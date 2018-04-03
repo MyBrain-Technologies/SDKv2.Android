@@ -1,0 +1,67 @@
+package core.bluetooth;
+
+/**
+ * Created by Vincent on 02/02/2016.
+ */
+public enum BTState {
+    /**
+     * When something went wrong but is not necessarily  related to Android itself
+     */
+    INTERNAL_FAILURE,
+
+    /**
+     *  Location is required in order to start the LE scan.
+     *  <p><strong>Note:</strong> this is needed only in Android M and next.</p>
+     */
+    LOCATION_IS_REQUIRED,
+
+    /**
+     *  Failed to start scan as BLE scan with the same settings is already started by the app.
+     */
+    SCAN_FAILED_ALREADY_STARTED,
+
+    /**
+     * Failed to start scan as app cannot be registered.
+     */
+    SCAN_FAILED_APPLICATION_REGISTRATION_FAILED,
+
+    /**
+     * Failed to start power optimized scan as this feature is not supported.
+     */
+    SCAN_FAILED_FEATURE_UNSUPPORTED,
+
+    /**
+     * Bluetooth is available on device but not enabled (turned on).
+     */
+    DISABLED,
+    /**
+     * Should not occur (see Android Manifest <code>uses-feature android:name="android.hardware.bluetooth_le" android:required="true"</code>.
+     * <p>The device does not have a Bluetooth interface or does not support Bluetooth Low Ebergy</p>
+     *
+     */
+    NO_BLUETOOTH,
+    /**
+     * Failed to connect : remote server not found (not in range or turned off)
+     */
+    CONNECT_FAILURE,
+    /**
+     * Idle, not connected, awaiting order
+     */
+    IDLE,
+    /**
+     * Currently attempting to connect to a Bluetooth remote endpoint
+     */
+    CONNECTING,
+    /**
+     * Successfully connected
+     */
+    CONNECTED,
+    /**
+     * User request to stop connecting
+     */
+    INTERRUPTED,
+    /**
+     * When connection was lost
+     */
+    DISCONNECTED
+}
