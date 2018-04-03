@@ -3,7 +3,7 @@ package core.bluetooth;
 /**
  * Created by Vincent on 02/02/2016.
  */
-public enum BTState {
+public enum BtState {
     /**
      * When something went wrong but is not necessarily  related to Android itself
      */
@@ -56,10 +56,23 @@ public enum BTState {
      * Successfully connected
      */
     CONNECTED,
+
+    /**
+     * Successfully connected and ready to use. This state is used when communication is finally possible,
+     * for example, when services are discovered for LE
+     */
+    CONNECTED_AND_READY,
+
     /**
      * User request to stop connecting
      */
     INTERRUPTED,
+
+    /**
+     * When connection is being disconnected
+     */
+    DISCONNECTING,
+
     /**
      * When connection was lost
      */

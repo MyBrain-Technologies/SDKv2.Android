@@ -61,13 +61,26 @@ public final class MbtClient {
         return new MbtClient(context, mbtClientEvents);
     }
 
+    /**
+     *
+     */
+    public static void configure(){
+        return;
+    }
+
     public boolean connectBluetooth(){
+
         this.bluetoothManager.connect();
         return false;
     }
 
     public boolean disconnectBluetooth(){
         return false;
+    }
+
+
+    public class Builder {
+        //TODO
     }
 
 }
