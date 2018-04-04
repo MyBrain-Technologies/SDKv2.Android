@@ -9,8 +9,10 @@ import android.util.Log;
 
 import core.bluetooth.BtState;
 import core.bluetooth.MbtBluetooth;
+import utils.MbtLock;
 
 final class MbtGattController extends BluetoothGattCallback {
+    private final static String TAG = MbtGattController.class.getSimpleName();
 
     private BluetoothGatt gatt = null;
     private BluetoothGattService mainService = null;
@@ -25,6 +27,9 @@ final class MbtGattController extends BluetoothGattCallback {
     private BluetoothGattCharacteristic serialNumber = null;
 
     private MbtBluetooth bluetoothController;
+
+    public MbtLock<Boolean> notificationLock;
+
 
     public MbtGattController(MbtBluetooth bluetoothController) {
         super();
@@ -109,6 +114,18 @@ final class MbtGattController extends BluetoothGattCallback {
     @Override
     public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
         super.onDescriptorWrite(gatt, descriptor, status);
+        // Check for EEG Notification status
+        if (this.notificationLock.isWaiting()){
+            if (descriptor.getValue() == BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE) {
+                Log.i(TAG, "Received a [onDescriptorWrite] callback for status on a request to remotely " +
+                        "enable notification for EEG.\nStatus: notification for EEG now ENABLED.");
+                this.notificationLock.setResultAndNotify(Boolean.TRUE);
+            } else {
+                Log.e(TAG, "Received a [onDescriptorWrite] callback for status on a request to remotely " +
+                        "enable notification for EEG.\nStatus: FAILURE.");
+                this.notificationLock.setResultAndNotify(Boolean.FALSE);
+            }
+        }
     }
 
     @Override

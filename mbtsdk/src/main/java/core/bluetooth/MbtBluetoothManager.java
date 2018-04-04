@@ -152,5 +152,48 @@ public final class MbtBluetoothManager {
             mbtBluetoothLE.stopScanDiscovery();
     }
 
+    /**
+     * Initiates the acquisition of EEG data. This method chooses between the correct BtProtocol
+     * @return false upon immediate failure, true otherwise
+     */
+    public boolean startStream(){
+        return false;
+    }
+
+    /**
+     * Initiates the acquisition of EEG data from the correct BtProtocol
+     * @return false upon immediate failure, true otherwise
+     */
+    public boolean stopStream(){
+        return false;
+    }
+
+    /**
+     * Initiates a read battery operation on this correct BtProtocol
+     */
+    public void readBattery(){
+
+    }
+
+    /**
+     * Initiates a read firmware version operation on this correct BtProtocol
+     */
+    public void readFwVersion(){
+
+    }
+
+    /**
+     * Initiates a read hardware version operation on this correct BtProtocol
+     */
+    public void readHwVersion(){
+
+    }
+
+    /**
+     * Initiates a read serial number operation on this correct BtProtocol
+     */
+    public void readSerialNumber(){
+
+    }
 
 }
