@@ -24,6 +24,15 @@ public enum BtState {
      * Failed to start scan as app cannot be registered.
      */
     SCAN_FAILED_APPLICATION_REGISTRATION_FAILED,
+    /**
+     * Failed to find device after scanning for a defined amount of time.
+     */
+    SCAN_TIMEOUT,
+
+    /**
+     * Failed to retrieve data
+     */
+    STREAM_ERROR,
 
     /**
      * Failed to start power optimized scan as this feature is not supported.

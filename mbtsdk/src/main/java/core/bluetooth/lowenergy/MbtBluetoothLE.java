@@ -64,6 +64,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @return Each found device that matches the specified filters
      */
     public BluetoothDevice startLowEnergyScan(boolean filterOnDeviceService, boolean filterOnDeviceName) {
+        this.
         this.bluetoothLeScanner = super.bluetoothAdapter.getBluetoothLeScanner();
         List<ScanFilter> mFilters = new ArrayList<>();
         if(filterOnDeviceService){

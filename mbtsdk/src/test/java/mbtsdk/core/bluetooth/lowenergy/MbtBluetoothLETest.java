@@ -1,4 +1,4 @@
-package mbtsdk.com.mybraintech.mbtsdk.core.bluetooth.lowenergy;
+package mbtsdk.core.bluetooth.lowenergy;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;

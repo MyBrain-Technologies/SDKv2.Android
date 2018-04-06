@@ -1,9 +1,14 @@
 package engine;
 
+import android.bluetooth.le.ScanCallback;
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.util.Log;
 
+import config.MbtConfig;
+import core.bluetooth.BtState;
 import core.bluetooth.MbtBluetoothManager;
+import core.bluetooth.lowenergy.StreamConfig;
 import core.eeg.MbtEEGManager;
 import core.recordingsession.MbtRecordingSessionManager;
 import core.serversync.MbtServerSyncManager;
@@ -15,6 +20,7 @@ import utils.AsyncUtils;
 
 public final class MbtClient {
 
+    private static final String TAG = MbtClientEvents.class.getName();
     /**
      *     Used to save context
      */
@@ -61,6 +67,15 @@ public final class MbtClient {
         return new MbtClient(context, mbtClientEvents);
     }
 
+    private MbtClient(MbtClientBuilder builder){
+        this.mContext=builder.mContext;
+        this.mEvents=builder.mEvents;
+        this.bluetoothManager=builder.bluetoothManager;
+        this.eegManager=builder.eegManager;
+        this.recordingSessionManager=builder.recordingSessionManager;
+        this.serverSyncManager=builder.serverSyncManager;
+    }
+
     /**
      *
      */
@@ -78,9 +93,90 @@ public final class MbtClient {
         return false;
     }
 
-
-    public class Builder {
-        //TODO
+    public Context getmContext() {
+        return mContext;
     }
 
+    public MbtClientEvents getmEvents() {
+        return mEvents;
+    }
+
+    public MbtBluetoothManager getBluetoothManager() {
+        return bluetoothManager;
+    }
+
+    public MbtEEGManager getEegManager() {
+        return eegManager;
+    }
+
+    public MbtRecordingSessionManager getRecordingSessionManager() {
+        return recordingSessionManager;
+    }
+
+    public MbtServerSyncManager getServerSyncManager() {
+        return serverSyncManager;
+    }
+
+    public static class MbtClientBuilder {
+        private Context mContext;
+        private MbtClientEvents mEvents;
+        private MbtBluetoothManager bluetoothManager;
+        private MbtEEGManager eegManager;
+        private MbtRecordingSessionManager recordingSessionManager;
+        private MbtServerSyncManager serverSyncManager;
+
+        public MbtClientBuilder setContext(final Context context){
+            this.mContext=context;
+            return this;
+        }
+
+        public MbtClientBuilder setEvents(final MbtClientEvents events){
+            this.mEvents = events;
+            return this;
+        }
+
+        public MbtClientBuilder setBluetoothManager(final MbtBluetoothManager bluetoothManager){
+            this.bluetoothManager = bluetoothManager;
+            return this;
+        }
+
+        public MbtClientBuilder setEegManager(final MbtEEGManager eegManager){
+            this.eegManager=eegManager;
+            return this;
+        }
+
+        public MbtClientBuilder setRecordingSessionManager(final MbtRecordingSessionManager recordingSessionManager) {
+            this.recordingSessionManager=recordingSessionManager;
+            return this;
+        }
+
+        public MbtClientBuilder setServerSyncManager(final MbtServerSyncManager serverSyncManager){
+            this.serverSyncManager = serverSyncManager;
+            return this;
+        }
+
+        public MbtClient create(){
+            return new MbtClient(this);
+        }
+
+    }
+
+    /*public void scanDevicesForType(MbtConfig.ScannableDevices deviceType, long duration, ScanCallback scanCallback){
+
+    }*/
+    public void configureHeadset(){
+
+    }
+
+    public synchronized void readBattery(int period) {
+        //this.gattController.startOrStopBatteryReader(true);
+    }
+
+    public void stopReadBattery(){
+        //this.gattController.startOrStopBatteryReader(false);
+    }
+
+    public void startstream(boolean useQualities, final MbtClientEvents clientEvents){
+
+    }
 }

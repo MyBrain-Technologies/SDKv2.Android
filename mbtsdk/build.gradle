@@ -18,6 +18,9 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+        debug {
+            buildConfigField "String", "USE_ALGO_VERSION", "\"2.3.0\""
+        }
     }
 
 
