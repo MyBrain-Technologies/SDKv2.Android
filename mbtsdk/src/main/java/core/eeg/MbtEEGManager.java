@@ -2,6 +2,7 @@ package core.eeg;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.support.annotation.WorkerThread;
 
 import java.util.ArrayList;
 import java.util.Observable;
@@ -10,6 +11,7 @@ import java.util.Observer;
 import core.MbtManager;
 import core.bluetooth.BtProtocol;
 import core.eeg.acquisition.MbtDataAcquisition;
+import core.eeg.signalprocessing.MBTEEGPacket;
 import core.eeg.storage.MbtHandleData;
 import core.eeg.storage.MbtBuffering;
 
@@ -56,12 +58,15 @@ public final class MbtEEGManager implements Observer {
     private MbtDataAcquisition dataAcquisition;
     private MbtBuffering mbtBuffering;
     private ArrayList<ArrayList<Float>> eegResult;
+    private ArrayList<MBTEEGPacket> mbteegPackets;
+
     private MbtManager mbtManager;
 
     public MbtEEGManager(@NonNull Context context){
         mContext = context;
         mbtManager = new MbtManager(mContext);
         this.dataAcquisition =new MbtDataAcquisition(this);
+
         mbtBuffering = new MbtBuffering(this);
 
         if (mbtManager.getBluetoothProtocol().equals(BtProtocol.BLUETOOTH_SPP)) {
@@ -83,6 +88,7 @@ public final class MbtEEGManager implements Observer {
         }
 
         mbtBuffering.addObserver(this);
+
     }
 
     /**
@@ -97,10 +103,10 @@ public final class MbtEEGManager implements Observer {
     /**
      * Creates the eeg data output from a simple raw data array
      * 0xFFFF values are computed a NaN values
-     * @param dataArray the raw data coming from BLE
+     * @param rawDataArray the raw data coming from BLE
      */
-    public void convertRawDataToEEG(byte[] dataArray){
-        eegResult = MbtHandleData.convertRawDataToEEG(dataArray,mbtManager.getBluetoothProtocol(),getRawDataNbChannel());
+    public void convertRawDataToEEG(byte[] rawDataArray){
+        eegResult = MbtHandleData.convertRawDataToEEG(rawDataArray,mbtManager.getBluetoothProtocol(),getRawDataNbChannel());
     }
 
     public int getRawDataPacketSize() {
@@ -151,7 +157,6 @@ public final class MbtEEGManager implements Observer {
 
     public void notifyBufferIsFullReceived(){
         //convertRawDataToEEG(toDecodeBytes);
-
     }
 
     public ArrayList<ArrayList<Float>> getEegResult() {
@@ -172,6 +177,10 @@ public final class MbtEEGManager implements Observer {
 
     public MbtManager getMbtManager() {
         return mbtManager;
+    }
+
+    public ArrayList<MBTEEGPacket> getMbteegPackets() {
+        return mbteegPackets;
     }
 
     public byte[] getPendingRawData() {

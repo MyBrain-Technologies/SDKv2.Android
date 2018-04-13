@@ -2,20 +2,10 @@ package engine;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
-
-import config.MbtConfig;
 import core.bluetooth.MbtBluetoothManager;
 import core.eeg.MbtEEGManager;
 import core.recordingsession.MbtRecordingSessionManager;
 import core.serversync.MbtServerSyncManager;
-import features.MbtFeatures;
-import model.MbtDevice;
-import model.MelomindDevice;
-import model.VProDevice;
-
-import static features.MbtFeatures.DEFAULT_GROUNDS;
-import static features.MbtFeatures.DEFAULT_LOCATIONS;
-import static features.MbtFeatures.DEFAULT_REFERENCES;
 
 /**
  * Created by Etienne on 08/02/2018.

@@ -5,10 +5,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.WorkerThread;
 
-import java.util.ArrayList;
-import java.util.Timer;
-
-import engine.MbtClientEvents;
 
 
 /**

@@ -7,6 +7,7 @@ import android.support.annotation.Nullable;
 import java.util.ArrayList;
 
 import core.bluetooth.BtState;
+import core.eeg.signalprocessing.MBTEEGPacket;
 import core.oad.OADEvent;
 
 /**
@@ -40,7 +41,7 @@ public interface MbtClientEvents {
          */
         @Deprecated
         void onNewSamples(final ArrayList<ArrayList<Float>> matrix, @Nullable final ArrayList<Float> status, final int nbChannels, final int nbSamples, final int sampleRate);
-        //void onNewPackets(final MBTEEGPacket mbteegPackets, final int nbChannels, final int nbSamples, final int sampleRate);
+        void onNewPackets(final MBTEEGPacket mbteegPackets, final int nbChannels, final int nbSamples, final int sampleRate);
     }
 
     //callback battery (optionnal)

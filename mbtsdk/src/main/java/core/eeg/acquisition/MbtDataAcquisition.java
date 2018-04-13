@@ -103,16 +103,16 @@ public class MbtDataAcquisition {
                     }
                     SRC_POS = eegManager.getRawDataIndexSize()+eegManager.getNbStatusBytes();
                 }
-                int length;
+                int pendingBufferLength;
                 //In case packet size is too large for buffer, we only take first part in pending buffer. Second part is stored in overflow buffer for future use
-                if (bufPos + eegManager.getRawDataPacketSize() > eegManager.getRawDataBufferSize()) {
-                    eegManager.setFirstBufferFull(true);
-                    length = eegManager.getRawDataBufferSize() - bufPos;
-                    eegManager.storeOverflowBuffer(data,bufPos,SRC_POS);
+                if (bufPos + eegManager.getRawDataPacketSize() > eegManager.getRawDataBufferSize()) { // check that the maximum size is not reached if we can add a packet to the buffer
+                    eegManager.setFirstBufferFull(true); //notify the eeg manager that the buffer is full
+                    pendingBufferLength = eegManager.getRawDataBufferSize() - bufPos; // the size of the pending buffer is the total buffer size - the overflow buffer size
+                    eegManager.storeOverflowBuffer(data,bufPos,SRC_POS);//we store the overflowing part in the overflow buffer
                 } else {
-                    length = eegManager.getRawDataPacketSize();
+                    pendingBufferLength = eegManager.getRawDataPacketSize(); //if we have no overflow, the pending buffer has the same size as the buffer
                 }
-                eegManager.storePendingBuffer(data,bufPos,SRC_POS,length);
+                eegManager.storePendingBuffer(data,bufPos,SRC_POS,pendingBufferLength); //we store the pending buffer in both case (overflow or no overflow)
 
             } else {
                 if(eegManager.getMbtManager().getBluetoothProtocol().equals(BLUETOOTH_LE)){
@@ -127,8 +127,8 @@ public class MbtDataAcquisition {
             }
             bufPos += eegManager.getRawDataPacketSize();
 
-            if (bufPos >= eegManager.getRawDataBufferSize()) {
-                eegManager.setSecondBufferFull(true); //notify buffer is full to eeg manager, so that the manager can change the value of isBufferFull in MbtBuffering (observable)
+            if (bufPos >= eegManager.getRawDataBufferSize()) { //the input eeg buffer is full so it contains enough data to compute a new MBTEEGPacket
+                eegManager.setSecondBufferFull(true); //notify buffer is full to eeg manager, so that the manager can change the value of isBufferFull in MbtBuffering (observable) and notify that the data is ready with notifyNewEeg
 
                 final ArrayList<Float> toDecodeStatus = statusData;
                 if(eegManager.getMbtManager().getBluetoothProtocol().equals(BLUETOOTH_LE)){
@@ -159,7 +159,7 @@ public class MbtDataAcquisition {
                     @Override
                     public void run() {
                         Log.i(TAG, "computing and sending to application");
-                        eegManager.convertRawDataToEEG(toDecodeBytes);
+                        eegManager.convertRawDataToEEG(toDecodeBytes); //convert byte table data to Float matrix and store the matrix in MbtEEGManager as eegResult attribute
                         switch(eegManager.getMbtManager().getBluetoothProtocol()){
                             case BLUETOOTH_LE:
                                 notifyDataIsReady(eegManager.getEegResult(), toDecodeStatus, sampleRate, nbChannels);
@@ -177,10 +177,6 @@ public class MbtDataAcquisition {
         previousIndex = currentIndex;
     }
 
-    public final void setDataAcquisitionListener(@Nullable final DataAcquisitionListener dataAcquisitionListener) {
-        this.dataAcquisitionListener = dataAcquisitionListener;
-    }
-
     private void notifyDataIsReady(@NonNull final ArrayList<ArrayList<Float>> matrix, final ArrayList<Float> status, final int sampleRate, final int nbChannels) {
         if (this.dataAcquisitionListener != null)
             this.dataAcquisitionListener.onDataReady(matrix, status, sampleRate, nbChannels);
@@ -191,6 +187,9 @@ public class MbtDataAcquisition {
         void onDataReady(@NonNull final ArrayList<ArrayList<Float>> matrix, @Nullable final ArrayList<Float> status, final int sampleRate, final int nbChannels);
     }
 
+    public final void setDataAcquisitionListener(@Nullable final DataAcquisitionListener dataAcquisitionListener) {
+        this.dataAcquisitionListener = dataAcquisitionListener;
+    }
 
     private static Float isBitSet(byte b, int bit){
         if((b & (1 << bit)) != 0)

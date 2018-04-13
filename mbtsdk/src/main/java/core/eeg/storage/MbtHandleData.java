@@ -20,25 +20,13 @@ public class MbtHandleData {
     private static final int POSITIVE_MASK_MELOMIND = (int) (~NEGATIVE_MASK_MELOMIND);
 
     public static int eegAmpGain = 12;
-    private MbtEEGManager eegManager;
-
-    private static boolean checkEegDataSize(final ArrayList<ArrayList<Float>> eegData, @NonNull final int limit) {
-        for (ArrayList<Float>  channel : eegData) {
-            if (channel.size() < limit){
-                return false;
-            }
-        }
-        return true;
-    }
 
     /**
      * Creates the eeg data output from a simple raw data array
-     * 0xFFFFFF values are computed a NaN values
-     * @param dataArray the raw data coming from BLE or SPP
+     * @param rawData the raw data coming from BLE or SPP
      * @return the eeg data as float lists, with NaN values for missing data
      */
-
-    public static ArrayList<ArrayList<Float>> convertRawDataToEEG(@NonNull byte[] dataArray, BtProtocol protocol, int nbChannels) {
+    public static ArrayList<ArrayList<Float>> convertRawDataToEEG(@NonNull byte[] rawData, BtProtocol protocol, int nbChannels) {
         int nbBytesData = 0;
         int max = 0;
 
@@ -56,7 +44,7 @@ public class MbtHandleData {
                 max = nbChannels;
                 break;
             case BLUETOOTH_SPP:
-                max = (dataArray.length/DIVIDER)/DIVIDER;
+                max = (rawData.length/DIVIDER)/DIVIDER;
                 break;
         }
 
@@ -64,19 +52,21 @@ public class MbtHandleData {
         for (int i = 0; i < nbChannels; i++) {
             eegData.add(new ArrayList<Float>());
         }
-        if(dataArray.length % 250 != 0){
+        if(rawData.length % 250 != 0){
             throw new IllegalArgumentException("Data size is invalid");
         }
         int index = 0;
 
-        for(int i = 0; i < dataArray.length/DIVIDER; i++) {
+        for(int i = 0; i < rawData.length/DIVIDER; i++) {
             for (int j = 0; j < max; j++) {
                 switch(protocol){
                     case BLUETOOTH_LE:
-                        index = handleBLE(dataArray, eegData, index, j);
+                        eegData = convertDataBLE(rawData, eegData, index, j);
+                        index += 2;
                         break;
                     case BLUETOOTH_SPP:
-                        index = handleSPP(dataArray, eegData, index, j);
+                        eegData = convertDataSPP(rawData, eegData, index, j);
+                        index += 3;
                         break;
                 }
             }
@@ -84,14 +74,20 @@ public class MbtHandleData {
         return eegData;
     }
 
-    public static int handleSPP(byte[] dataArray, ArrayList<ArrayList<Float>> eegData, int index, int j ) {
+    /**
+     * Creates the eeg data output from a simple raw data array
+     * 0xFFFFFF values are computed a NaN values
+     * @param rawData the raw data coming from SPP
+     * @return the eeg data as float lists, with NaN values for missing data
+     */
+    private static ArrayList<ArrayList<Float>> convertDataSPP(byte[] rawData, ArrayList<ArrayList<Float>> eegData, int index, int j ) {
         if(j == 0){
             //Here is status parsing, which can be directly updated to matrix
-            Float temp = (float) (dataArray[index + 2] & 1);
+            Float temp = (float) (rawData[index + 2] & 1);
             eegData.get(j).add(temp);
         }else{
             //Here are data from sensors, whom need to be transformed to float
-            int temp = (dataArray[index] & 0xFF) << 16 | (dataArray[index + 1] & 0xFF) << 8 | (dataArray[index + 2] & 0xFF);
+            int temp = (rawData[index] & 0xFF) << 16 | (rawData[index + 1] & 0xFF) << 8 | (rawData[index + 2] & 0xFF);
             if(temp == 0x00FFFFFF){
                 //Value is incorrect it's transformed to NaN for graphs
                 eegData.get(j).add(Float.NaN);
@@ -106,16 +102,22 @@ public class MbtHandleData {
                 eegData.get(j).add(temp * (float) (0.536d * Math.pow(10, -6)) / 24);
             }
         }
-        index += 3;
-        return index;
+        
+        return eegData;
     }
-
-    public static int handleBLE(byte[] dataArray, ArrayList<ArrayList<Float>> eegData, int index, int j){
+    
+    /**
+     * Creates the eeg data output from a simple raw data array
+     * 0xFFFF values are computed a NaN values
+     * @param rawData the raw data coming from BLE
+     * @return the eeg data as float lists, with NaN values for missing data
+     */
+    private static ArrayList<ArrayList<Float>> convertDataBLE(byte[] rawData, ArrayList<ArrayList<Float>> eegData, int index, int j){
         final float voltageADS1298 = (float) (0.286d * Math.pow(10, -6)) / eegAmpGain; //12; // for ADS 1298
 
         //Here are data from sensors, whom need to be transformed to float
         int temp = 0x00000000;
-        temp = ((dataArray[index] & 0xFF) << (SHIFT_MELOMIND)) | ((dataArray[index+1] & 0xFF) << (SHIFT_MELOMIND-8));
+        temp = ((rawData[index] & 0xFF) << (SHIFT_MELOMIND)) | ((rawData[index+1] & 0xFF) << (SHIFT_MELOMIND-8));
         if(temp == 0x0000FFFF){
             //Value is incorrect it's transformed to NaN for graphs
             eegData.get(j).add(Float.NaN);
@@ -130,8 +132,16 @@ public class MbtHandleData {
         }
 
         eegData.get(j).add(temp * voltageADS1298);
-        index += 2;
-        return index;
+        return eegData;
+    }
+    
+    private static boolean checkEegDataSize(final ArrayList<ArrayList<Float>> eegData, @NonNull final int limit) {
+        for (ArrayList<Float>  channel : eegData) {
+            if (channel.size() < limit){
+                return false;
+            }
+        }
+        return true;
     }
 
 }
