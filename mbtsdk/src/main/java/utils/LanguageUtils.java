@@ -28,7 +28,7 @@ public class LanguageUtils {
     //TODO Proper way using the array resource + completion
     private static String parseLanguageToIso(String language) {
         String isoLanguage;
-        switch (language){
+        switch(language){
             case "Français":
             case "fr_FR":
                 isoLanguage = "fr";
@@ -48,7 +48,7 @@ public class LanguageUtils {
     //TODO Proper way using the array resource + completion
     public static String parseLanguageFromIso(String isoLanguage) {
         String language;
-        switch (isoLanguage){
+        switch(isoLanguage){
             case "fr":
             case "fr-FR":
                 language = "Français";

@@ -1,11 +1,22 @@
 package core.eeg.signalprocessing;
 
+
 /**
  * Created by Vincent on 30/03/2016.
  */
-public class ContextSP {
+
+/**
+ * A class containing some static values related to the signal processing
+ */
+public final class ContextSP {
+    /**
+     * The current set of calibration parameters
+     */
     public static MBTCalibrationParameters calibrationParameters;
-    public static String SP_VERSION = "";
+    /**
+     * The current signal processing version. This value is updated as soon as the library is correctly loaded
+     */
+    public static String SP_VERSION = "0.0.0";
 
     /**
      * The prefix used to load the library. The suffix is the SP_VERSION we wish to load. This value is

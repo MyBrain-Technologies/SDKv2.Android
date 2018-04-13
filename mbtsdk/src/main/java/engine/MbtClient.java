@@ -1,18 +1,21 @@
 package engine;
 
-import android.bluetooth.le.ScanCallback;
 import android.content.Context;
 import android.support.annotation.NonNull;
-import android.util.Log;
 
 import config.MbtConfig;
-import core.bluetooth.BtState;
 import core.bluetooth.MbtBluetoothManager;
-import core.bluetooth.lowenergy.StreamConfig;
 import core.eeg.MbtEEGManager;
 import core.recordingsession.MbtRecordingSessionManager;
 import core.serversync.MbtServerSyncManager;
-import utils.AsyncUtils;
+import features.MbtFeatures;
+import model.MbtDevice;
+import model.MelomindDevice;
+import model.VProDevice;
+
+import static features.MbtFeatures.DEFAULT_GROUNDS;
+import static features.MbtFeatures.DEFAULT_LOCATIONS;
+import static features.MbtFeatures.DEFAULT_REFERENCES;
 
 /**
  * Created by Etienne on 08/02/2018.
@@ -20,7 +23,7 @@ import utils.AsyncUtils;
 
 public final class MbtClient {
 
-    private static final String TAG = MbtClientEvents.class.getName();
+    private static final String TAG = MbtClient.class.getName();
     /**
      *     Used to save context
      */
@@ -49,6 +52,7 @@ public final class MbtClient {
      * The server sync manager will manage the communication with MBT server API.
      */
     private final MbtServerSyncManager serverSyncManager;
+
 
     private MbtClient(@NonNull Context context, @NonNull MbtClientEvents mbtClientEvents){
         //save client side objects in variables
@@ -90,6 +94,8 @@ public final class MbtClient {
     }
 
     public boolean disconnectBluetooth(){
+        bluetoothManager.disconnect();
+
         return false;
     }
 
@@ -179,4 +185,5 @@ public final class MbtClient {
     public void startstream(boolean useQualities, final MbtClientEvents clientEvents){
 
     }
+
 }

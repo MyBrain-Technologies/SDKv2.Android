@@ -3,7 +3,7 @@ package model;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 
-import config.MelomindExerciseType;
+import features.MelomindExerciseType;
 import core.recordingsession.metadata.DataSource;
 
 /**

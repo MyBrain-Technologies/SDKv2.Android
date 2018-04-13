@@ -2,7 +2,7 @@ package core.bluetooth.lowenergy;
 
 import java.util.UUID;
 
-public final class MelomindServices {
+public final class MelomindCharacteristics {
     // Services UUIDS
 
     /**

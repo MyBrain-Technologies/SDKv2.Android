@@ -1,4 +1,4 @@
-package config;
+package features;
 
 public enum MelomindExerciseType {
     DEFAULT,

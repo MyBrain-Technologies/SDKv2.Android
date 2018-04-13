@@ -8,7 +8,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.WorkerThread;
@@ -18,24 +17,23 @@ import android.util.Log;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
 
 import config.MbtConfig;
-import engine.MbtClientEvents;
 import core.recordingsession.metadata.DeviceInfo;
+import engine.MbtClient;
 import utils.AsyncUtils;
 import utils.MbtLock;
 
-import static core.bluetooth.messageStatus.STATE_ACQ;
-import static core.bluetooth.messageStatus.STATE_COMMAND;
-import static core.bluetooth.messageStatus.STATE_COMPRESSION;
-import static core.bluetooth.messageStatus.STATE_FRAME_NB;
-import static core.bluetooth.messageStatus.STATE_IDLE;
-import static core.bluetooth.messageStatus.STATE_LENGTH;
+import static core.bluetooth.MessageStatus.STATE_ACQ;
+import static core.bluetooth.MessageStatus.STATE_COMMAND;
+import static core.bluetooth.MessageStatus.STATE_COMPRESSION;
+import static core.bluetooth.MessageStatus.STATE_FRAME_NB;
+import static core.bluetooth.MessageStatus.STATE_IDLE;
+import static core.bluetooth.MessageStatus.STATE_LENGTH;
 
 /**
  * Created by Etienne on 08/02/2018.
@@ -59,14 +57,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
     private OutputStream writer;
     private long bytesReceived = 0;
 
-    private MbtClientEvents.BandwidthListener bandwidthListener;
-    // A handler to process code in the Main UI Thread
-    private final Handler uiAccess;
-    private ArrayList<Byte> helper = new ArrayList<>();
-
-    private int currentBatteryLevel = -1;
-
-    private messageStatus currentStatus;
+    private MessageStatus currentStatus;
 
     private Timer keepAliveTimer;
 
@@ -76,7 +67,6 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
         this.bluetoothAdapter = (manager!=null) ? manager.getAdapter() : null;
 
         this.btState = BtState.DISCONNECTED;
-        this.uiAccess = new Handler(context.getMainLooper());
     }
 
     public MbtBluetoothSPP(@NonNull final Context context, @NonNull final String deviceAddress, @NonNull final String device_name) {
@@ -86,7 +76,6 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
 
         this.deviceAddress = deviceAddress;
         this.btState = BtState.DISCONNECTED;
-        this.uiAccess = new Handler(context.getMainLooper());
     }
 
 
@@ -262,7 +251,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
             // Loop through paired devices
             //TODO change here to use MAC address instead of Name
             for (BluetoothDevice device : pairedDevices) {
-                if (device.getName().equals(MbtConfig.getCurrentDeviceName()) /*|| device.getName().contains(deviceName)*/) { // device found
+                if (device.getName().equals(getMbtBluetoothManager().getDeviceName()) /*|| device.getName().contains(deviceName)*/) { // device found
                     return device;
                 }
             }
@@ -275,7 +264,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
         context.registerReceiver(new BroadcastReceiver() {
             public final void onReceive(final Context context, final Intent intent) {
                 final String action = intent.getAction();
-                switch (action) {
+                switch(action) {
                     case BluetoothDevice.ACTION_FOUND:
                         final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                         final String name = device.getName();
@@ -286,7 +275,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
 
                         Log.i(TAG, String.format("Stopping Discovery Scan -> device detected " +
                                 "with name '%s' and MAC address '%s' ", device.getName(), device.getAddress()));
-                        if (name.equals(MbtConfig.getCurrentDeviceName()) || name.contains(MbtConfig.getCurrentDeviceName())) {
+                        if (name.equals(getMbtBluetoothManager().getDeviceName()) || name.contains(getMbtBluetoothManager().getDeviceName())) {
                             Log.i(TAG, "VPro found. Cancelling discovery & connecting");
                             bluetoothAdapter.cancelDiscovery();
                             context.unregisterReceiver(this);
@@ -398,7 +387,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
                                 AsyncUtils.executeAsync(new Runnable() {
                                     //private final byte[] toAcquire = Arrays.copyOf(finalData, finalData.length);
                                     public void run() {
-                                        acquireData(finalData, BtProtocol.BLUETOOTH_SPP);
+                                        getMbtBluetoothManager().acquireData(finalData);
                                     }
                                 });
                             }
@@ -410,7 +399,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
                             counter = 0;
                             currentStatus = STATE_IDLE;
                             int pourcent = -1;
-                            switch (level) {
+                            switch(level) {
                                 case 0:
                                     pourcent = 0;
                                     break;
@@ -435,7 +424,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
                                 default:
                                     break;
                             }
-                            currentBatteryLevel = pourcent;
+                            getMbtBluetoothManager().getDeviceAcquisition().setBatteryLevel(pourcent) ;
                             notifyBatteryLevelChanged(pourcent);
                         }else {
                             //TODO here are non implemented cases. Please see the MBT SPP protocol for infos.

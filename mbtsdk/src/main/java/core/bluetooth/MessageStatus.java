@@ -1,6 +1,6 @@
 package core.bluetooth;
 
-public enum messageStatus {
+public enum MessageStatus {
     STATE_IDLE,
     STATE_LENGTH,
     STATE_COMMAND,

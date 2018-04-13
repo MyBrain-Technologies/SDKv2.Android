@@ -3,21 +3,33 @@ package core.bluetooth;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+
 import android.support.annotation.WorkerThread;
+import android.text.TextUtils;
 import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import config.MbtConfig;
+import core.device.acquisition.MbtDeviceAcquisition;
 import core.eeg.acquisition.MbtDataAcquisition;
 import core.oad.OADEvent;
+
 import engine.MbtClientEvents;
 import core.recordingsession.metadata.DeviceInfo;
+import features.MbtFeatures;
+import model.MbtDevice;
+import model.MelomindDevice;
+import model.VProDevice;
 import utils.MbtLock;
 
 /**
@@ -40,6 +52,7 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
     private BtState currentState = BtState.DISCONNECTED;
 
     protected BluetoothAdapter bluetoothAdapter;
+
     protected final Context context;
     protected final Handler uiAccess;
 
@@ -48,12 +61,17 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
 
     protected final MbtLock<BtState> connectionLock = new MbtLock<>();
 
-    private String deviceName;
-    private MbtDataAcquisition dataAcquisition;
+    private MbtBluetoothManager mbtBluetoothManager;
+
+    private MbtDeviceAcquisition deviceAcquisition;
+
+    private MbtDevice melomindDevice;
+    private MbtDevice vproDevice;
 
     public MbtBluetooth(Context context) {
         this.context = context.getApplicationContext();
         this.uiAccess = new Handler(this.context.getMainLooper());
+
         final BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
         if (manager != null) {
             this.bluetoothAdapter = manager.getAdapter();
@@ -61,37 +79,105 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
         if(this.bluetoothAdapter == null){
             this.bluetoothAdapter = BluetoothAdapter.getDefaultAdapter(); //try another way to get the adapter
         }
-        this.dataAcquisition = new MbtDataAcquisition(MbtConfig.SAMPLE_RATE, MbtConfig.CURRENT_NB_CHANNELS, MbtConfig.SAMPLE_PER_NOTIF, BtProtocol.BLUETOOTH_LE, 0);
+        mbtBluetoothManager = new MbtBluetoothManager(context);
 
-        if (this.dataAcquisition == null) // meaning this instance of MBT Bluetooth has no need for a dataAcquisition
-            return;
+        switch(MbtConfig.getScannableDevices()) {
+            case MELOMIND:
+                melomindDevice = new MelomindDevice(MbtFeatures.getDeviceName(), MbtFeatures.getSampleRate(), MbtFeatures.getNbChannels(), MbtFeatures.getLocations(), MbtFeatures.getReferences(), MbtFeatures.getGrounds(), MbtConfig.getEegPacketLength());
+                break;
+            case VPRO:
+                vproDevice = new VProDevice(MbtFeatures.getDeviceName(), MbtFeatures.getSampleRate(), MbtFeatures.getNbChannels(), MbtFeatures.getLocations(), MbtFeatures.getReferences(), MbtFeatures.getGrounds(), MbtConfig.getEegPacketLength());
+                break;
+            case ALL:
+                melomindDevice = new MelomindDevice(MbtFeatures.getDeviceName(), MbtFeatures.getSampleRate(), MbtFeatures.getNbChannels(), MbtFeatures.getLocations(), MbtFeatures.getReferences(), MbtFeatures.getGrounds(), MbtConfig.getEegPacketLength());
+
+                break;
+        }
 
 
-        this.dataAcquisition.setDataAcquisitionListener(new MbtDataAcquisition.DataAcquisitionListener() {
+        this.deviceAcquisition = new MbtDeviceAcquisition();
+        this.deviceAcquisition.setDeviceAcquisitionListener(new MbtDeviceAcquisition.DeviceAcquisitionListener() {
+
             @WorkerThread
-            public final void onDataReady(@NonNull final ArrayList<ArrayList<Float>> matrix, final ArrayList<Float> status, final int sampleRate, final int nbChannels) {
+            public final void onDeviceReady(@NonNull final int level) {
                 MbtBluetooth.this.uiAccess.post(new Runnable() {
                     public final void run() {
-                        notifyNewEeg(matrix, status, nbChannels, matrix.get(0).size(), sampleRate);
+                        notifyBatteryLevelChanged(level);
                     }
                 });
             }
         });
+
     }
 
     @Override
     public void startScanDiscovery(Context context) {
-        if(scannedDevices.equals(MbtConfig.ScannableDevices.VPRO)){
+        final Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
+        // If there are paired devices
+        if (pairedDevices.size() > 0) {
+            // Loop through paired devices
+            //TODO change here to use MAC address instead of Name
+            for (BluetoothDevice device : pairedDevices) {
+                if (device.getName().equals(mbtBluetoothManager.getDeviceName()) /*|| device.getName().contains(deviceName)*/) { // device found
+                    if (melomindDevice != null) {
+                        this.melomindDevice.setBluetoothDevice(device);
+                    } else if (vproDevice != null){
+                        this.vproDevice.setBluetoothDevice(device);
+                    }
+                }
+            }
+        }
+        // at this point, device was not found among bonded devices so let's start a discovery scan
+        final MbtLock<BluetoothDevice> scanLock = new MbtLock<>();
+        Log.i(TAG, "Starting Classic Bluetooth Discovery Scan");
+        final IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+        context.registerReceiver(new BroadcastReceiver() {
+            public final void onReceive(final Context context, final Intent intent) {
+                final String action = intent.getAction();
+                if (action != null) {
+                    switch(action) {
+                        case BluetoothDevice.ACTION_FOUND:
+                            final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                            final String name = device.getName();
+                            if (TextUtils.isEmpty(name)) {
+                                Log.w(TAG, "Found device with no name. MAC address is -> " + device.getAddress());
+                                return;
+                            }
 
+                            Log.i(TAG, String.format("Stopping Discovery Scan -> device detected " +
+                                    "with name '%s' and MAC address '%s' ", device.getName(), device.getAddress()));
+                            if (name.contains(mbtBluetoothManager.getDeviceName())) {
+                                Log.i(TAG, "VPro found. Cancelling discovery & connecting");
+                                bluetoothAdapter.cancelDiscovery();
+                                context.unregisterReceiver(this);
+                                scanLock.setResultAndNotify(device);
+                            }
+                            break;
+                        case BluetoothAdapter.ACTION_DISCOVERY_FINISHED:
+                            if (scanLock.isWaiting()) // restarting discovery while still waiting
+                                bluetoothAdapter.startDiscovery();
+                            break;
+                    }
+                }
+
+            }
+        }, filter);
+        bluetoothAdapter.startDiscovery();
+        if (melomindDevice != null) {
+            this.melomindDevice.setBluetoothDevice(scanLock.waitAndGetResult());
+        } else if (vproDevice != null){
+            this.vproDevice.setBluetoothDevice(scanLock.waitAndGetResult());
         }
     }
+
 
     @Override
     public void stopScanDiscovery() {
 
     }
 
-    void notifyDeviceInfoReceived(DeviceInfo infoType, String value){
+    public void notifyDeviceInfoReceived(DeviceInfo infoType, String value){
         switch(infoType){
             case FW_VERSION:
                 this.deviceInfoListener.onFwVersionReceived(value);
@@ -138,7 +224,7 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
         }
     }
 
-    void notifyBatteryLevelChanged(@NonNull final int level) {
+    public void notifyBatteryLevelChanged(@NonNull final int level) {
         if (this.batteryListener != null)
             this.batteryListener.onBatteryChanged(level);
     }
@@ -148,12 +234,13 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
             this.eegListener.onNewSamples(matrix, status, nbChannels, nbSamples, sampleRate);
     }
 
-    void acquireData(@NonNull final byte[] data, @NonNull BtProtocol protocol) {
-        this.dataAcquisition.handleData(data, protocol);
-    }
 
     public BtState getCurrentState() { return currentState; }
     public void setCurrentState(BtState state) { this.currentState=state;}
+
+    public MbtBluetoothManager getMbtBluetoothManager() {
+        return mbtBluetoothManager;
+    }
 
     public void setOadEventListener(MbtClientEvents.OADEventListener oadEventListener) {
         this.oadEventListener = oadEventListener;
@@ -164,7 +251,7 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
         this.stateListener = listener;
     }
 
-    void setOnBatteryChangeListener(@Nullable final MbtClientEvents.BatteryListener listener) {
+    void setBatteryChangeListener(@Nullable final MbtClientEvents.BatteryListener listener) {
         this.batteryListener = listener;
     }
 
@@ -174,18 +261,47 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
         this.mailboxEventListener = listener;
     }
 
-    void setOnNewEegListener(@Nullable final MbtClientEvents.EegListener listener) {
+    void setEegListener(@Nullable final MbtClientEvents.EegListener listener) {
         this.eegListener = listener;
         if (eegListener == null)
             Log.i(TAG,"eegListener is NULL");
     }
 
-    void setDeviceInfoListener(MbtClientEvents.DeviceInfoListener deviceInfoListener) {
+    void setDeviceInfoListener(@Nullable final MbtClientEvents.DeviceInfoListener deviceInfoListener) {
         this.deviceInfoListener = deviceInfoListener;
     }
 
-    void setHeadsetStatusListener(MbtClientEvents.HeadsetStatusListener headsetStatusListener) {
+    void setHeadsetStatusListener(@Nullable final MbtClientEvents.HeadsetStatusListener headsetStatusListener) {
         this.headsetStatusListener = headsetStatusListener;
     }
 
+    public void setStateListener(@Nullable final MbtClientEvents.StateListener stateListener) {
+        this.stateListener = stateListener;
+    }
+
+
+    /**
+     * This method reset all listeners to avoid null pointer exceptions and listener leaks
+     */
+    public void resetAllListeners(){
+        setBatteryChangeListener(null);
+        setDeviceInfoListener(null);
+        setOadEventListener(null);
+        setHeadsetStatusListener(null);
+        setEegListener(null);
+        setStateListener(null);
+
+    }
+
+    public MbtDevice getMelomindDevice() {
+        return melomindDevice;
+    }
+
+    public MbtDevice getVproDevice() {
+        return vproDevice;
+    }
+
+    public MbtDeviceAcquisition getDeviceAcquisition() {
+        return deviceAcquisition;
+    }
 }
