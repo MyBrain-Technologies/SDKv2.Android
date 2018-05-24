@@ -1,10 +1,4 @@
-package core.device.acquisition;
-
-
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.WorkerThread;
-
+package core.bluetooth.acquisition;
 
 
 /**
@@ -24,27 +18,10 @@ public class MbtDeviceAcquisition {
 
     private int currentDCOffset;
 
-
-    private DeviceAcquisitionListener deviceAcquisitionListener;
-
     public MbtDeviceAcquisition(){}
 
     public MbtDeviceAcquisition(int period) {
         this.batteryReaderPeriod = period;
-    }
-
-    public final void setDeviceAcquisitionListener(@Nullable final DeviceAcquisitionListener dataAcquisitionListener) {
-        this.deviceAcquisitionListener = dataAcquisitionListener;
-    }
-
-    private void notifyDeviceIsReady(@NonNull final int level) {
-        if (this.deviceAcquisitionListener != null)
-            this.deviceAcquisitionListener.onDeviceReady(level);
-    }
-
-    public interface DeviceAcquisitionListener {
-        @WorkerThread
-        void onDeviceReady(@NonNull final int level);
     }
 
     private void readBattery(final boolean start) {
@@ -90,5 +67,6 @@ public class MbtDeviceAcquisition {
     public void setDCOffset(short currentDCOffset) {
         this.currentDCOffset = currentDCOffset;
     }
+
 }
 

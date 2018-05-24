@@ -31,7 +31,7 @@ public final class MBTComputeRelaxIndex {
         if (packets == null || packets.length == 0)
             throw new IllegalArgumentException("there MUST be at least ONE or MORE packet(s) !");
 
-        Log.i(TAG, "starting relax index computation...");
+        //Log.i(TAG, "starting relax index computation...");
         final float[][] qualities = new float[2][packets.length];
         final float[][] mainMatrix = new float[2][packets.length * samprate];
 
@@ -40,7 +40,7 @@ public final class MBTComputeRelaxIndex {
         for (final MBTEEGPacket current : packets) {
             // Merging qualities
             if(current == null){
-                Log.e(TAG, "error null value");
+//                Log.e(TAG, "error null value");
             }
 
 

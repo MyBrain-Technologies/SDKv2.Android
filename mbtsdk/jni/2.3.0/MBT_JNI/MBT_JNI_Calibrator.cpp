@@ -26,7 +26,7 @@
  * Class:     mybraintech_com_mbtsdk_core_signalprocessing_MBTCalibrator
  * Method:    nativeCalibrateNew
  */
-JNIEXPORT jobject JNICALL Java_mybraintech_com_mbtsdk_core_signalprocessing_MBTCalibrator_nativeCalibrateNew
+JNIEXPORT jobject JNICALL Java_core_eeg_signalprocessing_MBTCalibrator_nativeCalibrateNew
         (JNIEnv *env, jclass caller, jint sampRate, jint packetLength, jint calibLength, jobjectArray qt_matrix, jobjectArray sig_matrix) {
 
     jboolean isCopy;

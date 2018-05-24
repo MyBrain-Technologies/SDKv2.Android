@@ -80,6 +80,8 @@ public final class MbtFeatures{
         return  deviceName;
     }
 
+
+
     public static int getStatusSize(){
         int statusSize=0;
         switch(MbtConfig.getScannableDevices()){

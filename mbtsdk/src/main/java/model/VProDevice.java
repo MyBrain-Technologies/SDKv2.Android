@@ -31,7 +31,7 @@ public class VProDevice extends MbtDevice{
 
         this.firmwareVersion = firmwareVersion;
         this.productName = productName;
-        this.deviceId = deviceId;
+        this.serialNumber = deviceId;
         this.hardwareVersion = hardwareVersion;
 
         this.sampRate = sampRate;
@@ -46,7 +46,7 @@ public class VProDevice extends MbtDevice{
         super(productName, sampRate, nbChannels, acquisitionLocations, referencesLocations, groundsLocation, eegPacketLength);
         this.firmwareVersion = null;
         this.productName = productName;
-        this.deviceId = null;
+        this.serialNumber = null;
         this.hardwareVersion = null;
 
         this.sampRate = sampRate;
@@ -84,7 +84,7 @@ public class VProDevice extends MbtDevice{
      * @return the device unique ID
      */
     public final String getDeviceId() {
-        return this.deviceId;
+        return this.serialNumber;
     }
 
     /**
@@ -118,7 +118,7 @@ public class VProDevice extends MbtDevice{
 
     public void setFirmwareVersion(@NonNull final String firmwareVersion) {this.firmwareVersion = firmwareVersion;}
 
-    public void setDeviceId(@NonNull final String deviceId) {this.deviceId = deviceId;}
+    public void setDeviceId(@NonNull final String deviceId) {this.serialNumber = deviceId;}
 
     public void updateConfiguration(ArrayList<MbtAcquisitionLocations> acquisitionLocationsArrayList, ArrayList<MbtAcquisitionLocations> referenceArrayList, ArrayList<MbtAcquisitionLocations> grounLocationsArrayList){
         this.acquisitionLocations = acquisitionLocationsArrayList;

@@ -15,7 +15,7 @@ public interface IScannable {
      * Start a classic discovery scan in order to find a bluetooth device
      * @param context: The context in which the scan will be started.
      */
-    void startScanDiscovery(Context context);
+    void startScanDiscovery(Context context, String deviceName);
 
     /**
      * Disconnect from the peripheral device

@@ -2,6 +2,9 @@ package engine;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
+
+import core.MbtManager;
+import core.bluetooth.BtProtocol;
 import core.bluetooth.MbtBluetoothManager;
 import core.eeg.MbtEEGManager;
 import core.recordingsession.MbtRecordingSessionManager;
@@ -23,25 +26,35 @@ public final class MbtClient {
      *     Contains the client callbacks that will allow fluid communication between SDK and client app.
      */
     private MbtClientEvents mEvents;
+    //Listeners declarations
+    private MbtClientEvents.EegListener eegMelomindListener = null;
+    private MbtClientEvents.BatteryListener batteryMelomindListener = null;
+    private MbtClientEvents.StateListener bleStateMelomindListener = null;
+    private MbtClientEvents.DeviceInfoListener deviceInfoListener = null;
+    private MbtClientEvents.OADEventListener oadEventListener = null;
+    private MbtClientEvents.MailboxEventListener mailboxEventListener = null;
+    private MbtClientEvents.HeadsetStatusListener headsetStatusListener = null;
 
 
-    private final MbtBluetoothManager bluetoothManager;
+   // private final MbtBluetoothManager bluetoothManager;
 
     /**
      * The eeg manager that will manage the EEG data coming from the @bluetoothManager. It is responsible for
      * managing buffers size, conversion from raw packets to eeg values (voltages).
      */
-    private final MbtEEGManager eegManager;
+    //private final MbtEEGManager eegManager;
 
     /**
      * The recording session manager will manage all the recordings that are made during the lifetime of this instance.
      */
-    private final MbtRecordingSessionManager recordingSessionManager;
+    //private final MbtRecordingSessionManager recordingSessionManager;
 
     /**
      * The server sync manager will manage the communication with MBT server API.
      */
-    private final MbtServerSyncManager serverSyncManager;
+    //private final MbtServerSyncManager serverSyncManager;
+
+    private final MbtManager mbtManager;
 
 
     private MbtClient(@NonNull Context context, @NonNull MbtClientEvents mbtClientEvents){
@@ -50,41 +63,46 @@ public final class MbtClient {
         mContext = context;
 
         //init internal managers
-        bluetoothManager = new MbtBluetoothManager(context);
+        mbtManager = new MbtManager(mContext);
+        /*bluetoothManager = new MbtBluetoothManager(context);
         eegManager = new MbtEEGManager(context);
         recordingSessionManager = new MbtRecordingSessionManager(context);
-        serverSyncManager = new MbtServerSyncManager(context);
-
+        serverSyncManager = new MbtServerSyncManager(context);*/
     }
 
     public static MbtClient init(@NonNull Context context, @NonNull MbtClientEvents mbtClientEvents){
-        return new MbtClient(context, mbtClientEvents);
+        return new MbtClientBuilder()
+                .setContext(context)
+                .setMbtManager(new MbtManager(context))
+                .setEvents(mbtClientEvents)
+                .create();
     }
 
     private MbtClient(MbtClientBuilder builder){
-        this.mContext=builder.mContext;
-        this.mEvents=builder.mEvents;
-        this.bluetoothManager=builder.bluetoothManager;
+        this.mContext = builder.mContext;
+        this.mEvents = builder.mEvents;
+        /*this.bluetoothManager=builder.bluetoothManager;
         this.eegManager=builder.eegManager;
         this.recordingSessionManager=builder.recordingSessionManager;
-        this.serverSyncManager=builder.serverSyncManager;
+        this.serverSyncManager=builder.serverSyncManager;*/
+        mbtManager = builder.mbtManager;
     }
 
     /**
      *
      */
     public static void configure(){
-        return;
+
     }
 
     public boolean connectBluetooth(){
 
-        this.bluetoothManager.connect();
+       // this.bluetoothManager.connect();
         return false;
     }
 
     public boolean disconnectBluetooth(){
-        bluetoothManager.disconnect();
+        //bluetoothManager.disconnect();
 
         return false;
     }
@@ -96,7 +114,7 @@ public final class MbtClient {
     public MbtClientEvents getmEvents() {
         return mEvents;
     }
-
+/*
     public MbtBluetoothManager getBluetoothManager() {
         return bluetoothManager;
     }
@@ -111,15 +129,20 @@ public final class MbtClient {
 
     public MbtServerSyncManager getServerSyncManager() {
         return serverSyncManager;
+    }*/
+
+    public MbtManager getMbtManager() {
+        return mbtManager;
     }
 
     public static class MbtClientBuilder {
         private Context mContext;
         private MbtClientEvents mEvents;
-        private MbtBluetoothManager bluetoothManager;
+        /*private MbtBluetoothManager bluetoothManager;
         private MbtEEGManager eegManager;
         private MbtRecordingSessionManager recordingSessionManager;
-        private MbtServerSyncManager serverSyncManager;
+        private MbtServerSyncManager serverSyncManager;*/
+        private MbtManager mbtManager;
 
         public MbtClientBuilder setContext(final Context context){
             this.mContext=context;
@@ -131,6 +154,11 @@ public final class MbtClient {
             return this;
         }
 
+        public MbtClientBuilder setMbtManager(final MbtManager mbtManager){
+            this.mbtManager = mbtManager;
+            return this;
+        }
+/*
         public MbtClientBuilder setBluetoothManager(final MbtBluetoothManager bluetoothManager){
             this.bluetoothManager = bluetoothManager;
             return this;
@@ -149,7 +177,7 @@ public final class MbtClient {
         public MbtClientBuilder setServerSyncManager(final MbtServerSyncManager serverSyncManager){
             this.serverSyncManager = serverSyncManager;
             return this;
-        }
+        }*/
 
         public MbtClient create(){
             return new MbtClient(this);
@@ -169,11 +197,14 @@ public final class MbtClient {
     }
 
     public void stopReadBattery(){
-        //this.gattController.startOrStopBatteryReader(false);
     }
 
     public void startstream(boolean useQualities, final MbtClientEvents clientEvents){
 
     }
 
+    public void testEEGpackageClientSPP(){
+        if(this.mbtManager!=null && this.mbtManager.getMbtBluetoothManager()!=null && this.mbtManager.getMbtBluetoothManager().getMbtBluetoothSPP()!=null)
+            this.mbtManager.getMbtBluetoothManager().getMbtBluetoothSPP().testAcquireDataRandomByte();
+    }
 }

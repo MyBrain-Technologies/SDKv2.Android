@@ -6,11 +6,13 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Handler;
 import android.support.annotation.NonNull;
-import android.support.annotation.WorkerThread;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
+import org.greenrobot.eventbus.Subscribe;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -20,8 +22,10 @@ import java.util.concurrent.TimeoutException;
 import config.MbtConfig;
 import core.MbtManager;
 import core.bluetooth.lowenergy.MbtBluetoothLE;
-import core.device.acquisition.MbtDeviceAcquisition;
-import core.eeg.acquisition.MbtDataAcquisition;
+import core.bluetooth.acquisition.MbtDeviceAcquisition;
+import eventbus.EventBusManager;
+import eventbus.events.EEGDataIsReady;
+import eventbus.events.EEGDataAcquired;
 import features.MbtFeatures;
 import features.ScannableDevices;
 import utils.AsyncUtils;
@@ -39,34 +43,39 @@ import utils.AsyncUtils;
  */
 
 public final class MbtBluetoothManager {
+
     private final static String TAG = MbtBluetoothManager.class.getSimpleName();
 
     private Context mContext;
     private final Handler uiAccess;
 
-    private String deviceName;
     private BluetoothDevice bluetoothDevice;
     private BtProtocol btProtocol;
 
     private MbtBluetoothLE mbtBluetoothLE;
     private MbtBluetoothA2DP mbtBluetoothA2DP;
     private MbtBluetoothSPP mbtBluetoothSPP;
-    private MbtManager mbtManager;
 
-    public MbtBluetoothManager(@NonNull Context context){
+    private MbtManager mbtManager;
+    private MbtDeviceAcquisition deviceAcquisition;
+    private EventBusManager eventBusManager;
+
+    public MbtBluetoothManager(@NonNull Context context, MbtManager mbtManagerController){
 
         //save client side objects in variables
-        mContext = context;
+        this.mContext = context;
         this.uiAccess = new Handler(context.getMainLooper());
-        this.deviceName = deviceName;
-        this.btProtocol = BtProtocol.BLUETOOTH_LE; //Default value
+        this.btProtocol = BtProtocol.BLUETOOTH_SPP; //Default value //todo change if tests are successful
 
-        mbtBluetoothLE = new MbtBluetoothLE(context);
-        mbtBluetoothSPP = new MbtBluetoothSPP(context);
-        mbtBluetoothA2DP = new MbtBluetoothA2DP(context);
+        this.mbtBluetoothLE = new MbtBluetoothLE(context, this);
+        this.mbtBluetoothSPP = new MbtBluetoothSPP(context,this);
+        this.mbtBluetoothA2DP = new MbtBluetoothA2DP(context,this);
+
+        this.mbtManager = mbtManagerController;
+        this.deviceAcquisition = new MbtDeviceAcquisition();
+        this.eventBusManager = new EventBusManager();// register MbtBluetoothManager as a subscriber for receiving event such as EEGDataIsReady event (called after EEG raw data has been converted)
 
     }
-
 
     public boolean connect(){
         //first step
@@ -106,8 +115,6 @@ public final class MbtBluetoothManager {
         return mbtBluetoothLE.connect(mContext, device);
     }
 
-
-
     /**
      *
      */
@@ -124,7 +131,7 @@ public final class MbtBluetoothManager {
             mbtBluetoothLE.startLowEnergyScan(true, false); //TODO handle this
 
         else
-            mbtBluetoothLE.startScanDiscovery(mContext);
+            mbtBluetoothLE.startScanDiscovery(mContext, MbtFeatures.getDeviceName());
     }
 
 
@@ -133,9 +140,28 @@ public final class MbtBluetoothManager {
      * @param deviceName The broadcasting name of the device to scan
      * @return a {@link Future} object holding the {@link BluetoothDevice} instance of the device to scan.
      */
-    public Future<BluetoothDevice> scanSingle (String deviceName){
+    public Future<BluetoothDevice> scanSingle (final String deviceName){ //todo check that
         //TODO choose method name accordingly between scan() / scanFor() / ...
-        this.deviceName = deviceName;
+        switch (btProtocol){
+            case BLUETOOTH_LE:
+                if(mbtBluetoothLE.getMelomindDevice()!=null)
+                    mbtBluetoothLE.getMelomindDevice().setProductName(deviceName);
+                else if (mbtBluetoothLE.getVproDevice()!=null)
+                    mbtBluetoothLE.getVproDevice().setProductName(deviceName);
+                break;
+            case BLUETOOTH_SPP:
+                if(mbtBluetoothSPP.getMelomindDevice()!=null)
+                    mbtBluetoothSPP.getMelomindDevice().setProductName(deviceName);
+                else if (mbtBluetoothSPP.getVproDevice()!=null)
+                    mbtBluetoothSPP.getVproDevice().setProductName(deviceName);
+                break;
+            case BLUETOOTH_A2DP:
+                if(mbtBluetoothA2DP.getMelomindDevice()!=null)
+                    mbtBluetoothA2DP.getMelomindDevice().setProductName(deviceName);
+                else if (mbtBluetoothA2DP.getVproDevice()!=null)
+                    mbtBluetoothA2DP.getVproDevice().setProductName(deviceName);
+        }
+
         return AsyncUtils.executeAsync(new Callable<BluetoothDevice>() {
             @Override
             public BluetoothDevice call() throws Exception {
@@ -152,7 +178,7 @@ public final class MbtBluetoothManager {
 //                    return mbtBluetoothLE.startScanDiscovery(mContext);
                 else
                     Log.i(TAG, "About to start scan discovery");
-                    mbtBluetoothSPP.startScanDiscovery(mContext);
+                    mbtBluetoothSPP.startScanDiscovery(mContext, deviceName);
                     btProtocol=BtProtocol.BLUETOOTH_SPP;
                     return null; //TODO handle scanDiscovery
 
@@ -195,7 +221,7 @@ public final class MbtBluetoothManager {
      * Initiates a read battery operation on this correct BtProtocol
      */
     public void readBattery(){
-
+        mbtBluetoothLE.readBattery(deviceAcquisition.getLastKnownBatteryLevel());
     }
 
     /**
@@ -218,14 +244,8 @@ public final class MbtBluetoothManager {
 
     }
 
-
-
     void notifyNewEeg(final ArrayList<ArrayList<Float>> matrix, final ArrayList<Float> status, final int nbChannels, final int nbSamples, final int sampleRate) {
     //call mbtbluetooth.notifyneweeg
-    }
-
-    void notifyBatteryLevelChanged(@NonNull final int level) {
-       // call mbtbluetooth.notifybatterylevelchanged
     }
 
     /**
@@ -244,14 +264,6 @@ public final class MbtBluetoothManager {
         this.btProtocol = btProtocol;
     }
 
-    public String getDeviceName() {
-        return deviceName;
-    }
-
-    public void setDeviceName(String deviceName) {
-        this.deviceName = deviceName;
-    }
-
     public MbtBluetoothLE getMbtBluetoothLE() {
         return mbtBluetoothLE;
     }
@@ -268,10 +280,13 @@ public final class MbtBluetoothManager {
         return bluetoothDevice;
     }
 
+    public MbtDeviceAcquisition getDeviceAcquisition() {
+        return deviceAcquisition;
+    }
 
     public void disconnect() {
 
-        switch(btProtocol){
+        switch(this.btProtocol){
             case BLUETOOTH_LE:
                 this.mbtBluetoothLE.disconnect(bluetoothDevice);
                 break;
@@ -281,10 +296,50 @@ public final class MbtBluetoothManager {
             case BLUETOOTH_A2DP:
                 this.mbtBluetoothA2DP.disconnect(bluetoothDevice);
                 break;
-            default:
-                this.mbtBluetoothSPP.disconnect(bluetoothDevice);
         }
     }
 
+    /**
+     * Store the new battery level received from the headset
+     * @param pourcent new battery level in percentage
+     */
+    public void updateBatteryLevel(int pourcent){
+        deviceAcquisition.setBatteryLevel(pourcent);
+    }
+
+    /**
+     * publish an event on the bus so that MbtEEGManager can handle raw EEG data received from Bluetooth
+     * @param data raw EEG Data
+     */
+    public void acquireData(@NonNull final byte[] data){
+        Log.e(TAG, "Acquire data BT Manager:" + Arrays.toString(data)); //todo remove
+        eventBusManager.postEvent(new EEGDataAcquired(data)); //MbtEEGManager will convert data from raw packets to eeg values
+    }
+
+    /**
+     * onEvent is called when the event bus receive a EEGDataIsReady event posted by MbtDataAcquisition in handleDataAcquired method
+     * @param event EEGDataIsReady is posted when the EEG data is ready (raw EGG data has been converted to Float matrix)
+     */
+    /*@Subscribe
+    public void onEvent(EEGDataIsReady event) {
+        switch (this.btProtocol){
+            case BLUETOOTH_LE:
+                this.mbtBluetoothLE.EEGDataIsReadyReceived(event);
+                break;
+            case BLUETOOTH_SPP:
+                this.mbtBluetoothSPP.EEGDataIsReadyReceived(event);
+                break;
+            case BLUETOOTH_A2DP:
+                this.mbtBluetoothA2DP.EEGDataIsReadyReceived(event);
+                break;
+        }
+    }*/
+
+    /**
+     * Unregister the MbtBluetoothManager class from the bus to avoid memory leak
+     */
+    /*public void deinit(){
+        eventBusManager.registerOrUnregister(false,this);
+    }*/
 
 }

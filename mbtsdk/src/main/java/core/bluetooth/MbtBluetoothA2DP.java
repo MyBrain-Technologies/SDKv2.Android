@@ -26,8 +26,8 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
 
     private final MbtLock<Boolean> timerLock = new MbtLock<>();
 
-    public MbtBluetoothA2DP(Context context) {
-        super(context);
+    public MbtBluetoothA2DP(Context context, MbtBluetoothManager mbtBluetoothManager) {
+        super(context, mbtBluetoothManager);
     }
     /**
      * This method will attempt to connect to the melomind via the A2DP protocol.

@@ -13,27 +13,27 @@ extern "C" {
  * Method:    nativeComputeQualities
  * Signature: ([[DII)[D
  */
-JNIEXPORT jdoubleArray JNICALL Java_mybraintech_com_mbtsdk_core_signalprocessing_MBTSignalQualityChecker_nativeComputeQualities
+JNIEXPORT jdoubleArray JNICALL Java_core_eeg_signalprocessing_MBTSignalQualityChecker_nativeComputeQualities
   (JNIEnv *, jclass, jobjectArray, jint, jint);
 
 
 JNIEXPORT jfloatArray JNICALL
-        Java_mybraintech_com_mbtsdk_core_signalprocessing_MBTSignalQualityChecker_nativeComputeQualityCheckerNew(JNIEnv *env,
+        Java_core_eeg_signalprocessing_MBTSignalQualityChecker_nativeComputeQualityCheckerNew(JNIEnv *env,
                                                                                      jclass type,
                                                                                      jobjectArray matrix,
                                                                                      jint samprate,
                                                                                      jint packetLength);
 
 JNIEXPORT jobjectArray JNICALL
-        Java_mybraintech_com_mbtsdk_core_signalprocessing_MBTSignalQualityChecker_nativeGetModifiedInputData(JNIEnv *env,
+        Java_core_eeg_signalprocessing_MBTSignalQualityChecker_nativeGetModifiedInputData(JNIEnv *env,
                                                                                          jclass type);
 
 JNIEXPORT jstring JNICALL
-Java_mybraintech_com_mbtsdk_core_signalprocessing_MBTSignalQualityChecker_nativeInitQualityChecker(JNIEnv *env,
+Java_core_eeg_signalprocessing_MBTSignalQualityChecker_nativeInitQualityChecker(JNIEnv *env,
                                                                                jclass type);
 
 JNIEXPORT void JNICALL
-Java_mybraintech_com_mbtsdk_core_signalprocessing_MBTSignalQualityChecker_nativeDeinitQualityChecker(JNIEnv *env,
+Java_core_eeg_signalprocessing_MBTSignalQualityChecker_nativeDeinitQualityChecker(JNIEnv *env,
                                                                                  jclass type);
 
 #ifdef __cplusplus

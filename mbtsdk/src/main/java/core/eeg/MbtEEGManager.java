@@ -2,18 +2,21 @@ package core.eeg;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
-import android.support.annotation.WorkerThread;
+import android.util.Log;
 
+import org.greenrobot.eventbus.Subscribe;
 import java.util.ArrayList;
-import java.util.Observable;
-import java.util.Observer;
+import java.util.Arrays;
 
 import core.MbtManager;
 import core.bluetooth.BtProtocol;
 import core.eeg.acquisition.MbtDataAcquisition;
-import core.eeg.signalprocessing.MBTEEGPacket;
-import core.eeg.storage.MbtHandleData;
-import core.eeg.storage.MbtBuffering;
+import core.eeg.storage.MbtDataConversion;
+import core.eeg.storage.MbtDataBuffering;
+import eventbus.EventBusManager;
+import eventbus.events.EEGDataIsReady;
+import eventbus.events.EEGDataAcquired;
+import utils.AsyncUtils;
 
 
 /**
@@ -22,7 +25,7 @@ import core.eeg.storage.MbtBuffering;
  * It is responsible for managing buffers size, conversion from raw packets to eeg values (voltages).
  */
 
-public final class MbtEEGManager implements Observer {
+public final class MbtEEGManager {
 
     private static final String TAG = MbtEEGManager.class.getName();
 
@@ -56,18 +59,18 @@ public final class MbtEEGManager implements Observer {
 
     private Context mContext;
     private MbtDataAcquisition dataAcquisition;
-    private MbtBuffering mbtBuffering;
+    private MbtDataBuffering mbtDataBuffering;
     private ArrayList<ArrayList<Float>> eegResult;
-    private ArrayList<MBTEEGPacket> mbteegPackets;
+
+    private EventBusManager eventBusManager;
+    // EventBus : MbtEEGManager is the subscriber for MbtDataAcquisition that will be notified for converting raw data
 
     private MbtManager mbtManager;
 
-    public MbtEEGManager(@NonNull Context context){
-        mContext = context;
-        mbtManager = new MbtManager(mContext);
-        this.dataAcquisition =new MbtDataAcquisition(this);
-
-        mbtBuffering = new MbtBuffering(this);
+    public MbtEEGManager(@NonNull Context context, MbtManager mbtManagerController){
+        this.mContext = context;
+        this.mbtManager = mbtManagerController;
+        this.eventBusManager = new EventBusManager(this); // register MbtEEGManager as a subscriber for receiving Event from MbtBluetooth via the Event Bus
 
         if (mbtManager.getBluetoothProtocol().equals(BtProtocol.BLUETOOTH_SPP)) {
             RAW_DATA_INDEX_SIZE = SPP_RAW_DATA_INDEX_SIZE;
@@ -86,27 +89,20 @@ public final class MbtEEGManager implements Observer {
             RAW_DATA_PACKET_SIZE = BLE_RAW_DATA_PACKET_SIZE;
             RAW_DATA_BUFFER_SIZE = BLE_RAW_DATA_BUFFER_SIZE;
         }
+        this.dataAcquisition = new MbtDataAcquisition(this);
+        this.mbtDataBuffering = new MbtDataBuffering(this);
 
-        mbtBuffering.addObserver(this);
-
-    }
-
-    /**
-     * convert from raw packets to eeg values (voltages)
-     * (from byte table to Float matrix)
-     * @param data : input raw data sent from the device via bluetooth
-     */
-    public void handleRawData(@NonNull final byte[] data) {
-        dataAcquisition.handleData(data);
     }
 
     /**
      * Creates the eeg data output from a simple raw data array
      * 0xFFFF values are computed a NaN values
      * @param rawDataArray the raw data coming from BLE
+     * This method is called by handleRawData method
      */
     public void convertRawDataToEEG(byte[] rawDataArray){
-        eegResult = MbtHandleData.convertRawDataToEEG(rawDataArray,mbtManager.getBluetoothProtocol(),getRawDataNbChannel());
+        eegResult = MbtDataConversion.convertRawDataToEEG(rawDataArray,mbtManager.getBluetoothProtocol(),getRawDataNbChannel());
+
     }
 
     public int getRawDataPacketSize() {
@@ -132,12 +128,9 @@ public final class MbtEEGManager implements Observer {
     public int getNbStatusBytes() {
         return NB_STATUS_BYTES;
     }
+
     public void setNbStatusBytes(int nbStatusBytes) {
         NB_STATUS_BYTES = nbStatusBytes;
-    }
-
-    public int getSamplePerNotif() {
-        return SAMPLE_PER_NOTIF;
     }
 
     public void setSamplePerNotif(int samplePerNotif) {
@@ -148,58 +141,83 @@ public final class MbtEEGManager implements Observer {
         return RAW_DATA_NB_CHANNEL;
     }
 
-    @Override
-    public void update(Observable o, Object obj) {
-        if(o instanceof MbtBuffering){
-            notifyBufferIsFullReceived();
-        }
-    }
-
-    public void notifyBufferIsFullReceived(){
-        //convertRawDataToEEG(toDecodeBytes);
+    public MbtManager getMbtManager() {
+        return mbtManager;
     }
 
     public ArrayList<ArrayList<Float>> getEegResult() {
         return eegResult;
     }
 
-    public void storePendingBuffer(final byte[] data, final int bufPos, final int src_pos, final int length){
-        mbtBuffering.storePendingBuffer(data,bufPos,src_pos,length);
+    /**
+     * Stores the EEG raw data buffer when the maximum size of the buffer is reached
+     * In case packet size is too large for buffer, the overflow buffer is stored in a second buffer
+     * @param data is the EEG raw data
+     * @param bufPos is the beginning position of the data source array
+     * @param srcPos is the beginning position of the buffer list where the data are copied
+     * @param pendingBufferLength is the length to copy
+     */
+    public void storePendingDataInBuffer(final byte[] data, final int srcPos, final int bufPos,final int pendingBufferLength){
+        mbtDataBuffering.storePendingDataInBuffer(data,srcPos,bufPos,pendingBufferLength);
     }
 
-    public void storeOverflowBuffer(final byte[] data, final int bufPos, final int src_pos){
-        mbtBuffering.storeOverflowBuffer(data,bufPos,src_pos);
+    /**
+     * In case packet size is too large for buffer, the overflow buffer is stored in a second buffer
+     * @param data is the EEG raw data
+     * @param bufPos is the beginning position of the data source array
+     * @param srcPos is the beginning position of the buffer list where the data are copied
+     * @param pendingBufferLength is the length of the pending buffer not to copy : this length is subtracted to get the length of the overflowing part of the data
+     */
+    public void storeOverflowDataInBuffer(final byte[] data, final int srcPos, final int bufPos, final int pendingBufferLength){
+        mbtDataBuffering.storeOverflowDataInBuffer(data,srcPos,bufPos,pendingBufferLength);
     }
 
-    public void handleOverflowBuffer(){
-        mbtBuffering.handleOverflowBuffer();
-    }
-
-    public MbtManager getMbtManager() {
-        return mbtManager;
-    }
-
-    public ArrayList<MBTEEGPacket> getMbteegPackets() {
-        return mbteegPackets;
+    /**
+     * Replace the pending data by the overflowing data in the pending buffer after the pending data has been handled
+     */
+    public int handleOverflowDataBuffer(){
+        return mbtDataBuffering.handleOverflowDataBuffer();
     }
 
     public byte[] getPendingRawData() {
-        return mbtBuffering.getPendingRawData();
+        return MbtDataBuffering.getPendingRawData();
     }
 
     public boolean hasOverflow() {
-       return mbtBuffering.hasOverflow();
+       return mbtDataBuffering.hasOverflow();
     }
 
-    public void setFirstBufferFull(boolean isFull) {
-        mbtBuffering.setFirstBufferFull(isFull);
-    }
-
-    public void setSecondBufferFull(boolean isFull) {
-        mbtBuffering.setSecondBufferFull(isFull);
+    public void setOverflow(boolean overflow){
+        MbtDataBuffering.setOverflow(overflow);
     }
 
     public void reconfigureBuffers(final int sampleRate, byte samplePerNotif, final int statusByteNb){
-        mbtBuffering.reconfigureBuffers(sampleRate,samplePerNotif,statusByteNb);
+        mbtDataBuffering.reconfigureBuffers(sampleRate,samplePerNotif,statusByteNb);
     }
+
+    /**
+     * onEvent is called when a EEGDataAcquired is posted
+     * @param event contains a raw EEG data array
+     */
+    @Subscribe
+    public void onEvent(EEGDataAcquired event){
+        Log.e(TAG, "onEvent EEGDataAcquired data:" + Arrays.toString(event.getData())); //todo remove
+        dataAcquisition.handleDataAcquired(event.getData());
+    }
+
+    /**
+     * Publish a EEGDataIsReady event to the event bus
+     * @param status the status channel if present.
+     * @param nbChannels the number of eeg channels
+     * @param sampleRate the sample rate
+     */
+    public void notifyEEGDataIsReady(ArrayList<Float> status, int sampleRate, int nbChannels) {
+        Log.d(TAG, "notify EEG Data Is Ready");
+        eventBusManager.postEvent(new EEGDataIsReady(eegResult, status, sampleRate, nbChannels));
+    }
+
+    public void deinit(){ //TODO CALL WHEN MbtEEGManager IS NOT USED ANYMORE TO AVOID MEMORY LEAK
+        eventBusManager.registerOrUnregister(false,this);
+    }
+
 }

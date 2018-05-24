@@ -21,11 +21,11 @@ public class MbtBluetoothLETest {
     @Mock
     BluetoothDevice device;
 
-    MbtGattController mbtGattController;
+    //MbtGattController mbtGattController;
 
     @Before
     public void setUp() throws Exception {
-        mbtGattController = new MbtGattController();
+        //mbtGattController = new MbtGattController();
     }
 
     @Test

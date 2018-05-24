@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">SDKv2</string>
+    <string name="received_data">EEG Data received:</string>
+    <string name="use_melomind">Use melomind</string>
+    <string name="use_vpro">Use VPro</string>
+    <string name="nbchannels">nbChannels</string>
+    <string name="sampleRate">sample rate</string>
+    <string name="nbSamples">nb of samples</string>
 </resources>

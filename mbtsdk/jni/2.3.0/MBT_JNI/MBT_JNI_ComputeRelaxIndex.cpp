@@ -19,7 +19,7 @@
 
 #define APPNAME "testSNRvalues"
 /*
- * Class:     mybraintech_com_mbtsdk_core_signalprocessing_MBTComputeRelaxIndex
+ * Class:     core_eeg_signalprocessing_MBTComputeRelaxIndex
  * Method:    nativeComputeRelaxIndex
  * Signature: (ILjava/util/HashMap;[[D[[D)D
  */
@@ -73,7 +73,7 @@ static float main_relaxIndex(const float sampRate, std::map<std::string, std::ve
  * Function nativeComputeRelaxIndexNew
  */
 JNIEXPORT jfloat JNICALL
-Java_mybraintech_com_mbtsdk_core_signalprocessing_MBTComputeRelaxIndex_nativeComputeRelaxIndex(JNIEnv *env,
+Java_core_eeg_signalprocessing_MBTComputeRelaxIndex_nativeComputeRelaxIndex(JNIEnv *env,
                                                                               jclass type,
                                                                               jint samprate,
                                                                               jobject parameters,
@@ -166,7 +166,7 @@ Java_mybraintech_com_mbtsdk_core_signalprocessing_MBTComputeRelaxIndex_nativeCom
 
 
 JNIEXPORT jobject JNICALL
-Java_mybraintech_com_mbtsdk_core_signalprocessing_MBTComputeRelaxIndex_nativeGetSessionMetadata(JNIEnv *env,
+core_eeg_signalprocessing_MBTComputeRelaxIndex_nativeGetSessionMetadata(JNIEnv *env,
                                                                             jclass type){
 
     // first, constructing c++ map
@@ -215,7 +215,7 @@ Java_mybraintech_com_mbtsdk_core_signalprocessing_MBTComputeRelaxIndex_nativeGet
 
 
 JNIEXPORT void JNICALL
-Java_mybraintech_com_mbtsdk_core_signalprocessing_MBTComputeRelaxIndex_nativeReinitRelaxIndexVariables(JNIEnv *env,
+core_eeg_signalprocessing_MBTComputeRelaxIndex_nativeReinitRelaxIndexVariables(JNIEnv *env,
                                                                                    jclass type) {
     pastRelaxIndex.clear();
     smoothedRelaxIndex.clear();

@@ -21,7 +21,7 @@ unsigned int channelNb;
 MBT_MainQC* mainQC;
 
 JNIEXPORT jstring JNICALL
-Java_mybraintech_com_mbtsdk_core_signalprocessing_MBTSignalQualityChecker_nativeInitQualityChecker(JNIEnv *env,
+Java_core_eeg_signalprocessing_MBTSignalQualityChecker_nativeInitQualityChecker(JNIEnv *env,
                                                                                jclass type) {
 
 
@@ -126,7 +126,7 @@ Java_mybraintech_com_mbtsdk_core_signalprocessing_MBTSignalQualityChecker_native
  * Function nativeComputeQualityCheckerNew
  */
 JNIEXPORT jfloatArray JNICALL
-Java_mybraintech_com_mbtsdk_core_signalprocessing_MBTSignalQualityChecker_nativeComputeQualityCheckerNew(JNIEnv *env, jclass type, jobjectArray matrix, jint samprate, jint packetLength) {
+Java_core_eeg_signalprocessing_MBTSignalQualityChecker_nativeComputeQualityCheckerNew(JNIEnv *env, jclass type, jobjectArray matrix, jint samprate, jint packetLength) {
     jboolean isCopy;
 
     unsigned int height = (unsigned int) env->GetArrayLength(matrix);
@@ -170,7 +170,7 @@ Java_mybraintech_com_mbtsdk_core_signalprocessing_MBTSignalQualityChecker_native
  * Function nativeGetModifiedInputData
  */
 JNIEXPORT jobjectArray JNICALL
-Java_mybraintech_com_mbtsdk_core_signalprocessing_MBTSignalQualityChecker_nativeGetModifiedInputData(JNIEnv *env,
+Java_core_eeg_signalprocessing_MBTSignalQualityChecker_nativeGetModifiedInputData(JNIEnv *env,
                                                                                  jclass type) {
 
     MBT_Matrix<float> modifiedInputData = mainQC->MBT_get_m_inputData();
@@ -212,7 +212,7 @@ Java_mybraintech_com_mbtsdk_core_signalprocessing_MBTSignalQualityChecker_native
 
 
 JNIEXPORT void JNICALL
-Java_mybraintech_com_mbtsdk_core_signalprocessing_MBTSignalQualityChecker_nativeDeinitQualityChecker(JNIEnv *env,
+Java_core_eeg_signalprocessing_MBTSignalQualityChecker_nativeDeinitQualityChecker(JNIEnv *env,
                                                                                  jclass type) {
     delete mainQC;
 }

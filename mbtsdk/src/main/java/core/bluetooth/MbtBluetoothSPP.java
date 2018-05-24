@@ -17,14 +17,13 @@ import android.util.Log;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Arrays;
+import java.util.Random;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
-
-import config.MbtConfig;
 import core.recordingsession.metadata.DeviceInfo;
-import engine.MbtClient;
 import utils.AsyncUtils;
 import utils.MbtLock;
 
@@ -61,16 +60,16 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
 
     private Timer keepAliveTimer;
 
-    public MbtBluetoothSPP(@NonNull final Context context) {
-        super(context);
+    public MbtBluetoothSPP(@NonNull final Context context, @NonNull MbtBluetoothManager mbtBluetoothManager) {
+        super(context, mbtBluetoothManager);
         final BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
         this.bluetoothAdapter = (manager!=null) ? manager.getAdapter() : null;
 
         this.btState = BtState.DISCONNECTED;
     }
 
-    public MbtBluetoothSPP(@NonNull final Context context, @NonNull final String deviceAddress, @NonNull final String device_name) {
-        super(context);
+    public MbtBluetoothSPP(@NonNull final Context context, @NonNull final String deviceAddress,@NonNull MbtBluetoothManager mbtBluetoothManager) {
+        super(context, mbtBluetoothManager);
         final BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
         this.bluetoothAdapter = manager.getAdapter();
 
@@ -125,7 +124,8 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
                 });
                 btState = BtState.CONNECTED;
                 notifyStateChanged(BtState.CONNECTED);
-                notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER, toConnect.getAddress());
+                //notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER, toConnect.getAddress());
+                deviceInfoReceived(DeviceInfo.SERIAL_NUMBER,toConnect.getAddress());
                 Log.i(TAG,toConnect.getName() + " Connected");
                 return true;
             }
@@ -244,14 +244,14 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
      * @return          the melomind if found, <code>null</code> otherwise MBT-VPro
      */
     @Nullable
-    private BluetoothDevice scanForDeviceWithDiscovery() {
+    private BluetoothDevice scanForDeviceWithDiscovery(final String deviceName) {
         final Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
         // If there are paired devices
         if (pairedDevices.size() > 0) {
             // Loop through paired devices
             //TODO change here to use MAC address instead of Name
             for (BluetoothDevice device : pairedDevices) {
-                if (device.getName().equals(getMbtBluetoothManager().getDeviceName()) /*|| device.getName().contains(deviceName)*/) { // device found
+                if (device.getName().equals(deviceName) /*|| device.getName().contains(deviceName)*/) { // device found
                     return device;
                 }
             }
@@ -264,29 +264,31 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
         context.registerReceiver(new BroadcastReceiver() {
             public final void onReceive(final Context context, final Intent intent) {
                 final String action = intent.getAction();
-                switch(action) {
-                    case BluetoothDevice.ACTION_FOUND:
-                        final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                        final String name = device.getName();
-                        if (TextUtils.isEmpty(name)) {
-                            Log.w(TAG, "Found device with no name. MAC address is -> " + device.getAddress());
-                            return;
-                        }
-
-                        Log.i(TAG, String.format("Stopping Discovery Scan -> device detected " +
-                                "with name '%s' and MAC address '%s' ", device.getName(), device.getAddress()));
-                        if (name.equals(getMbtBluetoothManager().getDeviceName()) || name.contains(getMbtBluetoothManager().getDeviceName())) {
-                            Log.i(TAG, "VPro found. Cancelling discovery & connecting");
-                            bluetoothAdapter.cancelDiscovery();
-                            context.unregisterReceiver(this);
-                            scanLock.setResultAndNotify(device);
-                        }
-                        break;
-                    case BluetoothAdapter.ACTION_DISCOVERY_FINISHED:
-                        if (scanLock.isWaiting()) // restarting discovery while still waiting
-                            bluetoothAdapter.startDiscovery();
-                        break;
+                if(action!=null){
+                    switch(action) {
+                        case BluetoothDevice.ACTION_FOUND:
+                            final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                            final String name = device.getName();
+                            if (TextUtils.isEmpty(name)) {
+                                Log.w(TAG, "Found device with no name. MAC address is -> " + device.getAddress());
+                                return;
+                            }
+                            Log.i(TAG, String.format("Stopping Discovery Scan -> device detected " +
+                                    "with name '%s' and MAC address '%s' ", device.getName(), device.getAddress()));
+                            if (name.equals(deviceName) || name.contains(deviceName)) {
+                                Log.i(TAG, "VPro found. Cancelling discovery & connecting");
+                                bluetoothAdapter.cancelDiscovery();
+                                context.unregisterReceiver(this);
+                                scanLock.setResultAndNotify(device);
+                            }
+                            break;
+                        case BluetoothAdapter.ACTION_DISCOVERY_FINISHED:
+                            if (scanLock.isWaiting()) // restarting discovery while still waiting
+                                bluetoothAdapter.startDiscovery();
+                            break;
+                    }
                 }
+
 
             }
         }, filter);
@@ -387,7 +389,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
                                 AsyncUtils.executeAsync(new Runnable() {
                                     //private final byte[] toAcquire = Arrays.copyOf(finalData, finalData.length);
                                     public void run() {
-                                        getMbtBluetoothManager().acquireData(finalData);
+                                        acquireData(finalData);
                                     }
                                 });
                             }
@@ -424,8 +426,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
                                 default:
                                     break;
                             }
-                            getMbtBluetoothManager().getDeviceAcquisition().setBatteryLevel(pourcent) ;
-                            notifyBatteryLevelChanged(pourcent);
+                            mbtBluetoothManager.updateBatteryLevel(pourcent);
                         }else {
                             //TODO here are non implemented cases. Please see the MBT SPP protocol for infos.
                         }
@@ -495,6 +496,25 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
             if (this.batteryTimer != null)
                 this.batteryTimer.cancel();
         }
+    }
+
+    public void testAcquireDataZeros(){
+        byte[] data = new byte[250];
+        Arrays.fill(data,(byte) 0);
+        this.acquireData(data);
+    }
+
+    public void testAcquireDataOnes(){
+        byte[] data = new byte[250];
+        Arrays.fill(data,(byte) 1);
+        this.acquireData(data);
+    }
+
+    public void testAcquireDataRandomByte(){
+        Log.i(TAG, "Test launched" );
+        byte[] data = new byte[6751];
+        new Random().nextBytes(data); //Generates random bytes and places them into a user-supplied byte array
+        this.acquireData(data);
     }
 
 }

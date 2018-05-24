@@ -12,22 +12,56 @@ public final class MbtManager {
 
     private static final String TAG = MbtManager.class.getName();
 
-    private MbtEEGManager mbtEEGManager;
+    /**
+     *     Used to save context
+     */
+    private Context mContext;
+    /**
+     *     Contains the client callbacks that will allow fluid communication between SDK and client app.
+     */
     private MbtBluetoothManager mbtBluetoothManager;
-    private MbtServerSyncManager mbtServerSyncManager;
+    /**
+     * The eeg manager that will manage the EEG data coming from the @bluetoothManager. It is responsible for
+     * managing buffers size, conversion from raw packets to eeg values (voltages).
+     */
+    private MbtEEGManager mbtEEGManager;
+    /**
+     * The recording session manager will manage all the recordings that are made during the lifetime of this instance.
+     */
     private MbtRecordingSessionManager mbtRecordingSessionManager;
+    /**
+     * The server sync manager will manage the communication with MBT server API.
+     */
+    private MbtServerSyncManager mbtServerSyncManager;
 
     public MbtManager(Context context) {
-        mbtEEGManager = new MbtEEGManager(context);
-        mbtBluetoothManager = new MbtBluetoothManager(context);
+        mbtBluetoothManager = new MbtBluetoothManager(context,this); //warning : very important to init mbtBluetootbManager before mbtEEGManager (if opposite : a NullPointerException is raised)
+        mbtEEGManager = new MbtEEGManager(context,this);
         mbtServerSyncManager = new MbtServerSyncManager(context);
         mbtRecordingSessionManager = new MbtRecordingSessionManager(context);
     }
 
     public BtProtocol getBluetoothProtocol(){
-        return mbtBluetoothManager .getBtProtocol();
+        return mbtBluetoothManager.getBtProtocol();
     }
 
+    public void setBluetoothProtocol(BtProtocol protocol){
+        mbtBluetoothManager.setBtProtocol(protocol);
+    }
 
+    public MbtBluetoothManager getMbtBluetoothManager() {
+        return mbtBluetoothManager;
+    }
 
+    public MbtEEGManager getMbtEEGManager() {
+        return mbtEEGManager;
+    }
+
+    public MbtRecordingSessionManager getMbtRecordingSessionManager() {
+        return mbtRecordingSessionManager;
+    }
+
+    public MbtServerSyncManager getMbtServerSyncManager() {
+        return mbtServerSyncManager;
+    }
 }

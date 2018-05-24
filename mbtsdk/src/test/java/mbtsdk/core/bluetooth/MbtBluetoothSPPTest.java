@@ -1,4 +1,4 @@
-package mbtsdk.com.mybraintech.mbtsdk.core.bluetooth;
+package mbtsdk.core.bluetooth;
 
 import static org.junit.Assert.*;
 

@@ -12,13 +12,13 @@ extern "C" {
 #endif
 
 JNIEXPORT jobject JNICALL
-Java_mybraintech_com_mbtsdk_core_signalprocessing_MBTComputeStatistics_nativeComputeStatistics(JNIEnv *env, jclass type,
+core_eeg_signalprocessing_MBTComputeStatistics_nativeComputeStatistics(JNIEnv *env, jclass type,
                                                                            jint sampRate,
                                                                            jint packetLength,
                                                                            jfloatArray inputData_);
 
 JNIEXPORT jobject JNICALL
-Java_mybraintech_com_mbtsdk_core_signalprocessing_MBTComputeStatistics_nativeComputeStatisticsSNR(JNIEnv *env, jclass type,
+core_eeg_signalprocessing_MBTComputeStatistics_nativeComputeStatisticsSNR(JNIEnv *env, jclass type,
                                                                           jfloat threshold,
                                                                           jint size,
                                                                           jfloatArray inputData_);

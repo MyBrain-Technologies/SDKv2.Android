@@ -12,6 +12,8 @@ public final class MBTEEGPacket {
     private ArrayList<ArrayList<Float>> channelsData;
     @Nullable
     private ArrayList<Float> qualities;
+    @Nullable
+    private ArrayList<Float> statusData;
     @NonNull
     private final long timestamp;
 
@@ -32,6 +34,33 @@ public final class MBTEEGPacket {
             throw new IllegalArgumentException("timestamp cannot be in the future");
 
         this.channelsData = channelsData;
+        this.qualities = qualities;
+        if(this.qualities == null){
+            this.qualities = new ArrayList<>();
+            this.qualities.add(0f);
+            this.qualities.add(0f);
+        }
+        this.timestamp = timestamp;
+    }
+
+    /**
+     * Initializes a new instance of the MBTEEGPacket class.
+     * @param channelsData The values from all channels
+     * @param qualities The qualities stored in a list. The
+     *                  list size should be equal to the number of channels if there is
+     *                  a status channel.
+     * @param timestamp the timestamp in milliseconds when this packet is created
+     */
+    @Keep
+    public MBTEEGPacket(@NonNull final ArrayList<ArrayList<Float>> channelsData,
+                        @Nullable final ArrayList<Float> qualities, @Nullable final ArrayList<Float> statusData, @NonNull final long timestamp) {
+        if (timestamp < 0)
+            throw new IllegalArgumentException("timestamp must NOT be NEGATIVE");
+        if (timestamp > System.currentTimeMillis())
+            throw new IllegalArgumentException("timestamp cannot be in the future");
+
+        this.channelsData = channelsData;
+        this.statusData = statusData;
         this.qualities = qualities;
         if(this.qualities == null){
             this.qualities = new ArrayList<>();

@@ -42,7 +42,7 @@
  * Jni function to call the correct compute statistics functions
  */
 JNIEXPORT jobject JNICALL
-Java_mybraintech_com_mbtsdk_core_signalprocessing_MBTComputeStatistics_nativeComputeStatisticsSNR(JNIEnv *env, jclass type,
+Java_core_eeg_signalprocessing_MBTComputeStatistics_nativeComputeStatisticsSNR(JNIEnv *env, jclass type,
                                                                            jfloat threshold,
                                                                            jint size,
                                                                            jfloatArray inputData_) {

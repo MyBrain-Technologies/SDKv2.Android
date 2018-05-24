@@ -14,7 +14,7 @@ extern "C" {
  */
 
 JNIEXPORT jfloat JNICALL
-Java_mybraintech_com_mbtsdk_core_signalprocessing_MBTComputeRelaxIndex_nativeComputeRelaxIndex(JNIEnv *env,
+core_eeg_signalprocessing_MBTComputeRelaxIndex_nativeComputeRelaxIndex(JNIEnv *env,
                                                                               jclass type,
                                                                               jint samprate,
                                                                               jobject parameters,
@@ -22,12 +22,12 @@ Java_mybraintech_com_mbtsdk_core_signalprocessing_MBTComputeRelaxIndex_nativeCom
                                                                               jobjectArray matrix);
 
 JNIEXPORT void JNICALL
-Java_mybraintech_com_mbtsdk_core_signalprocessing_MBTComputeRelaxIndex_nativeReinitRelaxIndexVariables(JNIEnv *env,
+core_eeg_signalprocessing_MBTComputeRelaxIndex_nativeReinitRelaxIndexVariables(JNIEnv *env,
                                                                                    jclass type);
 
 
 JNIEXPORT jobject JNICALL
-Java_mybraintech_com_mbtsdk_core_signalprocessing_MBTComputeRelaxIndex_nativeGetSessionMetadata(JNIEnv *env,
+core_eeg_signalprocessing_MBTComputeRelaxIndex_nativeGetSessionMetadata(JNIEnv *env,
                                                                             jclass type);
 
 

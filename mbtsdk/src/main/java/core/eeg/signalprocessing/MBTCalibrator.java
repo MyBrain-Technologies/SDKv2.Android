@@ -45,7 +45,7 @@ public final class MBTCalibrator {
                 mainMatrix[1][chanCnt++] = matrix[1][it];
             }
         }
-        Log.d(TAG, "count " + count++);
+//        Log.d(TAG, "count " + count++);
         return nativeCalibrateNew(sampRate, packetLength, packets.length, qualities, mainMatrix);
     }
 

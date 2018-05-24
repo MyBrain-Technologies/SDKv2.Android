@@ -25,6 +25,7 @@ import java.util.UUID;
 import core.bluetooth.BtState;
 import core.bluetooth.IStreamable;
 import core.bluetooth.MbtBluetooth;
+import core.bluetooth.MbtBluetoothManager;
 import core.recordingsession.metadata.DeviceInfo;
 import utils.AsyncUtils;
 import utils.MbtLock;
@@ -44,8 +45,8 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 
     private BluetoothGatt gatt;
 
-    public MbtBluetoothLE(Context context){
-        super(context);
+    public MbtBluetoothLE(Context context, MbtBluetoothManager mbtBluetoothManager) {
+        super(context, mbtBluetoothManager);
         this.mbtGattController = new MbtGattController(context,this);
     }
 
@@ -377,8 +378,8 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     /**
      * Initiates a read battery operation on this correct BtProtocol
      */
-    public void readBattery(){
-       this.mbtGattController.readBattery();
+    public void readBattery(int previousBatteryLevel){
+       this.mbtGattController.readBattery(previousBatteryLevel);
     }
 
     /**
