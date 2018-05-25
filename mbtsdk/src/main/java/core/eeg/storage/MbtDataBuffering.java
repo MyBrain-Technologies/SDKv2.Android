@@ -5,26 +5,28 @@ import android.util.Log;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import core.bluetooth.BtProtocol;
 import core.eeg.MbtEEGManager;
 
 
 public class MbtDataBuffering {
+
     private static final String TAG = MbtDataBuffering.class.getName();
 
-    private static byte[] oveflowBytes;
-    private static byte[] pendingRawData;
+    // EEG Data & Values
+    private static byte[] pendingRawData; // fixed-size buffer containing eeg data
+    private static byte[] oveflowBytes; // buffer containing overflowing eeg data (is used if pending data buffer is full)
+    private static byte[] lostPacketInterpolator; // Data size + compression byte + 2 packet length bytes
+    private static ArrayList<Float> statusData;
 
     private static boolean hasOverflow;
-    private static ArrayList<Float> statusData;
     private MbtEEGManager eegManager;
-
-    // EEG Data & Values
-    private static byte[] lostPacketInterpolator; // Data size + compression byte + 2 packet length bytes
 
     public MbtDataBuffering(MbtEEGManager eegManagerController) {
 
         this.eegManager = eegManagerController;
         int overflowBytesSize = 0;
+        int lostPacketInterpolatorSize = eegManager.getMbtManager().getBluetoothProtocol().equals(BtProtocol.BLUETOOTH_SPP)? 138:2 + eegManager.getRawDataPacketSize();
         switch (eegManager.getMbtManager().getBluetoothProtocol()){
             case BLUETOOTH_LE:
                 overflowBytesSize = eegManager.getRawDataPacketSize();
@@ -35,6 +37,8 @@ public class MbtDataBuffering {
         }
         oveflowBytes = new byte[overflowBytesSize];
         pendingRawData = new byte[eegManager.getRawDataBufferSize()];
+        lostPacketInterpolator = new byte[lostPacketInterpolatorSize];
+        Arrays.fill(lostPacketInterpolator, (byte) 0xFF);
         hasOverflow = false;
     }
 
@@ -94,9 +98,15 @@ public class MbtDataBuffering {
 
     }
 
-    public void reconfigureBuffers(final int sampleRate, byte samplePerNotif, final int statusByteNb){ // statusByteNb parameter should be the internal config value
+    /**
+     * Reset the buffers, status, NbStatusBytes and rawDataPacketSize
+     * @param sampleRate the sample rate
+     * @param samplePerNotif the number of sample per notification
+     * @param nbStatusByte the number of bytes used for one eeg data
+     */
+    public void reconfigureBuffers(final int sampleRate, byte samplePerNotif, final int nbStatusByte){ // statusByteNb parameter should be the internal config value
 
-        eegManager.setNbStatusBytes(statusByteNb); //init NB_STATUS_BYTES (BLE default value is 0 et SPP default value is 3)
+        eegManager.setNbStatusBytes(nbStatusByte); //init NB_STATUS_BYTES (BLE default value is 0 et SPP default value is 3)
         eegManager.setRawDataPacketSize(eegManager.getRawDataBytesPerWholeChannelsSamples() * samplePerNotif);
         lostPacketInterpolator = new byte[2 + eegManager.getRawDataPacketSize()]; //init the lost packet buffer
         Arrays.fill(lostPacketInterpolator, (byte) 0xFF);

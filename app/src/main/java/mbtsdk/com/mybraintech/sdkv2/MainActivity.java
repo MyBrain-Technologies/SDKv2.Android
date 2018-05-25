@@ -92,7 +92,7 @@ public class MainActivity extends AppCompatActivity implements MbtClientEvents, 
 
     @Override
     public void onNewPackets(MBTEEGPacket mbteegPackets, int nbChannels, int nbSamples, int sampleRate) {
-        Log.i(TAG, "Received new EEG packet on UI SIZE eeg data " + mbteegPackets.getChannelsData().size()+" * "+mbteegPackets.getChannelsData().get(0).size()+" = "+mbteegPackets.getChannelsData().size()*mbteegPackets.getChannelsData().get(0).size());
+        Log.i(TAG, "Received new EEG packet on UI");
         for (int i=0; i<mbteegPackets.getChannelsData().size();i++){
             for (int j=0; j<mbteegPackets.getChannelsData().get(i).size();j++){
                 Log.i(TAG, " "+mbteegPackets.getChannelsData().get(i).get(j));
