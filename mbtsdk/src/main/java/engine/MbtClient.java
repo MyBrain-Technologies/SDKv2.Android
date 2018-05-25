@@ -203,8 +203,13 @@ public final class MbtClient {
 
     }
 
-    public void testEEGpackageClientSPP(){
-        if(this.mbtManager!=null && this.mbtManager.getMbtBluetoothManager()!=null && this.mbtManager.getMbtBluetoothManager().getMbtBluetoothSPP()!=null)
-            this.mbtManager.getMbtBluetoothManager().getMbtBluetoothSPP().testAcquireDataRandomByte();
+    public void testEEGpackageClient(BtProtocol protocol){
+        if(this.mbtManager!=null && this.mbtManager.getMbtBluetoothManager()!=null && this.mbtManager.getMbtBluetoothManager().getMbtBluetoothSPP()!=null) {
+            if ((protocol.equals(BtProtocol.BLUETOOTH_LE))) {
+                this.mbtManager.getMbtBluetoothManager().getMbtBluetoothLE().testAcquireDataRandomByte();
+            } else if ((protocol.equals(BtProtocol.BLUETOOTH_SPP))){
+                this.mbtManager.getMbtBluetoothManager().getMbtBluetoothSPP().testAcquireDataRandomByte();
+            }
+        }
     }
 }

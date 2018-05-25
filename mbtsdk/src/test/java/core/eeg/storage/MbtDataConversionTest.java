@@ -9,7 +9,7 @@ import core.bluetooth.BtProtocol;
 
 public class MbtDataConversionTest {
 
-    @Test (expected = NullPointerException.class) //todo check this exception is raised/what happen if null parameter while @nonnull requested
+    @Test (expected = NullPointerException.class)
     public void convertRawDataToEEGNullDataTest() {
         byte[] data = null;  //check that IllegalArgumentException is raised if data is null
         BtProtocol protocol = BtProtocol.BLUETOOTH_LE;
@@ -25,17 +25,6 @@ public class MbtDataConversionTest {
         }
         BtProtocol protocol = BtProtocol.BLUETOOTH_LE;
         int nbChannels = 0; //if nbChannels =0, then divider =0 then we expect that length/divider will raise Arithmetic exception
-        MbtDataConversion.convertRawDataToEEG(data, protocol, nbChannels);
-    }
-
-    @Test (expected = ArithmeticException.class)
-    public void convertRawDataToEEGAD2PProtocolTest() {
-        byte[] data = new byte[250];
-        for(int i=0;i<250;i++){
-            data[i] = (byte) 1;
-        }
-        BtProtocol protocol = BtProtocol.BLUETOOTH_A2DP; //if A2DP then divider =0 then we expect that length/divider will raise Arithmetic exception
-        int nbChannels = 2;
         MbtDataConversion.convertRawDataToEEG(data, protocol, nbChannels);
     }
 

@@ -7,10 +7,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
+import org.robolectric.manifest.IntentFilterData;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Random;
 
 import core.MbtManager;
+import core.bluetooth.BtProtocol;
 import core.eeg.MbtEEGManager;
 
 import static org.junit.Assert.*;
@@ -58,7 +62,36 @@ public class MbtDataAcquisitionTest {
         assertTrue(MbtDataAcquisition.getStartingIndex() == -1);
     }
 
+    /*
     @Test
+    public void handleDataMatrixSizeBLETest() { //check that the output Float matrix size is correct, according to the input array size
+        dataAcquisition.getEegManager().getMbtManager().setBluetoothProtocol(BtProtocol.BLUETOOTH_LE);
+        byte[] data = new byte[250];
+        for (int i=0; i<63; i++){// buffer size = 1000=16*62,5 => matrix size always = 1000/2 = 500
+            new Random().nextBytes(data); //Generates random bytes and places them into a user-supplied byte array
+            dataAcquisition.handleDataAcquired(data);
+            Arrays.fill(data,0,0,(byte)0);
+        }
+        ArrayList<ArrayList<Float>> eegResult = dataAcquisition.getEegManager().getEegResult();
+        assertNotNull(eegResult); //problem to solve : test return null eegResult
+        //assertTrue(eegResult.size()*eegResult.get(0).size()==500);
+    }
+
+    @Test
+    public void handleDataMatrixSizeSPPTest() { //check that the output Float matrix size is correct, according to the input array size
+        dataAcquisition.getEegManager().getMbtManager().setBluetoothProtocol(BtProtocol.BLUETOOTH_SPP);
+        byte[] data = new byte[250];
+        for (int i=0; i<63; i++){ //buffer size=6750=62,5*108(Packet size) => matrix size = 6750/3 - 250 (-250 because matrix.get(0) removed for SPP)
+            new Random().nextBytes(data); //Generates random bytes and places them into a user-supplied byte array
+            dataAcquisition.handleDataAcquired(data);
+            Arrays.fill(data,0,0,(byte)0);
+        }
+        ArrayList<ArrayList<Float>> eegResult = dataAcquisition.getEegManager().getEegResult();
+        assertNotNull(eegResult); //problem to solve : test return null eegResult
+        //assertTrue(eegResult.size()*eegResult.get(0).size()==2000);
+    }*/
+
+ @Test
     public void handleDataAbnormalAmountOfDataTest() { //check that we don't have an abnormal Amount Of EEG Data
 
         int abnormalMaxSize = 10000; //very big value randomly chosen

@@ -498,23 +498,13 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
         }
     }
 
-    public void testAcquireDataZeros(){
+    public void testAcquireDataRandomByte(){ //eeg matrix size
         byte[] data = new byte[250];
-        Arrays.fill(data,(byte) 0);
-        this.acquireData(data);
-    }
-
-    public void testAcquireDataOnes(){
-        byte[] data = new byte[250];
-        Arrays.fill(data,(byte) 1);
-        this.acquireData(data);
-    }
-
-    public void testAcquireDataRandomByte(){
-        Log.i(TAG, "Test launched" );
-        byte[] data = new byte[6751];
-        new Random().nextBytes(data); //Generates random bytes and places them into a user-supplied byte array
-        this.acquireData(data);
+        for (int i=0; i<63; i++){//buffer size=6750=62,5*108(Packet size) => matrix size = 6750/3 - 250 (-250 because matrix.get(0) removed for SPP)
+            new Random().nextBytes(data); //Generates random bytes and places them into a user-supplied byte array
+            this.acquireData(data);
+            Arrays.fill(data,0,0,(byte)0);
+        }
     }
 
 }

@@ -19,7 +19,9 @@ import android.util.Log;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 
 import core.bluetooth.BtState;
@@ -401,5 +403,14 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      */
     public void readSerialNumber(){
     this.mbtGattController.readSerialNumber();
+    }
+
+    public void testAcquireDataRandomByte(){ //eeg matrix size
+        byte[] data = new byte[250];
+        for (int i=0; i<63; i++){// buffer size = 1000=16*62,5 => matrix size always = 1000/2 = 500
+            new Random().nextBytes(data); //Generates random bytes and places them into a user-supplied byte array
+            this.acquireData(data);
+            Arrays.fill(data,0,0,(byte)0);
+        }
     }
 }

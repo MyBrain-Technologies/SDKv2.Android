@@ -37,6 +37,7 @@ public final class MbtEEGManager {
     private static int BLE_RAW_DATA_NB_CHANNEL = 2;
     private static int BLE_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES = BLE_RAW_DATA_SAMPLE_SIZE * BLE_RAW_DATA_NB_CHANNEL;
     private static int BLE_NB_STATUS_BYTES = 0;
+    public final static int BLE_NB_BYTES = 2;
     private static int BLE_RAW_DATA_PACKET_SIZE = DEFAULT_SAMPLE_PER_PACKET*BLE_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES + BLE_NB_STATUS_BYTES; //4 samples per packet 2 channels 2bytes data
     private static int BLE_RAW_DATA_BUFFER_SIZE = BLE_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES * 250;
 
@@ -46,6 +47,7 @@ public final class MbtEEGManager {
     private static int SPP_RAW_DATA_NB_CHANNEL = 9;
     private static int SPP_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES = SPP_RAW_DATA_SAMPLE_SIZE * SPP_RAW_DATA_NB_CHANNEL;
     private static int SPP_NB_STATUS_BYTES = 3;
+    public final static int SPP_NB_BYTES = 3;
     private static int SPP_RAW_DATA_PACKET_SIZE = DEFAULT_SAMPLE_PER_PACKET*SPP_RAW_DATA_NB_CHANNEL*SPP_NB_STATUS_BYTES; //4 samples per packet 9 channels 3bytes data
     private static int SPP_RAW_DATA_BUFFER_SIZE = 6750;
 
@@ -201,7 +203,7 @@ public final class MbtEEGManager {
      */
     @Subscribe
     public void onEvent(EEGDataAcquired event){
-        Log.e(TAG, "onEvent EEGDataAcquired data:" + Arrays.toString(event.getData())); //todo remove
+        Log.i(TAG, "onEvent EEGDataAcquired received");
         dataAcquisition.handleDataAcquired(event.getData());
     }
 
@@ -212,7 +214,7 @@ public final class MbtEEGManager {
      * @param sampleRate the sample rate
      */
     public void notifyEEGDataIsReady(ArrayList<Float> status, int sampleRate, int nbChannels) {
-        Log.d(TAG, "notify EEG Data Is Ready");
+        Log.d(TAG, "notify EEG Data Is Ready: "+eegResult.size()+"*"+eegResult.get(0).size());
         eventBusManager.postEvent(new EEGDataIsReady(eegResult, status, sampleRate, nbChannels));
     }
 

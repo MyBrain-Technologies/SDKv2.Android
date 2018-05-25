@@ -33,7 +33,7 @@ public class MbtDataAcquisition {
     private static byte[] lostPacketInterpolator; // Data size + compression byte + 2 packet length bytes
 
     private static int previousIndex = -1;
-    private static int srcPos = 3;
+    private static int srcPos = 0;
     private static int bufPos = 0;
 
     private final int sampleRate;
@@ -41,8 +41,8 @@ public class MbtDataAcquisition {
 
     private MbtEEGManager eegManager;
     // EventBus : MbtDataAccquisition is
-    // (acquiredata) the subscriber for MbtBluetooth and will be notified for converting raw data
-    // (EEGDataIsReady) the publisher and MbtBluetooth is the subscriber that will be notified when a new EEG data is ready (raw byte table has been converted to Float matrix)
+    // (acquiredata) the subscriber for MbtBluetoothManager and will be notified for converting raw data
+    // (EEGDataIsReady) the publisher and MbtBluetoothManager is the subscriber that will be notified when a new EEG data is ready (raw byte table has been converted to Float matrix)
 
     private static ArrayList<Float> statusData;
 
@@ -53,6 +53,7 @@ public class MbtDataAcquisition {
         this.nbChannels = MbtFeatures.getNbChannels();
         this.sampleRate = MbtFeatures.getSampleRate();
         int lostPacketInterpolatorSize = 0;
+        srcPos = eegManager.getRawDataIndexSize();
 
         if (eegManager.getMbtManager().getBluetoothProtocol().equals(BLUETOOTH_SPP)) {
             lostPacketInterpolatorSize = 138;
@@ -70,21 +71,11 @@ public class MbtDataAcquisition {
         Arrays.fill(lostPacketInterpolator, (byte) 0xFF);
     }
 
-    public synchronized void handleDataAcquired(@NonNull final byte[] data){
-        do {
-            handleData(data);
-        }while (bufPos != eegManager.getRawDataBufferSize());
-
-    }
-
-    public synchronized void handleData(@NonNull final byte[] data) {
-        Log.e(TAG, "handleDataAcquired data:" + Arrays.toString(data)); //todo remove
-
+    public synchronized void handleDataAcquired(@NonNull final byte[] data) {
         if (!eegManager.getMbtManager().getBluetoothProtocol().equals(BLUETOOTH_LE) && !eegManager.getMbtManager().getBluetoothProtocol().equals(BLUETOOTH_SPP))
             return; // we don't receive any eeg data if any of these protocols are used
-        final int currentIndex = (previousIndex != -1)? previousIndex+1 : (eegManager.getMbtManager().getMbtBluetoothManager().getBtProtocol()).equals(BtProtocol.BLUETOOTH_LE)? (data[0] & 0xff) << 8 | (data[1] & 0xff) : (data[1] & 0xff) << 8 | (data[2] & 0xff);
+        final int currentIndex = (previousIndex>0)? previousIndex+1 : (eegManager.getMbtManager().getMbtBluetoothManager().getBtProtocol()).equals(BtProtocol.BLUETOOTH_LE)? (data[0] & 0xff) << 8 | (data[1] & 0xff) : (data[1] & 0xff) << 8 | (data[2] & 0xff);
         // “& 0xff” masks the variable contained in data[0] & data[1] (or data[1] & data[2]) so it leaves only the value in the last 8 bits, and ignores all the rest of the bits.
-        Log.e(TAG, "current index is " + currentIndex);
         //taking care of the first index
         if (previousIndex == -1)
             previousIndex = currentIndex - 1;
@@ -94,18 +85,14 @@ public class MbtDataAcquisition {
             Log.e(TAG, "diff is " + indexDifference);
 
         for (int i = 0; i < indexDifference; i++) {
-            Log.e(TAG, "i  " + i );//todo
-
             handleConsecutiveOrNonConsecutiveFrame(data, (byte) (indexDifference - i - 1) == 0); //if received frames are consecutive we store the eeg data in a pending buffer, if received frames are not consecutive, we store the eeg data in a lost packet buffer
             bufPos += eegManager.getRawDataPacketSize();
-            Log.e(TAG, "bufpos " + bufPos);//todo
 
             if (bufPos >= eegManager.getRawDataBufferSize()) { //the input eeg buffer is full so it contains enough data to compute a new MBTEEGPacket
                 handleFullPendingData();
             }
         }
         previousIndex = currentIndex;
-        Log.e(TAG,"previous index end: "+previousIndex);
     }
 
     public static Float isBitSet(byte b, int bit) {
@@ -116,22 +103,17 @@ public class MbtDataAcquisition {
     }
 
     void reconfigureBuffers(final int sampleRate, byte samplePerNotif, final int statusByteNb) {
-        Log.e(TAG, "reconfigure buffer data:"); //todo remove
-
         eegManager.reconfigureBuffers(sampleRate, samplePerNotif, statusByteNb);
         resetIndex();
         bufPos = 0;
     }
 
     private void fillStatusData(boolean isConsecutive, final byte[] data) {
-        Log.e(TAG, "Fill status data:" + Arrays.toString(data)); //todo remove
-
         if (eegManager.getMbtManager().getBluetoothProtocol().equals(BLUETOOTH_LE)) {
             for (int j = 0; j < eegManager.getNbStatusBytes(); j++) {
                 byte tempStatus = 0;
                 if (isConsecutive) {
                     tempStatus = data[eegManager.getRawDataIndexSize() + j];
-                    srcPos = eegManager.getRawDataIndexSize() + eegManager.getNbStatusBytes();
                 }
 
                 for (int k = 0; k < (getSamplePerNotif() - j * 8 < 8 ? getSamplePerNotif() - j * 8 : 8); k++) {
@@ -148,25 +130,25 @@ public class MbtDataAcquisition {
     }
 
     private void storeEEGDataLostPacket() {
-        Log.e(TAG, "store lost data:" + Arrays.toString(lostPacketInterpolator)); //todo remove
+        Log.i(TAG, "storing lost EEG data");
         eegManager.storePendingDataInBuffer(lostPacketInterpolator,0,bufPos,(bufPos +eegManager.getRawDataPacketSize())>eegManager.getRawDataBufferSize()?eegManager.getRawDataBufferSize()-bufPos :eegManager.getRawDataPacketSize());
     }
 
     private void storeEEGDataInBuffers(final byte[] data){
-        Log.e(TAG, "storeEEGDataInBuffers data:" + Arrays.toString(data)); //todo remove
+        Log.i(TAG, "storing EEG data In Buffers");
 
         int pendingBufferLength = eegManager.getRawDataPacketSize();//if we have no overflow, the pending buffer has the same size as the buffer
         //In case packet size is too large for buffer, we only take first part in pending buffer. Second part is stored in overflow buffer for future use
         if (bufPos + eegManager.getRawDataPacketSize() > eegManager.getRawDataBufferSize()) { // check that the maximum size is not reached if we can add a packet to the buffer
             eegManager.setOverflow(true); //notify the eeg manager that the buffer is full
-            pendingBufferLength = eegManager.getRawDataBufferSize() - bufPos; // the size of the pending buffer is the total buffer size - the overflow buffer size
+            pendingBufferLength = eegManager.getRawDataBufferSize() - bufPos;
             eegManager.storeOverflowDataInBuffer(data,srcPos,bufPos,pendingBufferLength);//we store the overflowing part in the overflow buffer
         }
         eegManager.storePendingDataInBuffer(data,srcPos,bufPos,pendingBufferLength); //we store the pending buffer in both case (overflow or no overflow)
     }
 
     private void handleFullPendingData(){
-        Log.e(TAG, "handleFullPending data:" + Arrays.toString(eegManager.getPendingRawData())); //todo remove
+        Log.i(TAG, "handling Pending data buffer" + eegManager.getPendingRawData().length);
         final ArrayList<Float> toDecodeStatus = buildToDecodeStatus();
         final byte[] toDecodeBytes = eegManager.getPendingRawData().clone();
         bufPos = (eegManager.hasOverflow())? eegManager.handleOverflowDataBuffer() : 0; //handleOverflowBuffer return eegManager.getRawDataPacketSize() / 2
@@ -174,8 +156,6 @@ public class MbtDataAcquisition {
     }
 
     private void handleConsecutiveOrNonConsecutiveFrame(final byte[] data, boolean isConsecutive) {
-        Log.e(TAG, "handleConsecutive data:" + Arrays.toString(data)); //todo remove
-
         fillStatusData(isConsecutive, data);
         if (isConsecutive)
             storeEEGDataInBuffers(data);
@@ -187,15 +167,15 @@ public class MbtDataAcquisition {
         ArrayList<Float> toDecodeStatus = statusData;
         if(eegManager.getMbtManager().getBluetoothProtocol().equals(BLUETOOTH_LE)){
             if(eegManager.getNbStatusBytes() > 0){
-                statusData = new ArrayList<>(); //statusData was null so we have to initialize the list
+                statusData = new ArrayList<>(); //reinit raw container
                 if(toDecodeStatus != null){
                     if(toDecodeStatus.size() > sampleRate){
                         int size = toDecodeStatus.size();
                         for(int it = sampleRate; it < size; it++){
-                            statusData.add(toDecodeStatus.get(it));
+                            statusData.add(toDecodeStatus.get(it)); //re add overflow status
                         }
                         for(int it = 0; it < size - sampleRate ; it++){
-                            toDecodeStatus.remove(toDecodeStatus.size()-1);
+                            toDecodeStatus.remove(toDecodeStatus.size()-1); //remove overflow status
                         }
                     }
                 }
@@ -210,14 +190,17 @@ public class MbtDataAcquisition {
             public void run() {
                 Log.i(TAG, "computing and sending to application");
                 eegManager.convertRawDataToEEG(toDecodeBytes); //convert byte table data to Float matrix and store the matrix in MbtEEGManager as eegResult attribute
+
                 ArrayList<Float> status = new ArrayList<>();
                 switch(eegManager.getMbtManager().getBluetoothProtocol()){
                     case BLUETOOTH_LE:
                         status = toDecodeStatus;
+                        Log.i(TAG,"NO REMOVING 0 index");
                         break;
                     case BLUETOOTH_SPP:
                         status = eegManager.getEegResult().get(0);
                         eegManager.getEegResult().remove(0);
+                        Log.i(TAG,"REMOVING 0 index");
                         break;
                 }
                 eegManager.notifyEEGDataIsReady(status, sampleRate, nbChannels);//notify UI that eeg data are ready
@@ -242,4 +225,7 @@ public class MbtDataAcquisition {
         return bufPos;
     }
 
+    public MbtEEGManager getEegManager() {
+        return eegManager;
+    }
 }

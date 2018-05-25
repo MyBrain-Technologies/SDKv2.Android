@@ -47,13 +47,13 @@ public class MbtDataBuffering {
      * @param bufLength is the length to copy
      */
     public void storePendingDataInBuffer(final byte[] data, final int srcPos, final int bufPos, final int bufLength){
-        Log.e(TAG, "store pending data:" + Arrays.toString(data)); //todo remove
+
         if (data == null || data.length == 0 || bufLength==0)
             throw new IllegalArgumentException("there MUST be at least ONE or MORE eeg data !");
         if (srcPos + bufLength > data.length || bufPos + bufLength > eegManager.getRawDataBufferSize()) //check that array indexes are not out of bounds
-            throw new IndexOutOfBoundsException("array index exception ! srcPos: "+ srcPos +" bufPos: "+ bufPos+" bufLength: "+ bufLength +"DATA LENGTH: "+data.length+" buffer size: "+eegManager.getRawDataBufferSize()); //todo reset
-
+            throw new IndexOutOfBoundsException("array index exception !");
         System.arraycopy(data, srcPos, pendingRawData, bufPos, bufLength);
+        Log.i(TAG, "storing pending data: "+Arrays.toString(Arrays.copyOfRange(data, srcPos, srcPos + bufLength)));
     }
 
     /**
@@ -63,7 +63,6 @@ public class MbtDataBuffering {
      * @param srcPos is the beginning position of the buffer list where the data are copied
      */
     public void storeOverflowDataInBuffer(final byte[] data, final int srcPos, final int bufPos, final int bufLength){
-        Log.e(TAG, "store overflow data:" + Arrays.toString(data)); //todo remove
 
         if (data == null || data.length == 0)
             throw new IllegalArgumentException("there MUST be at least ONE or MORE eeg data !");
@@ -74,6 +73,7 @@ public class MbtDataBuffering {
 
         System.arraycopy(data, srcPos + eegManager.getRawDataBufferSize() - bufPos, oveflowBytes, 0, eegManager.getRawDataPacketSize() - bufLength);
         hasOverflow = true;
+        Log.i(TAG, "storing overflow data:" + Arrays.toString(Arrays.copyOfRange(data,srcPos + eegManager.getRawDataBufferSize() - bufPos,eegManager.getRawDataPacketSize() - bufLength+srcPos + eegManager.getRawDataBufferSize() - bufPos)));
     }
 
     /**
@@ -81,7 +81,6 @@ public class MbtDataBuffering {
      * @param length is the length of the overflow buffer to copy in the pending buffer
      */
     public void storeOverflowDataInPendingBuffer(final int length) {
-        Log.e(TAG, "storeOverflowinpending data:" + Arrays.toString(oveflowBytes)); //todo remove
 
         if (oveflowBytes == null || oveflowBytes.length == 0 || length == 0)
             throw new IllegalArgumentException("there MUST be at least ONE or MORE eeg data !");
@@ -91,10 +90,11 @@ public class MbtDataBuffering {
 
         System.arraycopy(oveflowBytes, 0, pendingRawData, 0, length);
         hasOverflow = false;
+        Log.i(TAG, "storing Overflowing data in pending data buffer:" + Arrays.toString(oveflowBytes));
+
     }
 
     public void reconfigureBuffers(final int sampleRate, byte samplePerNotif, final int statusByteNb){ // statusByteNb parameter should be the internal config value
-        Log.e(TAG, "reconfigurebufffers MBTBuffering :"); //todo remove
 
         eegManager.setNbStatusBytes(statusByteNb); //init NB_STATUS_BYTES (BLE default value is 0 et SPP default value is 3)
         eegManager.setRawDataPacketSize(eegManager.getRawDataBytesPerWholeChannelsSamples() * samplePerNotif);
@@ -114,8 +114,8 @@ public class MbtDataBuffering {
      * Replace the pending data by the overflowing data in the pending buffer after the
      */
     public int handleOverflowDataBuffer(){
-        Log.e(TAG, "handleOverflow"); //todo remove
 
+        Log.i(TAG, "handling Overflow Data");
         pendingRawData = new byte[eegManager.getRawDataBufferSize()];
         Log.i(TAG, "overflow detected");
         storeOverflowDataInPendingBuffer(eegManager.getRawDataPacketSize() /2);

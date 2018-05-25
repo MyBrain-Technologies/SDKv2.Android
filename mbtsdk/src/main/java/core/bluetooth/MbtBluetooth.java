@@ -270,7 +270,6 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
     }*/
 
     public void acquireData(@NonNull final byte[] data) {
-        Log.e(TAG, "Acquire data BT:" + Arrays.toString(data)); //todo remove
         mbtBluetoothManager.acquireData(data);
     }
 

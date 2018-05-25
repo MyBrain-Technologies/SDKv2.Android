@@ -65,7 +65,7 @@ public final class MbtBluetoothManager {
         //save client side objects in variables
         this.mContext = context;
         this.uiAccess = new Handler(context.getMainLooper());
-        this.btProtocol = BtProtocol.BLUETOOTH_SPP; //Default value //todo change if tests are successful
+        this.btProtocol = BtProtocol.BLUETOOTH_LE; //Default value
 
         this.mbtBluetoothLE = new MbtBluetoothLE(context, this);
         this.mbtBluetoothSPP = new MbtBluetoothSPP(context,this);
@@ -312,7 +312,6 @@ public final class MbtBluetoothManager {
      * @param data raw EEG Data
      */
     public void acquireData(@NonNull final byte[] data){
-        Log.e(TAG, "Acquire data BT Manager:" + Arrays.toString(data)); //todo remove
         eventBusManager.postEvent(new EEGDataAcquired(data)); //MbtEEGManager will convert data from raw packets to eeg values
     }
 

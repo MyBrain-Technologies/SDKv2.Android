@@ -33,5 +33,4 @@ public class EEGDataIsReady { //Events are just POJO without any specific implem
     public int getNbChannels() {
         return nbChannels;
     }
-
 }

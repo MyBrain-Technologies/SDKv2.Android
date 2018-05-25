@@ -7,6 +7,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import core.bluetooth.BtProtocol;
+import core.eeg.MbtEEGManager;
+
+import static core.eeg.MbtEEGManager.BLE_NB_BYTES;
+import static core.eeg.MbtEEGManager.SPP_NB_BYTES;
 
 
 /**
@@ -29,11 +33,11 @@ public class MbtDataConversion {
      * @return the eeg data as float lists, with NaN values for missing data
      */
     public static ArrayList<ArrayList<Float>> convertRawDataToEEG(@NonNull byte[] rawData, BtProtocol protocol, int nbChannels) {
-        Log.e(TAG, "convertRawDatatoEEG data:" + Arrays.toString(rawData)); //todo remove
+       // Log.i(TAG, "converting Raw Data to EEG");
 
         int nbBytesData;
         int max = 0;
-        nbBytesData = (protocol.equals(BtProtocol.BLUETOOTH_LE))? 2 : 3; //equals 2 for BLE and equals 3 for SPP
+        nbBytesData = (protocol.equals(BtProtocol.BLUETOOTH_LE))? BLE_NB_BYTES : SPP_NB_BYTES; //equals 2 for BLE and equals 3 for SPP
 
         int DIVIDER = nbBytesData*nbChannels;
         switch(protocol){
@@ -59,11 +63,13 @@ public class MbtDataConversion {
         int rawDataIndex = 0;
 
         for(int i = 0; i < rawData.length/DIVIDER; i++) {
+
             for (int eegDataIndex = 0; eegDataIndex < max; eegDataIndex++) {
                 eegData = (protocol.equals(BtProtocol.BLUETOOTH_LE)? convertRawDataBLE(rawData, eegData, rawDataIndex, eegDataIndex) : convertRawDataSPP(rawData, eegData, rawDataIndex, eegDataIndex) );
                 rawDataIndex += nbBytesData;
             }
         }
+
         return eegData;
     }
 
@@ -75,8 +81,6 @@ public class MbtDataConversion {
      * @return the eeg data as float lists, with NaN values for missing data
      */
     private static ArrayList<ArrayList<Float>> convertRawDataSPP(byte[] rawData, ArrayList<ArrayList<Float>> eegData, int currentRawDataIndex, int currentEEGDataIndex) {
-        Log.e(TAG, "converting SPP data:" + Arrays.toString(rawData)); //todo remove
-
         final float voltage = (float) (0.536d * Math.pow(10, -6)) / 24;
 
         if(currentEEGDataIndex == 0){
@@ -114,8 +118,6 @@ public class MbtDataConversion {
      * @return the eeg data as float lists, with NaN values for missing data
      */
     private static ArrayList<ArrayList<Float>> convertRawDataBLE(byte[] rawData, ArrayList<ArrayList<Float>> eegData, int currentRawDataIndex, int currentEEGDataIndex){
-        Log.e(TAG, "converting BLE data:" + Arrays.toString(rawData)); //todo remove
-
         final float voltageADS1298 = (float) (0.286d * Math.pow(10, -6)) / EEG_AMP_GAIN; //12; // for ADS 1298
 
         //Here are data from sensors, whom need to be transformed to float
