@@ -15,13 +15,10 @@ import static core.eeg.MbtEEGManager.getSppNbBytes;
 import static features.MbtFeatures.getSampleRate;
 
 /**
- * MbtDataConversion.java
- * core.eeg.storage
- *
- * Created by manon on 25/10/16.
- * Last Update by Sophie Z 25/05/2018
- * Copyright (c) 2016 myBrain Technologies. All rights reserved.
  * MbtDataConversion is responsible for managing conversion from raw EEG data acquired by the Bluetooth headset into readable EEG values
+ *
+ * @author Manon LETERME on 25/10/16
+ * @version Sophie ZECRI 25/05/2018
  */
 public class MbtDataConversion {
 

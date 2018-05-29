@@ -17,13 +17,10 @@ import static core.eeg.MbtEEGManager.getSamplePerPacket;
 
 
 /**
- * MbtDataAcquisition.java.
- * core.eeg.acquisition
+ * MbtDataAcquisition is responsible for managing incoming EEG data acquired by the MBT headset and transmitted through Bluetooth communication to the application.
  *
  * @author Manon LETERME on 09/08/2016.
- * Last Update by Sophie ZECRI 25/05/2018.
- * Copyright (c) 2016 myBrain Technologies. All rights reserved.
- * MbtDataAcquisition is responsible for managing incoming EEG data acquired by the MBT headset and transmitted through Bluetooth communication to the application.
+ * @version Sophie ZECRI on 25/05/2018.
  */
 
 public class MbtDataAcquisition {

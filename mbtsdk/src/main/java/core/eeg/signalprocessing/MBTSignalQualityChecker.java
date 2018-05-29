@@ -4,7 +4,9 @@ package core.eeg.signalprocessing;
 import org.apache.commons.lang.ArrayUtils;
 
 /**
- * Created by Vincent on 26/08/2015.
+ * MBTSignalQualityChecker contains methods for computing the EEG signal quality
+ *
+ * @author Vincent on 26/08/2015.
  */
 public final class MBTSignalQualityChecker {
 

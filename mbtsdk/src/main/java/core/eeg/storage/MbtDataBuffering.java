@@ -10,14 +10,11 @@ import core.eeg.MbtEEGManager;
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
 
 /**
- * MbtDataBuffering.java
- * core.eeg.storage
- *
- * Created by Sophie Z on 10/04/2018.
- * Last Update by Sophie Z 25/05/2018
- * Copyright (c) 2016 myBrain Technologies. All rights reserved.
  * MbtDataBuffering is responsible for storing and managing EEG raw data acquired in temporary buffers.
  * Notifies {@link MbtDataConversion} when buffers are full, so that it can convert stored EEG raw data into user-readable data.
+ *
+ * @author Sophie ZECRI on 10/04/2018
+ * @version 25/05/2018
  */
 public class MbtDataBuffering {
 

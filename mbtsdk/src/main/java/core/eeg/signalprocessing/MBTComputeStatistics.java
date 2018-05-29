@@ -7,9 +7,10 @@ import org.apache.commons.lang.ArrayUtils;
 import java.util.HashMap;
 
 /**
- * Created by Etienne on 12/04/2017.
+ * MBTComputeStatistics contains methods for computing statistics
+ *
+ * @author Etienne on 12/04/2017.
  */
-
 public class MBTComputeStatistics {
     private static final String TAG = MBTComputeStatistics.class.getName();
 

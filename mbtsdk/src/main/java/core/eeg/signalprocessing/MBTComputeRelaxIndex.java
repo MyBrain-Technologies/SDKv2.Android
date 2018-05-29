@@ -1,12 +1,12 @@
 package core.eeg.signalprocessing;
 
-import android.util.Log;
-
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Created by Vincent on 26/11/2015.
+ * MBTComputeRelaxIndex contains methods for computing Relaxation Indexes
+ *
+ * @author Vincent on 26/11/2015.
  */
 public final class MBTComputeRelaxIndex {
     private static final String TAG = MBTComputeRelaxIndex.class.getName();

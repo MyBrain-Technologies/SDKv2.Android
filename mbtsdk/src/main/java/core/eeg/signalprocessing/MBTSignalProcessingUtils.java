@@ -1,18 +1,18 @@
 package core.eeg.signalprocessing;
 
 /**
- * Created by Vincent on 25/11/2015.
+ * MBTSignalProcessingUtils contains methods for converting the channels into Float or Double Matrix
+ *
+ * @author Vincent on 25/11/2015.
  */
 final class MBTSignalProcessingUtils {
     /**
      * Merges the provided channels into a matrix (a 2D array). The height of the matrix is defined by the number
-     * of provided channels and its width is defined by the samprate of each channel which must be
-     * consistent.
+     * of provided channels and its width is defined by the samprate of each channel which must be consistent.
      * In the end, each line of the matrix represents a channel in the order the channels were provided
      * @param channels the channels to transform into a matrix
      * @return the matrix if successful
-     * @exception IllegalArgumentException if there are no channels to merge and if the samprate is
-     * inconsistent
+     * @exception IllegalArgumentException if there are no channels to merge and if the samprate is inconsistent
      */
     final static double[][] channelsToMatrixDouble(Float[]... channels) {
         if (channels == null || channels.length == 0)
@@ -33,6 +33,14 @@ final class MBTSignalProcessingUtils {
         return matrix;
     }
 
+    /**
+     * Merges the provided channels into a matrix (a 2D array). The height of the matrix is defined by the number
+     * of provided channels and its width is defined by the samprate of each channel which must be consistent.
+     * In the end, each line of the matrix represents a channel in the order the channels were provided
+     * @param channels the channels to transform into a matrix
+     * @return the matrix if successful
+     * @exception IllegalArgumentException if there are no channels to merge and if the samprate is inconsistent
+     */
     final static float[][] channelsToMatrixFloat(Float[]... channels) {
         if (channels == null || channels.length == 0)
             throw new IllegalArgumentException("there MUST be at least ONE or MORE channel(s) !");

@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
- * Created by Vincent on 26/11/2015.
+ * MBTCalibrationParameters contains all parameters linked to the calibration
+ *
+ * @author Vincent on 26/11/2015.
  */
 public final class MBTCalibrationParameters {
     private final HashMap<String, float[]> params;

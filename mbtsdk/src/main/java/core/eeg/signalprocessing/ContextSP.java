@@ -2,12 +2,11 @@ package core.eeg.signalprocessing;
 
 
 /**
- * Created by Vincent on 30/03/2016.
+ * ContextSP contains some static values related to the signal processing
+ *
+ * @author Vincent on 30/03/2016.
  */
 
-/**
- * A class containing some static values related to the signal processing
- */
 public final class ContextSP {
     /**
      * The current set of calibration parameters

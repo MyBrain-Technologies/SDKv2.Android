@@ -5,7 +5,9 @@ import android.util.Log;
 import java.util.HashMap;
 
 /**
- * Created by Vincent on 24/11/2015.
+ * MBTCalibrator contains methods for calibrating new EEG packets
+ *
+ * @author Vincent on 24/11/2015.
  */
 public final class MBTCalibrator {
     private static final String TAG = MBTCalibrator.class.getSimpleName();
