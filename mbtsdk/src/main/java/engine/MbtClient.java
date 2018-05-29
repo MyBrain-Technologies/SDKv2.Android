@@ -3,12 +3,13 @@ package engine;
 import android.content.Context;
 import android.support.annotation.NonNull;
 
+import config.MbtConfig;
 import core.MbtManager;
 import core.bluetooth.BtProtocol;
-import core.bluetooth.MbtBluetoothManager;
-import core.eeg.MbtEEGManager;
-import core.recordingsession.MbtRecordingSessionManager;
-import core.serversync.MbtServerSyncManager;
+import features.MbtFeatures;
+
+import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
+import static core.bluetooth.BtProtocol.BLUETOOTH_SPP;
 
 /**
  * Created by Etienne on 08/02/2018.
@@ -55,20 +56,6 @@ public final class MbtClient {
     //private final MbtServerSyncManager serverSyncManager;
 
     private final MbtManager mbtManager;
-
-
-    private MbtClient(@NonNull Context context, @NonNull MbtClientEvents mbtClientEvents){
-        //save client side objects in variables
-        mEvents = mbtClientEvents;
-        mContext = context;
-
-        //init internal managers
-        mbtManager = new MbtManager(mContext);
-        /*bluetoothManager = new MbtBluetoothManager(context);
-        eegManager = new MbtEEGManager(context);
-        recordingSessionManager = new MbtRecordingSessionManager(context);
-        serverSyncManager = new MbtServerSyncManager(context);*/
-    }
 
     public static MbtClient init(@NonNull Context context, @NonNull MbtClientEvents mbtClientEvents){
         return new MbtClientBuilder()
@@ -130,7 +117,11 @@ public final class MbtClient {
     public MbtServerSyncManager getServerSyncManager() {
         return serverSyncManager;
     }*/
-
+    /**
+     * Gets the MbtManager instance.
+     * MbtManager is responsible for managing all the package managers
+     * @return the MbtManager instance.
+     */
     public MbtManager getMbtManager() {
         return mbtManager;
     }
@@ -203,13 +194,11 @@ public final class MbtClient {
 
     }
 
-    public void testEEGpackageClient(BtProtocol protocol){
-        if(this.mbtManager!=null && this.mbtManager.getMbtBluetoothManager()!=null && this.mbtManager.getMbtBluetoothManager().getMbtBluetoothSPP()!=null) {
-            if ((protocol.equals(BtProtocol.BLUETOOTH_LE))) {
-                this.mbtManager.getMbtBluetoothManager().getMbtBluetoothLE().testAcquireDataRandomByte();
-            } else if ((protocol.equals(BtProtocol.BLUETOOTH_SPP))){
-                this.mbtManager.getMbtBluetoothManager().getMbtBluetoothSPP().testAcquireDataRandomByte();
-            }
+    public void testEEGpackageClient(){
+        if (MbtFeatures.getBluetoothProtocol().equals(BLUETOOTH_LE)) {
+            this.mbtManager.getMbtBluetoothManager().getMbtBluetoothLE().testAcquireDataRandomByte();
+        } else if (MbtFeatures.getBluetoothProtocol().equals(BLUETOOTH_SPP)){
+            this.mbtManager.getMbtBluetoothManager().getMbtBluetoothSPP().testAcquireDataRandomByte();
         }
     }
 }

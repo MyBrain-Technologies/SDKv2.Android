@@ -24,11 +24,13 @@ import core.MbtManager;
 import core.bluetooth.lowenergy.MbtBluetoothLE;
 import core.bluetooth.acquisition.MbtDeviceAcquisition;
 import eventbus.EventBusManager;
-import eventbus.events.EEGDataIsReady;
 import eventbus.events.EEGDataAcquired;
 import features.MbtFeatures;
 import features.ScannableDevices;
 import utils.AsyncUtils;
+
+import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
+import static features.MbtFeatures.getBluetoothProtocol;
 
 /**
  * Created by Etienne on 08/02/2018.
@@ -65,7 +67,7 @@ public final class MbtBluetoothManager {
         //save client side objects in variables
         this.mContext = context;
         this.uiAccess = new Handler(context.getMainLooper());
-        this.btProtocol = BtProtocol.BLUETOOTH_LE; //Default value
+        this.btProtocol = getBluetoothProtocol(); //Default value according to the scanned device
 
         this.mbtBluetoothLE = new MbtBluetoothLE(context, this);
         this.mbtBluetoothSPP = new MbtBluetoothSPP(context,this);
@@ -92,13 +94,11 @@ public final class MbtBluetoothManager {
                 }finally {
                     mbtBluetoothLE.stopLowEnergyScan();
                 }
-
                 if(scannedDevice == null){
                     return;
                 }else {
                     bluetoothDevice = scannedDevice;
                 }
-
                 mbtBluetoothLE.connect(mContext, scannedDevice); //second step
             }
         });
@@ -170,7 +170,7 @@ public final class MbtBluetoothManager {
                         Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
                         || ContextCompat.checkSelfPermission(mContext,
                         Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
-                    btProtocol=BtProtocol.BLUETOOTH_LE;
+                    btProtocol= BLUETOOTH_LE;
                     return mbtBluetoothLE.startLowEnergyScan(true, false); //TODO handle this
 
                 }
@@ -308,8 +308,8 @@ public final class MbtBluetoothManager {
     }
 
     /**
-     * publish an event on the bus so that MbtEEGManager can handle raw EEG data received from Bluetooth
-     * @param data raw EEG Data
+     * Posts a EEGDataAcquired event to the bus so that MbtEEGManager can handle raw EEG data received
+     * @param data the raw EEG data array acquired by the headset and transmitted by Bluetooth to the application
      */
     public void acquireData(@NonNull final byte[] data){
         eventBusManager.postEvent(new EEGDataAcquired(data)); //MbtEEGManager will convert data from raw packets to eeg values

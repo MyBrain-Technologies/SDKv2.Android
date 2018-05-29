@@ -129,7 +129,7 @@ public final class OADFileManager {
 
     /**
      * This method computes the CRC32 over the file buffer. Only the 4 bytes reserved for the CRC32 storage are bypassed during the computation.
-     * @return
+     * @return the CRC32 over the file buffer
      */
     private int computeCRC()
     {

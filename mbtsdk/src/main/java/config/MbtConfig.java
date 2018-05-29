@@ -1,8 +1,5 @@
 package config;
 
-import java.util.ArrayList;
-
-import features.MbtAcquisitionLocations;
 import features.ScannableDevices;
 
 public final class MbtConfig {
@@ -171,7 +168,7 @@ public final class MbtConfig {
         EEGConfiguration = builder.EEGConfiguration;
     }
 
-
-
-
+    public static void setScannableDevices(ScannableDevices scannableDevices) {
+        MbtConfig.scannableDevices = scannableDevices;
+    }
 }

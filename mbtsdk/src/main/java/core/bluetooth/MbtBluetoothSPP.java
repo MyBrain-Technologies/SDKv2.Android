@@ -472,8 +472,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
 
     /**
      * Ask to get the battery level
-     *
-     * @return
+     * @param start is true for starting the battery timer and false for cancelling the battery timer
      */
     private Timer batteryTimer;
     void askForBatteryLevel(final boolean start) {

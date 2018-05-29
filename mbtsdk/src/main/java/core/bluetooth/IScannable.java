@@ -19,7 +19,6 @@ public interface IScannable {
 
     /**
      * Disconnect from the peripheral device
-     * @return true upon success, false otherwise
      */
     void stopScanDiscovery();
 

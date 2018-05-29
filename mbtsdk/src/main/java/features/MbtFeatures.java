@@ -1,7 +1,5 @@
 package features;
 
-import android.net.wifi.WifiManager;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -14,6 +12,8 @@ import core.bluetooth.BtProtocol;
  */
 
 public final class MbtFeatures{
+
+    private static String TAG = MbtFeatures.class.getName();
 
     public static final String MELOMIND_DEVICE_NAME_PREFIX = "melo_";
 
@@ -29,7 +29,7 @@ public final class MbtFeatures{
     public final static int DEFAULT_EEG_PACKET_LENGTH = 250;
 
     private final static int MELOMIND_NB_CHANNELS = 2;
-    private final static int VPRO_NB_CHANNELS = 8;
+    private final static int VPRO_NB_CHANNELS = 9;
 
     public final static int MELOMIND_STATUS_SIZE = 0;
     public final static int VPRO_STATUS_SIZE = 3;
@@ -54,7 +54,7 @@ public final class MbtFeatures{
                 nbChannels=VPRO_NB_CHANNELS;
                 break;
             case ALL:
-                nbChannels=MELOMIND_NB_CHANNELS;
+                nbChannels=VPRO_NB_CHANNELS+MELOMIND_NB_CHANNELS;
                 break;
             default:
                 break;
@@ -100,7 +100,7 @@ public final class MbtFeatures{
         return statusSize;
     }
 
-    public static BtProtocol getDefaultBluetoothProtocol(){
+    public static BtProtocol getBluetoothProtocol(){
         BtProtocol protocol = null;
         switch(MbtConfig.getScannableDevices()){
             case MELOMIND:
@@ -175,7 +175,4 @@ public final class MbtFeatures{
         return SAMPLE_RATE;
     }
 
-    public static int getSamplePerNotif() {
-        return SAMPLE_PER_NOTIF;
-    }
 }

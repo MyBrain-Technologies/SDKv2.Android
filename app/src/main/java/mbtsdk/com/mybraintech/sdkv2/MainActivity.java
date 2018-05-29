@@ -9,7 +9,7 @@ import org.greenrobot.eventbus.Subscribe;
 
 import java.util.Arrays;
 
-import core.bluetooth.BtProtocol;
+import config.MbtConfig;
 import core.bluetooth.BtState;
 import core.eeg.signalprocessing.MBTEEGPacket;
 import core.oad.OADEvent;
@@ -17,6 +17,9 @@ import engine.MbtClient;
 import engine.MbtClientEvents;
 import eventbus.EventBusManager;
 import eventbus.events.EEGDataIsReady;
+import features.MbtFeatures;
+
+import static features.ScannableDevices.MELOMIND;
 
 public class MainActivity extends AppCompatActivity implements MbtClientEvents, MbtClientEvents.EegListener, MbtClientEvents.BatteryListener, MbtClientEvents.DeviceInfoListener, MbtClientEvents.HeadsetStatusListener, MbtClientEvents.StateListener, MbtClientEvents.OADEventListener, MbtClientEvents.MailboxEventListener  {
 
@@ -78,9 +81,9 @@ public class MainActivity extends AppCompatActivity implements MbtClientEvents, 
                 super.finalize();
             }
         };
-
+        MbtConfig.setScannableDevices(MELOMIND);//TODO remove when test are ok
         client = MbtClient.init(getApplicationContext(),mbtClientEvents);
-        client.testEEGpackageClient(BtProtocol.BLUETOOTH_LE); //todo remove if tests are successful
+        client.testEEGpackageClient(); //todo remove if tests are successful
         eventBusManager = new EventBusManager(this);
 
     }
@@ -91,7 +94,7 @@ public class MainActivity extends AppCompatActivity implements MbtClientEvents, 
     }
 
     @Override
-    public void onNewPackets(MBTEEGPacket mbteegPackets, int nbChannels, int nbSamples, int sampleRate) {
+    public void onNewPackets(MBTEEGPacket mbteegPackets, int nbChannels, int sampleRate, int nbSamples) {
         Log.i(TAG, "Received new EEG packet on UI");
         for (int i=0; i<mbteegPackets.getChannelsData().size();i++){
             for (int j=0; j<mbteegPackets.getChannelsData().get(i).size();j++){
@@ -100,8 +103,8 @@ public class MainActivity extends AppCompatActivity implements MbtClientEvents, 
         }
         eegTextView.setText(Arrays.toString(mbteegPackets.getChannelsData().toArray())); //update text on UI with the EEG packet ready
         nbChannelsTextView.setText(Integer.toString(nbChannels));
-        nbSamplesTextView.setText(Integer.toString(nbSamples));
         sampleRateTextView.setText(Integer.toString(sampleRate));
+        nbSamplesTextView.setText(Integer.toString(nbSamples));
     }
 
     @Override
@@ -168,11 +171,11 @@ public class MainActivity extends AppCompatActivity implements MbtClientEvents, 
 
     @Subscribe
     public void onEvent(final EEGDataIsReady event) {
-        Log.i(TAG, "event EEGDataIsReady received " ); //todo remove
+        Log.i(TAG, "event EEGDataIsReady received" );
         this.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                onNewPackets(new MBTEEGPacket(event.getMatrix(), null, event.getStatus(), System.currentTimeMillis()), event.getNbChannels(), event.getMatrix().get(0).size(), event.getSampleRate());
+                onNewPackets(new MBTEEGPacket(event.getMatrix(), null, event.getStatus(), System.currentTimeMillis()), event.getNbChannels(), event.getSampleRate(), event.getMatrix().get(0).size());
             }
         });
     }

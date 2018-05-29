@@ -57,7 +57,7 @@ public class MbtDataAcquisitionTest {
         dataAcquisition.reconfigureBuffers(samprate,samplePerNotif,statusByteNb);
 
         //check that the buffer and indexes has been well initialized
-        assertTrue(MbtDataAcquisition.getBufPos() == 0);
+        assertTrue(MbtDataAcquisition.getbufferPosition() == 0);
         assertTrue(MbtDataAcquisition.getPreviousIndex() == -1);
         assertTrue(MbtDataAcquisition.getStartingIndex() == -1);
     }

@@ -31,7 +31,7 @@ public interface MbtClientEvents {
          * Callback triggered when the input eeg buffer is full, ie when raw buffer contains enough data to compute a new MBTEEGPacket.
          * This event is triggered from the MbtDataAcquisition class when (bufPos >= BLE_RAW_DATA_BUFFER_SIZE)
          * @param mbteegPackets the eeg data (Channels, EEG values)
-         * @param nbChannels the number of eeg channels
+         * @param nbChannels the number of EEG acquisition channels
          * @param nbSamples //TODO remove this input
          * @param sampleRate //TODO might be unnecessary
          */
