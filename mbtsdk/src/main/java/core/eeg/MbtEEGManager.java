@@ -21,18 +21,15 @@ import static core.bluetooth.BtProtocol.BLUETOOTH_SPP;
 
 
 /**
- * MbtEEGManager.java
- * core.eeg
- *
- * Created by Etienne on 08/02/2018.
- * Last Update by Sophie Z 25/05/2018
- * Copyright (c) 2016 myBrain Technologies. All rights reserved.
  * MbtEEGManager contains all necessary methods to manage incoming EEG data from the MBT headset.
  * It is responsible for managing the communication between the different classes of the eeg package.
  * In chronological order, the incoming raw data are first transmitted to {@link core.eeg.acquisition.MbtDataAcquisition},
  * to be stored by {@link core.eeg.storage.MbtDataBuffering} in temporary buffers.
  * EEG data acquisition still continue until the buffers are full.
  * Then, raw data are converted into user-readable EEG values by {@link MbtDataConversion}.
+ *
+ * @author Etienne on 08/02/2018.
+ * @version Sophie ZECRI 25/05/2018
  */
 
 public final class MbtEEGManager {

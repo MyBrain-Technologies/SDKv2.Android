@@ -15,6 +15,7 @@ engine
 eventbus
 eventbus.events
 features
+mbtsdk
 mbtsdk.com.mybraintech.mbtsdk
 mbtsdk.core.bluetooth
 mbtsdk.core.bluetooth.lowenergy

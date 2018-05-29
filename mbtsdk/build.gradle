@@ -32,17 +32,32 @@ android {
 
 }
 
+configurations {
+    doclava
+}
+
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'org.mod4j.org.apache.commons:lang:2.1.0'
     implementation 'com.android.support:appcompat-v7:27.1.1'
     implementation 'org.greenrobot:eventbus:3.1.1'
+    doclava 'com.google.doclava:doclava:1.0.6'
     testImplementation 'org.mockito:mockito-core:2.16.0'
     testImplementation "org.robolectric:robolectric:3.7.1"
     testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'junit:junit:4.12'
     testImplementation 'org.mockito:mockito-core:2.16.0'
+    androidTestImplementation 'junit:junit:4.12'
     androidTestImplementation 'org.mockito:mockito-android:2.16.0'
     androidTestImplementation  'com.android.support.test.espresso:espresso-core:3.0.2'
     androidTestImplementation 'org.hamcrest:hamcrest-library:1.3'
+}
+task generateJavadoc(type: Javadoc, dependsOn: project.configurations.doclava) {
+    failOnError = true
+    title = null
+    source = android.sourceSets.main.java.srcDirs
+    options.doclet = "com.google.doclava.Doclava"
+    options.docletpath = configurations.doclava.files.asType(List)
+    classpath +=
+            project.files(android.getBootClasspath().join(File.pathSeparator))
+    destinationDir = file("../documentation/")
 }
