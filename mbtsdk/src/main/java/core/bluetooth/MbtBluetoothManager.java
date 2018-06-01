@@ -311,7 +311,7 @@ public final class MbtBluetoothManager {
      * Posts a EEGDataAcquired event to the bus so that MbtEEGManager can handle raw EEG data received
      * @param data the raw EEG data array acquired by the headset and transmitted by Bluetooth to the application
      */
-    public void acquireData(@NonNull final byte[] data){
+    public void handleDataAcquired(@NonNull final byte[] data){
         eventBusManager.postEvent(new EEGDataAcquired(data)); //MbtEEGManager will convert data from raw packets to eeg values
     }
 

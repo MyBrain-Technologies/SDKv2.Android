@@ -1,12 +1,22 @@
 package engine;
 
+import android.bluetooth.le.ScanCallback;
 import android.content.Context;
 import android.support.annotation.NonNull;
 
-import config.MbtConfig;
+import java.util.ArrayList;
+import java.util.HashMap;
+
 import core.MbtManager;
-import core.bluetooth.BtProtocol;
+import core.bluetooth.MbtBluetoothManager;
+import core.eeg.MbtEEGManager;
+import core.eeg.signalprocessing.MBTCalibrationParameters;
+import core.eeg.signalprocessing.MBTEEGPacket;
+import core.recordingsession.MbtRecordingSessionManager;
+import core.serversync.MbtServerSyncManager;
 import features.MbtFeatures;
+import features.ScannableDevices;
+import model.MbtRecording;
 
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
 import static core.bluetooth.BtProtocol.BLUETOOTH_SPP;
@@ -28,35 +38,25 @@ public final class MbtClient {
      */
     private MbtClientEvents mEvents;
     //Listeners declarations
-    private MbtClientEvents.EegListener eegMelomindListener = null;
+    /*private MbtClientEvents.EegListener eegMelomindListener = null;
     private MbtClientEvents.BatteryListener batteryMelomindListener = null;
     private MbtClientEvents.StateListener bleStateMelomindListener = null;
     private MbtClientEvents.DeviceInfoListener deviceInfoListener = null;
     private MbtClientEvents.OADEventListener oadEventListener = null;
     private MbtClientEvents.MailboxEventListener mailboxEventListener = null;
-    private MbtClientEvents.HeadsetStatusListener headsetStatusListener = null;
-
-
-   // private final MbtBluetoothManager bluetoothManager;
+    private MbtClientEvents.HeadsetStatusListener headsetStatusListener = null;*/
 
     /**
-     * The eeg manager that will manage the EEG data coming from the @bluetoothManager. It is responsible for
-     * managing buffers size, conversion from raw packets to eeg values (voltages).
+     * The MbtManager is responsible for managing all the package managers
      */
-    //private final MbtEEGManager eegManager;
-
-    /**
-     * The recording session manager will manage all the recordings that are made during the lifetime of this instance.
-     */
-    //private final MbtRecordingSessionManager recordingSessionManager;
-
-    /**
-     * The server sync manager will manage the communication with MBT server API.
-     */
-    //private final MbtServerSyncManager serverSyncManager;
-
     private final MbtManager mbtManager;
 
+    /**
+     * Initializes the MbtClient instance
+     * @param context the context of the single, global Application object of the current process.
+     * @param mbtClientEvents object that contains callbacks for client events
+     * @return the initialized MbtClient instance to the application
+     */
     public static MbtClient init(@NonNull Context context, @NonNull MbtClientEvents mbtClientEvents){
         return new MbtClientBuilder()
                 .setContext(context)
@@ -65,20 +65,17 @@ public final class MbtClient {
                 .create();
     }
 
+    /**
+     * Constructor that use the MbtClientBuilder
+     * @param builder object for creating the MbtClient instance with a setters syntax.
+     */
     private MbtClient(MbtClientBuilder builder){
         this.mContext = builder.mContext;
         this.mEvents = builder.mEvents;
-        /*this.bluetoothManager=builder.bluetoothManager;
-        this.eegManager=builder.eegManager;
-        this.recordingSessionManager=builder.recordingSessionManager;
-        this.serverSyncManager=builder.serverSyncManager;*/
         mbtManager = builder.mbtManager;
     }
 
-    /**
-     *
-     */
-    public static void configure(){
+    public void scanDevicesForType(ScannableDevices deviceType, long duration, ScanCallback scanCallback){
 
     }
 
@@ -94,29 +91,6 @@ public final class MbtClient {
         return false;
     }
 
-    public Context getmContext() {
-        return mContext;
-    }
-
-    public MbtClientEvents getmEvents() {
-        return mEvents;
-    }
-/*
-    public MbtBluetoothManager getBluetoothManager() {
-        return bluetoothManager;
-    }
-
-    public MbtEEGManager getEegManager() {
-        return eegManager;
-    }
-
-    public MbtRecordingSessionManager getRecordingSessionManager() {
-        return recordingSessionManager;
-    }
-
-    public MbtServerSyncManager getServerSyncManager() {
-        return serverSyncManager;
-    }*/
     /**
      * Gets the MbtManager instance.
      * MbtManager is responsible for managing all the package managers
@@ -129,10 +103,6 @@ public final class MbtClient {
     public static class MbtClientBuilder {
         private Context mContext;
         private MbtClientEvents mEvents;
-        /*private MbtBluetoothManager bluetoothManager;
-        private MbtEEGManager eegManager;
-        private MbtRecordingSessionManager recordingSessionManager;
-        private MbtServerSyncManager serverSyncManager;*/
         private MbtManager mbtManager;
 
         public MbtClientBuilder setContext(final Context context){
@@ -149,26 +119,6 @@ public final class MbtClient {
             this.mbtManager = mbtManager;
             return this;
         }
-/*
-        public MbtClientBuilder setBluetoothManager(final MbtBluetoothManager bluetoothManager){
-            this.bluetoothManager = bluetoothManager;
-            return this;
-        }
-
-        public MbtClientBuilder setEegManager(final MbtEEGManager eegManager){
-            this.eegManager=eegManager;
-            return this;
-        }
-
-        public MbtClientBuilder setRecordingSessionManager(final MbtRecordingSessionManager recordingSessionManager) {
-            this.recordingSessionManager=recordingSessionManager;
-            return this;
-        }
-
-        public MbtClientBuilder setServerSyncManager(final MbtServerSyncManager serverSyncManager){
-            this.serverSyncManager = serverSyncManager;
-            return this;
-        }*/
 
         public MbtClient create(){
             return new MbtClient(this);
@@ -176,12 +126,11 @@ public final class MbtClient {
 
     }
 
-    /*public void scanDevicesForType(MbtConfig.ScannableDevices deviceType, long duration, ScanCallback scanCallback){
 
-    }*/
-    public void configureHeadset(){
+    public static void configureHeadset(){
 
     }
+
 
     public synchronized void readBattery(int period) {
         //this.gattController.startOrStopBatteryReader(true);
@@ -196,9 +145,142 @@ public final class MbtClient {
 
     public void testEEGpackageClient(){
         if (MbtFeatures.getBluetoothProtocol().equals(BLUETOOTH_LE)) {
-            this.mbtManager.getMbtBluetoothManager().getMbtBluetoothLE().testAcquireDataRandomByte();
+            getBluetoothManager().getMbtBluetoothLE().testAcquireDataRandomByte();
         } else if (MbtFeatures.getBluetoothProtocol().equals(BLUETOOTH_SPP)){
-            this.mbtManager.getMbtBluetoothManager().getMbtBluetoothSPP().testAcquireDataRandomByte();
+            getBluetoothManager().getMbtBluetoothSPP().testAcquireDataRandomByte();
         }
     }
+
+    /**
+     * Posts a EEGDataAcquired event to the bus so that MbtEEGManager can handle raw EEG data received
+     * @param data the raw EEG data array acquired by the headset and transmitted by Bluetooth to the application
+     */
+    public void handleDataAcquired(@NonNull final byte[] data){
+        getBluetoothManager().handleDataAcquired(data);
+    }
+
+    /**
+     * Initialize a new record session.
+     */
+    public void startRecord() {
+        getRecordingSessionManager().startRecord();
+    }
+
+    /**
+     * Stop current record and convert saved data into a new <b>MbtRecording</b> object
+     * @return the stopped recording data
+     */
+    public MbtRecording stopRecord() {
+        getRecordingSessionManager().stopRecord();
+        return getRecordingSessionManager().getCurrentRecording();
+    }
+
+    /**
+     * Saves current record into JSON file
+     */
+    public void saveRecordIntoJSON() {
+        getRecordingSessionManager().saveRecord();
+    }
+
+    /**
+     * Saves current record into JSON file
+     */
+    public void sendJSONtoServer() {
+        getRecordingSessionManager().sendJSONtoServer();
+    }
+
+    /**
+     * Computes the quality for each provided channels
+     * @param sampRate the number of value(s) inside each channel
+     * @param packetLength how long is a packet (time x samprate)
+     * @param channels the channel(s) to be computed
+     * @exception IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
+     */
+    public float[] computeEEGSignalQuality(int sampRate, int packetLength, Float[] channels){
+        return getEEGManager().computeEEGSignalQuality(sampRate,packetLength,channels);
+    }
+
+    /**
+     * Computes the relaxation index using the provided <code>MBTEEGPacket</code>.
+     * For now, we admit there are only 2 channels for each packet
+     * @param sampRate the samprate of a channel (must be consistent)
+     * @param calibParams the calibration parameters previously performed
+     * @param packets the packets that contains EEG data, theirs status and qualities.
+     * @return the relaxation index
+     * @exception IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
+     */
+    public float computeRelaxIndex(int sampRate, MBTCalibrationParameters calibParams, MBTEEGPacket... packets){
+        return getEEGManager().computeRelaxIndex(sampRate,calibParams,packets);
+    }
+
+    /**
+     * Computes the results of the previously done session
+     * @param threshold the level above which the relaxation indexes are considered in a relaxed state (under this threshold, they are considered not relaxed)
+     * @param snrValues the array that contains the relaxation indexes of the session
+     * @return the results of the previously done session
+     * @exception IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
+     */
+    public HashMap<String, Float> computeStatisticsSNR(final float threshold, final Float[] snrValues){
+        return getEEGManager().computeStatisticsSNR(threshold, snrValues);
+    }
+
+    /**
+     * Converts the EEG raw data array into a user-readable matrix
+     * @param rawData the raw EEG data array acquired by the headset and transmitted by Bluetooth to the application
+     * @return the converted EEG data matrix that contains readable values for any user
+     */
+    public ArrayList<ArrayList<Float>> launchConversionToEEG(byte[] rawData){
+        return getEEGManager().launchConversionToEEG(rawData);
+    }
+
+    /**
+     * Gets the MbtEEGManager instance.
+     * The eeg manager that will manage the EEG data coming from the {@link MbtBluetoothManager}. It is responsible for
+     * managing buffers size, conversion from raw packets to eeg values (voltages).
+     */
+    private MbtEEGManager getEEGManager(){
+        return this.getMbtManager().getMbtEEGManager();
+    }
+
+    /**
+     * Gets the MbtBluetoothManager instance.
+     *  The bluetooth manager will manage the communication between the headset and the application.
+     */
+    private MbtBluetoothManager getBluetoothManager(){
+        return this.getMbtManager().getMbtBluetoothManager();
+    }
+
+    /**
+     * Gets the MbtRecordingSessionManager instance.
+     * The recording session manager will manage all the recordings that are made during the lifetime of this instance.
+     */
+    private MbtRecordingSessionManager getRecordingSessionManager(){
+        return this.getMbtManager().getMbtRecordingSessionManager();
+    }
+
+    /**
+     * Gets the MbtServerSyncManager instance.
+     * The server sync manager will manage the communication with MBT server API.
+     */
+    private MbtServerSyncManager getMbtServerSyncManager(){
+        return this.getMbtManager().getMbtServerSyncManager();
+    }
+
+    /**
+     * Gets the application context
+     * @return the application context
+     */
+    public Context getmContext() {
+        return mContext;
+    }
+
+    /**
+     * Gets the callbacks for client events
+     * @return object that contains the callbacks for client events
+     */
+    public MbtClientEvents getmEvents() {
+        return mEvents;
+    }
+
+
 }

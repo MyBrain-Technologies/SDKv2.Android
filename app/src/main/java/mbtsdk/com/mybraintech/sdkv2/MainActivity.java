@@ -17,7 +17,6 @@ import engine.MbtClient;
 import engine.MbtClientEvents;
 import eventbus.EventBusManager;
 import eventbus.events.EEGDataIsReady;
-import features.MbtFeatures;
 
 import static features.ScannableDevices.MELOMIND;
 
@@ -26,35 +25,19 @@ public class MainActivity extends AppCompatActivity implements MbtClientEvents, 
     private static String TAG = MainActivity.class.getName();
 
     private MbtClient client;
-    private EventBusManager eventBusManager;
+    private EventBusManager eventBusManager; //warning : do not remove this attribute (consider unsused by the IDE, but actually used)
     private TextView eegTextView;
-    private TextView nbChannelsTextView;
-    private TextView nbSamplesTextView;
-    private TextView sampleRateTextView;
 
-    // Used to load the 'native-lib' library on application startup.
     static {
-        System.loadLibrary("native-lib");
+        System.loadLibrary("native-lib");    // Used to load the 'native-lib' library on application startup.
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        eegTextView = (TextView) findViewById(R.id.data);
-        nbChannelsTextView = (TextView) findViewById(R.id.nbChannels);
-        nbSamplesTextView = (TextView) findViewById(R.id.nbSamples);
-        sampleRateTextView = (TextView) findViewById(R.id.sampleRate);
+        eegTextView = findViewById(R.id.data); //todo remove when tests are ok
 
-//        //Listeners declarations
-//        MbtClientEvents.EegListener eegListener = null;
-//        MbtClientEvents.BatteryListener batteryListener = null;
-//        MbtClientEvents.StateListener stateListener = null;
-//        MbtClientEvents.DeviceInfoListener deviceInfoListener = null;
-//        MbtClientEvents.HeadsetStatusListener headsetStatusListener = null;
-//        MbtClientEvents.BandwidthListener bandwidthListener = null;
-//        MbtClientEvents.OADEventListener oadEventListener = null;
-//        MbtClientEvents.MailboxEventListener mailboxEventListener = null;
         MbtClientEvents mbtClientEvents = new MbtClientEvents() {
             @Override
             public int hashCode() {
@@ -82,10 +65,11 @@ public class MainActivity extends AppCompatActivity implements MbtClientEvents, 
             }
         };
         MbtConfig.setScannableDevices(MELOMIND);//TODO remove when test are ok
-        client = MbtClient.init(getApplicationContext(),mbtClientEvents);
-        client.testEEGpackageClient(); //todo remove if tests are successful
-        eventBusManager = new EventBusManager(this);
 
+        client = MbtClient.init(getApplicationContext(),mbtClientEvents);
+
+        client.testEEGpackageClient(); //todo remove when tests are ok
+        eventBusManager = new EventBusManager(this);
     }
 
     @Override
@@ -96,15 +80,8 @@ public class MainActivity extends AppCompatActivity implements MbtClientEvents, 
     @Override
     public void onNewPackets(MBTEEGPacket mbteegPackets, int nbChannels, int sampleRate, int nbSamples) {
         Log.i(TAG, "Received new EEG packet on UI");
-        for (int i=0; i<mbteegPackets.getChannelsData().size();i++){
-            for (int j=0; j<mbteegPackets.getChannelsData().get(i).size();j++){
-                Log.i(TAG, " "+mbteegPackets.getChannelsData().get(i).get(j));
-            }
-        }
+
         eegTextView.setText(Arrays.toString(mbteegPackets.getChannelsData().toArray())); //update text on UI with the EEG packet ready
-        nbChannelsTextView.setText(Integer.toString(nbChannels));
-        sampleRateTextView.setText(Integer.toString(sampleRate));
-        nbSamplesTextView.setText(Integer.toString(nbSamples));
     }
 
     @Override
@@ -130,7 +107,6 @@ public class MainActivity extends AppCompatActivity implements MbtClientEvents, 
     @Override
     public void onHwVersionReceived(String hwVersion) {
         Log.i(TAG, "Received hwVersion on UI" + hwVersion);
-
     }
 
     @Override
@@ -169,12 +145,19 @@ public class MainActivity extends AppCompatActivity implements MbtClientEvents, 
         Log.i(TAG, "Received mail box event on UI" + eventCode +"/n Values: "+eventValues.toString() );
     }
 
+    /**
+     * onEvent is called by the Event Bus when a EEGDataIsReady event is posted
+     * This event is published by {@link core.eeg.MbtEEGManager}:
+     * this manager handles EEG data acquired by the headset
+     * Creates a new MBTEEGPacket instance when the raw buffer contains enough data
+     * @param event contains data transmitted by the publisher : here it contains the converted EEG data matrix, the status, the number of acquisition channels and the sampling rate
+     */
     @Subscribe
-    public void onEvent(final EEGDataIsReady event) {
+    public void onEvent(final EEGDataIsReady event) { //warning : do not remove this attribute (consider unsused by the IDE, but actually used)
         Log.i(TAG, "event EEGDataIsReady received" );
         this.runOnUiThread(new Runnable() {
             @Override
-            public void run() {
+            public void run() { //update textView on MainActivity UI
                 onNewPackets(new MBTEEGPacket(event.getMatrix(), null, event.getStatus(), System.currentTimeMillis()), event.getNbChannels(), event.getSampleRate(), event.getMatrix().get(0).size());
             }
         });

@@ -13,8 +13,6 @@ import core.oad.OADEvent;
 
 public interface MbtClientEvents {
 
-    //callback connection state change (mandatory)
-
     interface StateListener {
         /**
          * Callback indicating the current state of the bluetooth communication
@@ -22,8 +20,6 @@ public interface MbtClientEvents {
          */
         void onStateChanged(@NonNull final BtState newState);
     }
-
-    //callback eegacquisition (mandatory)
 
     @Keep
     interface EegListener {
@@ -39,13 +35,10 @@ public interface MbtClientEvents {
         void onNewPackets(final MBTEEGPacket mbteegPackets, final int nbChannels, final int nbSamples, final int sampleRate);
     }
 
-    //callback battery (optionnal)
     @Keep
     interface BatteryListener {
         void onBatteryChanged(final int level);
     }
-
-    //callback headset status/saturation&DC (optionnal)
 
     interface HeadsetStatusListener {
         /**
@@ -60,8 +53,6 @@ public interface MbtClientEvents {
          */
         void onNewDCOffsetMeasured(final int dcOffset);
     }
-
-    //callback communication event --> ? (optionnal)
 
     @Keep
     interface DeviceInfoListener {

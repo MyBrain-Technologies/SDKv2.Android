@@ -8,6 +8,11 @@ import core.eeg.MbtEEGManager;
 import core.recordingsession.MbtRecordingSessionManager;
 import core.serversync.MbtServerSyncManager;
 
+/**
+ * MbtManager is responsible for managing communication between all the package managers
+ *
+ * @author Sophie ZECRI on 29/05/2018
+ */
 public final class MbtManager {
 
     private static final String TAG = MbtManager.class.getName();
@@ -17,11 +22,11 @@ public final class MbtManager {
      */
     private Context mContext;
     /**
-     *     Contains the client callbacks that will allow fluid communication between SDK and client app.
+     *  The bluetooth manager will manage the communication between the headset and the application.
      */
     private MbtBluetoothManager mbtBluetoothManager;
     /**
-     * The eeg manager that will manage the EEG data coming from the @bluetoothManager. It is responsible for
+     * The eeg manager that will manage the EEG data coming from the {@link MbtBluetoothManager}. It is responsible for
      * managing buffers size, conversion from raw packets to eeg values (voltages).
      */
     private MbtEEGManager mbtEEGManager;
@@ -43,10 +48,6 @@ public final class MbtManager {
 
     public BtProtocol getBluetoothProtocol(){
         return mbtBluetoothManager.getBtProtocol();
-    }
-
-    public void setBluetoothProtocol(BtProtocol protocol){
-        mbtBluetoothManager.setBtProtocol(protocol);
     }
 
     public MbtBluetoothManager getMbtBluetoothManager() {

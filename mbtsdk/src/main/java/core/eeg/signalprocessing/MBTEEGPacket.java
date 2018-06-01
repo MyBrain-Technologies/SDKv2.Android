@@ -89,14 +89,27 @@ public final class MBTEEGPacket {
         return channelsData;
     }
 
+    /**
+     * Sets value to all the data from all channels
+     * @param channelsData the new value for the data from all channels
+     */
     @Keep
     public void setChannelsData(@NonNull ArrayList<ArrayList<Float>> channelsData) {
         this.channelsData = channelsData;
     }
 
     /**
-     * Get the qualities as an arrayList
-     * @return the qualities as an array
+     * Gets the status data
+     * @return the status data
+     */
+    @Nullable
+    public ArrayList<Float> getStatusData() {
+        return statusData;
+    }
+
+    /**
+     * Get the list of qualities
+     * @return the qualities
      */
     @Nullable
     @Keep
@@ -104,6 +117,10 @@ public final class MBTEEGPacket {
         return qualities;
     }
 
+    /**
+     * Sets a new value to the qualities list
+     * @return the qualities
+     */
     @Keep
     public void setQualities(@NonNull ArrayList<Float> qualities) {
         this.qualities = qualities;

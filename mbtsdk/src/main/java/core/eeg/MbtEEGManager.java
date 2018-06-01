@@ -6,9 +6,15 @@ import android.util.Log;
 
 import org.greenrobot.eventbus.Subscribe;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import core.MbtManager;
 import core.eeg.acquisition.MbtDataAcquisition;
+import core.eeg.signalprocessing.MBTCalibrationParameters;
+import core.eeg.signalprocessing.MBTComputeRelaxIndex;
+import core.eeg.signalprocessing.MBTComputeStatistics;
+import core.eeg.signalprocessing.MBTEEGPacket;
+import core.eeg.signalprocessing.MBTSignalQualityChecker;
 import core.eeg.storage.MbtDataConversion;
 import core.eeg.storage.MbtDataBuffering;
 import eventbus.EventBusManager;
@@ -43,7 +49,7 @@ public final class MbtEEGManager {
     private final static int BLE_RAW_DATA_NB_CHANNEL = 2;
     private final static int BLE_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES = BLE_RAW_DATA_SAMPLE_SIZE * BLE_RAW_DATA_NB_CHANNEL;
     private final static int BLE_NB_STATUS_BYTES = 0;
-    private final static int BLE_NB_BYTES = 2;
+    private final static int BLE_NB_BYTES = MbtFeatures.DEFAULT_MELOMIND_NB_BYTES;
     private final static int BLE_RAW_DATA_PACKET_SIZE = DEFAULT_SAMPLE_PER_PACKET*BLE_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES + BLE_NB_STATUS_BYTES; //4 samples per packet 2 channels 2bytes data
     private final static int BLE_RAW_DATA_BUFFER_SIZE = BLE_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES * 250;
 
@@ -52,7 +58,7 @@ public final class MbtEEGManager {
     private final static int SPP_RAW_DATA_NB_CHANNELS = 9;
     private final static int SPP_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES = SPP_RAW_DATA_SAMPLE_SIZE * SPP_RAW_DATA_NB_CHANNELS;
     private final static int SPP_NB_STATUS_BYTES = 3;
-    private final static int SPP_NB_BYTES = 3;
+    private final static int SPP_NB_BYTES = MbtFeatures.DEFAULT_VPRO_NB_BYTES;
     private final static int SPP_RAW_DATA_PACKET_SIZE = DEFAULT_SAMPLE_PER_PACKET*SPP_RAW_DATA_NB_CHANNELS*SPP_NB_STATUS_BYTES; //4 samples per packet 9 channels 3bytes data
     private final static int SPP_RAW_DATA_BUFFER_SIZE = 6750;
 
@@ -102,13 +108,14 @@ public final class MbtEEGManager {
     }
 
     /**
-     * Creates the eeg data output from a simple raw data array
+     * Converts the EEG raw data array into a user-readable EEG matrix
      * 0xFFFF values are computed a NaN values
      * @param rawData the raw EEG data array acquired by the headset and transmitted by Bluetooth to the application
-     * This method is called by handleRawData method
+     * This method is called by {@link core.eeg.acquisition.MbtDataAcquisition}.prepareAndConvertToEEG method
+     * @return the converted EEG data matrix that contains readable values for any user
      */
-    public void launchConversionToEEG(byte[] rawData){
-        eegResult = MbtDataConversion.launchConversionToEEG(rawData, MbtFeatures.getBluetoothProtocol());
+    public ArrayList<ArrayList<Float>> launchConversionToEEG(byte[] rawData){
+        return eegResult = MbtDataConversion.convertRawDataToEEG(rawData, MbtFeatures.getBluetoothProtocol());
     }
 
     /**
@@ -174,6 +181,79 @@ public final class MbtEEGManager {
         eventBusManager.postEvent(new EEGDataIsReady(eegResult, status, sampleRate, nbChannels));
     }
 
+    /**
+     * Initializes the main quality checker object in the JNI which will live throughout all session.
+     * Should be destroyed at the end of the session
+     */
+    public String initQualityChecker() {
+        return MBTSignalQualityChecker.initQualityChecker();
+    }
+
+    /**
+     * Destroy the main quality checker object in the JNI at the end of the session.
+     */
+    public void deinitQualityChecker() {
+        MBTSignalQualityChecker.deinitQualityChecker();
+    }
+
+    /**
+     * Computes the result of the previously done session
+     * @param bestChannel the best quality channel index
+     * @param sampRate the number of value(s) inside each channel
+     * @param packetLength how long is a packet (time x samprate)
+     * @param packets the EEG packets containing EEG data, theirs status and qualities.
+     * @return the result of the previously done session
+     * @exception IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
+     */
+    public HashMap<String, Float> computeStatistics(final int bestChannel, final int sampRate, final int packetLength, final MBTEEGPacket... packets){
+        return MBTComputeStatistics.computeStatistics(bestChannel, sampRate, packetLength, packets);
+    }
+
+
+    /**
+     * Computes the result of the previously done session
+     * @param threshold the level above which the relaxation indexes are considered in a relaxed state (under this threshold, they are considered not relaxed)
+     * @param snrValues the array that contains the relaxation indexes of the session
+     * @return the qualities for each provided channels
+     * @exception IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
+     */
+    public HashMap<String, Float> computeStatisticsSNR(final float threshold, final Float[] snrValues){
+        return MBTComputeStatistics.computeStatisticsSNR(threshold, snrValues);
+    }
+
+
+
+    /**
+     * Computes the quality for each provided channels
+     * @param sampRate the number of value(s) inside each channel
+     * @param packetLength how long is a packet (time x samprate)
+     * @param channels the channel(s) to be computed
+     * @return the qualities for each provided channels
+     * @exception IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
+     */
+    public float[] computeEEGSignalQuality(int sampRate, int packetLength, Float[] channels){
+        return MBTSignalQualityChecker.computeQualitiesForPacketNew(sampRate,packetLength,channels);
+    }
+
+    /**
+     * Computes the relaxation index using the provided <code>MBTEEGPacket</code>.
+     * For now, we admit there are only 2 channels for each packet
+     * @param sampRate the samprate of a channel (must be consistent)
+     * @param calibParams the calibration paramters previously performed
+     * the EEG packets containing EEG data, theirs status and qualities.
+     * @return the relaxation index
+     * @exception IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
+     */
+    public float computeRelaxIndex(int sampRate, MBTCalibrationParameters calibParams, MBTEEGPacket... packets){
+        return MBTComputeRelaxIndex.computeRelaxIndex(sampRate,calibParams,packets);
+    }
+
+    /**
+     * Resets the relaxation index.
+     */
+    public void reinitRelaxIndexVariables(){
+        MBTComputeRelaxIndex.reinitRelaxIndexVariables();
+    }
     /**
      * Get the pending EEG raw data buffer
      * @return an array containing the pending EEG raw data

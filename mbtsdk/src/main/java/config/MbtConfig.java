@@ -6,7 +6,11 @@ public final class MbtConfig {
 
     public static ScannableDevices scannableDevices = ScannableDevices.ALL;
 
-    public static int eegPacketLength = 250;
+    private static int eegPacketLength = 250;
+
+    public static int sampleRate = 250;
+
+    private static int samplePerNotification = 4;
 
     private static boolean batteryEventsLogsEnabled;
 
@@ -25,8 +29,6 @@ public final class MbtConfig {
     private static int bluetoothPairingTimeout;
 
     private static String serverURL;
-
-    private static Byte[] EEGConfiguration;
 
 
     public static boolean isBatteryEventsLogsEnabled() {
@@ -70,15 +72,25 @@ public final class MbtConfig {
         return serverURL;
     }
 
-    /*public static Byte[] getEEGConfiguration() {
-        return EEGConfiguration;
-    }*/
+    public static int getSampleRate() {
+        return sampleRate;
+    }
+
+    public static int getSamplePerNotification() {
+        return samplePerNotification;
+    }
 
     public static ScannableDevices getScannableDevices() {
         return scannableDevices;
     }
 
     public static class MbtConfigBuilder {
+
+        private int eegPacketLength;
+
+        private int sampleRate;
+
+        private int samplePerNotification;
 
         private boolean batteryEventsLogsEnabled;
 
@@ -98,7 +110,20 @@ public final class MbtConfig {
 
         private String serverURL;
 
-        private Byte[] EEGConfiguration;
+        public MbtConfigBuilder setEegPacketLength(final int eegPacketLength) {
+            this.eegPacketLength = eegPacketLength;
+            return this;
+        }
+
+        public MbtConfigBuilder setSampleRate(final int sampleRate) {
+            this.sampleRate = sampleRate;
+            return this;
+        }
+
+        public MbtConfigBuilder setSamplePerNotification(final int samplePerNotification) {
+            this.samplePerNotification = samplePerNotification;
+            return this;
+        }
 
         public MbtConfigBuilder setBatteryEventsLogsEnabled(final boolean batteryEventsLogsEnabled) {
             this.batteryEventsLogsEnabled = batteryEventsLogsEnabled;
@@ -145,17 +170,15 @@ public final class MbtConfig {
             return this;
         }
 
-        public MbtConfigBuilder setEEGConfiguration(final Byte[] EEGConfiguration) {
-            this.EEGConfiguration = EEGConfiguration;
-            return this;
-        }
-
         public MbtConfig create() {
             return new MbtConfig(this);
         }
     }
 
     private MbtConfig(final MbtConfigBuilder builder) {
+        eegPacketLength = builder.eegPacketLength;
+        sampleRate = builder.sampleRate;
+        samplePerNotification = builder.samplePerNotification;
         batteryEventsLogsEnabled = builder.batteryEventsLogsEnabled;
         batteryReadPeriod = builder.batteryReadPeriod;
         offlineModeEnabled = builder.offlineModeEnabled;
@@ -165,7 +188,6 @@ public final class MbtConfig {
         bluetoothScanTimeout = builder.bluetoothScanTimeout;
         bluetoothPairingTimeout = builder.bluetoothPairingTimeout;
         serverURL = builder.serverURL;
-        EEGConfiguration = builder.EEGConfiguration;
     }
 
     public static void setScannableDevices(ScannableDevices scannableDevices) {

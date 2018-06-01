@@ -39,13 +39,13 @@ public class MbtDataConversion {
     private static final float INCORRECT_VALUE_SPP = 0x00FFFFFF;
 
     /**
-     * Creates the eeg data output from a simple raw data array and call convertDataSPP or convertDataBLE to convert raw EEG
+     * Converts the EEG raw data array into a user-readable EEG matrix
      * @param rawData the raw EEG data array acquired by the headset and transmitted by Bluetooth to the application
      * @param protocol the bluetooth protocol used to acquire data from the headset : Low Energy or Serial Port Profile.
      * @return the eeg data as float lists, with NaN values for missing data
      * @throws IllegalArgumentException if the number of components of the raw EEG data array is not modulo 250
      */
-    public static ArrayList<ArrayList<Float>> launchConversionToEEG(@NonNull byte[] rawData, BtProtocol protocol) {
+    public static ArrayList<ArrayList<Float>> convertRawDataToEEG(@NonNull byte[] rawData, BtProtocol protocol) {
         Log.i(TAG, "converting EEG raw data to user-readable EEG values");
 
         int nbChannels = MbtFeatures.getNbChannels();
@@ -68,33 +68,19 @@ public class MbtDataConversion {
                 if (protocol.equals(BLUETOOTH_SPP) && (j == 0)) { //Here is status parsing, which can be directly updated to matrix
                     eegData.get(j).add((float) (rawData[rawDataIndex + 2] & 1));
                 } else { //Here are data from sensors, whom need to be transformed to float
-                    eegData = convertRawDataToEEG(rawData, eegData, rawDataIndex, j, protocol);
-                }
+                    int temp = (rawData[rawDataIndex] & 0xFF) << ((protocol.equals(BLUETOOTH_LE)) ? SHIFT_BLE : SHIFT_SPP) | (rawData[rawDataIndex + 1] & 0xFF) << ((protocol.equals(BLUETOOTH_LE)) ? (SHIFT_BLE - 8) : (8 | (rawData[rawDataIndex + 2] & 0xFF)));
+                    if (temp == ((protocol.equals(BLUETOOTH_LE)) ? INCORRECT_VALUE_BLE : INCORRECT_VALUE_SPP)) {  //if value is incorrect ...
+                        eegData.get(j).add(Float.NaN); //... fill the EEG data matrix with a NaN value for graphs
+                    } else { //if value is correct ...
+                        temp = ((temp & ((protocol.equals(BLUETOOTH_LE)) ? CHECK_SIGN_BLE : CHECK_SIGN_SPP)) > 0) ?  // checking the sign
+                                (temp | ((protocol.equals(BLUETOOTH_LE)) ? NEGATIVE_MASK_BLE : NEGATIVE_MASK_SPP )) : // value is negative
+                                (temp & ((protocol.equals(BLUETOOTH_LE)) ? POSITIVE_MASK_BLE : POSITIVE_MASK_SPP)); // value is positive
+                        eegData.get(j).add(temp * ((protocol.equals(BLUETOOTH_LE)) ? VOLTAGE_BLE : VOLTAGE_SPP)); //fill the EEG data matrix with the converted EEG data
+                    }                }
                 rawDataIndex += nbBytesData;
             }
         }
         return eegData;
     }
 
-    /**
-     * Converts a single raw data to a readable EEG value and fills the EEG data matrix with this newly converted value
-     * @param rawData the raw EEG data array acquired by the headset and transmitted by Bluetooth to the application
-     * @param eegData the converted user-readable EEG data matrix
-     * @param currentRawDataIndex the index of the EEG data scanned from the EEG raw data array acquired by the headset
-     * @param currentEEGDataIndex the index of converted EEG data matrix for filling the matrix
-     * @param protocol the bluetooth protocol used to acquire data from the headset : Low Energy or Serial Port Profile.
-     * @return the eeg data as float lists, with NaN values for missing data
-     */
-    private static ArrayList<ArrayList<Float>> convertRawDataToEEG(byte[] rawData, ArrayList<ArrayList<Float>> eegData, int currentRawDataIndex, int currentEEGDataIndex, BtProtocol protocol) {
-        int temp = (rawData[currentRawDataIndex] & 0xFF) << ((protocol.equals(BLUETOOTH_LE)) ? SHIFT_BLE : SHIFT_SPP) | (rawData[currentRawDataIndex + 1] & 0xFF) << ((protocol.equals(BLUETOOTH_LE)) ? (SHIFT_BLE - 8) : (8 | (rawData[currentRawDataIndex + 2] & 0xFF)));
-        if (temp == ((protocol.equals(BLUETOOTH_LE)) ? INCORRECT_VALUE_BLE : INCORRECT_VALUE_SPP)) {  //if value is incorrect ...
-            eegData.get(currentEEGDataIndex).add(Float.NaN); //... fill the EEG data matrix with a NaN value for graphs
-        } else { //if value is correct ...
-            temp = ((temp & ((protocol.equals(BLUETOOTH_LE)) ? CHECK_SIGN_BLE : CHECK_SIGN_SPP)) > 0) ?  // checking the sign
-                    (temp | ((protocol.equals(BLUETOOTH_LE)) ? NEGATIVE_MASK_BLE : NEGATIVE_MASK_SPP )) : // value is negative
-                    (temp & ((protocol.equals(BLUETOOTH_LE)) ? POSITIVE_MASK_BLE : POSITIVE_MASK_SPP)); // value is positive
-            eegData.get(currentEEGDataIndex).add(temp * ((protocol.equals(BLUETOOTH_LE)) ? VOLTAGE_BLE : VOLTAGE_SPP)); //fill the EEG data matrix with the converted EEG data
-        }
-        return eegData;
-    }
 }

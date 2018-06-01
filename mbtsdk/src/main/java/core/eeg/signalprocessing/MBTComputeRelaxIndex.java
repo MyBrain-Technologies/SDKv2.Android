@@ -16,8 +16,8 @@ public final class MBTComputeRelaxIndex {
      * Computes the relaxation index using the provided <code>MBTEEGPacket</code>.
      * For now, we admit there are only 2 channels for each packet
      * @param samprate the samprate of a channel (must be consistent)
-     *      @param calibParams the calibration paramters previously performed
-     * @param packets the packets to be use for the relax index computing
+     * @param calibParams the calibration paramters previously performed
+     * @param packets the EEG packets containing EEG data, theirs status and qualities.
      * @return the relaxation index
      * @exception IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
      */

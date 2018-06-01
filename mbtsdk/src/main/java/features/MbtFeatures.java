@@ -23,8 +23,8 @@ public final class MbtFeatures{
 
     public static final int DEVICE_NAME_MAX_LENGTH = 10;
 
-    public final static int SAMPLE_RATE = 250;
-    public final static int SAMPLE_PER_NOTIF = 4;
+    public final static int DEFAULT_SAMPLE_RATE = 250;
+    public final static int DEFAULT_SAMPLE_PER_NOTIF = 4;
 
     public final static int DEFAULT_EEG_PACKET_LENGTH = 250;
 
@@ -33,6 +33,9 @@ public final class MbtFeatures{
 
     public final static int MELOMIND_STATUS_SIZE = 0;
     public final static int VPRO_STATUS_SIZE = 3;
+
+    public final static int DEFAULT_MELOMIND_NB_BYTES = 2;
+    public final static int DEFAULT_VPRO_NB_BYTES = 3;
 
     private final static long DEFAULT_BATTERY_READ_PERIOD = 20000;
 
@@ -172,7 +175,22 @@ public final class MbtFeatures{
     }
 
     public static int getSampleRate() {
-        return SAMPLE_RATE;
+        return DEFAULT_SAMPLE_RATE;
     }
 
+    public static int getNbBytes() {
+        int nbBytes = 0;
+        switch (MbtConfig.getScannableDevices()) {
+            case MELOMIND:
+                nbBytes=DEFAULT_MELOMIND_NB_BYTES;
+                break;
+            case VPRO:
+                nbBytes=DEFAULT_VPRO_NB_BYTES;
+                break;
+            case ALL:
+                nbBytes=DEFAULT_VPRO_NB_BYTES;
+                break;
+        }
+        return nbBytes;
+    }
 }
