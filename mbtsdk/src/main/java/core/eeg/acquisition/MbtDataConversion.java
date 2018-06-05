@@ -6,12 +6,10 @@ import android.util.Log;
 import java.util.ArrayList;
 
 import core.bluetooth.BtProtocol;
-import features.MbtFeatures;
-
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
 import static core.bluetooth.BtProtocol.BLUETOOTH_SPP;
-import static core.eeg.MbtEEGManager.getBleNbBytes;
-import static core.eeg.MbtEEGManager.getSppNbBytes;
+import static features.MbtFeatures.getNbBytes;
+import static features.MbtFeatures.getNbChannels;
 import static features.MbtFeatures.getSampleRate;
 
 /**
@@ -48,12 +46,10 @@ public class MbtDataConversion {
     public static ArrayList<ArrayList<Float>> convertRawDataToEEG(@NonNull byte[] rawData, BtProtocol protocol) {
         Log.i(TAG, "converting EEG raw data to user-readable EEG values");
 
-        int nbChannels = MbtFeatures.getNbChannels();
-        int nbBytesData = (protocol.equals(BLUETOOTH_LE)) ? getBleNbBytes() : getSppNbBytes(); //equals 2 for BLE and equals 3 for SPP
-        int totalNbBytesDataAllChannels = nbBytesData * nbChannels; //nbChannels equals 2 for Meloming Headset and 8 for VPRO headset
+        int totalNbBytesDataAllChannels = getNbBytes() * getNbChannels(); //nbChannels equals 2 for Meloming Headset and 9 for VPRO headset
 
-        ArrayList<ArrayList<Float>> eegData = new ArrayList<>(nbChannels);
-        for(int i = 0; i < nbChannels ; i++){
+        ArrayList<ArrayList<Float>> eegData = new ArrayList<>(getNbChannels());
+        for(int i = 0; i < getNbChannels() ; i++){
             eegData.add(new ArrayList<Float>()); //init EEG data matrix with empty lists of Float
         }
 
@@ -61,7 +57,7 @@ public class MbtDataConversion {
             throw new IllegalArgumentException("Data size is invalid");
 
         int rawDataIndex = 0;
-        int max = (protocol.equals(BLUETOOTH_LE)) ? nbChannels : (rawData.length / totalNbBytesDataAllChannels) / totalNbBytesDataAllChannels;
+        int max = (protocol.equals(BLUETOOTH_LE)) ? getNbChannels() : (rawData.length / totalNbBytesDataAllChannels) / totalNbBytesDataAllChannels;
 
         for (int i = 0; i < rawData.length / totalNbBytesDataAllChannels; i++) {
             for (int j = 0; j < max; j++) {
@@ -77,7 +73,7 @@ public class MbtDataConversion {
                                 (temp & ((protocol.equals(BLUETOOTH_LE)) ? POSITIVE_MASK_BLE : POSITIVE_MASK_SPP)); // value is positive
                         eegData.get(j).add(temp * ((protocol.equals(BLUETOOTH_LE)) ? VOLTAGE_BLE : VOLTAGE_SPP)); //fill the EEG data matrix with the converted EEG data
                     }                }
-                rawDataIndex += nbBytesData;
+                rawDataIndex += getNbChannels();
             }
         }
         return eegData;

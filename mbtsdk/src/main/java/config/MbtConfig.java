@@ -12,6 +12,14 @@ public final class MbtConfig {
 
     private static int samplePerNotification = 4;
 
+    /**
+     * The size of the temporary buffer where the MbtEEGPackets are stored.
+     * When this buffer is full, a notification is sent to the UI/Activity
+     * so that the user can do what he wants with this new packets
+     * (for example plot the values on a chart).
+     */
+    private static int eegBufferLengthNotification;
+
     private static boolean batteryEventsLogsEnabled;
 
     private static int batteryReadPeriod;
@@ -30,6 +38,9 @@ public final class MbtConfig {
 
     private static String serverURL;
 
+    public static int getEegBufferLengthNotification() {
+        return eegBufferLengthNotification;
+    }
 
     public static boolean isBatteryEventsLogsEnabled() {
         return batteryEventsLogsEnabled;
@@ -38,7 +49,6 @@ public final class MbtConfig {
     public static int getBatteryReadPeriod() {
         return batteryReadPeriod;
     }
-
 
     public static boolean isOfflineModeEnabled() {
         return offlineModeEnabled;
@@ -92,6 +102,8 @@ public final class MbtConfig {
 
         private int samplePerNotification;
 
+        private int eegBufferLengthNotification;
+
         private boolean batteryEventsLogsEnabled;
 
         private int batteryReadPeriod;
@@ -124,6 +136,13 @@ public final class MbtConfig {
             this.samplePerNotification = samplePerNotification;
             return this;
         }
+
+
+        public MbtConfigBuilder setEegBufferLengthNotification(final int eegBufferLengthNotification) {
+            this.eegBufferLengthNotification = eegBufferLengthNotification;
+            return this;
+        }
+
 
         public MbtConfigBuilder setBatteryEventsLogsEnabled(final boolean batteryEventsLogsEnabled) {
             this.batteryEventsLogsEnabled = batteryEventsLogsEnabled;
@@ -179,6 +198,7 @@ public final class MbtConfig {
         eegPacketLength = builder.eegPacketLength;
         sampleRate = builder.sampleRate;
         samplePerNotification = builder.samplePerNotification;
+        eegBufferLengthNotification = builder.eegBufferLengthNotification;
         batteryEventsLogsEnabled = builder.batteryEventsLogsEnabled;
         batteryReadPeriod = builder.batteryReadPeriod;
         offlineModeEnabled = builder.offlineModeEnabled;

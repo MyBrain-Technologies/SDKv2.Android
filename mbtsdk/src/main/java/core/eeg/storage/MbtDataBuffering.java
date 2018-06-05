@@ -1,18 +1,23 @@
 package core.eeg.storage;
 
+import android.support.v4.app.NavUtils;
 import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import config.MbtConfig;
 import core.eeg.MbtEEGManager;
 import core.eeg.acquisition.MbtDataConversion;
 
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
+import static features.MbtFeatures.getNbStatusBytes;
+import static features.MbtFeatures.getRawDataBufferSize;
+import static features.MbtFeatures.getRawDataPacketSize;
 
 /**
  * MbtDataBuffering is responsible for storing and managing EEG raw data acquired in temporary buffers.
- * Notifies {@link MbtDataConversion} when buffers are full, so that it can convert stored EEG raw data into user-readable data.
+ * Notifies {@link MbtDataConversion} when the raw EEG data buffer is full, so that it can convert stored EEG raw data into user-readable data.
  *
  * @author Sophie ZECRI on 10/04/2018
  * @version 25/05/2018
@@ -23,12 +28,14 @@ public class MbtDataBuffering {
 
     // EEG Data & Values
     private byte[] pendingRawData; // fixed-size buffer containing eeg data
-    private byte[] oveflowBytes; // buffer containing overflowing eeg data (is used if pending data buffer is full)
+    private byte[] overflowBytes; // buffer containing overflowing eeg data (is used if pending data buffer is full)
     private byte[] lostPacketInterpolator; // Data size + compression byte + 2 packet length bytes
     private ArrayList<Float> statusData;
 
     private boolean hasOverflow;
     private MbtEEGManager eegManager;
+
+    private ArrayList<MBTEEGPacket> mbtEegPacketsBuffer;
 
     public MbtDataBuffering(MbtEEGManager eegManagerController) {
 
@@ -36,12 +43,12 @@ public class MbtDataBuffering {
         hasOverflow = false;
 
         int lostPacketInterpolatorSize = eegManager.getMbtManager().getBluetoothProtocol().equals(BLUETOOTH_LE)? 2 + getRawDataPacketSize(): 138;
-        int overflowBytesSize = eegManager.getMbtManager().getBluetoothProtocol().equals(BLUETOOTH_LE)? getRawDataPacketSize() : getRawDataPacketSize()/2;
 
-        oveflowBytes = new byte[overflowBytesSize];
-        pendingRawData = new byte[eegManager.getRawDataBufferSize()];
+        overflowBytes = new byte[getRawDataPacketSize()];
+        pendingRawData = new byte[getRawDataBufferSize()];
         lostPacketInterpolator = new byte[lostPacketInterpolatorSize];
         Arrays.fill(lostPacketInterpolator, (byte) 0xFF);
+        mbtEegPacketsBuffer = new ArrayList<>();
     }
 
     /**
@@ -69,14 +76,14 @@ public class MbtDataBuffering {
     }
 
     /**
-     * Stores a part of the EEG raw data inside the oveflowBytes buffer in case packet size is too large for buffer
+     * Stores a part of the EEG raw data inside the overflowBytes buffer in case packet size is too large for buffer
      * As the overflowing data part is the part of the data source array that has not been stored in the pending data buffer,
      * the beginning position is [srcPos + rawDataBufferSize - bufPos] and the number of components stored is equal to rawDataPacketSize - length.
      * This part is stored in the part of the destination array that begins at the first position ([0]) and ends at the [rawDataPacketSize - length] position.
      * @param data the source raw EEG data array acquired by the headset and transmitted by Bluetooth to the application
      * @param srcPos is the beginning position of the source EEG data array from where the first part of the data has been stored into the pending data buffer.
      * @param bufPos is the beginning position of the destination array (the pending buffer) within the first part of the data has been stored
-     * @param length is the number of components from the source array to store into the oveflowBytes buffer
+     * @param length is the number of components from the source array to store into the overflowBytes buffer
      * @throws IllegalArgumentException is raised if the source EEG data array is null or is empty
      * @throws IndexOutOfBoundsException is raised if the number of elements to store is bigger than the size of the source array or bigger than the size of the destination array
      */
@@ -89,10 +96,27 @@ public class MbtDataBuffering {
                 || getRawDataPacketSize() - length > getRawDataBufferSize())
                 throw new IndexOutOfBoundsException("array index exception !");
 
-        System.arraycopy(data, srcPos + getRawDataBufferSize() - bufPos, oveflowBytes, 0, getRawDataPacketSize() - length);
+        System.arraycopy(data, srcPos + getRawDataBufferSize() - bufPos, overflowBytes, 0, getRawDataPacketSize() - length);
         hasOverflow = true;
         Log.i(TAG, "Overflowing data stored in overflow buffer:" + Arrays.toString(Arrays.copyOfRange(data,srcPos + getRawDataBufferSize() - bufPos,getRawDataPacketSize() - length+srcPos + getRawDataBufferSize() - bufPos)));
     }
+
+    /**
+     * Stores the newly created EEG packet in the Packets buffer
+     * We wait to have a full packet buffer to send these EEG values to the UI.
+     * @return true if the packet buffer is full (contains a number of data equals to eegBufferLengthNotification), false otherwise.
+     */
+    public ArrayList<MBTEEGPacket> storeEegPacketInPacketBuffer(final ArrayList<ArrayList<Float>> consolidatedEEG, ArrayList<Float> status) {
+        ArrayList<MBTEEGPacket> fullBuffer = null;
+
+        if(mbtEegPacketsBuffer.size() == MbtConfig.getEegBufferLengthNotification()){ //if the packet buffer is full, we notify the UI via the MbtManager
+            fullBuffer = mbtEegPacketsBuffer;
+            mbtEegPacketsBuffer.clear(); //reset the packet buffer
+        }
+        mbtEegPacketsBuffer.add(new MBTEEGPacket(consolidatedEEG, null, status, System.currentTimeMillis())); //the data is stored in the buffer
+        return fullBuffer;
+    }
+
 
     /**
      * Stores the overflow buffer in the pending buffer to handle overflow data after the pending data has been handled
@@ -100,14 +124,14 @@ public class MbtDataBuffering {
      */
     public void storeOverflowDataInPendingBuffer(final int length) {
 
-        if (oveflowBytes == null || oveflowBytes.length == 0 || length == 0)
+        if (overflowBytes == null || overflowBytes.length == 0 || length == 0)
             throw new IllegalArgumentException("there MUST be at least ONE or MORE eeg data !");
-        if (getRawDataPacketSize() - (getRawDataBufferSize()) > oveflowBytes.length  // if beginning position + length > array length, access to array[beginning position + length] will throw index out of bounds exception
+        if (getRawDataPacketSize() - (getRawDataBufferSize()) > overflowBytes.length  // if beginning position + length > array length, access to array[beginning position + length] will throw index out of bounds exception
                 || getRawDataPacketSize() - (getRawDataBufferSize()) > getRawDataBufferSize())
             throw new IndexOutOfBoundsException("array index exception !");
 
-        System.arraycopy(oveflowBytes, 0, pendingRawData, 0, length);
-        Log.i(TAG, "Overflowing data stored in pending data buffer:" + Arrays.toString(oveflowBytes));
+        System.arraycopy(overflowBytes, 0, pendingRawData, 0, length);
+        Log.i(TAG, "Overflowing data stored in pending data buffer:" + Arrays.toString(overflowBytes));
 
     }
 
@@ -119,12 +143,10 @@ public class MbtDataBuffering {
      */
     public void reconfigureBuffers(final int sampleRate, byte samplePerNotif, final int nbStatusByte){ // statusByteNb parameter should be the internal config value
 
-        eegManager.setNbStatusBytes(nbStatusByte); //init NB_STATUS_BYTES (BLE default value is 0 et SPP default value is 3)
-        eegManager.setRawDataPacketSize(getRawDataBytesPerWholeChannelsSamples() * samplePerNotif);
         lostPacketInterpolator = new byte[2 + getRawDataPacketSize()]; //init the lost packet buffer
         Arrays.fill(lostPacketInterpolator, (byte) 0xFF);
         pendingRawData = new byte[getRawDataBufferSize()]; //init the buffer that we will use for handle/convert EEG raw data
-        oveflowBytes = new byte[getRawDataPacketSize()]; //init the overflow buffer (buffer that will be used to store overflow data, while the data from pending buffer conversion is in progress)
+        overflowBytes = new byte[getRawDataPacketSize()]; //init the overflow buffer (buffer that will be used to store overflow data, while the data from pending buffer conversion is in progress)
         statusData = (getNbStatusBytes() > 0)? statusData = new ArrayList<>(sampleRate) : null;
     }
 
@@ -137,7 +159,7 @@ public class MbtDataBuffering {
 
         Log.i(TAG, "handling Overflowing Data");
         pendingRawData = new byte[getRawDataBufferSize()]; //TODO check if really mandatory
-        int length = getRawDataPacketSize() /2;
+        int length = overflowBytes.length;
         storeOverflowDataInPendingBuffer(length);
         hasOverflow = false; //reset overflow state
         return length; //return the buffer position
@@ -155,16 +177,24 @@ public class MbtDataBuffering {
      * Gets the overflowBytes array
      * @return the overflow EEG data buffer
      */
-    public byte[] getOveflowBytes() {
-        return oveflowBytes;
+    public byte[] getOverflowBytes() {
+        return overflowBytes;
     }
 
     /**
-     * Sets a new array to the oveflowBytes array
-     * @param oveflowBytes is the new value for oveflowBytes
+     * Gets the EEG packets buffer that contains the converted user-readable EEG data
+     * @return the EEG packets buffer
      */
-    public void setOveflowBytes(byte[] oveflowBytes) {
-        this.oveflowBytes = oveflowBytes;
+    public ArrayList<MBTEEGPacket> getMbtEegPacketsBuffer() {
+        return mbtEegPacketsBuffer;
+    }
+
+    /**
+     * Sets a new array to the overflowBytes array
+     * @param overflowBytes is the new value for overflowBytes
+     */
+    public void setOverflowBytes(byte[] overflowBytes) {
+        this.overflowBytes = overflowBytes;
     }
 
     /**
@@ -204,37 +234,5 @@ public class MbtDataBuffering {
      */
     public ArrayList<Float> getStatusData() {
         return statusData;
-    }
-
-    /**
-     * Gets the number of bytes corresponding to one EEG data
-     * @return the number of bytes corresponding to one EEG data
-     */
-    private int getNbStatusBytes(){
-        return eegManager.getNbStatusBytes();
-    }
-
-    /**
-     * Gets the raw data buffer size
-     * @return the raw data buffer size
-     */
-    private int getRawDataBufferSize(){
-        return eegManager.getRawDataBufferSize();
-    }
-
-    /**
-     * Gets the raw data packet size
-     * @return the raw data packet size
-     */
-    private int getRawDataPacketSize(){
-        return eegManager.getRawDataPacketSize();
-    }
-
-    /**
-     * Gets the number of bytes of a EEG raw data per whole channels samples
-     * @return the number of bytes of a EEG raw data per whole channels samples
-     */
-    private int getRawDataBytesPerWholeChannelsSamples(){
-        return eegManager.getRawDataBytesPerWholeChannelsSamples();
     }
 }

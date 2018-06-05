@@ -331,11 +331,4 @@ public final class MbtBluetoothManager {
         }
     }*/
 
-    /**
-     * Unregister the MbtBluetoothManager class from the bus to avoid memory leak
-     */
-    /*public void deinit(){
-        eventBusManager.registerOrUnregister(false,this);
-    }*/
-
 }

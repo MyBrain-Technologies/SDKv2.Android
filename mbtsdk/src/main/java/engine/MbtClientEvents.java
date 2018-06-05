@@ -3,6 +3,8 @@ package engine;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 
+import java.util.ArrayList;
+
 import core.bluetooth.BtState;
 import core.eeg.storage.MBTEEGPacket;
 import core.oad.OADEvent;
@@ -32,8 +34,7 @@ public interface MbtClientEvents {
          * @param nbSamples //TODO remove this input
          * @param sampleRate //TODO might be unnecessary
          */
-        //void onNewSamples(final ArrayList<ArrayList<Float>> matrix, @Nullable final ArrayList<Float> status, final int nbChannels, final int nbSamples, final int sampleRate);
-        void onNewPackets(final MBTEEGPacket mbteegPackets, final int nbChannels, final int nbSamples, final int sampleRate);
+        void onNewPackets(final ArrayList<MBTEEGPacket> mbteegPackets, final int nbChannels, final int nbSamples, final int sampleRate);
         void onError(/*TODO error cause*/);
     }
 

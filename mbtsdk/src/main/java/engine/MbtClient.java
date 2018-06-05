@@ -36,15 +36,15 @@ public final class MbtClient {
     /**
      *     Contains the client callbacks that will allow fluid communication between SDK and client app.
      */
-    private MbtClientEvents mEvents;
+    //private MbtClientEvents mEvents;
     //Listeners declarations
-    /*private MbtClientEvents.EegListener eegMelomindListener = null;
-    private MbtClientEvents.BatteryListener batteryMelomindListener = null;
-    private MbtClientEvents.StateListener bleStateMelomindListener = null;
+    private MbtClientEvents.EegListener eegListener = null;
+    private MbtClientEvents.BatteryListener batteryListener = null;
+    private MbtClientEvents.StateListener bleStateListener = null;
     private MbtClientEvents.DeviceInfoListener deviceInfoListener = null;
     private MbtClientEvents.OADEventListener oadEventListener = null;
     private MbtClientEvents.MailboxEventListener mailboxEventListener = null;
-    private MbtClientEvents.HeadsetStatusListener headsetStatusListener = null;*/
+    private MbtClientEvents.HeadsetStatusListener headsetStatusListener = null;
 
     /**
      * The MbtManager is responsible for managing all the package managers
@@ -54,14 +54,14 @@ public final class MbtClient {
     /**
      * Initializes the MbtClient instance
      * @param context the context of the single, global Application object of the current process.
-     * @param mbtClientEvents object that contains callbacks for client events
+     * @param eegListener callbacks for EEG client events
      * @return the initialized MbtClient instance to the application
      */
-    public static MbtClient init(@NonNull Context context, @NonNull MbtClientEvents mbtClientEvents){
+    public static MbtClient init(@NonNull Context context, @NonNull MbtClientEvents.EegListener eegListener){
         return new MbtClientBuilder()
                 .setContext(context)
                 .setMbtManager(new MbtManager(context))
-                .setEvents(mbtClientEvents)
+                .setEvents(eegListener)
                 .create();
     }
 
@@ -71,7 +71,7 @@ public final class MbtClient {
      */
     private MbtClient(MbtClientBuilder builder){
         this.mContext = builder.mContext;
-        this.mEvents = builder.mEvents;
+        this.eegListener = builder.eegListener;
         mbtManager = builder.mbtManager;
     }
 
@@ -243,8 +243,16 @@ public final class MbtClient {
      * Gets the callbacks for client events
      * @return object that contains the callbacks for client events
      */
-    public MbtClientEvents getmEvents() {
+    /*public MbtClientEvents getmEvents() {
         return mEvents;
+    }*/
+
+    /**
+     * Gets the EEG callbacks for a EEG client events
+     * @return the callbacks for a EEG client events
+     */
+    public MbtClientEvents.EegListener getEegListener() {
+        return eegListener;
     }
 
     /**
@@ -258,7 +266,7 @@ public final class MbtClient {
 
     public static class MbtClientBuilder {
         private Context mContext;
-        private MbtClientEvents mEvents;
+        private MbtClientEvents.EegListener eegListener;
         private MbtManager mbtManager;
 
         public MbtClientBuilder setContext(final Context context){
@@ -266,8 +274,8 @@ public final class MbtClient {
             return this;
         }
 
-        public MbtClientBuilder setEvents(final MbtClientEvents events){
-            this.mEvents = events;
+        public MbtClientBuilder setEvents(final MbtClientEvents.EegListener eegListener){
+            this.eegListener = eegListener;
             return this;
         }
 

@@ -2,12 +2,14 @@ package core.eeg;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import org.greenrobot.eventbus.Subscribe;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import config.MbtConfig;
 import core.MbtManager;
 import core.eeg.acquisition.MbtDataAcquisition;
 import core.eeg.signalprocessing.MBTCalibrationParameters;
@@ -20,10 +22,11 @@ import core.eeg.storage.MbtDataBuffering;
 import eventbus.EventBusManager;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.BluetoothEEGEvent;
-import features.MbtFeatures;
+import utils.AsyncUtils;
 
-import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
-import static core.bluetooth.BtProtocol.BLUETOOTH_SPP;
+import static config.MbtConfig.sampleRate;
+import static features.MbtFeatures.getBluetoothProtocol;
+import static features.MbtFeatures.getNbChannels;
 
 
 /**
@@ -33,6 +36,7 @@ import static core.bluetooth.BtProtocol.BLUETOOTH_SPP;
  * to be stored by {@link core.eeg.storage.MbtDataBuffering} in temporary buffers.
  * EEG data acquisition still continue until the buffers are full.
  * Then, raw data are converted into user-readable EEG values by {@link MbtDataConversion}.
+ * Finally, a notification is sent to {@link core.MbtManager} when the converted EEG data buffer is full, so that the client can have access to the user-readable EEG data
  *
  * @author Etienne on 08/02/2018.
  * @version Sophie ZECRI 25/05/2018
@@ -42,39 +46,12 @@ public final class MbtEEGManager {
 
     private static final String TAG = MbtEEGManager.class.getName();
 
-    private static int DEFAULT_SAMPLE_PER_PACKET = 4;
-
-    private final static int BLE_RAW_DATA_INDEX_SIZE = 2;
-    private final static int BLE_RAW_DATA_SAMPLE_SIZE = 2;
-    private final static int BLE_RAW_DATA_NB_CHANNEL = 2;
-    private final static int BLE_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES = BLE_RAW_DATA_SAMPLE_SIZE * BLE_RAW_DATA_NB_CHANNEL;
-    private final static int BLE_NB_STATUS_BYTES = 0;
-    private final static int BLE_NB_BYTES = MbtFeatures.DEFAULT_MELOMIND_NB_BYTES;
-    private final static int BLE_RAW_DATA_PACKET_SIZE = DEFAULT_SAMPLE_PER_PACKET*BLE_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES + BLE_NB_STATUS_BYTES; //4 samples per packet 2 channels 2bytes data
-    private final static int BLE_RAW_DATA_BUFFER_SIZE = BLE_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES * 250;
-
-    private final static int SPP_RAW_DATA_INDEX_SIZE = 3;
-    private final static int SPP_RAW_DATA_SAMPLE_SIZE = 3;
-    private final static int SPP_RAW_DATA_NB_CHANNELS = 9;
-    private final static int SPP_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES = SPP_RAW_DATA_SAMPLE_SIZE * SPP_RAW_DATA_NB_CHANNELS;
-    private final static int SPP_NB_STATUS_BYTES = 3;
-    private final static int SPP_NB_BYTES = MbtFeatures.DEFAULT_VPRO_NB_BYTES;
-    private final static int SPP_RAW_DATA_PACKET_SIZE = DEFAULT_SAMPLE_PER_PACKET*SPP_RAW_DATA_NB_CHANNELS*SPP_NB_STATUS_BYTES; //4 samples per packet 9 channels 3bytes data
-    private final static int SPP_RAW_DATA_BUFFER_SIZE = 6750;
-
-    private int RAW_DATA_INDEX_SIZE;
-    private int RAW_DATA_SAMPLE_SIZE;
-    private int RAW_DATA_NB_CHANNEL;
-    private int RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES;
-    private int NB_STATUS_BYTES;
-    private int RAW_DATA_PACKET_SIZE;
-    private int RAW_DATA_BUFFER_SIZE;
-
     private Context mContext;
 
     private MbtDataAcquisition dataAcquisition;
     private MbtDataBuffering mbtDataBuffering;
-    private ArrayList<ArrayList<Float>> eegResult;
+    ArrayList<ArrayList<Float>> consolidatedEEG;
+
 
     private EventBusManager eventBusManager; // EventBus : MbtEEGManager is the subscriber for MbtDataAcquisition that will be notified for converting raw data
 
@@ -84,25 +61,8 @@ public final class MbtEEGManager {
 
         this.mContext = context;
         this.mbtManager = mbtManagerController;
-        this.eventBusManager = new EventBusManager(this); // registers MbtEEGManager as a subscriber for receiving events from MbtBluetooth via the Event Bus
-        if (MbtFeatures.getBluetoothProtocol().equals(BLUETOOTH_LE)){
-            RAW_DATA_INDEX_SIZE = BLE_RAW_DATA_INDEX_SIZE;
-            RAW_DATA_SAMPLE_SIZE = BLE_RAW_DATA_SAMPLE_SIZE;
-            RAW_DATA_NB_CHANNEL = BLE_RAW_DATA_NB_CHANNEL;
-            RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES =BLE_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES;
-            NB_STATUS_BYTES = BLE_NB_STATUS_BYTES;
-            RAW_DATA_PACKET_SIZE = BLE_RAW_DATA_PACKET_SIZE;
-            RAW_DATA_BUFFER_SIZE = BLE_RAW_DATA_BUFFER_SIZE;
-        }else if(MbtFeatures.getBluetoothProtocol().equals(BLUETOOTH_SPP)){
-            RAW_DATA_INDEX_SIZE = SPP_RAW_DATA_INDEX_SIZE;
-            RAW_DATA_SAMPLE_SIZE = SPP_RAW_DATA_SAMPLE_SIZE;
-            RAW_DATA_NB_CHANNEL = SPP_RAW_DATA_NB_CHANNELS;
-            RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES =SPP_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES;
-            NB_STATUS_BYTES = SPP_NB_STATUS_BYTES;
-            RAW_DATA_PACKET_SIZE = SPP_RAW_DATA_PACKET_SIZE;
-            RAW_DATA_BUFFER_SIZE = SPP_RAW_DATA_BUFFER_SIZE;
-        }
-
+        this.eventBusManager = new EventBusManager();
+        this.eventBusManager.registerOrUnregister(true,this);// registers MbtEEGManager as a subscriber for receiving events from MbtBluetooth via the Event Bus
         this.dataAcquisition = new MbtDataAcquisition(this);
         this.mbtDataBuffering = new MbtDataBuffering(this);
     }
@@ -115,7 +75,7 @@ public final class MbtEEGManager {
      * @return the converted EEG data matrix that contains readable values for any user
      */
     public ArrayList<ArrayList<Float>> launchConversionToEEG(byte[] rawData){
-        return eegResult = MbtDataConversion.convertRawDataToEEG(rawData, MbtFeatures.getBluetoothProtocol());
+        return consolidatedEEG = MbtDataConversion.convertRawDataToEEG(rawData, getBluetoothProtocol());
     }
 
     /**
@@ -171,14 +131,45 @@ public final class MbtEEGManager {
     }
 
     /**
+     * Convert the raw EEG data array into a readable EEG data matrix of float values
+     * and notify that EEG data is ready to the User Interface
+     * @param toDecodeBytes the EEG raw data array to convert
+     * @param toDecodeStatus the status data corresponding to the EEG data array
+     */
+    public void convertToEEG(@NonNull final byte[] toDecodeBytes, @Nullable final ArrayList<Float> toDecodeStatus){
+        AsyncUtils.executeAsync(new Runnable() {
+            @Override
+            public void run() {
+                Log.i(TAG, "computing and sending to application");
+
+                consolidatedEEG = MbtDataConversion.convertRawDataToEEG(toDecodeBytes, getBluetoothProtocol()); //convert byte table data to Float matrix and store the matrix in MbtEEGManager as eegResult attribute
+
+                ArrayList<Float> status = new ArrayList<>();
+                switch(getBluetoothProtocol()){
+                    case BLUETOOTH_LE:
+                        status = toDecodeStatus;
+                        break;
+                    case BLUETOOTH_SPP:
+                        status = consolidatedEEG.get(0); //the first list of the matrix is the status
+                        consolidatedEEG.remove(0); //remove the first element of the EEG matrix
+                        break;
+                }
+                ArrayList<MBTEEGPacket> mbteegPacketsBuffer = mbtDataBuffering.storeEegPacketInPacketBuffer(consolidatedEEG, status);// if the packet buffer is full, this method returns the non null packet buffer
+                if(mbteegPacketsBuffer != null) //returns null while the buffer managed in the MbtDataBuffering class is not full
+                    notifyEEGDataIsReady(mbteegPacketsBuffer, status, sampleRate, getNbChannels());//notify UI that eeg data are ready via callbacks called by the MbtManager
+            }
+        });
+    }
+
+    /**
      * Publishes a ClientReadyEEGEvent event to the Event Bus to notify the User Interface
      * @param status the status list
      * @param sampleRate the sample rate
      * @param nbChannels the number of EEG acquisition channels
      */
-    public void notifyEEGDataIsReady(ArrayList<Float> status, int sampleRate, int nbChannels) {
+    public void notifyEEGDataIsReady(ArrayList<MBTEEGPacket> mbteegPackets, ArrayList<Float> status, int sampleRate, int nbChannels) {
         Log.d(TAG, "notify EEG Data Is Ready ");
-        eventBusManager.postEvent(new ClientReadyEEGEvent(eegResult, status, sampleRate, nbChannels));
+        eventBusManager.postEvent(new ClientReadyEEGEvent(mbteegPackets, status, sampleRate, nbChannels));
     }
 
     /**
@@ -209,7 +200,6 @@ public final class MbtEEGManager {
         return MBTComputeStatistics.computeStatistics(bestChannel, sampRate, packetLength, packets);
     }
 
-
     /**
      * Computes the result of the previously done session
      * @param threshold the level above which the relaxation indexes are considered in a relaxed state (under this threshold, they are considered not relaxed)
@@ -220,8 +210,6 @@ public final class MbtEEGManager {
     public HashMap<String, Float> computeStatisticsSNR(final float threshold, final Float[] snrValues){
         return MBTComputeStatistics.computeStatisticsSNR(threshold, snrValues);
     }
-
-
 
     /**
      * Computes the quality for each provided channels
@@ -294,94 +282,6 @@ public final class MbtEEGManager {
     }
 
     /**
-     * Gets the raw data packet size
-     * @return the raw data packet size
-     */
-    public int getRawDataPacketSize() {
-        return RAW_DATA_PACKET_SIZE;
-    }
-
-    /**
-     * Sets a value to the raw data packet size
-     * @param rawDataPacketSize the raw data packet size
-     */
-    public void setRawDataPacketSize(int rawDataPacketSize) {
-        RAW_DATA_PACKET_SIZE = rawDataPacketSize;
-    }
-
-    /**
-     * Gets the raw data buffer size
-     * @return the raw data buffer size
-     */
-    public int getRawDataBufferSize() {
-        return RAW_DATA_BUFFER_SIZE;
-    }
-
-    /**
-     * Gets the raw data index size
-     * @return the raw data index size
-     */
-    public int getRawDataIndexSize() {
-        return RAW_DATA_INDEX_SIZE;
-    }
-
-    /**
-     * Gets the number of bytes of a EEG raw data per whole channels samples
-     * @return the number of bytes of a EEG raw data per whole channels samples
-     */
-    public int getRawDataBytesPerWholeChannelsSamples() {
-        return RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES;
-    }
-
-    /**
-     * Gets the number of bytes corresponding to one EEG data
-     * @return the number of bytes corresponding to one EEG data
-     */
-    public int getNbStatusBytes() {
-        return NB_STATUS_BYTES;
-    }
-
-    /**
-     * Gets the number of bytes for a EEG raw data in case the Bluetooth protocol used is Bluetooth Low Energy
-     * @return the number of bytes for a EEG raw data in case the Bluetooth protocol used is Bluetooth Low Energy
-     */
-    public static int getBleNbBytes() {
-        return BLE_NB_BYTES;
-    }
-
-    /**
-     * Gets the number of bytes for a EEG raw data in case the Bluetooth protocol used is Bluetooth Serial Port Profile
-     * @return the number of bytes for a EEG raw data in case the Bluetooth protocol used is Bluetooth Low Energy
-     */
-    public static int getSppNbBytes() {
-        return SPP_NB_BYTES;
-    }
-
-    /**
-     * Gets the number of samples per packet
-     * @return the number of samples per packet
-     */
-    public static int getSamplePerPacket() {
-        return DEFAULT_SAMPLE_PER_PACKET;
-    }
-
-    /**
-     * Sets a value to the number of bytes for status data
-     * @param nbStatusBytes the number of bytes for status data
-     */
-    public void setNbStatusBytes(int nbStatusBytes) {
-        NB_STATUS_BYTES = nbStatusBytes;
-    }
-
-    /**
-     * Sets a value to the number of samples per EEG data packet
-     * @param samplePerPacket the number of samples per EEG data packet
-     */
-    public void setSamplePerPacket(int samplePerPacket) {
-        DEFAULT_SAMPLE_PER_PACKET = samplePerPacket;
-    }
-
-    /**
      * Gets the MbtManager instance.
      * MbtManager is responsible for managing all the package managers
      * @return the MbtManager instance.
@@ -394,8 +294,8 @@ public final class MbtEEGManager {
      * Gets the user-readable EEG data matrix
      * @return the converted EEG data matrix that contains readable values for any user
      */
-    public ArrayList<ArrayList<Float>> getEegResult() {
-        return eegResult;
+    public ArrayList<ArrayList<Float>> getConsolidatedEEG() {
+        return consolidatedEEG;
     }
 
     /**

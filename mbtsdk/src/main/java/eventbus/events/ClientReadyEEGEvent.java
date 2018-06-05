@@ -4,6 +4,8 @@ import android.support.annotation.NonNull;
 
 import java.util.ArrayList;
 
+import core.eeg.storage.MBTEEGPacket;
+
 /**
  * Event posted when a raw EEG data array has been converted to user-readable EEG matrix
  * Event data contains the converted EEG data matrix
@@ -12,24 +14,20 @@ import java.util.ArrayList;
  */
 public class ClientReadyEEGEvent { //Events are just POJO without any specific implementation
 
-    private ArrayList<ArrayList<Float>> matrix;
+    private ArrayList<MBTEEGPacket> eegPackets;
     private ArrayList<Float> status;
-    private int sampleRate;
-    private int nbChannels;
 
-    public ClientReadyEEGEvent(@NonNull ArrayList<ArrayList<Float>> matrix, ArrayList<Float> status, int sampleRate, int nbChannels) {
-        this.matrix = matrix;
+    public ClientReadyEEGEvent(@NonNull ArrayList<MBTEEGPacket> eegPackets, ArrayList<Float> status) {
+        this.eegPackets = eegPackets;
         this.status = status;
-        this.sampleRate = sampleRate;
-        this.nbChannels = nbChannels;
     }
 
     /**
      * Gets the user-readable EEG data matrix
      * @return the user-readable EEG data matrix
      */
-    public ArrayList<ArrayList<Float>> getMatrix() {
-        return matrix;
+    public ArrayList<MBTEEGPacket> getEegPackets() {
+        return eegPackets;
     }
 
     /**
@@ -40,19 +38,4 @@ public class ClientReadyEEGEvent { //Events are just POJO without any specific i
         return status;
     }
 
-    /**
-     * Gets the sample rate
-     * @return the sample rate
-     */
-    public int getSampleRate() {
-        return sampleRate;
-    }
-
-    /**
-     * Gets the number of channels used for EEG acquisition
-     * @return the number of channels used for EEG acquisition
-     */
-    public int getNbChannels() {
-        return nbChannels;
-    }
 }
