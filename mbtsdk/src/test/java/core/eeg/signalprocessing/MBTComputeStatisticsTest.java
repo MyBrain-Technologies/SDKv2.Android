@@ -1,10 +1,11 @@
 package core.eeg.signalprocessing;
 
 import org.junit.Test;
-import org.mockito.internal.matchers.Null;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+
+import core.eeg.storage.MBTEEGPacket;
 
 import static org.junit.Assert.*;
 

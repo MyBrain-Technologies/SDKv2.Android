@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import core.eeg.MbtEEGManager;
+import core.eeg.acquisition.MbtDataConversion;
 
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
 
@@ -21,13 +22,13 @@ public class MbtDataBuffering {
     private static final String TAG = MbtDataBuffering.class.getName();
 
     // EEG Data & Values
-    private static byte[] pendingRawData; // fixed-size buffer containing eeg data
-    private static byte[] oveflowBytes; // buffer containing overflowing eeg data (is used if pending data buffer is full)
-    private static byte[] lostPacketInterpolator; // Data size + compression byte + 2 packet length bytes
-    private static ArrayList<Float> statusData;
+    private byte[] pendingRawData; // fixed-size buffer containing eeg data
+    private byte[] oveflowBytes; // buffer containing overflowing eeg data (is used if pending data buffer is full)
+    private byte[] lostPacketInterpolator; // Data size + compression byte + 2 packet length bytes
+    private ArrayList<Float> statusData;
 
-    private static boolean hasOverflow;
-    private static MbtEEGManager eegManager;
+    private boolean hasOverflow;
+    private MbtEEGManager eegManager;
 
     public MbtDataBuffering(MbtEEGManager eegManagerController) {
 
@@ -106,7 +107,6 @@ public class MbtDataBuffering {
             throw new IndexOutOfBoundsException("array index exception !");
 
         System.arraycopy(oveflowBytes, 0, pendingRawData, 0, length);
-        hasOverflow = false;
         Log.i(TAG, "Overflowing data stored in pending data buffer:" + Arrays.toString(oveflowBytes));
 
     }
@@ -136,7 +136,7 @@ public class MbtDataBuffering {
     public int handleOverflowDataBuffer(){
 
         Log.i(TAG, "handling Overflowing Data");
-        pendingRawData = new byte[getRawDataBufferSize()];
+        pendingRawData = new byte[getRawDataBufferSize()]; //TODO check if really mandatory
         int length = getRawDataPacketSize() /2;
         storeOverflowDataInPendingBuffer(length);
         hasOverflow = false; //reset overflow state
@@ -147,7 +147,7 @@ public class MbtDataBuffering {
      * Gets the pendingRawData array
      * @return the pending EEG raw data buffer
      */
-    public static byte[] getPendingRawData() {
+    public byte[] getPendingRawData() {
         return pendingRawData;
     }
 
@@ -155,7 +155,7 @@ public class MbtDataBuffering {
      * Gets the overflowBytes array
      * @return the overflow EEG data buffer
      */
-    public static byte[] getOveflowBytes() {
+    public byte[] getOveflowBytes() {
         return oveflowBytes;
     }
 
@@ -163,8 +163,8 @@ public class MbtDataBuffering {
      * Sets a new array to the oveflowBytes array
      * @param oveflowBytes is the new value for oveflowBytes
      */
-    public static void setOveflowBytes(byte[] oveflowBytes) {
-        MbtDataBuffering.oveflowBytes = oveflowBytes;
+    public void setOveflowBytes(byte[] oveflowBytes) {
+        this.oveflowBytes = oveflowBytes;
     }
 
     /**
@@ -172,7 +172,7 @@ public class MbtDataBuffering {
      * It contains only 0XFF values
      * @return the lost EEG raw data packet buffer
      */
-    public static byte[] getLostPacketInterpolator() {
+    public byte[] getLostPacketInterpolator() {
         return lostPacketInterpolator;
     }
 
@@ -194,15 +194,15 @@ public class MbtDataBuffering {
      * Set false if the pending data buffer size is lower than its total capacity
      * @param hasOverflow the boolean value of the overflow state
      */
-    public static void setOverflow(boolean hasOverflow) {
-        MbtDataBuffering.hasOverflow = hasOverflow;
+    public void setOverflow(boolean hasOverflow) {
+        this.hasOverflow = hasOverflow;
     }
 
     /**
      * Get the statusData list
      * @return the status corresponding to the EEG data array
      */
-    public static ArrayList<Float> getStatusData() {
+    public ArrayList<Float> getStatusData() {
         return statusData;
     }
 

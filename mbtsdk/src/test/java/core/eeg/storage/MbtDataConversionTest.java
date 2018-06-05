@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import static org.junit.Assert.*;
 import core.bluetooth.BtProtocol;
+import core.eeg.acquisition.MbtDataConversion;
 
 public class MbtDataConversionTest {
 

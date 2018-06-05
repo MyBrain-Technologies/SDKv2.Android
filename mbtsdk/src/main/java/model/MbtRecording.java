@@ -7,7 +7,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import core.eeg.signalprocessing.MBTEEGPacket;
+import core.eeg.storage.MBTEEGPacket;
 
 
 /**

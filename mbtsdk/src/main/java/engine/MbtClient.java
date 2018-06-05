@@ -11,7 +11,7 @@ import core.MbtManager;
 import core.bluetooth.MbtBluetoothManager;
 import core.eeg.MbtEEGManager;
 import core.eeg.signalprocessing.MBTCalibrationParameters;
-import core.eeg.signalprocessing.MBTEEGPacket;
+import core.eeg.storage.MBTEEGPacket;
 import core.recordingsession.MbtRecordingSessionManager;
 import core.serversync.MbtServerSyncManager;
 import features.MbtFeatures;
@@ -104,7 +104,7 @@ public final class MbtClient {
     public void stopReadBattery(){
     }
 
-    public void startstream(boolean useQualities, final MbtClientEvents clientEvents){
+    public void startstream(boolean useQualities, final MbtClientEvents.EegListener clientEvents){
 
     }
 

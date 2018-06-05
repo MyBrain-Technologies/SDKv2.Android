@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import core.eeg.signalprocessing.MBTEEGPacket;
+import core.eeg.storage.MBTEEGPacket;
 import features.MbtAcquisitionLocations;
 import model.Comment;
 import model.MbtDevice;

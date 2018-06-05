@@ -5,6 +5,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import core.eeg.storage.MBTEEGPacket;
 import mbtsdk.com.mybraintech.mbtsdk.BuildConfig;
 
 import static org.junit.Assert.*;

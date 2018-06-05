@@ -13,12 +13,12 @@ import core.eeg.acquisition.MbtDataAcquisition;
 import core.eeg.signalprocessing.MBTCalibrationParameters;
 import core.eeg.signalprocessing.MBTComputeRelaxIndex;
 import core.eeg.signalprocessing.MBTComputeStatistics;
-import core.eeg.signalprocessing.MBTEEGPacket;
+import core.eeg.storage.MBTEEGPacket;
 import core.eeg.signalprocessing.MBTSignalQualityChecker;
-import core.eeg.storage.MbtDataConversion;
+import core.eeg.acquisition.MbtDataConversion;
 import core.eeg.storage.MbtDataBuffering;
 import eventbus.EventBusManager;
-import eventbus.events.EEGDataIsReady;
+import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.BluetoothEEGEvent;
 import features.MbtFeatures;
 
@@ -171,14 +171,14 @@ public final class MbtEEGManager {
     }
 
     /**
-     * Publishes a EEGDataIsReady event to the Event Bus to notify the User Interface
+     * Publishes a ClientReadyEEGEvent event to the Event Bus to notify the User Interface
      * @param status the status list
      * @param sampleRate the sample rate
      * @param nbChannels the number of EEG acquisition channels
      */
     public void notifyEEGDataIsReady(ArrayList<Float> status, int sampleRate, int nbChannels) {
         Log.d(TAG, "notify EEG Data Is Ready ");
-        eventBusManager.postEvent(new EEGDataIsReady(eegResult, status, sampleRate, nbChannels));
+        eventBusManager.postEvent(new ClientReadyEEGEvent(eegResult, status, sampleRate, nbChannels));
     }
 
     /**
@@ -259,7 +259,7 @@ public final class MbtEEGManager {
      * @return an array containing the pending EEG raw data
      */
     public byte[] getPendingRawData() {
-        return MbtDataBuffering.getPendingRawData();
+        return mbtDataBuffering.getPendingRawData();
     }
 
     /**
@@ -268,7 +268,7 @@ public final class MbtEEGManager {
      * @return the lost EEG raw data packet buffer
      */
     public byte[] getLostPacketInterpolator(){
-        return MbtDataBuffering.getLostPacketInterpolator();
+        return mbtDataBuffering.getLostPacketInterpolator();
     }
 
     /**
@@ -290,7 +290,7 @@ public final class MbtEEGManager {
      * @param hasOverflow the boolean value of the overflow state
      */
     public void setOverflow(boolean hasOverflow){
-        MbtDataBuffering.setOverflow(hasOverflow);
+        mbtDataBuffering.setOverflow(hasOverflow);
     }
 
     /**

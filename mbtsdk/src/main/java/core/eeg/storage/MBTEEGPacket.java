@@ -1,4 +1,4 @@
-package core.eeg.signalprocessing;
+package core.eeg.storage;
 
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;

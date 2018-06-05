@@ -72,7 +72,7 @@ public final class MbtBluetoothManager {
 
         this.mbtManager = mbtManagerController;
         this.deviceAcquisition = new MbtDeviceAcquisition();
-        this.eventBusManager = new EventBusManager();// register MbtBluetoothManager as a subscriber for receiving event such as EEGDataIsReady event (called after EEG raw data has been converted)
+        this.eventBusManager = new EventBusManager();// register MbtBluetoothManager as a subscriber for receiving event such as ClientReadyEEGEvent event (called after EEG raw data has been converted)
 
     }
 
@@ -313,11 +313,11 @@ public final class MbtBluetoothManager {
     }
 
     /**
-     * onEvent is called when the event bus receive a EEGDataIsReady event posted by MbtDataAcquisition in handleDataAcquired method
-     * @param event EEGDataIsReady is posted when the EEG data is ready (raw EGG data has been converted to Float matrix)
+     * onEvent is called when the event bus receive a ClientReadyEEGEvent event posted by MbtDataAcquisition in handleDataAcquired method
+     * @param event ClientReadyEEGEvent is posted when the EEG data is ready (raw EGG data has been converted to Float matrix)
      */
     /*@Subscribe
-    public void onEvent(EEGDataIsReady event) {
+    public void onEvent(ClientReadyEEGEvent event) {
         switch (this.btProtocol){
             case BLUETOOTH_LE:
                 this.mbtBluetoothLE.EEGDataIsReadyReceived(event);

@@ -1,4 +1,4 @@
-package core.eeg.storage;
+package core.eeg.acquisition;
 
 import android.support.annotation.NonNull;
 import android.util.Log;
