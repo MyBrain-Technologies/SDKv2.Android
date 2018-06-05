@@ -4,9 +4,9 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 
-import static org.junit.Assert.*;
+import core.eeg.storage.MBTEEGPacket;
+
 import static org.mockito.Mockito.mock;
 
 public class MBTComputeRelaxIndexTest {

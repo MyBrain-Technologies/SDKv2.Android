@@ -10,14 +10,14 @@ import java.util.ArrayList;
  *
  * @author Sophie Zecri on 24/05/2018
  */
-public class EEGDataIsReady { //Events are just POJO without any specific implementation
+public class ClientReadyEEGEvent { //Events are just POJO without any specific implementation
 
     private ArrayList<ArrayList<Float>> matrix;
     private ArrayList<Float> status;
     private int sampleRate;
     private int nbChannels;
 
-    public EEGDataIsReady(@NonNull ArrayList<ArrayList<Float>> matrix, ArrayList<Float> status, int sampleRate, int nbChannels) {
+    public ClientReadyEEGEvent(@NonNull ArrayList<ArrayList<Float>> matrix, ArrayList<Float> status, int sampleRate, int nbChannels) {
         this.matrix = matrix;
         this.status = status;
         this.sampleRate = sampleRate;

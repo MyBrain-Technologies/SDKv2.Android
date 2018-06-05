@@ -6,6 +6,8 @@ import org.apache.commons.lang.ArrayUtils;
 
 import java.util.HashMap;
 
+import core.eeg.storage.MBTEEGPacket;
+
 /**
  * MBTComputeStatistics contains methods for computing statistics
  *

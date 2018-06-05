@@ -4,7 +4,7 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 
 import core.bluetooth.BtState;
-import core.eeg.signalprocessing.MBTEEGPacket;
+import core.eeg.storage.MBTEEGPacket;
 import core.oad.OADEvent;
 
 /**
@@ -26,6 +26,7 @@ public interface MbtClientEvents {
         /**
          * Callback triggered when the input eeg buffer is full, ie when raw buffer contains enough data to compute a new MBTEEGPacket.
          * This event is triggered from the MbtDataAcquisition class when (bufPos >= BLE_RAW_DATA_BUFFER_SIZE)
+         * Warning, this callb is in worker thread. you need to call runOnUiThread to change views if necessary
          * @param mbteegPackets the eeg data (Channels, EEG values)
          * @param nbChannels the number of EEG acquisition channels
          * @param nbSamples //TODO remove this input
@@ -33,6 +34,7 @@ public interface MbtClientEvents {
          */
         //void onNewSamples(final ArrayList<ArrayList<Float>> matrix, @Nullable final ArrayList<Float> status, final int nbChannels, final int nbSamples, final int sampleRate);
         void onNewPackets(final MBTEEGPacket mbteegPackets, final int nbChannels, final int nbSamples, final int sampleRate);
+        void onError(/*TODO error cause*/);
     }
 
     @Keep

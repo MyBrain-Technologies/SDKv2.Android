@@ -5,8 +5,7 @@ import android.support.annotation.NonNull;
 
 import java.util.ArrayList;
 
-import config.MbtConfig;
-import core.eeg.signalprocessing.MBTEEGPacket;
+import core.eeg.storage.MBTEEGPacket;
 import features.MbtFeatures;
 import model.Comment;
 import model.MbtRecording;

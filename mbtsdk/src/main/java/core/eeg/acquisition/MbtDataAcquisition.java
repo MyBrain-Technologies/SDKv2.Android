@@ -1,6 +1,7 @@
 package core.eeg.acquisition;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import java.util.ArrayList;
@@ -27,17 +28,17 @@ public class MbtDataAcquisition {
 
     private final String TAG = MbtDataAcquisition.class.getName();
 
-    private static int startingIndex = -1;
-    private static int previousIndex = -1;
+    private int startingIndex = -1;
+    private int previousIndex = -1;
 
-    private static int rawDataPosition = 0;
-    private static int bufferPosition = 0;
+    private int rawDataPosition = 0;
+    private int bufferPosition = 0;
 
     private final int sampleRate;
 
     private MbtEEGManager eegManager;
 
-    private static ArrayList<Float> statusData;
+    private ArrayList<Float> statusData;
 
     public MbtDataAcquisition(MbtEEGManager eegManagerController) {
 
@@ -68,7 +69,7 @@ public class MbtDataAcquisition {
         for (int i = 0; i < indexDifference; i++) {
             handleConsecutiveOrNonConsecutiveFrame(data, (byte) (indexDifference - i - 1) == 0); //if received frames are consecutive we store the eeg data in a pending buffer, if received frames are not consecutive, we store the eeg data in a lost packet buffer
             bufferPosition += getRawDataPacketSize();
-            if (bufferPosition >= getRawDataBufferSize())  //the input eeg buffer is full ...
+            if (hasOverflow())  //the input eeg buffer is full ...
                 handleFullPendingData(); // ... conversion to user-readable EEG values can be launched
         }
         previousIndex = currentIndex;
@@ -127,19 +128,35 @@ public class MbtDataAcquisition {
      * This array is used to know exactly which packets have been lost during the acquisition
      * This way, a 0XFF value in the pending data buffer can be consider as a lost EEG data packet
      */
-    private void storeEEGDataLostPacket() {
-        Log.i(TAG, "storing lost EEG data");
-        eegManager.storePendingDataInBuffer(getLostPacketInterpolator(),0, bufferPosition, ((bufferPosition +getRawDataPacketSize())>getRawDataBufferSize()) ? getRawDataBufferSize()-bufferPosition : getRawDataPacketSize());
-    }
+//    private void storeEEGDataLostPacket() {
+//        Log.i(TAG, "storing lost EEG data");
+//    }
+
+//    /**
+//     * Stores EEG raw data received from Bluetooth Device in the pending buffer.
+//     * In case packet size is too large for buffer, the overflowing EEG data is stored in an overflow buffer
+//     * @param data the raw EEG data array acquired by the headset and transmitted by Bluetooth to the application
+//     */
+//    private void storeEEGDataInBuffers(final byte[] data){
+//        Log.i(TAG, "storing EEG data In Buffers");
+//
+//        int pendingBufferLength = getRawDataPacketSize();//if we have no overflow, the pending buffer has the same size as the buffer
+//        //In case packet size is too large for buffer, we only take first part in pending buffer. Second part is stored in overflow buffer for future use
+//        if (bufferPosition + getRawDataPacketSize() > getRawDataBufferSize()) { // check that the maximum size is not reached if we can add a packet to the buffer
+//            setOverflow(true); //notify the eeg manager that the buffer is full
+//            pendingBufferLength = getRawDataBufferSize() - bufferPosition;
+//            eegManager.storeOverflowDataInBuffer(data, rawDataPosition, bufferPosition, pendingBufferLength);//we store the overflowing part in the overflow buffer
+//        }
+//        eegManager.storePendingDataInBuffer(data, rawDataPosition, bufferPosition, pendingBufferLength); //we store the pending buffer in both case (overflow or no overflow)
+//    }
 
     /**
      * Stores EEG raw data received from Bluetooth Device in the pending buffer.
      * In case packet size is too large for buffer, the overflowing EEG data is stored in an overflow buffer
      * @param data the raw EEG data array acquired by the headset and transmitted by Bluetooth to the application
      */
-    private void storeEEGDataInBuffers(final byte[] data){
+    private void storeEEGDataInBuffers(@Nullable final byte[] data){
         Log.i(TAG, "storing EEG data In Buffers");
-
         int pendingBufferLength = getRawDataPacketSize();//if we have no overflow, the pending buffer has the same size as the buffer
         //In case packet size is too large for buffer, we only take first part in pending buffer. Second part is stored in overflow buffer for future use
         if (bufferPosition + getRawDataPacketSize() > getRawDataBufferSize()) { // check that the maximum size is not reached if we can add a packet to the buffer
@@ -147,8 +164,14 @@ public class MbtDataAcquisition {
             pendingBufferLength = getRawDataBufferSize() - bufferPosition;
             eegManager.storeOverflowDataInBuffer(data, rawDataPosition, bufferPosition, pendingBufferLength);//we store the overflowing part in the overflow buffer
         }
-        eegManager.storePendingDataInBuffer(data, rawDataPosition, bufferPosition, pendingBufferLength); //we store the pending buffer in both case (overflow or no overflow)
+
+        if(data == null){
+            eegManager.storePendingDataInBuffer(getLostPacketInterpolator(),0, bufferPosition, pendingBufferLength);
+        }else{
+            eegManager.storePendingDataInBuffer(data, rawDataPosition, bufferPosition, pendingBufferLength); //we store the pending buffer in both case (overflow or no overflow)
+        }
     }
+
 
     /**
      * Handles the pending data buffer when this buffer is full of EEG data :
@@ -161,7 +184,7 @@ public class MbtDataAcquisition {
         final ArrayList<Float> toDecodeStatus = generateToDecodeStatus();
         final byte[] toDecodeBytes = getPendingRawData().clone(); //the pending raw data is stored in toDecodeBytes to be converted in readable EEG values
         bufferPosition = (hasOverflow())? eegManager.handleOverflowDataBuffer() : 0; //handleOverflowBuffer return rawDataPacketSize/2
-        prepareAndConvertToEEG(toDecodeBytes, toDecodeStatus);
+        convertToEEG(toDecodeBytes, toDecodeStatus);
     }
 
     /**
@@ -174,10 +197,7 @@ public class MbtDataAcquisition {
      */
     private void handleConsecutiveOrNonConsecutiveFrame(final byte[] data, boolean isConsecutive) {
         generateStatusData(isConsecutive, data);
-        if ((isConsecutive))
-            storeEEGDataInBuffers(data);
-         else
-            storeEEGDataLostPacket();
+        storeEEGDataInBuffers(isConsecutive ? data : null);
     }
 
     /**
@@ -213,13 +233,13 @@ public class MbtDataAcquisition {
      * @param toDecodeBytes the EEG raw data array to convert
      * @param toDecodeStatus the status data corresponding to the EEG data array
      */
-    private void prepareAndConvertToEEG(final byte[] toDecodeBytes, final ArrayList<Float> toDecodeStatus ){
+    private void convertToEEG(@NonNull final byte[] toDecodeBytes, @Nullable final ArrayList<Float> toDecodeStatus ){
         AsyncUtils.executeAsync(new Runnable() {
             @Override
             public void run() {
                 Log.i(TAG, "computing and sending to application");
 
-                eegManager.launchConversionToEEG(toDecodeBytes); //convert byte table data to Float matrix and store the matrix in MbtEEGManager as eegResult attribute
+                ArrayList<ArrayList<Float>> consolidatedEEG = MbtDataConversion.convertRawDataToEEG(toDecodeBytes, MbtFeatures.getBluetoothProtocol()); //convert byte table data to Float matrix and store the matrix in MbtEEGManager as eegResult attribute
 
                 ArrayList<Float> status = new ArrayList<>();
                 switch(getBluetoothProtocol()){
@@ -256,7 +276,7 @@ public class MbtDataAcquisition {
      * Get the starting index for scanning the raw EEG data array
      * @return the starting index
      */
-    public static int getStartingIndex() {
+    public int getStartingIndex() {
         return startingIndex;
     }
 
@@ -264,7 +284,7 @@ public class MbtDataAcquisition {
      * Get the previous index for scanning the raw EEG data array
      * @return the previous index
      */
-    public static int getPreviousIndex() {
+    public int getPreviousIndex() {
         return previousIndex;
     }
 
@@ -272,7 +292,7 @@ public class MbtDataAcquisition {
      * Get the starting position of the buffer array to store
      * @return the starting position of the buffer array to store
      */
-    public static int getbufferPosition() {
+    public int getbufferPosition() {
         return bufferPosition;
     }
 

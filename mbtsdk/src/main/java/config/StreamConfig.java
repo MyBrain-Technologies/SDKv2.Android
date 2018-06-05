@@ -1,7 +1,10 @@
-package core.bluetooth.lowenergy;
+package config;
 
 import android.support.annotation.IntRange;
 import android.support.annotation.Keep;
+
+import core.bluetooth.lowenergy.AmpGainConfig;
+import core.bluetooth.lowenergy.FilterConfig;
 
 @Keep
 public class StreamConfig {

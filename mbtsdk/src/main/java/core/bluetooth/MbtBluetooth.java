@@ -15,17 +15,14 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
 import config.MbtConfig;
-import core.eeg.signalprocessing.MBTEEGPacket;
 import core.oad.OADEvent;
 
 import core.recordingsession.metadata.DeviceInfo;
 import engine.MbtClientEvents;
-import eventbus.events.EEGDataIsReady;
 import features.MbtFeatures;
 import model.MbtDevice;
 import model.MelomindDevice;
@@ -261,16 +258,16 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
     }
 
     /**
-     * EEGDataIsReadyReceived is called when the event bus receive a EEGDataIsReady event posted by MbtDataAcquisition in handleDataAcquired method
-     * event EEGDataIsReady is posted when the EEG data is ready (raw EGG data has been converted to Float matrix)
+     * EEGDataIsReadyReceived is called when the event bus receive a ClientReadyEEGEvent event posted by MbtDataAcquisition in handleDataAcquired method
+     * event ClientReadyEEGEvent is posted when the EEG data is ready (raw EGG data has been converted to Float matrix)
      */
-    /*public void EEGDataIsReadyReceived(EEGDataIsReady event){
+    /*public void EEGDataIsReadyReceived(ClientReadyEEGEvent event){
         if (this.eegListener != null)
             this.eegListener.onNewPackets(new MBTEEGPacket(event.getMatrix(), null, event.getStatus(), System.currentTimeMillis()), event.getNbChannels(), event.getMatrix().get(0).size(), event.getSampleRate());
     }*/
 
     public void acquireData(@NonNull final byte[] data) {
-        mbtBluetoothManager.acquireData(data);
+        mbtBluetoothManager.handleDataAcquired(data);
     }
 
     public MbtBluetoothManager getMbtBluetoothManager() {

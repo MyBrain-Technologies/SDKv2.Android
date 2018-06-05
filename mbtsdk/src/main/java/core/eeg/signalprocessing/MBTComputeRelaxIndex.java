@@ -3,6 +3,8 @@ package core.eeg.signalprocessing;
 import java.util.HashMap;
 import java.util.Map;
 
+import core.eeg.storage.MBTEEGPacket;
+
 /**
  * MBTComputeRelaxIndex contains methods for computing Relaxation Indexes
  *

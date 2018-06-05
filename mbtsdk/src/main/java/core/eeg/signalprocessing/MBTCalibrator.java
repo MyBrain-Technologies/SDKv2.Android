@@ -4,6 +4,8 @@ import android.util.Log;
 
 import java.util.HashMap;
 
+import core.eeg.storage.MBTEEGPacket;
+
 /**
  * MBTCalibrator contains methods for calibrating new EEG packets
  *
