@@ -9,10 +9,7 @@ import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
-import org.greenrobot.eventbus.Subscribe;
-
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -24,7 +21,7 @@ import core.MbtManager;
 import core.bluetooth.lowenergy.MbtBluetoothLE;
 import core.bluetooth.acquisition.MbtDeviceAcquisition;
 import eventbus.EventBusManager;
-import eventbus.events.EEGDataAcquired;
+import eventbus.events.BluetoothEEGEvent;
 import features.MbtFeatures;
 import features.ScannableDevices;
 import utils.AsyncUtils;
@@ -308,11 +305,11 @@ public final class MbtBluetoothManager {
     }
 
     /**
-     * Posts a EEGDataAcquired event to the bus so that MbtEEGManager can handle raw EEG data received
+     * Posts a BluetoothEEGEvent event to the bus so that MbtEEGManager can handle raw EEG data received
      * @param data the raw EEG data array acquired by the headset and transmitted by Bluetooth to the application
      */
     public void handleDataAcquired(@NonNull final byte[] data){
-        eventBusManager.postEvent(new EEGDataAcquired(data)); //MbtEEGManager will convert data from raw packets to eeg values
+        eventBusManager.postEvent(new BluetoothEEGEvent(data)); //MbtEEGManager will convert data from raw packets to eeg values
     }
 
     /**

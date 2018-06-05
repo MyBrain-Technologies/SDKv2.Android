@@ -19,7 +19,7 @@ import core.eeg.storage.MbtDataConversion;
 import core.eeg.storage.MbtDataBuffering;
 import eventbus.EventBusManager;
 import eventbus.events.EEGDataIsReady;
-import eventbus.events.EEGDataAcquired;
+import eventbus.events.BluetoothEEGEvent;
 import features.MbtFeatures;
 
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
@@ -160,13 +160,13 @@ public final class MbtEEGManager {
 
     /**
      * Handles the raw EEG data acquired by the headset and transmitted to the application
-     * onEvent is called by the Event Bus when a EEGDataAcquired event is posted
+     * onEvent is called by the Event Bus when a BluetoothEEGEvent event is posted
      * This event is published by {@link core.bluetooth.MbtBluetoothManager}:
      * this manager handles Bluetooth communication between the headset and the application and receive raw EEG data from the headset.
      * @param event contains data transmitted by the publisher : here it contains the raw EEG data array
      */
     @Subscribe
-    public void onEvent(EEGDataAcquired event){ //warning : this method is used
+    public void onEvent(BluetoothEEGEvent event){ //warning : this method is used
         dataAcquisition.handleDataAcquired(event.getData());
     }
 

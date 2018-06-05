@@ -117,7 +117,7 @@ public final class MbtClient {
     }
 
     /**
-     * Posts a EEGDataAcquired event to the bus so that MbtEEGManager can handle raw EEG data received
+     * Posts a BluetoothEEGEvent event to the bus so that MbtEEGManager can handle raw EEG data received
      * @param data the raw EEG data array acquired by the headset and transmitted by Bluetooth to the application
      */
     public void handleDataAcquired(@NonNull final byte[] data){

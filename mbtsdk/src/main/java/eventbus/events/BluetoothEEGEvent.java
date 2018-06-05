@@ -8,11 +8,11 @@ import android.support.annotation.NonNull;
  *
  * @author Sophie Zecri on 29/05/2018
  */
-public class EEGDataAcquired {
+public class BluetoothEEGEvent {
 
     private byte[] data;
 
-    public EEGDataAcquired(@NonNull byte[] data) {
+    public BluetoothEEGEvent(@NonNull byte[] data) {
         this.data = data;
     }
 
