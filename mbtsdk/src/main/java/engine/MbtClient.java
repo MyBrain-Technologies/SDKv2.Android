@@ -91,41 +91,6 @@ public final class MbtClient {
         return false;
     }
 
-    /**
-     * Gets the MbtManager instance.
-     * MbtManager is responsible for managing all the package managers
-     * @return the MbtManager instance.
-     */
-    public MbtManager getMbtManager() {
-        return mbtManager;
-    }
-
-    public static class MbtClientBuilder {
-        private Context mContext;
-        private MbtClientEvents mEvents;
-        private MbtManager mbtManager;
-
-        public MbtClientBuilder setContext(final Context context){
-            this.mContext=context;
-            return this;
-        }
-
-        public MbtClientBuilder setEvents(final MbtClientEvents events){
-            this.mEvents = events;
-            return this;
-        }
-
-        public MbtClientBuilder setMbtManager(final MbtManager mbtManager){
-            this.mbtManager = mbtManager;
-            return this;
-        }
-
-        public MbtClient create(){
-            return new MbtClient(this);
-        }
-
-    }
-
 
     public static void configureHeadset(){
 
@@ -216,12 +181,12 @@ public final class MbtClient {
     /**
      * Computes the results of the previously done session
      * @param threshold the level above which the relaxation indexes are considered in a relaxed state (under this threshold, they are considered not relaxed)
-     * @param snrValues the array that contains the relaxation indexes of the session
+     * @param relaxIndexValues the array that contains the relaxation indexes of the session
      * @return the results of the previously done session
      * @exception IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
      */
-    public HashMap<String, Float> computeStatisticsSNR(final float threshold, final Float[] snrValues){
-        return getEEGManager().computeStatisticsSNR(threshold, snrValues);
+    public HashMap<String, Float> computeStatisticsSNR(final float threshold, final Float[] relaxIndexValues){
+        return getEEGManager().computeStatisticsSNR(threshold, relaxIndexValues);
     }
 
     /**
@@ -282,5 +247,37 @@ public final class MbtClient {
         return mEvents;
     }
 
+    /**
+     * Gets the MbtManager instance.
+     * MbtManager is responsible for managing all the package managers
+     * @return the MbtManager instance.
+     */
+    public MbtManager getMbtManager() {
+        return mbtManager;
+    }
 
+    public static class MbtClientBuilder {
+        private Context mContext;
+        private MbtClientEvents mEvents;
+        private MbtManager mbtManager;
+
+        public MbtClientBuilder setContext(final Context context){
+            this.mContext=context;
+            return this;
+        }
+
+        public MbtClientBuilder setEvents(final MbtClientEvents events){
+            this.mEvents = events;
+            return this;
+        }
+
+        public MbtClientBuilder setMbtManager(final MbtManager mbtManager){
+            this.mbtManager = mbtManager;
+            return this;
+        }
+
+        public MbtClient create(){
+            return new MbtClient(this);
+        }
+    }
 }
