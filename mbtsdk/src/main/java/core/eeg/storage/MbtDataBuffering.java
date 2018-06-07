@@ -35,8 +35,8 @@ public class MbtDataBuffering {
         eegManager = eegManagerController;
         hasOverflow = false;
 
-        int lostPacketInterpolatorSize = eegManager.getMbtManager().getBluetoothProtocol().equals(BLUETOOTH_LE)? 2 + getRawDataPacketSize(): 138;
-        int overflowBytesSize = eegManager.getMbtManager().getBluetoothProtocol().equals(BLUETOOTH_LE)? getRawDataPacketSize() : getRawDataPacketSize()/2;
+        int lostPacketInterpolatorSize = 138;
+        int overflowBytesSize = 2;
 
         oveflowBytes = new byte[overflowBytesSize];
         pendingRawData = new byte[eegManager.getRawDataBufferSize()];

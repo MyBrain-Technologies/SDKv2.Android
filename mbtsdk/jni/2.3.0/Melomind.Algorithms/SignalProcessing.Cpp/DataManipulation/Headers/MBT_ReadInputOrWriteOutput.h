@@ -5,7 +5,7 @@
 // Created by Fanny GROSSELIN on 2016/08/26 (inspired from Emma Barme's code on 2015)
 // Copyright (c) 2016 myBrain Technologies. All rights reserved.
 //
-// Update : Fanny Grosselin 2017/01/26 Read correctly NaN values.
+// Update : Fanny Grosselin 2017/01/26 ReadRequestEvent correctly NaN values.
 
 
 #ifndef MBT_READINPUTORWRITEOUTPUT_H

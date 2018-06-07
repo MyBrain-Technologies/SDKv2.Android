@@ -204,6 +204,12 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
         return result;
     }
 
+    @Override
+    public boolean isConnected() {
+        //TODO
+        return false;
+    }
+
 
     private final static class A2DPAccessor implements BluetoothProfile.ServiceListener {
         private final MbtLock<BluetoothA2dp> lock = new MbtLock<>();

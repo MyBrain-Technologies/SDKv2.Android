@@ -46,11 +46,11 @@ public class MbtDataAcquisition {
         this.sampleRate = MbtFeatures.getSampleRate();
         rawDataPosition = getRawDataIndexSize();
 
-        if (getBluetoothProtocol().equals(BLUETOOTH_LE)) {
+        //if (getBluetoothProtocol().equals(BLUETOOTH_LE)) {
             setNbStatusBytes(MbtFeatures.getStatusSize());
             setRawDataPacketSize(getRawDataBytesPerWholeChannelsSamples() * getSamplePerPacket());
             statusData = (getNbStatusBytes() > 0)? new ArrayList<Float>(sampleRate) : null;//default nbStatusBytes=3 for SPP and default nbStatusBytes=0 for BLE
-        }
+        //}
     }
 
     /**
@@ -58,9 +58,9 @@ public class MbtDataAcquisition {
      * @param data the raw EEG data array acquired by the headset and transmitted by Bluetooth to the application
      */
     public synchronized void handleDataAcquired(@NonNull final byte[] data) {
-        if ( !getBluetoothProtocol().equals(BLUETOOTH_LE) && !getBluetoothProtocol().equals(BLUETOOTH_SPP))
-            return; // we don't receive any eeg data if any of these protocols are used
-        final int currentIndex = (previousIndex>0)? previousIndex+1 : getBluetoothProtocol().equals(BLUETOOTH_LE)? (data[0] & 0xff) << 8 | (data[1] & 0xff) : (data[1] & 0xff) << 8 | (data[2] & 0xff); // masks the variable contained in data[0] & data[1] (or data[1] & data[2]) so it leaves only the value in the last 8 bits, and ignores all the rest of the bits.
+//        if ( !getBluetoothProtocol().equals(BLUETOOTH_LE) && !getBluetoothProtocol().equals(BLUETOOTH_SPP))
+//            return; // we don't receive any eeg data if any of these protocols are used
+        final int currentIndex = 0;//(previousIndex>0)? previousIndex+1 : getBluetoothProtocol().equals(BLUETOOTH_LE) ? (data[0] & 0xff) << 8 | (data[1] & 0xff) : (data[1] & 0xff) << 8 | (data[2] & 0xff); // masks the variable contained in data[0] & data[1] (or data[1] & data[2]) so it leaves only the value in the last 8 bits, and ignores all the rest of the bits.
         if (previousIndex == -1) //taking care of the first index
             previousIndex = currentIndex - 1;
         final int indexDifference = currentIndex - previousIndex;
@@ -111,7 +111,7 @@ public class MbtDataAcquisition {
      * @param data the raw EEG data array acquired by the headset and transmitted by Bluetooth to the application
      */
     private void generateStatusData(boolean isConsecutive, final byte[] data) {
-        if (getBluetoothProtocol().equals(BLUETOOTH_LE)) {
+        //if (getBluetoothProtocol().equals(BLUETOOTH_LE)) {
             for (int j = 0; j < getNbStatusBytes(); j++) {
                 byte tempStatus = data[getRawDataIndexSize() + j];
                 for (int k = 0; k < (getSamplePerPacket() - j * 8 < 8 ? getSamplePerPacket() - j * 8 : 8); k++) {
@@ -119,7 +119,7 @@ public class MbtDataAcquisition {
                         statusData.add((isConsecutive)? isBitSet(tempStatus, k) : Float.NaN); //NaN is a constant holding a Not-a-Number value of type float.
                 }
             }
-        }
+        //}
     }
 
     /**
@@ -208,7 +208,7 @@ public class MbtDataAcquisition {
      */
     private ArrayList<Float> generateToDecodeStatus(){
         ArrayList<Float> toDecodeStatus = statusData;
-        if(getBluetoothProtocol().equals(BLUETOOTH_LE)){
+        //if(getBluetoothProtocol().equals(BLUETOOTH_LE)){
             if(getNbStatusBytes() > 0){
                 statusData = new ArrayList<>(); //reinit status raw container
                 if(toDecodeStatus != null){
@@ -223,7 +223,7 @@ public class MbtDataAcquisition {
                     }
                 }
             }
-        }
+        //}
         return toDecodeStatus;
     }
 
@@ -242,27 +242,27 @@ public class MbtDataAcquisition {
                 ArrayList<ArrayList<Float>> consolidatedEEG = MbtDataConversion.convertRawDataToEEG(toDecodeBytes, MbtFeatures.getBluetoothProtocol()); //convert byte table data to Float matrix and store the matrix in MbtEEGManager as eegResult attribute
 
                 ArrayList<Float> status = new ArrayList<>();
-                switch(getBluetoothProtocol()){
-                    case BLUETOOTH_LE:
-                        status = toDecodeStatus;
-                        break;
-                    case BLUETOOTH_SPP:
-                        status = getEegResult().get(0); //the first list of the matrix is the status
-                        getEegResult().remove(0); //remove the first element of the EEG matrix
-                        break;
-                }
+//                switch(getBluetoothProtocol()){
+//                    case BLUETOOTH_LE:
+//                        status = toDecodeStatus;
+//                        break;
+//                    case BLUETOOTH_SPP:
+//                        status = getEegResult().get(0); //the first list of the matrix is the status
+//                        getEegResult().remove(0); //remove the first element of the EEG matrix
+//                        break;
+//                }
                 eegManager.notifyEEGDataIsReady(status, sampleRate, MbtFeatures.getNbChannels());//notify UI that eeg data are ready
             }
         });
     }
 
-    /**
-     * Gets the Bluetooth protocol used to transmit data from the headset to the application
-     * @return the Bluetooth protocol used to transmit data from the headset to the application
-     */
-    private BtProtocol getBluetoothProtocol(){
-        return getMbtManager().getBluetoothProtocol();
-    }
+//    /**
+//     * Gets the Bluetooth protocol used to transmit data from the headset to the application
+//     * @return the Bluetooth protocol used to transmit data from the headset to the application
+//     */
+//    private BtProtocol getBluetoothProtocol(){
+//        return getMbtManager().getBluetoothProtocol();
+//    }
 
     /**
      * Reset the starting and previous indexes to -1

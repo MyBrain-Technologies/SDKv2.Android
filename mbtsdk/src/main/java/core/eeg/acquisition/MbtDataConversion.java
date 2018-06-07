@@ -26,7 +26,7 @@ public class MbtDataConversion {
 
     private static int EEG_AMP_GAIN = 12;
     private static final short SHIFT_BLE = 8 + 4; //mandatory 8 to switch from 24 bits to 32 bits + variable part which fits fw config
-    private static final short SHIFT_SPP = 16;
+    private static final short SHIFT_DC_OFFSET = 16;
     private static final int CHECK_SIGN_BLE = (int) (0x80 << SHIFT_BLE);
     private static final int CHECK_SIGN_SPP = (int) 0x00800000;
     private static final int NEGATIVE_MASK_BLE = (int) (0xFFFFFFFF << (32 - SHIFT_BLE));
@@ -68,7 +68,7 @@ public class MbtDataConversion {
                 if (protocol.equals(BLUETOOTH_SPP) && (j == 0)) { //Here is status parsing, which can be directly updated to matrix
                     eegData.get(j).add((float) (rawData[rawDataIndex + 2] & 1));
                 } else { //Here are data from sensors, whom need to be transformed to float
-                    int temp = (rawData[rawDataIndex] & 0xFF) << ((protocol.equals(BLUETOOTH_LE)) ? SHIFT_BLE : SHIFT_SPP) | (rawData[rawDataIndex + 1] & 0xFF) << ((protocol.equals(BLUETOOTH_LE)) ? (SHIFT_BLE - 8) : (8 | (rawData[rawDataIndex + 2] & 0xFF)));
+                    int temp = (rawData[rawDataIndex] & 0xFF) << ((protocol.equals(BLUETOOTH_LE)) ? SHIFT_BLE : 0) | (rawData[rawDataIndex + 1] & 0xFF) << ((protocol.equals(BLUETOOTH_LE)) ? (SHIFT_BLE - 8) : (8 | (rawData[rawDataIndex + 2] & 0xFF)));
                     if (temp == ((protocol.equals(BLUETOOTH_LE)) ? INCORRECT_VALUE_BLE : INCORRECT_VALUE_SPP)) {  //if value is incorrect ...
                         eegData.get(j).add(Float.NaN); //... fill the EEG data matrix with a NaN value for graphs
                     } else { //if value is correct ...
@@ -81,6 +81,23 @@ public class MbtDataConversion {
             }
         }
         return eegData;
+    }
+
+    public static float convertDCOffsetToEEG(byte[] offset){
+        final float voltageADS1298 = (float) (0.286d * Math.pow(10, -6)) / EEG_AMP_GAIN; // for ADS 1298
+
+        int digit = 0x00000000;
+        digit = ((offset[0] & 0xFF) << (SHIFT_DC_OFFSET)) | ((offset[1] & 0xFF) << (SHIFT_DC_OFFSET-8));
+
+        if ((digit & CHECK_SIGN_BLE) > 0) { // value is negative
+            digit = (int) (digit | NEGATIVE_MASK_BLE );
+        }
+        else{
+            // value is positive
+            digit = (int) (digit & POSITIVE_MASK_BLE);
+        }
+
+        return digit * voltageADS1298;
     }
 
 }

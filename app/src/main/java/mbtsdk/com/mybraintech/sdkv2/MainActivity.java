@@ -1,21 +1,29 @@
 package mbtsdk.com.mybraintech.sdkv2;
 
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import org.greenrobot.eventbus.Subscribe;
 
-import java.util.Arrays;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import config.MbtConfig;
 import core.bluetooth.BtState;
+import core.device.DCOffsets;
+import core.device.SaturationEvent;
 import core.eeg.storage.MBTEEGPacket;
-import core.oad.OADEvent;
+import engine.DeviceInfoListener;
+import engine.EegListener;
+import engine.HeadsetStatusListener;
 import engine.MbtClient;
 import engine.MbtClientEvents;
-import eventbus.EventBusManager;
+import engine.StateListener;
 import eventbus.events.ClientReadyEEGEvent;
 
 import static features.ScannableDevices.MELOMIND;
@@ -25,64 +33,135 @@ public class MainActivity extends AppCompatActivity{
     private static String TAG = MainActivity.class.getName();
 
     private MbtClient client;
-    private EventBusManager eventBusManager; //warning : do not remove this attribute (consider unsused by the IDE, but actually used)
     private TextView eegTextView;
+    private TextView dcoffsettextView;
 
-    static {
-        System.loadLibrary("native-lib");    // Used to load the 'native-lib' library on application startup.
-    }
+    Timer timer = new Timer("eegTImer");
+
+    boolean start = true;
+    TimerTask timerTask = new TimerTask() {
+        @Override
+        public void run() {
+            if(start){
+                client.startstream(false, eegListener, headsetStatusListener);
+                start = false;
+            }else{
+                client.stopStream();
+                start = true;
+            }
+        }
+    };
+
+    private HeadsetStatusListener headsetStatusListener = new HeadsetStatusListener() {
+        @Override
+        public void onSaturationStateChanged(SaturationEvent saturation) {
+            Toast.makeText(MainActivity.this, "Saturation detected with code " + saturation.getSaturationCode(), Toast.LENGTH_SHORT).show();
+        }
+
+        @Override
+        public void onNewDCOffsetMeasured(DCOffsets dcOffsets) {
+            dcoffsettextView.setText("offset 1 : " + dcOffsets.getOffset()[0] + " offset 2 : " + dcOffsets.getOffset()[1]);
+        }
+
+        @Override
+        public void onError(String reason) {
+
+        }
+    };
+
+
+    private DeviceInfoListener deviceInfoListener = new DeviceInfoListener() {
+        @Override
+        public void onBatteryChanged(String newLevel) {
+            Log.i(TAG, "new battery level is " + newLevel);
+        }
+
+        @Override
+        public void onFwVersionReceived(String fwVersion) {
+            Log.i(TAG, "firmware version is " + fwVersion);
+            Toast.makeText(MainActivity.this, "FwVersion is " + fwVersion, Toast.LENGTH_LONG).show();
+        }
+
+        @Override
+        public void onHwVersionReceived(String hwVersion) {
+            Log.i(TAG, "hardware version is " + hwVersion);
+        }
+
+        @Override
+        public void onSerialNumberReceived(String serialNumber) {
+            Log.i(TAG, "serial number is " + serialNumber);
+        }
+
+        @Override
+        public void onError(String reason) {
+            Log.e(TAG, reason);
+
+        }
+    };
+
+    private StateListener stateListener = new StateListener() {
+        @Override
+        public void onStateChanged(@NonNull BtState newState) {
+            Log.i(TAG,"newstate is " + newState.toString());
+            if(newState == BtState.CONNECTED_AND_READY){
+                Log.d(TAG, "connected and ready");
+                client.readFwVersion(deviceInfoListener);
+                client.readHwVersion(deviceInfoListener);
+                client.readSerialNumber(deviceInfoListener);
+                client.readBattery(0, deviceInfoListener);
+
+                timer.schedule(timerTask ,0, 10000);
+            } else if (newState == BtState.DISCONNECTED){
+
+                Log.i(TAG, "restarting");
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        client.connectBluetooth("melo_1010876553", stateListener);
+                    }
+                },10000);
+
+            }
+        }
+
+        @Override
+        public void onError(String reason) {
+
+        }
+    };
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         eegTextView = findViewById(R.id.data); //todo remove when tests are ok
+        dcoffsettextView = findViewById(R.id.dcoffset);
+//        getSupportActionBar().setHomeButtonEnabled(true);
+//        getSupportActionBar().
 
-        MbtClientEvents mbtClientEvents = new MbtClientEvents() {
-            @Override
-            public int hashCode() {
-                return super.hashCode();
-            }
-
-            @Override
-            public boolean equals(Object obj) {
-                return super.equals(obj);
-            }
-
-            @Override
-            protected Object clone() throws CloneNotSupportedException {
-                return super.clone();
-            }
-
-            @Override
-            public String toString() {
-                return super.toString();
-            }
-
-            @Override
-            protected void finalize() throws Throwable {
-                super.finalize();
-            }
-        };
         MbtConfig.setScannableDevices(MELOMIND);//TODO remove when test are ok
 
-        client = MbtClient.init(getApplicationContext(),mbtClientEvents);
-
-        client.testEEGpackageClient(); //todo remove when tests are ok
-        eventBusManager = new EventBusManager(this);
-
-
-        client.startstream(true, new MbtClientEvents.EegListener() {
+        client = MbtClient.init(getApplicationContext(), new MbtClientEvents() {
             @Override
-            public void onNewPackets(MBTEEGPacket mbteegPackets, int nbChannels, int nbSamples, int sampleRate) {
-
-            }
-
-            @Override
-            public void onError() {
+            public void onError(String reason) {
 
             }
         });
+
+        client.connectBluetooth("melo_1010876553", stateListener);
+
+//        client.startstream(true, new EegListener() {
+//            @Override
+//            public void onError(String reason) {
+//
+//            }
+//
+//            @Override
+//            public void onNewPackets(MBTEEGPacket mbteegPackets, int nbChannels, int nbSamples, int sampleRate) {
+//
+//            }
+//        });
     }
 
 
@@ -103,4 +182,19 @@ public class MainActivity extends AppCompatActivity{
             }
         });
     }
+
+
+    private EegListener eegListener = new EegListener() {
+        @Override
+        public void onNewPackets(MBTEEGPacket mbteegPackets, int nbChannels, int nbSamples, int sampleRate) {
+
+        }
+
+        @Override
+        public void onError(String reason) {
+            Toast.makeText(MainActivity.this, reason, Toast.LENGTH_SHORT).show();
+        }
+    };
+
+
 }

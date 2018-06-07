@@ -11,66 +11,7 @@ import core.oad.OADEvent;
  * Created by Etienne on 08/02/2018.
  */
 
-public interface MbtClientEvents {
-
-    interface StateListener {
-        /**
-         * Callback indicating the current state of the bluetooth communication
-         * See {@link BtState} for all possible states
-         */
-        void onStateChanged(@NonNull final BtState newState);
-    }
-
-    @Keep
-    interface EegListener {
-        /**
-         * Callback triggered when the input eeg buffer is full, ie when raw buffer contains enough data to compute a new MBTEEGPacket.
-         * This event is triggered from the MbtDataAcquisition class when (bufPos >= BLE_RAW_DATA_BUFFER_SIZE)
-         * Warning, this callb is in worker thread. you need to call runOnUiThread to change views if necessary
-         * @param mbteegPackets the eeg data (Channels, EEG values)
-         * @param nbChannels the number of EEG acquisition channels
-         * @param nbSamples //TODO remove this input
-         * @param sampleRate //TODO might be unnecessary
-         */
-        //void onNewSamples(final ArrayList<ArrayList<Float>> matrix, @Nullable final ArrayList<Float> status, final int nbChannels, final int nbSamples, final int sampleRate);
-        void onNewPackets(final MBTEEGPacket mbteegPackets, final int nbChannels, final int nbSamples, final int sampleRate);
-        void onError(/*TODO error cause*/);
-    }
-
-    @Keep
-    interface BatteryListener {
-        void onBatteryChanged(final int level);
-    }
-
-    interface HeadsetStatusListener {
-        /**
-         * Callback indicating that the headset has entered in a new saturation state
-         * @param newState the new measured state.
-         */
-        void onSaturationStateChanged(final int newState);
-
-        /**
-         * Callback indicating that the headset has measured a new dc offset
-         * @param dcOffset the new measured offset.
-         */
-        void onNewDCOffsetMeasured(final int dcOffset);
-    }
-
-    @Keep
-    interface DeviceInfoListener {
-        void onFwVersionReceived(String fwVersion);
-        void onHwVersionReceived(String hwVersion);
-        void onSerialNumberReceived(String serialNumber);
-    }
-
-    @Keep
-    interface BandwidthListener {
-        /**
-         * Triggers every time data is received in order to compute the time it took to receive it
-         * @param bandwidth the speed in bytes per second
-         */
-        void onNewSpeed(final double bandwidth);
-    }
+public interface MbtClientEvents extends ErrorEvent{
 
     interface OADEventListener {
         /**

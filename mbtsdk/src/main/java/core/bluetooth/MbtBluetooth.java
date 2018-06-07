@@ -36,21 +36,11 @@ import utils.MbtLock;
 public abstract class MbtBluetooth implements IScannable, IConnectable{
 
     private final static String TAG = "MBT Bluetooth";
-
-    // Events Listeners Callbacks
-    private MbtClientEvents.StateListener stateListener;
-    private MbtClientEvents.EegListener eegListener;
-    private MbtClientEvents.DeviceInfoListener deviceInfoListener;
-    private MbtClientEvents.OADEventListener oadEventListener;
-    private MbtClientEvents.MailboxEventListener mailboxEventListener;
-    private MbtClientEvents.HeadsetStatusListener headsetStatusListener;
-
     private BtState currentState = BtState.DISCONNECTED;
 
     protected BluetoothAdapter bluetoothAdapter;
 
     protected final Context context;
-    protected final Handler uiAccess;
 
     protected final MbtLock<BluetoothDevice> scanLock = new MbtLock<>();
     protected List<BluetoothDevice> scannedDevices = new ArrayList<>();
@@ -64,7 +54,6 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
 
     public MbtBluetooth(Context context, MbtBluetoothManager mbtBluetoothManager) {
         this.context = context.getApplicationContext();
-        this.uiAccess = new Handler(this.context.getMainLooper());
         this.mbtBluetoothManager = mbtBluetoothManager;
 
         final BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
@@ -90,22 +79,18 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
     }
 
     @Override
-    public void startScanDiscovery(Context context, final String deviceName) {
-        final Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
-        // If there are paired devices
-        if (pairedDevices.size() > 0) {
-            // Loop through paired devices
-            //TODO change here to use MAC address instead of Name
-            for (BluetoothDevice device : pairedDevices) {
-                if (device.getName().equals(deviceName) /*|| device.getName().contains(deviceName)*/) { // device found
-                    if (melomindDevice != null) {
-                        this.melomindDevice.setBluetoothDevice(device);
-                    } else if (vproDevice != null){
-                        this.vproDevice.setBluetoothDevice(device);
-                    }
-                }
-            }
-        }
+    public BluetoothDevice startScanDiscovery(final String deviceName) {
+//        final Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
+//        // If there are paired devices
+//        if (pairedDevices.size() > 0) {
+//            // Loop through paired devices
+//            //TODO change here to use MAC address instead of Name
+//            for (BluetoothDevice device : pairedDevices) {
+//                if (device.getName().equals(deviceName) /*|| device.getName().contains(deviceName)*/) { // device found
+//                    return device;
+//                }
+//            }
+//        }
         // at this point, device was not found among bonded devices so let's start a discovery scan
         final MbtLock<BluetoothDevice> scanLock = new MbtLock<>();
         Log.i(TAG, "Starting Classic Bluetooth Discovery Scan");
@@ -114,48 +99,49 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
         context.registerReceiver(new BroadcastReceiver() {
             public final void onReceive(final Context context, final Intent intent) {
                 final String action = intent.getAction();
-                if (action != null) {
-                    switch(action) {
-                        case BluetoothDevice.ACTION_FOUND:
-                            final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                            final String name = device.getName();
-                            if (TextUtils.isEmpty(name)) {
-                                Log.w(TAG, "Found device with no name. MAC address is -> " + device.getAddress());
-                                return;
-                            }
+                switch (action) {
+                    case BluetoothDevice.ACTION_FOUND:
+                        final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                        final String name = device.getName();
+                        if (TextUtils.isEmpty(name)) {
+                            Log.w(TAG, "Found device with no name. MAC address is -> " + device.getAddress());
+                            return;
+                        }
 
-                            Log.i(TAG, String.format("Stopping Discovery Scan -> device detected " +
-                                    "with name '%s' and MAC address '%s' ", device.getName(), device.getAddress()));
-                            if (name.contains(deviceName)) {
-                                Log.i(TAG, "VPro found. Cancelling discovery & connecting");
-                                bluetoothAdapter.cancelDiscovery();
-                                context.unregisterReceiver(this);
-                                scanLock.setResultAndNotify(device);
-                            }
-                            break;
-                        case BluetoothAdapter.ACTION_DISCOVERY_FINISHED:
-                            if (scanLock.isWaiting()) // restarting discovery while still waiting
-                                bluetoothAdapter.startDiscovery();
-                            break;
-                    }
+                        Log.i(TAG, String.format("Discovery Scan -> device detected " +
+                                "with name '%s' and MAC address '%s' ", device.getName(), device.getAddress()));
+                        if (name.equals(deviceName) || name.contains(deviceName)) {
+                            Log.i(TAG, "Device " + deviceName +" found. Cancelling discovery & connecting");
+                            bluetoothAdapter.cancelDiscovery();
+                            context.unregisterReceiver(this);
+                            scanLock.setResultAndNotify(device);
+                        }
+                        break;
+                    case BluetoothAdapter.ACTION_DISCOVERY_FINISHED:
+                        if (scanLock.isWaiting()) // restarting discovery while still waiting
+                            bluetoothAdapter.startDiscovery();
+                        break;
                 }
 
             }
         }, filter);
         bluetoothAdapter.startDiscovery();
-        if (melomindDevice != null) {
-            this.melomindDevice.setBluetoothDevice(scanLock.waitAndGetResult());
-        } else if (vproDevice != null){
-            this.vproDevice.setBluetoothDevice(scanLock.waitAndGetResult());
-        }
+        return scanLock.waitAndGetResult();
     }
 
     @Override
     public void stopScanDiscovery() {
+        if(scanLock != null && scanLock.isWaiting()){
+            scanLock.setResultAndNotify(null);
+        }
+
+        if(bluetoothAdapter.isDiscovering())
+            bluetoothAdapter.cancelDiscovery();
+
 
     }
 
-    public void deviceInfoReceived(DeviceInfo deviceInfo, String deviceValue){ // This method will be called when a DeviceInfoReceived is posted (fw or hw or serial number) by MbtBluetoothLE or MbtBluetoothSPP
+    public void notifyDeviceInfoReceived(DeviceInfo deviceInfo, String deviceValue){ // This method will be called when a DeviceInfoReceived is posted (fw or hw or serial number) by MbtBluetoothLE or MbtBluetoothSPP
         switch(deviceInfo){
             case FW_VERSION:
                 melomindDevice.setFirmwareVersion(deviceValue);
@@ -172,82 +158,55 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
             default:
                 break;
         }
-        //requestDeviceInformations(event.getDeviceInfo());
+
+        mbtBluetoothManager.notifyDeviceInfoReceived(deviceInfo, deviceValue);
 
     }
 
     void notifyOADEvent(OADEvent eventType, int value){
-        if(this.oadEventListener != null){
-            this.oadEventListener.onOadEvent(eventType, value);
-        }
+//        if(this.oadEventListener != null){
+//            this.oadEventListener.onOadEvent(eventType, value);
+//        }
     }
 
     @Override
     public void notifyStateChanged(@NonNull BtState newState) {
         this.currentState = newState;
-        if (this.stateListener != null)
-            this.stateListener.onStateChanged(newState);
+        mbtBluetoothManager.notifyStateChanged(newState);
+
     }
 
     void notifyMailboxEvent(byte code, Object value){
-        if(this.mailboxEventListener != null){
-            this.mailboxEventListener.onMailBoxEvent(code, value);
-        }
+//        if(this.mailboxEventListener != null){
+//            this.mailboxEventListener.onMailBoxEvent(code, value);
+//        }
+    }
+
+    public void notifyBatteryReceived(int value){
+        mbtBluetoothManager.notifyDeviceInfoReceived(DeviceInfo.BATTERY, String.valueOf(value));
     }
 
     void notifyHeadsetStatusEvent(byte code, int value){
-        if(this.headsetStatusListener != null){
-            if(code == 0x01)
-                this.headsetStatusListener.onSaturationStateChanged(value);
-            else if (code == 0x02)
-                this.headsetStatusListener.onNewDCOffsetMeasured(value);
-        }
+//        if(this.headsetStatusListener != null){
+//            if(code == 0x01)
+//                this.headsetStatusListener.onSaturationStateChanged(value);
+//            else if (code == 0x02)
+//                this.headsetStatusListener.onNewDCOffsetMeasured(value);
+//        }
     }
 
     public BtState getCurrentState() { return currentState; }
+
     public void setCurrentState(BtState state) { this.currentState=state;}
 
     public void setOadEventListener(MbtClientEvents.OADEventListener oadEventListener) {
-        this.oadEventListener = oadEventListener;
+        //this.oadEventListener = oadEventListener;
     }
 
     BluetoothAdapter getBluetoothAdapter() {return bluetoothAdapter;}
 
     // Events Registration
 
-    void setMailboxEventListener(@Nullable final MbtClientEvents.MailboxEventListener listener){
-        this.mailboxEventListener = listener;
-    }
-
-    void setEegListener(@Nullable final MbtClientEvents.EegListener listener) {
-        this.eegListener = listener;
-        if (eegListener == null)
-            Log.i(TAG,"eegListener is NULL");
-    }
-
-    void setDeviceInfoListener(@Nullable final MbtClientEvents.DeviceInfoListener deviceInfoListener) {
-        this.deviceInfoListener = deviceInfoListener;
-    }
-
-    void setHeadsetStatusListener(@Nullable final MbtClientEvents.HeadsetStatusListener headsetStatusListener) {
-        this.headsetStatusListener = headsetStatusListener;
-    }
-
-    void setStateChangeListener(@Nullable final MbtClientEvents.StateListener listener) {
-        this.stateListener = listener;
-    }
-
-    /**
-     * This method reset all listeners to avoid null pointer exceptions and listener leaks
-     */
-    public void resetAllListeners(){
-        setDeviceInfoListener(null);
-        setOadEventListener(null);
-        setHeadsetStatusListener(null);
-        setEegListener(null);
-        setCurrentState(null);
-
-    }
 
     public MbtDevice getMelomindDevice() {
         return melomindDevice;
@@ -257,18 +216,11 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
         return vproDevice;
     }
 
-    /**
-     * EEGDataIsReadyReceived is called when the event bus receive a ClientReadyEEGEvent event posted by MbtDataAcquisition in handleDataAcquired method
-     * event ClientReadyEEGEvent is posted when the EEG data is ready (raw EGG data has been converted to Float matrix)
-     */
-    /*public void EEGDataIsReadyReceived(ClientReadyEEGEvent event){
-        if (this.eegListener != null)
-            this.eegListener.onNewPackets(new MBTEEGPacket(event.getMatrix(), null, event.getStatus(), System.currentTimeMillis()), event.getNbChannels(), event.getMatrix().get(0).size(), event.getSampleRate());
-    }*/
 
-    public void acquireData(@NonNull final byte[] data) {
+    public void notifyNewDataAcquired(@NonNull final byte[] data) {
         mbtBluetoothManager.handleDataAcquired(data);
     }
+
 
     public MbtBluetoothManager getMbtBluetoothManager() {
         return mbtBluetoothManager;

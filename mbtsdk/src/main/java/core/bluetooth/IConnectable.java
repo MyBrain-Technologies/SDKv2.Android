@@ -14,7 +14,7 @@ import android.support.annotation.NonNull;
 public interface IConnectable {
 
     /**
-     * Connect to the peripheral device
+     * ConnectRequestEvent to the peripheral device
      * @return true upon success, false otherwise
      */
     boolean connect(Context context, BluetoothDevice device);
@@ -34,5 +34,6 @@ public interface IConnectable {
     void notifyStateChanged(@NonNull final BtState newState);
 
 
+    boolean isConnected();
 
 }

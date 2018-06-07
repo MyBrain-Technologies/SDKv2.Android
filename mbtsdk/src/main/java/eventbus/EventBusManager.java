@@ -23,7 +23,7 @@ public class EventBusManager {
      * It helps communication between the different packages
      * Once an instance of EventBusManager is created, the publishers can post event to the Event Bus
      */
-    public EventBusManager(){ } //empty constructor need to be called by publisher
+    private EventBusManager(){ } //empty constructor need to be called by publisher
 
     /**
      * EventBusManager contains all the methods for posting events, registering and unregistering subscribers.
@@ -32,7 +32,7 @@ public class EventBusManager {
      * Warning : subscribers can't receive any event if they are not registered.
      * @param subscriber is the subscriber class to register for receiving events from the Event Bus
      */
-    public EventBusManager(Object subscriber) { // non empty constructor for subscriber
+    private EventBusManager(Object subscriber) { // non empty constructor for subscriber
         registerOrUnregister(true, subscriber);
     }
 
@@ -43,7 +43,7 @@ public class EventBusManager {
      * @param isRegistration is true to register the subscriber class and false to unregister the subscriber class.
      * @param subscriber is the subscriber class to register for receiving events from the Event Bus.
      */
-    public void registerOrUnregister(boolean isRegistration, Object subscriber ){
+    public static void registerOrUnregister(boolean isRegistration, Object subscriber ){
         if (isRegistration) {
             BUS.register(subscriber);
         } else {
@@ -56,7 +56,7 @@ public class EventBusManager {
      * The Event Bus will deliver it to registered subscribers.
      * @param event contains data to transmit to the subscriber class.
      */
-    public void postEvent(Object event){
+    public static void postEvent(Object event){
         BUS.post(event);
     }
 }

@@ -76,15 +76,13 @@ public final class MbtEEGManager {
     private MbtDataBuffering mbtDataBuffering;
     private ArrayList<ArrayList<Float>> eegResult;
 
-    private EventBusManager eventBusManager; // EventBus : MbtEEGManager is the subscriber for MbtDataAcquisition that will be notified for converting raw data
-
     private MbtManager mbtManager;
 
     public MbtEEGManager(@NonNull Context context, MbtManager mbtManagerController){
 
         this.mContext = context;
         this.mbtManager = mbtManagerController;
-        this.eventBusManager = new EventBusManager(this); // registers MbtEEGManager as a subscriber for receiving events from MbtBluetooth via the Event Bus
+        EventBusManager.registerOrUnregister(true, this);
         if (MbtFeatures.getBluetoothProtocol().equals(BLUETOOTH_LE)){
             RAW_DATA_INDEX_SIZE = BLE_RAW_DATA_INDEX_SIZE;
             RAW_DATA_SAMPLE_SIZE = BLE_RAW_DATA_SAMPLE_SIZE;
@@ -178,7 +176,7 @@ public final class MbtEEGManager {
      */
     public void notifyEEGDataIsReady(ArrayList<Float> status, int sampleRate, int nbChannels) {
         Log.d(TAG, "notify EEG Data Is Ready ");
-        eventBusManager.postEvent(new ClientReadyEEGEvent(eegResult, status, sampleRate, nbChannels));
+        EventBusManager.postEvent(new ClientReadyEEGEvent(eegResult, status, sampleRate, nbChannels));
     }
 
     /**
@@ -402,7 +400,7 @@ public final class MbtEEGManager {
      * Unregister the MbtEEGManager class from the bus to avoid memory leak
      */
     public void deinit(){ //TODO CALL WHEN MbtEEGManager IS NOT USED ANYMORE TO AVOID MEMORY LEAK
-        eventBusManager.registerOrUnregister(false,this);
+        EventBusManager.registerOrUnregister(false,this);
     }
 
 }

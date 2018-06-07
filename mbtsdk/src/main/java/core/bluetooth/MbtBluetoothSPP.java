@@ -125,7 +125,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
                 btState = BtState.CONNECTED;
                 notifyStateChanged(BtState.CONNECTED);
                 //notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER, toConnect.getAddress());
-                deviceInfoReceived(DeviceInfo.SERIAL_NUMBER,toConnect.getAddress());
+                notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER,toConnect.getAddress());
                 Log.i(TAG,toConnect.getName() + " Connected");
                 return true;
             }
@@ -147,6 +147,11 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
             requestCloseConnexion();
         }
         return acquisitionStopped;
+    }
+
+    @Override
+    public boolean isConnected() {
+        return getCurrentState() == BtState.CONNECTED;
     }
 
     @Override
@@ -389,7 +394,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
                                 AsyncUtils.executeAsync(new Runnable() {
                                     //private final byte[] toAcquire = Arrays.copyOf(finalData, finalData.length);
                                     public void run() {
-                                        acquireData(finalData);
+                                        notifyNewDataAcquired(finalData);
                                     }
                                 });
                             }
@@ -426,7 +431,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
                                 default:
                                     break;
                             }
-                            mbtBluetoothManager.updateBatteryLevel(pourcent);
+                            //mbtBluetoothManager.updateBatteryLevel(pourcent);
                         }else {
                             //TODO here are non implemented cases. Please see the MBT SPP protocol for infos.
                         }
@@ -470,6 +475,16 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
         }
     }
 
+    @Override
+    public void notifyStreamStateChanged(StreamState streamState) {
+
+    }
+
+    @Override
+    public boolean isStreaming() {
+        return false;
+    }
+
     /**
      * Ask to get the battery level
      * @param start is true for starting the battery timer and false for cancelling the battery timer
@@ -501,7 +516,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
         byte[] data = new byte[250];
         for (int i=0; i<63; i++){//buffer size=6750=62,5*108(Packet size) => matrix size = 6750/3 - 250 (-250 because matrix.get(0) removed for SPP)
             new Random().nextBytes(data); //Generates random bytes and places them into a user-supplied byte array
-            this.acquireData(data);
+            this.notifyNewDataAcquired(data);
             Arrays.fill(data,0,0,(byte)0);
         }
     }

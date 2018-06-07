@@ -12,4 +12,15 @@ public interface IStreamable {
     interface DataStreamListener{
         void onNewData();
     }
+
+    void notifyStreamStateChanged(StreamState streamState);
+
+    enum StreamState{
+        IDLE,
+        STARTED,
+        STOPPED,
+        FAILED
+    }
+
+    boolean isStreaming();
 }

@@ -4,18 +4,19 @@ package core.bluetooth;
  * Created by Etienne on 08/02/2018.
  */
 
+import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 
 /**
  * Interface used to connect to or disconnect from a bluetooth peripheral device
  */
-public interface IScannable {
+interface IScannable {
 
     /**
      * Start a classic discovery scan in order to find a bluetooth device
-     * @param context: The context in which the scan will be started.
+     * @param
      */
-    void startScanDiscovery(Context context, String deviceName);
+    BluetoothDevice startScanDiscovery(String deviceName);
 
     /**
      * Disconnect from the peripheral device

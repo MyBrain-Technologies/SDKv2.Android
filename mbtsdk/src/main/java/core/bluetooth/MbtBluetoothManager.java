@@ -5,11 +5,17 @@ import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
-import java.util.ArrayList;
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -19,9 +25,17 @@ import java.util.concurrent.TimeoutException;
 import config.MbtConfig;
 import core.MbtManager;
 import core.bluetooth.lowenergy.MbtBluetoothLE;
-import core.bluetooth.acquisition.MbtDeviceAcquisition;
+import core.bluetooth.requests.BluetoothRequests;
+import core.bluetooth.requests.ConnectRequestEvent;
+import core.bluetooth.requests.DisconnectRequestEvent;
+import core.bluetooth.requests.ReadRequestEvent;
+import core.bluetooth.requests.StreamRequestEvent;
+import core.device.RawDeviceMeasure;
+import core.eeg.acquisition.MbtDataConversion;
+import core.recordingsession.metadata.DeviceInfo;
 import eventbus.EventBusManager;
 import eventbus.events.BluetoothEEGEvent;
+import eventbus.events.DeviceInfoEvent;
 import features.MbtFeatures;
 import features.ScannableDevices;
 import utils.AsyncUtils;
@@ -46,7 +60,6 @@ public final class MbtBluetoothManager {
     private final static String TAG = MbtBluetoothManager.class.getSimpleName();
 
     private Context mContext;
-    private final Handler uiAccess;
 
     private BluetoothDevice bluetoothDevice;
     private BtProtocol btProtocol;
@@ -56,14 +69,19 @@ public final class MbtBluetoothManager {
     private MbtBluetoothSPP mbtBluetoothSPP;
 
     private MbtManager mbtManager;
-    private MbtDeviceAcquisition deviceAcquisition;
-    private EventBusManager eventBusManager;
+
+    private final Queue<BluetoothRequests> pendingRequests;
+    private volatile boolean requestBeingProcessed = false;
+
+    private RequestThread requestThread;
+    private Handler handler;
+
+    //private MbtDeviceAcquisition deviceAcquisition;
 
     public MbtBluetoothManager(@NonNull Context context, MbtManager mbtManagerController){
 
         //save client side objects in variables
         this.mContext = context;
-        this.uiAccess = new Handler(context.getMainLooper());
         this.btProtocol = getBluetoothProtocol(); //Default value according to the scanned device
 
         this.mbtBluetoothLE = new MbtBluetoothLE(context, this);
@@ -71,42 +89,44 @@ public final class MbtBluetoothManager {
         this.mbtBluetoothA2DP = new MbtBluetoothA2DP(context,this);
 
         this.mbtManager = mbtManagerController;
-        this.deviceAcquisition = new MbtDeviceAcquisition();
-        this.eventBusManager = new EventBusManager();// register MbtBluetoothManager as a subscriber for receiving event such as ClientReadyEEGEvent event (called after EEG raw data has been converted)
+        //this.deviceAcquisition = new MbtDeviceAcquisition();
+        EventBusManager.registerOrUnregister(true, this);// register MbtBluetoothManager as a subscriber for receiving event such as ClientReadyEEGEvent event (called after EEG raw data has been converted)
+
+        this.pendingRequests = new LinkedList<>();
+
+        //Init thread that will handle messages synchronously. Using HandlerThread looks like it is the best way for CPU consomption as infinite loop in async thread was too heavy for cpu
+        requestThread = new RequestThread("requestThread", Thread.MAX_PRIORITY);
+        requestThread.start();
+        handler = new Handler(requestThread.getLooper());
 
     }
 
-    public boolean connect(){
+    public boolean scanAndConnect(String deviceName){
         //first step
-        AsyncUtils.executeAsync(new Runnable() {
-            @Override
-            public void run() {
-                BluetoothDevice scannedDevice = null;
-                try {
-                    scannedDevice = scanSingle("").get(20, TimeUnit.SECONDS);
-                    Log.i(TAG, "scanned device is " + scannedDevice.toString());
-                } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                    //TODO
-                    e.printStackTrace();
-                }finally {
-                    mbtBluetoothLE.stopLowEnergyScan();
-                }
-                if(scannedDevice == null){
-                    return;
-                }else {
-                    bluetoothDevice = scannedDevice;
-                }
-                mbtBluetoothLE.connect(mContext, scannedDevice); //second step
-            }
-        });
-        return connect(bluetoothDevice);
+        BluetoothDevice scannedDevice = null;
+        try {
+            scannedDevice = scanSingle(deviceName).get(40, TimeUnit.SECONDS);
+            Log.i(TAG, "scanned device is " + scannedDevice.toString());
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            //TODO
+            e.printStackTrace();
+        }finally {
+            stopCurrentScan();
+        }
+        if(scannedDevice == null){
+            return false;
+        }else {
+            bluetoothDevice = scannedDevice;
+        }
+        return connect(bluetoothDevice); //second step
+
     }
 
 
     /**
-     * Connect to a specific BluetoothDevice. This allows to skip the scanning part and jump directly to connection step
+     * ConnectRequestEvent to a specific BluetoothDevice. This allows to skip the scanning part and jump directly to connection step
      * @param device the Bluetooth device to connect to
-     * @return immediatly the following : false if device is null, true if connection step has been started
+     * @return immediately the following : false if device is null, true if connection step has been started
      */
     private boolean connect(@NonNull BluetoothDevice device){
         return mbtBluetoothLE.connect(mContext, device);
@@ -128,7 +148,7 @@ public final class MbtBluetoothManager {
             mbtBluetoothLE.startLowEnergyScan(true, false); //TODO handle this
 
         else
-            mbtBluetoothLE.startScanDiscovery(mContext, MbtFeatures.getDeviceName());
+            mbtBluetoothLE.startScanDiscovery(MbtFeatures.getDeviceName());
     }
 
 
@@ -163,7 +183,7 @@ public final class MbtBluetoothManager {
             @Override
             public BluetoothDevice call() throws Exception {
                 Log.i(TAG, "in call method. About to start scan LE");
-                if (MbtConfig.scannableDevices == ScannableDevices.ALL && ContextCompat.checkSelfPermission(mContext,
+                if (MbtConfig.scannableDevices == ScannableDevices.MELOMIND && ContextCompat.checkSelfPermission(mContext,
                         Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
                         || ContextCompat.checkSelfPermission(mContext,
                         Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
@@ -175,9 +195,9 @@ public final class MbtBluetoothManager {
 //                    return mbtBluetoothLE.startScanDiscovery(mContext);
                 else
                     Log.i(TAG, "About to start scan discovery");
-                    mbtBluetoothSPP.startScanDiscovery(mContext, deviceName);
+
                     btProtocol=BtProtocol.BLUETOOTH_SPP;
-                    return null; //TODO handle scanDiscovery
+                    return mbtBluetoothSPP.startScanDiscovery(deviceName);//TODO handle scanDiscovery
 
             }
         });
@@ -188,12 +208,11 @@ public final class MbtBluetoothManager {
      *
      */
     private void stopCurrentScan(){
-        if (MbtConfig.scannableDevices == ScannableDevices.ALL && ContextCompat.checkSelfPermission(mContext,
+        if (MbtConfig.scannableDevices == ScannableDevices.MELOMIND && ContextCompat.checkSelfPermission(mContext,
                 Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(mContext,
                 Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
             mbtBluetoothLE.stopLowEnergyScan(); //TODO handle this
-//                else
-//                    return mbtBluetoothLE.startScanDiscovery(mContext);
+
         else
             mbtBluetoothLE.stopScanDiscovery();
     }
@@ -203,6 +222,7 @@ public final class MbtBluetoothManager {
      * @return false upon immediate failure, true otherwise
      */
     public boolean startStream(){
+        mbtBluetoothLE.startStream();
         return false;
     }
 
@@ -211,39 +231,53 @@ public final class MbtBluetoothManager {
      * @return false upon immediate failure, true otherwise
      */
     public boolean stopStream(){
+        mbtBluetoothLE.stopStream();
         return false;
     }
 
     /**
      * Initiates a read battery operation on this correct BtProtocol
      */
-    public void readBattery(){
-        mbtBluetoothLE.readBattery(deviceAcquisition.getLastKnownBatteryLevel());
+    public void readBattery() {
+        if(!mbtBluetoothLE.readBattery()){
+            requestBeingProcessed = false;
+            EventBusManager.postEvent(new DeviceInfoEvent<>(DeviceInfo.BATTERY, null));
+        }
     }
+
 
     /**
      * Initiates a read firmware version operation on this correct BtProtocol
      */
     public void readFwVersion(){
+        if(!mbtBluetoothLE.readFwVersion()){
+            requestBeingProcessed = false;
+            EventBusManager.postEvent(new DeviceInfoEvent<>(DeviceInfo.FW_VERSION, null));
+        }
     }
+
 
     /**
      * Initiates a read hardware version operation on this correct BtProtocol
      */
     public void readHwVersion(){
-
+        if(!mbtBluetoothLE.readHwVersion()){
+            requestBeingProcessed = false;
+            EventBusManager.postEvent(new DeviceInfoEvent<>(DeviceInfo.HW_VERSION, null));
+        }
     }
+
 
     /**
      * Initiates a read serial number operation on this correct BtProtocol
      */
     public void readSerialNumber(){
-
+        if(!mbtBluetoothLE.readSerialNumber()){
+            requestBeingProcessed = false;
+            EventBusManager.postEvent(new DeviceInfoEvent<>(DeviceInfo.SERIAL_NUMBER, null));
+        }
     }
 
-    void notifyNewEeg(final ArrayList<ArrayList<Float>> matrix, final ArrayList<Float> status, final int nbChannels, final int nbSamples, final int sampleRate) {
-    //call mbtbluetooth.notifyneweeg
-    }
 
     /**
      * Allows the user to hot change the eeg signal amplifier gain amongst the proposed ones by sending a bluetooth command.
@@ -277,9 +311,9 @@ public final class MbtBluetoothManager {
         return bluetoothDevice;
     }
 
-    public MbtDeviceAcquisition getDeviceAcquisition() {
-        return deviceAcquisition;
-    }
+//    public MbtDeviceAcquisition getDeviceAcquisition() {
+//        return deviceAcquisition;
+//    }
 
     public void disconnect() {
 
@@ -300,16 +334,16 @@ public final class MbtBluetoothManager {
      * Store the new battery level received from the headset
      * @param pourcent new battery level in percentage
      */
-    public void updateBatteryLevel(int pourcent){
-        deviceAcquisition.setBatteryLevel(pourcent);
-    }
+//    public void updateBatteryLevel(int pourcent){
+//        deviceAcquisition.setBatteryLevel(pourcent);
+//    }
 
     /**
      * Posts a BluetoothEEGEvent event to the bus so that MbtEEGManager can handle raw EEG data received
      * @param data the raw EEG data array acquired by the headset and transmitted by Bluetooth to the application
      */
     public void handleDataAcquired(@NonNull final byte[] data){
-        eventBusManager.postEvent(new BluetoothEEGEvent(data)); //MbtEEGManager will convert data from raw packets to eeg values
+        EventBusManager.postEvent(new BluetoothEEGEvent(data)); //MbtEEGManager will convert data from raw packets to eeg values
     }
 
     /**
@@ -334,8 +368,119 @@ public final class MbtBluetoothManager {
     /**
      * Unregister the MbtBluetoothManager class from the bus to avoid memory leak
      */
-    /*public void deinit(){
-        eventBusManager.registerOrUnregister(false,this);
-    }*/
+    private void deinit(){
+        EventBusManager.registerOrUnregister(false,this);
+    }
+
+    /**
+     *
+     * @param requests
+     */
+    @Subscribe(threadMode = ThreadMode.BACKGROUND)
+    public void onBluetoothRequest(final BluetoothRequests requests){
+
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                parseRequest(requests);
+            }
+        });
+
+    }
+
+    /**
+     *
+     * @param deviceInfo
+     */
+    private void performReadOperation(DeviceInfo deviceInfo) {
+        switch(deviceInfo){
+            case BATTERY:
+                readBattery();
+                break;
+            case FW_VERSION:
+                readFwVersion();
+                break;
+            case HW_VERSION:
+                readHwVersion();
+                break;
+            case SERIAL_NUMBER:
+                readSerialNumber();
+                break;
+            case STATE:
+            default:
+                    break;
+        }
+    }
+
+    /**
+     *
+     * @param newState
+     */
+    public void notifyStateChanged(BtState newState) {
+        if(newState == BtState.CONNECTED_AND_READY || newState == BtState.DISCONNECTED)
+            requestBeingProcessed = false;
+        EventBusManager.postEvent(new DeviceInfoEvent<BtState>(DeviceInfo.STATE, newState));
+    }
+
+    /**
+     *
+     * @param deviceInfo
+     * @param deviceValue
+     */
+    public void notifyDeviceInfoReceived(DeviceInfo deviceInfo, String deviceValue){
+        requestBeingProcessed = false;
+        EventBusManager.postEvent(new DeviceInfoEvent<String>(deviceInfo, deviceValue));
+    }
+
+    public void parseRequest(BluetoothRequests request){
+        //BluetoothRequests request = pendingRequests.remove();
+        while(requestBeingProcessed);
+        if(request instanceof ConnectRequestEvent){
+            if(((ConnectRequestEvent)request).getName() == null){
+                scanDevices();
+            }else{
+                scanAndConnect(((ConnectRequestEvent)request).getName());
+            }
+        } else if(request instanceof ReadRequestEvent){
+            performReadOperation(((ReadRequestEvent)request).getDeviceInfo());
+        } else if(request instanceof DisconnectRequestEvent){
+            disconnect();
+        } else if(request instanceof StreamRequestEvent){
+            if(((StreamRequestEvent) request).isStart())
+                startStream();
+            else
+                stopStream();
+        }
+        requestBeingProcessed = true;
+    }
+
+    /**
+     *
+     * @param newStreamState
+     */
+    public void notifyStreamStateChanged(IStreamable.StreamState newStreamState) {
+        requestBeingProcessed = false;
+        EventBusManager.postEvent(newStreamState);
+    }
+
+    public void notifyNewHeadsetStatus(BtProtocol protocol, byte[] payload) {
+        EventBusManager.postEvent(new RawDeviceMeasure(payload));
+    }
+
+
+    public class RequestThread extends HandlerThread {
+        public RequestThread(String name) {
+            super(name);
+        }
+
+        public RequestThread(String name, int priority) {
+            super(name, priority);
+        }
+
+        @Override
+        protected void onLooperPrepared() {
+            super.onLooperPrepared();
+        }
+    }
 
 }
