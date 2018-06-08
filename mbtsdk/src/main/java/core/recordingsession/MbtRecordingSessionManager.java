@@ -5,6 +5,8 @@ import android.support.annotation.NonNull;
 
 import java.util.ArrayList;
 
+import core.BaseModuleManager;
+import core.MbtManager;
 import core.eeg.storage.MBTEEGPacket;
 import features.MbtFeatures;
 import model.Comment;
@@ -16,7 +18,7 @@ import utils.MbtJsonUtils;
  * Created by Etienne on 08/02/2018.
  */
 
-public final class MbtRecordingSessionManager {
+public final class MbtRecordingSessionManager extends BaseModuleManager{
 
     private ArrayList<MBTEEGPacket> mbteegPackets;
     private ArrayList<Comment> comments;
@@ -29,10 +31,8 @@ public final class MbtRecordingSessionManager {
 
     private boolean isRecording = false;
 
-    private Context mContext;
-
-    public MbtRecordingSessionManager(@NonNull Context context){
-        mContext = context;
+    public MbtRecordingSessionManager(@NonNull Context context , MbtManager mbtManager){
+        super(context, mbtManager);
     }
 
     /**

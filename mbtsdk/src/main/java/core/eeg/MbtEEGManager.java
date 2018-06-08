@@ -8,6 +8,7 @@ import org.greenrobot.eventbus.Subscribe;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import core.BaseModuleManager;
 import core.MbtManager;
 import core.eeg.acquisition.MbtDataAcquisition;
 import core.eeg.signalprocessing.MBTCalibrationParameters;
@@ -38,7 +39,7 @@ import static core.bluetooth.BtProtocol.BLUETOOTH_SPP;
  * @version Sophie ZECRI 25/05/2018
  */
 
-public final class MbtEEGManager {
+public final class MbtEEGManager extends BaseModuleManager{
 
     private static final String TAG = MbtEEGManager.class.getName();
 
@@ -70,19 +71,15 @@ public final class MbtEEGManager {
     private int RAW_DATA_PACKET_SIZE;
     private int RAW_DATA_BUFFER_SIZE;
 
-    private Context mContext;
 
     private MbtDataAcquisition dataAcquisition;
     private MbtDataBuffering mbtDataBuffering;
     private ArrayList<ArrayList<Float>> eegResult;
 
-    private MbtManager mbtManager;
 
     public MbtEEGManager(@NonNull Context context, MbtManager mbtManagerController){
+        super(context, mbtManagerController);
 
-        this.mContext = context;
-        this.mbtManager = mbtManagerController;
-        EventBusManager.registerOrUnregister(true, this);
         if (MbtFeatures.getBluetoothProtocol().equals(BLUETOOTH_LE)){
             RAW_DATA_INDEX_SIZE = BLE_RAW_DATA_INDEX_SIZE;
             RAW_DATA_SAMPLE_SIZE = BLE_RAW_DATA_SAMPLE_SIZE;

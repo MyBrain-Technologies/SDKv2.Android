@@ -4,22 +4,21 @@ import android.content.Context;
 
 import org.greenrobot.eventbus.Subscribe;
 
+import core.BaseModuleManager;
 import core.MbtManager;
 import core.bluetooth.BtProtocol;
 import core.eeg.acquisition.MbtDataConversion;
 import eventbus.EventBusManager;
 
-public class MbtDeviceManager {
+public class MbtDeviceManager extends BaseModuleManager{
 
-    private Context mContext;
-    private MbtManager mbtManager;
     private BtProtocol protocol;
 
 
     public MbtDeviceManager(Context context, MbtManager mbtManagerController, BtProtocol protocol){
+        super(context, mbtManagerController);
         this.mContext = context;
-        this.mbtManager = mbtManagerController;
-        EventBusManager.registerOrUnregister(true, this);
+        //EventBusManager.registerOrUnregister(true, this);
         this.protocol = protocol;
     }
 

@@ -7,7 +7,9 @@ import android.support.annotation.Nullable;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
-import core.bluetooth.BtProtocol;
+import java.util.HashSet;
+import java.util.Set;
+
 import core.bluetooth.BtState;
 import core.bluetooth.IStreamable;
 import core.bluetooth.requests.ConnectRequestEvent;
@@ -21,60 +23,87 @@ import core.device.SaturationEvent;
 import core.recordingsession.metadata.DeviceInfo;
 import engine.DeviceInfoListener;
 import engine.HeadsetStatusListener;
-import engine.MbtClientEvents;
 import engine.StateListener;
 import eventbus.EventBusManager;
 import eventbus.events.DeviceInfoEvent;
 import engine.EegListener;
+import features.MbtFeatures;
 
 /**
  * MbtManager is responsible for managing communication between all the package managers
  *
  * @author Sophie ZECRI on 29/05/2018
  */
-public final class MbtManager {
+public final class MbtManager{
+    private static final String TAG = MbtManager.class.getName();
+
+    private Set<BaseModuleManager> registeredModuleManagers;
+
+    private Context mContext;
 
     private StateListener stateListener;
     private EegListener eegListener;
     private DeviceInfoListener deviceInfoListener;
     private HeadsetStatusListener headsetStatusListener;
 
-    private static final String TAG = MbtManager.class.getName();
-
     /**
-     *     Used to save context
+     *
+     * @param context
      */
-    private Context mContext;
-
-    private MbtBluetoothManager mbtBluetoothManager;
-
-
     public MbtManager(Context context) {
         this.mContext = context;
-        mbtBluetoothManager = new MbtBluetoothManager(mContext, this);
-        new MbtDeviceManager(mContext, this, BtProtocol.BLUETOOTH_LE);
+        this.registeredModuleManagers = new HashSet<>();
+
         EventBusManager.registerOrUnregister(true, this);
+
+        registerManager(new MbtDeviceManager(mContext, this, MbtFeatures.getBluetoothProtocol()));
+        registerManager(new MbtBluetoothManager(mContext, this, MbtFeatures.getBluetoothProtocol()));
     }
 
+    /**
+     *
+     * @param manager
+     */
+    private void registerManager(BaseModuleManager manager){
+        registeredModuleManagers.add(manager);
+    }
+
+
+    /**
+     *
+     * @param name
+     * @param listener
+     */
     public void connectBluetooth(@Nullable String name, @NonNull StateListener listener){
         this.stateListener = listener;
 
         EventBusManager.postEvent(new ConnectRequestEvent(name));
     }
 
-
+    /**
+     *
+     */
     public void disconnectBluetooth(){
         EventBusManager.postEvent(new DisconnectRequestEvent());
     }
 
-
+    /**
+     *
+     * @param deviceInfo
+     * @param listener
+     */
     public void readBluetooth(@NonNull DeviceInfo deviceInfo, @NonNull DeviceInfoListener listener){
         this.deviceInfoListener = listener;
 
         EventBusManager.postEvent(new ReadRequestEvent(deviceInfo));
     }
 
-
+    /**
+     *
+     * @param useQualities
+     * @param eegListener
+     * @param headsetStatusListener
+     */
     public void startStream(boolean useQualities, @NonNull EegListener eegListener, @Nullable HeadsetStatusListener headsetStatusListener){
         this.eegListener = eegListener;
         this.headsetStatusListener = headsetStatusListener;
@@ -82,10 +111,17 @@ public final class MbtManager {
         EventBusManager.postEvent(new StreamRequestEvent(true));
     }
 
+    /**
+     *
+     */
     public void stopStream(){
         EventBusManager.postEvent(new StreamRequestEvent(false));
     }
 
+    /**
+     *
+     * @param event
+     */
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onDeviceInfoEvent(DeviceInfoEvent event){
         switch(event.getInfotype()){
@@ -123,6 +159,10 @@ public final class MbtManager {
         }
     }
 
+    /**
+     *
+     * @param newState
+     */
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onStreamStateChanged(IStreamable.StreamState newState){
         if(newState == IStreamable.StreamState.FAILED && eegListener != null){
@@ -130,6 +170,10 @@ public final class MbtManager {
         }
     }
 
+    /**
+     *
+     * @param saturationEvent
+     */
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onNewSaturationState(SaturationEvent saturationEvent){
         if(headsetStatusListener != null){
@@ -137,7 +181,10 @@ public final class MbtManager {
         }
     }
 
-
+    /**
+     *
+     * @param dcOffsets
+     */
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onNewDCOffset(DCOffsets dcOffsets){
         if(headsetStatusListener != null){

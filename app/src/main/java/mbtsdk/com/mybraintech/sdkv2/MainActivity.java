@@ -36,7 +36,7 @@ public class MainActivity extends AppCompatActivity{
     private TextView eegTextView;
     private TextView dcoffsettextView;
 
-    Timer timer = new Timer("eegTImer");
+    Timer timer;
 
     boolean start = true;
     TimerTask timerTask = new TimerTask() {
@@ -110,9 +110,13 @@ public class MainActivity extends AppCompatActivity{
                 client.readSerialNumber(deviceInfoListener);
                 client.readBattery(0, deviceInfoListener);
 
-                timer.schedule(timerTask ,0, 10000);
-            } else if (newState == BtState.DISCONNECTED){
+                client.startstream(false, eegListener, headsetStatusListener);
 
+//                timer = new Timer();
+//                timer.schedule(timerTask ,0, 30000);
+            } else if (newState == BtState.DISCONNECTED){
+                if(timer != null)
+                    timer.cancel();
                 Log.i(TAG, "restarting");
                 new Handler().postDelayed(new Runnable() {
                     @Override

@@ -31,7 +31,7 @@ public interface IConnectable {
      * @param newState The new bluetooth connection state. Refer to @{@link BtState}
      * for the complete list of states.
      */
-    void notifyStateChanged(@NonNull final BtState newState);
+    void notifyConnectionStateChanged(@NonNull final BtState newState);
 
 
     boolean isConnected();

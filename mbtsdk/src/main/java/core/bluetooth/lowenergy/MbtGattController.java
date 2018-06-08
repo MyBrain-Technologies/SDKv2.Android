@@ -77,11 +77,11 @@ final class MbtGattController extends BluetoothGattCallback {
             case BluetoothGatt.STATE_CONNECTED:
                 //gatt.requestMtu(MAX_MTU);
                 gatt.discoverServices();
-                this.bluetoothController.notifyStateChanged(BtState.CONNECTED);
+                this.bluetoothController.notifyConnectionStateChanged(BtState.CONNECTED);
                 msg += "STATE_CONNECTED and now discovering services...";
                 break;
             case BluetoothGatt.STATE_CONNECTING:
-                this.bluetoothController.notifyStateChanged(BtState.CONNECTING);
+                this.bluetoothController.notifyConnectionStateChanged(BtState.CONNECTING);
                 msg += "STATE_CONNECTING";
                 break;
             case BluetoothGatt.STATE_DISCONNECTED:
@@ -96,16 +96,16 @@ final class MbtGattController extends BluetoothGattCallback {
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                    this.bluetoothController.notifyStateChanged(BtState.DISCONNECTED);
+                    this.bluetoothController.notifyConnectionStateChanged(BtState.DISCONNECTED);
                 }
                 msg += "STATE_DISCONNECTED";
                 break;
             case BluetoothGatt.STATE_DISCONNECTING:
                 msg += "STATE_DISCONNECTING";
-                this.bluetoothController.notifyStateChanged(BtState.DISCONNECTING);
+                this.bluetoothController.notifyConnectionStateChanged(BtState.DISCONNECTING);
                 break;
             default:
-                this.bluetoothController.notifyStateChanged(BtState.INTERNAL_FAILURE);
+                this.bluetoothController.notifyConnectionStateChanged(BtState.INTERNAL_FAILURE);
                 gatt.close();
                 msg += "Unknown value " + newState;
         }
@@ -158,7 +158,7 @@ final class MbtGattController extends BluetoothGattCallback {
             // everything went well as expected
             if(this.connectionLock.isWaiting())
                 this.connectionLock.setResultAndNotify(BtState.CONNECTED_AND_READY);
-            this.bluetoothController.notifyStateChanged(BtState.CONNECTED_AND_READY);
+            this.bluetoothController.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
         }
 
         // Starting Battery Reader Timer
@@ -305,6 +305,7 @@ final class MbtGattController extends BluetoothGattCallback {
     @Override
     public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
         super.onMtuChanged(gatt, mtu, status);
+        Log.i(TAG, "onMtuChanged with new value " + mtu);
     }
 
 //    /**

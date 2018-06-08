@@ -15,6 +15,7 @@ import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.ParcelUuid;
+import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresPermission;
 import android.support.v4.content.ContextCompat;
@@ -22,19 +23,20 @@ import android.util.Log;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
+import config.AmpGainConfig;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.BtState;
 import core.bluetooth.IStreamable;
 import core.bluetooth.MbtBluetooth;
 import core.bluetooth.MbtBluetoothManager;
-import core.eeg.acquisition.MbtDataConversion;
-import utils.AsyncUtils;
+import config.FilterConfig;
 
 import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
@@ -138,29 +140,29 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         if(!isConnected())
             return false;
 
-        Log.i(TAG, "Now enabling local notification for EEG...");
+        Log.i(TAG, "Now enabling local notification for characteristic: " + characteristic.getUuid());
         if (!this.gatt.setCharacteristicNotification(characteristic, enableNotification)) {
-            Log.e(TAG, "Failed to enable local notification for EEG!");
+            Log.e(TAG, "Failed to enable local notification for characteristic: " + characteristic.getUuid());
             return false;
         }
 
         final BluetoothGattDescriptor notificationDescriptor =
                 characteristic.getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID);
         if (notificationDescriptor == null) {
-            Log.e(TAG, String.format("Error: measurement characteristic with " +
+            Log.e(TAG, String.format("Error: characteristic with " +
                             "UUID <%s> does not have a descriptor (UUID <%s>) to enable notification remotely!",
                     characteristic.getUuid().toString(), MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID.toString()));
             return false;
         }
 
-        Log.i(TAG, "Now enabling remote notification for EEG...");
+        Log.i(TAG, "Now enabling remote notification for characteristic: " + characteristic.getUuid());
         if (!notificationDescriptor.setValue(enableNotification ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE : BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)) {
             final StringBuilder sb = new StringBuilder();
             for (final byte value : enableNotification ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE : BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE) {
                 sb.append(value);
                 sb.append(';');
             }
-            Log.e(TAG, String.format("Error: measurement characteristic's notification descriptor with " +
+            Log.e(TAG, String.format("Error: characteristic's notification descriptor with " +
                             "UUID <%s> could not store the ENABLE notification value <%s>.",
                     MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID.toString(), sb.toString()));
             return false;
@@ -174,12 +176,12 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 
         if (!this.gatt.writeDescriptor(notificationDescriptor)) {
             Log.e(TAG, "Error: failed to initiate write descriptor operation in order to remotely " +
-                    "enable notification for EEG!");
+                    "enable notification for characteristic: " + characteristic.getUuid());
             return false;
         }
 
         Log.i(TAG, "Successfully initiated write descriptor operation in order to remotely " +
-                "enable notification for EEG: now waiting for confirmation from headset.");
+                "enable notification... now waiting for confirmation from headset.");
 
         return true;
     }
@@ -267,19 +269,19 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             switch(errorCode) {
                 case SCAN_FAILED_ALREADY_STARTED:
                     msg += "Scan already started!";
-                    notifyStateChanged(BtState.SCAN_FAILED_ALREADY_STARTED);
+                    notifyConnectionStateChanged(BtState.SCAN_FAILED_ALREADY_STARTED);
                     break;
                 case SCAN_FAILED_APPLICATION_REGISTRATION_FAILED:
                     msg += "App could not be registered";
-                    notifyStateChanged(BtState.SCAN_FAILED_APPLICATION_REGISTRATION_FAILED);
+                    notifyConnectionStateChanged(BtState.SCAN_FAILED_APPLICATION_REGISTRATION_FAILED);
                     break;
                 case SCAN_FAILED_FEATURE_UNSUPPORTED:
                     msg += "Failed to start power optimized scan. Feature is not supported by device";
-                    notifyStateChanged(BtState.SCAN_FAILED_FEATURE_UNSUPPORTED);
+                    notifyConnectionStateChanged(BtState.SCAN_FAILED_FEATURE_UNSUPPORTED);
                     break;
                 case SCAN_FAILED_INTERNAL_ERROR:
                     msg += "Internal Error. No more details.";
-                    notifyStateChanged(BtState.INTERNAL_FAILURE);
+                    notifyConnectionStateChanged(BtState.INTERNAL_FAILURE);
                     break;
             }
             Log.e(TAG, msg);
@@ -371,7 +373,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @param payload the payload to write to the characteristic
      * @return immediatly false on error, true otherwise
      */
-    public boolean startWriteOperation(UUID characteristic, byte[] payload){
+    private boolean startWriteOperation(UUID characteristic, byte[] payload){
         if(!checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT, characteristic))
             return false;
 
@@ -404,12 +406,15 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         return true;
     }
 
-    public synchronized Byte[] getEEGConfiguration() {
-//        if(!this.mbtGattController.enableNotificationOnMailbox())
-//            return null;
-//        //first read the eeg config to update acquisition buffers
-//        return this.mbtGattController.getEegConfig();
-        return null;
+    private boolean isNotificationEnabledOnCharacteristic(@NonNull UUID service, @NonNull UUID characteristic){
+        if(!checkServiceAndCharacteristicValidity(service, characteristic))
+            return false;
+
+        if(this.gatt.getService(service).getCharacteristic(characteristic).getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID) == null)
+            return false;
+
+        return Arrays.equals(this.gatt.getService(service).getCharacteristic(characteristic).getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID).getValue(), BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+
     }
 
 
@@ -441,6 +446,9 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         return startReadOperation(MelomindCharacteristics.CHARAC_INFO_SERIAL_NUMBER);
     }
 
+
+
+
     public void testAcquireDataRandomByte(){ //eeg matrix size
         byte[] data = new byte[250];
         for (int i=0; i<63; i++){// buffer size = 1000=16*62,5 => matrix size always = 1000/2 = 500
@@ -464,4 +472,85 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             //TODO see what's important here
         }
     }
+
+
+    @Override
+    public void notifyConnectionStateChanged(@NonNull BtState newState) {
+        super.notifyConnectionStateChanged(newState);
+        if(newState == BtState.DISCONNECTED){
+            if(isStreaming()){
+                streamingState = StreamState.IDLE;
+            }
+        }
+    }
+
+    /**
+     *
+     * @param newMTU
+     */
+    public void changeMTU(@IntRange(from = 23, to = 121) int newMTU) {
+        if(!isConnected()){
+            return;
+        }
+
+        if(this.gatt == null)
+            return;
+
+        this.gatt.requestMtu(newMTU);
+
+    }
+
+    /**
+     *
+     * @param newConfig
+     */
+    public void changeFilterConfiguration(FilterConfig newConfig){
+        if(!isNotificationEnabledOnCharacteristic(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX)){
+            enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX));
+        }
+
+        ByteBuffer nameToBytes = ByteBuffer.allocate(2); // +1 for mailbox code
+        nameToBytes.put(MailboxEvents.MBX_SET_NOTCH_FILT);
+        nameToBytes.put((byte)newConfig.getNumVal());
+        startWriteOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX, nameToBytes.array());
+    }
+
+    /**
+     *
+     * @param newConfig
+     */
+    public void changeAmpGainConfiguration(AmpGainConfig newConfig){
+        if(!isNotificationEnabledOnCharacteristic(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX)){
+            enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX));
+        }
+        ByteBuffer nameToBytes = ByteBuffer.allocate(2); // +1 for mailbox code
+        nameToBytes.put(MailboxEvents.MBX_SET_AMP_GAIN);
+        nameToBytes.put((byte)newConfig.getNumVal());
+        startWriteOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX, nameToBytes.array());
+    }
+
+    /**
+     *
+     * @param useP300
+     */
+    public void switchP300Mode(boolean useP300){
+        if(!isNotificationEnabledOnCharacteristic(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX)){
+            enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX));
+        }
+
+        ByteBuffer nameToBytes = ByteBuffer.allocate(2); // +1 for mailbox code
+        nameToBytes.put(MailboxEvents.MBX_P300_ENABLE);
+        nameToBytes.put((byte)(useP300 ? 0x01 : 0x00));
+        startWriteOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX, nameToBytes.array());
+    }
+
+    /**
+     *
+     * @return
+     */
+    public boolean requestDeviceConfig(){
+        byte[] code = {MailboxEvents.MBX_GET_EEG_CONFIG};
+        return startWriteOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX, code);
+    }
+
 }
