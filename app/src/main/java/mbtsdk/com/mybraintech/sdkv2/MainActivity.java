@@ -20,7 +20,7 @@ import core.device.SaturationEvent;
 import core.eeg.storage.MBTEEGPacket;
 import engine.DeviceInfoListener;
 import engine.EegListener;
-import engine.HeadsetStatusListener;
+import engine.DeviceStatusListener;
 import engine.MbtClient;
 import engine.MbtClientEvents;
 import engine.StateListener;
@@ -43,7 +43,7 @@ public class MainActivity extends AppCompatActivity{
         @Override
         public void run() {
             if(start){
-                client.startstream(false, eegListener, headsetStatusListener);
+                client.startstream(false, eegListener, deviceStatusListener);
                 start = false;
             }else{
                 client.stopStream();
@@ -52,7 +52,7 @@ public class MainActivity extends AppCompatActivity{
         }
     };
 
-    private HeadsetStatusListener headsetStatusListener = new HeadsetStatusListener() {
+    private DeviceStatusListener deviceStatusListener = new DeviceStatusListener() {
         @Override
         public void onSaturationStateChanged(SaturationEvent saturation) {
             Toast.makeText(MainActivity.this, "Saturation detected with code " + saturation.getSaturationCode(), Toast.LENGTH_SHORT).show();
@@ -110,11 +110,11 @@ public class MainActivity extends AppCompatActivity{
                 client.readSerialNumber(deviceInfoListener);
                 client.readBattery(0, deviceInfoListener);
 
-                client.startstream(false, eegListener, headsetStatusListener);
+                client.startstream(false, eegListener, deviceStatusListener);
 
 //                timer = new Timer();
 //                timer.schedule(timerTask ,0, 30000);
-            } else if (newState == BtState.DISCONNECTED){
+            } else if (newState == BtState.DISCONNECTED || newState == BtState.SCAN_TIMEOUT){
                 if(timer != null)
                     timer.cancel();
                 Log.i(TAG, "restarting");

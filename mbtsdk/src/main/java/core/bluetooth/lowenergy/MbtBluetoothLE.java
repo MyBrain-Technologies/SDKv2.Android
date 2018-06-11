@@ -42,6 +42,12 @@ import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 
 /**
+ *
+ * This class contains all required methods to interact with a LE bluetooth peripheral, such as Melomind.
+ *
+ * <p>In order to work {@link android.Manifest.permission#BLUETOOTH} and {@link android.Manifest.permission#BLUETOOTH_ADMIN} permissions
+ * are required </p>
+ *
  * Created by Etienne on 08/02/2018.
  *
  */
@@ -57,6 +63,12 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 
     private BluetoothGatt gatt;
 
+    /**
+     * public constructor that will instanciate this class. It also instanciate a new
+     * {@link MbtGattController MbtGattController} instance
+     * @param context the application context
+     * @param mbtBluetoothManager the Bluetooth manager that performs requests and receives results.
+     */
     public MbtBluetoothLE(Context context, MbtBluetoothManager mbtBluetoothManager) {
         super(context, mbtBluetoothManager);
         this.mbtGattController = new MbtGattController(context, this);
@@ -69,6 +81,9 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * <p><strong>Note:</strong> calling this method will start the raw EEG data acquisition process
      * on the headset which will <strong>consume battery life</strong>. Please consider calling
      * {@link #stopStream()} when EEG raw data are no longer needed.</p>
+     *
+     * If there is already a streaming session in progress, nothing happens and true is returned.
+     *
      * @return              <code>true</code> if request has been sent correctly
      *                      <code>false</code> on immediate error
      */
@@ -98,6 +113,9 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * and cleaning reference to previously registered listener.
      * <p>Calling this method will <strong>preserve battery life</strong> by halting the raw EEG
      * data acquisition process on the headset.</p>
+     *
+     * If there is no streaming session in progress, nothing happens and true is returned.
+     *
      * @return true upon correct EEG disability request, false on immediate error
      */
     @Override
@@ -111,6 +129,10 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         return enableOrDisableNotificationsOnCharacteristic(false, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG));
     }
 
+    /**
+     * Whenever there is a new stream state, this method is called to notify the bluetooth manager about it.
+     * @param newStreamState the new stream state based on {@link core.bluetooth.IStreamable.StreamState the StreamState enum}
+     */
     @Override
     public void notifyStreamStateChanged(StreamState newStreamState) {
         Log.i(TAG, "new streamstate with state " + newStreamState.toString());
@@ -119,11 +141,19 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         super.mbtBluetoothManager.notifyStreamStateChanged(newStreamState);
     }
 
+
+    /**
+     * Whenever there is a new headset status received, this method is called to notify the bluetooth manager about it.
+     * @param payload the new headset status as a raw byte array. This byte array has to be parsed afterward.
+     */
     public void notifyNewHeadsetStatus(byte[] payload){
         this.mbtBluetoothManager.notifyNewHeadsetStatus(BtProtocol.BLUETOOTH_LE, payload);
     }
 
-
+    /**
+     *
+     * @return true if a streaming session is in progress, false otherwise
+     */
     @Override
     public boolean isStreaming() {
         return streamingState == StreamState.STARTED;
@@ -133,7 +163,10 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     /**
      * Enable or disable notifications on specific characteristic provinding this characteristic is "notification ready".
      * @param enableNotification enabling if set to true, false otherwise
-     * @param characteristic the characteristic to enable or disable notification on
+     * @param characteristic the characteristic to enable or disable notification on.
+     *
+     * This operation is synchronous, meaning the thread running this method is blocked until the operation completes.
+     *
      * @return false for any error, true upon success
      */
     private synchronized boolean enableOrDisableNotificationsOnCharacteristic(boolean enableNotification, @NonNull BluetoothGattCharacteristic characteristic) {
@@ -183,7 +216,13 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         Log.i(TAG, "Successfully initiated write descriptor operation in order to remotely " +
                 "enable notification... now waiting for confirmation from headset.");
 
-        return true;
+        try {
+            this.wait(5000);
+            return true;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
 
@@ -235,6 +274,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 
     /**
      * Stops the currently bluetooth low energy scanner.
+     * If a lock is currently waiting, the lock is disabled.
      */
     public void stopLowEnergyScan() {
 
@@ -288,6 +328,14 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         }
     };
 
+    /**
+     * Starts the connect operation in order to connect the {@link BluetoothDevice bluetooth device} (peripheral)
+     * to the terminal (central).
+     * If the operation starts successfully, a new {@link BluetoothGatt gatt} instance will be stored.
+     * @param context the context which the connection event takes place in.
+     * @param device the bluetooth device to connect to.
+     * @return true if operation has correctly started, false otherwise.
+     */
     @Override
     public boolean connect(Context context, BluetoothDevice device) {
 
@@ -322,6 +370,11 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         return false;
     }
 
+    /**
+     * Disconnects from the currently connected {@link BluetoothGatt gatt instance} and sets it to null
+     * @param device
+     * @return
+     */
     @Override
     public boolean disconnect(BluetoothDevice device) {
         this.gatt.disconnect();
@@ -329,6 +382,9 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isConnected() {
         return getCurrentState() == BtState.CONNECTED_AND_READY;
@@ -340,7 +396,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @param characteristic the characteristic to read
      * @return immediatly false on error, true true if read operation has started correctly
      */
-    public boolean startReadOperation(UUID characteristic){
+    private boolean startReadOperation(UUID characteristic){
         if(!isConnected())
             return false;
 
@@ -373,7 +429,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @param payload the payload to write to the characteristic
      * @return immediatly false on error, true otherwise
      */
-    private boolean startWriteOperation(UUID characteristic, byte[] payload){
+    private synchronized boolean startWriteOperation(UUID characteristic, byte[] payload){
         if(!checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT, characteristic))
             return false;
 
@@ -383,7 +439,14 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             Log.e(TAG, "Error: failed to write characteristic " + characteristic.toString());
             return false;
         }
-        return true;
+
+        try {
+            this.wait(5000);
+            return true;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
 
@@ -406,6 +469,12 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         return true;
     }
 
+    /**
+     * Checks if the charateristic has notifications already enabled or not.
+     * @param service the Service UUID that holds the characteristic
+     * @param characteristic the characteristic UUID.
+     * @return true is already enabled notifications, false otherwise.
+     */
     private boolean isNotificationEnabledOnCharacteristic(@NonNull UUID service, @NonNull UUID characteristic){
         if(!checkServiceAndCharacteristicValidity(service, characteristic))
             return false;
@@ -422,7 +491,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * Initiates a read battery operation on this correct BtProtocol
      */
     public boolean readBattery() {
-
+        Log.i(TAG, "read battery requested");
         return startReadOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_BATTERY_LEVEL);
     }
 
@@ -430,12 +499,14 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * Initiates a read firmware version operation on this correct BtProtocol
      */
     public boolean readFwVersion(){
+        Log.i(TAG, "read firmware version requested");
         return startReadOperation(MelomindCharacteristics.CHARAC_INFO_FIRMWARE_VERSION);
     }
     /**
      * Initiates a read hardware version operation on this correct BtProtocol
      */
     public boolean readHwVersion(){
+        Log.i(TAG, "read hardware version requested");
         return startReadOperation(MelomindCharacteristics.CHARAC_INFO_HARDWARE_VERSION);
     }
 
@@ -443,10 +514,9 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * Initiates a read serial number operation on this correct BtProtocol
      */
     public boolean readSerialNumber(){
+        Log.i(TAG, "read serial number requested");
         return startReadOperation(MelomindCharacteristics.CHARAC_INFO_SERIAL_NUMBER);
     }
-
-
 
 
     public void testAcquireDataRandomByte(){ //eeg matrix size
@@ -459,6 +529,12 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     }
 
 
+    /**
+     * Callback called by the {@link MbtGattController gatt controller} when the notification state has changed.
+     * @param isSuccess if the modification state is correctly changed
+     * @param characteristic the characteristic which had its notification state changed
+     * @param wasEnableRequest if the request was to enable (true) or disable (false) request.
+     */
     public void onNotificationStateChanged(boolean isSuccess, BluetoothGattCharacteristic characteristic, boolean wasEnableRequest) {
         if(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG.equals(characteristic.getUuid())){
             if(wasEnableRequest && isSuccess){
@@ -473,7 +549,10 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         }
     }
 
-
+    /**
+     * Callback called by the {@link MbtGattController gatt controller} when the connection state has changed.
+     * @param newState the new {@link BtState state}
+     */
     @Override
     public void notifyConnectionStateChanged(@NonNull BtState newState) {
         super.notifyConnectionStateChanged(newState);
@@ -485,26 +564,46 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     }
 
     /**
+     * Initiates a change MTU request in order to have bigger (or smaller) bluetooth notifications.
+     * The default size is also the minimum size : 23
+     * The maximum size is set to 121.
+     * This method is synchronous and blocks the calling thread until operation is complete.
      *
-     * @param newMTU
+     *
+     * See {@link BluetoothGatt#requestMtu(int)} for more info.
+     *
+     * @param newMTU the new MTU value.
+     *
+     * @return false if request dod not start as planned, true otherwise.
      */
-    public void changeMTU(@IntRange(from = 23, to = 121) int newMTU) {
+    public synchronized boolean changeMTU(@IntRange(from = 23, to = 121)final int newMTU) {
+        Log.i(TAG, "changing mtu to " + newMTU);
         if(!isConnected()){
-            return;
+            return false;
         }
 
         if(this.gatt == null)
-            return;
+            return false;
 
-        this.gatt.requestMtu(newMTU);
+        if(!this.gatt.requestMtu(newMTU))
+            return false;
 
+        try {
+            this.wait(5000);
+            return true;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     /**
-     *
-     * @param newConfig
+     * Initiates a write operation in order to change the embedded filter values in the melomind firmware.
+     * It first requires that notifications are enabled to the {@link MelomindCharacteristics#CHARAC_MEASUREMENT_MAILBOX}
+     * charateristic are enabled.
+     * @param newConfig the new config.
      */
-    public void changeFilterConfiguration(FilterConfig newConfig){
+    public boolean changeFilterConfiguration(FilterConfig newConfig){
         if(!isNotificationEnabledOnCharacteristic(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX)){
             enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX));
         }
@@ -512,28 +611,36 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         ByteBuffer nameToBytes = ByteBuffer.allocate(2); // +1 for mailbox code
         nameToBytes.put(MailboxEvents.MBX_SET_NOTCH_FILT);
         nameToBytes.put((byte)newConfig.getNumVal());
-        startWriteOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX, nameToBytes.array());
+        return startWriteOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX, nameToBytes.array());
+
     }
 
     /**
-     *
-     * @param newConfig
+     * Initiates a write operation in order to change the embedded ampli gain value in the melomind firmware.
+     * It first requires that notifications are enabled to the {@link MelomindCharacteristics#CHARAC_MEASUREMENT_MAILBOX}
+     * charateristic are enabled.
+     * @param newConfig the new config.
      */
-    public void changeAmpGainConfiguration(AmpGainConfig newConfig){
+    public boolean changeAmpGainConfiguration(AmpGainConfig newConfig){
         if(!isNotificationEnabledOnCharacteristic(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX)){
             enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX));
         }
         ByteBuffer nameToBytes = ByteBuffer.allocate(2); // +1 for mailbox code
         nameToBytes.put(MailboxEvents.MBX_SET_AMP_GAIN);
         nameToBytes.put((byte)newConfig.getNumVal());
-        startWriteOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX, nameToBytes.array());
+        return startWriteOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX, nameToBytes.array());
+
     }
 
     /**
-     *
-     * @param useP300
+     * Initiates a write operation in order to enable or disable the p300 mode in the melomind firmware.
+     * It first requires that notifications are enabled to the {@link MelomindCharacteristics#CHARAC_MEASUREMENT_MAILBOX}
+     * charateristic are enabled.
+     * @param useP300 is true to enable, false to disable.
      */
-    public void switchP300Mode(boolean useP300){
+    public boolean switchP300Mode(boolean useP300){
+        Log.i(TAG, "switch p300: new mode is " + (useP300 ? "enabled" : "disabled"));
+
         if(!isNotificationEnabledOnCharacteristic(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX)){
             enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX));
         }
@@ -541,16 +648,19 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         ByteBuffer nameToBytes = ByteBuffer.allocate(2); // +1 for mailbox code
         nameToBytes.put(MailboxEvents.MBX_P300_ENABLE);
         nameToBytes.put((byte)(useP300 ? 0x01 : 0x00));
-        startWriteOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX, nameToBytes.array());
+        return startWriteOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX, nameToBytes.array());
     }
 
     /**
-     *
+     * Initiates a write operation in order to enable or disable the p300 mode in the melomind firmware.
+     * It first requires that notifications are enabled to the {@link MelomindCharacteristics#CHARAC_MEASUREMENT_MAILBOX}
+     * charateristic are enabled.
      * @return
      */
     public boolean requestDeviceConfig(){
         byte[] code = {MailboxEvents.MBX_GET_EEG_CONFIG};
         return startWriteOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX, code);
     }
+
 
 }

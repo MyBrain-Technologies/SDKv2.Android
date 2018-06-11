@@ -27,6 +27,11 @@ import features.MbtFeatures;
 import utils.MbtLock;
 
 /**
+ *
+ * Abstract class that contains all fields and methods that are common to the different bluetooth types.
+ * It implements {@link IScannable} interface and {@link IConnectable} interface as all bluetooth types shares this
+ * functionnalities.
+ *
  * Created by Etienne on 08/02/2018.
  */
 

@@ -5,25 +5,12 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import core.MbtManager;
-import core.bluetooth.MbtBluetoothManager;
-import core.eeg.MbtEEGManager;
-import core.eeg.signalprocessing.MBTCalibrationParameters;
-import core.eeg.storage.MBTEEGPacket;
-import core.recordingsession.MbtRecordingSessionManager;
 import core.recordingsession.metadata.DeviceInfo;
-import core.serversync.MbtServerSyncManager;
-import features.MbtFeatures;
 import features.ScannableDevices;
-import model.MbtRecording;
-
-import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
-import static core.bluetooth.BtProtocol.BLUETOOTH_SPP;
 
 /**
  * Created by Etienne on 08/02/2018.
@@ -48,7 +35,7 @@ public final class MbtClient {
     private MbtClientEvents.DeviceInfoListener deviceInfoListener = null;
     private MbtClientEvents.OADEventListener oadEventListener = null;
     private MbtClientEvents.MailboxEventListener mailboxEventListener = null;
-    private MbtClientEvents.HeadsetStatusListener headsetStatusListener = null;*/
+    private MbtClientEvents.DeviceStatusListener headsetStatusListener = null;*/
 
     /**
      * The MbtManager is responsible for managing all the package managers
@@ -128,8 +115,8 @@ public final class MbtClient {
     public void stopReadBattery(){
     }
 
-    public void startstream(boolean useQualities, @NonNull final EegListener eegListener, @Nullable HeadsetStatusListener headsetStatusListener){
-        mbtManager.startStream(useQualities, eegListener, headsetStatusListener);
+    public void startstream(boolean useQualities, @NonNull final EegListener eegListener, @Nullable DeviceStatusListener deviceStatusListener){
+        mbtManager.startStream(useQualities, eegListener, deviceStatusListener);
     }
 
     public void stopStream(){

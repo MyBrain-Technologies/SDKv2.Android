@@ -27,6 +27,13 @@ import static core.bluetooth.lowenergy.MelomindCharacteristics.CHARAC_MEASUREMEN
 import static core.bluetooth.lowenergy.MelomindCharacteristics.SERVICE_DEVICE_INFOS;
 import static core.bluetooth.lowenergy.MelomindCharacteristics.SERVICE_MEASUREMENT;
 
+
+/**
+ * A custom Gatt controller that extends {@link BluetoothGattCallback} class.
+ * All gatt operations from {@link MbtBluetoothLE} LE controller are completed here.
+ *
+ * @see BluetoothGattCallback
+ */
 final class MbtGattController extends BluetoothGattCallback {
     private final static String TAG = MbtGattController.class.getSimpleName();
 
@@ -41,7 +48,7 @@ final class MbtGattController extends BluetoothGattCallback {
     private BluetoothGattCharacteristic hwVersion = null;
     private BluetoothGattCharacteristic serialNumber = null;
 
-    private MbtBluetoothLE bluetoothController;
+    private final MbtBluetoothLE bluetoothController;
 
     public MbtLock<Boolean> notificationLock;
     private final MbtLock<BtState> connectionLock = new MbtLock<>();
@@ -168,6 +175,7 @@ final class MbtGattController extends BluetoothGattCallback {
     @Override
     public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
         super.onCharacteristicRead(gatt, characteristic, status);
+
         if (characteristic.getUuid().compareTo(CHARAC_INFO_FIRMWARE_VERSION) == 0) {
             bluetoothController.notifyDeviceInfoReceived(DeviceInfo.FW_VERSION, new String(characteristic.getValue()));
         }
@@ -272,6 +280,12 @@ final class MbtGattController extends BluetoothGattCallback {
             this.bluetoothController.notifyNewDataAcquired(characteristic.getValue());
         }else if(characteristic.getUuid().compareTo(MelomindCharacteristics.CHARAC_HEADSET_STATUS) == 0){
             this.bluetoothController.notifyNewHeadsetStatus(characteristic.getValue());
+        }else if(characteristic.getUuid().compareTo(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX) == 0){
+            Log.i(TAG, "mailbox message received with code " + characteristic.getValue()[0] +
+                " and payload " + Arrays.toString(characteristic.getValue()));
+            synchronized (this.bluetoothController){
+                this.bluetoothController.notify();
+            }
         }
     }
 
@@ -289,7 +303,11 @@ final class MbtGattController extends BluetoothGattCallback {
         } else {
             Log.e(TAG, "Received a [onDescriptorWrite] callback with Status: FAILURE.");
         }
-        bluetoothController.onNotificationStateChanged(status == BluetoothGatt.GATT_SUCCESS, descriptor.getCharacteristic(), descriptor.getValue() == BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+        synchronized (this.bluetoothController){
+            bluetoothController.notify();
+            bluetoothController.onNotificationStateChanged(status == BluetoothGatt.GATT_SUCCESS, descriptor.getCharacteristic(), descriptor.getValue() == BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+
+        }
     }
 
     @Override
@@ -306,93 +324,12 @@ final class MbtGattController extends BluetoothGattCallback {
     public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
         super.onMtuChanged(gatt, mtu, status);
         Log.i(TAG, "onMtuChanged with new value " + mtu);
+        synchronized (this.bluetoothController){
+            this.bluetoothController.notify();
+        }
+
     }
 
-//    /**
-//     * Enables the notification for mailbox data.
-//     * <p><strong>Note:</strong> calling this method will enable mailbox communications between bluetooth device and application
-//     * @return  <code>true</code> if the notification has been successfully established within the 2 seconds of allotted time,
-//     *          <code>false otherwise</code>
-//     */
-//    public synchronized boolean enableNotificationOnMailbox() {
-//        if (this.mailBox == null){
-//            Log.e(TAG, "Error, mailbox is null");
-//            return false;
-//        }
-//
-////                throw new IllegalStateException("Error: impossible to enable notification on mailbox " +
-////                        "because the Gatt Controller is not correctly initialized");
-//
-//        Log.i(TAG, "Request received to enable notification for mailbox.");
-//        if(this.gatt == null){
-//            Log.e(TAG, "Error, gatt is null");
-//            return false;
-//        }
-//
-//        if(mailboxNotificationsEnabled){
-//            Log.w(TAG, "notifications already enabled");
-//            return true;
-//        }
-//
-////            Log.i(TAG, "Now setting connection priority to HIGH for better performance before " +
-////                    "enabling notification remotely");
-////            if (!this.gatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH)) {
-////                Log.e(TAG, "Error: failed to set connection priority to HIGH for better performance!");
-////                return false;
-////            }
-////            Log.i(TAG, "Successfully set connection priority to HIGH for better performance.");
-////            Log.i(TAG, "It is now safe to enable notification remotely, which will start " +
-////                    "the EEG acquisition on the headset");
-//
-//
-//        Log.i(TAG, "Now enabling local notification for mailbox...");
-//        if (!this.gatt.setCharacteristicNotification(this.mailBox, true)) {
-//            Log.e(TAG, "Failed to enable local notification for mailbox!");
-//            return false;
-//        }
-//
-//        final BluetoothGattDescriptor notificationDescriptor =
-//                this.mailBox.getDescriptor(this.notificationDescriptorUUID);
-//        if (notificationDescriptor == null) {
-//            Log.e(TAG, String.format("Error: mailbox characteristic with " +
-//                            "UUID <%s> does not have a descriptor (UUID <%s>) to enable notification remotely!",
-//                    this.mailBox.getUuid().toString(), notificationDescriptorUUID.toString()));
-//            return false;
-//        }
-//
-//        Log.i(TAG, "Now enabling remote notification for mailbox...");
-//        if (!notificationDescriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)) {
-//            final StringBuilder sb = new StringBuilder();
-//            for (final byte value : BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE) {
-//                sb.append(value);
-//                sb.append(';');
-//            }
-//            Log.e(TAG, String.format("Error: measurement characteristic's notification descriptor with " +
-//                            "UUID <%s> could not store the ENABLE notification value <%s>.",
-//                    notificationDescriptorUUID.toString(), sb.toString()));
-//            return false;
-//        }
-//
-//        if (!this.gatt.writeDescriptor(notificationDescriptor)) {
-//            Log.e(TAG, "Error: failed to initiate write descriptor operation in order to remotely " +
-//                    "enable notification on mailbox!");
-//            return false;
-//        }
-//
-//        Log.i(TAG, "Successfully initiated write descriptor operation in order to remotely " +
-//                "enable notification for mailbox: now waiting for confirmation from headset.");
-//
-//        final Boolean result = this.enableMailboxNotificationLock.waitAndGetResult(10000);
-//        if (result == null)
-//            Log.e(TAG, "Error: waiting for confirmation from headset to have notification " +
-//                    "ENABLED for MAILBOX has expired or the write descriptor operation has failed");
-//        else if (result != null && result) {
-//            Log.i(TAG, "Notification for Mailbox are now finally enabled. ");
-//            mailboxNotificationsEnabled = true;
-//            return true;
-//        }
-//        return false;
-//    }
 
     public void testAcquireDataZeros(){
         byte[] data = new byte[250];

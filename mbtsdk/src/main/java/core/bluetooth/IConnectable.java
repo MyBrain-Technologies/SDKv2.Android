@@ -33,7 +33,9 @@ public interface IConnectable {
      */
     void notifyConnectionStateChanged(@NonNull final BtState newState);
 
-
+    /**
+     * @return whether or not the device is correctly connected, ie if current state is {@link BtState#CONNECTED_AND_READY}
+     */
     boolean isConnected();
 
 }

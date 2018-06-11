@@ -22,7 +22,7 @@ import core.device.MbtDeviceManager;
 import core.device.SaturationEvent;
 import core.recordingsession.metadata.DeviceInfo;
 import engine.DeviceInfoListener;
-import engine.HeadsetStatusListener;
+import engine.DeviceStatusListener;
 import engine.StateListener;
 import eventbus.EventBusManager;
 import eventbus.events.DeviceInfoEvent;
@@ -37,14 +37,24 @@ import features.MbtFeatures;
 public final class MbtManager{
     private static final String TAG = MbtManager.class.getName();
 
+    /**
+     * Contains the currently reigstered module managers.
+     */
     private Set<BaseModuleManager> registeredModuleManagers;
 
+    /**
+     * The application context
+     */
     private Context mContext;
 
+    /**
+     * the application callbacks. EventBus is not available outside the SDK so the user is notified
+     * using custom callback interfaces.
+     */
     private StateListener stateListener;
     private EegListener eegListener;
     private DeviceInfoListener deviceInfoListener;
-    private HeadsetStatusListener headsetStatusListener;
+    private DeviceStatusListener deviceStatusListener;
 
     /**
      *
@@ -61,8 +71,8 @@ public final class MbtManager{
     }
 
     /**
-     *
-     * @param manager
+     * Add a new module manager instance to the Hashset
+     * @param manager the new module manager to add
      */
     private void registerManager(BaseModuleManager manager){
         registeredModuleManagers.add(manager);
@@ -70,9 +80,9 @@ public final class MbtManager{
 
 
     /**
-     *
-     * @param name
-     * @param listener
+     * Perform a new Bluetooth connection.
+     * @param name the device name to connect to
+     * @param listener a set of callback that will notify the user about connection progress.
      */
     public void connectBluetooth(@Nullable String name, @NonNull StateListener listener){
         this.stateListener = listener;
@@ -81,16 +91,16 @@ public final class MbtManager{
     }
 
     /**
-     *
+     * Perform a Bluetooth disconnection.
      */
     public void disconnectBluetooth(){
         EventBusManager.postEvent(new DisconnectRequestEvent());
     }
 
     /**
-     *
-     * @param deviceInfo
-     * @param listener
+     * Perform a bluetooth read operation.
+     * @param deviceInfo the type of info to read
+     * @param listener a set of callback to notify user about the results.
      */
     public void readBluetooth(@NonNull DeviceInfo deviceInfo, @NonNull DeviceInfoListener listener){
         this.deviceInfoListener = listener;
@@ -99,27 +109,27 @@ public final class MbtManager{
     }
 
     /**
-     *
-     * @param useQualities
-     * @param eegListener
-     * @param headsetStatusListener
+     * Posts an event to initiate a stream session.
+     * @param useQualities whether or not quality check algorithms have to be called (Currently false)
+     * @param eegListener the eeg listener
+     * @param deviceStatusListener to notify the user about device status real time modifications.
      */
-    public void startStream(boolean useQualities, @NonNull EegListener eegListener, @Nullable HeadsetStatusListener headsetStatusListener){
+    public void startStream(boolean useQualities, @NonNull EegListener eegListener, @Nullable DeviceStatusListener deviceStatusListener){
         this.eegListener = eegListener;
-        this.headsetStatusListener = headsetStatusListener;
+        this.deviceStatusListener = deviceStatusListener;
 
         EventBusManager.postEvent(new StreamRequestEvent(true));
     }
 
     /**
-     *
+     * Posts an event to stop the currently started stream session
      */
     public void stopStream(){
         EventBusManager.postEvent(new StreamRequestEvent(false));
     }
 
     /**
-     *
+     * Called when a new device info event has been broadcast on the event bus.
      * @param event
      */
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -160,7 +170,7 @@ public final class MbtManager{
     }
 
     /**
-     *
+     * Called when a new stream state event has been broadcast on the event bus.
      * @param newState
      */
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -171,24 +181,24 @@ public final class MbtManager{
     }
 
     /**
-     *
+     *Called when a new saturation event has been broadcast on the event bus.
      * @param saturationEvent
      */
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onNewSaturationState(SaturationEvent saturationEvent){
-        if(headsetStatusListener != null){
-            headsetStatusListener.onSaturationStateChanged(saturationEvent);
+        if(deviceStatusListener != null){
+            deviceStatusListener.onSaturationStateChanged(saturationEvent);
         }
     }
 
     /**
-     *
+     * Called when a new DCOffset measure event has been broadcast on the event bus.
      * @param dcOffsets
      */
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onNewDCOffset(DCOffsets dcOffsets){
-        if(headsetStatusListener != null){
-            headsetStatusListener.onNewDCOffsetMeasured(dcOffsets);
+        if(deviceStatusListener != null){
+            deviceStatusListener.onNewDCOffsetMeasured(dcOffsets);
         }
     }
 

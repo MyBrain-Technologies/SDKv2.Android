@@ -6,6 +6,7 @@ package core.bluetooth.acquisition;
  *  Copyright (c) 2016 myBrain Technologies. All rights reserved.
  */
 
+//TODO use this class in further versions
 public class MbtDeviceAcquisition {
 
     private final String TAG = MbtDeviceAcquisition.class.getName();

@@ -80,7 +80,7 @@ public class DeviceConfig {
             return this;
         }
 
-        public DeviceConfig createStreamConfig() {
+        public DeviceConfig create() {
             return new DeviceConfig(notchFilter, bandpassFilter, gainValue, mtuValue, useP300);
         }
     }
