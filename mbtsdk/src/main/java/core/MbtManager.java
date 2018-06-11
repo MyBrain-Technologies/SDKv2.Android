@@ -2,21 +2,15 @@ package core;
 
 import android.content.Context;
 import android.util.Log;
-
 import org.greenrobot.eventbus.Subscribe;
-
-import java.util.ArrayList;
-
-import config.MbtConfig;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.MbtBluetoothManager;
 import core.eeg.MbtEEGManager;
-import core.eeg.storage.MBTEEGPacket;
 import core.recordingsession.MbtRecordingSessionManager;
 import core.serversync.MbtServerSyncManager;
+import engine.MbtClientEvents;
 import eventbus.EventBusManager;
 import eventbus.events.ClientReadyEEGEvent;
-import features.MbtFeatures;
 
 /**
  * MbtManager is responsible for managing communication between all the package managers
@@ -55,18 +49,19 @@ public final class MbtManager {
      */
     private MbtServerSyncManager mbtServerSyncManager;
 
+    private MbtClientEvents.EegListener eegCallback;
+
     public MbtManager(Context context) {
         mbtBluetoothManager = new MbtBluetoothManager(context,this); //warning : very important to init mbtBluetootbManager before mbtEEGManager (if opposite : a NullPointerException is raised)
         mbtEEGManager = new MbtEEGManager(context,this);
         mbtServerSyncManager = new MbtServerSyncManager(context);
         mbtRecordingSessionManager = new MbtRecordingSessionManager(context);
-        eventBusManager = new EventBusManager();
-        eventBusManager.registerOrUnregister(true,this);
+        EventBusManager.registerOrUnregister(true,this);
 
     }
 
     public BtProtocol getBluetoothProtocol(){
-        return mbtBluetoothManager.getBtProtocol();
+        return mbtBluetoothManager.getBluetoothProtocol();
     }
 
     public MbtBluetoothManager getMbtBluetoothManager() {
@@ -85,24 +80,20 @@ public final class MbtManager {
         return mbtServerSyncManager;
     }
 
-
     /**
      * onEvent is called by the Event Bus when a ClientReadyEEGEvent event is posted
      * This event is published by {@link core.eeg.MbtEEGManager}:
      * this manager handles EEG data acquired by the headset
-     * Creates a new MBTEEGPacket instance when the raw buffer contains enough data
+     * Creates a new MbtEEGPacket instance when the raw buffer contains enough data
      * @param event contains data transmitted by the publisher : here it contains the converted EEG data matrix, the status, the number of acquisition channels and the sampling rate
      */
     @Subscribe
     public void onEvent(final ClientReadyEEGEvent event) { //warning : do not remove this attribute (consider unsused by the IDE, but actually used)
         Log.i(TAG, "event ClientReadyEEGEvent received" );
-        notifyClientReadyEEG(event.getEegPackets(),event.getStatus(), MbtFeatures.getNbChannels(), MbtConfig.getSampleRate());
+        eegCallback.onNewPackets(event.getEegPackets());
     }
 
-    /**
-     * Notifies the client that the raw EEG data have been converted and are ready to use
-     */
-    private void notifyClientReadyEEG(ArrayList<MBTEEGPacket> mbteegPackets, ArrayList<Float> status, int nbChannels, int sampleRate) {
-
+    public void setEegCallback(MbtClientEvents.EegListener eegCallback) {
+        this.eegCallback = eegCallback;
     }
 }

@@ -5,7 +5,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import core.eeg.storage.MBTEEGPacket;
+import core.eeg.storage.MbtEEGPacket;
 
 import static org.mockito.Mockito.mock;
 
@@ -25,7 +25,7 @@ public class MBTComputeRelaxIndexTest {
         qualities.add(1F);
         qualities.add(1F);
         long timestamp = 1L;
-        //final MBTEEGPacket packets = new MBTEEGPacket(channelsData, qualities, null, timestamp);
+        //final MbtEEGPacket packets = new MbtEEGPacket(channelsData, qualities, null, timestamp);
         //float relaxIndex = MBTComputeRelaxIndex.computeRelaxIndex(sampRate,calibParams,packets);
     }
 
@@ -42,7 +42,7 @@ public class MBTComputeRelaxIndexTest {
         qualities.add(1F);
         qualities.add(1F);
         long timestamp = 1L;
-        final MBTEEGPacket packets = new MBTEEGPacket(channelsData, qualities, null, timestamp);
+        final MbtEEGPacket packets = new MbtEEGPacket(channelsData, qualities, null, timestamp);
         float relaxIndex = MBTComputeRelaxIndex.computeRelaxIndex(sampRate,calibParams,packets);
     }
 
@@ -58,7 +58,7 @@ public class MBTComputeRelaxIndexTest {
         ArrayList<Float> qualities = new ArrayList<Float>();
         qualities.add(1F);
         long timestamp = 1L;
-        final MBTEEGPacket packets = null;  //check that IllegalArgumentException is raised if packets is null
+        final MbtEEGPacket packets = null;  //check that IllegalArgumentException is raised if packets is null
         float relaxIndex = MBTComputeRelaxIndex.computeRelaxIndex(sampRate,calibParams,packets);
     }
 
@@ -74,7 +74,7 @@ public class MBTComputeRelaxIndexTest {
         ArrayList<Float> qualities = new ArrayList<Float>();
         qualities.add(1F);
         long timestamp = 1L;
-        final MBTEEGPacket[] packets = new MBTEEGPacket[0];  //check that IllegalArgumentException is raised if packets is empty
+        final MbtEEGPacket[] packets = new MbtEEGPacket[0];  //check that IllegalArgumentException is raised if packets is empty
         float relaxIndex = MBTComputeRelaxIndex.computeRelaxIndex(sampRate,calibParams,packets);
     }
 
@@ -90,7 +90,7 @@ public class MBTComputeRelaxIndexTest {
         ArrayList<Float> qualities = new ArrayList<Float>();
         qualities.add(1F);
         long timestamp = 1L;
-        final MBTEEGPacket packets = new MBTEEGPacket(channelsData, qualities, null, timestamp);
+        final MbtEEGPacket packets = new MbtEEGPacket(channelsData, qualities, null, timestamp);
         float relaxIndex = MBTComputeRelaxIndex.computeRelaxIndex(sampRate,calibParams,packets);
     }
 
@@ -111,7 +111,7 @@ public class MBTComputeRelaxIndexTest {
         qualities.add(1F);
         qualities.add(1F);
         long timestamp = 1L;
-        final MBTEEGPacket packets = new MBTEEGPacket(channelsData, qualities, null, timestamp);
+        final MbtEEGPacket packets = new MbtEEGPacket(channelsData, qualities, null, timestamp);
         //float relaxIndex = MBTComputeRelaxIndex.computeRelaxIndex(sampRate,calibParams,packets);
         //assertTrue(relaxIndex > 0 && relaxIndex < 1); //check that relax index has a relevant value
     }
@@ -127,7 +127,7 @@ public class MBTComputeRelaxIndexTest {
         channelsData.add(new ArrayList<Float>());
         ArrayList<Float> qualities = new ArrayList<Float>();
         long timestamp = 1L;
-        final MBTEEGPacket packets = new MBTEEGPacket(channelsData, qualities, null, timestamp);
+        final MbtEEGPacket packets = new MbtEEGPacket(channelsData, qualities, null, timestamp);
         float relaxIndex = MBTComputeRelaxIndex.computeRelaxIndex(sampRate,calibParams,packets);
     }
 
@@ -140,7 +140,7 @@ public class MBTComputeRelaxIndexTest {
         final ArrayList<ArrayList<Float>> channelsData = new ArrayList<ArrayList<Float>>(); //check that exception is raised if channelsdata is empty
         ArrayList<Float> qualities = new ArrayList<Float>();
         long timestamp = 1L;
-        final MBTEEGPacket packets = new MBTEEGPacket(channelsData, qualities, null, timestamp);
+        final MbtEEGPacket packets = new MbtEEGPacket(channelsData, qualities, null, timestamp);
         float relaxIndex = MBTComputeRelaxIndex.computeRelaxIndex(sampRate,calibParams,packets);
     }
 

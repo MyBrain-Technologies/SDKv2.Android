@@ -173,7 +173,7 @@ public abstract class MbtDevice {
         this.bluetoothDevice = device;
     }
 
-    final static class InternalConfig{
+    public final static class InternalConfig{
         private byte notchFilterConfig;
         private byte bandPassFilterConfig;
         private byte gainValue;
@@ -210,6 +210,16 @@ public abstract class MbtDevice {
             return nbPackets;
         }
 
+        @Override
+        public String toString() {
+            return "InternalConfig{" +
+                    "notchFilterConfig=" + notchFilterConfig +
+                    ", bandPassFilterConfig=" + bandPassFilterConfig +
+                    ", gainValue=" + gainValue +
+                    ", statusBytes=" + statusBytes +
+                    ", nbPackets=" + nbPackets +
+                    '}';
+        }
     }
 
 }

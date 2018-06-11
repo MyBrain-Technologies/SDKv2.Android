@@ -257,15 +257,6 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
         return vproDevice;
     }
 
-    /**
-     * EEGDataIsReadyReceived is called when the event bus receive a ClientReadyEEGEvent event posted by MbtDataAcquisition in handleDataAcquired method
-     * event ClientReadyEEGEvent is posted when the EEG data is ready (raw EGG data has been converted to Float matrix)
-     */
-    /*public void EEGDataIsReadyReceived(ClientReadyEEGEvent event){
-        if (this.eegListener != null)
-            this.eegListener.onNewPackets(new MBTEEGPacket(event.getMatrix(), null, event.getStatus(), System.currentTimeMillis()), event.getNbChannels(), event.getMatrix().get(0).size(), event.getSampleRate());
-    }*/
-
     public void acquireData(@NonNull final byte[] data) {
         mbtBluetoothManager.handleDataAcquired(data);
     }

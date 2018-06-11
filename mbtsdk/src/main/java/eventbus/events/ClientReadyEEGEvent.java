@@ -4,7 +4,7 @@ import android.support.annotation.NonNull;
 
 import java.util.ArrayList;
 
-import core.eeg.storage.MBTEEGPacket;
+import core.eeg.storage.MbtEEGPacket;
 
 /**
  * Event posted when a raw EEG data array has been converted to user-readable EEG matrix
@@ -14,28 +14,20 @@ import core.eeg.storage.MBTEEGPacket;
  */
 public class ClientReadyEEGEvent { //Events are just POJO without any specific implementation
 
-    private ArrayList<MBTEEGPacket> eegPackets;
-    private ArrayList<Float> status;
+    private ArrayList<MbtEEGPacket> eegPackets;
 
-    public ClientReadyEEGEvent(@NonNull ArrayList<MBTEEGPacket> eegPackets, ArrayList<Float> status) {
+    public ClientReadyEEGEvent(@NonNull ArrayList<MbtEEGPacket> eegPackets) {
         this.eegPackets = eegPackets;
-        this.status = status;
     }
 
     /**
-     * Gets the user-readable EEG data matrix
-     * @return the user-readable EEG data matrix
+     * Gets the user-readable list of accumulated MbtEEGPacket.
+     * The size of this list can be determined by the client/ SDK user.
+     * A MbtEEGPacket is an object that contains the EEG data matrix, their associated qualities and status.
+     * @return the list of accumulated MbtEEGPacket
      */
-    public ArrayList<MBTEEGPacket> getEegPackets() {
+    public ArrayList<MbtEEGPacket> getEegPackets() {
         return eegPackets;
-    }
-
-    /**
-     * Gets the status corresponding to the EEG data
-     * @return the status corresponding to the EEG data
-     */
-    public ArrayList<Float> getStatus() {
-        return status;
     }
 
 }

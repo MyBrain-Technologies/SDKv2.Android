@@ -5,19 +5,14 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.TextView;
-import org.greenrobot.eventbus.Subscribe;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 
 import config.MbtConfig;
-import core.bluetooth.BtState;
-import core.eeg.storage.MBTEEGPacket;
-import core.oad.OADEvent;
+import core.eeg.storage.MbtEEGPacket;
 import engine.MbtClient;
 import engine.MbtClientEvents;
 import eventbus.EventBusManager;
-import eventbus.events.ClientReadyEEGEvent;
 
 import static features.ScannableDevices.MELOMIND;
 
@@ -40,33 +35,27 @@ public class MainActivity extends AppCompatActivity{
         eegTextView = findViewById(R.id.data); //todo remove when tests are ok
 
         MbtClientEvents.EegListener eegListener = new MbtClientEvents.EegListener() {
-                      @Override
-            public void onNewPackets(ArrayList<MBTEEGPacket> mbteegPackets, int nbChannels, int nbSamples, int sampleRate) {
-                Log.i(TAG,"New EEG packets");
-                //the SDK user can do what he wants now with the EEG data stored in the mbteegPackets
+            @Override
+            public void onNewPackets(ArrayList<MbtEEGPacket> mbtEEGPackets) {
+                Log.i(TAG,"New EEG packets"+mbtEEGPackets.toString());
+                //the SDK user can do what he wants now with the EEG data stored in the MbtEEGPackets
+                eegTextView.setText(mbtEEGPackets.toString()); //update text on UI with the EEG packet ready
             }
 
             @Override
-            public void onError() {
-                Log.e(TAG,"Error during EEG processing");
+            public void onError(@NonNull Exception exception) {
+                Log.e(TAG, "Error during EEG processing");
             }
+
         };
 
         MbtConfig.setScannableDevices(MELOMIND);//TODO remove when tests are ok
 
         client = MbtClient.init(getApplicationContext(),eegListener);
 
-        /*client.startstream(true, new MbtClientEvents.EegListener() {
-            @Override
-            public void onNewPackets(MBTEEGPacket mbteegPackets, int nbChannels, int nbSamples, int sampleRate) {
+        client.startStream(false);
+        client.testEEGpackageClientBLE(); //todo remove if tests are successful
 
-            }
-
-            @Override
-            public void onError() {
-
-            }
-        });*/
     }
 
 }

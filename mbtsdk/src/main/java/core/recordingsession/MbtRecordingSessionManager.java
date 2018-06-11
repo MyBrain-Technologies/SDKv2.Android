@@ -5,7 +5,7 @@ import android.support.annotation.NonNull;
 
 import java.util.ArrayList;
 
-import core.eeg.storage.MBTEEGPacket;
+import core.eeg.storage.MbtEEGPacket;
 import features.MbtFeatures;
 import model.Comment;
 import model.MbtRecording;
@@ -18,7 +18,7 @@ import utils.MbtJsonUtils;
 
 public final class MbtRecordingSessionManager {
 
-    private ArrayList<MBTEEGPacket> mbteegPackets;
+    private ArrayList<MbtEEGPacket> MbtEEGPackets;
     private ArrayList<Comment> comments;
 
     private MbtRecording currentRecordInfo;
@@ -55,7 +55,7 @@ public final class MbtRecordingSessionManager {
      */
     public void startRecord() {
         recordTimestamp = System.currentTimeMillis();
-        mbteegPackets = new ArrayList<>();
+        MbtEEGPackets = new ArrayList<>();
         comments = new ArrayList<>();
         recordJSON = true;
         isRecording = true;
@@ -67,7 +67,7 @@ public final class MbtRecordingSessionManager {
     public void stopRecord() {
         recordJSON = false;
         isRecording = false;
-        currentRecordInfo = MbtJsonUtils.convertEEGPacketListToRecordings(recordInfo, recordTimestamp, mbteegPackets, MbtFeatures.getNbBytes() > 0);
+        currentRecordInfo = MbtJsonUtils.convertEEGPacketListToRecordings(recordInfo, recordTimestamp, MbtEEGPackets, MbtFeatures.getNbBytes() > 0);
     }
 
     /**

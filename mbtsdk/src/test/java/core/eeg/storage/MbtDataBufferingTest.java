@@ -29,7 +29,7 @@ public class MbtDataBufferingTest {
         eegManager = new MbtEEGManager(context,manager);
         this.buffering = new MbtDataBuffering(eegManager);
     }
-
+/*
     @Test
     public void storePendingBufferTest() {
         int srcPos = 0;
@@ -220,5 +220,5 @@ public class MbtDataBufferingTest {
     public void handleOverflowBufferWithNullOverflowBufferTest() {
         MbtDataBuffering.setOveflowBytes(null);  //check that IllegalArgumentException is raised with a null overflow buffer
         buffering.handleOverflowDataBuffer();
-    }
+    }*/
 }

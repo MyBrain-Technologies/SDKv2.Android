@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import core.eeg.storage.MBTEEGPacket;
+import core.eeg.storage.MbtEEGPacket;
 import features.MbtAcquisitionLocations;
 import model.Comment;
 import model.MbtDevice;
@@ -21,7 +21,7 @@ import model.RecordInfo;
 /**
  * A helper class containing statics methods to serialize and deserialize Objects.
  * <p>For now, this helper contains methods to serialize and deserialize <code>MBTSession</code>,
- * <code>MBTUser</code> and <code>MBTEEGPacket</code></p>
+ * <code>MBTUser</code> and <code>MbtEEGPacket</code></p>
  * @author Manon Leterme
  * @version 1.0
  */
@@ -196,8 +196,8 @@ public final class MbtJsonUtils {
     }
 
 
-    public static MbtRecording convertEEGPacketListToRecordings(@NonNull RecordInfo recordInfo, @NonNull long timestamp, @NonNull List<MBTEEGPacket> mbteegPacketArrayList, @NonNull boolean hasStatus){
-        return new MbtRecording(recordInfo, timestamp, mbteegPacketArrayList, hasStatus);
+    public static MbtRecording convertEEGPacketListToRecordings(@NonNull RecordInfo recordInfo, @NonNull long timestamp, @NonNull List<MbtEEGPacket> MbtEEGPacketArrayList, @NonNull boolean hasStatus){
+        return new MbtRecording(recordInfo, timestamp, MbtEEGPacketArrayList, hasStatus);
     }
 
 

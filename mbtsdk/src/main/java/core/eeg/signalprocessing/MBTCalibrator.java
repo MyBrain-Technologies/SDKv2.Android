@@ -4,7 +4,7 @@ import android.util.Log;
 
 import java.util.HashMap;
 
-import core.eeg.storage.MBTEEGPacket;
+import core.eeg.storage.MbtEEGPacket;
 
 /**
  * MBTCalibrator contains methods for calibrating new EEG packets
@@ -14,7 +14,7 @@ import core.eeg.storage.MBTEEGPacket;
 public final class MBTCalibrator {
     private static final String TAG = MBTCalibrator.class.getSimpleName();
     static int count = 0;
-    public static HashMap<String, float[]> calibrateNew(final int sampRate, final int packetLength, final MBTEEGPacket... packets){
+    public static HashMap<String, float[]> calibrateNew(final int sampRate, final int packetLength, final MbtEEGPacket... packets){
         if (sampRate < 0)
             throw new IllegalArgumentException("samprate MUST BE POSITIVE!");
         if (packetLength < 0)
@@ -27,7 +27,7 @@ public final class MBTCalibrator {
 
         int qtCnt = 0;
         int chanCnt = 0;
-        for (final MBTEEGPacket current : packets) {
+        for (final MbtEEGPacket current : packets) {
             // Merging qualities
             if(current.getQualities() == null)
                 Log.e(TAG, "NULL QUALITIES");

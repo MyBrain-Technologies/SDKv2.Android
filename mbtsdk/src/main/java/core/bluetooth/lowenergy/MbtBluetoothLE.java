@@ -29,6 +29,7 @@ import core.bluetooth.IStreamable;
 import core.bluetooth.MbtBluetooth;
 import core.bluetooth.MbtBluetoothManager;
 import core.recordingsession.metadata.DeviceInfo;
+import features.MbtFeatures;
 import utils.AsyncUtils;
 import utils.MbtLock;
 
@@ -406,8 +407,9 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     }
 
     public void testAcquireDataRandomByte(){ //eeg matrix size
-        byte[] data = new byte[250];
-        for (int i=0; i<63; i++){// buffer size = 1000=16*62,5 => matrix size always = 1000/2 = 500
+        byte[] data = new byte[MbtFeatures.getSampleRate()];
+        for (int i=0; i<126; i++){// buffer size = 1000=16*62,5 => matrix size always = 1000/2 = 500
+            Log.e(TAG,"test loop "+i);
             new Random().nextBytes(data); //Generates random bytes and places them into a user-supplied byte array
             this.acquireData(data);
             Arrays.fill(data,0,0,(byte)0);

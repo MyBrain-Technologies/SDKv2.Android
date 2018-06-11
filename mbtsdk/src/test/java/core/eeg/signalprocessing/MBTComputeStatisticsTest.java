@@ -5,7 +5,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import core.eeg.storage.MBTEEGPacket;
+import core.eeg.storage.MbtEEGPacket;
 
 import static org.junit.Assert.*;
 
@@ -20,7 +20,7 @@ public class MBTComputeStatisticsTest {
         ArrayList<Float> qualities = new ArrayList<Float>();
         qualities.add(1F);
         long timestamp = 1L;
-        final MBTEEGPacket packets = new MBTEEGPacket(channelsData, qualities, null, timestamp);
+        final MbtEEGPacket packets = new MbtEEGPacket(channelsData, qualities, null, timestamp);
         HashMap<String, Float> hashMap = MBTComputeStatistics.computeStatistics(bestChannel,sampRate,packetLength,packets);
     }
 
@@ -42,7 +42,7 @@ public class MBTComputeStatisticsTest {
         qualities.add(1F);
         qualities.add(1F);
         long timestamp = 1L;
-        final MBTEEGPacket packets = new MBTEEGPacket(channelsData, qualities, null, timestamp);
+        final MbtEEGPacket packets = new MbtEEGPacket(channelsData, qualities, null, timestamp);
         //HashMap<String, Float> result = MBTComputeStatistics.computeStatistics(bestChannel,sampRate,packetLength,packets);
         //assertTrue(result.isEmpty());
     } */

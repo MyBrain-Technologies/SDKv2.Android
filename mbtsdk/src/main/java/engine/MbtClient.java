@@ -3,21 +3,31 @@ package engine;
 import android.bluetooth.le.ScanCallback;
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.util.Log;
+
+import org.apache.commons.lang.NullArgumentException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import config.MbtConfig;
+import config.StreamConfig;
 import core.MbtManager;
+import core.bluetooth.BtProtocol;
 import core.bluetooth.MbtBluetoothManager;
 import core.eeg.MbtEEGManager;
 import core.eeg.signalprocessing.MBTCalibrationParameters;
-import core.eeg.storage.MBTEEGPacket;
+import core.eeg.storage.MbtEEGPacket;
+import core.eeg.storage.MbtRawEEG;
 import core.recordingsession.MbtRecordingSessionManager;
 import core.serversync.MbtServerSyncManager;
 import features.MbtFeatures;
 import features.ScannableDevices;
+import model.MbtDevice;
 import model.MbtRecording;
 
+import static config.MbtConfig.getSampleRate;
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
 import static core.bluetooth.BtProtocol.BLUETOOTH_SPP;
 
@@ -33,11 +43,10 @@ public final class MbtClient {
      */
     private Context mContext;
 
+    //the client callbacks that will allow fluid communication between SDK and client app
     /**
-     *     Contains the client callbacks that will allow fluid communication between SDK and client app.
+     * The client listener to be notified upon arrival of a new list of EEG Packets.
      */
-    //private MbtClientEvents mEvents;
-    //Listeners declarations
     private MbtClientEvents.EegListener eegListener = null;
     private MbtClientEvents.BatteryListener batteryListener = null;
     private MbtClientEvents.StateListener bleStateListener = null;
@@ -61,7 +70,7 @@ public final class MbtClient {
         return new MbtClientBuilder()
                 .setContext(context)
                 .setMbtManager(new MbtManager(context))
-                .setEvents(eegListener)
+                .setEegListener(eegListener)
                 .create();
     }
 
@@ -72,7 +81,7 @@ public final class MbtClient {
     private MbtClient(MbtClientBuilder builder){
         this.mContext = builder.mContext;
         this.eegListener = builder.eegListener;
-        mbtManager = builder.mbtManager;
+        this.mbtManager = builder.mbtManager;
     }
 
     public void scanDevicesForType(ScannableDevices deviceType, long duration, ScanCallback scanCallback){
@@ -92,8 +101,7 @@ public final class MbtClient {
     }
 
 
-    public static void configureHeadset(){
-
+    public void configureHeadset(StreamConfig config){
     }
 
 
@@ -104,16 +112,34 @@ public final class MbtClient {
     public void stopReadBattery(){
     }
 
-    public void startstream(boolean useQualities, final MbtClientEvents.EegListener clientEvents){
+    public void startStream(@Nullable final boolean useQualities/*,@Nullable final MbtClientEvents.EegListener eegCallback*/){ //todo remove nullable after tests
+    //todo delete  first line
+        getBluetoothManager().getMbtBluetoothLE().getMelomindDevice().setInternalConfig(new MbtDevice.InternalConfig(new Byte[]{0,0,0,0, (byte) MbtFeatures.getNbStatusBytes(),(byte) MbtFeatures.getSamplePerNotification()}));
 
+        this.mbtManager.getMbtEEGManager().getDataAcquisition().reconfigureBuffers(getSampleRate(),getDeviceInternalConfig().getNbPackets(),getDeviceInternalConfig().getStatusBytes());
+
+        MbtClientEvents.EegListener eegCallback = new MbtClientEvents.EegListener() { //if a new list of EEG packets is received, the client is notified
+            @Override
+            public void onNewPackets(ArrayList<MbtEEGPacket> eegPackets) {
+                if (MbtClient.this.eegListener != null)
+                    if(eegPackets != null && !eegPackets.isEmpty()){
+                        MbtClient.this.eegListener.onNewPackets(eegPackets); //client callback for notifying the Activity
+                    }else{
+                        MbtClient.this.eegListener.onError(new Exception()); //client callback for notifying the Activity that an error occured
+                    }
+            }
+
+            @Override
+            public void onError(@NonNull Exception exception) {
+                Log.e(TAG, "Exception raised: "+exception);
+                MbtClient.this.eegListener.onError(exception); //client callback for notifying the Activity that an error occured
+            }
+        };
+        mbtManager.setEegCallback(eegCallback);
     }
 
-    public void testEEGpackageClient(){
-        if (MbtFeatures.getBluetoothProtocol().equals(BLUETOOTH_LE)) {
-            getBluetoothManager().getMbtBluetoothLE().testAcquireDataRandomByte();
-        } else if (MbtFeatures.getBluetoothProtocol().equals(BLUETOOTH_SPP)){
-            getBluetoothManager().getMbtBluetoothSPP().testAcquireDataRandomByte();
-        }
+    public void stopStream(){
+        mbtManager.setEegCallback(null);
     }
 
     /**
@@ -155,18 +181,21 @@ public final class MbtClient {
     }
 
     /**
-     * Computes the quality for each provided channels
-     * @param sampRate the number of value(s) inside each channel
+     * Computes the quality for each provided EEG acquisition channels.
+     * The Melomind headset has 2 channels and the VPRO headset has 9 channels.
+     * @param consolidatedEEG the user-readable EEG data matrix
      * @param packetLength how long is a packet (time x samprate)
-     * @param channels the channel(s) to be computed
+     * @return an array that contains the quality of each EEG acquisition channels.
+     * This array contains 2 qualities (items) if the headset used is MELOMIND.
+     * This array contains 9 qualities (items) if the headset used is VPRO.
      * @exception IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
      */
-    public float[] computeEEGSignalQuality(int sampRate, int packetLength, Float[] channels){
-        return getEEGManager().computeEEGSignalQuality(sampRate,packetLength,channels);
+    public ArrayList<Float> computeEEGSignalQuality(ArrayList<ArrayList<Float>> consolidatedEEG, int packetLength){
+        return getEEGManager().computeEEGSignalQuality(consolidatedEEG,packetLength);
     }
 
     /**
-     * Computes the relaxation index using the provided <code>MBTEEGPacket</code>.
+     * Computes the relaxation index using the provided <code>MbtEEGPacket</code>.
      * For now, we admit there are only 2 channels for each packet
      * @param sampRate the samprate of a channel (must be consistent)
      * @param calibParams the calibration parameters previously performed
@@ -174,7 +203,7 @@ public final class MbtClient {
      * @return the relaxation index
      * @exception IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
      */
-    public float computeRelaxIndex(int sampRate, MBTCalibrationParameters calibParams, MBTEEGPacket... packets){
+    public float computeRelaxIndex(int sampRate, MBTCalibrationParameters calibParams, MbtEEGPacket... packets){
         return getEEGManager().computeRelaxIndex(sampRate,calibParams,packets);
     }
 
@@ -194,8 +223,17 @@ public final class MbtClient {
      * @param rawData the raw EEG data array acquired by the headset and transmitted by Bluetooth to the application
      * @return the converted EEG data matrix that contains readable values for any user
      */
-    public ArrayList<ArrayList<Float>> launchConversionToEEG(byte[] rawData){
+    public ArrayList<ArrayList<Float>> launchConversionToEEG(ArrayList<MbtRawEEG> rawData){
         return getEEGManager().launchConversionToEEG(rawData);
+    }
+
+    /**
+     * Callback called when the EEG packets buffer is full in order to transmit the user-readable EEG data to the client.
+     * Notifies the client that the raw EEG data have been converted and are ready to use.
+     */
+     public void notifyClientReadyEEG(final ArrayList<MbtEEGPacket> eegPackets) {
+         if (this.eegListener != null)
+             this.eegListener.onNewPackets((ArrayList<MbtEEGPacket>) eegPackets);
     }
 
     /**
@@ -240,14 +278,6 @@ public final class MbtClient {
     }
 
     /**
-     * Gets the callbacks for client events
-     * @return object that contains the callbacks for client events
-     */
-    /*public MbtClientEvents getmEvents() {
-        return mEvents;
-    }*/
-
-    /**
      * Gets the EEG callbacks for a EEG client events
      * @return the callbacks for a EEG client events
      */
@@ -264,6 +294,23 @@ public final class MbtClient {
         return mbtManager;
     }
 
+    private MbtDevice.InternalConfig getDeviceInternalConfig() {
+        MbtDevice.InternalConfig internalConfig = null;
+        switch (MbtConfig.getScannableDevices()) {
+            case MELOMIND:
+                internalConfig = getBluetoothManager().getBluetoothProtocol().equals(BtProtocol.BLUETOOTH_LE) ? getBluetoothManager().getMbtBluetoothLE().getMelomindDevice().getInternalConfig() : getBluetoothManager().getMbtBluetoothSPP().getMelomindDevice().getInternalConfig();
+                break;
+            case VPRO:
+                internalConfig = getBluetoothManager().getBluetoothProtocol().equals(BtProtocol.BLUETOOTH_LE) ? getBluetoothManager().getMbtBluetoothLE().getVproDevice().getInternalConfig() : getBluetoothManager().getMbtBluetoothSPP().getVproDevice().getInternalConfig();
+                break;
+        }
+        return internalConfig;
+    }
+
+    public void testEEGpackageClientBLE() {
+        this.mbtManager.getMbtBluetoothManager().getMbtBluetoothLE().testAcquireDataRandomByte();
+    }
+
     public static class MbtClientBuilder {
         private Context mContext;
         private MbtClientEvents.EegListener eegListener;
@@ -274,7 +321,7 @@ public final class MbtClient {
             return this;
         }
 
-        public MbtClientBuilder setEvents(final MbtClientEvents.EegListener eegListener){
+        public MbtClientBuilder setEegListener(final MbtClientEvents.EegListener eegListener){
             this.eegListener = eegListener;
             return this;
         }

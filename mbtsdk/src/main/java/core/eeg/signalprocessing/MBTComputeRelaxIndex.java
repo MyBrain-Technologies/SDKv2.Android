@@ -3,7 +3,7 @@ package core.eeg.signalprocessing;
 import java.util.HashMap;
 import java.util.Map;
 
-import core.eeg.storage.MBTEEGPacket;
+import core.eeg.storage.MbtEEGPacket;
 
 /**
  * MBTComputeRelaxIndex contains methods for computing Relaxation Indexes
@@ -15,7 +15,7 @@ public final class MBTComputeRelaxIndex {
 
 
     /**
-     * Computes the relaxation index using the provided <code>MBTEEGPacket</code>.
+     * Computes the relaxation index using the provided <code>MbtEEGPacket</code>.
      * For now, we admit there are only 2 channels for each packet
      * @param samprate the samprate of a channel (must be consistent)
      * @param calibParams the calibration paramters previously performed
@@ -25,7 +25,7 @@ public final class MBTComputeRelaxIndex {
      */
     public static float computeRelaxIndex(final int samprate,
                                           final MBTCalibrationParameters calibParams,
-                                          final MBTEEGPacket... packets) {
+                                          final MbtEEGPacket... packets) {
         if (samprate < 0)
             throw new IllegalArgumentException("samprate MUST BE POSITIVE!");
         if (calibParams == null || calibParams.getSize() == 0)
@@ -39,7 +39,7 @@ public final class MBTComputeRelaxIndex {
 
         int qtCnt = 0;
         int chanCnt = 0;
-        for (final MBTEEGPacket current : packets) {
+        for (final MbtEEGPacket current : packets) {
             // Merging qualities
             if(current == null){
 //                Log.e(TAG, "error null value");

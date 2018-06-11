@@ -7,7 +7,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import core.eeg.storage.MBTEEGPacket;
+import core.eeg.storage.MbtEEGPacket;
 
 
 /**
@@ -22,7 +22,7 @@ public class MbtRecording implements Serializable{
     private ArrayList<ArrayList<Float>> eegData;
     @Nullable
     private ArrayList<Float> status;
-    private List<MBTEEGPacket> packetArrayList;
+    private List<MbtEEGPacket> packetArrayList;
 
     MbtRecording() {
         this.recordingTime = -1;
@@ -69,7 +69,7 @@ public class MbtRecording implements Serializable{
     }
 
     public MbtRecording(@NonNull final RecordInfo recordInfo, @NonNull final long recordingTime,
-                        @NonNull List<MBTEEGPacket> packetArrayList, @NonNull final boolean hasStatus) {
+                        @NonNull List<MbtEEGPacket> packetArrayList, @NonNull final boolean hasStatus) {
         this.recordingTime = recordingTime;
         this.recordInfo = recordInfo;
         this.firstPacketID = 0;
@@ -95,39 +95,39 @@ public class MbtRecording implements Serializable{
             if(hasStatus && status == null)
                 status = new ArrayList<>();
 
-            for (MBTEEGPacket mbteegPacket : packetArrayList) {
+            for (MbtEEGPacket MbtEEGPacket : packetArrayList) {
 
-                if(mbteegPacket.getQualities() != null){
-                    for (int i = 0; i < mbteegPacket.getQualities().size(); i++){
+                if(MbtEEGPacket.getQualities() != null){
+                    for (int i = 0; i < MbtEEGPacket.getQualities().size(); i++){
                         if(i >= qualities.size())
                             qualities.add(new ArrayList<Float>());
-                        qualities.get(i).add(mbteegPacket.getQualities().get(i));
+                        qualities.get(i).add(MbtEEGPacket.getQualities().get(i));
                     }
                 }
 
-//                qualities.get(0).add((float)mbteegPacket.getQualities()getQualityChannel1());
-//                qualities.get(1).add((float)mbteegPacket.getQualityChannel2());
+//                qualities.get(0).add((float)MbtEEGPacket.getQualities()getQualityChannel1());
+//                qualities.get(1).add((float)MbtEEGPacket.getQualityChannel2());
                 if(hasStatus)
-                    status.addAll(mbteegPacket.getStatusData());
+                    status.addAll(MbtEEGPacket.getStatusData());
 
-                for(int i = 0; i < mbteegPacket.getChannelsData().size(); i++){
+                for(int i = 0; i < MbtEEGPacket.getChannelsData().size(); i++){
                     if(i >= eegData.size())
                         eegData.add(new ArrayList<Float>());
-                    for (Float aFloat : mbteegPacket.getChannelsData().get(i)) {
+                    for (Float aFloat : MbtEEGPacket.getChannelsData().get(i)) {
 
                         eegData.get(i).add(aFloat);
                     }
                 }
 
-//                for(int i = 0; i < mbteegPacket.getChannelsData().size(); i++){
+//                for(int i = 0; i < MbtEEGPacket.getChannelsData().size(); i++){
 //                    if(i==0 && hasStatus){
-//                        for (Float aFloat : mbteegPacket.getChannelsData().get(i)) {
+//                        for (Float aFloat : MbtEEGPacket.getChannelsData().get(i)) {
 //                            status.add(aFloat);
 //                        }
 //                    }else{
 //                        if(i >= eegData.size())
 //                            eegData.add(new ArrayList<Float>());
-//                        for (Float aFloat : mbteegPacket.getChannelsData().get(i)) {
+//                        for (Float aFloat : MbtEEGPacket.getChannelsData().get(i)) {
 //
 //                            eegData.get(i).add(aFloat);
 //                        }
@@ -135,10 +135,10 @@ public class MbtRecording implements Serializable{
 //
 //                }
 
-//                for (double v : mbteegPacket.getChannel1()) {
+//                for (double v : MbtEEGPacket.getChannel1()) {
 //                    eegData.get(0).add((float)v);
 //                }
-//                for (double v : mbteegPacket.getChannel2()) {
+//                for (double v : MbtEEGPacket.getChannel2()) {
 //                    eegData.get(1).add((float)v);
 //                }
             }

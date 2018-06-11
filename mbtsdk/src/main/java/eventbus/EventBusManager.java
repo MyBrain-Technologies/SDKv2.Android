@@ -13,7 +13,7 @@ import org.greenrobot.eventbus.EventBus;
 public class EventBusManager {
 
     /**
-     * Creates a new EventBus instance that will manage the events
+     * Gets a Event Bus instance that will manage the events
      * Each instance is a separate scope in which events are delivered.
      */
     public static final EventBus BUS = EventBus.getDefault();
@@ -24,7 +24,7 @@ public class EventBusManager {
      * Once an instance of EventBusManager is created, the publisher classes can post event to the Event Bus
      * If the current class is a subscriber class, it must register to the Bus for receiving Events.
      */
-    public EventBusManager(){}
+    private EventBusManager(){}
 
     /**
      * Registers or unregisters the given subscriber class to receive events from the Events Bus.
@@ -33,7 +33,7 @@ public class EventBusManager {
      * @param isRegistration is true to register the subscriber class and false to unregister the subscriber class.
      * @param subscriber is the subscriber class to register for receiving events from the Event Bus.
      */
-    public void registerOrUnregister(boolean isRegistration, Object subscriber ){
+    public static void registerOrUnregister(boolean isRegistration, Object subscriber ){
         if (isRegistration) {
             BUS.register(subscriber);
         } else {
@@ -46,7 +46,7 @@ public class EventBusManager {
      * The Event Bus will deliver it to registered subscribers.
      * @param event contains data to transmit to the subscriber class.
      */
-    public void postEvent(Object event){
+    public static void postEvent(Object event){
         BUS.post(event);
     }
 }

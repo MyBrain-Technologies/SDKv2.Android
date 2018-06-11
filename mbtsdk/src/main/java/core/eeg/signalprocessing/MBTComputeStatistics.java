@@ -6,7 +6,7 @@ import org.apache.commons.lang.ArrayUtils;
 
 import java.util.HashMap;
 
-import core.eeg.storage.MBTEEGPacket;
+import core.eeg.storage.MbtEEGPacket;
 
 /**
  * MBTComputeStatistics contains methods for computing statistics
@@ -16,7 +16,7 @@ import core.eeg.storage.MBTEEGPacket;
 public class MBTComputeStatistics {
     private static final String TAG = MBTComputeStatistics.class.getName();
 
-    public static HashMap<String, Float> computeStatistics(final int bestChannel, final int sampRate, final int packetLength, final MBTEEGPacket... packets){
+    public static HashMap<String, Float> computeStatistics(final int bestChannel, final int sampRate, final int packetLength, final MbtEEGPacket... packets){
 
         final float[][] qualities = new float[2][packetLength];
         final float[][] mainMatrix = new float[2][sampRate * packetLength];
@@ -24,7 +24,7 @@ public class MBTComputeStatistics {
 
         int qtCnt = 0;
         int chanCnt = 0;
-        for (final MBTEEGPacket current : packets) {
+        for (final MbtEEGPacket current : packets) {
             // Merging qualities
             qualities[0][qtCnt] = current.getQualities().get(0);
             qualities[1][qtCnt++] = current.getQualities().get(1);

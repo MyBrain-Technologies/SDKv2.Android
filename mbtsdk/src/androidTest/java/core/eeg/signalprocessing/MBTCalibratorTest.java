@@ -5,7 +5,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import core.eeg.storage.MBTEEGPacket;
+import core.eeg.storage.MbtEEGPacket;
 import mbtsdk.com.mybraintech.mbtsdk.BuildConfig;
 
 import static org.junit.Assert.*;
@@ -31,7 +31,7 @@ public class MBTCalibratorTest {
         ArrayList<Float> qualities = new ArrayList<Float>();
         qualities.add(1F); //check that IndexOutOfBoundsException is raised if qualities.size<2
         long timestamp = 1L;
-        final MBTEEGPacket packets = new MBTEEGPacket(channelsData, qualities, null, timestamp);
+        final MbtEEGPacket packets = new MbtEEGPacket(channelsData, qualities, null, timestamp);
         HashMap<String, float[]> map = MBTCalibrator.calibrateNew(sampRate, packetLength, packets);
         assertNull(map);
     }
@@ -47,7 +47,7 @@ public class MBTCalibratorTest {
         qualities.add(1F);
         qualities.add(1F);
         long timestamp = 1L;
-        final MBTEEGPacket packets = new MBTEEGPacket(channelsData, qualities, null, timestamp);
+        final MbtEEGPacket packets = new MbtEEGPacket(channelsData, qualities, null, timestamp);
         HashMap<String, float[]> map = MBTCalibrator.calibrateNew(sampRate, packetLength, packets);
         assertNotNull(map);
     }
@@ -62,7 +62,7 @@ public class MBTCalibratorTest {
         ArrayList<Float> qualities = new ArrayList<Float>();
         qualities.add(1F);
         long timestamp = 1L;
-        final MBTEEGPacket packets = new MBTEEGPacket(channelsData, qualities, null, timestamp);
+        final MbtEEGPacket packets = new MbtEEGPacket(channelsData, qualities, null, timestamp);
         MBTCalibrator.calibrateNew(sampRate, packetLength, packets);
     }
 
@@ -76,7 +76,7 @@ public class MBTCalibratorTest {
         ArrayList<Float> qualities = new ArrayList<Float>();
         qualities.add(1F);
         long timestamp = 1L;
-        final MBTEEGPacket packets = new MBTEEGPacket(channelsData, qualities, null, timestamp);
+        final MbtEEGPacket packets = new MbtEEGPacket(channelsData, qualities, null, timestamp);
         MBTCalibrator.calibrateNew(sampRate, packetLength, packets);
     }
 
@@ -84,7 +84,7 @@ public class MBTCalibratorTest {
     public void calibrateNewPacketsNullTest() {
         final int sampRate = 0;
         final int packetLength = 0;
-        final MBTEEGPacket packets = null; //check that IllegalArgumentException is raised if packets is null
+        final MbtEEGPacket packets = null; //check that IllegalArgumentException is raised if packets is null
         MBTCalibrator.calibrateNew(sampRate, packetLength, packets);
     }
 
@@ -92,7 +92,7 @@ public class MBTCalibratorTest {
     public void calibrateNewPacketsEmptyTest() {
         final int sampRate = 0;
         final int packetLength = 0;
-        final MBTEEGPacket[] packets = new MBTEEGPacket[0]; //check that IllegalArgumentException is raised if packets.size = 0
+        final MbtEEGPacket[] packets = new MbtEEGPacket[0]; //check that IllegalArgumentException is raised if packets.size = 0
         MBTCalibrator.calibrateNew(sampRate, packetLength, packets);
     }
 
@@ -107,7 +107,7 @@ public class MBTCalibratorTest {
         qualities.add(1F);
         qualities.add(1F);
         long timestamp = 1L;
-        final MBTEEGPacket packets = new MBTEEGPacket(channelsData, qualities, null, timestamp);
+        final MbtEEGPacket packets = new MbtEEGPacket(channelsData, qualities, null, timestamp);
         HashMap<String, float[]> map = MBTCalibrator.calibrateNew(sampRate, packetLength, packets);
         if(packets.getQualities()!=null)
             assertFalse(packets.getQualities().isEmpty()); //check that packets qualities is not empty

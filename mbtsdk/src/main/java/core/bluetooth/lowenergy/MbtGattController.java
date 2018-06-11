@@ -9,7 +9,6 @@ import android.content.Context;
 import android.os.Handler;
 import android.util.Log;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.UUID;
@@ -17,7 +16,6 @@ import java.util.UUID;
 import core.bluetooth.BtState;
 import core.bluetooth.MbtBluetooth;
 import core.recordingsession.metadata.DeviceInfo;
-import eventbus.EventBusManager;
 import utils.MbtLock;
 
 import static core.bluetooth.lowenergy.MelomindCharacteristics.CHARAC_HEADSET_STATUS;
@@ -55,8 +53,6 @@ final class MbtGattController extends BluetoothGattCallback {
     private final MbtLock<String> readDeviceInfoLock = new MbtLock<>();
     private final MbtLock<Boolean> enableMailboxNotificationLock = new MbtLock<>();
 
-    private EventBusManager eventBusManager;
-
     // A handler to process code in the Main UI Thread
     private final Handler uiAccess;
 
@@ -69,7 +65,6 @@ final class MbtGattController extends BluetoothGattCallback {
         super();
         this.bluetoothController = bluetoothController;
         this.uiAccess = new Handler(context.getMainLooper());
-        this.eventBusManager = new EventBusManager();
     }
 
     @Override
@@ -558,21 +553,4 @@ final class MbtGattController extends BluetoothGattCallback {
         return false;
     }
 
-    public void testAcquireDataZeros(){
-        byte[] data = new byte[250];
-        Arrays.fill(data,(byte) 0);
-        this.bluetoothController.acquireData(data);
-    }
-
-    public void testAcquireDataOnes(){
-        byte[] data = new byte[250];
-        Arrays.fill(data,(byte) 1);
-        this.bluetoothController.acquireData(data);
-    }
-
-    public void testAcquireDataRandomByte(){
-        byte[] data = new byte[250];
-        new Random().nextBytes(data); //Generates random bytes and places them into a user-supplied byte array
-        this.bluetoothController.acquireData(data);
-    }
 }

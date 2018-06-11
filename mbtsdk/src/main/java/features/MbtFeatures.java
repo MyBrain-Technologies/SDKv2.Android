@@ -1,6 +1,5 @@
 package features;
 
-import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -20,12 +19,12 @@ public final class MbtFeatures{
 
     private static String TAG = MbtFeatures.class.getName();
 
-    public static int DEFAULT_SAMPLE_PER_PACKET = 4;
 
     public static final int DEVICE_NAME_MAX_LENGTH = 10;
 
     public final static int DEFAULT_SAMPLE_RATE = 250;
-    public final static int DEFAULT_SAMPLE_PER_NOTIF = 4;
+    public final static int DEFAULT_SAMPLE_PER_PACKET = 4;
+    public static int DEFAULT_SAMPLE_PER_NOTIF = DEFAULT_SAMPLE_PER_PACKET;
 
     public final static int DEFAULT_EEG_PACKET_LENGTH = 250;
 
@@ -44,6 +43,7 @@ public final class MbtFeatures{
 
     public final static int DEFAULT_BLE_NB_STATUS_BYTES = 0;
     public final static int DEFAULT_SPP_NB_STATUS_BYTES = 3;
+    private static int nbStatusBytes = -1;
 
     public final static int DEFAULT_BLE_NB_BYTES = 2;
     public final static int DEFAULT_SPP_NB_BYTES = DEFAULT_SPP_NB_STATUS_BYTES;
@@ -54,11 +54,12 @@ public final class MbtFeatures{
     public final static int DEFAULT_BLE_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES = DEFAULT_BLE_NB_BYTES * MELOMIND_NB_CHANNELS;
     public final static int DEFAULT_SPP_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES = DEFAULT_SPP_NB_BYTES * VPRO_NB_CHANNELS;
 
-    public final static int DEFAULT_BLE_RAW_DATA_PACKET_SIZE = DEFAULT_SAMPLE_PER_PACKET * DEFAULT_BLE_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES; //4 samples per packet 2 channels 2 bytes data
+    public final static int DEFAULT_BLE_RAW_DATA_PACKET_SIZE = DEFAULT_SAMPLE_PER_PACKET * DEFAULT_BLE_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES + DEFAULT_BLE_NB_STATUS_BYTES;; //1 packet contains 4 samples per packet 2 channels 2 bytes data + the status bytes
     public final static int DEFAULT_SPP_RAW_DATA_PACKET_SIZE = DEFAULT_SAMPLE_PER_PACKET * DEFAULT_SPP_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES; //4 samples per packet 9 channels 3 bytes data
+    private static int packetSize = -1;
 
-    public final static int DEFAULT_BLE_RAW_DATA_BUFFER_SIZE = DEFAULT_EEG_PACKET_LENGTH * DEFAULT_BLE_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES;
-    public final static int DEFAULT_SPP_RAW_DATA_BUFFER_SIZE = DEFAULT_EEG_PACKET_LENGTH * DEFAULT_SPP_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES;
+    public final static int DEFAULT_BLE_RAW_DATA_BUFFER_SIZE = DEFAULT_EEG_PACKET_LENGTH * DEFAULT_BLE_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES;  //250*4 = 2000
+    public final static int DEFAULT_SPP_RAW_DATA_BUFFER_SIZE = DEFAULT_EEG_PACKET_LENGTH * DEFAULT_SPP_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES; //250*27 = 6750
 
     public final static ArrayList<MbtAcquisitionLocations> MELOMIND_LOCATIONS = new ArrayList<>(Arrays.asList(MbtAcquisitionLocations.P3, MbtAcquisitionLocations.P4));
     public final static ArrayList<MbtAcquisitionLocations> VPRO_LOCATIONS = new ArrayList<>(); //init values with server data
@@ -110,7 +111,16 @@ public final class MbtFeatures{
      * @return the raw data packet size
      */
     public static int getRawDataPacketSize() {
-        return (MbtConfig.getScannableDevices().equals(MELOMIND))? DEFAULT_BLE_RAW_DATA_PACKET_SIZE : DEFAULT_SPP_RAW_DATA_PACKET_SIZE;
+        if(packetSize == -1)
+            packetSize = (MbtConfig.getScannableDevices().equals(MELOMIND))? DEFAULT_BLE_RAW_DATA_PACKET_SIZE : DEFAULT_SPP_RAW_DATA_PACKET_SIZE;
+        return packetSize;
+    }
+    /**
+     * Sets the raw data packet size
+     * @return the raw data packet size
+     */
+    public static void setRawDataPacketSize(int newPacketSize) {
+        packetSize = newPacketSize;
     }
 
     /**
@@ -138,13 +148,22 @@ public final class MbtFeatures{
     }
 
     /**
-     * Gets the number of bytes corresponding to one status EEG data
-     * @return the number of bytes corresponding to one status EEG data
+     * Gets the number of bytes corresponding to one status data
+     * @return the number of bytes corresponding to one status data
      */
     public static int getNbStatusBytes() {
-        return (MbtConfig.getScannableDevices().equals(MELOMIND))? DEFAULT_BLE_NB_STATUS_BYTES : DEFAULT_SPP_NB_STATUS_BYTES;
+        if(nbStatusBytes == -1)
+            nbStatusBytes = (MbtConfig.getScannableDevices().equals(MELOMIND))? DEFAULT_BLE_NB_STATUS_BYTES : DEFAULT_SPP_NB_STATUS_BYTES;
+        return nbStatusBytes;
     }
 
+    /**
+     * Sets the number of bytes corresponding to one status data
+     * @param statusBytes the number of bytes corresponding to one status data
+     */
+    public static void setNbStatusBytes(int statusBytes) {
+        nbStatusBytes = statusBytes;
+    }
 
     /**
      * Gets the number of samples per packet
@@ -155,11 +174,18 @@ public final class MbtFeatures{
     }
 
     /**
-     * Sets a value to the number of samples per EEG data packet
-     * @param samplePerPacket the number of samples per EEG data packet
+     * Sets a value to the number of samples per EEG data packet notification
+     * @param samplePerNotification the number of samples per EEG data packet notification
      */
-    public void setSamplePerPacket(int samplePerPacket) {
-        DEFAULT_SAMPLE_PER_PACKET = samplePerPacket;
+    public static void setSamplePerNotification(int samplePerNotification) {
+        DEFAULT_SAMPLE_PER_NOTIF = samplePerNotification;
     }
 
+    /**
+     * Gets the number of samples per EEG data packet notification
+     * @return the number of samples per EEG data packet notification
+     */
+    public static int getSamplePerNotification() {
+        return DEFAULT_SAMPLE_PER_NOTIF;
+    }
 }

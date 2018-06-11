@@ -18,7 +18,7 @@ public final class MbtConfig {
      * so that the user can do what he wants with this new packets
      * (for example plot the values on a chart).
      */
-    private static int eegBufferLengthNotification;
+    public static int eegBufferLengthClientNotif = 2; //number of MbtEEGPackets to store in the buffer before notifying the client
 
     private static boolean batteryEventsLogsEnabled;
 
@@ -38,8 +38,8 @@ public final class MbtConfig {
 
     private static String serverURL;
 
-    public static int getEegBufferLengthNotification() {
-        return eegBufferLengthNotification;
+    public static int getEegBufferLengthClientNotif() {
+        return eegBufferLengthClientNotif;
     }
 
     public static boolean isBatteryEventsLogsEnabled() {
@@ -102,7 +102,7 @@ public final class MbtConfig {
 
         private int samplePerNotification;
 
-        private int eegBufferLengthNotification;
+        private int eegBufferLengthClientNotif;
 
         private boolean batteryEventsLogsEnabled;
 
@@ -139,7 +139,7 @@ public final class MbtConfig {
 
 
         public MbtConfigBuilder setEegBufferLengthNotification(final int eegBufferLengthNotification) {
-            this.eegBufferLengthNotification = eegBufferLengthNotification;
+            this.eegBufferLengthClientNotif = eegBufferLengthNotification;
             return this;
         }
 
@@ -198,7 +198,7 @@ public final class MbtConfig {
         eegPacketLength = builder.eegPacketLength;
         sampleRate = builder.sampleRate;
         samplePerNotification = builder.samplePerNotification;
-        eegBufferLengthNotification = builder.eegBufferLengthNotification;
+        eegBufferLengthClientNotif = builder.eegBufferLengthClientNotif;
         batteryEventsLogsEnabled = builder.batteryEventsLogsEnabled;
         batteryReadPeriod = builder.batteryReadPeriod;
         offlineModeEnabled = builder.offlineModeEnabled;
@@ -212,5 +212,9 @@ public final class MbtConfig {
 
     public static void setScannableDevices(ScannableDevices scannableDevices) {
         MbtConfig.scannableDevices = scannableDevices;
+    }
+
+    public static void setSamplePerNotification(int samplePerNotification) {
+        MbtConfig.samplePerNotification = samplePerNotification;
     }
 }
