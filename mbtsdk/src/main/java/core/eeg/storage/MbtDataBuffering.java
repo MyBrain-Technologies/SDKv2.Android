@@ -98,7 +98,7 @@ public class MbtDataBuffering {
                 || getRawDataPacketSize() - length > getRawDataBufferSize())
                 throw new IndexOutOfBoundsException("array index exception !");
 
-        overflowBytes.clear();//todo check that clearing is right
+        overflowBytes.clear();
         overflowBytes.addAll(data.subList(srcPos+getRawDataBufferSize()-bufPos,data.size()));
         //System.arraycopy(data, srcPos + getRawDataBufferSize() - bufPos, overflowBytes, 0, getRawDataPacketSize() - length);
         hasOverflow = true;
@@ -111,10 +111,12 @@ public class MbtDataBuffering {
      */
     public ArrayList<MbtEEGPacket> storeEegPacketInPacketBuffer(final ArrayList<ArrayList<Float>> consolidatedEEG, ArrayList<Float> status) {
         ArrayList<MbtEEGPacket> fullBufferForClient = mbtEEGPacketsBuffer;
+        Log.e(TAG, "Adding new MbtEEGPacket(");
+        Log.e(TAG, "EEG data= " +consolidatedEEG.toString());
+        Log.e(TAG, "status data= " +status.toString() );
 
         if(mbtEEGPacketsBuffer.size()+1 == getBufferLengthClientNotif()){ //if the packet buffer is full, we notify the client via the MbtManager and reset the MbtEEGPacket buffer
             mbtEEGPacketsBuffer.clear(); //reset the packet buffer
-
         }
         mbtEEGPacketsBuffer.add(new MbtEEGPacket(consolidatedEEG, /*eegManager.computeEEGSignalQuality(consolidatedEEG, getSampleRate())*/null, status, System.currentTimeMillis())); //the data is stored in the buffer
         return fullBufferForClient;

@@ -61,11 +61,9 @@ public class MbtDataAcquisition {
 
         //store the status in the statusDataBytes array and the EEG data in a list of MbtrawEEG
         statusDataBytes = (getNbStatusBytes() > 0) ? (Arrays.copyOfRange(data, getRawDataIndexSize(), getRawDataIndexSize() + getNbStatusBytes())) : null;
+        singleRawEEGList = new ArrayList<>();
 
-        singleRawEEGList = new ArrayList<MbtRawEEG>();
-
-        for (int dataIndex = getRawDataIndexSize() + getNbStatusBytes(); dataIndex < data.length; dataIndex+=getNbBytes()) { //init the list of raw EEG data (one raw EEG data is an object that contains a 2 (or 3) bytes data array and status
-
+        for (int dataIndex = getRawDataIndexSize() + getNbStatusBytes(); dataIndex < data.length; dataIndex += getNbBytes()) { //init the list of raw EEG data (one raw EEG data is an object that contains a 2 (or 3) bytes data array and status
             byte[] bytesEEG = new byte[getNbBytes()];
             for (int i = 0; i < getNbBytes() ; i++){
                 bytesEEG[i] = data[dataIndex+i];
@@ -124,12 +122,11 @@ public class MbtDataAcquisition {
      */
     private void generateStatusData(final boolean isConsecutive) {
 
-        ArrayList<Float> currentStatusList = new ArrayList<Float>(); //current status for 1 EEG data (composed of 2 or 3 status)
+        ArrayList<Float> currentStatusList = new ArrayList<>(); //current status for 1 EEG data (composed of 2 or 3 status)
         if (getBluetoothProtocol().equals(BLUETOOTH_LE) && singleRawEEGList != null) {
             for (int i = 0; i < getNbStatusBytes(); i++) { //for each status byte (0 BLE default or 3 bytes SPP)
                 if (getSamplePerNotification() - i * 8 > 0) {
                     byte currentStatus = statusDataBytes[i]; //status bytes have been stored in the statusDataBytes array at the beginning / when data are acquired
-                    int asupprimer = getSamplePerNotification() - i * 8; //todo delete
                     for (int currentBit = 0; currentBit < ((getSamplePerNotification() - i * 8 < 8) ? (getSamplePerNotification() - i * 8) : 8); currentBit++) {
                         currentStatusList.add((isConsecutive) ? isBitSet(currentStatus, currentBit) : Float.NaN);
                         statusData.add((isConsecutive) ? isBitSet(currentStatus, currentBit) : Float.NaN);
@@ -143,7 +140,6 @@ public class MbtDataAcquisition {
             if (singleRawEEG.getStatus() == null)
                 singleRawEEG.setStatus(currentStatusList);
         }
-
     }
 
     /**

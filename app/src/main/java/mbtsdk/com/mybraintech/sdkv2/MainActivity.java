@@ -24,10 +24,6 @@ public class MainActivity extends AppCompatActivity{
     private EventBusManager eventBusManager; //warning : do not remove this attribute (consider unsused by the IDE, but actually used)
     private TextView eegTextView;
 
-    static {
-        System.loadLibrary("native-lib");    // Used to load the 'native-lib' library on application startup.
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

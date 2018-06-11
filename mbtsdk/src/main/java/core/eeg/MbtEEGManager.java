@@ -7,6 +7,7 @@ import android.util.Log;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -127,7 +128,7 @@ public final class MbtEEGManager {
      * this manager handles Bluetooth communication between the headset and the application and receive raw EEG data from the headset.
      * @param event contains data transmitted by the publisher : here it contains the raw EEG data array
      */
-    @Subscribe
+    @Subscribe(threadMode = ThreadMode.ASYNC)
     public void onEvent(BluetoothEEGEvent event){ //warning : this method is used
         dataAcquisition.handleDataAcquired(event.getData());
     }

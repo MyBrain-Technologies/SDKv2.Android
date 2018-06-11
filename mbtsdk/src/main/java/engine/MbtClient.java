@@ -112,7 +112,7 @@ public final class MbtClient {
     public void stopReadBattery(){
     }
 
-    public void startStream(@Nullable final boolean useQualities/*,@Nullable final MbtClientEvents.EegListener eegCallback*/){ //todo remove nullable after tests
+    public void startStream(@Nullable final boolean useQualities/*, final MbtClientEvents.EegListener eegCallback*/){ //todo remove comments after tests
     //todo delete  first line
         getBluetoothManager().getMbtBluetoothLE().getMelomindDevice().setInternalConfig(new MbtDevice.InternalConfig(new Byte[]{0,0,0,0, (byte) MbtFeatures.getNbStatusBytes(),(byte) MbtFeatures.getSamplePerNotification()}));
 
