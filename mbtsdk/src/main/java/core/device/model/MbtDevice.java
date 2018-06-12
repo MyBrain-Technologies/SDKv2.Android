@@ -1,4 +1,4 @@
-package model;
+package core.device.model;
 
 import android.bluetooth.BluetoothDevice;
 import android.support.annotation.Keep;

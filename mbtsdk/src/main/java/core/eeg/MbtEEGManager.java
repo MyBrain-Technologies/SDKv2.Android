@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 import config.MbtConfig;
+import core.BaseModuleManager;
 import core.MbtManager;
 import core.bluetooth.BtProtocol;
 import core.eeg.acquisition.MbtDataAcquisition;
@@ -24,7 +25,7 @@ import core.eeg.storage.MbtEEGPacket;
 import core.eeg.signalprocessing.MBTSignalQualityChecker;
 import core.eeg.acquisition.MbtDataConversion;
 import core.eeg.storage.MbtDataBuffering;
-import core.eeg.storage.MbtRawEEG;
+import core.eeg.storage.RawEEGSample;
 import eventbus.EventBusManager;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.BluetoothEEGEvent;
@@ -49,25 +50,21 @@ import static features.ScannableDevices.VPRO;
  * @version Sophie ZECRI 25/05/2018
  */
 
-public final class MbtEEGManager {
+public final class MbtEEGManager extends BaseModuleManager{
 
     private static final String TAG = MbtEEGManager.class.getName();
-
-    private Context mContext;
 
     private MbtDataAcquisition dataAcquisition;
     private MbtDataBuffering mbtDataBuffering;
     ArrayList<ArrayList<Float>> consolidatedEEG;
 
-    private MbtManager mbtManager;
+    private BtProtocol protocol;
 
-    public MbtEEGManager(@NonNull Context context, MbtManager mbtManagerController){
-
-        this.mContext = context;
-        this.mbtManager = mbtManagerController;
-        EventBusManager.registerOrUnregister(true,this);// registers MbtEEGManager as a subscriber for receiving events from MbtBluetooth via the Event Bus
-        this.dataAcquisition = new MbtDataAcquisition(this);
-        this.mbtDataBuffering = new MbtDataBuffering(this);
+    public MbtEEGManager(@NonNull Context context, MbtManager mbtManagerController, BtProtocol protocol){
+        super(context, mbtManagerController);
+        this.protocol = protocol;
+        this.dataAcquisition = new MbtDataAcquisition(this, protocol);
+        this.mbtDataBuffering = new MbtDataBuffering(this, protocol);
     }
 
     /**
@@ -77,37 +74,17 @@ public final class MbtEEGManager {
      * This method is called by {@link core.eeg.acquisition.MbtDataAcquisition}.prepareAndConvertToEEG method
      * @return the converted EEG data matrix that contains readable values for any user
      */
-    public ArrayList<ArrayList<Float>> launchConversionToEEG(final ArrayList<MbtRawEEG> rawData){
-        return consolidatedEEG = MbtDataConversion.convertRawDataToEEG(rawData, getBluetoothProtocol());
+    public ArrayList<ArrayList<Float>> launchConversionToEEG(final ArrayList<RawEEGSample> rawData){
+        return consolidatedEEG = MbtDataConversion.convertRawDataToEEG(rawData, protocol);
     }
 
     /**
      * Stores the EEG raw data buffer when the maximum size of the buffer is reached
      * In case packet size is too large for buffer, the overflow buffer is stored in a second buffer
      * @param rawEEGdata the raw EEG data array acquired by the headset and transmitted by Bluetooth to the application
-     * @param srcPos is the beginning position of the buffer list where the data are copied
-     * @param pendingBufferLength is the length to copy
      */
-    public void storePendingDataInBuffer(@Nullable final ArrayList<MbtRawEEG> rawEEGdata, final int srcPos, final int pendingBufferLength){
-        mbtDataBuffering.storePendingDataInBuffer(rawEEGdata, srcPos, pendingBufferLength);
-    }
-
-    /**
-     * In case packet size is too large for buffer, the overflow EEG data is stored in an overflow buffer
-     * @param rawEEGdata the raw EEG data array acquired by the headset and transmitted by Bluetooth to the application
-     * @param bufPos is the beginning position of the data source array
-     * @param srcPos is the beginning position of the buffer list where the data are copied
-     * @param pendingBufferLength is the length of the pending buffer not to copy : this length is subtracted to get the length of the overflowing part of the data
-     */
-    public void storeOverflowDataInBuffer(final ArrayList<MbtRawEEG> rawEEGdata, final int srcPos, final int bufPos, final int pendingBufferLength){
-        mbtDataBuffering.storeOverflowDataInBuffer(rawEEGdata, srcPos, bufPos, pendingBufferLength);
-    }
-
-    /**
-     * Replace the pending data by the overflowing data in the pending buffer after the pending data has been handled
-     */
-    public int handleOverflowDataBuffer(){
-        return mbtDataBuffering.handleOverflowDataBuffer();
+    public void storePendingDataInBuffer(@NonNull final ArrayList<RawEEGSample> rawEEGdata){
+        mbtDataBuffering.storePendingDataInBuffer(rawEEGdata);
     }
 
     /**
@@ -121,45 +98,29 @@ public final class MbtEEGManager {
         mbtDataBuffering.reconfigureBuffers(sampleRate,samplePerNotif,nbStatusBytes);
     }
 
-    /**
-     * Handles the raw EEG data acquired by the headset and transmitted to the application
-     * onEvent is called by the Event Bus when a BluetoothEEGEvent event is posted
-     * This event is published by {@link core.bluetooth.MbtBluetoothManager}:
-     * this manager handles Bluetooth communication between the headset and the application and receive raw EEG data from the headset.
-     * @param event contains data transmitted by the publisher : here it contains the raw EEG data array
-     */
-    @Subscribe(threadMode = ThreadMode.ASYNC)
-    public void onEvent(BluetoothEEGEvent event){ //warning : this method is used
-        dataAcquisition.handleDataAcquired(event.getData());
-    }
+
 
     /**
      * Convert the raw EEG data array into a readable EEG data matrix of float values
      * and notify that EEG data is ready to the User Interface
      * @param toDecodeRawEEG the EEG raw data array to convert
-     * @param toDecodeStatus the status data
      */
-    public void convertToEEG(@NonNull final ArrayList<MbtRawEEG> toDecodeRawEEG, @Nullable final ArrayList<Float> toDecodeStatus){
+    public void convertToEEG(@NonNull final ArrayList<RawEEGSample> toDecodeRawEEG){
         AsyncUtils.executeAsync(new Runnable() {
             @Override
             public void run() {
                 Log.i(TAG, "computing and sending to application");
 
-                consolidatedEEG = MbtDataConversion.convertRawDataToEEG(toDecodeRawEEG, getBluetoothProtocol()); //convert byte table data to Float matrix and store the matrix in MbtEEGManager as eegResult attribute
-
-                ArrayList<Float> status = new ArrayList<>();
-                switch(getBluetoothProtocol()){
-                    case BLUETOOTH_LE:
-                        status = toDecodeStatus;
-                        break;
-                    case BLUETOOTH_SPP:
-                        status = consolidatedEEG.get(0); //the first list of the matrix is the status
-                        consolidatedEEG.remove(0); //remove the first element of the EEG matrix
-                        break;
+                ArrayList<Float> toDecodeStatus = new ArrayList<>();
+                for (RawEEGSample rawEEGSample : toDecodeRawEEG) {
+                    if(rawEEGSample.getStatus() != Float.NaN)
+                        toDecodeStatus.add(rawEEGSample.getStatus());
                 }
-                ArrayList<MbtEEGPacket> mbtEEGPacketsBuffer = mbtDataBuffering.storeEegPacketInPacketBuffer(consolidatedEEG, status);// if the packet buffer is full, this method returns the non null packet buffer
-                if(mbtEEGPacketsBuffer.size() >= getEegBufferLengthClientNotif()) //if the client buffer is full
-                    notifyEEGDataIsReady(mbtEEGPacketsBuffer);//notify UI that eeg data are ready via callbacks
+
+                consolidatedEEG = MbtDataConversion.convertRawDataToEEG(toDecodeRawEEG, protocol); //convert byte table data to Float matrix and store the matrix in MbtEEGManager as eegResult attribute
+
+                mbtDataBuffering.storeConsolidatedEegPacketInPacketBuffer(consolidatedEEG, toDecodeStatus);// if the packet buffer is full, this method returns the non null packet buffer
+
             }
         });
     }
@@ -169,7 +130,7 @@ public final class MbtEEGManager {
      * The event returns a list of MbtEEGPacket object, that contains the EEG data, and their associated qualities and status
      * @param eegPackets the list that contains EEG packets ready to use for the client.
      */
-    public void notifyEEGDataIsReady(ArrayList<MbtEEGPacket> eegPackets) {
+    public void notifyEEGDataIsReady(MbtEEGPacket eegPackets) {
         Log.d(TAG, "notify EEG Data Is Ready ");
         EventBusManager.postEvent(new ClientReadyEEGEvent(eegPackets));
     }
@@ -277,44 +238,7 @@ public final class MbtEEGManager {
     public void reinitRelaxIndexVariables(){
         MBTComputeRelaxIndex.reinitRelaxIndexVariables();
     }
-    /**
-     * Get the pending EEG raw data buffer
-     * @return an array containing the pending EEG raw data
-     */
-    public ArrayList<MbtRawEEG> getPendingRawData() {
-        return mbtDataBuffering.getPendingRawData();
-    }
 
-    /**
-     * Gets the lost EEG raw data packets buffer
-     * It contains only 0XFF values
-     * @return the lost EEG raw data packet buffer
-     */
-    public ArrayList<MbtRawEEG> getLostPacketInterpolator(){
-        return mbtDataBuffering.getLostPacketInterpolator();
-    }
-
-    /**
-     * Get the boolean value of hasOverflow
-     * Return true if the pending data buffer is full of EEG data
-     * The pending data buffer will be full if the incoming EEG data array size is bigger than the EEG raw data pending buffer size
-     * Return false if the pending data buffer size is lower than its total capacity
-     * @return the boolean value of the overflow state
-     */
-    public boolean hasOverflow() {
-        return mbtDataBuffering.hasOverflow();
-    }
-
-    /**
-     * Set a boolean value to hasOverflow
-     * Set true if the pending data buffer is full of EEG data
-     * The pending data buffer will be full if the incoming EEG data array size is bigger than the EEG raw data pending buffer size
-     * Set false if the pending data buffer size is lower than its total capacity
-     * @param hasOverflow the boolean value of the overflow state
-     */
-    public void setOverflow(boolean hasOverflow){
-        mbtDataBuffering.setOverflow(hasOverflow);
-    }
 
     /**
      * Gets the MbtManager instance.
@@ -329,9 +253,9 @@ public final class MbtEEGManager {
      * Gets the bluetooth protocolfor transmitting data from the headset to the application.
      * @return the bluetooth protocol used for transmitting data from the headset to the application.
      */
-    public BtProtocol getBluetoothProtocol() {
-        return mbtManager.getBluetoothProtocol();
-    }
+//    public BtProtocol getBluetoothProtocol() {
+//        return mbtManager.getBluetoothProtocol();
+//    }
 
     /**
      * Gets the user-readable EEG data matrix
@@ -354,6 +278,19 @@ public final class MbtEEGManager {
      */
     public void deinit(){ //TODO CALL WHEN MbtEEGManager IS NOT USED ANYMORE TO AVOID MEMORY LEAK
         EventBusManager.registerOrUnregister(false,this);
+    }
+
+
+    /**
+     * Handles the raw EEG data acquired by the headset and transmitted to the application
+     * onEvent is called by the Event Bus when a BluetoothEEGEvent event is posted
+     * This event is published by {@link core.bluetooth.MbtBluetoothManager}:
+     * this manager handles Bluetooth communication between the headset and the application and receive raw EEG data from the headset.
+     * @param event contains data transmitted by the publisher : here it contains the raw EEG data array
+     */
+    @Subscribe(threadMode = ThreadMode.ASYNC)
+    public void onEvent(BluetoothEEGEvent event){ //warning : this method is used
+        dataAcquisition.handleDataAcquired(event.getData());
     }
 
 }

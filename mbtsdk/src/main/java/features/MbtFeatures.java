@@ -16,7 +16,6 @@ import static features.ScannableDevices.MELOMIND;
  */
 
 public final class MbtFeatures{
-
     private static String TAG = MbtFeatures.class.getName();
 
 
@@ -44,6 +43,8 @@ public final class MbtFeatures{
     public final static int DEFAULT_BLE_NB_STATUS_BYTES = 0;
     public final static int DEFAULT_SPP_NB_STATUS_BYTES = 3;
     private static int nbStatusBytes = -1;
+
+    public static final int DEFAULT_MAX_PENDING_RAW_DATA_BUFFER_SIZE = 250;
 
     public final static int DEFAULT_BLE_NB_BYTES = 2;
     public final static int DEFAULT_SPP_NB_BYTES = DEFAULT_SPP_NB_STATUS_BYTES;
@@ -102,7 +103,7 @@ public final class MbtFeatures{
      * Gets the number of bytes for a EEG raw data in case the Bluetooth protocol used is Bluetooth Low Energy
      * @return the number of bytes for a EEG raw data in case the Bluetooth protocol used is Bluetooth Low Energy
      */
-    public static int getNbBytes() {
+    public static int getEEGByteSize() {
         return (MbtConfig.getScannableDevices().equals(MELOMIND) ? DEFAULT_BLE_NB_BYTES : DEFAULT_SPP_NB_BYTES);
     }
 

@@ -756,7 +756,7 @@ public final class EncryptionUtils {
              * time, PID, UID, build fingerprint, and hardware serial number
              * (where available) into Linux PRNG.
              *
-             * Concurrency: Read requests to the underlying Linux PRNG are
+             * Concurrency: ReadRequestEvent requests to the underlying Linux PRNG are
              * serialized (on sLock) to ensure that multiple threads do not get
              * duplicated PRNG output.
              */

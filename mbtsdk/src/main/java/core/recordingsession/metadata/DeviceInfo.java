@@ -10,7 +10,6 @@ public enum DeviceInfo {
      */
     FW_VERSION,
 
-
     /**
      * Corresponds to a call to hardware version value.
      */
@@ -19,5 +18,15 @@ public enum DeviceInfo {
     /**
      * Corresponds to a call to serial number value.
      */
-    SERIAL_NUMBER
+    SERIAL_NUMBER,
+
+    /**
+     * Corresponds to a device's new connection state
+     */
+    STATE,
+
+    /**
+     * Corresponds to a device battery measure
+     */
+    BATTERY
 }

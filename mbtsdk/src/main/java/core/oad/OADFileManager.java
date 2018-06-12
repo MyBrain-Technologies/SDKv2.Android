@@ -136,7 +136,7 @@ public final class OADFileManager {
         CRC32 x = new CRC32();
         int addr = 0, crc32 = 0xFFFFFFFF, nbByte = 0;
         byte[] tempProgBuffer;
-        // Read full APP code from extrernal Flash to compute CRC32 before comparison
+        // ReadRequestEvent full APP code from extrernal Flash to compute CRC32 before comparison
         while (addr< getmFileLengthAsInteger())
         {
             if(addr < OAD_CRC_OFFSET)
@@ -292,7 +292,7 @@ public final class OADFileManager {
      */
     private boolean loadFile(AssetManager assetManager, String filepath) {
         try {
-            // Read the file raw into a buffer
+            // ReadRequestEvent the file raw into a buffer
             InputStream stream;
             stream = assetManager.open(filepath);
             mFileLength = stream.read(mFileBuffer, 0, mFileBuffer.length);

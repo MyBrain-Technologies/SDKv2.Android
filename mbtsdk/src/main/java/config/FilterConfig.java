@@ -1,8 +1,7 @@
-package core.bluetooth.lowenergy;
+package config;
 
 import android.support.annotation.Keep;
 
-@Keep
 public enum FilterConfig {
     NOTCH_FILTER_50HZ(50),
     NOTCH_FILTER_60HZ(60),

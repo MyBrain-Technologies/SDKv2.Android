@@ -5,42 +5,23 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
 
 @Keep
 public final class MbtEEGPacket {
     @NonNull
-    private ArrayList<ArrayList<Float>> channelsData;
+    private ArrayList<ArrayList<Float>> channelsData = new ArrayList<>(); //TODO check if we need to set this synchornized
     @Nullable
-    private ArrayList<Float> qualities;
-    @Nullable
-    private ArrayList<Float> statusData;
+    private ArrayList<Float> qualities = new ArrayList<>();
+
+    private ArrayList<Float> statusData = new ArrayList<>();
     @NonNull
     private final long timestamp;
 
-    /**
-     * Initializes a new instance of the MbtEEGPacket class.
-     * @param channelsData The values from all channels
-     * @param qualities The qualities stored in a list. The
-     *                  list size should be equal to the number of channels if there is
-     *                  a status channel.
-     * @param timestamp the timestamp in milliseconds when this packet is created
-     */
-    @Keep
-    public MbtEEGPacket(@NonNull final ArrayList<ArrayList<Float>> channelsData,
-                        @Nullable final ArrayList<Float> qualities, final long timestamp) {
-        if (timestamp < 0)
-            throw new IllegalArgumentException("timestamp must NOT be NEGATIVE");
-        if (timestamp > System.currentTimeMillis())
-            throw new IllegalArgumentException("timestamp cannot be in the future");
 
-        this.channelsData = channelsData;
-        this.qualities = qualities;
-        if(this.qualities == null){
-            this.qualities = new ArrayList<>();
-            this.qualities.add(0f);
-            this.qualities.add(0f);
-        }
-        this.timestamp = timestamp;
+    public MbtEEGPacket(){
+        timestamp = System.currentTimeMillis();
     }
 
     /**
@@ -49,25 +30,39 @@ public final class MbtEEGPacket {
      * @param qualities The qualities stored in a list. The
      *                  list size should be equal to the number of channels if there is
      *                  a status channel.
-     * @param timestamp the timestamp in milliseconds when this packet is created
      */
     @Keep
     public MbtEEGPacket(@NonNull final ArrayList<ArrayList<Float>> channelsData,
-                        @Nullable final ArrayList<Float> qualities, @Nullable final ArrayList<Float> statusData, @NonNull final long timestamp) {
-        if (timestamp < 0)
-            throw new IllegalArgumentException("timestamp must NOT be NEGATIVE");
-        if (timestamp > System.currentTimeMillis())
-            throw new IllegalArgumentException("timestamp cannot be in the future");
+                        @Nullable final ArrayList<Float> qualities) {
+
+        this.channelsData = channelsData;
+        this.qualities = qualities;
+        if(this.qualities == null){
+            this.qualities = new ArrayList<>();
+        }
+        this.timestamp = System.currentTimeMillis();
+    }
+
+    /**
+     * Initializes a new instance of the MbtEEGPacket class.
+     * @param channelsData The values from all channels
+     * @param qualities The qualities stored in a list. The
+     *                  list size should be equal to the number of channels if there is
+     *                  a status channel.
+     */
+    @Keep
+    public MbtEEGPacket(@NonNull final ArrayList<ArrayList<Float>> channelsData,
+                        @Nullable final ArrayList<Float> qualities, final ArrayList<Float> statusData) {
 
         this.channelsData = channelsData;
         this.statusData = statusData;
         this.qualities = qualities;
         if(this.qualities == null){
             this.qualities = new ArrayList<>();
-            this.qualities.add(0f);
-            this.qualities.add(0f);
         }
-        this.timestamp = timestamp;
+
+        this.timestamp = System.currentTimeMillis();
+
     }
 
     /**
@@ -102,7 +97,6 @@ public final class MbtEEGPacket {
      * Gets the status data
      * @return the status data
      */
-    @Nullable
     public ArrayList<Float> getStatusData() {
         return statusData;
     }

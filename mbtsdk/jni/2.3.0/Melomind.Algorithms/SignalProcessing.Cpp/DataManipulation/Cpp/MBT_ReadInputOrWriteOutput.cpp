@@ -4,7 +4,7 @@
 // Created by Fanny GROSSELIN on 2016/08/26 (inspired from Emma Barme's code on 2015)
 // Copyright (c) 2016 myBrain Technologies. All rights reserved.
 //
-// Update : Fanny Grosselin 2017/01/26 Read correctly NaN values.
+// Update : Fanny Grosselin 2017/01/26 ReadRequestEvent correctly NaN values.
 //		    Fanny Grosselin 23/03/2017 --> Change std::nan by nanf
 //			Fanny Grosselin 2017/03/27 --> Change '\' by '/' for the paths
 //          Fanny Grosselin 2017/03/27 --> Fix all the warnings.
@@ -46,13 +46,13 @@ std::vector<std::complex<float> > MBT_readVector(std::string fileName)
         else
         {
             errno = ENOENT;
-            perror("Read Vector ERROR: The input file is empty");
+            perror("ReadRequestEvent Vector ERROR: The input file is empty");
         }
     }
     else
     {
         errno = ENOENT;
-        perror("Read Vector ERROR: Cannot open the input file");
+        perror("ReadRequestEvent Vector ERROR: Cannot open the input file");
     }
 
     return data;
@@ -177,14 +177,14 @@ MBT_Matrix<float> MBT_readMatrix(std::string fileName)
         else
         {
             errno = ENOENT;
-            perror("Read matrix ERROR: The input file is empty");
+            perror("ReadRequestEvent matrix ERROR: The input file is empty");
         }
 
     }
     else
     {
         errno = ENOENT;
-        perror("Read matrix ERROR: Cannot open the input file");
+        perror("ReadRequestEvent matrix ERROR: Cannot open the input file");
     }
 
     return EegData;
