@@ -138,7 +138,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
     }
 
     @Override
-    public boolean disconnect(BluetoothDevice device) {
+    public boolean disconnect() {
         boolean acquisitionStopped = true;
         if (getCurrentState() != BtState.CONNECTED) {
             Log.i(TAG, "Device already disconnected");

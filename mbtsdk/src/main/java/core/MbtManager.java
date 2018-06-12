@@ -86,7 +86,7 @@ public final class MbtManager{
      */
     public void connectBluetooth(@Nullable String name, @NonNull StateListener listener){
         this.stateListener = listener;
-
+ ;
         EventBusManager.postEvent(new ConnectRequestEvent(name));
     }
 

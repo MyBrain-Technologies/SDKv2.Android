@@ -372,11 +372,10 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 
     /**
      * Disconnects from the currently connected {@link BluetoothGatt gatt instance} and sets it to null
-     * @param device
      * @return
      */
     @Override
-    public boolean disconnect(BluetoothDevice device) {
+    public boolean disconnect() {
         this.gatt.disconnect();
         this.gatt = null;
         return false;

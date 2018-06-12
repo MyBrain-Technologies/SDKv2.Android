@@ -10,7 +10,7 @@ import org.greenrobot.eventbus.EventBus;
  * Copyright (c) 2016 myBrain Technologies. All rights reserved.
  * EventBusManager is responsible for managing communication between the different packages by using a publisher/subscriber system
  */
-public class EventBusManager {
+public final class EventBusManager {
 
     /**
      * Creates a new EventBus instance that will manage the events

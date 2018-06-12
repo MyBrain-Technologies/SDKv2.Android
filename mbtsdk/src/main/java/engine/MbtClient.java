@@ -67,7 +67,7 @@ public final class MbtClient {
     }
 
     public void scanDevicesForType(ScannableDevices deviceType, long duration, ScanCallback scanCallback){
-
+        //TODO
     }
 
     public void connectBluetooth(@Nullable String name, StateListener stateListener){
@@ -82,7 +82,7 @@ public final class MbtClient {
 
 
     public static void configureHeadset(){
-
+        //TODO
     }
 
 

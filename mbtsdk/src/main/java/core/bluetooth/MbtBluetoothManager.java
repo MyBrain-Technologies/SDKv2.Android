@@ -58,7 +58,6 @@ import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
 public final class MbtBluetoothManager extends BaseModuleManager{
     private final static String TAG = MbtBluetoothManager.class.getSimpleName();
 
-    private BluetoothDevice bluetoothDevice;
     private BtProtocol btProtocol;
 
     private MbtBluetoothLE mbtBluetoothLE;
@@ -119,6 +118,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         }finally {
             stopCurrentScan();
         }
+        BluetoothDevice bluetoothDevice;
         if(scannedDevice == null){
             notifyConnectionStateChanged(BtState.SCAN_TIMEOUT);
             return;
@@ -437,13 +437,13 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
         switch(this.btProtocol){
             case BLUETOOTH_LE:
-                this.mbtBluetoothLE.disconnect(bluetoothDevice);
+                this.mbtBluetoothLE.disconnect();
                 break;
             case BLUETOOTH_SPP:
-                this.mbtBluetoothSPP.disconnect(bluetoothDevice);
+                this.mbtBluetoothSPP.disconnect();
                 break;
             case BLUETOOTH_A2DP:
-                this.mbtBluetoothA2DP.disconnect(bluetoothDevice);
+                this.mbtBluetoothA2DP.disconnect();
                 break;
         }
     }

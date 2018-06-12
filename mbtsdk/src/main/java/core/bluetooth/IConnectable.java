@@ -23,7 +23,7 @@ public interface IConnectable {
      * Disconnect from the peripheral device
      * @return true upon success, false otherwise
      */
-    boolean disconnect(BluetoothDevice device);
+    boolean disconnect();
 
 
     /**

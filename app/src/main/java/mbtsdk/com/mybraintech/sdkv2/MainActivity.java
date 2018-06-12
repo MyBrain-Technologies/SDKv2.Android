@@ -114,7 +114,8 @@ public class MainActivity extends AppCompatActivity{
 
 //                timer = new Timer();
 //                timer.schedule(timerTask ,0, 30000);
-            } else if (newState == BtState.DISCONNECTED || newState == BtState.SCAN_TIMEOUT){
+
+            } else if (newState == BtState.DISCONNECTED || newState == BtState.SCAN_TIMEOUT || newState == BtState.INTERNAL_FAILURE){
                 if(timer != null)
                     timer.cancel();
                 Log.i(TAG, "restarting");
