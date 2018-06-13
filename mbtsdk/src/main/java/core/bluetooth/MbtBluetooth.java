@@ -128,6 +128,7 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
             }
         }, filter);
         bluetoothAdapter.startDiscovery();
+        notifyConnectionStateChanged(BtState.SCAN_STARTED);
         return scanLock.waitAndGetResult();
     }
 

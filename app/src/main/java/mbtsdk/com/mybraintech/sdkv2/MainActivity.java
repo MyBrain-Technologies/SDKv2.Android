@@ -10,9 +10,6 @@ import android.widget.Toast;
 
 import org.greenrobot.eventbus.Subscribe;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -21,13 +18,14 @@ import core.bluetooth.BtState;
 import core.device.DCOffsets;
 import core.device.SaturationEvent;
 import core.eeg.storage.MbtEEGPacket;
+import engine.ConnectionConfig;
 import engine.DeviceInfoListener;
 import engine.EegListener;
 import engine.DeviceStatusListener;
 import engine.MbtClient;
-import engine.MbtClientEvents;
-import engine.StateListener;
+import engine.ConnectionStateListener;
 import eventbus.events.ClientReadyEEGEvent;
+import features.ScannableDevices;
 
 import static features.ScannableDevices.MELOMIND;
 
@@ -102,7 +100,7 @@ public class MainActivity extends AppCompatActivity{
         }
     };
 
-    private StateListener stateListener = new StateListener() {
+    private ConnectionStateListener connectionStateListener = new ConnectionStateListener() {
         @Override
         public void onStateChanged(@NonNull BtState newState) {
             Log.i(TAG,"newstate is " + newState.toString());
@@ -125,7 +123,14 @@ public class MainActivity extends AppCompatActivity{
                 new Handler().postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        client.connectBluetooth("melo_1010876553", stateListener);
+                        Log.i(TAG, "starting bt connection");
+                        client.connectBluetooth(new ConnectionConfig.Builder(connectionStateListener)
+                                .maxScanDuration(30000)
+                                .scanDeviceType(ScannableDevices.MELOMIND)
+                                .deviceName("melo_1010100966")
+                                .connectAudioIfDeviceCompatible(false)
+                                .create());
+
                     }
                 },10000);
 
@@ -152,7 +157,13 @@ public class MainActivity extends AppCompatActivity{
 
         client = MbtClient.init(getApplicationContext());
 
-        client.connectBluetooth("melo_1010876553", stateListener);
+        client.connectBluetooth(new ConnectionConfig.Builder(connectionStateListener)
+                .maxScanDuration(30000)
+                .scanDeviceType(ScannableDevices.MELOMIND)
+                .deviceName("melo_1010100966")
+                .connectAudioIfDeviceCompatible(false)
+                .create());
+
 
 //        client.startstream(true, new EegListener() {
 //            @Override

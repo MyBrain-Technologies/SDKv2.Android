@@ -26,7 +26,7 @@ import core.eeg.MbtEEGManager;
 import core.recordingsession.metadata.DeviceInfo;
 import engine.DeviceInfoListener;
 import engine.DeviceStatusListener;
-import engine.StateListener;
+import engine.ConnectionStateListener;
 import eventbus.EventBusManager;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.DeviceInfoEvent;
@@ -58,7 +58,7 @@ public final class MbtManager{
      * the application callbacks. EventBus is not available outside the SDK so the user is notified
      * using custom callback interfaces.
      */
-    private StateListener stateListener;
+    private ConnectionStateListener connectionStateListener;
     private EegListener eegListener;
     private DeviceInfoListener deviceInfoListener;
     private DeviceStatusListener deviceStatusListener;
@@ -89,12 +89,11 @@ public final class MbtManager{
 
     /**
      * Perform a new Bluetooth connection.
-     * @param name the device name to connect to
+     * @param name the device name to connect to. Might be null if not known by the user.
      * @param listener a set of callback that will notify the user about connection progress.
      */
-    public void connectBluetooth(@Nullable String name, @NonNull StateListener listener){
-        this.stateListener = listener;
- ;
+    public void connectBluetooth(@Nullable String name, @NonNull ConnectionStateListener listener){
+        this.connectionStateListener = listener;
         EventBusManager.postEvent(new ConnectRequestEvent(name));
     }
 
@@ -169,10 +168,10 @@ public final class MbtManager{
                 break;
 
             case STATE:
-                if(event.getInfo() == null && stateListener != null)
-                    stateListener.onError("Unable to change ");
+                if(event.getInfo() == null && connectionStateListener != null)
+                    connectionStateListener.onError("Unable to change ");
                 else
-                    stateListener.onStateChanged((BtState) event.getInfo());
+                    connectionStateListener.onStateChanged((BtState) event.getInfo());
                 break;
         }
     }

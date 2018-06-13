@@ -243,63 +243,6 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
             Log.getStackTraceString(e);
         }
     }
-    /**
-     * Checks if device is already bonded. If not, a Classic Bluetooth Discovery scan
-     * will be started to see if it is in range.
-     * @return          the melomind if found, <code>null</code> otherwise MBT-VPro
-     */
-    @Nullable
-    private BluetoothDevice scanForDeviceWithDiscovery(final String deviceName) {
-        final Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
-        // If there are paired devices
-        if (pairedDevices.size() > 0) {
-            // Loop through paired devices
-            //TODO change here to use MAC address instead of Name
-            for (BluetoothDevice device : pairedDevices) {
-                if (device.getName().equals(deviceName) /*|| device.getName().contains(deviceName)*/) { // device found
-                    return device;
-                }
-            }
-        }
-        // at this point, device was not found among bonded devices so let's start a discovery scan
-        final MbtLock<BluetoothDevice> scanLock = new MbtLock<>();
-        Log.i(TAG, "Starting Classic Bluetooth Discovery Scan");
-        final IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
-        context.registerReceiver(new BroadcastReceiver() {
-            public final void onReceive(final Context context, final Intent intent) {
-                final String action = intent.getAction();
-                if(action!=null){
-                    switch(action) {
-                        case BluetoothDevice.ACTION_FOUND:
-                            final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                            final String name = device.getName();
-                            if (TextUtils.isEmpty(name)) {
-                                Log.w(TAG, "Found device with no name. MAC address is -> " + device.getAddress());
-                                return;
-                            }
-                            Log.i(TAG, String.format("Stopping Discovery Scan -> device detected " +
-                                    "with name '%s' and MAC address '%s' ", device.getName(), device.getAddress()));
-                            if (name.equals(deviceName) || name.contains(deviceName)) {
-                                Log.i(TAG, "VPro found. Cancelling discovery & connecting");
-                                bluetoothAdapter.cancelDiscovery();
-                                context.unregisterReceiver(this);
-                                scanLock.setResultAndNotify(device);
-                            }
-                            break;
-                        case BluetoothAdapter.ACTION_DISCOVERY_FINISHED:
-                            if (scanLock.isWaiting()) // restarting discovery while still waiting
-                                bluetoothAdapter.startDiscovery();
-                            break;
-                    }
-                }
-
-
-            }
-        }, filter);
-        bluetoothAdapter.startDiscovery();
-        return scanLock.waitAndGetResult();
-    }
 
     private boolean retrieveStreams() {
         if (this.btSocket != null) {

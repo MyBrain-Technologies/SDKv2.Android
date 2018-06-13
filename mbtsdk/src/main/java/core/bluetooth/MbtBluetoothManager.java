@@ -65,7 +65,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private MbtBluetoothSPP mbtBluetoothSPP;
 
     private final Queue<BluetoothRequests> pendingRequests; //TODO see if still necessary
-    private volatile boolean requestBeingProcessed = false;
+    private boolean requestBeingProcessed = false;
 
     private RequestThread requestThread;
     private Handler requestHandler;
@@ -110,7 +110,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         //first step
         BluetoothDevice scannedDevice = null;
         try {
-            scannedDevice = scanSingle(deviceName).get(40, TimeUnit.SECONDS);
+            scannedDevice = scanSingle(deviceName).get(MbtConfig.getBluetoothScanTimeout(), TimeUnit.MILLISECONDS);
 
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             //TODO
@@ -168,7 +168,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         if (MbtConfig.scannableDevices == ScannableDevices.MELOMIND && ContextCompat.checkSelfPermission(mContext,
                 Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(mContext,
                 Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
-            mbtBluetoothLE.startLowEnergyScan(true, false); //TODO handle this
+            mbtBluetoothLE.startLowEnergyScan(true, null); //TODO handle this
 
         else
             mbtBluetoothLE.startScanDiscovery(MbtFeatures.getDeviceName());
@@ -182,25 +182,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      */
     private Future<BluetoothDevice> scanSingle(final String deviceName){ //todo check that
         //TODO choose method name accordingly between scan() / scanFor() / ...
-        switch (btProtocol){
-            case BLUETOOTH_LE:
-                if(mbtBluetoothLE.getMelomindDevice()!=null)
-                    mbtBluetoothLE.getMelomindDevice().setProductName(deviceName);
-                else if (mbtBluetoothLE.getVproDevice()!=null)
-                    mbtBluetoothLE.getVproDevice().setProductName(deviceName);
-                break;
-            case BLUETOOTH_SPP:
-                if(mbtBluetoothSPP.getMelomindDevice()!=null)
-                    mbtBluetoothSPP.getMelomindDevice().setProductName(deviceName);
-                else if (mbtBluetoothSPP.getVproDevice()!=null)
-                    mbtBluetoothSPP.getVproDevice().setProductName(deviceName);
-                break;
-            case BLUETOOTH_A2DP:
-                if(mbtBluetoothA2DP.getMelomindDevice()!=null)
-                    mbtBluetoothA2DP.getMelomindDevice().setProductName(deviceName);
-                else if (mbtBluetoothA2DP.getVproDevice()!=null)
-                    mbtBluetoothA2DP.getVproDevice().setProductName(deviceName);
-        }
 
         return AsyncUtils.executeAsync(new Callable<BluetoothDevice>() {
             @Override
@@ -211,7 +192,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                         || ContextCompat.checkSelfPermission(mContext,
                         Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
                     btProtocol= BLUETOOTH_LE;
-                    return mbtBluetoothLE.startLowEnergyScan(true, false); //TODO handle this
+                    return mbtBluetoothLE.startLowEnergyScan(true, deviceName);
 
                 }
 //                else
@@ -220,8 +201,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                     Log.i(TAG, "About to start scan discovery");
 
                     btProtocol=BtProtocol.BLUETOOTH_SPP;
-                    return mbtBluetoothSPP.startScanDiscovery(deviceName);//TODO handle scanDiscovery
-
+                    return mbtBluetoothSPP.startScanDiscovery(deviceName);
             }
         });
     }
@@ -337,7 +317,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         if(mbtBluetoothLE.isStreaming())
                 return;
         //TODO remove configureHeadset method from here later on.
-        //configureHeadset(new DeviceConfig.Builder().mtu(47).useP300(true).create());
+        configureHeadset(new DeviceConfig.Builder().useP300(false).create());
         if(!mbtBluetoothLE.startStream()){
             requestBeingProcessed  = false;
             EventBusManager.postEvent(IStreamable.StreamState.FAILED);
@@ -489,7 +469,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     public void notifyConnectionStateChanged(BtState newState) {
         if(newState == BtState.CONNECTED_AND_READY)
             requestBeingProcessed = false;
-        else if(newState == BtState.DISCONNECTED){
+        else if(newState == BtState.DISCONNECTED || newState == BtState.SCAN_TIMEOUT){
             requestBeingProcessed = false;
         }
 
@@ -552,8 +532,11 @@ public final class MbtBluetoothManager extends BaseModuleManager{
          * @param request the {@link BluetoothRequests} request to execute.
          */
         void parseRequest(BluetoothRequests request){
+            Log.i(TAG,"parsing new request");
             //BluetoothRequests request = pendingRequests.remove();
             while(requestBeingProcessed);
+            Log.i(TAG,"bt execution thread is now free");
+            requestBeingProcessed = true;
             if(request instanceof ConnectRequestEvent){
                 if(((ConnectRequestEvent)request).getName() == null){
                     scanDevices();
@@ -573,7 +556,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 configureHeadset(((UpdateConfigurationRequestEvent) request).getConfig());
             }
 
-            requestBeingProcessed = true;
+
         }
 
         /**

@@ -19,7 +19,6 @@ import static features.MbtFeatures.getNbChannels;
  * @version Sophie ZECRI 25/05/2018
  */
 public class MbtDataConversion {
-
     private static final String TAG = MbtDataConversion.class.getName();
 
     private static int EEG_AMP_GAIN = 12;

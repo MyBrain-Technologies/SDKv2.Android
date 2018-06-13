@@ -10,6 +10,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import config.DeviceConfig;
+import config.MbtConfig;
 import core.MbtManager;
 import core.recordingsession.metadata.DeviceInfo;
 import core.eeg.storage.MbtEEGPacket;
@@ -62,8 +63,14 @@ public final class MbtClient {
         //TODO
     }
 
-    public void connectBluetooth(@Nullable String name, StateListener stateListener){
-        this.mbtManager.connectBluetooth(name, stateListener);
+
+    public void connectBluetooth(@NonNull ConnectionConfig config){
+        MbtConfig.scannableDevices = config.getDeviceType();
+        MbtConfig.bluetoothConnectionTimeout = config.getConnectionTimeout();
+        MbtConfig.bluetoothScanTimeout = config.getMaxScanDuration();
+
+
+        this.mbtManager.connectBluetooth(config.getDeviceName(), config.getConnectionStateListener());
     }
 
     public boolean disconnectBluetooth(){

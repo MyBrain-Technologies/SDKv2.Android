@@ -30,9 +30,9 @@ public final class MbtConfig {
 
     private static boolean acquisitionEnabledLowBattery;
 
-    private static int bluetoothConnectionTimeout;
+    public static int bluetoothConnectionTimeout;
 
-    private static int bluetoothScanTimeout;
+    public static int bluetoothScanTimeout;
 
     private static int bluetoothPairingTimeout;
 

@@ -29,6 +29,9 @@ public final class MbtFeatures{
 
     public final static long DEFAULT_BATTERY_READ_PERIOD = 20000;
 
+    public final static int DEFAULT_MAX_SCAN_DURATION_IN_MILLIS = 40000;
+    public final static int DEFAULT_MAX_CONNECTION_DURATION_IN_MILLIS = 40000;
+
     // MELOMIND & VPRO FEATURES
     public static final String MELOMIND_DEVICE_NAME_PREFIX = "melo_";
     public static final String VPRO_DEVICE_NAME_PREFIX = "vpro_";

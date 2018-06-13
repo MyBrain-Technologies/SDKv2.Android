@@ -231,31 +231,31 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * <p><strong>Note:</strong> This method will consume your mobile/tablet battery. Please consider calling
      * {@link #stopLowEnergyScan()} when scanning is no longer needed.</p>
      * @param filterOnDeviceService
-     * @param filterOnDeviceName
      * @return Each found device that matches the specified filters
      */
     @RequiresPermission(anyOf = {ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION})
-    public BluetoothDevice startLowEnergyScan(boolean filterOnDeviceService, boolean filterOnDeviceName) {
+    public BluetoothDevice startLowEnergyScan(boolean filterOnDeviceService, String deviceName) {
         this.bluetoothLeScanner = super.bluetoothAdapter.getBluetoothLeScanner();
         List<ScanFilter> mFilters = new ArrayList<>();
         if (filterOnDeviceService) {
             Log.i(TAG, "ENABLED SERVICE FILTER");
-            final ScanFilter filterService = new ScanFilter.Builder()
-                    //.setDeviceName(deviceName)
-                    //.setDeviceName("melo_")
-                    .setServiceUuid(new ParcelUuid(MelomindCharacteristics.SERVICE_MEASUREMENT))
-                    .build();
-            mFilters.add(filterService);
+            final ScanFilter.Builder filterService = new ScanFilter.Builder()
+                    .setServiceUuid(new ParcelUuid(MelomindCharacteristics.SERVICE_MEASUREMENT));
+
+            if(deviceName != null)
+                filterService.setDeviceName(deviceName);
+
+            mFilters.add(filterService.build());
         }
 
-        if (filterOnDeviceName) {
+//        if (deviceName != null) {
 //            Log.i(TAG, "ENABLED NAME FILTER");
 //            final ScanFilter filterName = new ScanFilter.Builder()
 //                    .setDeviceName(deviceName)
 //                    .build();
 //
 //            mFilters.add(filterName);
-        }
+//        }
 
         final ScanSettings settings = new ScanSettings.Builder()
                 .setReportDelay(0)
@@ -268,7 +268,8 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return null;
         }
-        return super.scanLock.waitAndGetResult(40000);
+        notifyConnectionStateChanged(BtState.SCAN_STARTED);
+        return super.scanLock.waitAndGetResult();
     }
 
 
@@ -299,8 +300,8 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             Log.i(TAG, String.format("Stopping Low Energy Scan -> device detected " +
                     "with name '%s' and MAC address '%s' ", device.getName(), device.getAddress()));
             //TODO, check if already in the array list
-            MbtBluetoothLE.super.scannedDevices.add(result.getDevice());
-            MbtBluetoothLE.super.scanLock.setResultAndNotify(result.getDevice());
+            MbtBluetoothLE.super.scannedDevices.add(device);
+            MbtBluetoothLE.super.scanLock.setResultAndNotify(device);
         }
 
         public final void onScanFailed(final int errorCode) {
