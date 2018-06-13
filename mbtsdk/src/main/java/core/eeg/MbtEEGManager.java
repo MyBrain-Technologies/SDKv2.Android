@@ -288,8 +288,9 @@ public final class MbtEEGManager extends BaseModuleManager{
      * this manager handles Bluetooth communication between the headset and the application and receive raw EEG data from the headset.
      * @param event contains data transmitted by the publisher : here it contains the raw EEG data array
      */
-    @Subscribe(threadMode = ThreadMode.ASYNC)
+    @Subscribe(threadMode = ThreadMode.BACKGROUND)
     public void onEvent(BluetoothEEGEvent event){ //warning : this method is used
+        Log.i(TAG, Arrays.toString(event.getData()));
         dataAcquisition.handleDataAcquired(event.getData());
     }
 

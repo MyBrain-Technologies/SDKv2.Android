@@ -18,7 +18,7 @@ public final class MbtConfig {
      * so that the user can do what he wants with this new packets
      * (for example plot the values on a chart).
      */
-    public static int eegBufferLengthClientNotif = 500; //number of MbtEEGPackets to store in the buffer before notifying the client
+    public static int eegBufferLengthClientNotif = 250; //number of MbtEEGPackets to store in the buffer before notifying the client
 
     private static boolean batteryEventsLogsEnabled;
 

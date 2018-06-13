@@ -55,7 +55,7 @@ public class MbtDataAcquisition {
      * @param data the raw EEG data array acquired by the headset and transmitted by Bluetooth to the application
      */
     public synchronized ArrayList<ArrayList<Float>> handleDataAcquired(@NonNull final byte[] data) {
-        Log.d(TAG,"data acquired: "+Arrays.toString(data));
+        //Log.d(TAG,"data acquired: "+Arrays.toString(data));
 
         singleRawEEGList = new ArrayList<>();
 
