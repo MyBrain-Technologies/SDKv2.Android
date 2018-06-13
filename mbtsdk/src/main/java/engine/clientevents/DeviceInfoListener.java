@@ -1,4 +1,4 @@
-package engine;
+package engine.clientevents;
 
 public interface DeviceInfoListener extends MbtClientEvents{
     void onBatteryChanged(String newLevel);

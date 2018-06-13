@@ -24,13 +24,13 @@ import core.device.MbtDeviceManager;
 import core.device.SaturationEvent;
 import core.eeg.MbtEEGManager;
 import core.recordingsession.metadata.DeviceInfo;
-import engine.DeviceInfoListener;
-import engine.DeviceStatusListener;
-import engine.ConnectionStateListener;
+import engine.clientevents.DeviceInfoListener;
+import engine.clientevents.DeviceStatusListener;
+import engine.clientevents.ConnectionStateListener;
 import eventbus.EventBusManager;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.DeviceInfoEvent;
-import engine.EegListener;
+import engine.clientevents.EegListener;
 import features.MbtFeatures;
 
 /**
@@ -125,14 +125,14 @@ public final class MbtManager{
         this.eegListener = eegListener;
         this.deviceStatusListener = deviceStatusListener;
 
-        EventBusManager.postEvent(new StreamRequestEvent(true));
+        EventBusManager.postEvent(new StreamRequestEvent(true, deviceStatusListener != null));
     }
 
     /**
      * Posts an event to stop the currently started stream session
      */
     public void stopStream(){
-        EventBusManager.postEvent(new StreamRequestEvent(false));
+        EventBusManager.postEvent(new StreamRequestEvent(false, false));
     }
 
     /**

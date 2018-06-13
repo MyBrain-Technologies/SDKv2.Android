@@ -22,7 +22,7 @@ import core.device.model.VProDevice;
 import core.oad.OADEvent;
 
 import core.recordingsession.metadata.DeviceInfo;
-import engine.MbtClientEvents;
+import engine.clientevents.MbtClientEvents;
 import features.MbtFeatures;
 import utils.MbtLock;
 

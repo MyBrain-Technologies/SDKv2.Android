@@ -14,6 +14,10 @@ import config.MbtConfig;
 import core.MbtManager;
 import core.recordingsession.metadata.DeviceInfo;
 import core.eeg.storage.MbtEEGPacket;
+import engine.clientevents.DeviceInfoListener;
+import engine.clientevents.DeviceStatusListener;
+import engine.clientevents.EegListener;
+import features.MbtFeatures;
 import features.ScannableDevices;
 
 /**
@@ -113,8 +117,9 @@ public final class MbtClient {
     public void stopReadBattery(){
     }
 
-    public void startstream(boolean useQualities, @NonNull final EegListener eegListener, @Nullable DeviceStatusListener deviceStatusListener){
-        mbtManager.startStream(useQualities, eegListener, deviceStatusListener);
+    public void startstream(@NonNull StreamConfig streamConfig){
+        MbtConfig.eegBufferLengthClientNotif = (int)((streamConfig.getNotificationPeriod()* MbtFeatures.DEFAULT_SAMPLE_RATE)/1000);
+        mbtManager.startStream(false, streamConfig.getEegListener(), streamConfig.getDeviceStatusListener());
     }
 
 

@@ -1,5 +1,6 @@
 package config;
 
+import features.MbtFeatures;
 import features.ScannableDevices;
 
 public final class MbtConfig {
@@ -18,7 +19,7 @@ public final class MbtConfig {
      * so that the user can do what he wants with this new packets
      * (for example plot the values on a chart).
      */
-    public static int eegBufferLengthClientNotif = 250; //number of MbtEEGPackets to store in the buffer before notifying the client
+    public static int eegBufferLengthClientNotif = MbtFeatures.DEFAULT_EEG_PACKET_LENGTH; //number of MbtEEGPackets to store in the buffer before notifying the client
 
     private static boolean batteryEventsLogsEnabled;
 

@@ -19,11 +19,12 @@ import core.device.DCOffsets;
 import core.device.SaturationEvent;
 import core.eeg.storage.MbtEEGPacket;
 import engine.ConnectionConfig;
-import engine.DeviceInfoListener;
-import engine.EegListener;
-import engine.DeviceStatusListener;
+import engine.StreamConfig;
+import engine.clientevents.DeviceInfoListener;
+import engine.clientevents.EegListener;
+import engine.clientevents.DeviceStatusListener;
 import engine.MbtClient;
-import engine.ConnectionStateListener;
+import engine.clientevents.ConnectionStateListener;
 import eventbus.events.ClientReadyEEGEvent;
 import features.ScannableDevices;
 
@@ -40,18 +41,6 @@ public class MainActivity extends AppCompatActivity{
     Timer timer;
 
     boolean start = true;
-    TimerTask timerTask = new TimerTask() {
-        @Override
-        public void run() {
-            if(start){
-                client.startstream(false, eegListener, deviceStatusListener);
-                start = false;
-            }else{
-                client.stopStream();
-                start = true;
-            }
-        }
-    };
 
     private DeviceStatusListener deviceStatusListener = new DeviceStatusListener() {
         @Override
@@ -111,7 +100,7 @@ public class MainActivity extends AppCompatActivity{
                 client.readSerialNumber(deviceInfoListener);
                 client.readBattery(0, deviceInfoListener);
 
-                client.startstream(false, eegListener, deviceStatusListener);
+                client.startstream(new StreamConfig.Builder(eegListener).setNotificationPeriod(500).addSaturationAndOffsetListener(null).create());
 
 //                timer = new Timer();
 //                timer.schedule(timerTask ,0, 30000);
@@ -127,7 +116,7 @@ public class MainActivity extends AppCompatActivity{
                         client.connectBluetooth(new ConnectionConfig.Builder(connectionStateListener)
                                 .maxScanDuration(30000)
                                 .scanDeviceType(ScannableDevices.MELOMIND)
-                                .deviceName("melo_1010100966")
+                                .deviceName("melo_1010876553")
                                 .connectAudioIfDeviceCompatible(false)
                                 .create());
 
@@ -160,7 +149,7 @@ public class MainActivity extends AppCompatActivity{
         client.connectBluetooth(new ConnectionConfig.Builder(connectionStateListener)
                 .maxScanDuration(30000)
                 .scanDeviceType(ScannableDevices.MELOMIND)
-                .deviceName("melo_1010100966")
+                .deviceName("melo_1010876553")
                 .connectAudioIfDeviceCompatible(false)
                 .create());
 

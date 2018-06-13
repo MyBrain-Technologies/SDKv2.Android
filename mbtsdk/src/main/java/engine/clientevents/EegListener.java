@@ -1,7 +1,6 @@
-package engine;
+package engine.clientevents;
 
 
-import java.util.ArrayList;
 import core.eeg.storage.MbtEEGPacket;
 
 public interface EegListener extends MbtClientEvents{

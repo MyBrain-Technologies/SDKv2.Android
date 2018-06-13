@@ -95,8 +95,6 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         if (!checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_EEG))
             return false;
 
-        enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_HEADSET_STATUS));
-
         //Adding small sleep to "free" bluetooth
         try {
             Thread.sleep(50);
@@ -106,6 +104,14 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 
         return enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG));
     }
+
+    public boolean activateDeviceStatusMonitoring(){
+        if (!checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_EEG))
+            return false;
+
+        return enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_HEADSET_STATUS));
+    }
+
 
     /**
      * This method sends a request to the headset to <strong><code>STOP</code></strong>

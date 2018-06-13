@@ -2,6 +2,7 @@ package engine;
 
 import android.support.annotation.NonNull;
 
+import engine.clientevents.ConnectionStateListener;
 import features.MbtFeatures;
 import features.ScannableDevices;
 

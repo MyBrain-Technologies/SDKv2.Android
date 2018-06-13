@@ -313,11 +313,15 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * Initiates the acquisition of EEG data. This method chooses between the correct BtProtocol.
      * If there is already a streaming session in progress, nothing happens and the method returns silently.
      */
-    private void startStream(){
+    private void startStream(boolean enableDeviceStatusMonitoring){
         if(mbtBluetoothLE.isStreaming())
                 return;
         //TODO remove configureHeadset method from here later on.
         configureHeadset(new DeviceConfig.Builder().useP300(false).create());
+
+        if(enableDeviceStatusMonitoring)
+            mbtBluetoothLE.activateDeviceStatusMonitoring();
+
         if(!mbtBluetoothLE.startStream()){
             requestBeingProcessed  = false;
             EventBusManager.postEvent(IStreamable.StreamState.FAILED);
@@ -539,7 +543,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             requestBeingProcessed = true;
             if(request instanceof ConnectRequestEvent){
                 if(((ConnectRequestEvent)request).getName() == null){
-                    scanDevices();
+                    scanDevices(); //not used yet.
                 }else{
                     scanAndConnect(((ConnectRequestEvent)request).getName());
                 }
@@ -549,7 +553,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 disconnect();
             } else if(request instanceof StreamRequestEvent){
                 if(((StreamRequestEvent) request).isStart())
-                    startStream();
+                    startStream(((StreamRequestEvent) request).shouldMonitorDeviceStatus());
                 else
                     stopStream();
             } else if(request instanceof UpdateConfigurationRequestEvent){

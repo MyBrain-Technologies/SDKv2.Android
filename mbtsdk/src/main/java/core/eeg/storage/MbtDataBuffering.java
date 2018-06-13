@@ -147,7 +147,7 @@ public class MbtDataBuffering {
      * a notification is sent to {@link core.MbtManager} when the converted EEG data buffer is full, so that the client can have access to the user-readable EEG data
      * @return
      */
-    public int getBufferLengthClientNotif(){
+    private int getBufferLengthClientNotif(){
         return Math.max(getEegBufferLengthClientNotif(), MbtFeatures.DEFAULT_MAX_PENDING_RAW_DATA_BUFFER_SIZE); //todo ajouter size buffer C++
     }
 

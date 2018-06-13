@@ -27,6 +27,8 @@ public final class MbtFeatures{
 
     public final static int DEFAULT_EEG_PACKET_LENGTH = 250;
 
+    public final static int DEFAULT_CLIENT_PACKET_SIZE = 250;
+
     public final static long DEFAULT_BATTERY_READ_PERIOD = 20000;
 
     public final static int DEFAULT_MAX_SCAN_DURATION_IN_MILLIS = 40000;
