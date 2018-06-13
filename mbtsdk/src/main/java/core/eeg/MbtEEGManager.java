@@ -56,7 +56,7 @@ public final class MbtEEGManager extends BaseModuleManager{
 
     private MbtDataAcquisition dataAcquisition;
     private MbtDataBuffering mbtDataBuffering;
-    ArrayList<ArrayList<Float>> consolidatedEEG;
+    private ArrayList<ArrayList<Float>> consolidatedEEG;
 
     private BtProtocol protocol;
 
@@ -86,6 +86,7 @@ public final class MbtEEGManager extends BaseModuleManager{
     public void storePendingDataInBuffer(@NonNull final ArrayList<RawEEGSample> rawEEGdata){
         mbtDataBuffering.storePendingDataInBuffer(rawEEGdata);
     }
+
 
     /**
      * Reconfigures the temporary buffers that are used to store the raw EEG data until conversion to user-readable EEG data.
@@ -248,14 +249,6 @@ public final class MbtEEGManager extends BaseModuleManager{
     public MbtManager getMbtManager() {
         return mbtManager;
     }
-
-    /**
-     * Gets the bluetooth protocolfor transmitting data from the headset to the application.
-     * @return the bluetooth protocol used for transmitting data from the headset to the application.
-     */
-//    public BtProtocol getBluetoothProtocol() {
-//        return mbtManager.getBluetoothProtocol();
-//    }
 
     /**
      * Gets the user-readable EEG data matrix
