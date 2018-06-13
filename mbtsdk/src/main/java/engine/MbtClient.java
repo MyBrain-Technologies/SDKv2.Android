@@ -27,6 +27,7 @@ import features.ScannableDevices;
 public final class MbtClient {
 
     private static final String TAG = MbtClient.class.getName();
+
     /**
      *     Used to save context
      */
@@ -68,6 +69,12 @@ public final class MbtClient {
     }
 
 
+    /**
+     * Call this method to establish a bluetooth connection with a remote device.
+     * It is possible to connect either a Melomind or a VPro device through this method. You need to specify
+     * the device type in the {@link ConnectionConfig} input instance with the {@link ScannableDevices} type.
+     * @param config the {@link ConnectionConfig} instance that holds all the configuration parameters inside.
+     */
     public void connectBluetooth(@NonNull ConnectionConfig config){
         MbtConfig.scannableDevices = config.getDeviceType();
         MbtConfig.bluetoothConnectionTimeout = config.getConnectionTimeout();

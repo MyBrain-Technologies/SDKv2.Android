@@ -4,12 +4,19 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import config.DeviceConfig;
+import core.eeg.storage.MbtEEGPacket;
 import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.EegListener;
 import features.MbtFeatures;
 import features.ScannableDevices;
 
+/**
+ * This class aims at configuring the stream process. It contains user configurable
+ * parameters to specify how the streaming is going to be.
+ *
+ * <p>Use the {@link Builder} class to instanciate this.</p>
+ */
 public final class StreamConfig {
 
     //private final long streamDuration; //For later use
@@ -40,14 +47,21 @@ public final class StreamConfig {
         return notificationPeriod;
     }
 
+
+    /**
+     * Builder class to ease construction of the {@link StreamConfig} instance.
+     */
     public static class Builder{
         //long streamDuration = -1L;
-        int notificationPeriod = MbtFeatures.DEFAULT_CLIENT_PACKET_SIZE;
+        int notificationPeriod = MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD;
         DeviceStatusListener deviceStatusListener = null;
         final EegListener eegListener;
 
 
-
+        /**
+         * The eeg Listener is mandatory.
+         * @param eegListener
+         */
         public Builder(@NonNull EegListener eegListener){
             this.eegListener = eegListener;
         }
@@ -57,11 +71,36 @@ public final class StreamConfig {
 //            return this;
 //        }
 
+        /**
+         * Use this method to specify how much eeg you want to receive in the {@link EegListener#onNewPackets(MbtEEGPacket)} method.
+         *
+         * <p>Warning, the duration is based on a quantity of eeg data. This quantity depends on the sampling frequency of the device.
+         * It is by default {@link MbtFeatures#DEFAULT_SAMPLE_RATE} in Hertz.
+         * The specified period is in any case a fixed duration based on a timer. This means that you may be notified with a certain latency.
+         *</p>
+         *
+         * <p>For better performances, it is HIGHLY recommended that the period is a multiple of the sampling period.
+         * For example, if the sampling frequency is 250Hz, then the sampling period is 4ms.
+         * It means that the value must be a multiple of 4ms.</p>
+         *
+         * <p>It is by default set to {@link MbtFeatures#DEFAULT_CLIENT_NOTIFICATION_PERIOD}</p>
+         * @param periodInMillis the period in milliseconds
+         * @return the builder instance
+         */
         public Builder setNotificationPeriod(int periodInMillis){
             this.notificationPeriod = periodInMillis;
             return this;
         }
 
+        /**
+         * Use this method if you want to monitor headset's electrodes saturation and eeg offset.
+         * Set it to null if unnecesary.
+         *
+         * <p>It is by default set to NULL</p>
+         *
+         * @param deviceStatusListener the device status listener
+         * @return the device instance
+         */
         public Builder addSaturationAndOffsetListener(@Nullable DeviceStatusListener deviceStatusListener){
             this.deviceStatusListener = deviceStatusListener;
             return this;
