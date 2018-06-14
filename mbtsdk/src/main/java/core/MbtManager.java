@@ -1,87 +1,212 @@
 package core;
 
 import android.content.Context;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
+
 import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+
+import java.util.HashSet;
+import java.util.Set;
+
 import core.bluetooth.BtProtocol;
+import core.bluetooth.BtState;
+import core.bluetooth.IStreamable;
+import core.bluetooth.requests.ConnectRequestEvent;
+import core.bluetooth.requests.DisconnectRequestEvent;
 import core.bluetooth.MbtBluetoothManager;
+import core.bluetooth.requests.ReadRequestEvent;
+import core.bluetooth.requests.StreamRequestEvent;
+import core.device.DCOffsets;
+import core.device.MbtDeviceManager;
+import core.device.SaturationEvent;
 import core.eeg.MbtEEGManager;
-import core.recordingsession.MbtRecordingSessionManager;
-import core.serversync.MbtServerSyncManager;
-import engine.MbtClient;
-import engine.MbtClientEvents;
+import core.recordingsession.metadata.DeviceInfo;
+import engine.clientevents.DeviceInfoListener;
+import engine.clientevents.DeviceStatusListener;
+import engine.clientevents.ConnectionStateListener;
 import eventbus.EventBusManager;
 import eventbus.events.ClientReadyEEGEvent;
-import exception.EmptyEegDataException;
-import exception.NullEegDataException;
-import exception.ZeroEegDataException;
+import eventbus.events.DeviceInfoEvent;
+import engine.clientevents.EegListener;
+import features.MbtFeatures;
 
 /**
  * MbtManager is responsible for managing communication between all the package managers
  *
  * @author Sophie ZECRI on 29/05/2018
  */
-public final class MbtManager {
-
+public final class MbtManager{
     private static final String TAG = MbtManager.class.getName();
 
     /**
-     *     Used to save context
+     * Contains the currently reigstered module managers.
+     */
+    private Set<BaseModuleManager> registeredModuleManagers;
+
+    /**
+     * The application context
      */
     private Context mContext;
-    /**
-     *  The bluetooth manager will manage the communication between the headset and the application.
-     */
-    private MbtBluetoothManager mbtBluetoothManager;
-    /**
-     * The eeg manager that will manage the EEG data coming from the {@link MbtBluetoothManager}. It is responsible for
-     * managing buffers size, conversion from raw packets to eeg values (voltages).
-     */
-    private MbtEEGManager mbtEEGManager;
+
+    private BtProtocol btProtocol;
+
 
     /**
-     * The Event Bus Manager is responsible for registering the subscribers and posting events
+     * the application callbacks. EventBus is not available outside the SDK so the user is notified
+     * using custom callback interfaces.
      */
-    private EventBusManager eventBusManager;
+    private ConnectionStateListener connectionStateListener;
+    private EegListener eegListener;
+    private DeviceInfoListener deviceInfoListener;
+    private DeviceStatusListener deviceStatusListener;
 
     /**
-     * The recording session manager will manage all the recordings that are made during the lifetime of this instance.
+     *
+     * @param context
      */
-    private MbtRecordingSessionManager mbtRecordingSessionManager;
-    /**
-     * The server sync manager will manage the communication with MBT server API.
-     */
-    private MbtServerSyncManager mbtServerSyncManager;
-
-    private MbtClientEvents.EegListener eegCallback;
-
     public MbtManager(Context context) {
-        mbtBluetoothManager = new MbtBluetoothManager(context,this); //warning : very important to init mbtBluetootbManager before mbtEEGManager (if opposite : a NullPointerException is raised)
-        mbtEEGManager = new MbtEEGManager(context,this);
-        mbtServerSyncManager = new MbtServerSyncManager(context);
-        mbtRecordingSessionManager = new MbtRecordingSessionManager(context);
-        EventBusManager.registerOrUnregister(true,this);
+        this.mContext = context;
+        this.registeredModuleManagers = new HashSet<>();
 
+        EventBusManager.registerOrUnregister(true, this);
+
+        registerManager(new MbtDeviceManager(mContext, this, MbtFeatures.getBluetoothProtocol()));
+        registerManager(new MbtBluetoothManager(mContext, this, MbtFeatures.getBluetoothProtocol()));
+        registerManager(new MbtEEGManager(mContext, this, MbtFeatures.getBluetoothProtocol()));
     }
 
-    public BtProtocol getBluetoothProtocol(){
-        return mbtBluetoothManager.getBluetoothProtocol();
+    /**
+     * Add a new module manager instance to the Hashset
+     * @param manager the new module manager to add
+     */
+    private void registerManager(BaseModuleManager manager){
+        registeredModuleManagers.add(manager);
     }
 
-    public MbtBluetoothManager getMbtBluetoothManager() {
-        return mbtBluetoothManager;
+
+    /**
+     * Perform a new Bluetooth connection.
+     * @param name the device name to connect to. Might be null if not known by the user.
+     * @param listener a set of callback that will notify the user about connection progress.
+     */
+    public void connectBluetooth(@Nullable String name, @NonNull ConnectionStateListener listener){
+        this.connectionStateListener = listener;
+        EventBusManager.postEvent(new ConnectRequestEvent(name));
     }
 
-    public MbtEEGManager getMbtEEGManager() {
-        return mbtEEGManager;
+    /**
+     * Perform a Bluetooth disconnection.
+     */
+    public void disconnectBluetooth(){
+        EventBusManager.postEvent(new DisconnectRequestEvent());
     }
 
-    public MbtRecordingSessionManager getMbtRecordingSessionManager() {
-        return mbtRecordingSessionManager;
+    /**
+     * Perform a bluetooth read operation.
+     * @param deviceInfo the type of info to read
+     * @param listener a set of callback to notify user about the results.
+     */
+    public void readBluetooth(@NonNull DeviceInfo deviceInfo, @NonNull DeviceInfoListener listener){
+        this.deviceInfoListener = listener;
+
+        EventBusManager.postEvent(new ReadRequestEvent(deviceInfo));
     }
 
-    public MbtServerSyncManager getMbtServerSyncManager() {
-        return mbtServerSyncManager;
+    /**
+     * Posts an event to initiate a stream session.
+     * @param useQualities whether or not quality check algorithms have to be called (Currently false)
+     * @param eegListener the eeg listener
+     * @param deviceStatusListener to notify the user about device status real time modifications.
+     */
+    public void startStream(boolean useQualities, @NonNull EegListener eegListener, @Nullable DeviceStatusListener deviceStatusListener){
+        this.eegListener = eegListener;
+        this.deviceStatusListener = deviceStatusListener;
+
+        EventBusManager.postEvent(new StreamRequestEvent(true, deviceStatusListener != null));
+    }
+
+    /**
+     * Posts an event to stop the currently started stream session
+     */
+    public void stopStream(){
+        EventBusManager.postEvent(new StreamRequestEvent(false, false));
+    }
+
+    /**
+     * Called when a new device info event has been broadcast on the event bus.
+     * @param event
+     */
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onDeviceInfoEvent(DeviceInfoEvent event){
+        switch(event.getInfotype()){
+            case BATTERY:
+                if(event.getInfo() == null && deviceInfoListener != null)
+                    deviceInfoListener.onError(new Exception("Unable to get battery level"));
+                else
+                    deviceInfoListener.onBatteryChanged((String)event.getInfo());
+                break;
+            case FW_VERSION:
+                if(event.getInfo() == null && deviceInfoListener != null)
+                    deviceInfoListener.onError(new Exception("Unable to get firmware version"));
+                else
+                    deviceInfoListener.onFwVersionReceived((String) event.getInfo());
+                break;
+            case HW_VERSION:
+                if(event.getInfo() == null && deviceInfoListener != null)
+                    deviceInfoListener.onError(new Exception("Unable to get hardware level"));
+                else
+                    deviceInfoListener.onHwVersionReceived((String) event.getInfo());
+                break;
+            case SERIAL_NUMBER:
+                if(event.getInfo() == null && deviceInfoListener != null)
+                    deviceInfoListener.onError(new Exception("Unable to get serial number"));
+                else
+                    deviceInfoListener.onSerialNumberReceived((String) event.getInfo());
+                break;
+
+            case STATE:
+                if(event.getInfo() == null && connectionStateListener != null)
+                    connectionStateListener.onError(new Exception("Unable to change "));
+                else
+                    connectionStateListener.onStateChanged((BtState) event.getInfo());
+                break;
+        }
+    }
+
+    /**
+     * Called when a new stream state event has been broadcast on the event bus.
+     * @param newState
+     */
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onStreamStateChanged(IStreamable.StreamState newState){
+        if(newState == IStreamable.StreamState.FAILED && eegListener != null){
+            eegListener.onError(new Exception("Unable to start streaming"));
+        }
+    }
+
+    /**
+     *Called when a new saturation event has been broadcast on the event bus.
+     * @param saturationEvent
+     */
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onNewSaturationState(SaturationEvent saturationEvent){
+        if(deviceStatusListener != null){
+            deviceStatusListener.onSaturationStateChanged(saturationEvent);
+        }
+    }
+
+    /**
+     * Called when a new DCOffset measure event has been broadcast on the event bus.
+     * @param dcOffsets
+     */
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onNewDCOffset(DCOffsets dcOffsets){
+        if(deviceStatusListener != null){
+            deviceStatusListener.onNewDCOffsetMeasured(dcOffsets);
+        }
     }
 
     /**
@@ -91,21 +216,12 @@ public final class MbtManager {
      * Creates a new MbtEEGPacket instance when the raw buffer contains enough data
      * @param event contains data transmitted by the publisher : here it contains the converted EEG data matrix, the status, the number of acquisition channels and the sampling rate
      */
-    @Subscribe
+    @Subscribe(threadMode = ThreadMode.MAIN, priority = 1)
     public void onEvent(final ClientReadyEEGEvent event) { //warning : do not remove this attribute (consider unsused by the IDE, but actually used)
         Log.i(TAG, "event ClientReadyEEGEvent received" );
-        if(event.getEegPackets().isEmpty()){
-            eegCallback.onError(new EmptyEegDataException("Client received empty a EEG packet"));
-        } else if(event.getEegPackets().getChannelsData().equals(null)){
-           eegCallback.onError(new NullEegDataException("Client received null EEG data"));
-        }  else if(event.getEegPackets().containsZerosEegOnly()){
-           eegCallback.onError(new ZeroEegDataException("Client received null EEG data"));
-        } else
-            eegCallback.onNewPackets(event.getEegPackets());
-
+        if(eegListener != null)
+            eegListener.onNewPackets(event.getEegPackets());
     }
 
-    public void setEegCallback(MbtClientEvents.EegListener eegCallback) {
-        this.eegCallback = eegCallback;
-    }
+
 }

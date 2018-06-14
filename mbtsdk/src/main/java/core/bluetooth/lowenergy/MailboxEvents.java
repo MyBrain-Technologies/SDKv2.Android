@@ -1,6 +1,10 @@
 package core.bluetooth.lowenergy;
 
-class MailboxEvents{
+/**
+ * A class that contains all currently used mailbox codes.
+ * One code has one specific functionnality.
+ */
+final class MailboxEvents{
 
             static final byte MBX_SET_ADS_CONFIG = 0;
             static final byte MBX_SET_AUDIO_CONFIG = 1;

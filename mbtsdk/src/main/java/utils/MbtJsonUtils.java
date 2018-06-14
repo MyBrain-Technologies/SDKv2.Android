@@ -11,10 +11,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import core.device.model.MbtDevice;
 import core.eeg.storage.MbtEEGPacket;
 import features.MbtAcquisitionLocations;
 import model.Comment;
-import model.MbtDevice;
+
 import model.MbtRecording;
 import model.RecordInfo;
 

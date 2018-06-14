@@ -25,6 +25,10 @@ public enum BtState {
      */
     SCAN_FAILED_APPLICATION_REGISTRATION_FAILED,
     /**
+     * Scanning has just started.
+     */
+    SCAN_STARTED,
+    /**
      * Failed to find device after scanning for a defined amount of time.
      */
     SCAN_TIMEOUT,

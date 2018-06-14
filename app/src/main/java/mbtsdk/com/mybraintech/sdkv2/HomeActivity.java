@@ -2,6 +2,7 @@ package mbtsdk.com.mybraintech.sdkv2;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -10,7 +11,11 @@ import android.widget.EditText;
 import android.widget.ScrollView;
 import android.widget.Scroller;
 import android.widget.Toast;
+
+import core.bluetooth.BtState;
+import engine.ConnectionConfig;
 import engine.MbtClient;
+import engine.clientevents.ConnectionStateListener;
 import features.MbtFeatures;
 
 import static features.MbtFeatures.DEVICE_NAME_MAX_LENGTH;
@@ -75,11 +80,11 @@ public class HomeActivity extends AppCompatActivity{
         scanAllButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(devicesFoundList.getVisibility() == View.VISIBLE)
+                /*if(devicesFoundList.getVisibility() == View.VISIBLE)
                     devicesFoundList.setVisibility(View.INVISIBLE);
                 else
-                    devicesFoundList.setVisibility(View.VISIBLE);
-                notifyUser("Scanning to find all visible Mbt Bluetooth Devices");
+                    devicesFoundList.setVisibility(View.VISIBLE);*/
+                notifyUser("Scanning method not implemented yet");
 
             }
         });
@@ -93,21 +98,27 @@ public class HomeActivity extends AppCompatActivity{
             if( isMbtDeviceName() && deviceName.length() == DEVICE_NAME_MAX_LENGTH ) { //check the device name format
                 notifyUser(getString(R.string.scan_in_progress));
                 updateScanning(true); //changes isScanning to true and updates button text "Find a device" into "Cancel"
-                boolean scanSucceeded =  client.scanDevicesForType(isMelomindDevice() ? MELOMIND : VPRO, SCAN_DURATION,  null /*todo scanCallback instead of null*/);
-                if(scanSucceeded) {
-                    boolean connectionSucceeded =  client.connectBluetooth();
-                    if (connectionSucceeded) {  //true if scan is a success and the application is able to connect to the device
-                        notifyUser("Device ' " + deviceName + " ' found");
-                        final Intent intent = new Intent(HomeActivity.this, DeviceActivity.class);
-                        intent.putExtra(DEVICE_NAME, deviceName);
-                        startActivity(intent);
-                        finish();
-                    }else {
-                        notifyUser(getString(R.string.connect_failed) + deviceName);
+
+                client.connectBluetooth(new ConnectionConfig.Builder(new ConnectionStateListener() {
+                    @Override
+                    public void onStateChanged(@NonNull BtState newState) {
+                        if (newState.equals(BtState.CONNECTED_AND_READY)){
+                            notifyUser("Device ' " + deviceName + " ' found");
+                            final Intent intent = new Intent(HomeActivity.this, DeviceActivity.class);
+                            intent.putExtra(DEVICE_NAME, deviceName);
+                            startActivity(intent);
+                            finish();
+                        }else if (newState.equals(BtState.SCAN_TIMEOUT)||(newState.equals(BtState.CONNECT_FAILURE))){
+                            notifyUser(getString(R.string.connect_failed) + deviceName);
+                        }
                     }
-                }else{ //isScanning true if scan failed
-                    notifyUser(getString(R.string.scan_failed) + deviceName);
-                }
+
+                    @Override
+                    public void onError(Exception exception) {
+                        exception.printStackTrace();
+                    }
+                }).deviceName(deviceName).maxScanDuration(SCAN_DURATION).scanDeviceType(isMelomindDevice() ? MELOMIND : VPRO).create());
+
             }else{ //if the device name entered by the user is empty or is not starting with a mbt prefix
                 notifyUser(getString(R.string.wrong_device_name));
                 deviceNameField.setText(getString(R.string.example_device_name));
@@ -127,7 +138,7 @@ public class HomeActivity extends AppCompatActivity{
 
     private void cancelScan(){
         updateScanning(false); // isScanning is false , and the scan button is updated
-        client.cancelScanning();
+        client.cancelConnection();
     }
 
     /**

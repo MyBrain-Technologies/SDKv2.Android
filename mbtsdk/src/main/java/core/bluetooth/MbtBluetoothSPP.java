@@ -99,7 +99,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
             return false;
         }
         if (!this.bluetoothAdapter.isEnabled()) {
-            notifyStateChanged(BtState.DISABLED);
+            notifyConnectionStateChanged(BtState.DISABLED);
             return false;
         }
 
@@ -113,7 +113,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
             toConnect = device;
 
         try {
-            notifyStateChanged(BtState.CONNECTING);
+            notifyConnectionStateChanged(BtState.CONNECTING);
             this.btSocket = toConnect.createRfcommSocketToServiceRecord(SERVER_UUID);
             this.btSocket.connect();
             if (retrieveStreams()) {
@@ -123,14 +123,14 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
                     }
                 });
                 btState = BtState.CONNECTED;
-                notifyStateChanged(BtState.CONNECTED);
+                notifyConnectionStateChanged(BtState.CONNECTED);
                 //notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER, toConnect.getAddress());
-                deviceInfoReceived(DeviceInfo.SERIAL_NUMBER,toConnect.getAddress());
+                notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER,toConnect.getAddress());
                 Log.i(TAG,toConnect.getName() + " Connected");
                 return true;
             }
         } catch (final IOException ioe) {
-            notifyStateChanged(BtState.CONNECT_FAILURE);
+            notifyConnectionStateChanged(BtState.CONNECT_FAILURE);
             Log.e(TAG, "Exception while connecting ->" + ioe.getMessage());
             Log.getStackTraceString(ioe);
         }
@@ -138,7 +138,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
     }
 
     @Override
-    public boolean disconnect(BluetoothDevice device) {
+    public boolean disconnect() {
         boolean acquisitionStopped = true;
         if (getCurrentState() != BtState.CONNECTED) {
             Log.i(TAG, "Device already disconnected");
@@ -147,6 +147,11 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
             requestCloseConnexion();
         }
         return acquisitionStopped;
+    }
+
+    @Override
+    public boolean isConnected() {
+        return getCurrentState() == BtState.CONNECTED;
     }
 
     @Override
@@ -183,7 +188,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
             this.reader = null;
             this.writer = null;
             Log.e(TAG, "Failed to send data. IOException ->\n" + ioe.getMessage());
-            notifyStateChanged(BtState.DISCONNECTED);
+            notifyConnectionStateChanged(BtState.DISCONNECTED);
             Log.getStackTraceString(ioe);
             return false;
         }
@@ -231,69 +236,12 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
                 this.btSocket.close();
                 this.btSocket = null;
             }
-            notifyStateChanged(BtState.DISCONNECTED);
+            notifyConnectionStateChanged(BtState.DISCONNECTED);
         } catch (final IOException e) {
             Log.e(TAG, "Error while closing streams -> \n" + e.getMessage());
-            notifyStateChanged(BtState.INTERRUPTED);
+            notifyConnectionStateChanged(BtState.INTERRUPTED);
             Log.getStackTraceString(e);
         }
-    }
-    /**
-     * Checks if device is already bonded. If not, a Classic Bluetooth Discovery scan
-     * will be started to see if it is in range.
-     * @return          the melomind if found, <code>null</code> otherwise MBT-VPro
-     */
-    @Nullable
-    private BluetoothDevice scanForDeviceWithDiscovery(final String deviceName) {
-        final Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
-        // If there are paired devices
-        if (pairedDevices.size() > 0) {
-            // Loop through paired devices
-            //TODO change here to use MAC address instead of Name
-            for (BluetoothDevice device : pairedDevices) {
-                if (device.getName().equals(deviceName) /*|| device.getName().contains(deviceName)*/) { // device found
-                    return device;
-                }
-            }
-        }
-        // at this point, device was not found among bonded devices so let's start a discovery scan
-        final MbtLock<BluetoothDevice> scanLock = new MbtLock<>();
-        Log.i(TAG, "Starting Classic Bluetooth Discovery Scan");
-        final IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
-        context.registerReceiver(new BroadcastReceiver() {
-            public final void onReceive(final Context context, final Intent intent) {
-                final String action = intent.getAction();
-                if(action!=null){
-                    switch(action) {
-                        case BluetoothDevice.ACTION_FOUND:
-                            final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                            final String name = device.getName();
-                            if (TextUtils.isEmpty(name)) {
-                                Log.w(TAG, "Found device with no name. MAC address is -> " + device.getAddress());
-                                return;
-                            }
-                            Log.i(TAG, String.format("Stopping Discovery Scan -> device detected " +
-                                    "with name '%s' and MAC address '%s' ", device.getName(), device.getAddress()));
-                            if (name.equals(deviceName) || name.contains(deviceName)) {
-                                Log.i(TAG, "VPro found. Cancelling discovery & connecting");
-                                bluetoothAdapter.cancelDiscovery();
-                                context.unregisterReceiver(this);
-                                scanLock.setResultAndNotify(device);
-                            }
-                            break;
-                        case BluetoothAdapter.ACTION_DISCOVERY_FINISHED:
-                            if (scanLock.isWaiting()) // restarting discovery while still waiting
-                                bluetoothAdapter.startDiscovery();
-                            break;
-                    }
-                }
-
-
-            }
-        }, filter);
-        bluetoothAdapter.startDiscovery();
-        return scanLock.waitAndGetResult();
     }
 
     private boolean retrieveStreams() {
@@ -306,7 +254,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
             } catch (final IOException ioe) {
                 Log.e(TAG, "Failed to retrieve streams ! -> \n" + ioe.getMessage());
                 Log.getStackTraceString(ioe);
-                notifyStateChanged(BtState.STREAM_ERROR);
+                notifyConnectionStateChanged(BtState.STREAM_ERROR);
             }
         }
         return false;
@@ -389,7 +337,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
                                 AsyncUtils.executeAsync(new Runnable() {
                                     //private final byte[] toAcquire = Arrays.copyOf(finalData, finalData.length);
                                     public void run() {
-                                        acquireData(finalData);
+                                        notifyNewDataAcquired(finalData);
                                     }
                                 });
                             }
@@ -426,7 +374,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
                                 default:
                                     break;
                             }
-                            mbtBluetoothManager.updateBatteryLevel(pourcent);
+                            //mbtBluetoothManager.updateBatteryLevel(pourcent);
                         }else {
                             //TODO here are non implemented cases. Please see the MBT SPP protocol for infos.
                         }
@@ -440,9 +388,9 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
                 Log.getStackTraceString(e);
                 if (this.requestDisconnect) {
                     this.requestDisconnect = false; // consumed
-                    notifyStateChanged(BtState.DISCONNECTED);
+                    notifyConnectionStateChanged(BtState.DISCONNECTED);
                 } else
-                    notifyStateChanged(BtState.INTERRUPTED);
+                    notifyConnectionStateChanged(BtState.INTERRUPTED);
                 break;
             }
         }
@@ -468,6 +416,16 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
                 return false;
             }
         }
+    }
+
+    @Override
+    public void notifyStreamStateChanged(StreamState streamState) {
+
+    }
+
+    @Override
+    public boolean isStreaming() {
+        return false;
     }
 
     /**
@@ -501,7 +459,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
         byte[] data = new byte[250];
         for (int i=0; i<63; i++){//buffer size=6750=62,5*108(Packet size) => matrix size = 6750/3 - 250 (-250 because matrix.get(0) removed for SPP)
             new Random().nextBytes(data); //Generates random bytes and places them into a user-supplied byte array
-            this.acquireData(data);
+            this.notifyNewDataAcquired(data);
             Arrays.fill(data,0,0,(byte)0);
         }
     }

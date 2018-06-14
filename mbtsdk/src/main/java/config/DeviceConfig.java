@@ -3,11 +3,8 @@ package config;
 import android.support.annotation.IntRange;
 import android.support.annotation.Keep;
 
-import core.bluetooth.lowenergy.AmpGainConfig;
-import core.bluetooth.lowenergy.FilterConfig;
-
 @Keep
-public class StreamConfig {
+public class DeviceConfig {
     private FilterConfig notchFilter;
     private FilterConfig bandpassFilter;
     private AmpGainConfig gainValue;
@@ -15,7 +12,7 @@ public class StreamConfig {
     private boolean useP300;
 
 
-    StreamConfig(FilterConfig notchFilter, FilterConfig bandpassFilter, AmpGainConfig gainValue, int mtuValue, boolean useP300) {
+    DeviceConfig(FilterConfig notchFilter, FilterConfig bandpassFilter, AmpGainConfig gainValue, int mtuValue, boolean useP300) {
         this.notchFilter = notchFilter;
         this.bandpassFilter = bandpassFilter;
         this.gainValue = gainValue;
@@ -83,8 +80,8 @@ public class StreamConfig {
             return this;
         }
 
-        public StreamConfig createStreamConfig() {
-            return new StreamConfig(notchFilter, bandpassFilter, gainValue, mtuValue, useP300);
+        public DeviceConfig create() {
+            return new DeviceConfig(notchFilter, bandpassFilter, gainValue, mtuValue, useP300);
         }
     }
 

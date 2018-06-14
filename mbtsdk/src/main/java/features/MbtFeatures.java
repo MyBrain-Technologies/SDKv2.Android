@@ -16,10 +16,10 @@ import static features.ScannableDevices.MELOMIND;
  */
 
 public final class MbtFeatures{
-
     private static String TAG = MbtFeatures.class.getName();
 
 
+    public static final int DEVICE_NAME_MAX_LENGTH = 5+10;
 
     public final static int DEFAULT_SAMPLE_RATE = 250;
     public final static int DEFAULT_SAMPLE_PER_PACKET = 4;
@@ -27,13 +27,17 @@ public final class MbtFeatures{
 
     public final static int DEFAULT_EEG_PACKET_LENGTH = 250;
 
+    public final static int DEFAULT_CLIENT_PACKET_SIZE = 250;
+    public final static int DEFAULT_CLIENT_NOTIFICATION_PERIOD = 1000;
     public final static long DEFAULT_BATTERY_READ_PERIOD = 20000;
 
-      public static final int DEVICE_NAME_MAX_LENGTH = 5+10; //5 characters for melo_ or vpro_ + 10 digits
+    public final static int DEFAULT_MAX_SCAN_DURATION_IN_MILLIS = 40000;
+    public final static int DEFAULT_MAX_CONNECTION_DURATION_IN_MILLIS = 40000;
+
+    // MELOMIND & VPRO FEATURES
     public static final String MELOMIND_DEVICE_NAME_PREFIX = "melo_";
     public static final String VPRO_DEVICE_NAME_PREFIX = "vpro_";
 
-    // MELOMIND & VPRO FEATURES
     public static final String MELOMIND_DEVICE_NAME = "Melomind";
     public static final String VPRO_DEVICE_NAME = "VPro";
     public static final String ALL_DEVICE_NAME = "All";
@@ -44,6 +48,8 @@ public final class MbtFeatures{
     public final static int DEFAULT_BLE_NB_STATUS_BYTES = 0;
     public final static int DEFAULT_SPP_NB_STATUS_BYTES = 3;
     private static int nbStatusBytes = -1;
+
+    public static final int DEFAULT_MAX_PENDING_RAW_DATA_BUFFER_SIZE = 50;
 
     public final static int DEFAULT_BLE_NB_BYTES = 2;
     public final static int DEFAULT_SPP_NB_BYTES = DEFAULT_SPP_NB_STATUS_BYTES;
@@ -102,7 +108,7 @@ public final class MbtFeatures{
      * Gets the number of bytes for a EEG raw data in case the Bluetooth protocol used is Bluetooth Low Energy
      * @return the number of bytes for a EEG raw data in case the Bluetooth protocol used is Bluetooth Low Energy
      */
-    public static int getNbBytes() {
+    public static int getEEGByteSize() {
         return (MbtConfig.getScannableDevices().equals(MELOMIND) ? DEFAULT_BLE_NB_BYTES : DEFAULT_SPP_NB_BYTES);
     }
 

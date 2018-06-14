@@ -10,7 +10,7 @@ import org.greenrobot.eventbus.EventBus;
  * Copyright (c) 2016 myBrain Technologies. All rights reserved.
  * EventBusManager is responsible for managing communication between the different packages by using a publisher/subscriber system
  */
-public class EventBusManager {
+public final class EventBusManager {
 
     /**
      * Gets a Event Bus instance that will manage the events
@@ -23,8 +23,9 @@ public class EventBusManager {
      * It helps communication between the different packages
      * Once an instance of EventBusManager is created, the publisher classes can post event to the Event Bus
      * If the current class is a subscriber class, it must register to the Bus for receiving Events.
+    private EventBusManager(){ } //empty constructor need to be called by publisher
      */
-    private EventBusManager(){}
+    private EventBusManager(Object subscriber) {} // non empty constructor for subscriber
 
     /**
      * Registers or unregisters the given subscriber class to receive events from the Events Bus.

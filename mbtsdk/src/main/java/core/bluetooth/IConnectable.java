@@ -14,7 +14,7 @@ import android.support.annotation.NonNull;
 public interface IConnectable {
 
     /**
-     * Connect to the peripheral device
+     * ConnectRequestEvent to the peripheral device
      * @return true upon success, false otherwise
      */
     boolean connect(Context context, BluetoothDevice device);
@@ -23,7 +23,7 @@ public interface IConnectable {
      * Disconnect from the peripheral device
      * @return true upon success, false otherwise
      */
-    boolean disconnect(BluetoothDevice device);
+    boolean disconnect();
 
 
     /**
@@ -31,8 +31,11 @@ public interface IConnectable {
      * @param newState The new bluetooth connection state. Refer to @{@link BtState}
      * for the complete list of states.
      */
-    void notifyStateChanged(@NonNull final BtState newState);
+    void notifyConnectionStateChanged(@NonNull final BtState newState);
 
-
+    /**
+     * @return whether or not the device is correctly connected, ie if current state is {@link BtState#CONNECTED_AND_READY}
+     */
+    boolean isConnected();
 
 }

@@ -20,12 +20,15 @@ import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.listener.ChartTouchListener;
 import com.github.mikephil.charting.listener.OnChartGestureListener;
+import com.github.mikephil.charting.utils.EntryXComparator;
 
 import java.util.ArrayList;
 
 import core.eeg.storage.MbtEEGPacket;
 import engine.MbtClient;
-import engine.MbtClientEvents;
+
+import engine.StreamConfig;
+import engine.clientevents.EegListener;
 import utils.MatrixUtils;
 
 public class DeviceActivity extends AppCompatActivity {
@@ -50,7 +53,8 @@ public class DeviceActivity extends AppCompatActivity {
 
     private boolean isStreaming = false;
 
-    private MbtClientEvents.EegListener eegListener = new MbtClientEvents.EegListener() {
+    private EegListener eegListener = new EegListener() {
+
         @Override
         public void onNewPackets(final MbtEEGPacket mbtEEGPackets) {
             Log.i(TAG,"New EEG packets"+mbtEEGPackets.toString());
@@ -92,11 +96,11 @@ public class DeviceActivity extends AppCompatActivity {
                 });
             }
         }
-
         @Override
-        public void onError(@NonNull Exception exception) {
+        public void onError(Exception exception) {
             exception.printStackTrace();
         }
+
 
     };
 
@@ -159,10 +163,10 @@ public class DeviceActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if(!isStreaming) { //streaming is not in progress : starting streaming
                     updateStreaming(true);
-                    //client.startStream(false);
+                    client.startStream(new StreamConfig.Builder(eegListener).create());
                     notifyUser("Starting streaming");
                 }else { //streaming is in progress : stopping streaming
-                    //client.stopStream();
+                    client.stopStream();
                     notifyUser("Stopping streaming");
                     updateStreaming(false);
                 }

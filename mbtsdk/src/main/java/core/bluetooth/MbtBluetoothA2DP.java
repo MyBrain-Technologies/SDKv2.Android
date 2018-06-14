@@ -173,7 +173,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
     }
 
     @Override
-    public boolean disconnect(BluetoothDevice device) {
+    public boolean disconnect() {
 
         boolean result = false;
         if(timerLock.isWaiting()){
@@ -202,6 +202,12 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
         }
 
         return result;
+    }
+
+    @Override
+    public boolean isConnected() {
+        //TODO
+        return false;
     }
 
 
