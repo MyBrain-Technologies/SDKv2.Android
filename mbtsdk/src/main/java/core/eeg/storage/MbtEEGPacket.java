@@ -135,4 +135,31 @@ public final class MbtEEGPacket {
                 ", timestamp=" + timestamp +
                 '}';
     }
+
+    /**
+     * Returns true if the instance contains an empty EEG data matrix and an empty list of qualities and an empty list of status.
+     * Returns false otherwise.
+     * @return Returns true if the EEG data list contains no elements.
+     */
+    public boolean isEmpty(){
+        return this.channelsData.isEmpty() && this.qualities.isEmpty() && this.statusData.isEmpty();
+    }
+
+    /**
+     * Returns true if the instance EEG data matrix only contains 0.
+     * Returns false otherwise.
+     * @return Returns true if the EEG data list contains only 0.
+     */
+    public boolean containsZerosEegOnly(){
+        int counterOfZeros = 0;
+        int matrixSize = this.getChannelsData().size()*this.getChannelsData().get(0).size();
+        for (int i = 0; i < this.getChannelsData().size() ; i++){
+            for (int j = 0 ; j < this.getChannelsData().get(0).size() ; j++){
+                if(this.getChannelsData().get(j).equals(0F))
+                    counterOfZeros++;
+            }
+        }
+        return (counterOfZeros == matrixSize); //return true if counter == matrixSize (if matrix contains only 0)
+    }
+
 }

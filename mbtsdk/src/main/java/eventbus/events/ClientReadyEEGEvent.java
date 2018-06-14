@@ -14,9 +14,9 @@ import core.eeg.storage.MbtEEGPacket;
  */
 public class ClientReadyEEGEvent { //Events are just POJO without any specific implementation
 
-    private ArrayList<MbtEEGPacket> eegPackets;
+    private MbtEEGPacket eegPackets;
 
-    public ClientReadyEEGEvent(@NonNull ArrayList<MbtEEGPacket> eegPackets) {
+    public ClientReadyEEGEvent(@NonNull MbtEEGPacket eegPackets) {
         this.eegPackets = eegPackets;
     }
 
@@ -26,7 +26,7 @@ public class ClientReadyEEGEvent { //Events are just POJO without any specific i
      * A MbtEEGPacket is an object that contains the EEG data matrix, their associated qualities and status.
      * @return the list of accumulated MbtEEGPacket
      */
-    public ArrayList<MbtEEGPacket> getEegPackets() {
+    public MbtEEGPacket getEegPackets() {
         return eegPackets;
     }
 

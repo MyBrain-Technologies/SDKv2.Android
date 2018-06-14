@@ -159,7 +159,7 @@ public final class MbtEEGManager {
                 }
                 ArrayList<MbtEEGPacket> mbtEEGPacketsBuffer = mbtDataBuffering.storeEegPacketInPacketBuffer(consolidatedEEG, status);// if the packet buffer is full, this method returns the non null packet buffer
                 if(mbtEEGPacketsBuffer.size() >= getEegBufferLengthClientNotif()) //if the client buffer is full
-                    notifyEEGDataIsReady(mbtEEGPacketsBuffer);//notify UI that eeg data are ready via callbacks
+                    notifyEEGDataIsReady(mbtEEGPacketsBuffer.get(0));//notify UI that eeg data are ready via callbacks //todo merge with etienne version
             }
         });
     }
@@ -167,9 +167,9 @@ public final class MbtEEGManager {
     /**
      * Publishes a ClientReadyEEGEvent event to the Event Bus to notify the client that the EEG raw data have been converted.
      * The event returns a list of MbtEEGPacket object, that contains the EEG data, and their associated qualities and status
-     * @param eegPackets the list that contains EEG packets ready to use for the client.
+     * @param eegPackets the object that contains EEG packets ready to use for the client.
      */
-    public void notifyEEGDataIsReady(ArrayList<MbtEEGPacket> eegPackets) {
+    public void notifyEEGDataIsReady(MbtEEGPacket eegPackets) {
         Log.d(TAG, "notify EEG Data Is Ready ");
         EventBusManager.postEvent(new ClientReadyEEGEvent(eegPackets));
     }

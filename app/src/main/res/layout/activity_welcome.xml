@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:custom="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white">
+
+
+    <android.support.constraint.Guideline
+        android:id="@+id/guidelineStart"
+        android:layout_width="1dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        custom:layout_constraintGuide_percent="0.1" />
+
+    <android.support.constraint.Guideline
+        android:id="@+id/guidelineEnd"
+        android:layout_width="1dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        custom:layout_constraintGuide_percent="0.9" />
+
+
+    <android.support.constraint.Guideline
+        android:id="@+id/guidelineTopImage"
+        android:layout_width="1dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        custom:layout_constraintGuide_percent="0.1" />
+
+    <android.support.constraint.Guideline
+        android:id="@+id/guidelineBottomImage"
+        android:layout_width="1dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        custom:layout_constraintGuide_percent="0.6" />
+
+    <android.support.constraint.Guideline
+        android:id="@+id/guidelineTopButton"
+        android:layout_width="1dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        custom:layout_constraintGuide_percent="0.7" />
+
+    <android.support.constraint.Guideline
+        android:id="@+id/guidelineBottomButton"
+        android:layout_width="1dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        custom:layout_constraintGuide_percent="0.8" />
+
+    <ImageView
+        android:id="@+id/image"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_centerVertical="true"
+        android:adjustViewBounds="true"
+        android:src="@drawable/brain"
+        app:layout_constraintTop_toTopOf="@id/guidelineTopImage"
+        app:layout_constraintBottom_toBottomOf="@id/guidelineBottomImage"
+        app:layout_constraintEnd_toEndOf="@+id/guidelineEnd"
+        app:layout_constraintStart_toStartOf="@+id/guidelineStart" />
+
+    <Button
+        android:id="@+id/start"
+        style="@style/Base.Widget.AppCompat.Button.Borderless"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:background="@color/light_blue"
+        android:text="@string/start"
+        android:textSize="18sp"
+        android:textColor="@color/white"
+        app:layout_constraintTop_toTopOf="@id/guidelineTopButton"
+        app:layout_constraintBottom_toBottomOf="@id/guidelineBottomButton"/>
+
+</android.support.constraint.ConstraintLayout>

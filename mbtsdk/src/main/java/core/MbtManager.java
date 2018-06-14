@@ -8,9 +8,13 @@ import core.bluetooth.MbtBluetoothManager;
 import core.eeg.MbtEEGManager;
 import core.recordingsession.MbtRecordingSessionManager;
 import core.serversync.MbtServerSyncManager;
+import engine.MbtClient;
 import engine.MbtClientEvents;
 import eventbus.EventBusManager;
 import eventbus.events.ClientReadyEEGEvent;
+import exception.EmptyEegDataException;
+import exception.NullEegDataException;
+import exception.ZeroEegDataException;
 
 /**
  * MbtManager is responsible for managing communication between all the package managers
@@ -90,7 +94,15 @@ public final class MbtManager {
     @Subscribe
     public void onEvent(final ClientReadyEEGEvent event) { //warning : do not remove this attribute (consider unsused by the IDE, but actually used)
         Log.i(TAG, "event ClientReadyEEGEvent received" );
-        eegCallback.onNewPackets(event.getEegPackets());
+        if(event.getEegPackets().isEmpty()){
+            eegCallback.onError(new EmptyEegDataException("Client received empty a EEG packet"));
+        } else if(event.getEegPackets().getChannelsData().equals(null)){
+           eegCallback.onError(new NullEegDataException("Client received null EEG data"));
+        }  else if(event.getEegPackets().containsZerosEegOnly()){
+           eegCallback.onError(new ZeroEegDataException("Client received null EEG data"));
+        } else
+            eegCallback.onNewPackets(event.getEegPackets());
+
     }
 
     public void setEegCallback(MbtClientEvents.EegListener eegCallback) {

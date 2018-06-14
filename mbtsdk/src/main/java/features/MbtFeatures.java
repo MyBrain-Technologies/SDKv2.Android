@@ -20,7 +20,6 @@ public final class MbtFeatures{
     private static String TAG = MbtFeatures.class.getName();
 
 
-    public static final int DEVICE_NAME_MAX_LENGTH = 10;
 
     public final static int DEFAULT_SAMPLE_RATE = 250;
     public final static int DEFAULT_SAMPLE_PER_PACKET = 4;
@@ -30,10 +29,11 @@ public final class MbtFeatures{
 
     public final static long DEFAULT_BATTERY_READ_PERIOD = 20000;
 
-    // MELOMIND & VPRO FEATURES
+      public static final int DEVICE_NAME_MAX_LENGTH = 5+10; //5 characters for melo_ or vpro_ + 10 digits
     public static final String MELOMIND_DEVICE_NAME_PREFIX = "melo_";
     public static final String VPRO_DEVICE_NAME_PREFIX = "vpro_";
 
+    // MELOMIND & VPRO FEATURES
     public static final String MELOMIND_DEVICE_NAME = "Melomind";
     public static final String VPRO_DEVICE_NAME = "VPro";
     public static final String ALL_DEVICE_NAME = "All";

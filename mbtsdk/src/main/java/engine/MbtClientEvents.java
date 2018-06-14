@@ -31,7 +31,7 @@ public interface MbtClientEvents {
          * Warning, this callb is in worker thread. you need to call runOnUiThread to change views if necessary
          * @param MbtEEGPackets the eeg data (Channels, EEG values)
          */
-        void onNewPackets(@NonNull final ArrayList<MbtEEGPacket> MbtEEGPackets);
+        void onNewPackets(@NonNull final MbtEEGPacket MbtEEGPackets);
         void onError(@NonNull final Exception exception);
     }
 
