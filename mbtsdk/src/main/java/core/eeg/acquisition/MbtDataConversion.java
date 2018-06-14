@@ -21,7 +21,7 @@ import static features.MbtFeatures.getNbChannels;
 public class MbtDataConversion {
     private static final String TAG = MbtDataConversion.class.getName();
 
-    private static int EEG_AMP_GAIN = 12;
+    private static int EEG_AMP_GAIN = 8;
     private static final short SHIFT_BLE = 8 + 4; //mandatory 8 to switch from 24 bits to 32 bits + variable part which fits fw config
     private static final short SHIFT_DC_OFFSET = 16;
     private static final int CHECK_SIGN_BLE = (int) (0x80 << SHIFT_BLE);

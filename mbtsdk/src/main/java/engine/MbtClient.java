@@ -90,11 +90,6 @@ public final class MbtClient {
     }
 
 
-    public void configureHeadset(DeviceConfig config){
-        //TODO
-    }
-
-
     public void readBattery(int periodInMillis, final DeviceInfoListener listener) {
         if(periodInMillis <= 0){
             mbtManager.readBluetooth(DeviceInfo.BATTERY, listener);
@@ -122,6 +117,7 @@ public final class MbtClient {
     }
 
     public void stopReadBattery(){
+
     }
 
     public void startstream(@NonNull StreamConfig streamConfig){
@@ -132,11 +128,6 @@ public final class MbtClient {
 
     public void stopStream(){
         mbtManager.stopStream();
-    }
-
-    public void notifyClientReadyEEG(final ArrayList<MbtEEGPacket> eegPackets) {
-//        if (this.eegListener != null)
-//            this.eegListener.onNewPackets((ArrayList<MbtEEGPacket>) eegPackets);
     }
 
 

@@ -42,6 +42,8 @@ public class MainActivity extends AppCompatActivity{
 
     boolean start = true;
 
+    private String deviceName = "melo_1010876553";
+
     private DeviceStatusListener deviceStatusListener = new DeviceStatusListener() {
         @Override
         public void onSaturationStateChanged(SaturationEvent saturation) {
@@ -116,7 +118,7 @@ public class MainActivity extends AppCompatActivity{
                         client.connectBluetooth(new ConnectionConfig.Builder(connectionStateListener)
                                 .maxScanDuration(30000)
                                 .scanDeviceType(ScannableDevices.MELOMIND)
-                                .deviceName("melo_1010876553")
+                                .deviceName(deviceName)
                                 .connectAudioIfDeviceCompatible(false)
                                 .create());
 
@@ -149,7 +151,7 @@ public class MainActivity extends AppCompatActivity{
         client.connectBluetooth(new ConnectionConfig.Builder(connectionStateListener)
                 .maxScanDuration(30000)
                 .scanDeviceType(ScannableDevices.MELOMIND)
-                .deviceName("melo_1010876553")
+                .deviceName(deviceName)
                 .connectAudioIfDeviceCompatible(false)
                 .create());
 
