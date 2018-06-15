@@ -20,6 +20,16 @@
         app:layout_constraintBottom_toBottomOf="@id/guidelineBottomTitle"
         />
 
+    <Spinner
+        android:id="@+id/devicePrefix"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+
+        app:layout_constraintStart_toStartOf="@+id/guidelineStart"
+        app:layout_constraintEnd_toEndOf="@+id/guidelineEndPrefix"
+        app:layout_constraintTop_toTopOf="@+id/guidelineTopName"
+        app:layout_constraintBottom_toBottomOf="@+id/guidelineBottomName"/>
+
     <EditText
         android:id="@+id/deviceNameField"
         android:layout_width="0dp"
@@ -27,7 +37,7 @@
         android:maxLines="1"
         android:hint="@string/device_name"
 
-        app:layout_constraintStart_toStartOf="@+id/guidelineStart"
+        app:layout_constraintStart_toEndOf="@+id/devicePrefix"
         app:layout_constraintEnd_toEndOf="@+id/guidelineEnd"
         app:layout_constraintTop_toTopOf="@+id/guidelineTopName"
         app:layout_constraintBottom_toBottomOf="@+id/guidelineBottomName"
@@ -103,6 +113,7 @@
 
         </LinearLayout>
     </ScrollView>
+
     <!-- VERTICAL GUIDELINES-->
 
     <android.support.constraint.Guideline
@@ -118,6 +129,13 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         custom:layout_constraintGuide_percent="0.47" />
+
+    <android.support.constraint.Guideline
+        android:id="@+id/guidelineEndPrefix"
+        android:layout_width="1dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        custom:layout_constraintGuide_percent="0.35" />
 
     <android.support.constraint.Guideline
         android:id="@+id/guidelineStartCancelButton"
@@ -154,7 +172,7 @@
         android:layout_width="1dp"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        custom:layout_constraintGuide_percent="0.35" />
+        custom:layout_constraintGuide_percent="0.3" />
 
     <android.support.constraint.Guideline
         android:id="@+id/guidelineTopButton"

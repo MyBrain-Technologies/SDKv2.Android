@@ -2,8 +2,9 @@ package mbtsdk.com.mybraintech.sdkv2;
 
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -15,25 +16,28 @@ import android.widget.Toast;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.DataSet;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
-import com.github.mikephil.charting.listener.ChartTouchListener;
-import com.github.mikephil.charting.listener.OnChartGestureListener;
-import com.github.mikephil.charting.utils.EntryXComparator;
+import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
 import java.util.ArrayList;
+import java.util.FormatFlagsConversionMismatchException;
 
 import core.eeg.storage.MbtEEGPacket;
 import engine.MbtClient;
 
 import engine.StreamConfig;
 import engine.clientevents.EegListener;
+import features.MbtFeatures;
 import utils.MatrixUtils;
 
 public class DeviceActivity extends AppCompatActivity {
 
     private static String TAG = DeviceActivity.class.getName();
+    private final int INDEX_STATUS = 0;
+
 
     private MbtClient client;
 
@@ -41,7 +45,7 @@ public class DeviceActivity extends AppCompatActivity {
     private TextView deviceNameTextView;
 
     private LineChart eegGraph;
-    private LineData eegLineData = new LineData();
+    private LineData eegLineData;
     private ArrayList<ArrayList<Float>> bufferedChartData;
     private long chartCounter  = 0;
     private TextView channel1Quality;
@@ -61,53 +65,36 @@ public class DeviceActivity extends AppCompatActivity {
             //the SDK user can do what he wants now with the EEG data stored in the MbtEEGPackets
 
             mbtEEGPackets.setChannelsData(MatrixUtils.invertFloatMatrix(mbtEEGPackets.getChannelsData()));
+
             if(eegGraph!=null){
-                eegGraph.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        eegGraph.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                chartCounter++;
-
-                                if(chartCounter <= 2)
-                                    addEntry(eegGraph, mbtEEGPackets.getChannelsData(), mbtEEGPackets.getStatusData());
-                                else
-                                    updateEntry(eegGraph,mbtEEGPackets.getChannelsData(), bufferedChartData, mbtEEGPackets.getStatusData());
-
-                                bufferedChartData = mbtEEGPackets.getChannelsData();
-                                bufferedChartData.add(0, mbtEEGPackets.getStatusData());
-                            }
-                        });
-                    }
-                });
+                addEegDataToGraph(mbtEEGPackets);
 
                 channel1Quality.post(new Runnable() {
                     @Override
                     public void run() {
-                        channel1Quality.setText("CHANNEL 1 QC : " + (mbtEEGPackets.getQualities() != null ? mbtEEGPackets.getQualities().get(0) : "--"));
+                        //channel1Quality.setText(getString(R.string.channel_1_qc) + (mbtEEGPackets.getQualities() != null ? mbtEEGPackets.getQualities().get(0) : "--"));
                     }
                 });
                 channel2Quality.post(new Runnable() {
                     @Override
                     public void run() {
-                        channel2Quality.setText("CHANNEL 2 QC : " + (mbtEEGPackets.getQualities() != null ? mbtEEGPackets.getQualities().get(1) : "--"));
+                        //channel2Quality.setText(getString(R.string.channel_2_qc) + (mbtEEGPackets.getQualities() != null ? mbtEEGPackets.getQualities().get(1) : "--"));
                     }
                 });
             }
         }
+
         @Override
         public void onError(Exception exception) {
             exception.printStackTrace();
         }
-
-
     };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_device);
+        initTopBar();
 
         initChannelsTextView();
         initDeviceNameTextView();
@@ -117,7 +104,7 @@ public class DeviceActivity extends AppCompatActivity {
 
         initStartStopStreamingButton();
 
-        //initEegGraph();
+        initEegGraph();
 
     }
 
@@ -187,44 +174,41 @@ public class DeviceActivity extends AppCompatActivity {
 
     public void initEegGraph(){
         eegGraph = findViewById(R.id.eegGraph);
-        LineDataSet dataSetChan1 = new LineDataSet(new ArrayList<Entry>(250), "Status");
-        LineDataSet dataSetChan2 = new LineDataSet(new ArrayList<Entry>(250), "Channel 1");
-        LineDataSet dataSetChan3 = new LineDataSet(new ArrayList<Entry>(250), "Channel 2");
+        ArrayList<Entry> data = new ArrayList<>(MbtFeatures.getSampleRate());
+        data.add(new Entry(0, 0)); //init with a 0 value in order to avoid a crash
 
-        dataSetChan1.setLabel("STYM");
-        dataSetChan1.setDrawValues(false);
-        dataSetChan1.disableDashedLine();
-        dataSetChan1.setDrawCircleHole(false);
-        dataSetChan1.setDrawCircles(false);
-        dataSetChan1.setColor(Color.GREEN);
-        dataSetChan1.setDrawFilled(true);
-        dataSetChan1.setFillColor(Color.GREEN);
-        dataSetChan1.setFillAlpha(40);
-        dataSetChan1.setAxisDependency(YAxis.AxisDependency.RIGHT);
+        //LineDataSet status = new LineDataSet(data, "Status");
+        LineDataSet channel1 = new LineDataSet(data, "Channel 1");
+        LineDataSet channel2 = new LineDataSet(data, "Channel 2");
 
-        dataSetChan2.setLabel("Channel 1");
-        dataSetChan2.setDrawValues(false);
-        dataSetChan2.disableDashedLine();
-        dataSetChan2.setDrawCircleHole(false);
-        dataSetChan2.setDrawCircles(false);
-        dataSetChan2.setColor(Color.RED);
-        dataSetChan2.setAxisDependency(YAxis.AxisDependency.LEFT);
+        /*status.setLabel("STYM");
+        status.setDrawValues(false);
+        status.disableDashedLine();
+        status.setDrawCircleHole(false);
+        status.setDrawCircles(false);
+        status.setColor(Color.GREEN);
+        status.setDrawFilled(true);
+        status.setFillColor(Color.GREEN);
+        status.setFillAlpha(40);
+        status.setAxisDependency(YAxis.AxisDependency.RIGHT);*/
 
-        dataSetChan3.setLabel("Channel 2");
-        dataSetChan3.setDrawValues(false);
-        dataSetChan3.disableDashedLine();
-        dataSetChan3.setDrawCircleHole(false);
-        dataSetChan3.setDrawCircles(false);
-        dataSetChan3.setColor(Color.BLUE);
-        dataSetChan3.setAxisDependency(YAxis.AxisDependency.LEFT);
+        channel1.setLabel("Channel 1");
+        channel1.setDrawValues(false);
+        channel1.disableDashedLine();
+        channel1.setDrawCircleHole(false);
+        channel1.setDrawCircles(false);
+        channel1.setColor(Color.BLACK);
+        channel1.setAxisDependency(YAxis.AxisDependency.LEFT);
 
-        // setting chart
-//        eegLineData.removeDataSet(2);
-//        eegLineData.removeDataSet(1);
-//        eegLineData.removeDataSet(0);
-        eegLineData.addDataSet(dataSetChan1);
-        eegLineData.addDataSet(dataSetChan2);
-        eegLineData.addDataSet(dataSetChan3);
+        channel2.setLabel("Channel 2");
+        channel2.setDrawValues(false);
+        channel2.disableDashedLine();
+        channel2.setDrawCircleHole(false);
+        channel2.setDrawCircles(false);
+        channel2.setColor(Color.MAGENTA);
+        channel2.setAxisDependency(YAxis.AxisDependency.LEFT);
+
+        eegLineData = new LineData(/*status,*/channel1,channel2);
 
         eegGraph.setData(eegLineData);
         // this.chart.setAutoScaleMinMaxEnabled(true);
@@ -253,47 +237,7 @@ public class DeviceActivity extends AppCompatActivity {
 
         /*chart.getAxisLeft().setAxisMaxValue(-10000f);
         chart.getAxisLeft().setAxisMaxValue(-10000f);*/
-        eegGraph.setOnChartGestureListener(new OnChartGestureListener() {
-            @Override
-            public void onChartGestureStart(MotionEvent me, ChartTouchListener.ChartGesture lastPerformedGesture) {
 
-            }
-
-            @Override
-            public void onChartGestureEnd(MotionEvent me, ChartTouchListener.ChartGesture lastPerformedGesture) {
-
-            }
-
-            @Override
-            public void onChartLongPressed(MotionEvent me) {
-
-            }
-
-            @Override
-            public void onChartDoubleTapped(MotionEvent me) {
-
-            }
-
-            @Override
-            public void onChartSingleTapped(MotionEvent me) {
-
-            }
-
-            @Override
-            public void onChartFling(MotionEvent me1, MotionEvent me2, float velocityX, float velocityY) {
-
-            }
-
-            @Override
-            public void onChartScale(MotionEvent me, float scaleX, float scaleY) {
-
-            }
-
-            @Override
-            public void onChartTranslate(MotionEvent me, float dX, float dY) {
-
-            }
-        });
 
         eegGraph.invalidate();
     }
@@ -304,36 +248,41 @@ public class DeviceActivity extends AppCompatActivity {
         LineData data = mChart.getData();
         if (data != null) {
 
-            if(channelData.size()<2){
+            if(channelData.size()< MbtFeatures.getNbChannels()){
                 throw new IllegalStateException("Incorrect matrix size, one or more channel are missing");
             }else{
-                if(channelData.get(0).size() == channelData.get(1).size()){
-                    for(int i = 0; i< channelData.get(0).size(); i++){
-                        if(statusData != null)
-                            data.addEntry(new Entry(data.getDataSets().get(0).getEntryCount(), statusData.get(i).floatValue()), 0);
-
-                        data.addEntry(new Entry(data.getDataSets().get(1).getEntryCount(), channelData.get(0).get(i).floatValue()*1000000), 1);
-                        data.addEntry(new Entry(data.getDataSets().get(2).getEntryCount(), channelData.get(1).get(i).floatValue()*1000000), 2);
+                if(channelsHasTheSameNumberOfData(channelData)){
+                    for(int i = 0; i< channelData.get(0).size(); i++){ //for each number of eeg data
+                        /*if(statusData != null && statusData.size()>0)
+                            data.addEntry(new Entry(data.getDataSets().get(INDEX_STATUS).getEntryCount(), statusData.get(i)), INDEX_STATUS);*/
+                        for (int channelIndex = 0; channelIndex < MbtFeatures.getNbChannels() ; channelIndex++){
+                            data.addEntry(new Entry(data.getDataSets().get(channelIndex).getEntryCount(), channelData.get(channelIndex).get(i) *1000000),channelIndex);
+                        }
                     }
                 }else{
                     throw new IllegalStateException("Channels do not have the same amount of data");
                 }
-
             }
             data.notifyDataChanged();
 
-            // let the chart know it's data has changed
-            mChart.notifyDataSetChanged();
-
-            // limit the number of visible entries
-            mChart.setVisibleXRangeMaximum(500);
-
-            // move to the latest entry
-            mChart.moveViewToX((data.getEntryCount()/2));
+            mChart.notifyDataSetChanged();// let the chart know it's data has changed
+            mChart.setVisibleXRangeMaximum(500);// limit the number of visible entries
+            mChart.moveViewToX((data.getEntryCount()/2));// move to the latest entry
 
         }else{
             throw new IllegalStateException("Graph not correctly initialized");
         }
+    }
+
+    private boolean channelsHasTheSameNumberOfData(ArrayList<ArrayList<Float>> data){
+        boolean hasTheSameNumberOfData = true;
+        int size = data.get(0).size();
+        for (int i = 0 ; i < MbtFeatures.getNbChannels() ; i++){
+            if(data.get(i).size() != size){
+                hasTheSameNumberOfData = false;
+            }
+        }
+        return hasTheSameNumberOfData;
     }
 
     private void updateEntry(LineChart mChart,ArrayList<ArrayList<Float>> channelData, ArrayList<ArrayList<Float>> bufferedData, ArrayList<Float> statusData) {
@@ -341,20 +290,22 @@ public class DeviceActivity extends AppCompatActivity {
         LineData data = mChart.getData();
         //System.currentTimeMillis();
         if (data != null) {
-            if(statusData != null)
-                data.getDataSets().get(0).clear();
-            data.getDataSets().get(1).clear();
-            data.getDataSets().get(2).clear();
+            /*if(statusData != null)
+                data.getDataSets().get(INDEX_STATUS).clear();*/
+            for (ILineDataSet dataSet : data.getDataSets()){
+                dataSet.clear();
+            }
             if(channelData.size()<2){
                 throw new IllegalStateException("Incorrect matrix size, one or more channel are missing");
             }else{
-                if(bufferedData.get(1).size() == bufferedData.get(2).size()){
+                if(channelsHasTheSameNumberOfData(bufferedData)){
                     for(int i = 0; i< bufferedData.get(1).size(); i++){
-                        if(statusData != null)
-                            data.addEntry(new Entry(data.getDataSets().get(0).getEntryCount(), bufferedData.get(0).get(i).floatValue()), 0);
+                        /*if(statusData != null)
+                            data.addEntry(new Entry(data.getDataSets().get(INDEX_STATUS).getEntryCount(), bufferedData.get(0).get(i)), 0);*/
 
-                        data.addEntry(new Entry(data.getDataSets().get(1).getEntryCount(), bufferedData.get(1).get(i).floatValue()*1000000), 1);
-                        data.addEntry(new Entry(data.getDataSets().get(2).getEntryCount(), bufferedData.get(2).get(i).floatValue()*1000000), 2);
+                        for (int channelIndex = 0; channelIndex < MbtFeatures.getNbChannels() ; channelIndex++){
+                            data.getDataSetByIndex(channelIndex).addEntry(new Entry(data.getDataSets().get(channelIndex).getEntryCount(), bufferedData.get(channelIndex).get(i)*1000000));
+                        }
                     }
                 }else{
                     throw new IllegalStateException("Channels do not have the same amount of data");
@@ -362,31 +313,36 @@ public class DeviceActivity extends AppCompatActivity {
 
                 if(channelData.get(0).size() == channelData.get(1).size()){
                     for(int i = 0; i< channelData.get(0).size(); i++){
-                        if(statusData != null)
-                            data.addEntry(new Entry(data.getDataSets().get(0).getEntryCount(), statusData.get(i).floatValue()), 0);
+                        /*if(statusData != null)
+                            data.addEntry(new Entry(data.getDataSets().get(0).getEntryCount(), statusData.get(i)), 0);*/
 
-                        data.addEntry(new Entry(data.getDataSets().get(1).getEntryCount(), channelData.get(0).get(i).floatValue()*1000000), 1);
-                        data.addEntry(new Entry(data.getDataSets().get(2).getEntryCount(), channelData.get(1).get(i).floatValue()*1000000), 2);
+                        for (int channelIndex = 0; channelIndex < MbtFeatures.getNbChannels() ; channelIndex ++){
+                            data.getDataSetByIndex(channelIndex).addEntry(new Entry(data.getDataSets().get(channelIndex).getEntryCount(), channelData.get(channelIndex).get(i)*1000000));
+                        }
                     }
                 }else{
                     throw new IllegalStateException("Channels do not have the same amount of data");
                 }
-
             }
             data.notifyDataChanged();
 
-            // let the chart know it's data has changed
-            mChart.notifyDataSetChanged();
-
-            // limit the number of visible entries
-            mChart.setVisibleXRangeMaximum(500);
-
-            // move to the latest entry
-            mChart.moveViewToX((data.getEntryCount()/2));
-
+            mChart.notifyDataSetChanged();// let the chart know it's data has changed
+            mChart.setVisibleXRangeMaximum(500); // limit the number of visible entries
+            mChart.moveViewToX((data.getEntryCount()/2));// move to the latest entry
         }else{
             throw new IllegalStateException("Graph not correctly initialized");
         }
+    }
+
+    private void addEegDataToGraph(MbtEEGPacket mbtEEGPackets) {
+        chartCounter++;
+        if(chartCounter <= 2)
+            addEntry(eegGraph, mbtEEGPackets.getChannelsData(), mbtEEGPackets.getStatusData());
+        else
+            updateEntry(eegGraph,mbtEEGPackets.getChannelsData(), bufferedChartData, mbtEEGPackets.getStatusData());
+
+        bufferedChartData = mbtEEGPackets.getChannelsData();
+        //bufferedChartData.add(0, mbtEEGPackets.getStatusData());
     }
 
     private void notifyUser(String message){
@@ -396,5 +352,13 @@ public class DeviceActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         startActivity(new Intent(DeviceActivity.this,HomeActivity.class));
+    }
+
+    public void initTopBar(){
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
+        getSupportActionBar().setIcon(R.drawable.logo);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getColor(R.color.light_blue)));
+        }
     }
 }

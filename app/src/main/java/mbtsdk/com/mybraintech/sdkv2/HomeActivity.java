@@ -1,16 +1,22 @@
 package mbtsdk.com.mybraintech.sdkv2;
 
 import android.content.Intent;
+import android.graphics.drawable.ColorDrawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ScrollView;
 import android.widget.Scroller;
+import android.widget.Spinner;
 import android.widget.Toast;
+
+import java.util.ArrayList;
 
 import core.bluetooth.BtState;
 import engine.ConnectionConfig;
@@ -19,6 +25,8 @@ import engine.clientevents.ConnectionStateListener;
 import features.MbtFeatures;
 
 import static features.MbtFeatures.DEVICE_NAME_MAX_LENGTH;
+import static features.MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX;
+import static features.MbtFeatures.VPRO_DEVICE_NAME_PREFIX;
 import static features.ScannableDevices.MELOMIND;
 import static features.ScannableDevices.VPRO;
 
@@ -33,8 +41,12 @@ public class HomeActivity extends AppCompatActivity{
     private EditText deviceNameField;
     private String deviceName;
 
+    private Spinner devicePrefixSpinner;
+    private String devicePrefix;
+
     private Button scanButton;
     private Button scanAllButton;
+
     private ScrollView devicesFoundList;
 
     private boolean isScanning = false;
@@ -43,14 +55,30 @@ public class HomeActivity extends AppCompatActivity{
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
+        initTopBar();
 
         client = MbtClient.init(getApplicationContext());
 
-        deviceNameField = findViewById(R.id.deviceNameField);
-
+        initDeviceNameField();
         initScanButton();
         initScanAllButton();
+        initDevicePrefix();
         initDevicesFoundList();
+    }
+
+    private void initDevicePrefix() {
+        devicePrefixSpinner = findViewById(R.id.devicePrefix);
+        ArrayList<String> prefixList = new ArrayList<>();
+        prefixList.add(MELOMIND_DEVICE_NAME_PREFIX);
+        prefixList.add(VPRO_DEVICE_NAME_PREFIX);
+        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(this,
+                android.R.layout.simple_spinner_item, prefixList);
+        devicePrefixSpinner.setAdapter(arrayAdapter);
+        devicePrefixSpinner.setSelection(arrayAdapter.getPosition(MELOMIND_DEVICE_NAME_PREFIX));
+    }
+
+    private void initDeviceNameField() {
+        deviceNameField = findViewById(R.id.deviceNameField);
     }
 
     private void initDevicesFoundList() {
@@ -63,8 +91,8 @@ public class HomeActivity extends AppCompatActivity{
         scanButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                deviceName = deviceNameField.getText().toString();
-
+                devicePrefix = String.valueOf(devicePrefixSpinner.getSelectedItem()); //get the prefix chosed by the user in the Spinner
+                deviceName = devicePrefix+deviceNameField.getText().toString(); //get the name entered by the user in the EditText
                 if(isScanning){ //Scan in progress : a second click means that the user is trying to cancel the scan
                    cancelScan();
                 }else{ // Scan is not in progress : starting a new scan in order to connect to a Mbt Device
@@ -92,18 +120,18 @@ public class HomeActivity extends AppCompatActivity{
 
     private void startScan() {
 
-        if(deviceName.isEmpty() ){ //no name entered by the user
+        if(deviceName.equals(MELOMIND_DEVICE_NAME_PREFIX) || deviceName.equals(VPRO_DEVICE_NAME_PREFIX) ){ //no name entered by the user
             findAvailableDevice();
         }else{ //the user entered a name
-            if( isMbtDeviceName() && deviceName.length() == DEVICE_NAME_MAX_LENGTH ) { //check the device name format
-                notifyUser(getString(R.string.scan_in_progress));
+            if( deviceName.length() == DEVICE_NAME_MAX_LENGTH ) { //check the device name format
+                notifyUser(getString(R.string.connect_in_progress));
                 updateScanning(true); //changes isScanning to true and updates button text "Find a device" into "Cancel"
 
                 client.connectBluetooth(new ConnectionConfig.Builder(new ConnectionStateListener() {
                     @Override
                     public void onStateChanged(@NonNull BtState newState) {
                         if (newState.equals(BtState.CONNECTED_AND_READY)){
-                            notifyUser("Device ' " + deviceName + " ' found");
+                            notifyUser("Device ' " + deviceName + " ' connected");
                             final Intent intent = new Intent(HomeActivity.this, DeviceActivity.class);
                             intent.putExtra(DEVICE_NAME, deviceName);
                             startActivity(intent);
@@ -120,7 +148,7 @@ public class HomeActivity extends AppCompatActivity{
                 }).deviceName(deviceName).maxScanDuration(SCAN_DURATION).scanDeviceType(isMelomindDevice() ? MELOMIND : VPRO).create());
 
             }else{ //if the device name entered by the user is empty or is not starting with a mbt prefix
-                notifyUser(getString(R.string.wrong_device_name));
+                notifyUser(getString(R.string.wrong_device_name)+" "+deviceName);
                 deviceNameField.setText(getString(R.string.example_device_name));
             }
         }
@@ -128,7 +156,7 @@ public class HomeActivity extends AppCompatActivity{
     }
 
     private void findAvailableDevice() {
-        notifyUser("The application is about to find the first available headset");
+        notifyUser(getString(R.string.find_first_available_headset));
         deviceName = getString(R.string.example_device_name) ;//todo replace getString... by the method that detects the first available device
         deviceNameField.setText(deviceName);
         scanButton.setText(getString(R.string.connect));
@@ -175,5 +203,13 @@ public class HomeActivity extends AppCompatActivity{
     @Override
     public void onBackPressed() {
         startActivity(new Intent(HomeActivity.this,WelcomeActivity.class));
+    }
+
+    private void initTopBar(){
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
+        getSupportActionBar().setIcon(R.drawable.logo);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getColor(R.color.light_blue)));
+        }
     }
 }

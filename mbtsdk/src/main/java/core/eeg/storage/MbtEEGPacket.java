@@ -75,8 +75,14 @@ public final class MbtEEGPacket {
     }
 
     /**
-     * Gets all the data from all channels
-     * @return the data from all channels
+     * Gets all the EEG data acquired from all channels in a matrix format during a specific duration.
+     * <p> Each column of the matrix contains the number of EEG data acquired by one channel.</p>
+     * <p> Call {@link #getChannelsData()}.size() to get the number of EEG data acquired by one channel.
+     * <p> Each line of the matrix contains the acquired EEG data by all the channels at a specifc moment:
+     * <p> 2 EEG data acquired for a Melomind headset and 9 EEG data for a Vpro headset (each channels acquire the same number of EEG data).
+     * <p> Call {@link #getChannelsData}.get(0).size() to get the number of channels/electrodes.
+     *
+     * @return the EEG data from all channels
      */
     @NonNull
     @Keep

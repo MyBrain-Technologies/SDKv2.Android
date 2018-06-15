@@ -77,7 +77,7 @@
             android:id="@+id/channel_1_quality"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Channel 1 QC : --"
+            android:text="@string/channel_1_qc"
             android:textColor="@color/white"
             android:textSize="18sp" />
 
@@ -85,7 +85,7 @@
             android:id="@+id/channel_2_quality"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Channel 2 QC : --"
+            android:text="@string/channel_2_qc"
             android:textColor="@color/white"
             android:textSize="18sp" />
     </LinearLayout>

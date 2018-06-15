@@ -102,28 +102,31 @@ public class MbtDataBuffering {
      * We wait to have a full packet buffer to send these EEG values to the UI.
      * @return true if the packet buffer is full (contains a number of data equals to eegBufferLengthNotification), false otherwise.
      */
-    public void storeConsolidatedEegPacketInPacketBuffer(final ArrayList<ArrayList<Float>> consolidatedEEG, ArrayList<Float> status) {
+    public void storeConsolidatedEegPacketInPacketBuffer(final ArrayList<ArrayList<Float>> consolidatedEEG, final ArrayList<Float> status) {
 
-        Log.e(TAG, "Adding new MbtEEGPacket(");
-        Log.e(TAG, "EEG data= " +consolidatedEEG.toString());
-        Log.e(TAG, "status data= " +status.toString() );
+        Log.d(TAG, "Adding new MbtEEGPacket(");
+        Log.d(TAG, "EEG data= " +consolidatedEEG.toString());
+        Log.d(TAG, "status data= " +status.toString() );
 
         int maxElementsToAppend = getBufferLengthClientNotif() - mbtEEGPacketsBuffer.getChannelsData().size();
         Log.i(TAG, "max element to append is " + maxElementsToAppend);
-        Log.i(TAG, "consolidated EEG size is" + consolidatedEEG.size());
+        Log.i(TAG, "consolidated EEG size is " + consolidatedEEG.size());
+        Log.i(TAG, "status size is " + status.size());
         if(maxElementsToAppend > consolidatedEEG.size()){
             mbtEEGPacketsBuffer.getChannelsData().addAll(consolidatedEEG);
-            mbtEEGPacketsBuffer.getStatusData().addAll(status);
+            if(mbtEEGPacketsBuffer.getStatusData() != null)
+                mbtEEGPacketsBuffer.getStatusData().addAll(status);
         }else{
             if(maxElementsToAppend > 0){
                 mbtEEGPacketsBuffer.getChannelsData().addAll(consolidatedEEG.subList(0, maxElementsToAppend));
-                mbtEEGPacketsBuffer.getStatusData().addAll(status.subList(0, maxElementsToAppend));
+                if(status.size()>= maxElementsToAppend)
+                    mbtEEGPacketsBuffer.getStatusData().addAll(status.subList(0, maxElementsToAppend));
             }
             MbtEEGPacket fullBufferForClient = mbtEEGPacketsBuffer;
             notifyClientEEGDataBufferFull();
-            mbtEEGPacketsBuffer = new MbtEEGPacket(new ArrayList<ArrayList<Float>>(consolidatedEEG.subList(maxElementsToAppend, consolidatedEEG.size())),
+            mbtEEGPacketsBuffer = new MbtEEGPacket(new ArrayList<>(consolidatedEEG.subList(maxElementsToAppend, consolidatedEEG.size())),
                     null,
-                    new ArrayList<Float>(status.subList(maxElementsToAppend, consolidatedEEG.size())));
+                    (status.size() >= consolidatedEEG.size()) ? new ArrayList<>(status.subList(maxElementsToAppend, consolidatedEEG.size())) : null);
         }
     }
 

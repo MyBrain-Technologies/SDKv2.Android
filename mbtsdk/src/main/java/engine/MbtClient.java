@@ -64,7 +64,6 @@ public final class MbtClient {
         return clientInstance;
     }
 
-
     /**
      * Constructor that use the MbtClientBuilder
      * @param builder object for creating the MbtClient instance with a setters syntax.
@@ -77,7 +76,6 @@ public final class MbtClient {
     public void scanDevicesForType(ScannableDevices deviceType, long duration, ScanCallback scanCallback){
         //TODO
     }
-
 
     /**
      * Call this method to establish a bluetooth connection with a remote device.
@@ -143,7 +141,6 @@ public final class MbtClient {
     public void cancelConnection() {
         //todo
     }
-
 
 //    public void testEEGpackageClient(){
 //        if (MbtFeatures.getBluetoothProtocol().equals(BLUETOOTH_LE)) {
