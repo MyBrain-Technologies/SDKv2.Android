@@ -314,6 +314,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * If there is already a streaming session in progress, nothing happens and the method returns silently.
      */
     private void startStream(boolean enableDeviceStatusMonitoring){
+
         if(mbtBluetoothLE.isStreaming())
                 return;
         //TODO remove configureHeadset method from here later on.
@@ -535,7 +536,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
          * Checks the subclass type of {@link BluetoothRequests} and handles the correct method/action to perform.
          * @param request the {@link BluetoothRequests} request to execute.
          */
-        void parseRequest(BluetoothRequests request){
+        void parseRequest(BluetoothRequests request) {
             Log.i(TAG,"parsing new request");
             //BluetoothRequests request = pendingRequests.remove();
             while(requestBeingProcessed);

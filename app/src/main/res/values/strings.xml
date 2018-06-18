@@ -24,7 +24,7 @@
     <string name="find_first_available_headset">The application is looking for the first available headset</string>
     <string name="cancel_failed">Cancel encountered a problem </string>
     <string name="connect_failed">Impossible to connect to </string>
-    <string name="disconnect_failed">Impossible to disconnect to </string>
+    <string name="disconnect_failed">Impossible to disconnect from </string>
     <string name="wrong_device_name">Wrong name : must contains 10 digits "</string>
 
     <string name="channel_1_qc">Channel 1 QC : </string>

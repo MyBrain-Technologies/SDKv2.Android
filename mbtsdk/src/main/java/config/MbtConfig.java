@@ -95,6 +95,7 @@ public final class MbtConfig {
         return scannableDevices;
     }
 
+
     public static class MbtConfigBuilder {
 
         private int eegPacketLength;
@@ -218,4 +219,5 @@ public final class MbtConfig {
     public static void setSamplePerNotification(int samplePerNotification) {
         MbtConfig.samplePerNotification = samplePerNotification;
     }
+
 }

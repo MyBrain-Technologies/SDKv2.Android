@@ -63,6 +63,7 @@ public final class MbtManager{
     private DeviceInfoListener deviceInfoListener;
     private DeviceStatusListener deviceStatusListener;
 
+
     /**
      *
      * @param context
@@ -133,6 +134,7 @@ public final class MbtManager{
      */
     public void stopStream(){
         EventBusManager.postEvent(new StreamRequestEvent(false, false));
+        setEegListener(null);
     }
 
     /**
@@ -170,8 +172,11 @@ public final class MbtManager{
             case STATE:
                 if(event.getInfo() == null && connectionStateListener != null)
                     connectionStateListener.onError(new Exception("Unable to change "));
-                else
+                else {
                     connectionStateListener.onStateChanged((BtState) event.getInfo());
+                    Log.e(TAG, "Current state updated mbtmanager " + event.getInfo());
+                }
+
                 break;
         }
     }
@@ -223,5 +228,25 @@ public final class MbtManager{
             eegListener.onNewPackets(event.getEegPackets());
     }
 
+    private void setEegListener(EegListener eegListener) {
+        this.eegListener = eegListener;
+    }
+
+    /**
+     * Sets the {@link ConnectionStateListener} to the connectionStateListener value
+     * @param connectionStateListener the new {@link ConnectionStateListener}. Set it to null if you want to reset the listener
+     */
+    /*public void setConnectionStateListener(ConnectionStateListener<ConnectionException> connectionStateListener) {
+        this.connectionStateListener = connectionStateListener;
+    }
+*/
+
+    /**
+     * Sets the {@link EegListener} to the connectionStateListener value
+     * @param EEGListener the new {@link EegListener}. Set it to null if you want to reset the listener
+     */
+    /*public void setEEGListener(EegListener<EEGException> EEGListener) {
+        this.eegListener = EEGListener;
+    }*/
 
 }

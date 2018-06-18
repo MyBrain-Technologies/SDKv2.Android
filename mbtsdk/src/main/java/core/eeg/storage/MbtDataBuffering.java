@@ -119,14 +119,14 @@ public class MbtDataBuffering {
         }else{
             if(maxElementsToAppend > 0){
                 mbtEEGPacketsBuffer.getChannelsData().addAll(consolidatedEEG.subList(0, maxElementsToAppend));
-                if(status.size()>= maxElementsToAppend)
-                    mbtEEGPacketsBuffer.getStatusData().addAll(status.subList(0, maxElementsToAppend));
+                if(mbtEEGPacketsBuffer.getStatusData() != null)
+                    mbtEEGPacketsBuffer.getStatusData().addAll(status.subList(0, (status.size()>= maxElementsToAppend) ? maxElementsToAppend : status.size()));
             }
             MbtEEGPacket fullBufferForClient = mbtEEGPacketsBuffer;
             notifyClientEEGDataBufferFull();
-            mbtEEGPacketsBuffer = new MbtEEGPacket(new ArrayList<>(consolidatedEEG.subList(maxElementsToAppend, consolidatedEEG.size())),
-                    null,
-                    (status.size() >= consolidatedEEG.size()) ? new ArrayList<>(status.subList(maxElementsToAppend, consolidatedEEG.size())) : null);
+            mbtEEGPacketsBuffer = new MbtEEGPacket( new ArrayList<>(consolidatedEEG.subList(maxElementsToAppend, consolidatedEEG.size())),
+                    null, status.size() != 0 ?
+                    ( new ArrayList<>(status.subList(maxElementsToAppend, status.size() >= consolidatedEEG.size() ? consolidatedEEG.size() : status.size() ))) : null );
         }
     }
 

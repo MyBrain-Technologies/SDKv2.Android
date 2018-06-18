@@ -5,9 +5,9 @@ import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -16,19 +16,19 @@ import android.widget.Toast;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
-import com.github.mikephil.charting.data.DataSet;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
 import java.util.ArrayList;
-import java.util.FormatFlagsConversionMismatchException;
 
+import core.bluetooth.BtState;
 import core.eeg.storage.MbtEEGPacket;
 import engine.MbtClient;
 
 import engine.StreamConfig;
+import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.EegListener;
 import features.MbtFeatures;
 import utils.MatrixUtils;
@@ -56,6 +56,7 @@ public class DeviceActivity extends AppCompatActivity {
     private Button disconnectButton;
 
     private boolean isStreaming = false;
+    private BtState currentState;
 
     private EegListener eegListener = new EegListener() {
 
@@ -90,6 +91,17 @@ public class DeviceActivity extends AppCompatActivity {
         }
     };
 
+    private ConnectionStateListener connectionStateListener = new ConnectionStateListener() {
+        @Override
+        public void onStateChanged(@NonNull BtState newState) {
+            currentState = newState;
+            Log.e(TAG, "Current state updated Device Activity "+newState);
+        }
+
+        @Override
+        public void onError(Exception expection) {}
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -114,11 +126,11 @@ public class DeviceActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if(isStreaming) {
-                    client.stopStream();
-                    isStreaming = false;
+                    stopStream();
                 }
-
-                if( true/*client.disconnectBluetooth()*/){ //disconnect succeeded
+                client.disconnectBluetooth();
+                if(currentState.equals(BtState.DISCONNECTED)){
+                    setConnectionStateListener(null);
                     startActivity(new Intent(DeviceActivity.this,HomeActivity.class)); //back to the home page
                     finish();
                 }else{ //disconnect failed
@@ -130,8 +142,6 @@ public class DeviceActivity extends AppCompatActivity {
 
     private void initDeviceNameTextView() {
         deviceNameTextView = findViewById(R.id.deviceNameTextView);
-
-
         if(getIntent().hasExtra(HomeActivity.DEVICE_NAME)){
             deviceName = getIntent().getExtras().getString(HomeActivity.DEVICE_NAME,"");
             deviceNameTextView.setText(deviceName);
@@ -149,14 +159,14 @@ public class DeviceActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if(!isStreaming) { //streaming is not in progress : starting streaming
-                    updateStreaming(true);
-                    client.startStream(new StreamConfig.Builder(eegListener).create());
+                    startStream(new StreamConfig.Builder(eegListener).setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD).create());
                     notifyUser("Starting streaming");
                 }else { //streaming is in progress : stopping streaming
-                    client.stopStream();
+                    stopStream(); // set false to isStreaming et null to the eegListener
                     notifyUser("Stopping streaming");
-                    updateStreaming(false);
                 }
+                updateStreaming(); //update the UI text in both case according to the new value of isStreaming
+
             }
         });
     }
@@ -165,10 +175,8 @@ public class DeviceActivity extends AppCompatActivity {
      * Updates the streaming state boolean and the Stream button text
      * The Stream button text is changed into into "Stop Streaming" if streaming is started
      * or into "Start Streaming" if streaming is stopped
-     * @param newIsStreaming
      */
-    private void updateStreaming(boolean newIsStreaming){
-        isStreaming = newIsStreaming;
+    private void updateStreaming(){
         startStopStreamingButton.setText((isStreaming ? R.string.stop_streaming : R.string.start_streaming));
     }
 
@@ -242,7 +250,6 @@ public class DeviceActivity extends AppCompatActivity {
         eegGraph.invalidate();
     }
 
-
     private void addEntry(LineChart mChart, ArrayList<ArrayList<Float>> channelData, ArrayList<Float> statusData) {
 
         LineData data = mChart.getData();
@@ -287,48 +294,58 @@ public class DeviceActivity extends AppCompatActivity {
 
     private void updateEntry(LineChart mChart,ArrayList<ArrayList<Float>> channelData, ArrayList<ArrayList<Float>> bufferedData, ArrayList<Float> statusData) {
 
-        LineData data = mChart.getData();
+        LineData lineData = mChart.getLineData();
         //System.currentTimeMillis();
-        if (data != null) {
+        if (lineData != null) {
             /*if(statusData != null)
-                data.getDataSets().get(INDEX_STATUS).clear();*/
-            for (ILineDataSet dataSet : data.getDataSets()){
+                lineData.getDataSets().get(INDEX_STATUS).clear();*/
+            for (ILineDataSet dataSet : lineData.getDataSets()){
                 dataSet.clear();
             }
-            if(channelData.size()<2){
+            if(channelData.size()< MbtFeatures.getNbChannels()){
                 throw new IllegalStateException("Incorrect matrix size, one or more channel are missing");
             }else{
                 if(channelsHasTheSameNumberOfData(bufferedData)){
-                    for(int i = 0; i< bufferedData.get(1).size(); i++){
-                        /*if(statusData != null)
-                            data.addEntry(new Entry(data.getDataSets().get(INDEX_STATUS).getEntryCount(), bufferedData.get(0).get(i)), 0);*/
+                    for(int i = 0; i< bufferedData.get(0).size(); i++){ //250 loop
 
-                        for (int channelIndex = 0; channelIndex < MbtFeatures.getNbChannels() ; channelIndex++){
-                            data.getDataSetByIndex(channelIndex).addEntry(new Entry(data.getDataSets().get(channelIndex).getEntryCount(), bufferedData.get(channelIndex).get(i)*1000000));
+                        /*if(statusData != null)
+                            lineData.addEntry(new Entry(lineData.getDataSets().get(INDEX_STATUS).getEntryCount(), bufferedData.get(0).get(i)), 0);*/
+                        Log.e(TAG,"channel 1 "+ lineData.getDataSetByIndex(0).getEntryCount() );
+                        if(lineData.getDataSetByIndex(0).getEntryCount()>0){
+                            for (int k=0; k< lineData.getDataSetByIndex(0).getEntryCount();k++){
+                                Log.e(TAG,"value "+ lineData.getDataSetByIndex(0).getEntriesForXValue(k));
+                            }
                         }
+                        for (int channelIndex = 0; channelIndex < MbtFeatures.getNbChannels() ; channelIndex++){
+                            Entry e = new Entry(lineData.getDataSets().get(channelIndex).getEntryCount(), bufferedData.get(channelIndex).get(i)*1000000);
+                            lineData.getDataSetByIndex(channelIndex).addEntry(new Entry(lineData.getDataSets().get(channelIndex).getEntryCount(), bufferedData.get(channelIndex).get(i)*1000000));
+                            Log.e(TAG,"added entry"+ e.toString() );
+
+                        }
+
                     }
                 }else{
                     throw new IllegalStateException("Channels do not have the same amount of data");
                 }
 
-                if(channelData.get(0).size() == channelData.get(1).size()){
+                if(channelsHasTheSameNumberOfData(channelData)){
                     for(int i = 0; i< channelData.get(0).size(); i++){
                         /*if(statusData != null)
                             data.addEntry(new Entry(data.getDataSets().get(0).getEntryCount(), statusData.get(i)), 0);*/
 
                         for (int channelIndex = 0; channelIndex < MbtFeatures.getNbChannels() ; channelIndex ++){
-                            data.getDataSetByIndex(channelIndex).addEntry(new Entry(data.getDataSets().get(channelIndex).getEntryCount(), channelData.get(channelIndex).get(i)*1000000));
+                            lineData.getDataSetByIndex(channelIndex).addEntry(new Entry(lineData.getDataSets().get(channelIndex).getEntryCount(), channelData.get(channelIndex).get(i)*1000000));
                         }
                     }
                 }else{
                     throw new IllegalStateException("Channels do not have the same amount of data");
                 }
             }
-            data.notifyDataChanged();
+            lineData.notifyDataChanged();
 
             mChart.notifyDataSetChanged();// let the chart know it's data has changed
             mChart.setVisibleXRangeMaximum(500); // limit the number of visible entries
-            mChart.moveViewToX((data.getEntryCount()/2));// move to the latest entry
+            mChart.moveViewToX((lineData.getEntryCount()/2));// move the view to the latest entry to avoid manual scrolling
         }else{
             throw new IllegalStateException("Graph not correctly initialized");
         }
@@ -351,6 +368,10 @@ public class DeviceActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
+        client.disconnectBluetooth();
+        setEegListener(null);
+        setConnectionStateListener(null);
+        finish();
         startActivity(new Intent(DeviceActivity.this,HomeActivity.class));
     }
 
@@ -360,5 +381,24 @@ public class DeviceActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getColor(R.color.light_blue)));
         }
+    }
+
+    private void setEegListener(EegListener eegListener) {
+        this.eegListener = eegListener;
+    }
+
+    private void setConnectionStateListener(ConnectionStateListener connectionStateListener) {
+        this.eegListener = eegListener;
+    }
+
+    private void stopStream(){
+        isStreaming = false;
+        client.stopStream();
+        setEegListener(null);
+    }
+
+    private void startStream(StreamConfig streamConfig){
+        isStreaming = true;
+        client.startStream(streamConfig);
     }
 }

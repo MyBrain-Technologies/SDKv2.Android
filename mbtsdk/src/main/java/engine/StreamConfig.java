@@ -3,13 +3,10 @@ package engine;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import config.DeviceConfig;
 import core.eeg.storage.MbtEEGPacket;
-import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.EegListener;
 import features.MbtFeatures;
-import features.ScannableDevices;
 
 /**
  * This class aims at configuring the stream process. It contains user configurable
@@ -25,7 +22,7 @@ public final class StreamConfig {
 
     //private final DeviceConfig deviceConfig; Will be used in future release
 
-    private final EegListener eegListener;
+    private EegListener eegListener;
 
     private final DeviceStatusListener deviceStatusListener;
 
@@ -47,6 +44,14 @@ public final class StreamConfig {
         return notificationPeriod;
     }
 
+    public boolean isConfigCorrect() {
+        return true;
+    }
+
+    public void removeEegListener() {
+        this.eegListener = null;
+    }
+
 
     /**
      * Builder class to ease construction of the {@link StreamConfig} instance.
@@ -55,7 +60,7 @@ public final class StreamConfig {
         //long streamDuration = -1L;
         private int notificationPeriod = MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD;
         private DeviceStatusListener deviceStatusListener = null;
-        private final EegListener eegListener;
+        private EegListener eegListener;
 
 
         /**
@@ -112,7 +117,5 @@ public final class StreamConfig {
 
 
 
-
     }
-
 }

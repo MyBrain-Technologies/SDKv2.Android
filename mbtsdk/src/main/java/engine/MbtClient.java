@@ -3,20 +3,14 @@ package engine;
 import android.bluetooth.le.ScanCallback;
 import android.content.Context;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-
-import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import config.DeviceConfig;
 import config.MbtConfig;
 import core.MbtManager;
 import core.recordingsession.metadata.DeviceInfo;
-import core.eeg.storage.MbtEEGPacket;
 import engine.clientevents.DeviceInfoListener;
-import engine.clientevents.DeviceStatusListener;
-import engine.clientevents.EegListener;
+
 import features.MbtFeatures;
 import features.ScannableDevices;
 
@@ -128,9 +122,18 @@ public final class MbtClient {
 
     }
 
-    public void startStream(@NonNull StreamConfig streamConfig){
-        MbtConfig.eegBufferLengthClientNotif = (int)((streamConfig.getNotificationPeriod()* MbtFeatures.DEFAULT_SAMPLE_RATE)/1000);
-        mbtManager.startStream(false, streamConfig.getEegListener(), streamConfig.getDeviceStatusListener());
+    /**
+     * Initiates the acquisition of EEG raw data sensed by the EEG headset.
+     * <p>If there is already a streaming session in progress, nothing happens and the method returns silently. </p>
+     * @param streamConfig is the streaming configuration : please use the StreamConfig.Builder to create a new instance and choose your notification period.
+     * <p>Example : new StreamConfig.Builder(eegListener).setNotificationPeriod(DEFAULT_NOTIFICATION_PERIOD).create() </p>
+     *
+     */
+    public void startStream(@NonNull StreamConfig streamConfig) {
+        MbtConfig.eegBufferLengthClientNotif = ((streamConfig.getNotificationPeriod()* MbtFeatures.DEFAULT_SAMPLE_RATE)/1000);
+        if(streamConfig.isConfigCorrect())
+            mbtManager.startStream(false, streamConfig.getEegListener(), streamConfig.getDeviceStatusListener());
+        streamConfig.removeEegListener(); // avoid memory leak ?
     }
 
 
@@ -302,5 +305,21 @@ public final class MbtClient {
         public MbtClient create(){
             return new MbtClient(this);
         }
+    }
+
+    /**
+     * Sets the {@link engine.clientevents.ConnectionStateListener} to the connectionStateListener value
+     * @param connectionStateListener the new {@link ConnectionStateListener}. Set it to null if you want to reset the listener
+     */
+    public void setConnectionStateListener(ConnectionStateListener<ConnectionException> connectionStateListener){
+        this.mbtManager.setConnectionStateListener(connectionStateListener);
+    }
+
+    /**
+     * Sets the {@link engine.clientevents.EegListener} to the connectionStateListener value
+     * @param eegListener the new {@link EegListener}. Set it to null if you want to reset the listener
+     */
+    public void setEEGListener(EegListener<EEGException> eegListener){
+        this.mbtManager.setEEGListener(eegListener);
     }
 }

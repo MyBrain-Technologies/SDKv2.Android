@@ -36,7 +36,6 @@ public class MbtDataAcquisition {
     private int rawDataPosition = 0;
     //private int bufferPosition = 0;
 
-
     private MbtEEGManager eegManager;
 
     private ArrayList<RawEEGSample> singleRawEEGList;
@@ -86,7 +85,6 @@ public class MbtDataAcquisition {
 
         //4th step : store and convert
         handleAndConvertData();
-
 
         previousIndex = currentIndex;
 

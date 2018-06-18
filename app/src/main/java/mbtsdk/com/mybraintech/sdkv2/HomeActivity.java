@@ -130,6 +130,7 @@ public class HomeActivity extends AppCompatActivity{
                 client.connectBluetooth(new ConnectionConfig.Builder(new ConnectionStateListener() {
                     @Override
                     public void onStateChanged(@NonNull BtState newState) {
+                        Log.e(TAG, "Current state updated in Home Activity"+newState);
                         if (newState.equals(BtState.CONNECTED_AND_READY)){
                             notifyUser("Device ' " + deviceName + " ' connected");
                             final Intent intent = new Intent(HomeActivity.this, DeviceActivity.class);
