@@ -42,7 +42,8 @@ public class MbtDataConversion {
      * @return the eeg data as float lists, with NaN values for missing data
      * @throws IllegalArgumentException if the number of components of the raw EEG data array is not modulo 250
      */
-    public static ArrayList<ArrayList<Float>> convertRawDataToEEG(@NonNull ArrayList<RawEEGSample> rawEEGdataList, BtProtocol protocol) {
+    @NonNull
+    public static ArrayList<ArrayList<Float>> convertRawDataToEEG(@NonNull ArrayList<RawEEGSample> rawEEGdataList, @NonNull BtProtocol protocol) {
         /*if ((rawEEGdataList.size()*getEEGByteSize()) % getSampleRate() != 0)
             throw new IllegalArgumentException("EEG Data size is invalid "+ rawEEGdataList.size());*/
 

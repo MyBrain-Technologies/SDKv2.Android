@@ -8,6 +8,7 @@ import core.recordingsession.metadata.DeviceInfo;
 
 public class DeviceInfoEvent<T> implements Serializable{
 
+    @Nullable
     private T info;
     private DeviceInfo infotype;
 
@@ -20,6 +21,7 @@ public class DeviceInfoEvent<T> implements Serializable{
      * Gets information stored in this event class
      * @return the information
      */
+    @Nullable
     public T getInfo() {
         return info;
     }

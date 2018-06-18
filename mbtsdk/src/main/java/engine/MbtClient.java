@@ -3,14 +3,20 @@ package engine;
 import android.bluetooth.le.ScanCallback;
 import android.content.Context;
 import android.support.annotation.NonNull;
+
 import java.util.Timer;
 import java.util.TimerTask;
 
 import config.MbtConfig;
 import core.MbtManager;
+import core.eeg.storage.MbtEEGPacket;
 import core.recordingsession.metadata.DeviceInfo;
+import engine.clientevents.BaseException;
+import engine.clientevents.ConnectionException;
+import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.DeviceInfoListener;
-
+import engine.clientevents.EEGException;
+import engine.clientevents.EegListener;
 import features.MbtFeatures;
 import features.ScannableDevices;
 
@@ -21,11 +27,6 @@ import features.ScannableDevices;
 public final class MbtClient {
 
     private static final String TAG = MbtClient.class.getName();
-
-    /**
-     *     Used to save context
-     */
-    private Context mContext;
 
     //the client callbacks that will allow fluid communication between SDK and client app
     /**
@@ -52,6 +53,10 @@ public final class MbtClient {
         return clientInstance;
     }
 
+    /**
+     * @return The current instance of the client. Init() must have been called first
+     * @throws NullPointerException if there is no instance created.
+     */
     public static MbtClient getClientInstance(){
         if(clientInstance == null)
             throw new NullPointerException("Client instance has not been initialized. Please call init() method first.");
@@ -63,7 +68,7 @@ public final class MbtClient {
      * @param builder object for creating the MbtClient instance with a setters syntax.
      */
     private MbtClient(MbtClientBuilder builder){
-        mContext = builder.mContext;
+        //mContext = builder.mContext;
         this.mbtManager = builder.mbtManager;
     }
 
@@ -75,11 +80,18 @@ public final class MbtClient {
      * Call this method to establish a bluetooth connection with a remote device.
      * It is possible to connect either a Melomind or a VPro device through this method. You need to specify
      * the device type in the {@link ConnectionConfig} input instance with the {@link ScannableDevices} type.
+     * <p>If the parameters are invalid, the method returns immediately and {@link engine.clientevents.ConnectionStateListener#onError(BaseException)} method is called</p>
+     *
      * @param config the {@link ConnectionConfig} instance that holds all the configuration parameters inside.
      */
     public void connectBluetooth(@NonNull ConnectionConfig config){
         MbtConfig.scannableDevices = config.getDeviceType();
-        MbtConfig.bluetoothConnectionTimeout = config.getConnectionTimeout();
+
+        //MbtConfig.bluetoothConnectionTimeout = config.getConnectionTimeout();
+        if(config.getMaxScanDuration() < MbtFeatures.MIN_SCAN_DURATION){
+            config.getConnectionStateListener().onError(new ConnectionException(ConnectionException.INVALID_SCAN_DURATION));
+        }
+
         MbtConfig.bluetoothScanTimeout = config.getMaxScanDuration();
 
 
@@ -92,7 +104,7 @@ public final class MbtClient {
     }
 
 
-    public void readBattery(int periodInMillis, final DeviceInfoListener listener) {
+    public void readBattery(int periodInMillis, @NonNull final DeviceInfoListener listener) {
         if(periodInMillis <= 0){
             mbtManager.readBluetooth(DeviceInfo.BATTERY, listener);
         }else{
@@ -123,17 +135,24 @@ public final class MbtClient {
     }
 
     /**
-     * Initiates the acquisition of EEG raw data sensed by the EEG headset.
-     * <p>If there is already a streaming session in progress, nothing happens and the method returns silently. </p>
-     * @param streamConfig is the streaming configuration : please use the StreamConfig.Builder to create a new instance and choose your notification period.
-     * <p>Example : new StreamConfig.Builder(eegListener).setNotificationPeriod(DEFAULT_NOTIFICATION_PERIOD).create() </p>
+     * Initiates an EEG streaming ie, send a message to the headset to deliver EEG to the application.
      *
+     * <p>You can customize some parameters in the {@link StreamConfig}class.</p>
+     *
+     * <p>If the parameters are incorrect, the function returns directly and the {@link engine.clientevents.EegListener#onError(BaseException)} method is called</p>
+     * If something wrong happens during the operation, {@link engine.clientevents.EegListener#onError(BaseException)} method is called.
+     *
+     * <p>If everything went well, the EEG will be available in the {@link engine.clientevents.EegListener#onNewPackets(MbtEEGPacket)} callback.</p>
+     *
+     * @param streamConfig the configuration to pass to the streaming.
      */
-    public void startStream(@NonNull StreamConfig streamConfig) {
-        MbtConfig.eegBufferLengthClientNotif = ((streamConfig.getNotificationPeriod()* MbtFeatures.DEFAULT_SAMPLE_RATE)/1000);
-        if(streamConfig.isConfigCorrect())
-            mbtManager.startStream(false, streamConfig.getEegListener(), streamConfig.getDeviceStatusListener());
-        streamConfig.removeEegListener(); // avoid memory leak ?
+    public void startStream(@NonNull StreamConfig streamConfig){
+        if(!streamConfig.isConfigCorrect())
+            streamConfig.getEegListener().onError(new EEGException(EEGException.INVALID_PARAMETERS));
+        else
+            MbtConfig.eegBufferLengthClientNotif = (int)((streamConfig.getNotificationPeriod()* MbtFeatures.DEFAULT_SAMPLE_RATE)/1000);
+
+        mbtManager.startStream(false, streamConfig.getEegListener(), streamConfig.getDeviceStatusListener());
     }
 
 
@@ -144,6 +163,23 @@ public final class MbtClient {
     public void cancelConnection() {
         //todo
     }
+
+    /**
+     * Sets the {@link ConnectionStateListener} to the connectionStateListener value
+     * @param connectionStateListener the new {@link ConnectionStateListener}. Set it to null if you want to reset the listener
+     */
+    public void setConnectionStateListener(ConnectionStateListener<ConnectionException> connectionStateListener){
+        this.mbtManager.setConnectionStateListener(connectionStateListener);
+    }
+
+    /**
+     * Sets the {@link EegListener} to the connectionStateListener value
+     * @param eegListener the new {@link EegListener}. Set it to null if you want to reset the listener
+     */
+    public void setEEGListener(EegListener<EEGException> eegListener){
+        this.mbtManager.setEEGListener(eegListener);
+    }
+
 
 //    public void testEEGpackageClient(){
 //        if (MbtFeatures.getBluetoothProtocol().equals(BLUETOOTH_LE)) {
@@ -291,35 +327,22 @@ public final class MbtClient {
         private Context mContext;
         private MbtManager mbtManager;
 
+        @NonNull
         public MbtClientBuilder setContext(final Context context){
             this.mContext=context;
             return this;
         }
 
 
+        @NonNull
         public MbtClientBuilder setMbtManager(final MbtManager mbtManager){
             this.mbtManager = mbtManager;
             return this;
         }
 
+        @NonNull
         public MbtClient create(){
             return new MbtClient(this);
         }
-    }
-
-    /**
-     * Sets the {@link engine.clientevents.ConnectionStateListener} to the connectionStateListener value
-     * @param connectionStateListener the new {@link ConnectionStateListener}. Set it to null if you want to reset the listener
-     */
-    public void setConnectionStateListener(ConnectionStateListener<ConnectionException> connectionStateListener){
-        this.mbtManager.setConnectionStateListener(connectionStateListener);
-    }
-
-    /**
-     * Sets the {@link engine.clientevents.EegListener} to the connectionStateListener value
-     * @param eegListener the new {@link EegListener}. Set it to null if you want to reset the listener
-     */
-    public void setEEGListener(EegListener<EEGException> eegListener){
-        this.mbtManager.setEEGListener(eegListener);
     }
 }

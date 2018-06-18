@@ -3,6 +3,7 @@ package engine;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import engine.clientevents.ConnectionException;
 import engine.clientevents.ConnectionStateListener;
 import features.MbtFeatures;
 import features.ScannableDevices;
@@ -25,9 +26,9 @@ public final class ConnectionConfig {
 
     private final ScannableDevices deviceType;
 
-    private final ConnectionStateListener connectionStateListener;
+    private final ConnectionStateListener<ConnectionException> connectionStateListener;
 
-    private ConnectionConfig(String deviceName, int maxScanDuration, int connectionTimeout, boolean connectAudio, ScannableDevices deviceType, ConnectionStateListener connectionStateListener){
+    private ConnectionConfig(String deviceName, int maxScanDuration, int connectionTimeout, boolean connectAudio, ScannableDevices deviceType, ConnectionStateListener<ConnectionException> connectionStateListener){
         this.deviceName = deviceName;
         this.maxScanDuration = maxScanDuration;
         this.connectionTimeout = connectionTimeout;
@@ -68,15 +69,17 @@ public final class ConnectionConfig {
      * Builder class to ease construction of the {@link ConnectionConfig} instance.
      */
     public static class Builder{
+        @Nullable
         private String deviceName = null;
         private int maxScanDuration = MbtFeatures.DEFAULT_MAX_SCAN_DURATION_IN_MILLIS;
         private int connectionTimeout = MbtFeatures.DEFAULT_MAX_CONNECTION_DURATION_IN_MILLIS;
         private boolean connectAudio = false;
         private ScannableDevices deviceType = ScannableDevices.ALL;
-        private final ConnectionStateListener connectionStateListener;
+        @NonNull
+        private final ConnectionStateListener<ConnectionException> connectionStateListener;
 
 
-        public Builder(@NonNull ConnectionStateListener stateListener){
+        public Builder(@NonNull ConnectionStateListener<ConnectionException> stateListener){
             this.connectionStateListener = stateListener;
         }
 
@@ -86,6 +89,7 @@ public final class ConnectionConfig {
          * @param deviceName the device name. Can be NULL
          * @return the builder instance
          */
+        @NonNull
         public Builder deviceName(@Nullable String deviceName){
             this.deviceName = deviceName;
             return this;
@@ -97,9 +101,12 @@ public final class ConnectionConfig {
          * If the maximum duration is reached without being able to find any device, the user is notified with the state
          * {@link core.bluetooth.BtState#SCAN_TIMEOUT}
          *
+         * <p>Warning, minimum input must be equal to 10000ms</p>
+         *
          * @param maxScanDurationInMillis the new maximum duration in milliseconds
          * @return the builder instance
          */
+        @NonNull
         public Builder maxScanDuration(int maxScanDurationInMillis){
             this.maxScanDuration = maxScanDurationInMillis;
             return this;
@@ -124,6 +131,7 @@ public final class ConnectionConfig {
          * @param shouldConnectAudio true to connect automatically, false otherwise. If the device is not audio compatible, the flag is forced to false.
          * @return the builder instance
          */
+        @NonNull
         public Builder connectAudioIfDeviceCompatible(boolean shouldConnectAudio){
             this.connectAudio = shouldConnectAudio;
             return this;
@@ -135,16 +143,16 @@ public final class ConnectionConfig {
          * @param deviceType
          * @return the builder instance
          */
+        @NonNull
         public Builder scanDeviceType(ScannableDevices deviceType){
             this.deviceType = deviceType;
             return this;
         }
 
+        @NonNull
         public ConnectionConfig create(){
             return new ConnectionConfig(this.deviceName, this.maxScanDuration, this.connectionTimeout, this.connectAudio, this.deviceType, this.connectionStateListener);
         }
-
-
 
 
     }

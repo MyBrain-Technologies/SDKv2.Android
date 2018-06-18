@@ -1,5 +1,7 @@
 package utils;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.text.TextUtils;
 
 import java.io.File;
@@ -27,7 +29,7 @@ public final class FileUtils {
      * @exception ExceptionUtils.NullArg in case one of the arguments is null
      * @see <a href=http://www.mkyong.com/java/how-to-copy-directory-in-java/>Public Source Code</a>
      */
-    public static final void copyDirectoryToAnotherLocation(File source, File destination)
+    public static final void copyDirectoryToAnotherLocation(@Nullable File source, @Nullable File destination)
             throws IOException{
         if (source == null)
             throw new ExceptionUtils.NullArg("source");
@@ -80,7 +82,8 @@ public final class FileUtils {
      * @throws IOException
      * @exception IllegalStateException if the file to compress does not exist or is not accessible
      */
-    public static final File compressFile(final File toCompress, final String outPutName) throws IOException {
+    @NonNull
+    public static final File compressFile(@Nullable final File toCompress, final String outPutName) throws IOException {
         if (toCompress == null)
             throw new ExceptionUtils.NullArg("toCompress");
         if (TextUtils.isEmpty(outPutName))
@@ -118,7 +121,8 @@ public final class FileUtils {
      * @throws IOException
      * @exception IllegalStateException if the file to decompress is null, does not exist or is not accessible
      */
-    public static final File deCompressFile(final File toDeCompress) throws IOException {
+    @NonNull
+    public static final File deCompressFile(@Nullable final File toDeCompress) throws IOException {
         if (toDeCompress == null)
             throw new ExceptionUtils.NullArg("toDeCompress");
         if (!toDeCompress.exists())

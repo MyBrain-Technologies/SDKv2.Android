@@ -2,6 +2,7 @@ package utils;
 
 import android.content.Context;
 import android.graphics.Point;
+import android.support.annotation.NonNull;
 import android.view.Display;
 import android.view.WindowManager;
 
@@ -11,7 +12,7 @@ import android.view.WindowManager;
 
 public class ScreenUtils {
 
-    public static int getScreenWidth(Context context) {
+    public static int getScreenWidth(@NonNull Context context) {
         int screenWidth = 0;
         if (screenWidth == 0) {
             WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);

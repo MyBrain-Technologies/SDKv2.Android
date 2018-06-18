@@ -1,6 +1,7 @@
 package core.eeg.acquisition;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import java.util.ArrayList;
@@ -9,6 +10,7 @@ import java.util.Arrays;
 import core.bluetooth.BtProtocol;
 import core.eeg.MbtEEGManager;
 import core.eeg.storage.RawEEGSample;
+import features.MbtFeatures;
 
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
 import static features.MbtFeatures.getEEGByteSize;
@@ -39,6 +41,7 @@ public class MbtDataAcquisition {
     private MbtEEGManager eegManager;
 
     private ArrayList<RawEEGSample> singleRawEEGList;
+    @Nullable
     private byte[] statusDataBytes;
 
     private BtProtocol protocol;
@@ -53,6 +56,7 @@ public class MbtDataAcquisition {
      *
      * @param data the raw EEG data array acquired by the headset and transmitted by Bluetooth to the application
      */
+    @Nullable
     public synchronized ArrayList<ArrayList<Float>> handleDataAcquired(@NonNull final byte[] data) {
         //Log.d(TAG,"data acquired: "+Arrays.toString(data));
 
@@ -151,11 +155,11 @@ public class MbtDataAcquisition {
      *
      */
     private Float generateStatusData(int count) {
-        if (this.protocol.equals(BLUETOOTH_LE) && singleRawEEGList != null) {
+        if (MbtFeatures.getBluetoothProtocol() == BLUETOOTH_LE && singleRawEEGList != null) {
 
             return statusDataBytes == null ? Float.NaN : (isBitSet(count < 8 ? statusDataBytes[0] : statusDataBytes[1], count));
         }
-        return null; //TODO handle SPP
+        return Float.NaN; //TODO handle SPP
     }
 
 

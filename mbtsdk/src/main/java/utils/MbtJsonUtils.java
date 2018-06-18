@@ -190,7 +190,7 @@ public final class MbtJsonUtils {
             jsonWriter.endObject();   // end of MAIN JSON   object
 
             return stringWriter.toString();
-        } catch (final IOException ioe) {
+        } catch (@NonNull final IOException ioe) {
             Log.e(TAG, "Error while serializing EEG data to JSON ->\n" + ioe.getMessage());
             return null;
         }

@@ -1,5 +1,7 @@
 package features;
 
+import android.support.annotation.NonNull;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -16,6 +18,11 @@ import static features.ScannableDevices.MELOMIND;
  */
 
 public final class MbtFeatures{
+
+
+
+    public static final int MIN_SCAN_DURATION = 10000;
+
     private static String TAG = MbtFeatures.class.getName();
 
 
@@ -29,6 +36,8 @@ public final class MbtFeatures{
 
     public final static int DEFAULT_CLIENT_PACKET_SIZE = 250;
     public final static int DEFAULT_CLIENT_NOTIFICATION_PERIOD = 1000;
+    public static final int MIN_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS = 500;
+    public static final int MAX_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS = 60000;
     public final static long DEFAULT_BATTERY_READ_PERIOD = 20000;
 
     public final static int DEFAULT_MAX_SCAN_DURATION_IN_MILLIS = 40000;
@@ -36,7 +45,7 @@ public final class MbtFeatures{
 
     // MELOMIND & VPRO FEATURES
     public static final String MELOMIND_DEVICE_NAME_PREFIX = "melo_";
-    public static final String VPRO_DEVICE_NAME_PREFIX = "vpro_";
+    public static final String VPRO_DEVICE_NAME_PREFIX = "VPro";
 
     public static final String MELOMIND_DEVICE_NAME = "Melomind";
     public static final String VPRO_DEVICE_NAME = "VPro";
@@ -80,22 +89,27 @@ public final class MbtFeatures{
         return (MbtConfig.getScannableDevices().equals(MELOMIND) ? MELOMIND_NB_CHANNELS : VPRO_NB_CHANNELS);
     }
 
+    @NonNull
     public static String getDeviceName(){
         return (MbtConfig.getScannableDevices().equals(MELOMIND) ? MELOMIND_DEVICE_NAME : VPRO_DEVICE_NAME);
     }
 
+    @NonNull
     public static BtProtocol getBluetoothProtocol(){
         return (MbtConfig.getScannableDevices().equals(MELOMIND) ? BLUETOOTH_LE : BLUETOOTH_SPP);
     }
 
+    @NonNull
     public static ArrayList<MbtAcquisitionLocations> getLocations(){
         return (MbtConfig.getScannableDevices().equals(MELOMIND) ? MELOMIND_LOCATIONS : VPRO_LOCATIONS);
     }
 
+    @NonNull
     public static ArrayList<MbtAcquisitionLocations> getReferences(){
         return (MbtConfig.getScannableDevices().equals(MELOMIND) ? MELOMIND_REFERENCES : VPRO_REFERENCES);
     }
 
+    @NonNull
     public static ArrayList<MbtAcquisitionLocations> getGrounds(){
         return (MbtConfig.getScannableDevices().equals(MELOMIND) ? MELOMIND_GROUNDS : VPRO_GROUNDS);
     }

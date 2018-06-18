@@ -38,7 +38,7 @@ public class Comment implements Parcelable {
     }
 
     @Override
-    public void writeToParcel(Parcel dest, int flags) {
+    public void writeToParcel(@NonNull Parcel dest, int flags) {
         dest.writeString(comment);
         dest.writeLong(timestamp);
         dest.writeString(user);
@@ -47,7 +47,7 @@ public class Comment implements Parcelable {
     @SuppressWarnings("unused")
     public static final Creator<Comment> CREATOR = new Creator<Comment>() {
         @Override
-        public Comment createFromParcel(Parcel in) {
+        public Comment createFromParcel(@NonNull Parcel in) {
             return new Comment(in);
         }
 
@@ -57,6 +57,7 @@ public class Comment implements Parcelable {
         }
     };
 
+    @NonNull
     public String getComment(){
         return comment;
     }
@@ -65,6 +66,7 @@ public class Comment implements Parcelable {
         return timestamp;
     }
 
+    @Nullable
     public String getUser(){
         return user;
     }
@@ -87,6 +89,7 @@ public class Comment implements Parcelable {
         return true;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return "Comment{" +

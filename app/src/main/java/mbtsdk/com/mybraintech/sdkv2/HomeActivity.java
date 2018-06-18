@@ -6,13 +6,11 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ScrollView;
-import android.widget.Scroller;
 import android.widget.Spinner;
 import android.widget.Toast;
 
@@ -21,10 +19,10 @@ import java.util.ArrayList;
 import core.bluetooth.BtState;
 import engine.ConnectionConfig;
 import engine.MbtClient;
+import engine.clientevents.ConnectionException;
 import engine.clientevents.ConnectionStateListener;
 import features.MbtFeatures;
 
-import static features.MbtFeatures.DEVICE_NAME_MAX_LENGTH;
 import static features.MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX;
 import static features.MbtFeatures.VPRO_DEVICE_NAME_PREFIX;
 import static features.ScannableDevices.MELOMIND;
@@ -51,13 +49,15 @@ public class HomeActivity extends AppCompatActivity{
 
     private boolean isScanning = false;
 
+    private Toast toast;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
-        initTopBar();
-
-        client = MbtClient.init(getApplicationContext());
+        initToolBar();
+        toast= Toast.makeText(HomeActivity.this, "", Toast.LENGTH_SHORT);
+        client = MbtClient.getClientInstance();
 
         initDeviceNameField();
         initScanButton();
@@ -123,11 +123,11 @@ public class HomeActivity extends AppCompatActivity{
         if(deviceName.equals(MELOMIND_DEVICE_NAME_PREFIX) || deviceName.equals(VPRO_DEVICE_NAME_PREFIX) ){ //no name entered by the user
             findAvailableDevice();
         }else{ //the user entered a name
-            if( deviceName.length() == DEVICE_NAME_MAX_LENGTH ) { //check the device name format
+            if((true) /*isMbtDeviceName() && deviceName.length() == DEVICE_NAME_MAX_LENGTH */) { //check the device name format
                 notifyUser(getString(R.string.connect_in_progress));
                 updateScanning(true); //changes isScanning to true and updates button text "Find a device" into "Cancel"
 
-                client.connectBluetooth(new ConnectionConfig.Builder(new ConnectionStateListener() {
+                client.connectBluetooth(new ConnectionConfig.Builder(new ConnectionStateListener<ConnectionException>() {
                     @Override
                     public void onStateChanged(@NonNull BtState newState) {
                         Log.e(TAG, "Current state updated in Home Activity"+newState);
@@ -143,7 +143,8 @@ public class HomeActivity extends AppCompatActivity{
                     }
 
                     @Override
-                    public void onError(Exception exception) {
+                    public void onError(ConnectionException exception) {
+                        notifyUser(exception.toString());
                         exception.printStackTrace();
                     }
                 }).deviceName(deviceName).maxScanDuration(SCAN_DURATION).scanDeviceType(isMelomindDevice() ? MELOMIND : VPRO).create());
@@ -153,7 +154,6 @@ public class HomeActivity extends AppCompatActivity{
                 deviceNameField.setText(getString(R.string.example_device_name));
             }
         }
-
     }
 
     private void findAvailableDevice() {
@@ -198,7 +198,10 @@ public class HomeActivity extends AppCompatActivity{
     }
 
     private void notifyUser(String message){
-        Toast.makeText(HomeActivity.this, message, Toast.LENGTH_LONG).show();
+        toast.setText("");
+        toast.show();
+        toast.setText(message);
+        toast.show();
     }
 
     @Override
@@ -206,9 +209,9 @@ public class HomeActivity extends AppCompatActivity{
         startActivity(new Intent(HomeActivity.this,WelcomeActivity.class));
     }
 
-    private void initTopBar(){
+    private void initToolBar(){
         getSupportActionBar().setDisplayShowHomeEnabled(true);
-        getSupportActionBar().setIcon(R.drawable.logo);
+        //getSupportActionBar().setIcon(R.drawable.logo);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getColor(R.color.light_blue)));
         }

@@ -1,5 +1,7 @@
 package eventbus;
 
+import android.support.annotation.NonNull;
+
 import org.greenrobot.eventbus.EventBus;
 
 /**
@@ -34,7 +36,7 @@ public final class EventBusManager {
      * @param isRegistration is true to register the subscriber class and false to unregister the subscriber class.
      * @param subscriber is the subscriber class to register for receiving events from the Event Bus.
      */
-    public static void registerOrUnregister(boolean isRegistration, Object subscriber ){
+    public static void registerOrUnregister(boolean isRegistration, @NonNull Object subscriber ){
         if (isRegistration) {
             BUS.register(subscriber);
         } else {

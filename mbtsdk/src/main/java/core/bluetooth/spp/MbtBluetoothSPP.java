@@ -1,17 +1,12 @@
-package core.bluetooth;
+package core.bluetooth.spp;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothSocket;
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.WorkerThread;
-import android.text.TextUtils;
 import android.util.Log;
 
 import java.io.DataInputStream;
@@ -19,20 +14,23 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.Random;
-import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
+
+import core.bluetooth.BtState;
+import core.bluetooth.IStreamable;
+import core.bluetooth.MbtBluetooth;
+import core.bluetooth.MbtBluetoothManager;
 import core.recordingsession.metadata.DeviceInfo;
 import utils.AsyncUtils;
-import utils.MbtLock;
 
-import static core.bluetooth.MessageStatus.STATE_ACQ;
-import static core.bluetooth.MessageStatus.STATE_COMMAND;
-import static core.bluetooth.MessageStatus.STATE_COMPRESSION;
-import static core.bluetooth.MessageStatus.STATE_FRAME_NB;
-import static core.bluetooth.MessageStatus.STATE_IDLE;
-import static core.bluetooth.MessageStatus.STATE_LENGTH;
+import static core.bluetooth.spp.MessageStatus.STATE_ACQ;
+import static core.bluetooth.spp.MessageStatus.STATE_COMMAND;
+import static core.bluetooth.spp.MessageStatus.STATE_COMPRESSION;
+import static core.bluetooth.spp.MessageStatus.STATE_FRAME_NB;
+import static core.bluetooth.spp.MessageStatus.STATE_IDLE;
+import static core.bluetooth.spp.MessageStatus.STATE_LENGTH;
 
 /**
  * Created by Etienne on 08/02/2018.
@@ -50,9 +48,12 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
     private boolean requestDisconnect = false;
 
     private static final UUID SERVER_UUID = UUID.fromString("0001101-0000-1000-8000-00805f9b34fb");
+    @Nullable
     private BluetoothSocket btSocket;
 
+    @Nullable
     private DataInputStream reader;
+    @Nullable
     private OutputStream writer;
     private long bytesReceived = 0;
 
@@ -79,7 +80,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
 
 
     @Override
-    public boolean connect(Context context, BluetoothDevice device) {
+    public boolean connect(Context context, @Nullable BluetoothDevice device) {
         if (device != null)
             return connectToDevice(device);
         return false;
@@ -129,7 +130,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
                 Log.i(TAG,toConnect.getName() + " Connected");
                 return true;
             }
-        } catch (final IOException ioe) {
+        } catch (@NonNull final IOException ioe) {
             notifyConnectionStateChanged(BtState.CONNECT_FAILURE);
             Log.e(TAG, "Exception while connecting ->" + ioe.getMessage());
             Log.getStackTraceString(ioe);
@@ -184,7 +185,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
                 return true;
             }
             return false;
-        } catch (final IOException ioe) {
+        } catch (@NonNull final IOException ioe) {
             this.reader = null;
             this.writer = null;
             Log.e(TAG, "Failed to send data. IOException ->\n" + ioe.getMessage());
@@ -237,7 +238,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
                 this.btSocket = null;
             }
             notifyConnectionStateChanged(BtState.DISCONNECTED);
-        } catch (final IOException e) {
+        } catch (@NonNull final IOException e) {
             Log.e(TAG, "Error while closing streams -> \n" + e.getMessage());
             notifyConnectionStateChanged(BtState.INTERRUPTED);
             Log.getStackTraceString(e);
@@ -251,7 +252,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
                 this.writer = this.btSocket.getOutputStream();
                 boolean is = this.reader!=null && this.writer != null;
                 return (is);
-            } catch (final IOException ioe) {
+            } catch (@NonNull final IOException ioe) {
                 Log.e(TAG, "Failed to retrieve streams ! -> \n" + ioe.getMessage());
                 Log.getStackTraceString(ioe);
                 notifyConnectionStateChanged(BtState.STREAM_ERROR);
@@ -260,11 +261,14 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
         return false;
     }
 
+    @NonNull
     byte[] payloadSizeBuf = new byte[2];
+    @NonNull
     byte[] data = new byte[0];
     private int command = -1;
     private int counter = 0;
     private int payloadSize = -1;
+    @NonNull
     private byte[] pcktNumber = new byte[2];
 
     private void listenForIncomingMessages() {
@@ -381,7 +385,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
                         break;
                 }
 
-            } catch (final Exception e) {
+            } catch (@NonNull final Exception e) {
                 this.reader = null;
                 this.writer = null;
                 Log.e(TAG, "Failed to listen. Exception ->\n" + e.getMessage());

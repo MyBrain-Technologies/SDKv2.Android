@@ -1,5 +1,6 @@
 package core.eeg.storage;
 
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
@@ -16,6 +17,7 @@ public class RawEEGSample {
     @Nullable
     private Float statusEEG = null; //list size must be 2 or 3
 
+    @NonNull
     public static RawEEGSample LOST_PACKET_INTERPOLATOR = new RawEEGSample(null, Float.NaN);
 
     /**
@@ -56,6 +58,7 @@ public class RawEEGSample {
      * @return the status data
      *
      */
+    @Nullable
     public ArrayList<byte[]> getBytesEEG() {
         return bytesEEG;
     }
@@ -78,6 +81,7 @@ public class RawEEGSample {
     }
 
 
+    @NonNull
     @Override
     public String toString() {
         /*

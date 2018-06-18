@@ -3,10 +3,14 @@ package engine;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import config.DeviceConfig;
 import core.eeg.storage.MbtEEGPacket;
+import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.DeviceStatusListener;
+import engine.clientevents.EEGException;
 import engine.clientevents.EegListener;
 import features.MbtFeatures;
+import features.ScannableDevices;
 
 /**
  * This class aims at configuring the stream process. It contains user configurable
@@ -22,11 +26,11 @@ public final class StreamConfig {
 
     //private final DeviceConfig deviceConfig; Will be used in future release
 
-    private EegListener eegListener;
+    private final EegListener<EEGException> eegListener;
 
     private final DeviceStatusListener deviceStatusListener;
 
-    private StreamConfig(EegListener eegListener, int notificationPeriod, DeviceStatusListener deviceStatusListener){
+    private StreamConfig(EegListener<EEGException> eegListener, int notificationPeriod, DeviceStatusListener deviceStatusListener){
         this.eegListener = eegListener;
         this.notificationPeriod = notificationPeriod;
         this.deviceStatusListener = deviceStatusListener;
@@ -44,14 +48,6 @@ public final class StreamConfig {
         return notificationPeriod;
     }
 
-    public boolean isConfigCorrect() {
-        return true;
-    }
-
-    public void removeEegListener() {
-        this.eegListener = null;
-    }
-
 
     /**
      * Builder class to ease construction of the {@link StreamConfig} instance.
@@ -59,15 +55,17 @@ public final class StreamConfig {
     public static class Builder{
         //long streamDuration = -1L;
         private int notificationPeriod = MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD;
+        @Nullable
         private DeviceStatusListener deviceStatusListener = null;
-        private EegListener eegListener;
+        @NonNull
+        private final EegListener<EEGException> eegListener;
 
 
         /**
          * The eeg Listener is mandatory.
          * @param eegListener
          */
-        public Builder(@NonNull EegListener eegListener){
+        public Builder(@NonNull EegListener<EEGException> eegListener){
             this.eegListener = eegListener;
         }
 
@@ -92,6 +90,7 @@ public final class StreamConfig {
          * @param periodInMillis the period in milliseconds
          * @return the builder instance
          */
+        @NonNull
         public Builder setNotificationPeriod(int periodInMillis){
             this.notificationPeriod = periodInMillis;
             return this;
@@ -106,16 +105,33 @@ public final class StreamConfig {
          * @param deviceStatusListener the device status listener
          * @return the device instance
          */
+        @NonNull
         public Builder addSaturationAndOffsetListener(@Nullable DeviceStatusListener deviceStatusListener){
             this.deviceStatusListener = deviceStatusListener;
             return this;
         }
 
+        @Nullable
         public StreamConfig create(){
             return new StreamConfig(this.eegListener, this.notificationPeriod, this.deviceStatusListener);
         }
 
 
 
+
     }
+
+    /**
+     * Checks if the configuration parameters are correct
+     * @return true is the configuration is correct, false otherwise
+     */
+    public boolean isConfigCorrect() {
+        if(this.notificationPeriod <  MbtFeatures.MIN_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS)
+            return false;
+        else if(notificationPeriod >  MbtFeatures.MAX_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS )
+            return false;
+
+        return true;
+    }
+
 }

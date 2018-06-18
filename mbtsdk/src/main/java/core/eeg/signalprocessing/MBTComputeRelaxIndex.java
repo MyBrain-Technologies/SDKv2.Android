@@ -1,5 +1,8 @@
 package core.eeg.signalprocessing;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,8 +27,8 @@ public final class MBTComputeRelaxIndex {
      * @exception IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
      */
     public static float computeRelaxIndex(final int samprate,
-                                          final MBTCalibrationParameters calibParams,
-                                          final MbtEEGPacket... packets) {
+                                          @Nullable final MBTCalibrationParameters calibParams,
+                                          @Nullable final MbtEEGPacket... packets) {
         if (samprate < 0)
             throw new IllegalArgumentException("samprate MUST BE POSITIVE!");
         if (calibParams == null || calibParams.getSize() == 0)
@@ -66,6 +69,7 @@ public final class MBTComputeRelaxIndex {
     }
 
 
+    @NonNull
     public static Map<String, float[]> getSessionMetadata(){
 
         return nativeGetSessionMetadata();
@@ -83,6 +87,7 @@ public final class MBTComputeRelaxIndex {
                                                         final MBTCalibrationParameters parameters,
                                                         final float[][] qualities, final float[][] matrix);
 
+    @NonNull
     private native static HashMap<String, float[]> nativeGetSessionMetadata();
 
 

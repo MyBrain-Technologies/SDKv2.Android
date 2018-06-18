@@ -2,6 +2,8 @@ package core.oad;
 
 import android.content.Context;
 import android.content.res.AssetManager;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import java.io.IOException;
@@ -31,9 +33,11 @@ public final class OADFileManager {
     private static final int FILE_BUFFER_SIZE = 256000;
     private final byte[] mFileBuffer = new byte[FILE_BUFFER_SIZE];
     private final ArrayList<byte[]> mOadBuffer = new ArrayList<>();
+    @NonNull
     private ProgInfo mProgInfo = new ProgInfo();
     private int mFileLength;
     private int crc32;
+    @Nullable
     private String fwVersion;
 
 
@@ -42,7 +46,7 @@ public final class OADFileManager {
      * @param assetManager
      * @param filepath
      */
-    public OADFileManager(AssetManager assetManager, String filepath){
+    public OADFileManager(@NonNull AssetManager assetManager, String filepath){
         if(loadFile(assetManager, filepath)){
             this.fwVersion = getFWVersionFromFile();
             createBufferFromBinaryFile();
@@ -210,6 +214,7 @@ public final class OADFileManager {
      *
      * @return the final oad buffer
      */
+    @NonNull
     public ArrayList<byte[]> getmOadBuffer(){
         return mOadBuffer;
     }
@@ -219,6 +224,7 @@ public final class OADFileManager {
      *
      * @return fw version read directly from file buffer
      */
+    @Nullable
     private String getFWVersionFromFile(){
         String fwVersion = null;
         byte[] tempBuffer = new byte[4];
@@ -259,11 +265,13 @@ public final class OADFileManager {
         mProgInfo.reset();
     }
 
+    @Nullable
     public String getFwVersion() {
         return fwVersion;
     }
 
 
+    @NonNull
     public ProgInfo getmProgInfo(){
         return mProgInfo;
     }
@@ -350,6 +358,7 @@ public final class OADFileManager {
     /**
      * static CRC32 table. Used in crc32 computation
      */
+    @NonNull
     private static int[] g_pui32CRC32Table = {
             0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f, 0xe963a535, 0x9e6495a3,
             0x0edb8832, 0x79dcb8a4, 0xe0d5e91e, 0x97d2d988, 0x09b64c2b, 0x7eb17cbd, 0xe7b82d07, 0x90bf1d91,

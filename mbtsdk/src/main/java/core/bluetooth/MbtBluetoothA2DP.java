@@ -26,7 +26,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
 
     private final MbtLock<Boolean> timerLock = new MbtLock<>();
 
-    public MbtBluetoothA2DP(Context context, MbtBluetoothManager mbtBluetoothManager) {
+    public MbtBluetoothA2DP(@NonNull Context context, MbtBluetoothManager mbtBluetoothManager) {
         super(context, mbtBluetoothManager);
     }
     /**
@@ -40,7 +40,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
      * @return          <code>true</code> upon success, <code>false otherwise</code>
      */
     @Override
-    public boolean connect(Context context, BluetoothDevice device) {
+    public boolean connect(@NonNull Context context, @NonNull BluetoothDevice device) {
         // Hack to try to show pairing popup to front
         BluetoothAdapter.getDefaultAdapter().startDiscovery();
         //Give it some time before cancelling the discovery
@@ -108,7 +108,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                             // TODO fail to disconnect from wrong headset (should not happen)
                             return false;
                         }
-                    } catch (final NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+                    } catch (@NonNull final NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
                         final String errorMsg = " -> " + e.getMessage();
                         if (e instanceof NoSuchMethodException)
                             Log.e(TAG, "Failed to find disconnect method via reflexion" + errorMsg);
@@ -155,7 +155,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                     } else
                         Log.i(TAG, "Cannot connect to A2DP on device" + device.getAddress());
                     return false; // TODO fail to connect to melomind A2DP
-                } catch (final NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+                } catch (@NonNull final NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
                     final String errorMsg = " -> " + e.getMessage();
                     if (e instanceof NoSuchMethodException)
                         Log.e(TAG, "Failed to find connect method via reflexion" + errorMsg);

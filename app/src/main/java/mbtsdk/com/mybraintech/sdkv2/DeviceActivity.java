@@ -29,6 +29,7 @@ import engine.MbtClient;
 
 import engine.StreamConfig;
 import engine.clientevents.ConnectionStateListener;
+import engine.clientevents.EEGException;
 import engine.clientevents.EegListener;
 import features.MbtFeatures;
 import utils.MatrixUtils;
@@ -58,7 +59,12 @@ public class DeviceActivity extends AppCompatActivity {
     private boolean isStreaming = false;
     private BtState currentState;
 
-    private EegListener eegListener = new EegListener() {
+    private EegListener eegListener = new EegListener<EEGException>() {
+
+        @Override
+        public void onError(EEGException exception) {
+            Toast.makeText(DeviceActivity.this, exception.toString(), Toast.LENGTH_SHORT).show();
+        }
 
         @Override
         public void onNewPackets(final MbtEEGPacket mbtEEGPackets) {
@@ -85,10 +91,6 @@ public class DeviceActivity extends AppCompatActivity {
             }
         }
 
-        @Override
-        public void onError(Exception exception) {
-            exception.printStackTrace();
-        }
     };
 
     private ConnectionStateListener connectionStateListener = new ConnectionStateListener() {

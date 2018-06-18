@@ -1,4 +1,4 @@
-package core.bluetooth;
+package core.bluetooth.spp;
 
 public enum MessageStatus {
     STATE_IDLE,

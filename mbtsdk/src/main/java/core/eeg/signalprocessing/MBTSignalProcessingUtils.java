@@ -1,5 +1,8 @@
 package core.eeg.signalprocessing;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 /**
  * MBTSignalProcessingUtils contains methods for converting the channels into Float or Double Matrix
  *
@@ -14,7 +17,8 @@ final class MBTSignalProcessingUtils {
      * @return the matrix if successful
      * @exception IllegalArgumentException if there are no channels to merge and if the samprate is inconsistent
      */
-    final static double[][] channelsToMatrixDouble(Float[]... channels) {
+    @NonNull
+    final static double[][] channelsToMatrixDouble(@Nullable Float[]... channels) {
         if (channels == null || channels.length == 0)
             throw new IllegalArgumentException("there MUST be at least ONE or MORE channel(s) !");
 
@@ -41,7 +45,8 @@ final class MBTSignalProcessingUtils {
      * @return the matrix if successful
      * @exception IllegalArgumentException if there are no channels to merge and if the samprate is inconsistent
      */
-    final static float[][] channelsToMatrixFloat(Float[]... channels) {
+    @NonNull
+    final static float[][] channelsToMatrixFloat(@Nullable Float[]... channels) {
         if (channels == null || channels.length == 0)
             throw new IllegalArgumentException("there MUST be at least ONE or MORE channel(s) !");
 

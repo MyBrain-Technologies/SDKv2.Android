@@ -2,6 +2,7 @@ package core.device.model;
 
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
 
@@ -83,6 +84,7 @@ public class VProDevice extends MbtDevice{
      * Gets the devide unique ID
      * @return the device unique ID
      */
+    @Nullable
     public final String getDeviceId() {
         return this.serialNumber;
     }

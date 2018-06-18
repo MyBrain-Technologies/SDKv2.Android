@@ -6,6 +6,8 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.content.Context;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import java.util.Arrays;
@@ -37,15 +39,25 @@ import static core.bluetooth.lowenergy.MelomindCharacteristics.SERVICE_MEASUREME
 final class MbtGattController extends BluetoothGattCallback {
     private final static String TAG = MbtGattController.class.getSimpleName();
 
+    @Nullable
     private BluetoothGattService mainService = null;
+    @Nullable
     private BluetoothGattService deviceInfoService = null;
+    @Nullable
     private BluetoothGattCharacteristic measurement = null ;
+    @Nullable
     private BluetoothGattCharacteristic headsetStatus = null ;
+    @Nullable
     private BluetoothGattCharacteristic mailBox = null ;
+    @Nullable
     private BluetoothGattCharacteristic oadPacketsCharac = null;
+    @Nullable
     private BluetoothGattCharacteristic battery = null ;
+    @Nullable
     private BluetoothGattCharacteristic fwVersion = null;
+    @Nullable
     private BluetoothGattCharacteristic hwVersion = null;
+    @Nullable
     private BluetoothGattCharacteristic serialNumber = null;
 
     private final MbtBluetoothLE bluetoothController;
@@ -77,7 +89,7 @@ final class MbtGattController extends BluetoothGattCallback {
     }
 
     @Override
-    public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+    public void onConnectionStateChange(@NonNull BluetoothGatt gatt, int status, int newState) {
         super.onConnectionStateChange(gatt, status, newState);
         String msg = "Connection state change : ";
         switch(newState) {
@@ -120,7 +132,7 @@ final class MbtGattController extends BluetoothGattCallback {
     }
 
     @Override
-    public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+    public void onServicesDiscovered(@NonNull BluetoothGatt gatt, int status) {
         super.onServicesDiscovered(gatt, status);
 
         // Checking if services were indeed discovered or not
@@ -173,7 +185,7 @@ final class MbtGattController extends BluetoothGattCallback {
     }
 
     @Override
-    public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+    public void onCharacteristicRead(BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, int status) {
         super.onCharacteristicRead(gatt, characteristic, status);
 
         if (characteristic.getUuid().compareTo(CHARAC_INFO_FIRMWARE_VERSION) == 0) {
@@ -244,7 +256,7 @@ final class MbtGattController extends BluetoothGattCallback {
     }
 
     @Override
-    public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+    public void onCharacteristicWrite(BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, int status) {
         super.onCharacteristicWrite(gatt, characteristic, status);
 
         if(status !=0 ){
@@ -273,7 +285,7 @@ final class MbtGattController extends BluetoothGattCallback {
     }
 
     @Override
-    public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+    public void onCharacteristicChanged(BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic) {
         super.onCharacteristicChanged(gatt, characteristic);
 
         if (characteristic.getUuid().compareTo(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG) == 0){
@@ -295,7 +307,7 @@ final class MbtGattController extends BluetoothGattCallback {
     }
 
     @Override
-    public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+    public void onDescriptorWrite(BluetoothGatt gatt, @NonNull BluetoothGattDescriptor descriptor, int status) {
         super.onDescriptorWrite(gatt, descriptor, status);
         // Check for EEG Notification status
         if (status == BluetoothGatt.GATT_SUCCESS) {

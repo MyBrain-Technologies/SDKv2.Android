@@ -1,6 +1,8 @@
 package core.eeg.signalprocessing;
 
 
+import android.support.annotation.NonNull;
+
 /**
  * ContextSP contains some static values related to the signal processing
  *
@@ -15,6 +17,7 @@ public final class ContextSP {
     /**
      * The current signal processing version. This value is updated as soon as the library is correctly loaded
      */
+    @NonNull
     public static String SP_VERSION = "0.0.0";
 
     /**
