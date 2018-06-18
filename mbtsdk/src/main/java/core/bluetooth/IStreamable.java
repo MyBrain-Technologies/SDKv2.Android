@@ -53,7 +53,12 @@ public interface IStreamable {
         /**
          * Stream has not correctly been started or stopped.
          */
-        FAILED
+        FAILED,
+
+        /**
+         * Device is disconnected, thus stream cannot be started
+         */
+        DISCONNECTED
     }
 
     /**

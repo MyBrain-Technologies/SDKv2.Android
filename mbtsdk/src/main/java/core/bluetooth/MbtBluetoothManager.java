@@ -1,9 +1,11 @@
 package core.bluetooth;
 
 import android.Manifest;
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.location.LocationManager;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
@@ -38,12 +40,14 @@ import core.device.RawDeviceMeasure;
 import core.recordingsession.metadata.DeviceInfo;
 import eventbus.EventBusManager;
 import eventbus.events.BluetoothEEGEvent;
+import eventbus.events.ConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
 import features.MbtFeatures;
 import features.ScannableDevices;
 import utils.AsyncUtils;
 
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
+import static core.bluetooth.BtProtocol.BLUETOOTH_SPP;
 
 /**
  * Created by Etienne on 08/02/2018.
@@ -110,6 +114,35 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * @param deviceName the device bluetooth name.
      */
     private void scanAndConnect(@NonNull String deviceName){
+        if(!BluetoothAdapter.getDefaultAdapter().isEnabled()){
+            notifyConnectionStateChanged(BtState.DISABLED);
+            return;
+        }
+
+        //Checking location permission
+        if (MbtConfig.scannableDevices == ScannableDevices.MELOMIND){
+            if(ContextCompat.checkSelfPermission(mContext,
+                    Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_DENIED
+                    && ContextCompat.checkSelfPermission(mContext,
+                    Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED){
+
+                notifyConnectionStateChanged(BtState.LOCATION_PERMISSION_NOT_GRANTED);
+                return;
+            }
+
+            //Checking location activation
+            LocationManager manager = (LocationManager) mContext.getSystemService(Context.LOCATION_SERVICE );
+            if(manager != null && !manager.isProviderEnabled(LocationManager.GPS_PROVIDER)){
+                notifyConnectionStateChanged(BtState.LOCATION_IS_REQUIRED);
+                return;
+            }
+            btProtocol= BLUETOOTH_LE;
+        }else{
+            btProtocol = BLUETOOTH_SPP;
+        }
+
+
+
         //first step
         BluetoothDevice scannedDevice = null;
         try {
@@ -187,21 +220,16 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private Future<BluetoothDevice> scanSingle(@NonNull final String deviceName){ //todo check that
         //TODO choose method name accordingly between scan() / scanFor() / ...
 
+
         return AsyncUtils.executeAsync(new Callable<BluetoothDevice>() {
             @Nullable
             @Override
             public BluetoothDevice call() throws Exception {
-                Log.i(TAG, "in call method. About to start scan LE");
-                if (MbtConfig.scannableDevices == ScannableDevices.MELOMIND && ContextCompat.checkSelfPermission(mContext,
-                        Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                        || ContextCompat.checkSelfPermission(mContext,
-                        Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
-                    btProtocol= BLUETOOTH_LE;
-                    return mbtBluetoothLE.startLowEnergyScan(true, deviceName);
 
+                if(btProtocol== BLUETOOTH_LE){
+                    Log.i(TAG, "in call method. About to start scan LE");
+                    return mbtBluetoothLE.startLowEnergyScan(true, deviceName);
                 }
-//                else
-//                    return mbtBluetoothLE.startScanDiscovery(mContext);
                 else
                     Log.i(TAG, "About to start scan discovery");
 
@@ -319,8 +347,15 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * If there is already a streaming session in progress, nothing happens and the method returns silently.
      */
     private void startStream(boolean enableDeviceStatusMonitoring){
-        if(mbtBluetoothLE.isStreaming())
-                return;
+        if(!mbtBluetoothLE.isConnected()){
+            notifyStreamStateChanged(IStreamable.StreamState.DISCONNECTED);
+            return;
+        }
+
+        if(mbtBluetoothLE.isStreaming()){
+            return;
+        }
+
         //TODO remove configureHeadset method from here later on.
         configureHeadset(new DeviceConfig.Builder().useP300(false).create());
 
@@ -478,11 +513,14 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     public void notifyConnectionStateChanged(BtState newState) {
         if(newState == BtState.CONNECTED_AND_READY)
             requestBeingProcessed = false;
-        else if(newState == BtState.DISCONNECTED || newState == BtState.SCAN_TIMEOUT){
+        else if(newState == BtState.DISCONNECTED || newState == BtState.SCAN_TIMEOUT || newState == BtState.DISABLED || newState == BtState.INTERNAL_FAILURE
+                || newState == BtState.LOCATION_IS_REQUIRED ||newState == BtState.LOCATION_PERMISSION_NOT_GRANTED){
             requestBeingProcessed = false;
         }
 
-        EventBusManager.postEvent(new DeviceInfoEvent<BtState>(DeviceInfo.STATE, newState));
+        //TODO improve this method
+
+        EventBusManager.postEvent(new ConnectionStateEvent(newState));
     }
 
 

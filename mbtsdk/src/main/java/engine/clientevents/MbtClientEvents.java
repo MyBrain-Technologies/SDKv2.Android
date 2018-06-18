@@ -6,7 +6,7 @@ import core.oad.OADEvent;
  * Created by Etienne on 08/02/2018.
  */
 
-public interface MbtClientEvents extends ErrorEvent{
+public interface MbtClientEvents extends BaseErrorEvent {
 
     interface OADEventListener {
         /**

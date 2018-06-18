@@ -24,11 +24,15 @@ import core.device.MbtDeviceManager;
 import core.device.SaturationEvent;
 import core.eeg.MbtEEGManager;
 import core.recordingsession.metadata.DeviceInfo;
+import engine.clientevents.ConnectionException;
 import engine.clientevents.DeviceInfoListener;
 import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.ConnectionStateListener;
+import engine.clientevents.EEGException;
+import engine.clientevents.ReadException;
 import eventbus.EventBusManager;
 import eventbus.events.ClientReadyEEGEvent;
+import eventbus.events.ConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
 import engine.clientevents.EegListener;
 import features.MbtFeatures;
@@ -58,9 +62,9 @@ public final class MbtManager{
      * the application callbacks. EventBus is not available outside the SDK so the user is notified
      * using custom callback interfaces.
      */
-    private ConnectionStateListener connectionStateListener;
-    private EegListener eegListener;
-    private DeviceInfoListener deviceInfoListener;
+    private ConnectionStateListener<ConnectionException> connectionStateListener;
+    private EegListener<EEGException> eegListener;
+    private DeviceInfoListener<ReadException> deviceInfoListener;
     @Nullable
     private DeviceStatusListener deviceStatusListener;
 
@@ -94,7 +98,15 @@ public final class MbtManager{
      * @param name the device name to connect to. Might be null if not known by the user.
      * @param listener a set of callback that will notify the user about connection progress.
      */
-    public void connectBluetooth(@Nullable String name, @NonNull ConnectionStateListener listener){
+    public void connectBluetooth(@Nullable String name, @NonNull ConnectionStateListener<ConnectionException> listener){
+
+        if(name != null && (!name.startsWith(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX) && !name.startsWith(MbtFeatures.VPRO_DEVICE_NAME))){
+            listener.onError(new ConnectionException(ConnectionException.INVALID_NAME));
+            return;
+        }
+
+
+
         this.connectionStateListener = listener;
         EventBusManager.postEvent(new ConnectRequestEvent(name));
     }
@@ -146,36 +158,72 @@ public final class MbtManager{
         switch(event.getInfotype()){
             case BATTERY:
                 if(event.getInfo() == null && deviceInfoListener != null)
-                    deviceInfoListener.onError(new Exception("Unable to get battery level"));
+                    deviceInfoListener.onError(new ReadException(ReadException.READ_TIMEOUT));
                 else
                     deviceInfoListener.onBatteryChanged((String)event.getInfo());
                 break;
             case FW_VERSION:
                 if(event.getInfo() == null && deviceInfoListener != null)
-                    deviceInfoListener.onError(new Exception("Unable to get firmware version"));
+                    deviceInfoListener.onError(new ReadException(ReadException.READ_TIMEOUT));
                 else
                     deviceInfoListener.onFwVersionReceived((String) event.getInfo());
                 break;
             case HW_VERSION:
                 if(event.getInfo() == null && deviceInfoListener != null)
-                    deviceInfoListener.onError(new Exception("Unable to get hardware level"));
+                    deviceInfoListener.onError(new ReadException(ReadException.READ_TIMEOUT));
                 else
                     deviceInfoListener.onHwVersionReceived((String) event.getInfo());
                 break;
             case SERIAL_NUMBER:
                 if(event.getInfo() == null && deviceInfoListener != null)
-                    deviceInfoListener.onError(new Exception("Unable to get serial number"));
+                    deviceInfoListener.onError(new ReadException(ReadException.READ_TIMEOUT));
                 else
                     deviceInfoListener.onSerialNumberReceived((String) event.getInfo());
                 break;
 
             case STATE:
                 if(event.getInfo() == null && connectionStateListener != null)
-                    connectionStateListener.onError(new Exception("Unable to change "));
+                    connectionStateListener.onError(new ConnectionException(ConnectionException.CONNECTION_FAILURE));
                 else
                     connectionStateListener.onStateChanged((BtState) event.getInfo());
                 break;
         }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onConnectionStateChanged(ConnectionStateEvent connectionStateEvent){
+        if(connectionStateListener == null)
+            return;
+
+        switch(connectionStateEvent.getNewState()){
+            case DISABLED:
+                connectionStateListener.onError(new ConnectionException(ConnectionException.BT_NOT_ACTIVATED));
+                break;
+
+            case LOCATION_IS_REQUIRED:
+                connectionStateListener.onError(new ConnectionException(ConnectionException.GPS_DISABLED));
+                break;
+
+            case LOCATION_PERMISSION_NOT_GRANTED:
+                connectionStateListener.onError(new ConnectionException(ConnectionException.GPS_PERMISSIONS_NOT_GRANTED));
+                break;
+
+            case SCAN_FAILED_ALREADY_STARTED:
+            case SCAN_FAILED_FEATURE_UNSUPPORTED:
+            case SCAN_FAILED_APPLICATION_REGISTRATION_FAILED:
+                connectionStateListener.onError(new ConnectionException(ConnectionException.LE_SCAN_FAILURE));
+                break;
+
+            case CONNECT_FAILURE:
+                connectionStateListener.onError(new ConnectionException(ConnectionException.CONNECTION_FAILURE));
+                break;
+
+            default:
+                //This newState is not an error, notifying user with the correct callback
+                connectionStateListener.onStateChanged(connectionStateEvent.getNewState());
+                break;
+        }
+
     }
 
     /**
@@ -184,9 +232,14 @@ public final class MbtManager{
      */
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onStreamStateChanged(IStreamable.StreamState newState){
-        if(newState == IStreamable.StreamState.FAILED && eegListener != null){
-            eegListener.onError(new Exception("Unable to start streaming"));
+        if(eegListener != null){
+            if(newState == IStreamable.StreamState.FAILED){
+                eegListener.onError(new EEGException(EEGException.STREAM_START_FAILED));
+            }else if(newState == IStreamable.StreamState.DISCONNECTED){
+                eegListener.onError(new EEGException(EEGException.DEVICE_NOT_CONNECTED));
+            }
         }
+
     }
 
     /**

@@ -3,20 +3,18 @@ package engine;
 import android.bluetooth.le.ScanCallback;
 import android.content.Context;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 
-import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import config.DeviceConfig;
 import config.MbtConfig;
 import core.MbtManager;
-import core.recordingsession.metadata.DeviceInfo;
 import core.eeg.storage.MbtEEGPacket;
+import core.recordingsession.metadata.DeviceInfo;
+import engine.clientevents.BaseException;
+import engine.clientevents.ConnectionException;
 import engine.clientevents.DeviceInfoListener;
-import engine.clientevents.DeviceStatusListener;
-import engine.clientevents.EegListener;
+import engine.clientevents.EEGException;
 import features.MbtFeatures;
 import features.ScannableDevices;
 
@@ -83,11 +81,18 @@ public final class MbtClient {
      * Call this method to establish a bluetooth connection with a remote device.
      * It is possible to connect either a Melomind or a VPro device through this method. You need to specify
      * the device type in the {@link ConnectionConfig} input instance with the {@link ScannableDevices} type.
+     * <p>If the parameters are invalid, the method returns immediately and {@link engine.clientevents.ConnectionStateListener#onError(BaseException)} method is called</p>
+     *
      * @param config the {@link ConnectionConfig} instance that holds all the configuration parameters inside.
      */
     public void connectBluetooth(@NonNull ConnectionConfig config){
         MbtConfig.scannableDevices = config.getDeviceType();
-        MbtConfig.bluetoothConnectionTimeout = config.getConnectionTimeout();
+
+        //MbtConfig.bluetoothConnectionTimeout = config.getConnectionTimeout();
+        if(config.getMaxScanDuration() < MbtFeatures.MIN_SCAN_DURATION){
+            config.getConnectionStateListener().onError(new ConnectionException(ConnectionException.INVALID_SCAN_DURATION));
+        }
+
         MbtConfig.bluetoothScanTimeout = config.getMaxScanDuration();
 
 
@@ -130,8 +135,24 @@ public final class MbtClient {
 
     }
 
+    /**
+     * Initiates an EEG streaming ie, send a message to the headset to deliver EEG to the application.
+     *
+     * <p>You can customize some parameters in the {@link StreamConfig}class.</p>
+     *
+     * <p>If the parameters are incorrect, the function returns directly and the {@link engine.clientevents.EegListener#onError(BaseException)} method is called</p>
+     * If something wrong happens during the operation, {@link engine.clientevents.EegListener#onError(BaseException)} method is called.
+     *
+     * <p>If everything went well, the EEG will be available in the {@link engine.clientevents.EegListener#onNewPackets(MbtEEGPacket)} callback.</p>
+     *
+     * @param streamConfig the configuration to pass to the streaming.
+     */
     public void startStream(@NonNull StreamConfig streamConfig){
-        MbtConfig.eegBufferLengthClientNotif = (int)((streamConfig.getNotificationPeriod()* MbtFeatures.DEFAULT_SAMPLE_RATE)/1000);
+        if(streamConfig.getNotificationPeriod() < MbtFeatures.MIN_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS)
+            streamConfig.getEegListener().onError(new EEGException(EEGException.INVALID_PARAMETERS));
+        else
+            MbtConfig.eegBufferLengthClientNotif = (int)((streamConfig.getNotificationPeriod()* MbtFeatures.DEFAULT_SAMPLE_RATE)/1000);
+
         mbtManager.startStream(false, streamConfig.getEegListener(), streamConfig.getDeviceStatusListener());
     }
 

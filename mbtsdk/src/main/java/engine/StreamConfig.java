@@ -7,6 +7,7 @@ import config.DeviceConfig;
 import core.eeg.storage.MbtEEGPacket;
 import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.DeviceStatusListener;
+import engine.clientevents.EEGException;
 import engine.clientevents.EegListener;
 import features.MbtFeatures;
 import features.ScannableDevices;
@@ -25,11 +26,11 @@ public final class StreamConfig {
 
     //private final DeviceConfig deviceConfig; Will be used in future release
 
-    private final EegListener eegListener;
+    private final EegListener<EEGException> eegListener;
 
     private final DeviceStatusListener deviceStatusListener;
 
-    private StreamConfig(EegListener eegListener, int notificationPeriod, DeviceStatusListener deviceStatusListener){
+    private StreamConfig(EegListener<EEGException> eegListener, int notificationPeriod, DeviceStatusListener deviceStatusListener){
         this.eegListener = eegListener;
         this.notificationPeriod = notificationPeriod;
         this.deviceStatusListener = deviceStatusListener;
@@ -57,14 +58,14 @@ public final class StreamConfig {
         @Nullable
         private DeviceStatusListener deviceStatusListener = null;
         @NonNull
-        private final EegListener eegListener;
+        private final EegListener<EEGException> eegListener;
 
 
         /**
          * The eeg Listener is mandatory.
          * @param eegListener
          */
-        public Builder(@NonNull EegListener eegListener){
+        public Builder(@NonNull EegListener<EEGException> eegListener){
             this.eegListener = eegListener;
         }
 

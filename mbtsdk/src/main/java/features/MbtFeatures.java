@@ -18,6 +18,8 @@ import static features.ScannableDevices.MELOMIND;
  */
 
 public final class MbtFeatures{
+    public static final int MIN_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS = 500;
+    public static final int MIN_SCAN_DURATION = 10000;
     private static String TAG = MbtFeatures.class.getName();
 
 
@@ -38,7 +40,7 @@ public final class MbtFeatures{
 
     // MELOMIND & VPRO FEATURES
     public static final String MELOMIND_DEVICE_NAME_PREFIX = "melo_";
-    public static final String VPRO_DEVICE_NAME_PREFIX = "vpro_";
+    public static final String VPRO_DEVICE_NAME_PREFIX = "VPro";
 
     public static final String MELOMIND_DEVICE_NAME = "Melomind";
     public static final String VPRO_DEVICE_NAME = "VPro";

@@ -5,15 +5,21 @@ package core.bluetooth;
  */
 public enum BtState {
     /**
-     * When something went wrong but is not necessarily  related to Android itself
+     * When something went wrong but is not necessarily related to Android itself
      */
     INTERNAL_FAILURE,
 
     /**
-     *  Location is required in order to start the LE scan.
-     *  <p><strong>Note:</strong> this is needed only in Android M and next.</p>
+     *  Location is required in order to start the LE scan. GPS is disabled
      */
     LOCATION_IS_REQUIRED,
+
+    /**
+     *  Location is required in order to start the LE scan. Location may or may not be enabled, the user forgot
+     *  to grant permissions to access FINE or COARSE location
+     *  <p><strong>Note:</strong> this is needed only in Android M and next.</p>
+     */
+    LOCATION_PERMISSION_NOT_GRANTED,
 
     /**
      *  Failed to start scan as BLE scan with the same settings is already started by the app.
@@ -47,6 +53,7 @@ public enum BtState {
      * Bluetooth is available on device but not enabled (turned on).
      */
     DISABLED,
+
     /**
      * Should not occur (see Android Manifest <code>uses-feature android:name="android.hardware.bluetooth_le" android:required="true"</code>.
      * <p>The device does not have a Bluetooth interface or does not support Bluetooth Low Ebergy</p>

@@ -242,7 +242,6 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @param filterOnDeviceService
      * @return Each found device that matches the specified filters
      */
-    @RequiresPermission(anyOf = {ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION})
     public BluetoothDevice startLowEnergyScan(boolean filterOnDeviceService, @Nullable String deviceName) {
         this.bluetoothLeScanner = super.bluetoothAdapter.getBluetoothLeScanner();
         List<ScanFilter> mFilters = new ArrayList<>();
@@ -274,9 +273,6 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         //Log.i(TAG, String.format("Starting Low Energy Scan with filtering on name '%s' and service UUID '%s'", deviceName, MelomindCharacteristics.SERVICE_MEASUREMENT));
         this.bluetoothLeScanner.startScan(mFilters, settings, this.leScanCallback);
         Log.i(TAG, "in scan method.");
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            return null;
-        }
         notifyConnectionStateChanged(BtState.SCAN_STARTED);
         return super.scanLock.waitAndGetResult();
     }

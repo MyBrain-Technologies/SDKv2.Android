@@ -15,6 +15,7 @@ import android.widget.Toast;
 import core.bluetooth.BtState;
 import engine.ConnectionConfig;
 import engine.MbtClient;
+import engine.clientevents.ConnectionException;
 import engine.clientevents.ConnectionStateListener;
 import features.MbtFeatures;
 
@@ -39,12 +40,14 @@ public class HomeActivity extends AppCompatActivity{
 
     private boolean isScanning = false;
 
+    private Toast toast;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
-
-        client = MbtClient.init(getApplicationContext());
+        toast= Toast.makeText(HomeActivity.this, "", Toast.LENGTH_SHORT);
+        client = MbtClient.getClientInstance();
 
         deviceNameField = findViewById(R.id.deviceNameField);
 
@@ -95,11 +98,11 @@ public class HomeActivity extends AppCompatActivity{
         if(deviceName.isEmpty() ){ //no name entered by the user
             findAvailableDevice();
         }else{ //the user entered a name
-            if( isMbtDeviceName() && deviceName.length() == DEVICE_NAME_MAX_LENGTH ) { //check the device name format
+            if((true) /*isMbtDeviceName() && deviceName.length() == DEVICE_NAME_MAX_LENGTH */) { //check the device name format
                 notifyUser(getString(R.string.scan_in_progress));
                 updateScanning(true); //changes isScanning to true and updates button text "Find a device" into "Cancel"
 
-                client.connectBluetooth(new ConnectionConfig.Builder(new ConnectionStateListener() {
+                client.connectBluetooth(new ConnectionConfig.Builder(new ConnectionStateListener<ConnectionException>() {
                     @Override
                     public void onStateChanged(@NonNull BtState newState) {
                         if (newState.equals(BtState.CONNECTED_AND_READY)){
@@ -114,7 +117,8 @@ public class HomeActivity extends AppCompatActivity{
                     }
 
                     @Override
-                    public void onError(Exception exception) {
+                    public void onError(ConnectionException exception) {
+                        notifyUser(exception.toString());
                         exception.printStackTrace();
                     }
                 }).deviceName(deviceName).maxScanDuration(SCAN_DURATION).scanDeviceType(isMelomindDevice() ? MELOMIND : VPRO).create());
@@ -168,7 +172,10 @@ public class HomeActivity extends AppCompatActivity{
     }
 
     private void notifyUser(String message){
-        Toast.makeText(HomeActivity.this, message, Toast.LENGTH_LONG).show();
+        toast.setText("");
+        toast.show();
+        toast.setText(message);
+        toast.show();
     }
 
     @Override
