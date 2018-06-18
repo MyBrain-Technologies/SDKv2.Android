@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.support.annotation.NonNull;
 
+import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -40,11 +41,13 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
     private final static String TAG = "MBT Bluetooth";
     private BtState currentState = BtState.DISCONNECTED;
 
+    @Nullable
     protected BluetoothAdapter bluetoothAdapter;
 
     protected final Context context;
 
     protected final MbtLock<BluetoothDevice> scanLock = new MbtLock<>();
+    @NonNull
     protected List<BluetoothDevice> scannedDevices = new ArrayList<>();
 
     protected final MbtLock<BtState> connectionLock = new MbtLock<>();
@@ -80,8 +83,9 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
         }
     }
 
+    @Nullable
     @Override
-    public BluetoothDevice startScanDiscovery(final String deviceName) {
+    public BluetoothDevice startScanDiscovery(@NonNull final String deviceName) {
 //        final Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
 //        // If there are paired devices
 //        if (pairedDevices.size() > 0) {
@@ -99,7 +103,7 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
         final IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
         context.registerReceiver(new BroadcastReceiver() {
-            public final void onReceive(final Context context, final Intent intent) {
+            public final void onReceive(@NonNull final Context context, @NonNull final Intent intent) {
                 final String action = intent.getAction();
                 switch (action) {
                     case BluetoothDevice.ACTION_FOUND:
@@ -144,7 +148,7 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
 
     }
 
-    public void notifyDeviceInfoReceived(DeviceInfo deviceInfo, String deviceValue){ // This method will be called when a DeviceInfoReceived is posted (fw or hw or serial number) by MbtBluetoothLE or MbtBluetoothSPP
+    public void notifyDeviceInfoReceived(@NonNull DeviceInfo deviceInfo, @NonNull String deviceValue){ // This method will be called when a DeviceInfoReceived is posted (fw or hw or serial number) by MbtBluetoothLE or MbtBluetoothSPP
         switch(deviceInfo){
             case FW_VERSION:
                 melomindDevice.setFirmwareVersion(deviceValue);
@@ -206,6 +210,7 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
         //this.oadEventListener = oadEventListener;
     }
 
+    @Nullable
     BluetoothAdapter getBluetoothAdapter() {return bluetoothAdapter;}
 
     // Events Registration

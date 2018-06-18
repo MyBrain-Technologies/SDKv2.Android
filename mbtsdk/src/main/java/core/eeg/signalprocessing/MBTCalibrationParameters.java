@@ -1,5 +1,7 @@
 package core.eeg.signalprocessing;
 
+import android.support.annotation.Nullable;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -9,10 +11,11 @@ import java.util.HashMap;
  * @author Vincent on 26/11/2015.
  */
 public final class MBTCalibrationParameters {
+    @Nullable
     private final HashMap<String, float[]> params;
     ArrayList<float[]> valuesAsList;
 
-    public MBTCalibrationParameters(final HashMap<String, float[]> params){
+    public MBTCalibrationParameters(@Nullable final HashMap<String, float[]> params){
         if (params == null || params.size() == 0)
             throw new IllegalArgumentException("calib params MUST NOT be NULL or EMPTY");
         this.params = params;
@@ -23,6 +26,7 @@ public final class MBTCalibrationParameters {
     }
 
 
+    @Nullable
     public final HashMap<String, float[]> getParamsAsMap(){
         return params;
     }

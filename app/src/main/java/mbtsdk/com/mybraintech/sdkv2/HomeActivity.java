@@ -124,7 +124,6 @@ public class HomeActivity extends AppCompatActivity{
                 deviceNameField.setText(getString(R.string.example_device_name));
             }
         }
-
     }
 
     private void findAvailableDevice() {

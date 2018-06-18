@@ -1,6 +1,7 @@
 package core.device;
 
 import android.content.Context;
+import android.support.annotation.NonNull;
 
 import org.greenrobot.eventbus.Subscribe;
 
@@ -24,7 +25,7 @@ public class MbtDeviceManager extends BaseModuleManager{
 
 
     @Subscribe
-    public void onNewDeviceMeasure(final RawDeviceMeasure rawDeviceMeasure){
+    public void onNewDeviceMeasure(@NonNull final RawDeviceMeasure rawDeviceMeasure){
         //TODO complete cases with differents measures.
         if(rawDeviceMeasure.getRawMeasure().length < 2)
             return;

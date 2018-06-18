@@ -60,11 +60,11 @@ public final class MbtEEGManager extends BaseModuleManager{
 
     private BtProtocol protocol;
 
-    public MbtEEGManager(@NonNull Context context, MbtManager mbtManagerController, BtProtocol protocol){
+    public MbtEEGManager(@NonNull Context context, MbtManager mbtManagerController, @NonNull BtProtocol protocol){
         super(context, mbtManagerController);
         this.protocol = protocol;
         this.dataAcquisition = new MbtDataAcquisition(this, protocol);
-        this.mbtDataBuffering = new MbtDataBuffering(this, protocol);
+        this.mbtDataBuffering = new MbtDataBuffering(this);
     }
 
     /**
@@ -74,7 +74,8 @@ public final class MbtEEGManager extends BaseModuleManager{
      * This method is called by {@link core.eeg.acquisition.MbtDataAcquisition}.prepareAndConvertToEEG method
      * @return the converted EEG data matrix that contains readable values for any user
      */
-    public ArrayList<ArrayList<Float>> launchConversionToEEG(final ArrayList<RawEEGSample> rawData){
+    @NonNull
+    public ArrayList<ArrayList<Float>> launchConversionToEEG(@NonNull final ArrayList<RawEEGSample> rawData){
         return consolidatedEEG = MbtDataConversion.convertRawDataToEEG(rawData, protocol);
     }
 
@@ -114,6 +115,9 @@ public final class MbtEEGManager extends BaseModuleManager{
 
                 ArrayList<Float> toDecodeStatus = new ArrayList<>();
                 for (RawEEGSample rawEEGSample : toDecodeRawEEG) {
+                    if(rawEEGSample.getStatus() == null){
+                        Log.i(TAG, "why");
+                    }
                     if(rawEEGSample.getStatus() != Float.NaN)
                         toDecodeStatus.add(rawEEGSample.getStatus());
                 }
@@ -131,7 +135,7 @@ public final class MbtEEGManager extends BaseModuleManager{
      * The event returns a list of MbtEEGPacket object, that contains the EEG data, and their associated qualities and status
      * @param eegPackets the list that contains EEG packets ready to use for the client.
      */
-    public void notifyEEGDataIsReady(MbtEEGPacket eegPackets) {
+    public void notifyEEGDataIsReady(@NonNull MbtEEGPacket eegPackets) {
         Log.d(TAG, "notify EEG Data Is Ready ");
         EventBusManager.postEvent(new ClientReadyEEGEvent(eegPackets));
     }
@@ -140,6 +144,7 @@ public final class MbtEEGManager extends BaseModuleManager{
      * Initializes the main quality checker object in the JNI which will live throughout all session.
      * Should be destroyed at the end of the session
      */
+    @NonNull
     public String initQualityChecker() {
         return MBTSignalQualityChecker.initQualityChecker();
     }
@@ -160,6 +165,7 @@ public final class MbtEEGManager extends BaseModuleManager{
      * @return the result of the previously done session
      * @exception IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
      */
+    @NonNull
     public HashMap<String, Float> computeStatistics(final int bestChannel, final int sampRate, final int packetLength, final MbtEEGPacket... packets){
         return MBTComputeStatistics.computeStatistics(bestChannel, sampRate, packetLength, packets);
     }
@@ -171,7 +177,8 @@ public final class MbtEEGManager extends BaseModuleManager{
      * @return the qualities for each provided channels
      * @exception IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
      */
-    public HashMap<String, Float> computeStatisticsSNR(final float threshold, final Float[] snrValues){
+    @NonNull
+    public HashMap<String, Float> computeStatisticsSNR(final float threshold, @NonNull final Float[] snrValues){
         return MBTComputeStatistics.computeStatisticsSNR(threshold, snrValues);
     }
 

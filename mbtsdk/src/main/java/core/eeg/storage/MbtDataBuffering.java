@@ -40,6 +40,7 @@ public class MbtDataBuffering {
      * Object that will manage the EEG <b>CONSOLIDATED</b> data. The buffer is internal and accessible using
      * {@link MbtEEGPacket#getChannelsData()} method.
      */
+    @Nullable
     private MbtEEGPacket mbtEEGPacketsBuffer;
 
     /**
@@ -47,14 +48,11 @@ public class MbtDataBuffering {
      */
     private MbtEEGManager eegManager;
 
-    private BtProtocol protocol;
 
 
-
-    public MbtDataBuffering(@NonNull MbtEEGManager eegManagerController, @NonNull BtProtocol protocol) {
+    public MbtDataBuffering(@NonNull MbtEEGManager eegManagerController) {
 
         eegManager = eegManagerController;
-        this.protocol = protocol;
 
         pendingRawData = new ArrayList<>();//new byte[getRawDataBufferSize()];
         mbtEEGPacketsBuffer = new MbtEEGPacket();
@@ -102,7 +100,7 @@ public class MbtDataBuffering {
      * We wait to have a full packet buffer to send these EEG values to the UI.
      * @return true if the packet buffer is full (contains a number of data equals to eegBufferLengthNotification), false otherwise.
      */
-    public void storeConsolidatedEegPacketInPacketBuffer(final ArrayList<ArrayList<Float>> consolidatedEEG, ArrayList<Float> status) {
+    public void storeConsolidatedEegPacketInPacketBuffer(@NonNull final ArrayList<ArrayList<Float>> consolidatedEEG, @NonNull ArrayList<Float> status) {
 
         Log.e(TAG, "Adding new MbtEEGPacket(");
         Log.e(TAG, "EEG data= " +consolidatedEEG.toString());

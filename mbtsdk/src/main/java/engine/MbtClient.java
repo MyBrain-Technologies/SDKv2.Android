@@ -100,7 +100,7 @@ public final class MbtClient {
     }
 
 
-    public void readBattery(int periodInMillis, final DeviceInfoListener listener) {
+    public void readBattery(int periodInMillis, @NonNull final DeviceInfoListener listener) {
         if(periodInMillis <= 0){
             mbtManager.readBluetooth(DeviceInfo.BATTERY, listener);
         }else{
@@ -291,17 +291,20 @@ public final class MbtClient {
         private Context mContext;
         private MbtManager mbtManager;
 
+        @NonNull
         public MbtClientBuilder setContext(final Context context){
             this.mContext=context;
             return this;
         }
 
 
+        @NonNull
         public MbtClientBuilder setMbtManager(final MbtManager mbtManager){
             this.mbtManager = mbtManager;
             return this;
         }
 
+        @NonNull
         public MbtClient create(){
             return new MbtClient(this);
         }

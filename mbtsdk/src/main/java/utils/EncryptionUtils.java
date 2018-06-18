@@ -2,6 +2,8 @@ package utils;
 
 import android.os.Build;
 import android.os.Process;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Base64;
 import android.util.Log;
 
@@ -163,7 +165,7 @@ public final class EncryptionUtils {
      * @return The AES & HMAC keys.
      * @throws GeneralSecurityException
      */
-    public static final SecretKeys generateKeyFromPassword(final String password, final String salt) throws GeneralSecurityException {
+    public static final SecretKeys generateKeyFromPassword(@NonNull final String password, final String salt) throws GeneralSecurityException {
         return generateKeyFromPassword(password, Base64.decode(salt, BASE64_FLAGS));
     }
 
@@ -171,6 +173,7 @@ public final class EncryptionUtils {
      * Generates a random salt.
      * @return The random salt suitable for generateKeyFromPassword.
      */
+    @NonNull
     public static final byte[] generateSalt() throws GeneralSecurityException {
         return randomBytes(PBE_SALT_LENGTH_BITS);
     }
@@ -193,10 +196,12 @@ public final class EncryptionUtils {
      * @return The byte array of this IV
      * @throws GeneralSecurityException if a suitable RNG is not available
      */
+    @NonNull
     public static final byte[] generateIv() throws GeneralSecurityException {
         return randomBytes(IV_LENGTH_BYTES);
     }
 
+    @NonNull
     private static final byte[] randomBytes(int length) throws GeneralSecurityException {
         fixPrng();
         final SecureRandom random = SecureRandom.getInstance(RANDOM_ALGORITHM);
@@ -222,7 +227,7 @@ public final class EncryptionUtils {
      * @throws GeneralSecurityException if AES is not implemented on this system
      * @throws UnsupportedEncodingException if UTF-8 is not supported in this system
      */
-    public static final CipherTextIvMac encrypt(final String plaintext, final SecretKeys secretKeys)
+    public static final CipherTextIvMac encrypt(@NonNull final String plaintext, @NonNull final SecretKeys secretKeys)
             throws UnsupportedEncodingException, GeneralSecurityException {
         return encrypt(plaintext, secretKeys, "UTF-8");
     }
@@ -237,7 +242,7 @@ public final class EncryptionUtils {
      * @throws GeneralSecurityException if AES is not implemented on this system
      * @throws UnsupportedEncodingException if the specified encoding is invalid
      */
-    public static final CipherTextIvMac encrypt(final String plaintext, final SecretKeys secretKeys, final String encoding)
+    public static final CipherTextIvMac encrypt(final String plaintext, @NonNull final SecretKeys secretKeys, @NonNull final String encoding)
             throws UnsupportedEncodingException, GeneralSecurityException {
         return encrypt(plaintext.getBytes(encoding), secretKeys);
     }
@@ -300,7 +305,7 @@ public final class EncryptionUtils {
      * @throws GeneralSecurityException if AES is not implemented on this system
      * @throws UnsupportedEncodingException if the encoding is unsupported
      */
-    public static final String decryptString(final CipherTextIvMac civ, final SecretKeys secretKeys, final String encoding)
+    public static final String decryptString(@NonNull final CipherTextIvMac civ, @NonNull final SecretKeys secretKeys, @NonNull final String encoding)
             throws UnsupportedEncodingException, GeneralSecurityException {
         return new String(decrypt(civ, secretKeys), encoding);
     }
@@ -315,7 +320,7 @@ public final class EncryptionUtils {
      * @throws GeneralSecurityException if AES is not implemented on this system
      * @throws UnsupportedEncodingException if UTF-8 is not supported
      */
-    public static final String decryptString(final CipherTextIvMac civ, final SecretKeys secretKeys)
+    public static final String decryptString(@NonNull final CipherTextIvMac civ, @NonNull final SecretKeys secretKeys)
             throws UnsupportedEncodingException, GeneralSecurityException {
         return decryptString(civ, secretKeys, "UTF-8");
     }
@@ -418,7 +423,7 @@ public final class EncryptionUtils {
         }
 
         @Override
-        public final boolean equals(final Object obj) {
+        public final boolean equals(@Nullable final Object obj) {
             if (this == obj)
                 return true;
             if (obj == null)
@@ -513,6 +518,7 @@ public final class EncryptionUtils {
          * @param cipherText the cipherText to append
          * @return iv:cipherText, a new byte array.
          */
+        @NonNull
         public static final byte[] ivCipherConcat(final byte[] iv, final byte[] cipherText) {
             final byte[] combined = new byte[iv.length + cipherText.length];
             System.arraycopy(iv, 0, combined, 0, iv.length);
@@ -545,7 +551,7 @@ public final class EncryptionUtils {
         }
 
         @Override
-        public final boolean equals(final Object obj) {
+        public final boolean equals(@Nullable final Object obj) {
             if (this == obj)
                 return true;
             if (obj == null)
@@ -571,7 +577,8 @@ public final class EncryptionUtils {
      * @param end   the end index to finish
      * @return the new buffer
      */
-    private static final byte[] copyOfRange(final byte[] from, final int start, final int end) {
+    @NonNull
+    private static final byte[] copyOfRange(@NonNull final byte[] from, final int start, final int end) {
         final int length = end - start;
         final byte[] result = new byte[length];
         System.arraycopy(from, start, result, 0, length);
@@ -789,7 +796,7 @@ public final class EncryptionUtils {
             private boolean mSeeded;
 
             @Override
-            protected void engineSetSeed(byte[] bytes) {
+            protected void engineSetSeed(@NonNull byte[] bytes) {
                 try {
                     OutputStream out;
                     synchronized (sLock) {
@@ -797,7 +804,7 @@ public final class EncryptionUtils {
                     }
                     out.write(bytes);
                     out.flush();
-                } catch (final IOException e) {
+                } catch (@NonNull final IOException e) {
                     // On a small fraction of devices /dev/urandom is not
                     // writable Log and ignore.
                     Log.w(PrngFixes.class.getSimpleName(), "Failed to mix seed into "
@@ -808,7 +815,7 @@ public final class EncryptionUtils {
             }
 
             @Override
-            protected void engineNextBytes(byte[] bytes) {
+            protected void engineNextBytes(@NonNull byte[] bytes) {
                 if (!mSeeded) {
                     // Mix in the device- and invocation-specific seed.
                     engineSetSeed(generateSeed());
@@ -822,11 +829,12 @@ public final class EncryptionUtils {
                     synchronized (in) {
                         in.readFully(bytes);
                     }
-                } catch (final IOException e) {
+                } catch (@NonNull final IOException e) {
                     throw new SecurityException("Failed to read from " + URANDOM_FILE, e);
                 }
             }
 
+            @NonNull
             @Override
             protected final byte[] engineGenerateSeed(int size) {
                 final byte[] seed = new byte[size];
@@ -843,7 +851,7 @@ public final class EncryptionUtils {
                         // output being pulled into this process prematurely.
                         try {
                             sUrandomIn = new DataInputStream(new FileInputStream(URANDOM_FILE));
-                        } catch (final IOException e) {
+                        } catch (@NonNull final IOException e) {
                             throw new SecurityException("Failed to open " + URANDOM_FILE
                                     + " for reading", e);
                         }
@@ -877,7 +885,7 @@ public final class EncryptionUtils {
                 seedBufferOut.write(BUILD_FINGERPRINT_AND_DEVICE_SERIAL);
                 seedBufferOut.close();
                 return seedBuffer.toByteArray();
-            } catch (final IOException e) {
+            } catch (@NonNull final IOException e) {
                 throw new SecurityException("Failed to generate seed", e);
             }
         }
@@ -892,7 +900,7 @@ public final class EncryptionUtils {
             // available since API Level 9 (Gingerbread, Android 2.3).
             try {
                 return (String) Build.class.getField("SERIAL").get(null);
-            } catch (final Exception ignored) {
+            } catch (@NonNull final Exception ignored) {
                 return null;
             }
         }

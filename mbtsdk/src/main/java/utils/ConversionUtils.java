@@ -52,6 +52,8 @@
  **************************************************************************************************/
 package utils;
 
+import android.support.annotation.Nullable;
+
 import java.util.Formatter;
 
 /* This class encapsulates utility functions */
@@ -112,7 +114,7 @@ public class ConversionUtils {
   }
 
   // Convert hex String to Byte
-  public static int hexStringtoByte(String sb, byte[] results) {
+  public static int hexStringtoByte(@Nullable String sb, byte[] results) {
 
     int i = 0;
     boolean j = false;
@@ -134,7 +136,7 @@ public class ConversionUtils {
     return i;
   }
 
-  public static boolean isAsciiPrintable(String str) {
+  public static boolean isAsciiPrintable(@Nullable String str) {
     if (str == null) {
       return false;
     }

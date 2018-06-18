@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
@@ -32,6 +33,7 @@ import core.bluetooth.requests.DisconnectRequestEvent;
 import core.bluetooth.requests.ReadRequestEvent;
 import core.bluetooth.requests.StreamRequestEvent;
 import core.bluetooth.requests.UpdateConfigurationRequestEvent;
+import core.bluetooth.spp.MbtBluetoothSPP;
 import core.device.RawDeviceMeasure;
 import core.recordingsession.metadata.DeviceInfo;
 import eventbus.EventBusManager;
@@ -64,6 +66,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private MbtBluetoothA2DP mbtBluetoothA2DP;
     private MbtBluetoothSPP mbtBluetoothSPP;
 
+    @NonNull
     private final Queue<BluetoothRequests> pendingRequests; //TODO see if still necessary
     private boolean requestBeingProcessed = false;
 
@@ -106,13 +109,13 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * - Perform the connect operation if scan is successful.
      * @param deviceName the device bluetooth name.
      */
-    private void scanAndConnect(String deviceName){
+    private void scanAndConnect(@NonNull String deviceName){
         //first step
         BluetoothDevice scannedDevice = null;
         try {
             scannedDevice = scanSingle(deviceName).get(MbtConfig.getBluetoothScanTimeout(), TimeUnit.MILLISECONDS);
 
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+        } catch (@NonNull InterruptedException | ExecutionException | TimeoutException e) {
             //TODO
             e.printStackTrace();
         }finally {
@@ -124,6 +127,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             return;
         }else {
             Log.i(TAG, "scanned device is " + scannedDevice.toString());
+            notifyConnectionStateChanged(BtState.DEVICE_FOUND);
             bluetoothDevice = scannedDevice;
         }
 
@@ -180,10 +184,11 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * @param deviceName The broadcasting name of the device to scan
      * @return a {@link Future} object holding the {@link BluetoothDevice} instance of the device to scan.
      */
-    private Future<BluetoothDevice> scanSingle(final String deviceName){ //todo check that
+    private Future<BluetoothDevice> scanSingle(@NonNull final String deviceName){ //todo check that
         //TODO choose method name accordingly between scan() / scanFor() / ...
 
         return AsyncUtils.executeAsync(new Callable<BluetoothDevice>() {
+            @Nullable
             @Override
             public BluetoothDevice call() throws Exception {
                 Log.i(TAG, "in call method. About to start scan LE");
@@ -505,7 +510,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     }
 
 
-    public void notifyNewHeadsetStatus(BtProtocol protocol, byte[] payload) {
+    public void notifyNewHeadsetStatus(BtProtocol protocol, @NonNull byte[] payload) {
         EventBusManager.postEvent(new RawDeviceMeasure(payload));
     }
 

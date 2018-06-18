@@ -86,6 +86,13 @@ public enum BtState {
      */
     DISCONNECTING,
 
+
+    /**
+     * Used to notify user when a device has been found during scanning. The device can be a specific
+     * one if the user specified one, or the first device scanned if no device has been specified.
+     */
+    DEVICE_FOUND,
+
     /**
      * When connection was lost
      */

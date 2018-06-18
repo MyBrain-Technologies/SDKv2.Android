@@ -14,6 +14,7 @@ import core.eeg.storage.MbtEEGPacket;
  * Created by manon on 10/10/16.
  */
 public class MbtRecording implements Serializable{
+    @Nullable
     private final RecordInfo recordInfo;
     private final long recordingTime;
     private int nbPackets;

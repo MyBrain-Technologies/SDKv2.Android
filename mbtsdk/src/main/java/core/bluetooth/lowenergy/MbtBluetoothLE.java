@@ -17,6 +17,7 @@ import android.content.pm.PackageManager;
 import android.os.ParcelUuid;
 import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.RequiresPermission;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
@@ -55,12 +56,14 @@ import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     private static final String TAG = MbtBluetoothLE.class.getSimpleName();
 
+    @NonNull
     private StreamState streamingState = StreamState.IDLE;
 
     private MbtGattController mbtGattController;
 
     private BluetoothLeScanner bluetoothLeScanner;
 
+    @Nullable
     private BluetoothGatt gatt;
 
     /**
@@ -69,7 +72,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @param context the application context
      * @param mbtBluetoothManager the Bluetooth manager that performs requests and receives results.
      */
-    public MbtBluetoothLE(Context context, MbtBluetoothManager mbtBluetoothManager) {
+    public MbtBluetoothLE(@NonNull Context context, MbtBluetoothManager mbtBluetoothManager) {
         super(context, mbtBluetoothManager);
         this.mbtGattController = new MbtGattController(context, this);
     }
@@ -240,7 +243,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @return Each found device that matches the specified filters
      */
     @RequiresPermission(anyOf = {ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION})
-    public BluetoothDevice startLowEnergyScan(boolean filterOnDeviceService, String deviceName) {
+    public BluetoothDevice startLowEnergyScan(boolean filterOnDeviceService, @Nullable String deviceName) {
         this.bluetoothLeScanner = super.bluetoothAdapter.getBluetoothLeScanner();
         List<ScanFilter> mFilters = new ArrayList<>();
         if (filterOnDeviceService) {
@@ -298,9 +301,10 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     /**
      * callback used when scanning using bluetooth Low Energy scanner.
      */
+    @NonNull
     private ScanCallback leScanCallback = new ScanCallback() {
 
-        public void onScanResult(int callbackType, ScanResult result) {
+        public void onScanResult(int callbackType, @NonNull ScanResult result) {
             super.onScanResult(callbackType, result);
             final BluetoothDevice device = result.getDevice();
             Log.i(TAG, String.format("Stopping Low Energy Scan -> device detected " +
@@ -359,7 +363,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 //            final BtState state = super.connectionLock.waitAndGetResult(20000);
 //            return state != null && state == BtState.CONNECTED_AND_READY;
 
-        } catch (final NoSuchMethodException | NoSuchFieldException | IllegalAccessException
+        } catch (@NonNull final NoSuchMethodException | NoSuchFieldException | IllegalAccessException
                 | InvocationTargetException e) {
             final String errorMsg = " -> " + e.getMessage();
             if (e instanceof NoSuchMethodException)
@@ -383,7 +387,9 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      */
     @Override
     public boolean disconnect() {
-        this.gatt.disconnect();
+        if(this.gatt != null){
+            this.gatt.disconnect();
+        }
         this.gatt = null;
         return false;
     }
@@ -402,7 +408,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @param characteristic the characteristic to read
      * @return immediatly false on error, true true if read operation has started correctly
      */
-    private boolean startReadOperation(UUID characteristic){
+    private boolean startReadOperation(@NonNull UUID characteristic){
         if(!isConnected())
             return false;
 
@@ -435,7 +441,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @param payload the payload to write to the characteristic
      * @return immediatly false on error, true otherwise
      */
-    private synchronized boolean startWriteOperation(UUID characteristic, byte[] payload){
+    private synchronized boolean startWriteOperation(@NonNull UUID characteristic, byte[] payload){
         if(!checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT, characteristic))
             return false;
 
@@ -609,7 +615,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * charateristic are enabled.
      * @param newConfig the new config.
      */
-    public boolean changeFilterConfiguration(FilterConfig newConfig){
+    public boolean changeFilterConfiguration(@NonNull FilterConfig newConfig){
         if(!isNotificationEnabledOnCharacteristic(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX)){
             enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX));
         }
@@ -627,7 +633,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * charateristic are enabled.
      * @param newConfig the new config.
      */
-    public boolean changeAmpGainConfiguration(AmpGainConfig newConfig){
+    public boolean changeAmpGainConfiguration(@NonNull AmpGainConfig newConfig){
         if(!isNotificationEnabledOnCharacteristic(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX)){
             enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX));
         }

@@ -3,6 +3,7 @@ package core.device.model;
 import android.bluetooth.BluetoothDevice;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
 
@@ -14,8 +15,11 @@ import features.MbtAcquisitionLocations;
 @Keep
 public abstract class MbtDevice {
     String productName;
+    @Nullable
     String hardwareVersion;
+    @Nullable
     String firmwareVersion;
+    @Nullable
     String serialNumber;
     String deviceAddress;
 
@@ -28,6 +32,7 @@ public abstract class MbtDevice {
 
     private InternalConfig internalConfig;
 
+    @Nullable
     private BluetoothDevice bluetoothDevice; //TODO à enlever si non pertinent
 
     MbtDevice(){
@@ -103,6 +108,7 @@ public abstract class MbtDevice {
      * Gets the devide unique ID
      * @return the device unique ID
      */
+    @Nullable
     public String getSerialNumber() {
         return this.serialNumber;
     }
@@ -165,6 +171,7 @@ public abstract class MbtDevice {
         this.internalConfig = internalConfig;
     }
 
+    @Nullable
     public BluetoothDevice getBluetoothDevice() {
         return bluetoothDevice;
     }

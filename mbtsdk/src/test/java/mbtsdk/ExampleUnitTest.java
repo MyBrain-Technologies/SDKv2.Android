@@ -1,4 +1,4 @@
-package mbtsdk.com.mybraintech.mbtsdk;
+package mbtsdk;
 
 import org.junit.Test;
 

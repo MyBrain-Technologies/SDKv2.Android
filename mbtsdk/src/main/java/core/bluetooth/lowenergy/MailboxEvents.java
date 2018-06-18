@@ -22,5 +22,6 @@ final class MailboxEvents{
             static final byte MBX_SET_AMP_GAIN = 13;        // Set the eeg signal amplifier gain
             static final byte MBX_GET_EEG_CONFIG = 14;      // Get the current configuration of the Notch filter, the bandpass filter, and the amplifier gain.
             static final byte MBX_P300_ENABLE = 15;         // Enable or disable the p300 functionnality of the melomind.
+            static final byte MBX_DC_OFFSET_ENABLE = 15;         // Enable or disable the DC offset measurement computation and sending.
             static final byte MBX_BAD_EVT = (byte)0xFF;
 }

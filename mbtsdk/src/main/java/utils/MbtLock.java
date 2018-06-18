@@ -4,6 +4,7 @@ package utils;
  * Created by manon on 26/08/16.
  */
 
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
@@ -13,6 +14,7 @@ import android.util.Log;
 public final class MbtLock<T> {
     private final static String TAG = "MBT Lock";
 
+    @Nullable
     private T result = null;
     private boolean isWaiting = false;
     private boolean wasNotified = false;
@@ -52,7 +54,7 @@ public final class MbtLock<T> {
                 this.isWaiting = false;
                 return this.result;
             }
-        } catch (final InterruptedException e) {
+        } catch (@NonNull final InterruptedException e) {
             Log.e(TAG, "Failed to wait, Thread got interrupted -> " + e.getMessage());
             Log.getStackTraceString(e);
         }
@@ -77,7 +79,7 @@ public final class MbtLock<T> {
                 this.isWaiting = false;
                 return this.result;
             }
-        } catch (final InterruptedException e) {
+        } catch (@NonNull final InterruptedException e) {
             Log.e(TAG, "Failed to wait, Thread got interrupted -> " + e.getMessage());
             Log.getStackTraceString(e);
         }

@@ -1,5 +1,6 @@
 package utils;
 
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import java.util.concurrent.Callable;
@@ -27,7 +28,7 @@ public final class AsyncUtils {
      * @see ExecutorService
      * @see Executors
      */
-    public static void executeAsync(final Runnable runAsync) {
+    public static void executeAsync(@Nullable final Runnable runAsync) {
         if (runAsync == null)
             throw new IllegalArgumentException("runAsync MUST NOT be NULL");
         try{
@@ -37,7 +38,8 @@ public final class AsyncUtils {
         }
     }
 
-    public static <T> Future<T> executeAsync(final Callable<T> callable){
+    @Nullable
+    public static <T> Future<T> executeAsync(@Nullable final Callable<T> callable){
         Future<T> asyncResult = null;
         if (callable == null)
             throw new IllegalArgumentException("callable MUST NOT be NULL");

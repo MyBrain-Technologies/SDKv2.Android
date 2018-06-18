@@ -1,4 +1,6 @@
 package core.eeg.signalprocessing;
+import android.support.annotation.NonNull;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -16,7 +18,7 @@ public class MBTCalibratorTest {
     public void setUp() throws Exception {
         try {
             System.loadLibrary("mbtalgo_" + BuildConfig.USE_ALGO_VERSION);
-        } catch (final UnsatisfiedLinkError e) {
+        } catch (@NonNull final UnsatisfiedLinkError e) {
             e.printStackTrace();
         }
     }

@@ -1,6 +1,9 @@
 package core.eeg.signalprocessing;
 
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import org.apache.commons.lang.ArrayUtils;
 
 /**
@@ -14,6 +17,7 @@ public final class MBTSignalQualityChecker {
      * Initializes the MBT_MainQC object in the JNI which will live throughout all session.
      * Should be destroyed at the end of the session
      */
+    @NonNull
     public static String initQualityChecker(){
         return nativeInitQualityChecker();
     }
@@ -34,8 +38,9 @@ public final class MBTSignalQualityChecker {
      * @return the qualities for each provided channels
      * @exception IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
      */
-    public static double[] computeQualitiesForPacket( final int samprate, final int packetLength,
-                                                            final double[]... channels ) {
+    @NonNull
+    public static double[] computeQualitiesForPacket(final int samprate, final int packetLength,
+                                                     @Nullable final double[]... channels ) {
 
     if (samprate < 0)
             throw new IllegalArgumentException("samprate MUST BE POSITIVE!");
@@ -64,8 +69,9 @@ public final class MBTSignalQualityChecker {
      * @return the qualities for each provided channels
      * @exception IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
      */
-    public static float[] computeQualitiesForPacketNew( final int samprate, final int packetLength,
-                                                      final Float[]... channels ) {
+    @NonNull
+    public static float[] computeQualitiesForPacketNew(final int samprate, final int packetLength,
+                                                       @Nullable final Float[]... channels ) {
 
         if (samprate < 0)
             throw new IllegalArgumentException("samprate MUST BE POSITIVE!");
@@ -88,6 +94,7 @@ public final class MBTSignalQualityChecker {
 
 
 
+    @NonNull
     public static Float[][] getModifiedInputData(){
         float [][] modifiedData = nativeGetModifiedInputData();
         Float[][] data = new Float[modifiedData.length][];
@@ -101,15 +108,19 @@ public final class MBTSignalQualityChecker {
 
 
 
+    @NonNull
     private native static String nativeInitQualityChecker();
 
     private native static void nativeDeinitQualityChecker();
 
+    @NonNull
     private native static float[][] nativeGetModifiedInputData();
 
 
+    @NonNull
     private native static double[] nativeComputeQualities(double[][] matrix, int samprate, int packetLength);
 
+    @NonNull
     public native static float[] nativeComputeQualityCheckerNew(float[][] matrix, int samprate, int packetLengthe);
 
 

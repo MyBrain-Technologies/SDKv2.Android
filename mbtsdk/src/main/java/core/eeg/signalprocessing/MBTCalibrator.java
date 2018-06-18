@@ -1,5 +1,7 @@
 package core.eeg.signalprocessing;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import java.util.HashMap;
@@ -14,7 +16,8 @@ import core.eeg.storage.MbtEEGPacket;
 public final class MBTCalibrator {
     private static final String TAG = MBTCalibrator.class.getSimpleName();
     static int count = 0;
-    public static HashMap<String, float[]> calibrateNew(final int sampRate, final int packetLength, final MbtEEGPacket... packets){
+    @NonNull
+    public static HashMap<String, float[]> calibrateNew(final int sampRate, final int packetLength, @Nullable final MbtEEGPacket... packets){
         if (sampRate < 0)
             throw new IllegalArgumentException("samprate MUST BE POSITIVE!");
         if (packetLength < 0)
@@ -53,12 +56,14 @@ public final class MBTCalibrator {
         return nativeCalibrateNew(sampRate, packetLength, packets.length, qualities, mainMatrix);
     }
 
+    @NonNull
     public static HashMap<String, float[]> calibrateTest(final int sampRate, final int packetLength){
         final float[][] qualities = new float[2][250];
         final float[][] mainMatrix = new float[2][250];
         return nativeCalibrateNew(sampRate, packetLength, 30, qualities, mainMatrix);
     }
 
+    @NonNull
     private native static HashMap<String, float[]> nativeCalibrateNew(final int samprate, final int packetLength, final int calibLength,
-                                                                  final float[][] qualities, final float[][] matrix);
+                                                                      final float[][] qualities, final float[][] matrix);
 }

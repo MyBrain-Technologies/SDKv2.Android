@@ -61,6 +61,7 @@ public final class MbtManager{
     private ConnectionStateListener connectionStateListener;
     private EegListener eegListener;
     private DeviceInfoListener deviceInfoListener;
+    @Nullable
     private DeviceStatusListener deviceStatusListener;
 
     /**
@@ -76,6 +77,7 @@ public final class MbtManager{
         registerManager(new MbtDeviceManager(mContext, this, MbtFeatures.getBluetoothProtocol()));
         registerManager(new MbtBluetoothManager(mContext, this, MbtFeatures.getBluetoothProtocol()));
         registerManager(new MbtEEGManager(mContext, this, MbtFeatures.getBluetoothProtocol()));
+
     }
 
     /**
@@ -217,7 +219,7 @@ public final class MbtManager{
      * @param event contains data transmitted by the publisher : here it contains the converted EEG data matrix, the status, the number of acquisition channels and the sampling rate
      */
     @Subscribe(threadMode = ThreadMode.MAIN, priority = 1)
-    public void onEvent(final ClientReadyEEGEvent event) { //warning : do not remove this attribute (consider unsused by the IDE, but actually used)
+    public void onEvent(@NonNull final ClientReadyEEGEvent event) { //warning : do not remove this attribute (consider unsused by the IDE, but actually used)
         Log.i(TAG, "event ClientReadyEEGEvent received" );
         if(eegListener != null)
             eegListener.onNewPackets(event.getEegPackets());

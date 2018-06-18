@@ -1,5 +1,7 @@
 package features;
 
+import android.support.annotation.NonNull;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -80,22 +82,27 @@ public final class MbtFeatures{
         return (MbtConfig.getScannableDevices().equals(MELOMIND) ? MELOMIND_NB_CHANNELS : VPRO_NB_CHANNELS);
     }
 
+    @NonNull
     public static String getDeviceName(){
         return (MbtConfig.getScannableDevices().equals(MELOMIND) ? MELOMIND_DEVICE_NAME : VPRO_DEVICE_NAME);
     }
 
+    @NonNull
     public static BtProtocol getBluetoothProtocol(){
         return (MbtConfig.getScannableDevices().equals(MELOMIND) ? BLUETOOTH_LE : BLUETOOTH_SPP);
     }
 
+    @NonNull
     public static ArrayList<MbtAcquisitionLocations> getLocations(){
         return (MbtConfig.getScannableDevices().equals(MELOMIND) ? MELOMIND_LOCATIONS : VPRO_LOCATIONS);
     }
 
+    @NonNull
     public static ArrayList<MbtAcquisitionLocations> getReferences(){
         return (MbtConfig.getScannableDevices().equals(MELOMIND) ? MELOMIND_REFERENCES : VPRO_REFERENCES);
     }
 
+    @NonNull
     public static ArrayList<MbtAcquisitionLocations> getGrounds(){
         return (MbtConfig.getScannableDevices().equals(MELOMIND) ? MELOMIND_GROUNDS : VPRO_GROUNDS);
     }

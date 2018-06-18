@@ -1,6 +1,8 @@
 package utils;
 
 
+import android.support.annotation.NonNull;
+
 import java.util.ArrayList;
 
 /**
@@ -12,7 +14,8 @@ public class MatrixUtils {
      * Inverts the columns and lines of a matrix of Float
      *
      */
-    public static ArrayList<ArrayList<Float>> invertFloatMatrix( ArrayList<ArrayList<Float>> source){
+    @NonNull
+    public static ArrayList<ArrayList<Float>> invertFloatMatrix(ArrayList<ArrayList<Float>> source){
 
         int nbLinesDestination = source.get(0).size();
         int nbColumnsDestination = source.size();
@@ -33,7 +36,8 @@ public class MatrixUtils {
     /**
      * Inverts the columns and lines of a matrix of Integer
      */
-    public static ArrayList<ArrayList<Integer>> invertIntegertMatrix( ArrayList<ArrayList<Integer>> source){
+    @NonNull
+    public static ArrayList<ArrayList<Integer>> invertIntegertMatrix(ArrayList<ArrayList<Integer>> source){
 
         int nbLinesDestination = source.get(0).size();
         int nbColumnsDestination = source.size();
@@ -53,7 +57,8 @@ public class MatrixUtils {
     /**
      * Inverts the columns and lines of a matrix of String
      */
-    public static ArrayList<ArrayList<String>> invertStringtMatrix( ArrayList<ArrayList<String>> source){
+    @NonNull
+    public static ArrayList<ArrayList<String>> invertStringtMatrix(ArrayList<ArrayList<String>> source){
 
         int nbLinesDestination = source.get(0).size();
         int nbColumnsDestination = source.size();

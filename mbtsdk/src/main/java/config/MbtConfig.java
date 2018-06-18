@@ -1,5 +1,7 @@
 package config;
 
+import android.support.annotation.NonNull;
+
 import features.MbtFeatures;
 import features.ScannableDevices;
 
@@ -123,73 +125,87 @@ public final class MbtConfig {
 
         private String serverURL;
 
+        @NonNull
         public MbtConfigBuilder setEegPacketLength(final int eegPacketLength) {
             this.eegPacketLength = eegPacketLength;
             return this;
         }
 
+        @NonNull
         public MbtConfigBuilder setSampleRate(final int sampleRate) {
             this.sampleRate = sampleRate;
             return this;
         }
 
+        @NonNull
         public MbtConfigBuilder setSamplePerNotification(final int samplePerNotification) {
             this.samplePerNotification = samplePerNotification;
             return this;
         }
 
 
+        @NonNull
         public MbtConfigBuilder setEegBufferLengthNotification(final int eegBufferLengthNotification) {
             this.eegBufferLengthClientNotif = eegBufferLengthNotification;
             return this;
         }
 
 
+        @NonNull
         public MbtConfigBuilder setBatteryEventsLogsEnabled(final boolean batteryEventsLogsEnabled) {
             this.batteryEventsLogsEnabled = batteryEventsLogsEnabled;
             return this;
         }
 
+        @NonNull
         public MbtConfigBuilder setBatteryReadPeriod(final int batteryReadPeriod) {
             this.batteryReadPeriod = batteryReadPeriod;
             return this;
         }
 
+        @NonNull
         public MbtConfigBuilder setOfflineModeEnabled(final boolean offlineModeEnabled) {
             this.offlineModeEnabled = offlineModeEnabled;
             return this;
         }
 
+        @NonNull
         public MbtConfigBuilder setMaxIdleDurationForDisconnecting(final int maxIdleDurationForDisconnecting) {
             this.maxIdleDurationForDisconnecting = maxIdleDurationForDisconnecting;
             return this;
         }
 
+        @NonNull
         public MbtConfigBuilder setAcquisitionEnabledLowBattery(final boolean acquisitionEnabledLowBattery) {
             this.acquisitionEnabledLowBattery = acquisitionEnabledLowBattery;
             return this;
         }
 
+        @NonNull
         public MbtConfigBuilder setBluetoothConnectionTimeout(final int bluetoothConnectionTimeout) {
             this.bluetoothConnectionTimeout = bluetoothConnectionTimeout;
             return this;
         }
 
+        @NonNull
         public MbtConfigBuilder setBluetoothScanTimeout(final int bluetoothScanTimeout) {
             this.bluetoothScanTimeout = bluetoothScanTimeout;
             return this;
         }
 
+        @NonNull
         public MbtConfigBuilder setBluetoothPairingTimeout(final int bluetoothPairingTimeout) {
             this.bluetoothPairingTimeout = bluetoothPairingTimeout;
             return this;
         }
 
+        @NonNull
         public MbtConfigBuilder setServerURL(final String serverURL) {
             this.serverURL = serverURL;
             return this;
         }
 
+        @NonNull
         public MbtConfig create() {
             return new MbtConfig(this);
         }

@@ -1,5 +1,7 @@
 package utils;
 
+import android.support.annotation.NonNull;
+
 import java.lang.reflect.Field;
 
 /**
@@ -7,7 +9,7 @@ import java.lang.reflect.Field;
  */
 
 public class ResIdUtils {
-    public static int getResId(String resName, Class<?> c) {
+    public static int getResId(String resName, @NonNull Class<?> c) {
 
         try {
             Field idField = c.getDeclaredField(resName);

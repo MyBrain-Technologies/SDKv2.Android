@@ -54,7 +54,9 @@ public final class StreamConfig {
     public static class Builder{
         //long streamDuration = -1L;
         private int notificationPeriod = MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD;
+        @Nullable
         private DeviceStatusListener deviceStatusListener = null;
+        @NonNull
         private final EegListener eegListener;
 
 
@@ -87,6 +89,7 @@ public final class StreamConfig {
          * @param periodInMillis the period in milliseconds
          * @return the builder instance
          */
+        @NonNull
         public Builder setNotificationPeriod(int periodInMillis){
             this.notificationPeriod = periodInMillis;
             return this;
@@ -101,11 +104,13 @@ public final class StreamConfig {
          * @param deviceStatusListener the device status listener
          * @return the device instance
          */
+        @NonNull
         public Builder addSaturationAndOffsetListener(@Nullable DeviceStatusListener deviceStatusListener){
             this.deviceStatusListener = deviceStatusListener;
             return this;
         }
 
+        @Nullable
         public StreamConfig create(){
             return new StreamConfig(this.eegListener, this.notificationPeriod, this.deviceStatusListener);
         }

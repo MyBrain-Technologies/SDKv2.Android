@@ -1,5 +1,6 @@
 package core.eeg.signalprocessing;
 
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import org.apache.commons.lang.ArrayUtils;
@@ -16,6 +17,7 @@ import core.eeg.storage.MbtEEGPacket;
 public class MBTComputeStatistics {
     private static final String TAG = MBTComputeStatistics.class.getName();
 
+    @NonNull
     public static HashMap<String, Float> computeStatistics(final int bestChannel, final int sampRate, final int packetLength, final MbtEEGPacket... packets){
 
         final float[][] qualities = new float[2][packetLength];
@@ -52,7 +54,8 @@ public class MBTComputeStatistics {
         return result;
     }
 
-    public static HashMap<String, Float> computeStatisticsSNR(final float threshold,  final Float[] snrValues){
+    @NonNull
+    public static HashMap<String, Float> computeStatisticsSNR(final float threshold, final Float[] snrValues){
 
 
         HashMap<String, Float> result = new HashMap<>();
@@ -63,8 +66,10 @@ public class MBTComputeStatistics {
         return result;
     }
 
+    @NonNull
     private native static HashMap<String, Float> nativeComputeStatistics(final int sampRate, final int packetLength, final float[] inputData);
 
+    @NonNull
     private native static HashMap<String, Float> nativeComputeStatisticsSNR(final float threshold, final int size, final float[] snrValues);
 
 }

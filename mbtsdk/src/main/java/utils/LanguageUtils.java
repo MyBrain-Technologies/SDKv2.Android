@@ -2,6 +2,7 @@ package utils;
 
 import android.content.Context;
 import android.content.res.Configuration;
+import android.support.annotation.NonNull;
 
 import java.util.Locale;
 
@@ -11,7 +12,7 @@ import java.util.Locale;
 
 public class LanguageUtils {
     private static Locale myLocale;
-    public static void setLocale(Context context, String lang) {
+    public static void setLocale(@NonNull Context context, String lang) {
         if (lang.equalsIgnoreCase(""))
             return;
         myLocale = Locale.forLanguageTag(lang);
