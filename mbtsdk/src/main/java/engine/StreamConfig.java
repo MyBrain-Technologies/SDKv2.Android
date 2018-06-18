@@ -121,4 +121,17 @@ public final class StreamConfig {
 
     }
 
+    /**
+     * Checks if the configuration parameters are correct
+     * @return true is the configuration is correct, false otherwise
+     */
+    public boolean isConfigCorrect() {
+        if(this.notificationPeriod <  MbtFeatures.MIN_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS)
+            return false;
+        else if(notificationPeriod >  MbtFeatures.MAX_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS )
+            return false;
+
+        return true;
+    }
+
 }

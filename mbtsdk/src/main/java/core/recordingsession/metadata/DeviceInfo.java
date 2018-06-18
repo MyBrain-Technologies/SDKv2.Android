@@ -21,11 +21,6 @@ public enum DeviceInfo {
     SERIAL_NUMBER,
 
     /**
-     * Corresponds to a device's new connection state
-     */
-    STATE,
-
-    /**
      * Corresponds to a device battery measure
      */
     BATTERY

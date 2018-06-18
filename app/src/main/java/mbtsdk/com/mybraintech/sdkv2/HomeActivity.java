@@ -6,13 +6,11 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ScrollView;
-import android.widget.Scroller;
 import android.widget.Spinner;
 import android.widget.Toast;
 
@@ -25,7 +23,6 @@ import engine.clientevents.ConnectionException;
 import engine.clientevents.ConnectionStateListener;
 import features.MbtFeatures;
 
-import static features.MbtFeatures.DEVICE_NAME_MAX_LENGTH;
 import static features.MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX;
 import static features.MbtFeatures.VPRO_DEVICE_NAME_PREFIX;
 import static features.ScannableDevices.MELOMIND;
@@ -58,7 +55,7 @@ public class HomeActivity extends AppCompatActivity{
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
-        initTopBar();
+        initToolBar();
         toast= Toast.makeText(HomeActivity.this, "", Toast.LENGTH_SHORT);
         client = MbtClient.getClientInstance();
 
@@ -211,9 +208,9 @@ public class HomeActivity extends AppCompatActivity{
         startActivity(new Intent(HomeActivity.this,WelcomeActivity.class));
     }
 
-    private void initTopBar(){
+    private void initToolBar(){
         getSupportActionBar().setDisplayShowHomeEnabled(true);
-        getSupportActionBar().setIcon(R.drawable.logo);
+        //getSupportActionBar().setIcon(R.drawable.logo);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getColor(R.color.light_blue)));
         }

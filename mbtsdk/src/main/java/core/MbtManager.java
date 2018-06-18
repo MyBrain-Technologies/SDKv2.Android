@@ -180,13 +180,6 @@ public final class MbtManager{
                 else
                     deviceInfoListener.onSerialNumberReceived((String) event.getInfo());
                 break;
-
-            case STATE:
-                if(event.getInfo() == null && connectionStateListener != null)
-                    connectionStateListener.onError(new ConnectionException(ConnectionException.CONNECTION_FAILURE));
-                else
-                    connectionStateListener.onStateChanged((BtState) event.getInfo());
-                break;
         }
     }
 
@@ -279,4 +272,20 @@ public final class MbtManager{
     }
 
 
+    /**
+     * Sets the {@link ConnectionStateListener} to the connectionStateListener value
+     * @param connectionStateListener the new {@link ConnectionStateListener}. Set it to null if you want to reset the listener
+     */
+    public void setConnectionStateListener(ConnectionStateListener<ConnectionException> connectionStateListener) {
+        this.connectionStateListener = connectionStateListener;
+    }
+
+
+    /**
+     * Sets the {@link EegListener} to the connectionStateListener value
+     * @param EEGListener the new {@link EegListener}. Set it to null if you want to reset the listener
+     */
+    public void setEEGListener(EegListener<EEGException> EEGListener) {
+        this.eegListener = EEGListener;
+    }
 }

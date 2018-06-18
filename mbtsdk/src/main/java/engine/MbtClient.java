@@ -13,8 +13,10 @@ import core.eeg.storage.MbtEEGPacket;
 import core.recordingsession.metadata.DeviceInfo;
 import engine.clientevents.BaseException;
 import engine.clientevents.ConnectionException;
+import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.DeviceInfoListener;
 import engine.clientevents.EEGException;
+import engine.clientevents.EegListener;
 import features.MbtFeatures;
 import features.ScannableDevices;
 
@@ -25,11 +27,6 @@ import features.ScannableDevices;
 public final class MbtClient {
 
     private static final String TAG = MbtClient.class.getName();
-
-    /**
-     *     Used to save context
-     */
-    private Context mContext;
 
     //the client callbacks that will allow fluid communication between SDK and client app
     /**
@@ -56,6 +53,10 @@ public final class MbtClient {
         return clientInstance;
     }
 
+    /**
+     * @return The current instance of the client. Init() must have been called first
+     * @throws NullPointerException if there is no instance created.
+     */
     public static MbtClient getClientInstance(){
         if(clientInstance == null)
             throw new NullPointerException("Client instance has not been initialized. Please call init() method first.");
@@ -67,7 +68,7 @@ public final class MbtClient {
      * @param builder object for creating the MbtClient instance with a setters syntax.
      */
     private MbtClient(MbtClientBuilder builder){
-        mContext = builder.mContext;
+        //mContext = builder.mContext;
         this.mbtManager = builder.mbtManager;
     }
 
@@ -146,7 +147,7 @@ public final class MbtClient {
      * @param streamConfig the configuration to pass to the streaming.
      */
     public void startStream(@NonNull StreamConfig streamConfig){
-        if(streamConfig.getNotificationPeriod() < MbtFeatures.MIN_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS)
+        if(!streamConfig.isConfigCorrect())
             streamConfig.getEegListener().onError(new EEGException(EEGException.INVALID_PARAMETERS));
         else
             MbtConfig.eegBufferLengthClientNotif = (int)((streamConfig.getNotificationPeriod()* MbtFeatures.DEFAULT_SAMPLE_RATE)/1000);
@@ -162,6 +163,23 @@ public final class MbtClient {
     public void cancelConnection() {
         //todo
     }
+
+    /**
+     * Sets the {@link ConnectionStateListener} to the connectionStateListener value
+     * @param connectionStateListener the new {@link ConnectionStateListener}. Set it to null if you want to reset the listener
+     */
+    public void setConnectionStateListener(ConnectionStateListener<ConnectionException> connectionStateListener){
+        this.mbtManager.setConnectionStateListener(connectionStateListener);
+    }
+
+    /**
+     * Sets the {@link EegListener} to the connectionStateListener value
+     * @param eegListener the new {@link EegListener}. Set it to null if you want to reset the listener
+     */
+    public void setEEGListener(EegListener<EEGException> eegListener){
+        this.mbtManager.setEEGListener(eegListener);
+    }
+
 
 //    public void testEEGpackageClient(){
 //        if (MbtFeatures.getBluetoothProtocol().equals(BLUETOOTH_LE)) {
