@@ -2,7 +2,6 @@ package core.eeg;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.util.Log;
 
 import org.apache.commons.lang.ArrayUtils;
@@ -30,9 +29,7 @@ import eventbus.EventBusManager;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.BluetoothEEGEvent;
 import utils.AsyncUtils;
-import utils.MatrixUtils;
 
-import static config.MbtConfig.getEegBufferLengthClientNotif;
 import static config.MbtConfig.getSampleRate;
 import static core.eeg.signalprocessing.MBTSignalQualityChecker.computeQualitiesForPacketNew;
 import static features.ScannableDevices.VPRO;
@@ -81,12 +78,11 @@ public final class MbtEEGManager extends BaseModuleManager{
     /**
      * Reconfigures the temporary buffers that are used to store the raw EEG data until conversion to user-readable EEG data.
      * Reset the buffers arrays, status list, the number of status bytes and the packet Size
-     * @param sampleRate the sample rate
      * @param samplePerNotif the number of sample per notification
      * @param nbStatusBytes the number of bytes used for status data
      */
-    public void reconfigureBuffers(final int sampleRate, byte samplePerNotif, final int nbStatusBytes){
-        mbtDataBuffering.reconfigureBuffers(sampleRate,samplePerNotif,nbStatusBytes);
+    public void reconfigureBuffers(byte samplePerNotif, final int nbStatusBytes){
+        mbtDataBuffering.reconfigureBuffers(samplePerNotif,nbStatusBytes);
     }
 
 

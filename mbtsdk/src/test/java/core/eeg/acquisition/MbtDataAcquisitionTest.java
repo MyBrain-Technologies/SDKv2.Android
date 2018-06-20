@@ -28,15 +28,15 @@ public class MbtDataAcquisitionTest {
     public void setUp() throws Exception {
         Context context = RuntimeEnvironment.application.getApplicationContext();
         MbtManager mbtManager = new MbtManager(context);
-        MbtEEGManager mbtEEGManager = new MbtEEGManager(context, mbtManager);
-        this.dataAcquisition = new MbtDataAcquisition(mbtEEGManager);
+        MbtEEGManager mbtEEGManager = new MbtEEGManager(context, mbtManager,BtProtocol.BLUETOOTH_LE);
+        this.dataAcquisition = new MbtDataAcquisition(mbtEEGManager, BtProtocol.BLUETOOTH_LE);
     }
 
     /*@Test
     public void isBitSetZerosTest() {
         int i = 0;
         byte tempStatus = (byte) 0;
-        Float result = dataAcquisition.isBitSet(tempStatus, i);
+        Float result = dataAcquisition.isBitSet(tempStatus, i); // private method
         assertTrue(result.equals(0f)); //check that the tested method return 0f as expected
     }*/
 
@@ -44,52 +44,47 @@ public class MbtDataAcquisitionTest {
     public void isBitSetWithOnesTest() {
         int i = 100000000;
         byte tempStatus = (byte) 1;
-        Float result = dataAcquisition.isBitSet(tempStatus, i);
+        Float result = dataAcquisition.isBitSet(tempStatus, i); // private method
         assertTrue(result.equals(1f)); //check that the tested method return 1f as expected
     }*/
 
     @Test
     public void reconfigureBuffersTest() {
-        int samprate = 250;
         byte samplePerNotif = (byte) 1;
         byte statusByteNb = 2;
 
-        dataAcquisition.reconfigureBuffers(samprate,samplePerNotif,statusByteNb);
-
+        dataAcquisition.reconfigureBuffers(samplePerNotif,statusByteNb);
         //check that the buffer and indexes has been well initialized
-        assertTrue(dataAcquisition.getbufferPosition() == 0);
         assertTrue(dataAcquisition.getPreviousIndex() == -1);
         assertTrue(dataAcquisition.getStartingIndex() == -1);
     }
 
-    /*
+
     @Test
     public void handleDataMatrixSizeBLETest() { //check that the output Float matrix size is correct, according to the input array size
-        dataAcquisition.getEegManager().getMbtManager().setBluetoothProtocol(BtProtocol.BLUETOOTH_LE);
         byte[] data = new byte[250];
         for (int i=0; i<63; i++){// buffer size = 1000=16*62,5 => matrix size always = 1000/2 = 500
             new Random().nextBytes(data); //Generates random bytes and places them into a user-supplied byte array
             dataAcquisition.handleDataAcquired(data);
             Arrays.fill(data,0,0,(byte)0);
         }
-        ArrayList<ArrayList<Float>> eegResult = dataAcquisition.getEegManager().getEegResult();
+        ArrayList<ArrayList<Float>> eegResult = dataAcquisition.getEegMatrix();
         assertNotNull(eegResult); //problem to solve : test return null eegResult
         //assertTrue(eegResult.size()*eegResult.get(0).size()==500);
     }
 
     @Test
     public void handleDataMatrixSizeSPPTest() { //check that the output Float matrix size is correct, according to the input array size
-        dataAcquisition.getEegManager().getMbtManager().setBluetoothProtocol(BtProtocol.BLUETOOTH_SPP);
         byte[] data = new byte[250];
         for (int i=0; i<63; i++){ //buffer size=6750=62,5*108(Packet size) => matrix size = 6750/3 - 250 (-250 because matrix.get(0) removed for SPP)
             new Random().nextBytes(data); //Generates random bytes and places them into a user-supplied byte array
             dataAcquisition.handleDataAcquired(data);
             Arrays.fill(data,0,0,(byte)0);
         }
-        ArrayList<ArrayList<Float>> eegResult = dataAcquisition.getEegManager().getEegResult();
+        ArrayList<ArrayList<Float>> eegResult = dataAcquisition.getEegMatrix();
         assertNotNull(eegResult); //problem to solve : test return null eegResult
         //assertTrue(eegResult.size()*eegResult.get(0).size()==2000);
-    }*/
+    }
 
  @Test
     public void handleDataAbnormalAmountOfDataTest() { //check that we don't have an abnormal Amount Of EEG Data

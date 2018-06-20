@@ -153,11 +153,10 @@ public class MbtDataBuffering {
     /**
      * Reconfigures the temporary buffers that are used to store the raw EEG data until conversion to user-readable EEG data.
      * Reset the buffers, status and packet size
-     * @param sampleRate the sample rate
      * @param samplePerNotif the number of samples per notification
      * @param nbStatusByte the number of bytes used for one eeg data
      */
-    public void reconfigureBuffers(final int sampleRate, byte samplePerNotif, final int nbStatusByte){ // statusByteNb parameter should be the internal config value
+    public void reconfigureBuffers(byte samplePerNotif, final int nbStatusByte){ // statusByteNb parameter should be the internal config value
 
         MbtConfig.setSamplePerNotification(samplePerNotif);
         setNbStatusBytes(nbStatusByte);

@@ -136,13 +136,11 @@ public class MbtDataAcquisition {
     /**
      * Reconfigures the temporary buffers that are used to store the raw EEG data until conversion to user-readable EEG data.
      * Resets the buffers, status, NbStatusBytes and rawDataPacketSize
-     *
-     * @param sampleRate     the sample rate
      * @param samplePerNotif the number of sample per notification
      * @param nbStatusByte   the number of bytes used for one eeg data
      */
-    public void reconfigureBuffers(final int sampleRate, final byte samplePerNotif, final byte nbStatusByte) {
-        eegManager.reconfigureBuffers(sampleRate, samplePerNotif, nbStatusByte);
+    public void reconfigureBuffers(final byte samplePerNotif, final byte nbStatusByte) {
+        eegManager.reconfigureBuffers(samplePerNotif, nbStatusByte);
         resetIndex();
     }
 
@@ -208,4 +206,10 @@ public class MbtDataAcquisition {
         return previousIndex;
     }
 
+    /**
+     * Method for unit tests
+     */
+    public ArrayList<ArrayList<Float>> getEegMatrix(){
+        return eegManager.getConsolidatedEEG();
+    }
 }

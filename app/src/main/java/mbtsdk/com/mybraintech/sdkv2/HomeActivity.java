@@ -57,7 +57,7 @@ public class HomeActivity extends AppCompatActivity{
         @Override
         public void onStateChanged(@NonNull BtState newState) {
             Log.i(TAG, "Current state updated "+newState);
-            if(isScanning){
+            //if(isScanning){
                 if (newState.equals(BtState.CONNECTED) ) {
                     notifyUser("Device ' " + deviceName + " ' connected but not ready. Please be patient");
                 }else if (newState.equals(BtState.CONNECTED_AND_READY) ){
@@ -66,13 +66,17 @@ public class HomeActivity extends AppCompatActivity{
                 }else if (newState.equals(BtState.SCAN_TIMEOUT)||(newState.equals(BtState.CONNECT_FAILURE))){
                     notifyUser(getString(R.string.connect_failed) + " "+deviceName);
                     updateScanning(false);
+                }else if (newState.equals(BtState.SCAN_STARTED)){
+                    notifyUser(getString(R.string.connect_in_progress));
+                    updateScanning(true);
                 }
-            }
+            //}
         }
 
         @Override
         public void onError(ConnectionException exception) {
             notifyUser(exception.toString());
+            updateScanning(false);
             exception.printStackTrace();
         }
     };
@@ -130,9 +134,9 @@ public class HomeActivity extends AppCompatActivity{
             //findAvailableDevice();
             notifyUser("Please enter the name of the device");
         }else{ //the user entered a name
+            Log.e(TAG,"device name "+deviceName);
             if( isMbtDeviceName() && deviceName.length() == DEVICE_NAME_MAX_LENGTH ) { //check the device name format
-                notifyUser(getString(R.string.connect_in_progress));
-                updateScanning(true); //changes isScanning to true and updates button text "Find a device" into "Cancel"
+//                updateScanning(true); //changes isScanning to true and updates button text "Find a device" into "Cancel"
                 client.connectBluetooth(new ConnectionConfig.Builder(connectionStateListener).deviceName(deviceName).maxScanDuration(SCAN_DURATION).scanDeviceType(isMelomindDevice() ? MELOMIND : VPRO).create());
 
             }else{ //if the device name entered by the user is empty or is not starting with a mbt prefix
@@ -207,7 +211,7 @@ public class HomeActivity extends AppCompatActivity{
         final Intent intent = new Intent(HomeActivity.this, DeviceActivity.class);
         intent.putExtra(DEVICE_NAME, deviceName);
         intent.putExtra(BT_STATE, newState);
-        startActivity(new Intent(HomeActivity.this,DeviceActivity.class));
+        startActivity(intent);
         finish();
     }
 }

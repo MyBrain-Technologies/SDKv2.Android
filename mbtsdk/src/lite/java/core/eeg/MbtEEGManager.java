@@ -85,8 +85,8 @@ public final class MbtEEGManager extends BaseModuleManager{
      * @param samplePerNotif the number of sample per notification
      * @param nbStatusBytes the number of bytes used for status data
      */
-    public void reconfigureBuffers(final int sampleRate, byte samplePerNotif, final int nbStatusBytes){
-        mbtDataBuffering.reconfigureBuffers(sampleRate,samplePerNotif,nbStatusBytes);
+    public void reconfigureBuffers(byte samplePerNotif, final int nbStatusBytes){
+        mbtDataBuffering.reconfigureBuffers(samplePerNotif,nbStatusBytes);
     }
 
 

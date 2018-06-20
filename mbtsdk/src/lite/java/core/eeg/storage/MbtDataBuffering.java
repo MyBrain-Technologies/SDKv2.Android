@@ -157,7 +157,7 @@ public class MbtDataBuffering {
      * @param samplePerNotif the number of samples per notification
      * @param nbStatusByte the number of bytes used for one eeg data
      */
-    public void reconfigureBuffers(final int sampleRate, byte samplePerNotif, final int nbStatusByte){ // statusByteNb parameter should be the internal config value
+    public void reconfigureBuffers(byte samplePerNotif, final int nbStatusByte){ // statusByteNb parameter should be the internal config value
 
         MbtConfig.setSamplePerNotification(samplePerNotif);
         setNbStatusBytes(nbStatusByte);

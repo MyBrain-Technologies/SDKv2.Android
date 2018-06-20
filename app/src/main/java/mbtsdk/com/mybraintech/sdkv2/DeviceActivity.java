@@ -107,7 +107,7 @@ public class DeviceActivity extends AppCompatActivity {
 
         @Override
         public void onError(BaseException exception) {
-            notifyUser(getString(R.string.read_battery));
+            notifyUser(getString(R.string.error_read_battery));
         }
     };
 
@@ -165,10 +165,8 @@ public class DeviceActivity extends AppCompatActivity {
                     stopStream();
 
                 if(currentState == BtState.CONNECTED_AND_READY ){
-                    client.disconnectBluetooth(connectionStateListener);
+                    client.disconnectBluetooth();
                 }
-                returnOnPreviousActivity();
-
             }
         });
     }
@@ -373,7 +371,8 @@ public class DeviceActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        client.disconnectBluetooth(null);
+        client.disconnectBluetooth();
+        client.setConnectionStateListener(null);
         returnOnPreviousActivity();
     }
 
