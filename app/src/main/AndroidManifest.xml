@@ -12,16 +12,15 @@
         android:supportsRtl="true"
         android:name=".TestApp"
         android:theme="@style/AppTheme">
-        <activity android:name=".WelcomeActivity">
+        <activity
+            android:name=".HomeActivity"
+            android:windowSoftInputMode="stateAlwaysHidden"
+            >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-        <activity
-            android:name=".HomeActivity"
-            android:configChanges="orientation|screenSize" >
         </activity>
         <activity
             android:name=".DeviceActivity"

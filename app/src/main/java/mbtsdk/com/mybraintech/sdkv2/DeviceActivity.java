@@ -22,13 +22,17 @@ import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 import core.bluetooth.BtState;
 import core.eeg.storage.MbtEEGPacket;
 import engine.MbtClient;
 
 import engine.StreamConfig;
+import engine.clientevents.BaseException;
+import engine.clientevents.ConnectionException;
 import engine.clientevents.ConnectionStateListener;
+import engine.clientevents.DeviceInfoListener;
 import engine.clientevents.EEGException;
 import engine.clientevents.EegListener;
 import features.MbtFeatures;
@@ -47,6 +51,9 @@ public class DeviceActivity extends AppCompatActivity {
 
     private LineChart eegGraph;
     private LineData eegLineData;
+
+    private LineDataSet channel1;
+    private LineDataSet channel2;
     private ArrayList<ArrayList<Float>> bufferedChartData;
     private long chartCounter  = 0;
     private TextView channel1Quality;
@@ -56,10 +63,57 @@ public class DeviceActivity extends AppCompatActivity {
 
     private Button disconnectButton;
 
+    private Button readBatteryButton;
+    private String lastReadBatteryLevel = "";
+
     private boolean isStreaming = false;
+
+    private ConnectionStateListener<ConnectionException> connectionStateListener = new ConnectionStateListener<ConnectionException>() {
+        @Override
+        public void onError(ConnectionException exception) {
+            notifyUser(getString(R.string.disconnect_failed));
+        }
+
+        @Override
+        public void onStateChanged(@NonNull BtState newState) {
+            currentState = newState;
+            if(currentState.equals(BtState.DISCONNECTED) ){
+                notifyUser(getString(R.string.disconnected_headset));
+                if(isStreaming)
+                    notifyUser("Please try to connect again");
+                returnOnPreviousActivity();
+            }
+        }
+    };
+
+    private DeviceInfoListener deviceInfoListener = new DeviceInfoListener() {
+        @Override
+        public void onBatteryChanged(String newLevel) {
+            lastReadBatteryLevel = newLevel;
+            notifyUser("Current battery level : "+lastReadBatteryLevel+" %");
+        }
+
+        @Override
+        public void onFwVersionReceived(String fwVersion) {
+        }
+
+        @Override
+        public void onHwVersionReceived(String hwVersion) {
+        }
+
+        @Override
+        public void onSerialNumberReceived(String serialNumber) {
+        }
+
+        @Override
+        public void onError(BaseException exception) {
+            notifyUser(getString(R.string.read_battery));
+        }
+    };
+
     private BtState currentState;
 
-    private EegListener eegListener = new EegListener<EEGException>() {
+    private EegListener<EEGException> eegListener = new EegListener<EEGException>() {
 
         @Override
         public void onError(EEGException exception) {
@@ -68,57 +122,37 @@ public class DeviceActivity extends AppCompatActivity {
 
         @Override
         public void onNewPackets(final MbtEEGPacket mbtEEGPackets) {
-            Log.i(TAG,"New EEG packets"+mbtEEGPackets.toString());
-            //the SDK user can do what he wants now with the EEG data stored in the MbtEEGPackets
-
             mbtEEGPackets.setChannelsData(MatrixUtils.invertFloatMatrix(mbtEEGPackets.getChannelsData()));
 
-            if(eegGraph!=null){
-                addEegDataToGraph(mbtEEGPackets);
+            if(isStreaming){
+                if(eegGraph!=null){
+                    addEegDataToGraph(mbtEEGPackets);
 
-                channel1Quality.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        //channel1Quality.setText(getString(R.string.channel_1_qc) + (mbtEEGPackets.getQualities() != null ? mbtEEGPackets.getQualities().get(0) : "--"));
-                    }
-                });
-                channel2Quality.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        //channel2Quality.setText(getString(R.string.channel_2_qc) + (mbtEEGPackets.getQualities() != null ? mbtEEGPackets.getQualities().get(1) : "--"));
-                    }
-                });
+                    channel1Quality.setText(getString(R.string.channel_1_qc) + (mbtEEGPackets.getQualities() != null ? mbtEEGPackets.getQualities().get(0) : " -- "));
+                    channel2Quality.setText(getString(R.string.channel_2_qc) + (mbtEEGPackets.getQualities() != null ? mbtEEGPackets.getQualities().get(1) : " -- "));
+                }
             }
         }
-
     };
 
-    private ConnectionStateListener connectionStateListener = new ConnectionStateListener() {
-        @Override
-        public void onStateChanged(@NonNull BtState newState) {
-            currentState = newState;
-            Log.e(TAG, "Current state updated Device Activity "+newState);
-        }
-
-        @Override
-        public void onError(Exception expection) {}
-    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_device);
-        initTopBar();
+        client = MbtClient.getClientInstance();
+        currentState = (BtState) getIntent().getSerializableExtra(HomeActivity.BT_STATE);
 
+        initToolBar();
         initChannelsTextView();
         initDeviceNameTextView();
         initDisconnectButton();
-
-        client = MbtClient.getClientInstance();
-
+        initReadBatteryButton();
         initStartStopStreamingButton();
-
         initEegGraph();
+
+        client.setConnectionStateListener(connectionStateListener);
+
 
     }
 
@@ -127,17 +161,14 @@ public class DeviceActivity extends AppCompatActivity {
         disconnectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(isStreaming) {
+                if(isStreaming)
                     stopStream();
+
+                if(currentState == BtState.CONNECTED_AND_READY ){
+                    client.disconnectBluetooth(connectionStateListener);
                 }
-                client.disconnectBluetooth();
-                if(currentState.equals(BtState.DISCONNECTED)){
-                    setConnectionStateListener(null);
-                    startActivity(new Intent(DeviceActivity.this,HomeActivity.class)); //back to the home page
-                    finish();
-                }else{ //disconnect failed
-                    notifyUser(getString(R.string.disconnect_failed)+deviceName);
-                }
+                returnOnPreviousActivity();
+
             }
         });
     }
@@ -145,14 +176,27 @@ public class DeviceActivity extends AppCompatActivity {
     private void initDeviceNameTextView() {
         deviceNameTextView = findViewById(R.id.deviceNameTextView);
         if(getIntent().hasExtra(HomeActivity.DEVICE_NAME)){
-            deviceName = getIntent().getExtras().getString(HomeActivity.DEVICE_NAME,"");
+            deviceName = Objects.requireNonNull(getIntent().getExtras()).getString(HomeActivity.DEVICE_NAME,"");
             deviceNameTextView.setText(deviceName);
         }
+    }
+
+    private void initReadBatteryButton() {
+        readBatteryButton = findViewById(R.id.readBatteryButton);
+        readBatteryButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(deviceInfoListener != null)
+                    client.readBattery(-1,deviceInfoListener);
+            }
+        });
     }
 
     private void initChannelsTextView() {
         channel1Quality = findViewById(R.id.channel_1_quality);
         channel2Quality = findViewById(R.id.channel_2_quality);
+        channel1Quality.setText(getString(R.string.channel_1_qc) + " -- ");
+        channel2Quality.setText(getString(R.string.channel_2_qc) + " -- ");
     }
 
     private void initStartStopStreamingButton(){
@@ -184,44 +228,30 @@ public class DeviceActivity extends AppCompatActivity {
 
     public void initEegGraph(){
         eegGraph = findViewById(R.id.eegGraph);
-        ArrayList<Entry> data = new ArrayList<>(MbtFeatures.getSampleRate());
-        data.add(new Entry(0, 0)); //init with a 0 value in order to avoid a crash
 
-        //LineDataSet status = new LineDataSet(data, "Status");
-        LineDataSet channel1 = new LineDataSet(data, "Channel 1");
-        LineDataSet channel2 = new LineDataSet(data, "Channel 2");
+        channel1 = new LineDataSet(new ArrayList<Entry>(250), getString(R.string.channel1));
+        channel2 = new LineDataSet(new ArrayList<Entry>(250), getString(R.string.channel2));
 
-        /*status.setLabel("STYM");
-        status.setDrawValues(false);
-        status.disableDashedLine();
-        status.setDrawCircleHole(false);
-        status.setDrawCircles(false);
-        status.setColor(Color.GREEN);
-        status.setDrawFilled(true);
-        status.setFillColor(Color.GREEN);
-        status.setFillAlpha(40);
-        status.setAxisDependency(YAxis.AxisDependency.RIGHT);*/
-
-        channel1.setLabel("Channel 1");
         channel1.setDrawValues(false);
         channel1.disableDashedLine();
         channel1.setDrawCircleHole(false);
         channel1.setDrawCircles(false);
-        channel1.setColor(Color.BLACK);
+        channel1.setColor(Color.rgb(3,32,123));
         channel1.setAxisDependency(YAxis.AxisDependency.LEFT);
 
-        channel2.setLabel("Channel 2");
         channel2.setDrawValues(false);
         channel2.disableDashedLine();
         channel2.setDrawCircleHole(false);
         channel2.setDrawCircles(false);
-        channel2.setColor(Color.MAGENTA);
+        channel2.setColor(Color.rgb(99,186,233));
         channel2.setAxisDependency(YAxis.AxisDependency.LEFT);
 
-        eegLineData = new LineData(/*status,*/channel1,channel2);
+        eegLineData = new LineData();
+
+        eegLineData.addDataSet(channel1);
+        eegLineData.addDataSet(channel2);
 
         eegGraph.setData(eegLineData);
-        // this.chart.setAutoScaleMinMaxEnabled(true);
 
         XAxis xAxis = eegGraph.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.TOP_INSIDE);
@@ -239,34 +269,25 @@ public class DeviceActivity extends AppCompatActivity {
         eegGraph.getAxisLeft().setDrawLabels(true);
         eegGraph.getAxisRight().setDrawLabels(true);
         eegGraph.getAxisRight().setDrawGridLines(false);
-        eegGraph.getAxisRight().setAxisMinimum(0f);
-        eegGraph.getAxisRight().setAxisMaximum(1f);
         eegGraph.getXAxis().setDrawGridLines(false);
-
-        //eegGraph.getXAxis().setDrawLabels(true);
-
-        /*chart.getAxisLeft().setAxisMaxValue(-10000f);
-        chart.getAxisLeft().setAxisMaxValue(-10000f);*/
-
 
         eegGraph.invalidate();
     }
 
-    private void addEntry(LineChart mChart, ArrayList<ArrayList<Float>> channelData, ArrayList<Float> statusData) {
+    private void addEntry(ArrayList<ArrayList<Float>> channelData) {
 
-        LineData data = mChart.getData();
+        LineData data = eegGraph.getData();
         if (data != null) {
 
             if(channelData.size()< MbtFeatures.getNbChannels()){
                 throw new IllegalStateException("Incorrect matrix size, one or more channel are missing");
             }else{
                 if(channelsHasTheSameNumberOfData(channelData)){
-                    for(int i = 0; i< channelData.get(0).size(); i++){ //for each number of eeg data
-                        /*if(statusData != null && statusData.size()>0)
-                            data.addEntry(new Entry(data.getDataSets().get(INDEX_STATUS).getEntryCount(), statusData.get(i)), INDEX_STATUS);*/
-                        for (int channelIndex = 0; channelIndex < MbtFeatures.getNbChannels() ; channelIndex++){
-                            data.addEntry(new Entry(data.getDataSets().get(channelIndex).getEntryCount(), channelData.get(channelIndex).get(i) *1000000),channelIndex);
+                    for(int currentEegData = 0; currentEegData< channelData.get(0).size(); currentEegData++){ //for each number of eeg data
+                        for (int currentChannel = 0; currentChannel < MbtFeatures.getNbChannels() ; currentChannel++){
+                            data.addEntry(new Entry(data.getDataSets().get(currentChannel).getEntryCount(), channelData.get(currentChannel).get(currentEegData) *1000000),currentChannel);
                         }
+
                     }
                 }else{
                     throw new IllegalStateException("Channels do not have the same amount of data");
@@ -274,9 +295,9 @@ public class DeviceActivity extends AppCompatActivity {
             }
             data.notifyDataChanged();
 
-            mChart.notifyDataSetChanged();// let the chart know it's data has changed
-            mChart.setVisibleXRangeMaximum(500);// limit the number of visible entries
-            mChart.moveViewToX((data.getEntryCount()/2));// move to the latest entry
+            eegGraph.notifyDataSetChanged();// let the chart know it's data has changed
+            eegGraph.setVisibleXRangeMaximum(500);// limit the number of visible entries
+            eegGraph.moveViewToX((data.getEntryCount()/2));// move to the latest entry
 
         }else{
             throw new IllegalStateException("Graph not correctly initialized");
@@ -285,7 +306,8 @@ public class DeviceActivity extends AppCompatActivity {
 
     private boolean channelsHasTheSameNumberOfData(ArrayList<ArrayList<Float>> data){
         boolean hasTheSameNumberOfData = true;
-        int size = data.get(0).size();
+
+        int size = data.get(1).size();
         for (int i = 0 ; i < MbtFeatures.getNbChannels() ; i++){
             if(data.get(i).size() != size){
                 hasTheSameNumberOfData = false;
@@ -294,49 +316,31 @@ public class DeviceActivity extends AppCompatActivity {
         return hasTheSameNumberOfData;
     }
 
-    private void updateEntry(LineChart mChart,ArrayList<ArrayList<Float>> channelData, ArrayList<ArrayList<Float>> bufferedData, ArrayList<Float> statusData) {
+    private void updateEntry(ArrayList<ArrayList<Float>> channelData) {
 
-        LineData lineData = mChart.getLineData();
-        //System.currentTimeMillis();
+        LineData lineData = eegGraph.getData();
         if (lineData != null) {
-            /*if(statusData != null)
-                lineData.getDataSets().get(INDEX_STATUS).clear();*/
             for (ILineDataSet dataSet : lineData.getDataSets()){
                 dataSet.clear();
             }
             if(channelData.size()< MbtFeatures.getNbChannels()){
                 throw new IllegalStateException("Incorrect matrix size, one or more channel are missing");
             }else{
-                if(channelsHasTheSameNumberOfData(bufferedData)){
-                    for(int i = 0; i< bufferedData.get(0).size(); i++){ //250 loop
-
-                        /*if(statusData != null)
-                            lineData.addEntry(new Entry(lineData.getDataSets().get(INDEX_STATUS).getEntryCount(), bufferedData.get(0).get(i)), 0);*/
-                        Log.e(TAG,"channel 1 "+ lineData.getDataSetByIndex(0).getEntryCount() );
-                        if(lineData.getDataSetByIndex(0).getEntryCount()>0){
-                            for (int k=0; k< lineData.getDataSetByIndex(0).getEntryCount();k++){
-                                Log.e(TAG,"value "+ lineData.getDataSetByIndex(0).getEntriesForXValue(k));
-                            }
-                        }
+                if(channelsHasTheSameNumberOfData(bufferedChartData)){
+                    for(int currentEegData = 0; currentEegData< bufferedChartData.get(0).size(); currentEegData++){ //250 loop
                         for (int channelIndex = 0; channelIndex < MbtFeatures.getNbChannels() ; channelIndex++){
-                            Entry e = new Entry(lineData.getDataSets().get(channelIndex).getEntryCount(), bufferedData.get(channelIndex).get(i)*1000000);
-                            lineData.getDataSetByIndex(channelIndex).addEntry(new Entry(lineData.getDataSets().get(channelIndex).getEntryCount(), bufferedData.get(channelIndex).get(i)*1000000));
-                            Log.e(TAG,"added entry"+ e.toString() );
-
+                            lineData.addEntry(new Entry(lineData.getDataSetByIndex(channelIndex).getEntryCount(), bufferedChartData.get(channelIndex).get(currentEegData)*1000000),channelIndex);
                         }
-
                     }
                 }else{
                     throw new IllegalStateException("Channels do not have the same amount of data");
                 }
 
                 if(channelsHasTheSameNumberOfData(channelData)){
-                    for(int i = 0; i< channelData.get(0).size(); i++){
-                        /*if(statusData != null)
-                            data.addEntry(new Entry(data.getDataSets().get(0).getEntryCount(), statusData.get(i)), 0);*/
+                    for(int currentEegData = 0; currentEegData< channelData.get(0).size(); currentEegData++){
 
                         for (int channelIndex = 0; channelIndex < MbtFeatures.getNbChannels() ; channelIndex ++){
-                            lineData.getDataSetByIndex(channelIndex).addEntry(new Entry(lineData.getDataSets().get(channelIndex).getEntryCount(), channelData.get(channelIndex).get(i)*1000000));
+                            lineData.addEntry(new Entry(lineData.getDataSetByIndex(channelIndex).getEntryCount(), channelData.get(channelIndex).get(currentEegData)*1000000),channelIndex);
                         }
                     }
                 }else{
@@ -345,9 +349,9 @@ public class DeviceActivity extends AppCompatActivity {
             }
             lineData.notifyDataChanged();
 
-            mChart.notifyDataSetChanged();// let the chart know it's data has changed
-            mChart.setVisibleXRangeMaximum(500); // limit the number of visible entries
-            mChart.moveViewToX((lineData.getEntryCount()/2));// move the view to the latest entry to avoid manual scrolling
+            eegGraph.notifyDataSetChanged();// let the chart know it's data has changed
+            eegGraph.setVisibleXRangeMaximum(500); // limit the number of visible entries
+            eegGraph.moveViewToX((lineData.getEntryCount()/2));// move the view to the latest entry to avoid manual scrolling
         }else{
             throw new IllegalStateException("Graph not correctly initialized");
         }
@@ -356,12 +360,11 @@ public class DeviceActivity extends AppCompatActivity {
     private void addEegDataToGraph(MbtEEGPacket mbtEEGPackets) {
         chartCounter++;
         if(chartCounter <= 2)
-            addEntry(eegGraph, mbtEEGPackets.getChannelsData(), mbtEEGPackets.getStatusData());
+            addEntry(mbtEEGPackets.getChannelsData());
         else
-            updateEntry(eegGraph,mbtEEGPackets.getChannelsData(), bufferedChartData, mbtEEGPackets.getStatusData());
+            updateEntry(mbtEEGPackets.getChannelsData());
 
         bufferedChartData = mbtEEGPackets.getChannelsData();
-        //bufferedChartData.add(0, mbtEEGPackets.getStatusData());
     }
 
     private void notifyUser(String message){
@@ -370,33 +373,29 @@ public class DeviceActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        client.disconnectBluetooth();
-        setEegListener(null);
-        setConnectionStateListener(null);
+        client.disconnectBluetooth(null);
+        returnOnPreviousActivity();
+    }
+
+    private void returnOnPreviousActivity(){
+        eegListener = null;
+        connectionStateListener = null;
+        deviceInfoListener = null;
         finish();
         startActivity(new Intent(DeviceActivity.this,HomeActivity.class));
     }
 
-    public void initTopBar(){
-        getSupportActionBar().setDisplayShowHomeEnabled(true);
+    public void initToolBar(){
+        Objects.requireNonNull(getSupportActionBar()).setDisplayShowHomeEnabled(true);
         getSupportActionBar().setIcon(R.drawable.logo);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getColor(R.color.light_blue)));
         }
     }
 
-    private void setEegListener(EegListener eegListener) {
-        this.eegListener = eegListener;
-    }
-
-    private void setConnectionStateListener(ConnectionStateListener connectionStateListener) {
-        this.eegListener = eegListener;
-    }
-
     private void stopStream(){
         isStreaming = false;
         client.stopStream();
-        setEegListener(null);
     }
 
     private void startStream(StreamConfig streamConfig){

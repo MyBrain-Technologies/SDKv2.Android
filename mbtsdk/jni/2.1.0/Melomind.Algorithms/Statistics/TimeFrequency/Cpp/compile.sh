@@ -1,4 +1,0 @@
- #!/bin/bash
-g++ -std=c++11 main.cpp ../../../../SignalProcessing.Cpp/Algebra/Cpp/MBT_Operations.cpp ../../../../SignalProcessing.Cpp/Algebra/Cpp/MBT_Interpolation.cpp ../../../../SignalProcessing.Cpp/DataManipulation/Cpp/MBT_Matrix.cpp ../../../../SignalProcessing.Cpp/DataManipulation/Cpp/MBT_ReadInputOrWriteOutput.cpp ../../../../SignalProcessing.Cpp/PreProcessing/Cpp/MBT_PreProcessing.cpp ../../../../SignalProcessing.Cpp/Transformations/Cpp/MBT_Fourier_fftw3.cpp MBT_TF_Stats.cpp ../../../../SignalProcessing.Cpp/Algebra/Cpp/MBT_FindClosest.cpp ../../../../SignalProcessing.Cpp/PreProcessing/Cpp/MBT_BandPass_fftw3.cpp ../../../../SignalProcessing.Cpp/Transformations/Cpp/MBT_PWelchComputer.cpp MBT_TF_map.cpp MBT_Contour.cpp ../../../../SignalProcessing.Cpp/Algebra/Cpp/MBT_kmeans.cpp MBT_FinalClustering.cpp ../../SNR/Cpp/MBT_SNR_Stats.cpp -O3 -lfftw3 -lm -Wall -Wextra -Wfloat-conversion -g -o exec
-
-

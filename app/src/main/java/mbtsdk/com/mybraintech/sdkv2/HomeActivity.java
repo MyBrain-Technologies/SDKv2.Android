@@ -6,6 +6,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -17,12 +18,15 @@ import android.widget.Toast;
 import java.util.ArrayList;
 
 import core.bluetooth.BtState;
+import core.recordingsession.metadata.DeviceInfo;
 import engine.ConnectionConfig;
 import engine.MbtClient;
+import engine.StreamConfig;
 import engine.clientevents.ConnectionException;
 import engine.clientevents.ConnectionStateListener;
 import features.MbtFeatures;
 
+import static features.MbtFeatures.DEVICE_NAME_MAX_LENGTH;
 import static features.MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX;
 import static features.MbtFeatures.VPRO_DEVICE_NAME_PREFIX;
 import static features.ScannableDevices.MELOMIND;
@@ -33,6 +37,7 @@ public class HomeActivity extends AppCompatActivity{
     private static String TAG = HomeActivity.class.getName();
     private final static int SCAN_DURATION = 30000;
     public final static String DEVICE_NAME = "DEVICE_NAME";
+    public final static String BT_STATE = "BT_STATE";
 
     private MbtClient client;
 
@@ -43,13 +48,34 @@ public class HomeActivity extends AppCompatActivity{
     private String devicePrefix;
 
     private Button scanButton;
-    private Button scanAllButton;
-
-    private ScrollView devicesFoundList;
 
     private boolean isScanning = false;
 
     private Toast toast;
+
+    private ConnectionStateListener connectionStateListener = new ConnectionStateListener<ConnectionException>() {
+        @Override
+        public void onStateChanged(@NonNull BtState newState) {
+            Log.i(TAG, "Current state updated "+newState);
+            if(isScanning){
+                if (newState.equals(BtState.CONNECTED) ) {
+                    notifyUser("Device ' " + deviceName + " ' connected but not ready. Please be patient");
+                }else if (newState.equals(BtState.CONNECTED_AND_READY) ){
+                    notifyUser("Device ' " + deviceName + " ' connected");
+                    deinitCurrentActivity(newState);
+                }else if (newState.equals(BtState.SCAN_TIMEOUT)||(newState.equals(BtState.CONNECT_FAILURE))){
+                    notifyUser(getString(R.string.connect_failed) + " "+deviceName);
+                    updateScanning(false);
+                }
+            }
+        }
+
+        @Override
+        public void onError(ConnectionException exception) {
+            notifyUser(exception.toString());
+            exception.printStackTrace();
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,9 +87,7 @@ public class HomeActivity extends AppCompatActivity{
 
         initDeviceNameField();
         initScanButton();
-        initScanAllButton();
         initDevicePrefix();
-        initDevicesFoundList();
     }
 
     private void initDevicePrefix() {
@@ -73,16 +97,13 @@ public class HomeActivity extends AppCompatActivity{
         prefixList.add(VPRO_DEVICE_NAME_PREFIX);
         ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(this,
                 android.R.layout.simple_spinner_item, prefixList);
+        arrayAdapter.setDropDownViewResource(R.layout.spinner_item);
         devicePrefixSpinner.setAdapter(arrayAdapter);
         devicePrefixSpinner.setSelection(arrayAdapter.getPosition(MELOMIND_DEVICE_NAME_PREFIX));
     }
 
     private void initDeviceNameField() {
         deviceNameField = findViewById(R.id.deviceNameField);
-    }
-
-    private void initDevicesFoundList() {
-        devicesFoundList = findViewById(R.id.devicesFoundList);
     }
 
     private void initScanButton(){
@@ -102,63 +123,27 @@ public class HomeActivity extends AppCompatActivity{
         });
     }
 
-    private void initScanAllButton(){
-        scanAllButton = findViewById(R.id.scanAllButton);
-
-        scanAllButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                /*if(devicesFoundList.getVisibility() == View.VISIBLE)
-                    devicesFoundList.setVisibility(View.INVISIBLE);
-                else
-                    devicesFoundList.setVisibility(View.VISIBLE);*/
-                notifyUser("Scanning method not implemented yet");
-
-            }
-        });
-    }
 
     private void startScan() {
 
         if(deviceName.equals(MELOMIND_DEVICE_NAME_PREFIX) || deviceName.equals(VPRO_DEVICE_NAME_PREFIX) ){ //no name entered by the user
-            findAvailableDevice();
+            //findAvailableDevice();
+            notifyUser("Please enter the name of the device");
         }else{ //the user entered a name
-            if((true) /*isMbtDeviceName() && deviceName.length() == DEVICE_NAME_MAX_LENGTH */) { //check the device name format
+            if( isMbtDeviceName() && deviceName.length() == DEVICE_NAME_MAX_LENGTH ) { //check the device name format
                 notifyUser(getString(R.string.connect_in_progress));
                 updateScanning(true); //changes isScanning to true and updates button text "Find a device" into "Cancel"
-
-                client.connectBluetooth(new ConnectionConfig.Builder(new ConnectionStateListener<ConnectionException>() {
-                    @Override
-                    public void onStateChanged(@NonNull BtState newState) {
-                        Log.e(TAG, "Current state updated in Home Activity"+newState);
-                        if (newState.equals(BtState.CONNECTED_AND_READY)){
-                            notifyUser("Device ' " + deviceName + " ' connected");
-                            final Intent intent = new Intent(HomeActivity.this, DeviceActivity.class);
-                            intent.putExtra(DEVICE_NAME, deviceName);
-                            startActivity(intent);
-                            finish();
-                        }else if (newState.equals(BtState.SCAN_TIMEOUT)||(newState.equals(BtState.CONNECT_FAILURE))){
-                            notifyUser(getString(R.string.connect_failed) + deviceName);
-                        }
-                    }
-
-                    @Override
-                    public void onError(ConnectionException exception) {
-                        notifyUser(exception.toString());
-                        exception.printStackTrace();
-                    }
-                }).deviceName(deviceName).maxScanDuration(SCAN_DURATION).scanDeviceType(isMelomindDevice() ? MELOMIND : VPRO).create());
+                client.connectBluetooth(new ConnectionConfig.Builder(connectionStateListener).deviceName(deviceName).maxScanDuration(SCAN_DURATION).scanDeviceType(isMelomindDevice() ? MELOMIND : VPRO).create());
 
             }else{ //if the device name entered by the user is empty or is not starting with a mbt prefix
-                notifyUser(getString(R.string.wrong_device_name)+" "+deviceName);
-                deviceNameField.setText(getString(R.string.example_device_name));
+                notifyUser(getString(R.string.wrong_device_name));
             }
         }
     }
 
     private void findAvailableDevice() {
         notifyUser(getString(R.string.find_first_available_headset));
-        deviceName = getString(R.string.example_device_name) ;//todo replace getString... by the method that detects the first available device
+        //deviceName =  ;//todo replace  by the method that detects the first available device
         deviceNameField.setText(deviceName);
         scanButton.setText(getString(R.string.connect));
         scanButton.setTextColor(getResources().getColor(R.color.white));
@@ -206,14 +191,23 @@ public class HomeActivity extends AppCompatActivity{
 
     @Override
     public void onBackPressed() {
-        startActivity(new Intent(HomeActivity.this,WelcomeActivity.class));
+        this.connectionStateListener = null;
     }
 
     private void initToolBar(){
         getSupportActionBar().setDisplayShowHomeEnabled(true);
-        //getSupportActionBar().setIcon(R.drawable.logo);
+        getSupportActionBar().setIcon(R.drawable.logo);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getColor(R.color.light_blue)));
         }
+    }
+
+    private void deinitCurrentActivity(BtState newState){
+        connectionStateListener = null;
+        final Intent intent = new Intent(HomeActivity.this, DeviceActivity.class);
+        intent.putExtra(DEVICE_NAME, deviceName);
+        intent.putExtra(BT_STATE, newState);
+        startActivity(new Intent(HomeActivity.this,DeviceActivity.class));
+        finish();
     }
 }

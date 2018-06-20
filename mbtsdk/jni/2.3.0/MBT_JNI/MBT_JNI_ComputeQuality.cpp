@@ -8,7 +8,7 @@
 
 
 /*
- * Class:     mybraintech_com_mbtsdk_core_signalprocessing_MBTSignalQualityChecker
+ * Class:     core_eeg_signalprocessing_MBTSignalQualityChecker
  * Method:    nativeComputeQualities
  * Signature: ([[DI)[D
  */
