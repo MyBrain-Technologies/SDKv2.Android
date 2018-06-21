@@ -5,6 +5,7 @@ import android.support.annotation.NonNull;
 
 import java.util.ArrayList;
 
+
 /**
  * @author Sophie ZECRI on 13/06/2018
  */
@@ -14,18 +15,19 @@ public class MatrixUtils {
      * Inverts the columns and lines of a matrix of Float
      *
      */
-    @NonNull
+
     public static ArrayList<ArrayList<Float>> invertFloatMatrix(ArrayList<ArrayList<Float>> source){
+
+        if (source.size() == 0 )
+            return null;
 
         int nbLinesDestination = source.get(0).size();
         int nbColumnsDestination = source.size();
 
         ArrayList<ArrayList<Float>> destination = new ArrayList<>();
-        for(int nbLine = 0 ; nbLine < nbLinesDestination; nbLine++){ //init the matrix
-            destination.add(new ArrayList<Float>());
-        }
 
         for (int nbLine = 0 ; nbLine < nbLinesDestination; nbLine++){ //fill the lines of the destination matrix
+            destination.add(new ArrayList<Float>());
             for (int nbColumn = 0 ; nbColumn < nbColumnsDestination; nbColumn++){ //fill the columns of the destination matrix
                 destination.get(nbLine).add(source.get(nbColumn).get(nbLine)); //add the column elements for each line
             }

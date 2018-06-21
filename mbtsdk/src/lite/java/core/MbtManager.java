@@ -74,7 +74,7 @@ public final class MbtManager{
         EventBusManager.registerOrUnregister(true, this);
 
         registerManager(new MbtDeviceManager(mContext, this, MbtFeatures.getBluetoothProtocol()));
-        registerManager(new MbtBluetoothManager(mContext, this, MbtFeatures.getBluetoothProtocol()));
+        registerManager(new MbtBluetoothManager(mContext, this));
         registerManager(new MbtEEGManager(mContext, this, MbtFeatures.getBluetoothProtocol()));
 
     }
@@ -228,10 +228,9 @@ public final class MbtManager{
             }else if(newState == IStreamable.StreamState.DISCONNECTED){
                 eegListener.onError(new EEGException(EEGException.DEVICE_NOT_CONNECTED));
             }else if(newState == IStreamable.StreamState.STOPPED){
-                connectionStateListener = null;
+                eegListener = null;
             }
         }
-
     }
 
     /**
@@ -258,7 +257,7 @@ public final class MbtManager{
 
     /**
      * onEvent is called by the Event Bus when a ClientReadyEEGEvent event is posted
-     * This event is published by {@link core.eeg.MbtEEGManager}:
+     * This event is published by {@link MbtEEGManager}:
      * this manager handles EEG data acquired by the headset
      * Creates a new MbtEEGPacket instance when the raw buffer contains enough data
      * @param event contains data transmitted by the publisher : here it contains the converted EEG data matrix, the status, the number of acquisition channels and the sampling rate

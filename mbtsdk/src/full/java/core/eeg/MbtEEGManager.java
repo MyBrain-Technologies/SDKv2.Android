@@ -2,7 +2,6 @@ package core.eeg;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.util.Log;
 
 import org.apache.commons.lang.ArrayUtils;
@@ -17,6 +16,7 @@ import config.MbtConfig;
 import core.BaseModuleManager;
 import core.MbtManager;
 import core.bluetooth.BtProtocol;
+import core.bluetooth.IStreamable;
 import core.eeg.acquisition.MbtDataAcquisition;
 import core.eeg.signalprocessing.MBTCalibrationParameters;
 import core.eeg.signalprocessing.MBTComputeRelaxIndex;
@@ -26,13 +26,12 @@ import core.eeg.signalprocessing.MBTSignalQualityChecker;
 import core.eeg.acquisition.MbtDataConversion;
 import core.eeg.storage.MbtDataBuffering;
 import core.eeg.storage.RawEEGSample;
+import engine.clientevents.EEGException;
 import eventbus.EventBusManager;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.BluetoothEEGEvent;
 import utils.AsyncUtils;
-import utils.MatrixUtils;
 
-import static config.MbtConfig.getEegBufferLengthClientNotif;
 import static config.MbtConfig.getSampleRate;
 import static core.eeg.signalprocessing.MBTSignalQualityChecker.computeQualitiesForPacketNew;
 import static features.ScannableDevices.VPRO;
@@ -56,7 +55,7 @@ public final class MbtEEGManager extends BaseModuleManager{
     private static final String TAG = MbtEEGManager.class.getName();
 
     private MbtDataAcquisition dataAcquisition;
-    private MbtDataBuffering mbtDataBuffering;
+    private MbtDataBuffering dataBuffering;
     private ArrayList<ArrayList<Float>> consolidatedEEG;
 
     private BtProtocol protocol;
@@ -65,7 +64,7 @@ public final class MbtEEGManager extends BaseModuleManager{
         super(context, mbtManagerController);
         this.protocol = protocol;
         this.dataAcquisition = new MbtDataAcquisition(this, protocol);
-        this.mbtDataBuffering = new MbtDataBuffering(this);
+        this.dataBuffering = new MbtDataBuffering(this);
     }
 
     /**
@@ -74,19 +73,17 @@ public final class MbtEEGManager extends BaseModuleManager{
      * @param rawEEGdata the raw EEG data array acquired by the headset and transmitted by Bluetooth to the application
      */
     public void storePendingDataInBuffer(@NonNull final ArrayList<RawEEGSample> rawEEGdata){
-        mbtDataBuffering.storePendingDataInBuffer(rawEEGdata);
+        dataBuffering.storePendingDataInBuffer(rawEEGdata);
     }
 
 
     /**
      * Reconfigures the temporary buffers that are used to store the raw EEG data until conversion to user-readable EEG data.
      * Reset the buffers arrays, status list, the number of status bytes and the packet Size
-     * @param sampleRate the sample rate
-     * @param samplePerNotif the number of sample per notification
-     * @param nbStatusBytes the number of bytes used for status data
      */
-    public void reconfigureBuffers(final int sampleRate, byte samplePerNotif, final int nbStatusBytes){
-        mbtDataBuffering.reconfigureBuffers(sampleRate,samplePerNotif,nbStatusBytes);
+    public void reinitBuffers(){
+        dataBuffering.reinitBuffers();
+        dataAcquisition.resetIndex();
     }
 
 
@@ -112,7 +109,7 @@ public final class MbtEEGManager extends BaseModuleManager{
 
                 consolidatedEEG = MbtDataConversion.convertRawDataToEEG(toDecodeRawEEG, protocol); //convert byte table data to Float matrix and store the matrix in MbtEEGManager as eegResult attribute
 
-                mbtDataBuffering.storeConsolidatedEegPacketInPacketBuffer(consolidatedEEG, toDecodeStatus);// if the packet buffer is full, this method returns the non null packet buffer
+                dataBuffering.storeConsolidatedEegPacketInPacketBuffer(consolidatedEEG, toDecodeStatus);// if the packet buffer is full, this method returns the non null packet buffer
 
             }
         });
@@ -280,6 +277,16 @@ public final class MbtEEGManager extends BaseModuleManager{
     public void onEvent(BluetoothEEGEvent event){ //warning : this method is used
         Log.i(TAG, Arrays.toString(event.getData()));
         dataAcquisition.handleDataAcquired(event.getData());
+    }
+
+    /**
+     * Called when a new stream state event has been broadcast on the event bus.
+     * @param newState
+     */
+    @Subscribe(threadMode = ThreadMode.POSTING)
+    public void onStreamStateChanged(IStreamable.StreamState newState){
+        if(newState == IStreamable.StreamState.STOPPED)
+            reinitBuffers();
     }
 
 }

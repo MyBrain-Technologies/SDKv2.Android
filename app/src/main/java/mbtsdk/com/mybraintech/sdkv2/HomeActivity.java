@@ -1,6 +1,7 @@
 package mbtsdk.com.mybraintech.sdkv2;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
@@ -11,17 +12,14 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.Toast;
 
 import java.util.ArrayList;
 
 import core.bluetooth.BtState;
-import core.recordingsession.metadata.DeviceInfo;
 import engine.ConnectionConfig;
 import engine.MbtClient;
-import engine.StreamConfig;
 import engine.clientevents.ConnectionException;
 import engine.clientevents.ConnectionStateListener;
 import features.MbtFeatures;
@@ -59,6 +57,8 @@ public class HomeActivity extends AppCompatActivity{
             Log.i(TAG, "Current state updated "+newState);
 
             if (newState.equals(BtState.CONNECTED) ) {
+                    notifyUser("Connecting to ' " + deviceName +" '");
+                }if (newState.equals(BtState.CONNECTED) ) {
                 notifyUser("Device ' " + deviceName + " ' connected but not ready. Please be patient");
             }else if (newState.equals(BtState.CONNECTED_AND_READY) ){
                 notifyUser("Device ' " + deviceName + " ' connected");
@@ -66,17 +66,21 @@ public class HomeActivity extends AppCompatActivity{
             }else if (newState.equals(BtState.SCAN_TIMEOUT)||(newState.equals(BtState.CONNECT_FAILURE))){
                 notifyUser(getString(R.string.connect_failed) + " "+deviceName);
                 updateScanning(false);
-            }else if(newState.equals(BtState.INTERRUPTED)){
-                updateScanning(false);
-            }else if(newState.equals(BtState.SCAN_STARTED)){
-                updateScanning(true);
-            }
-
+                }else if (newState.equals(BtState.SCAN_STARTED)){
+                    notifyUser(getString(R.string.connect_in_progress));
+                    updateScanning(true);
+                }else if (newState.equals(BtState.DISCONNECTED)){
+                    notifyUser(getString(R.string.disconnected_headset));
+                    updateScanning(false);
+                }else if (newState.equals(BtState.INTERRUPTED))
+                    updateScanning(false);
+            //}
         }
 
         @Override
         public void onError(ConnectionException exception) {
             notifyUser(exception.toString());
+            updateScanning(false);
             exception.printStackTrace();
         }
     };
@@ -136,7 +140,6 @@ public class HomeActivity extends AppCompatActivity{
             notifyUser("Please enter the name of the device");
         }else{ //the user entered a name
             if( isMbtDeviceName() && deviceName.length() == DEVICE_NAME_MAX_LENGTH ) { //check the device name format
-                notifyUser(getString(R.string.connect_in_progress));
                 client.connectBluetooth(new ConnectionConfig.Builder(connectionStateListener)
                         .deviceName(deviceName)
                         .maxScanDuration(SCAN_DURATION)
@@ -170,6 +173,9 @@ public class HomeActivity extends AppCompatActivity{
      */
     private void updateScanning(boolean newIsScanning){
         isScanning = newIsScanning;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            scanButton.setBackgroundColor((isScanning ? Color.LTGRAY : getColor(R.color.light_blue)));
+        }
         scanButton.setText((isScanning ? R.string.cancel : R.string.scan));
     }
 
@@ -214,7 +220,7 @@ public class HomeActivity extends AppCompatActivity{
         final Intent intent = new Intent(HomeActivity.this, DeviceActivity.class);
         intent.putExtra(DEVICE_NAME, deviceName);
         intent.putExtra(BT_STATE, newState);
-        startActivity(new Intent(HomeActivity.this,DeviceActivity.class));
+        startActivity(intent);
         finish();
     }
 }

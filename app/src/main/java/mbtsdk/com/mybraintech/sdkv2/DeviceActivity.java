@@ -38,6 +38,8 @@ import engine.clientevents.EegListener;
 import features.MbtFeatures;
 import utils.MatrixUtils;
 
+import static utils.MatrixUtils.invertFloatMatrix;
+
 public class DeviceActivity extends AppCompatActivity {
 
     private static String TAG = DeviceActivity.class.getName();
@@ -78,6 +80,7 @@ public class DeviceActivity extends AppCompatActivity {
         public void onStateChanged(@NonNull BtState newState) {
             Log.i(TAG, "Current state updated "+newState);
             currentState = newState;
+            Log.i(TAG,"current state "+newState);
             if(currentState.equals(BtState.DISCONNECTED) ){
                 notifyUser(getString(R.string.disconnected_headset));
                 if(isStreaming)
@@ -108,7 +111,7 @@ public class DeviceActivity extends AppCompatActivity {
 
         @Override
         public void onError(BaseException exception) {
-            notifyUser(getString(R.string.read_battery));
+            notifyUser(getString(R.string.error_read_battery));
         }
     };
 
@@ -123,14 +126,15 @@ public class DeviceActivity extends AppCompatActivity {
 
         @Override
         public void onNewPackets(final MbtEEGPacket mbtEEGPackets) {
-            mbtEEGPackets.setChannelsData(MatrixUtils.invertFloatMatrix(mbtEEGPackets.getChannelsData()));
+            if(invertFloatMatrix(mbtEEGPackets.getChannelsData()) != null)
+                mbtEEGPackets.setChannelsData(invertFloatMatrix(mbtEEGPackets.getChannelsData()));
 
             if(isStreaming){
                 if(eegGraph!=null){
                     addEegDataToGraph(mbtEEGPackets);
 
-                    channel1Quality.setText(getString(R.string.channel_1_qc) + (mbtEEGPackets.getQualities() != null ? mbtEEGPackets.getQualities().get(0) : " -- "));
-                    channel2Quality.setText(getString(R.string.channel_2_qc) + (mbtEEGPackets.getQualities() != null ? mbtEEGPackets.getQualities().get(1) : " -- "));
+                    //channel1Quality.setText(getString(R.string.channel_1_qc) + ((mbtEEGPackets.getQualities() != null && mbtEEGPackets.getQualities().get(0) != null) ? mbtEEGPackets.getQualities().get(0) : " -- "));
+                    //channel2Quality.setText(getString(R.string.channel_2_qc) + ( (mbtEEGPackets.getQualities() != null && mbtEEGPackets.getQualities().get(1) != null ) ? mbtEEGPackets.getQualities().get(1) : " -- "));
                 }
             }
         }
@@ -164,8 +168,8 @@ public class DeviceActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if(isStreaming)
                     stopStream();
-                else
-                    client.disconnectBluetooth();
+
+                client.disconnectBluetooth();
 
 
 
@@ -374,6 +378,7 @@ public class DeviceActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         client.disconnectBluetooth();
+        client.setConnectionStateListener(null);
         returnOnPreviousActivity();
     }
 
@@ -396,6 +401,7 @@ public class DeviceActivity extends AppCompatActivity {
     private void stopStream(){
         isStreaming = false;
         client.stopStream();
+
     }
 
     private void startStream(StreamConfig streamConfig){

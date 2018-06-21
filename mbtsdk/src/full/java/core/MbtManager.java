@@ -232,10 +232,9 @@ public final class MbtManager{
             }else if(newState == IStreamable.StreamState.DISCONNECTED){
                 eegListener.onError(new EEGException(EEGException.DEVICE_NOT_CONNECTED));
             }else if(newState == IStreamable.StreamState.STOPPED){
-                connectionStateListener = null;
+                eegListener = null;
             }
         }
-
     }
 
     /**

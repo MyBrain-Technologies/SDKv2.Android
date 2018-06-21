@@ -11,6 +11,7 @@ import org.robolectric.RuntimeEnvironment;
 import java.util.Arrays;
 
 import core.MbtManager;
+import core.bluetooth.BtProtocol;
 import core.eeg.MbtEEGManager;
 
 import static org.junit.Assert.*;
@@ -26,10 +27,10 @@ public class MbtDataBufferingTest {
         Context context = RuntimeEnvironment.application.getApplicationContext();
         MbtManager manager = new MbtManager(context);
         //default value for protocol is BLE
-        eegManager = new MbtEEGManager(context,manager);
+        eegManager = new MbtEEGManager(context,manager, BtProtocol.BLUETOOTH_LE);
         this.buffering = new MbtDataBuffering(eegManager);
     }
-/*
+
     @Test
     public void storePendingBufferTest() {
         int srcPos = 0;
@@ -220,5 +221,5 @@ public class MbtDataBufferingTest {
     public void handleOverflowBufferWithNullOverflowBufferTest() {
         MbtDataBuffering.setOveflowBytes(null);  //check that IllegalArgumentException is raised with a null overflow buffer
         buffering.handleOverflowDataBuffer();
-    }*/
+    }
 }
