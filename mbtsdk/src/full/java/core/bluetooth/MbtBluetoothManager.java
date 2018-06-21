@@ -20,6 +20,7 @@ import org.greenrobot.eventbus.ThreadMode;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -65,8 +66,6 @@ import static core.bluetooth.BtProtocol.BLUETOOTH_SPP;
 public final class MbtBluetoothManager extends BaseModuleManager{
     private final static String TAG = MbtBluetoothManager.class.getSimpleName();
 
-    private BtProtocol btProtocol;
-
     private MbtBluetoothLE mbtBluetoothLE;
     private MbtBluetoothA2DP mbtBluetoothA2DP;
     private MbtBluetoothSPP mbtBluetoothSPP;
@@ -78,18 +77,20 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private RequestThread requestThread;
     private Handler requestHandler;
 
+    private boolean isConnectionInterrupted = false;
+
+    private Future<BluetoothDevice> futureScannedDevice;
+    private BluetoothDevice currentDevice;
     //private MbtDeviceAcquisition deviceAcquisition;
 
     /**
      * Constructor of the manager.
      * @param context the application context
      * @param mbtManagerController the main manager that sends and receives bluetooth events
-     * @param btProtocol the {@link BtProtocol} the user wants to use
      */
-    public MbtBluetoothManager(@NonNull Context context, MbtManager mbtManagerController, BtProtocol btProtocol){
+    public MbtBluetoothManager(@NonNull Context context, MbtManager mbtManagerController){
         super(context, mbtManagerController);
         //save client side objects in variables
-        this.btProtocol = btProtocol;//Default value according to the scanned device
 
         this.mbtBluetoothLE = new MbtBluetoothLE(context, this);
         this.mbtBluetoothSPP = new MbtBluetoothSPP(context,this);
@@ -115,6 +116,18 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * @param deviceName the device bluetooth name.
      */
     private void scanAndConnect(@NonNull String deviceName){
+        if(getCurrentState() == BtState.CONNECTED_AND_READY){
+            if(currentDevice != null && currentDevice.getName().equals(deviceName)){
+                notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
+            }else{
+                notifyConnectionStateChanged(BtState.ANOTHER_DEVICE_CONNECTED);
+            }
+            return;
+        }
+
+
+
+        isConnectionInterrupted = false; // resetting the flag when starting a new connection
         if(!BluetoothAdapter.getDefaultAdapter().isEnabled()){
             notifyConnectionStateChanged(BtState.DISABLED);
             return;
@@ -144,24 +157,24 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
 
         //first step
-        BluetoothDevice scannedDevice = null;
         try {
-            scannedDevice = scanSingle(deviceName).get(MbtConfig.getBluetoothScanTimeout(), TimeUnit.MILLISECONDS);
+            futureScannedDevice= scanSingle(deviceName);
+            currentDevice = futureScannedDevice.get(MbtConfig.getBluetoothScanTimeout(), TimeUnit.MILLISECONDS);
 
-        } catch (@NonNull InterruptedException | ExecutionException | TimeoutException e) {
+        } catch (@NonNull InterruptedException | ExecutionException | TimeoutException | CancellationException e) {
             //TODO
             e.printStackTrace();
         }finally {
             stopCurrentScan();
         }
         BluetoothDevice bluetoothDevice;
-        if(scannedDevice == null){
-            notifyConnectionStateChanged(BtState.SCAN_TIMEOUT);
+        if(currentDevice == null){
+            notifyConnectionStateChanged(isConnectionInterrupted ? BtState.INTERRUPTED : BtState.SCAN_TIMEOUT);
             return;
         }else {
-            Log.i(TAG, "scanned device is " + scannedDevice.toString());
+            Log.i(TAG, "scanned device is " + currentDevice.toString());
             notifyConnectionStateChanged(BtState.DEVICE_FOUND);
-            bluetoothDevice = scannedDevice;
+            bluetoothDevice = currentDevice;
         }
 
         //second step
@@ -170,12 +183,18 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
 
     /**
-     * ConnectRequestEvent to a specific BluetoothDevice. This allows to skip the scanning part and jump directly to connection step
+     * ConnectRequestEvent to a specific BluetoothDevice. This allows to skip the scanning part and jump directly to connection step.
+     * The method returns immediately if a connection interruption has been sent by the user
      * @param device the Bluetooth device to connect to
      * @return immediately the following : false if device is null, true if connection step has been started
      */
     private void connect(@NonNull BluetoothDevice device){
-        switch (btProtocol){
+        if(isConnectionInterrupted){
+            notifyConnectionStateChanged(BtState.INTERRUPTED);
+            return;
+        }
+
+        switch (MbtFeatures.getBluetoothProtocol()){
             case BLUETOOTH_LE:
                 mbtBluetoothLE.connect(mContext, device);
                 break;
@@ -186,6 +205,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 mbtBluetoothA2DP.connect(mContext, device);
                 break;
         }
+
     }
 
     /**
@@ -226,7 +246,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             @Override
             public BluetoothDevice call() throws Exception {
 
-                if(btProtocol== BLUETOOTH_LE){
+                if(MbtFeatures.getBluetoothProtocol()== BLUETOOTH_LE){
                     Log.i(TAG, "in call method. About to start scan LE");
                     return mbtBluetoothLE.startLowEnergyScan(true, deviceName);
                 }
@@ -243,6 +263,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * This method stops the currently running bluetooth scan, either Le scan or discovery scan
      */
     private void stopCurrentScan(){
+        Log.i(TAG, "stopping current scan");
         if (MbtConfig.scannableDevices == ScannableDevices.MELOMIND && ContextCompat.checkSelfPermission(mContext,
                 Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(mContext,
                 Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
@@ -429,38 +450,14 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     }
 
 
-//    public void setBtProtocol(BtProtocol btProtocol) {
-//        this.btProtocol = btProtocol;
-//    }
-
-//    public MbtBluetoothLE getMbtBluetoothLE() {
-//        return mbtBluetoothLE;
-//    }
-//
-//    public MbtBluetoothA2DP getMbtBluetoothA2DP() {
-//        return mbtBluetoothA2DP;
-//    }
-//
-//    public MbtBluetoothSPP getMbtBluetoothSPP() {
-//        return mbtBluetoothSPP;
-//    }
-//
-//    public BluetoothDevice getBluetoothDevice() {
-//        return bluetoothDevice;
-//    }
-
-//    public MbtDeviceAcquisition getDeviceAcquisition() {
-//        return deviceAcquisition;
-//    }
-
     /**
      * Start the disconnect operation on the currently connected bluetooth device according to the {@link BtProtocol} currently used.
      */
     private void disconnect() {
-
-        switch(this.btProtocol){
+        switch(MbtFeatures.getBluetoothProtocol()){
             case BLUETOOTH_LE:
-                this.mbtBluetoothLE.disconnect();
+                if(mbtBluetoothLE.getCurrentState().equals(BtState.CONNECTED_AND_READY))
+                    this.mbtBluetoothLE.disconnect();
                 break;
             case BLUETOOTH_SPP:
                 this.mbtBluetoothSPP.disconnect();
@@ -470,6 +467,36 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 break;
         }
     }
+
+
+    /**
+     * Stops current pending connection according to its current {@link BtState state}.
+     * It can be either stop scan or connection process interruption
+     */
+    private void cancelPendingConnection() {
+        Log.i(TAG, "cancelling pending connection");
+        isConnectionInterrupted = true;
+        if(getCurrentState() == BtState.SCAN_STARTED){
+            if(futureScannedDevice != null)
+                futureScannedDevice.cancel(false);
+        }else if(getCurrentState() == BtState.CONNECTING || getCurrentState() == BtState.CONNECTED){
+            disconnect();
+        }
+    }
+
+
+
+    /**
+     * Gets current state according to bluetooth protocol value
+     * @return
+     */
+    private BtState getCurrentState(){
+        if(MbtFeatures.getBluetoothProtocol() == BLUETOOTH_LE)
+            return mbtBluetoothLE.getCurrentState();
+
+        return mbtBluetoothSPP.getCurrentState();
+    }
+
 
 
     /**
@@ -488,20 +515,29 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         EventBusManager.registerOrUnregister(false,this);
     }
 
+
+
     /**
      * Add the new {@link BluetoothRequests} to the handler thread that will execute tasks one after another
      * This method must return quickly in order not to block the thread.
      * @param request the new {@link BluetoothRequests } to execute
      */
-    @Subscribe(threadMode = ThreadMode.BACKGROUND)
+    @Subscribe(threadMode = ThreadMode.ASYNC)
     public void onNewBluetoothRequest(final BluetoothRequests request){
-
-        requestHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                requestThread.parseRequest(request);
-            }
-        });
+        //Specific case: disconnection has main priority so we don't add it to queue
+        Log.i(TAG, "onNewBTRequest");
+        if(request instanceof DisconnectRequestEvent)
+            if(((DisconnectRequestEvent) request).isInterrupted())
+                cancelPendingConnection();
+            else
+                disconnect();
+        else
+            requestHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    requestThread.parseRequest(request);
+                }
+            });
     }
 
     /**
@@ -510,10 +546,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * @param newState the new {@link BtState}
      */
     public void notifyConnectionStateChanged(BtState newState) {
-        if(newState == BtState.CONNECTED_AND_READY)
-            requestBeingProcessed = false;
-        else if(newState == BtState.DISCONNECTED || newState == BtState.SCAN_TIMEOUT || newState == BtState.DISABLED || newState == BtState.INTERNAL_FAILURE
-                || newState == BtState.LOCATION_IS_REQUIRED ||newState == BtState.LOCATION_PERMISSION_NOT_GRANTED){
+        if(newState == BtState.CONNECTED_AND_READY ||newState == BtState.DISCONNECTED || newState == BtState.SCAN_TIMEOUT || newState == BtState.DISABLED || newState == BtState.INTERNAL_FAILURE
+                || newState == BtState.LOCATION_IS_REQUIRED ||newState == BtState.LOCATION_PERMISSION_NOT_GRANTED || newState == BtState.INTERRUPTED || newState == BtState.ANOTHER_DEVICE_CONNECTED){
             requestBeingProcessed = false;
         }
 
@@ -580,6 +614,9 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         void parseRequest(BluetoothRequests request){
             Log.i(TAG,"parsing new request");
             //BluetoothRequests request = pendingRequests.remove();
+
+            //disconnect request doesn't need to be in "queue" as it is top priority
+
             while(requestBeingProcessed);
             Log.i(TAG,"bt execution thread is now free");
             requestBeingProcessed = true;
@@ -591,8 +628,11 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 }
             } else if(request instanceof ReadRequestEvent){
                 performReadOperation(((ReadRequestEvent)request).getDeviceInfo());
-            } else if(request instanceof DisconnectRequestEvent){
-                disconnect();
+//                } else if(request instanceof DisconnectRequestEvent){
+//                    if(((DisconnectRequestEvent) request).isInterrupted())
+//                        cancelPendingConnection();
+//                    else
+//                        disconnect();
             } else if(request instanceof StreamRequestEvent){
                 if(((StreamRequestEvent) request).isStart())
                     startStream(((StreamRequestEvent) request).shouldMonitorDeviceStatus());
@@ -604,6 +644,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
 
         }
+
 
         /**
          * If the {@link BluetoothRequests request} is a {@link ReadRequestEvent} event, this method
@@ -628,8 +669,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                     break;
             }
         }
-
-
     }
+
 
 }

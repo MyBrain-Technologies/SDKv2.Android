@@ -45,7 +45,7 @@ public final class MbtFeatures{
 
     // MELOMIND & VPRO FEATURES
     public static final String MELOMIND_DEVICE_NAME_PREFIX = "melo_";
-    public static final String VPRO_DEVICE_NAME_PREFIX = "vpro_";
+    public static final String VPRO_DEVICE_NAME_PREFIX = "VPro";
 
     public static final String MELOMIND_DEVICE_NAME = "Melomind";
     public static final String VPRO_DEVICE_NAME = "VPro";

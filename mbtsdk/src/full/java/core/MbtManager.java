@@ -74,7 +74,7 @@ public final class MbtManager{
         EventBusManager.registerOrUnregister(true, this);
 
         registerManager(new MbtDeviceManager(mContext, this, MbtFeatures.getBluetoothProtocol()));
-        registerManager(new MbtBluetoothManager(mContext, this, MbtFeatures.getBluetoothProtocol()));
+        registerManager(new MbtBluetoothManager(mContext, this));
         registerManager(new MbtEEGManager(mContext, this, MbtFeatures.getBluetoothProtocol()));
 
     }
@@ -108,8 +108,8 @@ public final class MbtManager{
     /**
      * Perform a Bluetooth disconnection.
      */
-    public void disconnectBluetooth(){
-        EventBusManager.postEvent(new DisconnectRequestEvent());
+    public void disconnectBluetooth(boolean isAbortion){
+        EventBusManager.postEvent(new DisconnectRequestEvent(isAbortion));
     }
 
     /**
@@ -205,9 +205,13 @@ public final class MbtManager{
                 connectionStateListener.onError(new ConnectionException(ConnectionException.CONNECTION_FAILURE));
                 break;
 
+            case ANOTHER_DEVICE_CONNECTED:
+                connectionStateListener.onError(new ConnectionException(ConnectionException.ANOTHER_DEVICE_CONNECTED));
+                break;
+
             case DISCONNECTED:
                 connectionStateListener.onStateChanged(connectionStateEvent.getNewState());
-
+                break;
             default:
                 //This newState is not an error, notifying user with the correct callback
                 connectionStateListener.onStateChanged(connectionStateEvent.getNewState());

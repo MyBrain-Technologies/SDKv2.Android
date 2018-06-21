@@ -76,6 +76,7 @@ public class DeviceActivity extends AppCompatActivity {
 
         @Override
         public void onStateChanged(@NonNull BtState newState) {
+            Log.i(TAG, "Current state updated "+newState);
             currentState = newState;
             if(currentState.equals(BtState.DISCONNECTED) ){
                 notifyUser(getString(R.string.disconnected_headset));
@@ -163,11 +164,10 @@ public class DeviceActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if(isStreaming)
                     stopStream();
+                else
+                    client.disconnectBluetooth();
 
-                if(currentState == BtState.CONNECTED_AND_READY ){
-                    client.disconnectBluetooth(connectionStateListener);
-                }
-                returnOnPreviousActivity();
+
 
             }
         });
@@ -373,7 +373,7 @@ public class DeviceActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        client.disconnectBluetooth(null);
+        client.disconnectBluetooth();
         returnOnPreviousActivity();
     }
 

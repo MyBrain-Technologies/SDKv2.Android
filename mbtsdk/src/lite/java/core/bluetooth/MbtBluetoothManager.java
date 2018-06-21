@@ -64,8 +64,6 @@ import static core.bluetooth.BtProtocol.BLUETOOTH_SPP;
 public final class MbtBluetoothManager extends BaseModuleManager{
     private final static String TAG = MbtBluetoothManager.class.getSimpleName();
 
-    private BtProtocol btProtocol;
-
     private MbtBluetoothLE mbtBluetoothLE;
     private MbtBluetoothA2DP mbtBluetoothA2DP;
     private MbtBluetoothSPP mbtBluetoothSPP;
@@ -83,12 +81,11 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * Constructor of the manager.
      * @param context the application context
      * @param mbtManagerController the main manager that sends and receives bluetooth events
-     * @param btProtocol the {@link BtProtocol} the user wants to use
+     * @param MbtFeatures.getBluetoothProtocol() the {@link BtProtocol} the user wants to use
      */
-    public MbtBluetoothManager(@NonNull Context context, MbtManager mbtManagerController, BtProtocol btProtocol){
+    public MbtBluetoothManager(@NonNull Context context, MbtManager mbtManagerController){
         super(context, mbtManagerController);
         //save client side objects in variables
-        this.btProtocol = btProtocol;//Default value according to the scanned device
 
         this.mbtBluetoothLE = new MbtBluetoothLE(context, this);
         this.mbtBluetoothSPP = new MbtBluetoothSPP(context,this);
@@ -136,9 +133,9 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 notifyConnectionStateChanged(BtState.LOCATION_IS_REQUIRED);
                 return;
             }
-            btProtocol= BLUETOOTH_LE;
+            MbtFeatures.getBluetoothProtocol()= BLUETOOTH_LE;
         }else{
-            btProtocol = BLUETOOTH_SPP;
+            MbtFeatures.getBluetoothProtocol() = BLUETOOTH_SPP;
         }
 
 
@@ -175,7 +172,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * @return immediately the following : false if device is null, true if connection step has been started
      */
     private void connect(@NonNull BluetoothDevice device){
-        switch (btProtocol){
+        switch (MbtFeatures.getBluetoothProtocol()){
             case BLUETOOTH_LE:
                 mbtBluetoothLE.connect(mContext, device);
                 break;
@@ -226,14 +223,13 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             @Override
             public BluetoothDevice call() throws Exception {
 
-                if(btProtocol== BLUETOOTH_LE){
+                if(MbtFeatures.getBluetoothProtocol()== BLUETOOTH_LE){
                     Log.i(TAG, "in call method. About to start scan LE");
                     return mbtBluetoothLE.startLowEnergyScan(true, deviceName);
                 }
                 else
                     Log.i(TAG, "About to start scan discovery");
 
-                    btProtocol=BtProtocol.BLUETOOTH_SPP;
                     return mbtBluetoothSPP.startScanDiscovery(deviceName);
             }
         });
@@ -429,37 +425,12 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         }
     }
 
-
-//    public void setBtProtocol(BtProtocol btProtocol) {
-//        this.btProtocol = btProtocol;
-//    }
-
-//    public MbtBluetoothLE getMbtBluetoothLE() {
-//        return mbtBluetoothLE;
-//    }
-//
-//    public MbtBluetoothA2DP getMbtBluetoothA2DP() {
-//        return mbtBluetoothA2DP;
-//    }
-//
-//    public MbtBluetoothSPP getMbtBluetoothSPP() {
-//        return mbtBluetoothSPP;
-//    }
-//
-//    public BluetoothDevice getBluetoothDevice() {
-//        return bluetoothDevice;
-//    }
-
-//    public MbtDeviceAcquisition getDeviceAcquisition() {
-//        return deviceAcquisition;
-//    }
-
     /**
      * Start the disconnect operation on the currently connected bluetooth device according to the {@link BtProtocol} currently used.
      */
     private void disconnect() {
 
-        switch(this.btProtocol){
+        switch(MbtFeatures.getBluetoothProtocol()){
             case BLUETOOTH_LE:
                 this.mbtBluetoothLE.disconnect();
                 break;

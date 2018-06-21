@@ -53,21 +53,25 @@ public class HomeActivity extends AppCompatActivity{
 
     private Toast toast;
 
-    private ConnectionStateListener connectionStateListener = new ConnectionStateListener<ConnectionException>() {
+    private ConnectionStateListener<ConnectionException> connectionStateListener = new ConnectionStateListener<ConnectionException>() {
         @Override
         public void onStateChanged(@NonNull BtState newState) {
             Log.i(TAG, "Current state updated "+newState);
-            if(isScanning){
-                if (newState.equals(BtState.CONNECTED) ) {
-                    notifyUser("Device ' " + deviceName + " ' connected but not ready. Please be patient");
-                }else if (newState.equals(BtState.CONNECTED_AND_READY) ){
-                    notifyUser("Device ' " + deviceName + " ' connected");
-                    deinitCurrentActivity(newState);
-                }else if (newState.equals(BtState.SCAN_TIMEOUT)||(newState.equals(BtState.CONNECT_FAILURE))){
-                    notifyUser(getString(R.string.connect_failed) + " "+deviceName);
-                    updateScanning(false);
-                }
+
+            if (newState.equals(BtState.CONNECTED) ) {
+                notifyUser("Device ' " + deviceName + " ' connected but not ready. Please be patient");
+            }else if (newState.equals(BtState.CONNECTED_AND_READY) ){
+                notifyUser("Device ' " + deviceName + " ' connected");
+                deinitCurrentActivity(newState);
+            }else if (newState.equals(BtState.SCAN_TIMEOUT)||(newState.equals(BtState.CONNECT_FAILURE))){
+                notifyUser(getString(R.string.connect_failed) + " "+deviceName);
+                updateScanning(false);
+            }else if(newState.equals(BtState.INTERRUPTED)){
+                updateScanning(false);
+            }else if(newState.equals(BtState.SCAN_STARTED)){
+                updateScanning(true);
             }
+
         }
 
         @Override
@@ -102,6 +106,7 @@ public class HomeActivity extends AppCompatActivity{
         devicePrefixSpinner.setSelection(arrayAdapter.getPosition(MELOMIND_DEVICE_NAME_PREFIX));
     }
 
+
     private void initDeviceNameField() {
         deviceNameField = findViewById(R.id.deviceNameField);
     }
@@ -132,8 +137,11 @@ public class HomeActivity extends AppCompatActivity{
         }else{ //the user entered a name
             if( isMbtDeviceName() && deviceName.length() == DEVICE_NAME_MAX_LENGTH ) { //check the device name format
                 notifyUser(getString(R.string.connect_in_progress));
-                updateScanning(true); //changes isScanning to true and updates button text "Find a device" into "Cancel"
-                client.connectBluetooth(new ConnectionConfig.Builder(connectionStateListener).deviceName(deviceName).maxScanDuration(SCAN_DURATION).scanDeviceType(isMelomindDevice() ? MELOMIND : VPRO).create());
+                client.connectBluetooth(new ConnectionConfig.Builder(connectionStateListener)
+                        .deviceName(deviceName)
+                        .maxScanDuration(SCAN_DURATION)
+                        .scanDeviceType(isMelomindDevice() ? MELOMIND : VPRO)
+                        .create());
 
             }else{ //if the device name entered by the user is empty or is not starting with a mbt prefix
                 notifyUser(getString(R.string.wrong_device_name));
@@ -151,7 +159,6 @@ public class HomeActivity extends AppCompatActivity{
     }
 
     private void cancelScan(){
-        updateScanning(false); // isScanning is false , and the scan button is updated
         client.cancelConnection();
     }
 

@@ -100,8 +100,7 @@ public final class MbtClient {
         this.mbtManager.connectBluetooth(config.getDeviceName(), config.getConnectionStateListener());
     }
 
-    public void disconnectBluetooth(ConnectionStateListener<ConnectionException> connectionStateListener){
-        this.mbtManager.setConnectionStateListener(connectionStateListener);
+    public void disconnectBluetooth(){
         this.mbtManager.disconnectBluetooth();
     }
 

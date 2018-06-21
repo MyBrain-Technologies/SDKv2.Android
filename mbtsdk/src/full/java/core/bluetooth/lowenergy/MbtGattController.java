@@ -95,8 +95,8 @@ final class MbtGattController extends BluetoothGattCallback {
         switch(newState) {
             case BluetoothGatt.STATE_CONNECTED:
                 //gatt.requestMtu(MAX_MTU);
-                gatt.discoverServices();
                 this.bluetoothController.notifyConnectionStateChanged(BtState.CONNECTED);
+                gatt.discoverServices();
                 msg += "STATE_CONNECTED and now discovering services...";
                 break;
             case BluetoothGatt.STATE_CONNECTING:
