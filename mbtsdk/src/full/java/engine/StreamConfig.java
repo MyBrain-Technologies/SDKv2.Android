@@ -115,10 +115,6 @@ public final class StreamConfig {
         public StreamConfig create(){
             return new StreamConfig(this.eegListener, this.notificationPeriod, this.deviceStatusListener);
         }
-
-
-
-
     }
 
     /**

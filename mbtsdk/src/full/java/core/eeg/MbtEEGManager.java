@@ -274,7 +274,6 @@ public final class MbtEEGManager extends BaseModuleManager{
      */
     @Subscribe(threadMode = ThreadMode.BACKGROUND)
     public void onEvent(BluetoothEEGEvent event){ //warning : this method is used
-        Log.i(TAG, Arrays.toString(event.getData()));
         dataAcquisition.handleDataAcquired(event.getData());
     }
 

@@ -36,7 +36,7 @@ public final class MbtFeatures{
 
     public final static int DEFAULT_CLIENT_PACKET_SIZE = 250;
     public final static int DEFAULT_CLIENT_NOTIFICATION_PERIOD = 1000;
-    public static final int MIN_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS = 500;
+    public static final int MIN_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS = 200;
     public static final int MAX_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS = 60000;
     public final static long DEFAULT_BATTERY_READ_PERIOD = 20000;
 

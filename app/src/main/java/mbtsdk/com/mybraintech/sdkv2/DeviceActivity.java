@@ -209,7 +209,7 @@ public class DeviceActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if(!isStreaming) { //streaming is not in progress : starting streaming
-                    startStream(new StreamConfig.Builder(eegListener).setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD).create());
+                    startStream(new StreamConfig.Builder(eegListener).setNotificationPeriod(400).create());
                     notifyUser("Starting streaming");
                 }else { //streaming is in progress : stopping streaming
                     stopStream(); // set false to isStreaming et null to the eegListener

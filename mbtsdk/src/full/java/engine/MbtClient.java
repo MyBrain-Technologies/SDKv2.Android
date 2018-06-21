@@ -148,10 +148,12 @@ public final class MbtClient {
      * @param streamConfig the configuration to pass to the streaming.
      */
     public void startStream(@NonNull StreamConfig streamConfig){
-        if(!streamConfig.isConfigCorrect())
+        if(!streamConfig.isConfigCorrect()){
             streamConfig.getEegListener().onError(new EEGException(EEGException.INVALID_PARAMETERS));
-        else
-            MbtConfig.eegBufferLengthClientNotif = (int)((streamConfig.getNotificationPeriod()* MbtFeatures.DEFAULT_SAMPLE_RATE)/1000);
+            return;
+        }
+
+        MbtConfig.eegBufferLengthClientNotif = (int)((streamConfig.getNotificationPeriod()* MbtFeatures.DEFAULT_SAMPLE_RATE)/1000);
 
         mbtManager.startStream(false, streamConfig.getEegListener(), streamConfig.getDeviceStatusListener());
     }
