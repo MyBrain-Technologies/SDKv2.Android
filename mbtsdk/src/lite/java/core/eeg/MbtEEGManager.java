@@ -26,7 +26,6 @@ import core.eeg.signalprocessing.MBTSignalQualityChecker;
 import core.eeg.acquisition.MbtDataConversion;
 import core.eeg.storage.MbtDataBuffering;
 import core.eeg.storage.RawEEGSample;
-import engine.clientevents.EEGException;
 import eventbus.EventBusManager;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.BluetoothEEGEvent;
@@ -81,7 +80,7 @@ public final class MbtEEGManager extends BaseModuleManager{
      * Reconfigures the temporary buffers that are used to store the raw EEG data until conversion to user-readable EEG data.
      * Reset the buffers arrays, status list, the number of status bytes and the packet Size
      */
-    public void reinitBuffers(){
+    private void reinitBuffers(){
         dataBuffering.reinitBuffers();
         dataAcquisition.resetIndex();
     }

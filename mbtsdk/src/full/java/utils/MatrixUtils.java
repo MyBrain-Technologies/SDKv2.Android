@@ -1,6 +1,7 @@
 package utils;
 
 
+import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 
 import java.util.ArrayList;
@@ -9,6 +10,7 @@ import java.util.ArrayList;
 /**
  * @author Sophie ZECRI on 13/06/2018
  */
+@Keep
 public class MatrixUtils {
 
     /**

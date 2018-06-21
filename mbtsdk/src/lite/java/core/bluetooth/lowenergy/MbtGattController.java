@@ -62,18 +62,9 @@ final class MbtGattController extends BluetoothGattCallback {
 
     private final MbtBluetoothLE bluetoothController;
 
-    public MbtLock<Boolean> notificationLock;
     private final MbtLock<BtState> connectionLock = new MbtLock<>();
-    private final MbtLock<Byte[]> eegConfigRetrievalLock = new MbtLock<>();
-    private final MbtLock<String> readDeviceInfoLock = new MbtLock<>();
-    private final MbtLock<Boolean> enableMailboxNotificationLock = new MbtLock<>();
 
-    private boolean mailboxNotificationsEnabled = false;
-
-    // Generic Descriptor UUID for Notification System
-    private final UUID notificationDescriptorUUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
-
-    public MbtGattController(Context context, MbtBluetoothLE bluetoothController) {
+    MbtGattController(Context context, MbtBluetoothLE bluetoothController) {
         super();
         this.bluetoothController = bluetoothController;
     }
@@ -95,8 +86,8 @@ final class MbtGattController extends BluetoothGattCallback {
         switch(newState) {
             case BluetoothGatt.STATE_CONNECTED:
                 //gatt.requestMtu(MAX_MTU);
-                gatt.discoverServices();
                 this.bluetoothController.notifyConnectionStateChanged(BtState.CONNECTED);
+                gatt.discoverServices();
                 msg += "STATE_CONNECTED and now discovering services...";
                 break;
             case BluetoothGatt.STATE_CONNECTING:

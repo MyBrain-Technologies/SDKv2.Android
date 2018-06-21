@@ -45,7 +45,7 @@ public final class MbtFeatures{
 
     // MELOMIND & VPRO FEATURES
     public static final String MELOMIND_DEVICE_NAME_PREFIX = "melo_";
-    public static final String VPRO_DEVICE_NAME_PREFIX = "vpro_";
+    public static final String VPRO_DEVICE_NAME_PREFIX = "VPro";
 
     public static final String MELOMIND_DEVICE_NAME = "Melomind";
     public static final String VPRO_DEVICE_NAME = "VPro";
@@ -135,13 +135,7 @@ public final class MbtFeatures{
             packetSize = (MbtConfig.getScannableDevices().equals(MELOMIND))? DEFAULT_BLE_RAW_DATA_PACKET_SIZE : DEFAULT_SPP_RAW_DATA_PACKET_SIZE;
         return packetSize;
     }
-    /**
-     * Sets the raw data packet size
-     * @return the raw data packet size
-     */
-    public static void setRawDataPacketSize(int newPacketSize) {
-        packetSize = newPacketSize;
-    }
+
 
     /**
      * Gets the raw data buffer size
@@ -175,14 +169,6 @@ public final class MbtFeatures{
         if(nbStatusBytes == -1)
             nbStatusBytes = (MbtConfig.getScannableDevices().equals(MELOMIND))? DEFAULT_BLE_NB_STATUS_BYTES : DEFAULT_SPP_NB_STATUS_BYTES;
         return nbStatusBytes;
-    }
-
-    /**
-     * Sets the number of bytes corresponding to one status data
-     * @param statusBytes the number of bytes corresponding to one status data
-     */
-    public static void setNbStatusBytes(int statusBytes) {
-        nbStatusBytes = statusBytes;
     }
 
     /**

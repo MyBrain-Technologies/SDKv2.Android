@@ -5,7 +5,6 @@ package core.bluetooth;
  */
 
 import android.bluetooth.BluetoothDevice;
-import android.content.Context;
 
 /**
  * Interface used to connect to or disconnect from a bluetooth peripheral device

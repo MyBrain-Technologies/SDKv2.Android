@@ -30,7 +30,7 @@ public interface MbtClientEvents extends BaseErrorEvent {
          * @param eventCode the Mailbox code associated with the message. See {@link core.bluetooth.lowenergy.MailboxEvents} for the list of all codes
          * @param eventValues the values sent by the peripheral.
          */
-        void onMailBoxEvent (final byte eventCode, final Object eventValues);
+        void onMailBoxEvent(final byte eventCode, final Object eventValues);
     }
 
 }

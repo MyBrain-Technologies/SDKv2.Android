@@ -1,17 +1,13 @@
 package core.device;
 
-import android.os.Parcel;
-import android.os.Parcelable;
-
 import java.io.Serializable;
 import java.util.Arrays;
-
 
 /**
  * Created by SophieZ on 28/02/2018.
  */
 
-public final class DCOffsets extends Object implements Serializable {
+public final class DCOffsets implements Serializable {
 
     private long timestamp;
 

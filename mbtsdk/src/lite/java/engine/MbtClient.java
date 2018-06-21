@@ -83,7 +83,7 @@ public final class MbtClient {
      * Call this method to establish a bluetooth connection with a remote device.
      * It is possible to connect either a Melomind or a VPro device through this method. You need to specify
      * the device type in the {@link ConnectionConfig} input instance with the {@link ScannableDevices} type.
-     * <p>If the parameters are invalid, the method returns immediately and {@link engine.clientevents.ConnectionStateListener#onError(BaseException)} method is called</p>
+     * <p>If the parameters are invalid, the method returns immediately and {@link ConnectionStateListener#onError(BaseException)} method is called</p>
      *
      * @param config the {@link ConnectionConfig} instance that holds all the configuration parameters inside.
      */
@@ -101,7 +101,7 @@ public final class MbtClient {
     }
 
     public void disconnectBluetooth(){
-        this.mbtManager.disconnectBluetooth();
+        this.mbtManager.disconnectBluetooth(false);
     }
 
 
@@ -140,10 +140,10 @@ public final class MbtClient {
      *
      * <p>You can customize some parameters in the {@link StreamConfig}class.</p>
      *
-     * <p>If the parameters are incorrect, the function returns directly and the {@link engine.clientevents.EegListener#onError(BaseException)} method is called</p>
-     * If something wrong happens during the operation, {@link engine.clientevents.EegListener#onError(BaseException)} method is called.
+     * <p>If the parameters are incorrect, the function returns directly and the {@link EegListener#onError(BaseException)} method is called</p>
+     * If something wrong happens during the operation, {@link EegListener#onError(BaseException)} method is called.
      *
-     * <p>If everything went well, the EEG will be available in the {@link engine.clientevents.EegListener#onNewPackets(MbtEEGPacket)} callback.</p>
+     * <p>If everything went well, the EEG will be available in the {@link EegListener#onNewPackets(MbtEEGPacket)} callback.</p>
      *
      * @param streamConfig the configuration to pass to the streaming.
      */
@@ -162,7 +162,7 @@ public final class MbtClient {
     }
 
     public void cancelConnection() {
-        this.mbtManager.disconnectBluetooth();
+        this.mbtManager.disconnectBluetooth(true);
     }
 
     /**
@@ -180,6 +180,8 @@ public final class MbtClient {
     public void setEEGListener(EegListener<EEGException> eegListener){
         this.mbtManager.setEEGListener(eegListener);
     }
+
+
 
 
 //    public void testEEGpackageClient(){
