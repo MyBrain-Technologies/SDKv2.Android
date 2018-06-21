@@ -41,18 +41,6 @@ public class RawEEGSample {
         this.bytesEEG = bytes;
     }
 
-//    /**
-//     * Initializes a new instance of the RawEEGSample object.
-//     * This object stores a single EEG data and its associated status.
-//     * @param defaultValue The default value for initializing all the items of the raw EEG data array
-//     */
-//    public RawEEGSample(@NonNull byte defaultValue) {
-//        this.bytesEEG = new byte[MbtFeatures.getEEGByteSize()];
-//        for (int i = 0; i< MbtFeatures.getEEGByteSize(); i++){
-//            this.bytesEEG[i] = defaultValue;
-//        }
-//    }
-
     /**
      * Gets the status data
      * @return the status data
@@ -84,11 +72,6 @@ public class RawEEGSample {
     @NonNull
     @Override
     public String toString() {
-        /*
-        return "RawEEGSample{" +
-                "bytesEEG=" + Arrays.toString(bytesEEG) +
-                ", statusEEG=" + statusEEG +
-                '}';*/
         StringBuilder s = new StringBuilder();
         for (byte[] bytes : bytesEEG) {
             s.append(Arrays.toString(bytes));

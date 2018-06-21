@@ -125,8 +125,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             return;
         }
 
-
-
+        
         isConnectionInterrupted = false; // resetting the flag when starting a new connection
         if(!BluetoothAdapter.getDefaultAdapter().isEnabled()){
             notifyConnectionStateChanged(BtState.DISABLED);
@@ -153,7 +152,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         }else{
             //todo
         }
-
 
 
         //first step
@@ -526,11 +524,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     public void onNewBluetoothRequest(final BluetoothRequests request){
         //Specific case: disconnection has main priority so we don't add it to queue
         Log.i(TAG, "onNewBTRequest");
-        if(request instanceof DisconnectRequestEvent)
-            if(((DisconnectRequestEvent) request).isInterrupted())
-                cancelPendingConnection();
-            else
-                disconnect();
+        if(request instanceof DisconnectRequestEvent && ((DisconnectRequestEvent) request).isInterrupted())
+            cancelPendingConnection();
         else
             requestHandler.post(new Runnable() {
                 @Override
@@ -604,9 +599,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             super.onLooperPrepared();
         }
 
-
-
-
         /**
          * Checks the subclass type of {@link BluetoothRequests} and handles the correct method/action to perform.
          * @param request the {@link BluetoothRequests} request to execute.
@@ -628,11 +620,11 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 }
             } else if(request instanceof ReadRequestEvent){
                 performReadOperation(((ReadRequestEvent)request).getDeviceInfo());
-//                } else if(request instanceof DisconnectRequestEvent){
-//                    if(((DisconnectRequestEvent) request).isInterrupted())
-//                        cancelPendingConnection();
-//                    else
-//                        disconnect();
+            } else if(request instanceof DisconnectRequestEvent){
+                if(((DisconnectRequestEvent) request).isInterrupted())
+                    cancelPendingConnection();
+                else
+                    disconnect();
             } else if(request instanceof StreamRequestEvent){
                 if(((StreamRequestEvent) request).isStart())
                     startStream(((StreamRequestEvent) request).shouldMonitorDeviceStatus());
@@ -641,9 +633,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             } else if(request instanceof UpdateConfigurationRequestEvent){
                 configureHeadset(((UpdateConfigurationRequestEvent) request).getConfig());
             }
-
-
         }
+
 
 
         /**
