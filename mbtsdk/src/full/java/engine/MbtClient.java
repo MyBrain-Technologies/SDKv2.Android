@@ -131,9 +131,10 @@ public final class MbtClient {
         mbtManager.readBluetooth(DeviceInfo.SERIAL_NUMBER, listener);
     }
 
-    public void stopReadBattery(){
-
-    }
+//
+//    public void stopReadBattery(){
+//
+//    }
 
     /**
      * Initiates an EEG streaming ie, send a message to the headset to deliver EEG to the application.

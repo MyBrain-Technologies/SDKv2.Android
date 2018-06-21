@@ -145,7 +145,8 @@ public class DeviceActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_device);
-        client = MbtClient.getClientInstance();
+        client = MbtClient.init(getApplicationContext());
+
         currentState = (BtState) getIntent().getSerializableExtra(HomeActivity.BT_STATE);
 
         initToolBar();
@@ -168,7 +169,6 @@ public class DeviceActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if(isStreaming)
                     stopStream();
-
                 client.disconnectBluetooth();
 
 
