@@ -167,10 +167,7 @@ public class DeviceActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if(isStreaming)
                     stopStream();
-
-                if(currentState == BtState.CONNECTED_AND_READY ){
-                    client.disconnectBluetooth();
-                }
+                client.disconnectBluetooth();
             }
         });
     }
