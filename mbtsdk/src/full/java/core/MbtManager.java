@@ -74,7 +74,7 @@ public final class MbtManager{
         EventBusManager.registerOrUnregister(true, this);
 
         registerManager(new MbtDeviceManager(mContext, this, MbtFeatures.getBluetoothProtocol()));
-        registerManager(new MbtBluetoothManager(mContext, this, MbtFeatures.getBluetoothProtocol()));
+        registerManager(new MbtBluetoothManager(mContext, this));
         registerManager(new MbtEEGManager(mContext, this, MbtFeatures.getBluetoothProtocol()));
 
     }
@@ -228,10 +228,9 @@ public final class MbtManager{
             }else if(newState == IStreamable.StreamState.DISCONNECTED){
                 eegListener.onError(new EEGException(EEGException.DEVICE_NOT_CONNECTED));
             }else if(newState == IStreamable.StreamState.STOPPED){
-                connectionStateListener = null;
+                eegListener = null;
             }
         }
-
     }
 
     /**

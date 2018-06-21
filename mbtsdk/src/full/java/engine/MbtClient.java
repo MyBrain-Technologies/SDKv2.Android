@@ -182,6 +182,8 @@ public final class MbtClient {
     }
 
 
+
+
 //    public void testEEGpackageClient(){
 //        if (MbtFeatures.getBluetoothProtocol().equals(BLUETOOTH_LE)) {
 //            getBluetoothManager().getMbtBluetoothLE().testAcquireDataRandomByte();

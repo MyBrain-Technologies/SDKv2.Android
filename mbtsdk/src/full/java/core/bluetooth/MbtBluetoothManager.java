@@ -65,7 +65,6 @@ import static core.bluetooth.BtProtocol.BLUETOOTH_SPP;
 public final class MbtBluetoothManager extends BaseModuleManager{
     private final static String TAG = MbtBluetoothManager.class.getSimpleName();
 
-    private BtProtocol btProtocol;
 
     private MbtBluetoothLE mbtBluetoothLE;
     private MbtBluetoothA2DP mbtBluetoothA2DP;
@@ -84,12 +83,10 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * Constructor of the manager.
      * @param context the application context
      * @param mbtManagerController the main manager that sends and receives bluetooth events
-     * @param btProtocol the {@link BtProtocol} the user wants to use
      */
-    public MbtBluetoothManager(@NonNull Context context, MbtManager mbtManagerController, BtProtocol btProtocol){
+    public MbtBluetoothManager(@NonNull Context context, MbtManager mbtManagerController){
         super(context, mbtManagerController);
         //save client side objects in variables
-        this.btProtocol = btProtocol;//Default value according to the scanned device
 
         this.mbtBluetoothLE = new MbtBluetoothLE(context, this);
         this.mbtBluetoothSPP = new MbtBluetoothSPP(context,this);
@@ -141,8 +138,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             //todo
         }
 
-
-
         //first step
         BluetoothDevice scannedDevice = null;
         try {
@@ -168,14 +163,13 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         connect(bluetoothDevice);
     }
 
-
     /**
      * ConnectRequestEvent to a specific BluetoothDevice. This allows to skip the scanning part and jump directly to connection step
      * @param device the Bluetooth device to connect to
      * @return immediately the following : false if device is null, true if connection step has been started
      */
     private void connect(@NonNull BluetoothDevice device){
-        switch (btProtocol){
+        switch (MbtFeatures.getBluetoothProtocol()){
             case BLUETOOTH_LE:
                 mbtBluetoothLE.connect(mContext, device);
                 break;
@@ -211,7 +205,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             mbtBluetoothLE.startScanDiscovery(MbtFeatures.getDeviceName());
     }
 
-
     /**
      * Start scanning a single device by filtering on its name. This method is asynchronous
      * @param deviceName The broadcasting name of the device to scan
@@ -220,24 +213,22 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private Future<BluetoothDevice> scanSingle(@NonNull final String deviceName){ //todo check that
         //TODO choose method name accordingly between scan() / scanFor() / ...
 
-
         return AsyncUtils.executeAsync(new Callable<BluetoothDevice>() {
             @Nullable
             @Override
             public BluetoothDevice call() throws Exception {
 
-                if(btProtocol== BLUETOOTH_LE){
+                if(MbtFeatures.getBluetoothProtocol()== BLUETOOTH_LE){
                     Log.i(TAG, "in call method. About to start scan LE");
                     return mbtBluetoothLE.startLowEnergyScan(true, deviceName);
                 }
                 else
                     Log.i(TAG, "About to start scan discovery");
 
-                    return mbtBluetoothSPP.startScanDiscovery(deviceName);
+                return mbtBluetoothLE.startScanDiscovery(deviceName);
             }
         });
     }
-
 
     /**
      * This method stops the currently running bluetooth scan, either Le scan or discovery scan
@@ -251,7 +242,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         else
             mbtBluetoothLE.stopScanDiscovery();
     }
-
 
     /**
      * This method manages a set of calls to perform in order to reconfigure some of the headset's
@@ -278,7 +268,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 e.printStackTrace();
             }
             if (config.getNotchFilter() != null) {
-               stepSuccess = mbtBluetoothLE.changeFilterConfiguration(config.getNotchFilter());
+                stepSuccess = mbtBluetoothLE.changeFilterConfiguration(config.getNotchFilter());
 
                 //TODO implement bandpass filter change
 //            if(config.getBandpassFilter() != null){
@@ -338,9 +328,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
     }
 
-
-
-
     /**
      * Initiates the acquisition of EEG data. This method chooses between the correct BtProtocol.
      * If there is already a streaming session in progress, nothing happens and the method returns silently.
@@ -392,7 +379,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         }
     }
 
-
     /**
      * Initiates a read firmware version operation on this correct BtProtocol
      * In case of failure during read process, an event with error is posted to the main manager.
@@ -403,7 +389,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             EventBusManager.postEvent(new DeviceInfoEvent<>(DeviceInfo.FW_VERSION, null));
         }
     }
-
 
     /**
      * Initiates a read hardware version operation on this correct BtProtocol
@@ -416,7 +401,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         }
     }
 
-
     /**
      * Initiates a read serial number operation on this correct BtProtocol
      * In case of failure during read process, an event with error is posted to the main manager.
@@ -427,7 +411,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             EventBusManager.postEvent(new DeviceInfoEvent<>(DeviceInfo.SERIAL_NUMBER, null));
         }
     }
-
 
 //    public void setBtProtocol(BtProtocol btProtocol) {
 //        this.btProtocol = btProtocol;
@@ -458,7 +441,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      */
     private void disconnect() {
 
-        switch(this.btProtocol){
+        switch(MbtFeatures.getBluetoothProtocol()){
             case BLUETOOTH_LE:
                 this.mbtBluetoothLE.disconnect();
                 break;
@@ -470,7 +453,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 break;
         }
     }
-
 
     /**
      * Posts a BluetoothEEGEvent event to the bus so that MbtEEGManager can handle raw EEG data received
@@ -522,7 +504,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         EventBusManager.postEvent(new ConnectionStateEvent(newState));
     }
 
-
     /**
      * This method is called from Bluetooth classes and is meant to post an event to the main manager
      * that contains the {@link DeviceInfo} with the associated value
@@ -533,8 +514,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         requestBeingProcessed = false;
         EventBusManager.postEvent(new DeviceInfoEvent<String>(deviceInfo, deviceValue));
     }
-
-
 
     /**
      * This method is called from Bluetooth classes and is meant to post an event to the main manager
@@ -570,9 +549,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             super.onLooperPrepared();
         }
 
-
-
-
         /**
          * Checks the subclass type of {@link BluetoothRequests} and handles the correct method/action to perform.
          * @param request the {@link BluetoothRequests} request to execute.
@@ -601,8 +577,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             } else if(request instanceof UpdateConfigurationRequestEvent){
                 configureHeadset(((UpdateConfigurationRequestEvent) request).getConfig());
             }
-
-
         }
 
         /**
@@ -628,8 +602,5 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                     break;
             }
         }
-
-
     }
-
 }

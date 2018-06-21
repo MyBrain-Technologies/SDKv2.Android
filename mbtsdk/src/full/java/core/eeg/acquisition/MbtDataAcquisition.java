@@ -35,9 +35,6 @@ public class MbtDataAcquisition {
     private int startingIndex = -1;
     private int previousIndex = -1;
 
-    private int rawDataPosition = 0;
-    //private int bufferPosition = 0;
-
     private MbtEEGManager eegManager;
 
     private ArrayList<RawEEGSample> singleRawEEGList;
@@ -133,16 +130,7 @@ public class MbtDataAcquisition {
         return ((tempStatus & (1 << bit)) != 0) ? 1f : 0f;
     }
 
-    /**
-     * Reconfigures the temporary buffers that are used to store the raw EEG data until conversion to user-readable EEG data.
-     * Resets the buffers, status, NbStatusBytes and rawDataPacketSize
-     * @param samplePerNotif the number of sample per notification
-     * @param nbStatusByte   the number of bytes used for one eeg data
-     */
-    public void reconfigureBuffers(final byte samplePerNotif, final byte nbStatusByte) {
-        eegManager.reconfigureBuffers(samplePerNotif, nbStatusByte);
-        resetIndex();
-    }
+
 
     /**
      * Fills the status data list corresponding to the EEG data array.
@@ -183,7 +171,7 @@ public class MbtDataAcquisition {
     /**
      * Reset the starting and previous indexes to -1
      */
-    private void resetIndex() {
+    public void resetIndex() {
         startingIndex = -1;
         previousIndex = -1;
     }

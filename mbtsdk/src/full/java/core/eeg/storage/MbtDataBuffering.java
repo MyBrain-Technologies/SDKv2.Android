@@ -16,6 +16,7 @@ import core.eeg.acquisition.MbtDataConversion;
 import core.eeg.signalprocessing.ContextSP;
 import core.eeg.signalprocessing.MBTSignalQualityChecker;
 import features.MbtFeatures;
+import features.ScannableDevices;
 import mbtsdk.com.mybraintech.mbtsdk.BuildConfig;
 import utils.MatrixUtils;
 
@@ -134,18 +135,22 @@ public class MbtDataBuffering {
             notifyClientEEGDataBufferFull();
 
             mbtEEGPacketsBuffer = new MbtEEGPacket( new ArrayList<>(consolidatedEEG.subList(maxElementsToAppend, consolidatedEEG.size())),
-                    computeSignalQuality(), status.size() != 0 ?
+                    null, status.size() != 0 ?
                     ( new ArrayList<>(status.subList(maxElementsToAppend, status.size() >= consolidatedEEG.size() ? consolidatedEEG.size() : status.size() ))) : null );
         }
     }
 
     private ArrayList<Float> computeSignalQuality(){
         ArrayList<ArrayList<Float>> channelData = MatrixUtils.invertFloatMatrix(mbtEEGPacketsBuffer.getChannelsData());
-        Float[] channel1 = new Float[channelData.get(0).size()];
-        Float[] channel2 = new Float[channelData.get(1).size()];
-        channelData.get(0).toArray(channel1);
-        channelData.get(1).toArray(channel2);
-        final float[] qts = MBTSignalQualityChecker.computeQualitiesForPacketNew(MbtFeatures.getSampleRate(),MbtFeatures.getSampleRate(), channel1, channel2);
+        ArrayList<Float[]> channels = new ArrayList<>();
+        for (int nbChannel = 0; nbChannel < MbtFeatures.getNbChannels() ; nbChannel++){
+            channels.add(new Float[channelData.get(nbChannel).size()]);
+            channelData.get(nbChannel).toArray(channels.get(nbChannel));
+        }
+
+        final float[] qts = (MbtConfig.getScannableDevices().equals(ScannableDevices.MELOMIND) ?
+                MBTSignalQualityChecker.computeQualitiesForPacketNew(MbtFeatures.getSampleRate(),MbtFeatures.getSampleRate(), channels.get(0), channels.get(1)) :
+                MBTSignalQualityChecker.computeQualitiesForPacketNew(MbtFeatures.getSampleRate(),MbtFeatures.getSampleRate(), channels.get(0), channels.get(1), channels.get(2), channels.get(3), channels.get(4), channels.get(5), channels.get(6), channels.get(7), channels.get(8))) ;
         ArrayList<Float> listedQualities = new ArrayList<Float>(Arrays.asList(ArrayUtils.toObject(qts)));
         return listedQualities;
     }
@@ -153,15 +158,12 @@ public class MbtDataBuffering {
     /**
      * Reconfigures the temporary buffers that are used to store the raw EEG data until conversion to user-readable EEG data.
      * Reset the buffers, status and packet size
-     * @param samplePerNotif the number of samples per notification
-     * @param nbStatusByte the number of bytes used for one eeg data
      */
-    public void reconfigureBuffers(byte samplePerNotif, final int nbStatusByte){ // statusByteNb parameter should be the internal config value
+    public void reinitBuffers(){
 
-        MbtConfig.setSamplePerNotification(samplePerNotif);
-        setNbStatusBytes(nbStatusByte);
-        setRawDataPacketSize(getRawDataBytesPerWholeChannelsSamples()*samplePerNotif);
-        pendingRawData = new ArrayList<>(getRawDataBufferSize()); //init the buffer that we will use for handle/convert EEG raw data //TODO see if mandatory to reinit this buffer
+        pendingRawData.clear(); //init the buffer that we will use for handle/convert EEG raw data //TODO see if mandatory to reinit this buffer
+        mbtEEGPacketsBuffer = new MbtEEGPacket();
+
     }
 
     /**
