@@ -56,12 +56,6 @@ public class MbtDataBuffering {
 
         pendingRawData = new ArrayList<>();
         mbtEEGPacketsBuffer = new MbtEEGPacket();
-        try {
-            System.loadLibrary(ContextSP.LIBRARY_NAME + BuildConfig.USE_ALGO_VERSION);
-        } catch (final UnsatisfiedLinkError e) {
-            e.printStackTrace();
-        }
-        ContextSP.SP_VERSION = MBTSignalQualityChecker.initQualityChecker();
 
     }
 
