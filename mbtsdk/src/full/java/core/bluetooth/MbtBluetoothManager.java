@@ -47,6 +47,7 @@ import eventbus.events.DeviceInfoEvent;
 import features.MbtFeatures;
 import features.ScannableDevices;
 import utils.AsyncUtils;
+import utils.LogUtils;
 
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
 import static core.bluetooth.BtProtocol.BLUETOOTH_SPP;
@@ -170,7 +171,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             notifyConnectionStateChanged(isConnectionInterrupted ? BtState.INTERRUPTED : BtState.SCAN_TIMEOUT);
             return;
         }else {
-            Log.i(TAG, "scanned device is " + currentDevice.toString());
+            LogUtils.i(TAG, "scanned device is " + currentDevice.toString());
             notifyConnectionStateChanged(BtState.DEVICE_FOUND);
             bluetoothDevice = currentDevice;
         }
@@ -245,11 +246,11 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             public BluetoothDevice call() throws Exception {
 
                 if(MbtFeatures.getBluetoothProtocol()== BLUETOOTH_LE){
-                    Log.i(TAG, "in call method. About to start scan LE");
+                    LogUtils.i(TAG, "in call method. About to start scan LE");
                     return mbtBluetoothLE.startLowEnergyScan(true, deviceName);
                 }
                 else
-                    Log.i(TAG, "About to start scan discovery");
+                    LogUtils.i(TAG, "About to start scan discovery");
 
                     return mbtBluetoothSPP.startScanDiscovery(deviceName);
             }
@@ -261,7 +262,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * This method stops the currently running bluetooth scan, either Le scan or discovery scan
      */
     private void stopCurrentScan(){
-        Log.i(TAG, "stopping current scan");
+        LogUtils.i(TAG, "stopping current scan");
         if (MbtConfig.scannableDevices == ScannableDevices.MELOMIND && ContextCompat.checkSelfPermission(mContext,
                 Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(mContext,
                 Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
@@ -287,7 +288,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             }
 
             if(!stepSuccess){
-                Log.e(TAG, "step has timeout. Aborting task...");
+                LogUtils.e(TAG, "step has timeout. Aborting task...");
                 return;
             }
 
@@ -303,12 +304,12 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 //            if(config.getBandpassFilter() != null){
 //                boolean b = changeFilterConfiguration(config.getBandpassFilter());
 //                if(!b)
-//                    Log.e(TAG, "Error changing bandpass filter configuration");
+//                    LogUtils.e(TAG, "Error changing bandpass filter configuration");
 //            }
             }
 
             if(!stepSuccess){
-                Log.e(TAG, "step has timeout. Aborting task...");
+                LogUtils.e(TAG, "step has timeout. Aborting task...");
                 return;
             }
 
@@ -323,7 +324,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             }
 
             if(!stepSuccess){
-                Log.e(TAG, "step has timeout. Aborting task...");
+                LogUtils.e(TAG, "step has timeout. Aborting task...");
                 return;
             }
 
@@ -334,7 +335,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             }
             stepSuccess = mbtBluetoothLE.switchP300Mode(config.isUseP300());
             if(!stepSuccess){
-                Log.e(TAG, "step has timeout. Aborting task...");
+                LogUtils.e(TAG, "step has timeout. Aborting task...");
                 return;
             }
         }
@@ -348,7 +349,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         stepSuccess = mbtBluetoothLE.requestDeviceConfig();
 
         if(!stepSuccess){
-            Log.e(TAG, "step has timeout. Aborting task...");
+            LogUtils.e(TAG, "step has timeout. Aborting task...");
             return;
         }
 
@@ -472,7 +473,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * It can be either stop scan or connection process interruption
      */
     private void cancelPendingConnection() {
-        Log.i(TAG, "cancelling pending connection");
+        LogUtils.i(TAG, "cancelling pending connection");
         isConnectionInterrupted = true;
         if(getCurrentState() == BtState.SCAN_STARTED){
             if(futureScannedDevice != null)
@@ -523,7 +524,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     @Subscribe(threadMode = ThreadMode.ASYNC)
     public void onNewBluetoothRequest(final BluetoothRequests request){
         //Specific case: disconnection has main priority so we don't add it to queue
-        Log.i(TAG, "onNewBTRequest");
+        LogUtils.i(TAG, "onNewBTRequest");
         if(request instanceof DisconnectRequestEvent && ((DisconnectRequestEvent) request).isInterrupted())
             cancelPendingConnection();
         else
@@ -604,13 +605,13 @@ public final class MbtBluetoothManager extends BaseModuleManager{
          * @param request the {@link BluetoothRequests} request to execute.
          */
         void parseRequest(BluetoothRequests request){
-            Log.i(TAG,"parsing new request");
+            LogUtils.i(TAG,"parsing new request");
             //BluetoothRequests request = pendingRequests.remove();
 
             //disconnect request doesn't need to be in "queue" as it is top priority
 
             while(requestBeingProcessed);
-            Log.i(TAG,"bt execution thread is now free");
+            LogUtils.i(TAG,"bt execution thread is now free");
             requestBeingProcessed = true;
             if(request instanceof ConnectRequestEvent){
                 if(((ConnectRequestEvent)request).getName() == null){

@@ -125,7 +125,7 @@ public class MbtDataBuffering {
             notifyClientEEGDataBufferFull();
 
             mbtEEGPacketsBuffer = new MbtEEGPacket( new ArrayList<>(consolidatedEEG.subList(maxElementsToAppend, consolidatedEEG.size())),
-                    null, status.size() != 0 ?
+                    status.size() != 0 ?
                     ( new ArrayList<>(status.subList(maxElementsToAppend, status.size() >= consolidatedEEG.size() ? consolidatedEEG.size() : status.size() ))) : null );
         }
     }

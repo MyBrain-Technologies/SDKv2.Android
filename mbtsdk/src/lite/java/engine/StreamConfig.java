@@ -12,18 +12,14 @@ import features.MbtFeatures;
 
 /**
  * This class aims at configuring the stream process. It contains user configurable
- * parameters to specify how the streaming is going to be.
+ * parameters to specify how the streaming is going to be performed.
  *
  * <p>Use the {@link Builder} class to instanciate this.</p>
  */
 @Keep
 public final class StreamConfig {
 
-    //private final long streamDuration; //For later use
-
     private final int notificationPeriod;
-
-    //private final DeviceConfig deviceConfig; Will be used in future release
 
     private final EegListener<EEGException> eegListener;
 
@@ -55,6 +51,7 @@ public final class StreamConfig {
     public static class Builder{
         //long streamDuration = -1L;
         private int notificationPeriod = MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD;
+
         @Nullable
         private DeviceStatusListener deviceStatusListener = null;
         @NonNull
@@ -69,10 +66,6 @@ public final class StreamConfig {
             this.eegListener = eegListener;
         }
 
-//        public Builder setStreamDuration(long durationInMillis){
-//            this.streamDuration = streamDuration;
-//            return this;
-//        }
 
         /**
          * Use this method to specify how much eeg you want to receive in the {@link EegListener#onNewPackets(MbtEEGPacket)} method.
@@ -96,20 +89,6 @@ public final class StreamConfig {
             return this;
         }
 
-        /**
-         * Use this method if you want to monitor headset's electrodes saturation and eeg offset.
-         * Set it to null if unnecesary.
-         *
-         * <p>It is by default set to NULL</p>
-         *
-         * @param deviceStatusListener the device status listener
-         * @return the device instance
-         */
-        @NonNull
-        public Builder addSaturationAndOffsetListener(@Nullable DeviceStatusListener deviceStatusListener){
-            this.deviceStatusListener = deviceStatusListener;
-            return this;
-        }
 
         @Nullable
         public StreamConfig create(){

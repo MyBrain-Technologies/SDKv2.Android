@@ -11,6 +11,7 @@ import core.bluetooth.BtProtocol;
 import core.eeg.MbtEEGManager;
 import core.eeg.storage.RawEEGSample;
 import features.MbtFeatures;
+import utils.LogUtils;
 
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
 import static features.MbtFeatures.getEEGByteSize;
@@ -69,7 +70,7 @@ public class MbtDataAcquisition {
 
         //2nd step : Create interpolation packets if packet loss
         if(indexDifference != 1){
-            Log.e(TAG, "diff is " + indexDifference);
+            LogUtils.e(TAG, "diff is " + indexDifference);
             for (int i = 0; i < indexDifference; i++) {
                 fillSingleDataEEGList(true, data);
             }

@@ -78,7 +78,6 @@ public class DeviceActivity extends AppCompatActivity {
 
         @Override
         public void onStateChanged(@NonNull BtState newState) {
-            Log.i(TAG, "Current state updated "+newState);
             currentState = newState;
             Log.i(TAG,"current state "+newState);
             if(currentState.equals(BtState.DISCONNECTED) ){
@@ -145,7 +144,7 @@ public class DeviceActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_device);
-        client = MbtClient.init(getApplicationContext());
+        client = MbtClient.getClientInstance();
 
         currentState = (BtState) getIntent().getSerializableExtra(HomeActivity.BT_STATE);
 
@@ -190,8 +189,9 @@ public class DeviceActivity extends AppCompatActivity {
         readBatteryButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(deviceInfoListener != null)
-                    client.readBattery(-1,deviceInfoListener);
+                if(deviceInfoListener != null){
+                    client.readBattery(deviceInfoListener);
+                }
             }
         });
     }

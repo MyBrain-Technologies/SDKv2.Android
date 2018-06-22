@@ -1,5 +1,6 @@
 package utils;
 
+import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
@@ -18,6 +19,7 @@ import java.util.zip.ZipOutputStream;
 /**
  * Created by Vincent on 19/08/2015.
  */
+@Keep
 public final class FileUtils {
     private final static String TAG = "FileUtils";
 

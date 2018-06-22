@@ -22,16 +22,12 @@ android {
 
     productFlavors {
         full {
-            minSdkVersion 22
             versionNameSuffix "-Full"
-            versionName "1.0.0"
 
         }
 
         lite {
-            minSdkVersion 22
             versionNameSuffix "-Lite"
-            versionName "1.0.0"
         }
     }
 

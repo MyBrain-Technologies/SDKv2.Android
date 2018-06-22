@@ -1,8 +1,11 @@
 package utils;
 
+import android.support.annotation.Keep;
+
 /**
  * Created by Vincent on 31/07/2015.
  */
+@Keep
 public final class ExceptionUtils {
     /**
      * To throw an <code>IllegalArgumentException</code> when a variable is <code>null</code>

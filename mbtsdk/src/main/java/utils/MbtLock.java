@@ -4,6 +4,7 @@ package utils;
  * Created by manon on 26/08/16.
  */
 
+import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -11,6 +12,7 @@ import android.util.Log;
 /**
  * This class is a small helper to provide feedback on lock wait and notify process
  */
+@Keep
 public final class MbtLock<T> {
     private final static String TAG = "MBT Lock";
 

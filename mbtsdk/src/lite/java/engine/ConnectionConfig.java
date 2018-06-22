@@ -115,30 +115,6 @@ public final class ConnectionConfig {
             return this;
         }
 
-        /**
-         * Unused at the moment
-         * */
-//        public Builder connectionTimeout(int connectionTimeoutInMillis){
-//            this.connectionTimeout = connectionTimeoutInMillis;
-//            return this;
-//        }
-
-        /**
-         * Use this method to force audio connection to a device. This is automatically set to {@link Boolean#FALSE}
-         * if the device is not a melomind.
-         *
-         * If the device is a melomind, then the flag will tell either or not the SDK has to connect the audio bluetooth.
-         * <p>Caution, the audio is handled by the Android system itself and is not meant to be connect via a third party application.
-         * If set to {@link Boolean#TRUE}, the connection attempt may fail. It is still possible to connect to audio through the system settings of your android device.</p>
-         *
-         * @param shouldConnectAudio true to connect automatically, false otherwise. If the device is not audio compatible, the flag is forced to false.
-         * @return the builder instance
-         */
-        @NonNull
-        public Builder connectAudioIfDeviceCompatible(boolean shouldConnectAudio){
-            this.connectAudio = shouldConnectAudio;
-            return this;
-        }
 
         /**
          * Use this method to define which king of device you want to connect to.

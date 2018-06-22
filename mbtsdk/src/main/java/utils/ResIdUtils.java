@@ -1,5 +1,6 @@
 package utils;
 
+import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 
 import java.lang.reflect.Field;
@@ -7,7 +8,7 @@ import java.lang.reflect.Field;
 /**
  * Created by Etienne on 06/04/2017.
  */
-
+@Keep
 public class ResIdUtils {
     public static int getResId(String resName, @NonNull Class<?> c) {
 

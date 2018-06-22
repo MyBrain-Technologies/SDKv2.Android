@@ -49,6 +49,9 @@ public final class MbtClient {
      * @return the initialized MbtClient instance to the application
      */
     public static MbtClient init(@NonNull Context context){
+        if(clientInstance != null)
+            throw new IllegalStateException("Client has already been init. You should call getClientInstance() instead");
+
         clientInstance = new MbtClientBuilder()
                 .setContext(context)
                 .setMbtManager(new MbtManager(context))

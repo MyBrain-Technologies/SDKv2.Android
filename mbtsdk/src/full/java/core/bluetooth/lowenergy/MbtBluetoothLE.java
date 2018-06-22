@@ -35,6 +35,7 @@ import core.bluetooth.BtState;
 import core.bluetooth.IStreamable;
 import core.bluetooth.MbtBluetooth;
 import core.bluetooth.MbtBluetoothManager;
+import utils.LogUtils;
 
 /**
  *
@@ -138,7 +139,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      */
     @Override
     public void notifyStreamStateChanged(StreamState newStreamState) {
-        Log.i(TAG, "new streamstate with state " + newStreamState.toString());
+        LogUtils.i(TAG, "new streamstate with state " + newStreamState.toString());
 
         streamingState = newStreamState;
         super.mbtBluetoothManager.notifyStreamStateChanged(newStreamState);
@@ -176,29 +177,29 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         if(!isConnected())
             return false;
 
-        Log.i(TAG, "Now enabling local notification for characteristic: " + characteristic.getUuid());
+        LogUtils.i(TAG, "Now enabling local notification for characteristic: " + characteristic.getUuid());
         if (!this.gatt.setCharacteristicNotification(characteristic, enableNotification)) {
-            Log.e(TAG, "Failed to enable local notification for characteristic: " + characteristic.getUuid());
+            LogUtils.e(TAG, "Failed to enable local notification for characteristic: " + characteristic.getUuid());
             return false;
         }
 
         final BluetoothGattDescriptor notificationDescriptor =
                 characteristic.getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID);
         if (notificationDescriptor == null) {
-            Log.e(TAG, String.format("Error: characteristic with " +
+            LogUtils.e(TAG, String.format("Error: characteristic with " +
                             "UUID <%s> does not have a descriptor (UUID <%s>) to enable notification remotely!",
                     characteristic.getUuid().toString(), MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID.toString()));
             return false;
         }
 
-        Log.i(TAG, "Now enabling remote notification for characteristic: " + characteristic.getUuid());
+        LogUtils.i(TAG, "Now enabling remote notification for characteristic: " + characteristic.getUuid());
         if (!notificationDescriptor.setValue(enableNotification ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE : BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)) {
             final StringBuilder sb = new StringBuilder();
             for (final byte value : enableNotification ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE : BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE) {
                 sb.append(value);
                 sb.append(';');
             }
-            Log.e(TAG, String.format("Error: characteristic's notification descriptor with " +
+            LogUtils.e(TAG, String.format("Error: characteristic's notification descriptor with " +
                             "UUID <%s> could not store the ENABLE notification value <%s>.",
                     MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID.toString(), sb.toString()));
             return false;
@@ -211,12 +212,12 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         }
 
         if (!this.gatt.writeDescriptor(notificationDescriptor)) {
-            Log.e(TAG, "Error: failed to initiate write descriptor operation in order to remotely " +
+            LogUtils.e(TAG, "Error: failed to initiate write descriptor operation in order to remotely " +
                     "enable notification for characteristic: " + characteristic.getUuid());
             return false;
         }
 
-        Log.i(TAG, "Successfully initiated write descriptor operation in order to remotely " +
+        LogUtils.i(TAG, "Successfully initiated write descriptor operation in order to remotely " +
                 "enable notification... now waiting for confirmation from headset.");
 
         try {
@@ -240,7 +241,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         this.bluetoothLeScanner = super.bluetoothAdapter.getBluetoothLeScanner();
         List<ScanFilter> mFilters = new ArrayList<>();
         if (filterOnDeviceService) {
-            Log.i(TAG, "ENABLED SERVICE FILTER");
+            LogUtils.i(TAG, "ENABLED SERVICE FILTER");
             final ScanFilter.Builder filterService = new ScanFilter.Builder()
                     .setServiceUuid(new ParcelUuid(MelomindCharacteristics.SERVICE_MEASUREMENT));
 
@@ -251,7 +252,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         }
 
 //        if (deviceName != null) {
-//            Log.i(TAG, "ENABLED NAME FILTER");
+//            LogUtils.i(TAG, "ENABLED NAME FILTER");
 //            final ScanFilter filterName = new ScanFilter.Builder()
 //                    .setDeviceName(deviceName)
 //                    .build();
@@ -264,9 +265,9 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
                 .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
                 .build();
 
-        //Log.i(TAG, String.format("Starting Low Energy Scan with filtering on name '%s' and service UUID '%s'", deviceName, MelomindCharacteristics.SERVICE_MEASUREMENT));
+        //LogUtils.i(TAG, String.format("Starting Low Energy Scan with filtering on name '%s' and service UUID '%s'", deviceName, MelomindCharacteristics.SERVICE_MEASUREMENT));
         this.bluetoothLeScanner.startScan(mFilters, settings, this.leScanCallback);
-        Log.i(TAG, "in scan method.");
+        LogUtils.i(TAG, "in scan method.");
         notifyConnectionStateChanged(BtState.SCAN_STARTED);
         return super.scanLock.waitAndGetResult();
     }
@@ -297,7 +298,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         public void onScanResult(int callbackType, @NonNull ScanResult result) {
             super.onScanResult(callbackType, result);
             final BluetoothDevice device = result.getDevice();
-            Log.i(TAG, String.format("Stopping Low Energy Scan -> device detected " +
+            LogUtils.i(TAG, String.format("Stopping Low Energy Scan -> device detected " +
                     "with name '%s' and MAC address '%s' ", device.getName(), device.getAddress()));
             //TODO, check if already in the array list
             MbtBluetoothLE.super.scannedDevices.add(device);
@@ -325,7 +326,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
                     notifyConnectionStateChanged(BtState.INTERNAL_FAILURE);
                     break;
             }
-            Log.e(TAG, msg);
+            LogUtils.e(TAG, msg);
         }
     };
 
@@ -348,7 +349,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 
             final int transport = device.getClass().getDeclaredField("TRANSPORT_LE").getInt(null);
             this.gatt = (BluetoothGatt) connectGattMethod.invoke(device, context, false, mbtGattController, transport);
-            Log.i(TAG, "this.gatt = " + this.gatt.toString());
+            LogUtils.i(TAG, "this.gatt = " + this.gatt.toString());
             return true; //TODO test
 //            final BtState state = super.connectionLock.waitAndGetResult(20000);
 //            return state != null && state == BtState.CONNECTED_AND_READY;
@@ -357,15 +358,15 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
                 | InvocationTargetException e) {
             final String errorMsg = " -> " + e.getMessage();
             if (e instanceof NoSuchMethodException)
-                Log.e(TAG, "Failed to find connectGatt method via reflexion" + errorMsg);
+                LogUtils.e(TAG, "Failed to find connectGatt method via reflexion" + errorMsg);
             else if (e instanceof NoSuchFieldException)
-                Log.e(TAG, "Failed to find Transport LE field via reflexion" + errorMsg);
+                LogUtils.e(TAG, "Failed to find Transport LE field via reflexion" + errorMsg);
             else if (e instanceof IllegalAccessException)
-                Log.e(TAG, "Failed to access Transport LE field via reflexion" + errorMsg);
+                LogUtils.e(TAG, "Failed to access Transport LE field via reflexion" + errorMsg);
             else if (e instanceof InvocationTargetException)
-                Log.e(TAG, "Failed to invoke connectGatt method via reflexion" + errorMsg);
+                LogUtils.e(TAG, "Failed to invoke connectGatt method via reflexion" + errorMsg);
             else
-                Log.e(TAG, "Unable to connect LE with reflexion. Reason" + errorMsg);
+                LogUtils.e(TAG, "Unable to connect LE with reflexion. Reason" + errorMsg);
             Log.getStackTraceString(e);
         }
         return false;
@@ -416,11 +417,11 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             return false;
 
         if (!this.gatt.readCharacteristic(gatt.getService(service).getCharacteristic(characteristic))) {
-            Log.e(TAG, "Error: failed to initiate read characteristic operation");
+            LogUtils.e(TAG, "Error: failed to initiate read characteristic operation");
             return false;
         }
 
-        Log.i(TAG, "Successfully initiated read characteristic operation");
+        LogUtils.i(TAG, "Successfully initiated read characteristic operation");
 
         return true;
     }
@@ -438,7 +439,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         //Send buffer
         this.gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(characteristic).setValue(payload);
         if (!this.gatt.writeCharacteristic(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(characteristic))) {
-            Log.e(TAG, "Error: failed to write characteristic " + characteristic.toString());
+            LogUtils.e(TAG, "Error: failed to write characteristic " + characteristic.toString());
             return false;
         }
 
@@ -493,7 +494,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * Initiates a read battery operation on this correct BtProtocol
      */
     public boolean readBattery() {
-        Log.i(TAG, "read battery requested");
+        LogUtils.i(TAG, "read battery requested");
         return startReadOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_BATTERY_LEVEL);
     }
 
@@ -501,14 +502,14 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * Initiates a read firmware version operation on this correct BtProtocol
      */
     public boolean readFwVersion(){
-        Log.i(TAG, "read firmware version requested");
+        LogUtils.i(TAG, "read firmware version requested");
         return startReadOperation(MelomindCharacteristics.CHARAC_INFO_FIRMWARE_VERSION);
     }
     /**
      * Initiates a read hardware version operation on this correct BtProtocol
      */
     public boolean readHwVersion(){
-        Log.i(TAG, "read hardware version requested");
+        LogUtils.i(TAG, "read hardware version requested");
         return startReadOperation(MelomindCharacteristics.CHARAC_INFO_HARDWARE_VERSION);
     }
 
@@ -516,7 +517,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * Initiates a read serial number operation on this correct BtProtocol
      */
     public boolean readSerialNumber(){
-        Log.i(TAG, "read serial number requested");
+        LogUtils.i(TAG, "read serial number requested");
         return startReadOperation(MelomindCharacteristics.CHARAC_INFO_SERIAL_NUMBER);
     }
 
@@ -579,7 +580,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @return false if request dod not start as planned, true otherwise.
      */
     public synchronized boolean changeMTU(@IntRange(from = 23, to = 121)final int newMTU) {
-        Log.i(TAG, "changing mtu to " + newMTU);
+        LogUtils.i(TAG, "changing mtu to " + newMTU);
         if(!isConnected()){
             return false;
         }
@@ -641,7 +642,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @param useP300 is true to enable, false to disable.
      */
     public boolean switchP300Mode(boolean useP300){
-        Log.i(TAG, "switch p300: new mode is " + (useP300 ? "enabled" : "disabled"));
+        LogUtils.i(TAG, "switch p300: new mode is " + (useP300 ? "enabled" : "disabled"));
 
         if(!isNotificationEnabledOnCharacteristic(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX)){
             enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX));

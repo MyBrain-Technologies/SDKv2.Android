@@ -36,7 +36,7 @@ public final class MbtFeatures{
 
     public final static int DEFAULT_CLIENT_PACKET_SIZE = 250;
     public final static int DEFAULT_CLIENT_NOTIFICATION_PERIOD = 1000;
-    public static final int MIN_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS = 500;
+    public static final int MIN_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS = 200;
     public static final int MAX_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS = 60000;
     public final static long DEFAULT_BATTERY_READ_PERIOD = 20000;
 
@@ -58,7 +58,7 @@ public final class MbtFeatures{
     public final static int DEFAULT_SPP_NB_STATUS_BYTES = 3;
     private static int nbStatusBytes = -1;
 
-    public static final int DEFAULT_MAX_PENDING_RAW_DATA_BUFFER_SIZE = 50;
+    public static final int DEFAULT_MAX_PENDING_RAW_DATA_BUFFER_SIZE = 40;
 
     public final static int DEFAULT_BLE_NB_BYTES = 2;
     public final static int DEFAULT_SPP_NB_BYTES = DEFAULT_SPP_NB_STATUS_BYTES;

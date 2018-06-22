@@ -268,7 +268,6 @@ public final class MbtManager{
      */
     @Subscribe(threadMode = ThreadMode.MAIN, priority = 1)
     public void onEvent(@NonNull final ClientReadyEEGEvent event) { //warning : do not remove this attribute (consider unsused by the IDE, but actually used)
-        Log.i(TAG, "event ClientReadyEEGEvent received" );
         if(eegListener != null)
             eegListener.onNewPackets(event.getEegPackets());
     }
