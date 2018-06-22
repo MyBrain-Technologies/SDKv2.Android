@@ -66,7 +66,7 @@ publishing {
         full(MavenPublication) {
             def libName = "lib_full_release_${android.defaultConfig.versionName}.aar" //Select the library name here
 
-            groupId 'test.mybraintech.com'
+            groupId 'mybraintech.com'
             artifactId 'sdk-full'
             version android.defaultConfig.versionName
 
@@ -92,7 +92,7 @@ publishing {
         lite(MavenPublication) {
             def libName = "lib_lite_release_${android.defaultConfig.versionName}.aar" //Select the library name here
 
-            groupId 'test.mybraintech.com'
+            groupId 'mybraintech.com'
             artifactId 'sdk-lite'
             version android.defaultConfig.versionName
 

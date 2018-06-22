@@ -77,7 +77,7 @@ public final class ConnectionConfig {
         private int maxScanDuration = MbtFeatures.DEFAULT_MAX_SCAN_DURATION_IN_MILLIS;
         private int connectionTimeout = MbtFeatures.DEFAULT_MAX_CONNECTION_DURATION_IN_MILLIS;
         private boolean connectAudio = false;
-        private ScannableDevices deviceType = ScannableDevices.ALL;
+        private ScannableDevices deviceType = ScannableDevices.MELOMIND; // temporarily set to melomind
         @NonNull
         private final ConnectionStateListener<ConnectionException> connectionStateListener;
 

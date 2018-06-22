@@ -108,18 +108,8 @@ public final class MbtClient {
     }
 
 
-    public void readBattery(int periodInMillis, @NonNull final DeviceInfoListener listener) {
-        if(periodInMillis <= 0){
-            mbtManager.readBluetooth(DeviceInfo.BATTERY, listener);
-        }else{
-            new Timer("batteryTimer").schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    mbtManager.readBluetooth(DeviceInfo.BATTERY, listener);
-
-                }
-            },0, periodInMillis);
-        }
+    public void readBattery(@NonNull final DeviceInfoListener listener) {
+        mbtManager.readBluetooth(DeviceInfo.BATTERY, listener);
     }
 
     public void readFwVersion(@NonNull DeviceInfoListener listener){

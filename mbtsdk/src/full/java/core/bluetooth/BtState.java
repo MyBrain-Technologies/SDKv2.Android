@@ -44,13 +44,14 @@ public enum BtState {
      * Scanning has just started.
      */
     SCAN_STARTED,
+    
     /**
      * Failed to find device after scanning for a defined amount of time.
      */
     SCAN_TIMEOUT,
 
     /**
-     * Failed to retrieve data
+     * Failed to retrieve data. Bluetooth SPP only
      */
     STREAM_ERROR,
 
