@@ -131,7 +131,7 @@ public final class MbtEEGPacket {
         return "MbtEEGPacket{" +
                 "EEG Data=" + channelsData +
                 ", qualities=" + qualities +
-                ", statusData=" + statusData +
+                ", status Data=" + statusData +
                 ", timestamp=" + timestamp +
                 '}';
     }
@@ -150,7 +150,7 @@ public final class MbtEEGPacket {
      * Returns false otherwise.
      * @return Returns true if the EEG data list contains only 0.
      */
-    public boolean containsZerosEegOnly(){
+    public boolean eegMatrixContainsZerosEegOnly(){
         int counterOfZeros = 0;
         int matrixSize = this.getChannelsData().size()*this.getChannelsData().get(0).size();
         for (int i = 0; i < this.getChannelsData().size() ; i++){

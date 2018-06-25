@@ -50,7 +50,6 @@ public class MbtDataBuffering {
      * Object that will manage the EEG <b>CONSOLIDATED</b> data. The buffer is internal and accessible using
      * {@link MbtEEGPacket#getChannelsData()} method.
      */
-    @Nullable
     private MbtEEGPacket mbtEEGPacketsBuffer;
 
     /**

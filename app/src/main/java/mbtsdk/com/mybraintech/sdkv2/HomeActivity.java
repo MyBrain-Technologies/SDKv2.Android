@@ -61,7 +61,6 @@ public class HomeActivity extends AppCompatActivity{
                 }if (newState.equals(BtState.CONNECTED) ) {
                     notifyUser("Device ' " + deviceName + " ' connected but not ready. Please be patient");
                 }else if (newState.equals(BtState.CONNECTED_AND_READY) ){
-                    notifyUser("Device ' " + deviceName + " ' connected");
                     deinitCurrentActivity(newState);
                 }else if (newState.equals(BtState.SCAN_TIMEOUT)||(newState.equals(BtState.CONNECT_FAILURE))){
                     notifyUser(getString(R.string.connect_failed) + " "+deviceName);

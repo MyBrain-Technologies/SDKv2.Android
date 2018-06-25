@@ -105,18 +105,15 @@ public final class MbtClient {
     }
 
 
-    public void readBattery(int periodInMillis, @NonNull final DeviceInfoListener listener) {
-        if(periodInMillis <= 0){
-            mbtManager.readBluetooth(DeviceInfo.BATTERY, listener);
-        }else{
-            new Timer("batteryTimer").schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    mbtManager.readBluetooth(DeviceInfo.BATTERY, listener);
-
-                }
-            },0, periodInMillis);
-        }
+    /**
+     * Gets the current battery level of the connected headset through a listener.
+     * @param listener is the listener that receive the new value of the battery level.
+     * <p> As the received value is a percentage, it is included between 0 and 100.</p>
+     * <p> A value of 0 means that the battery is totally empty.</p>
+     * <p> A value of 100 means that the battery is totally charged.</p>
+     */
+    public void readBattery(@NonNull final DeviceInfoListener listener) {
+        mbtManager.readBluetooth(DeviceInfo.BATTERY, listener);
     }
 
     public void readFwVersion(@NonNull DeviceInfoListener listener){
