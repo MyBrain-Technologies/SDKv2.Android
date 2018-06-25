@@ -1,5 +1,6 @@
 package utils;
 
+import android.support.annotation.Keep;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
@@ -14,6 +15,7 @@ import java.util.concurrent.RejectedExecutionException;
  * to the usage of threads and threadpools
  * Created by Vincent on 31/07/2015.
  */
+@Keep
 public final class AsyncUtils {
     private final static ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
             //Executors.newCachedThreadPool();

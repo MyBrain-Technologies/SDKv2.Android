@@ -11,15 +11,13 @@ import core.bluetooth.BtProtocol;
 import core.eeg.MbtEEGManager;
 import core.eeg.storage.RawEEGSample;
 import features.MbtFeatures;
+import utils.LogUtils;
 
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
 import static features.MbtFeatures.getEEGByteSize;
 import static features.MbtFeatures.getNbChannels;
 import static features.MbtFeatures.getNbStatusBytes;
 import static features.MbtFeatures.getRawDataIndexSize;
-import static features.MbtFeatures.getRawDataPacketSize;
-import static features.MbtFeatures.getSampleRate;
-
 
 /**
  * MbtDataAcquisition is responsible for managing incoming EEG data acquired by the MBT headset and transmitted through Bluetooth communication to the application.
@@ -55,7 +53,6 @@ public class MbtDataAcquisition {
      */
     @Nullable
     public synchronized ArrayList<ArrayList<Float>> handleDataAcquired(@NonNull final byte[] data) {
-        //Log.d(TAG,"data acquired: "+Arrays.toString(data));
 
         singleRawEEGList = new ArrayList<>();
 
@@ -73,7 +70,7 @@ public class MbtDataAcquisition {
 
         //2nd step : Create interpolation packets if packet loss
         if(indexDifference != 1){
-            Log.e(TAG, "diff is " + indexDifference);
+            LogUtils.e(TAG, "diff is " + indexDifference);
             for (int i = 0; i < indexDifference; i++) {
                 fillSingleDataEEGList(true, data);
             }

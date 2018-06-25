@@ -24,7 +24,6 @@ android {
             }
         }
         debug {
-            buildConfigField "String", "USE_ALGO_VERSION", "\"2.3.0\""
         }
     }
     externalNativeBuild {
@@ -34,11 +33,10 @@ android {
     }
     productFlavors {
         full{
-            versionNameSuffix "-full"
-
+            buildConfigField "String", "USE_ALGO_VERSION", "\"2.3.0\""
         }
         lite{
-            versionNameSuffix "-lite"
+
         }
     }
 }
@@ -65,12 +63,38 @@ dependencies {
 
 publishing {
     publications {
-        bar(MavenPublication) {
-            def libName = "lib_full_release_2.0.0.aar" //Select the library name here
+        full(MavenPublication) {
+            def libName = "lib_full_release_${android.defaultConfig.versionName}.aar" //Select the library name here
 
             groupId 'mybraintech.com'
-            artifactId 'sdk'
-            version '2.0.0'
+            artifactId 'sdk-full'
+            version android.defaultConfig.versionName
+
+            artifact(sourcesJar)
+            artifact(javadocJar)
+            artifact("$buildDir/outputs/aar/${libName}") //we can force send to nexus the version we want by changing the aar name
+            pom.withXml {
+                def dependenciesNode = asNode().appendNode('dependencies')
+                //Iterate over the compile dependencies (we don't want the test ones), adding a <dependency> node for each
+                // WARNING HERE IS FOR IMPLEMENTATION ONLY. API, COMPILEONLY,... ARE NOT TAKEN INTO ACCOUNT
+                configurations.implementation.allDependencies.each {
+                    if(it.group != null && (it.name != null || "unspecified".equals(it.name)) && it.version != null)
+                    {
+                        def dependencyNode = dependenciesNode.appendNode('dependency')
+                        dependencyNode.appendNode('groupId', it.group)
+                        dependencyNode.appendNode('artifactId', it.name)
+                        dependencyNode.appendNode('version', it.version)
+                    }
+                }
+            }
+        }
+
+        lite(MavenPublication) {
+            def libName = "lib_lite_release_${android.defaultConfig.versionName}.aar" //Select the library name here
+
+            groupId 'mybraintech.com'
+            artifactId 'sdk-lite'
+            version android.defaultConfig.versionName
 
             artifact(sourcesJar)
             artifact(javadocJar)

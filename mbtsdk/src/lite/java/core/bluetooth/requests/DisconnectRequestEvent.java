@@ -7,7 +7,14 @@ import core.bluetooth.requests.BluetoothRequests;
  */
 public class DisconnectRequestEvent extends BluetoothRequests {
 
-        public DisconnectRequestEvent(){
+    private final boolean isInterrupted;
 
-        }
+    public DisconnectRequestEvent(boolean isInterrupted){
+        this.isInterrupted = isInterrupted;
+    }
+
+
+    public boolean isInterrupted() {
+        return isInterrupted;
+    }
 }

@@ -25,6 +25,7 @@ import core.oad.OADEvent;
 import core.recordingsession.metadata.DeviceInfo;
 import engine.clientevents.MbtClientEvents;
 import features.MbtFeatures;
+import utils.LogUtils;
 import utils.MbtLock;
 
 /**
@@ -98,7 +99,7 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
 //            }
 //        }
         // at this point, device was not found among bonded devices so let's start a discovery scan
-        Log.i(TAG, "Starting Classic Bluetooth Discovery Scan");
+        LogUtils.i(TAG, "Starting Classic Bluetooth Discovery Scan");
         final IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
         context.registerReceiver(new BroadcastReceiver() {
@@ -109,14 +110,14 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
                         final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                         final String name = device.getName();
                         if (TextUtils.isEmpty(name)) {
-                            Log.w(TAG, "Found device with no name. MAC address is -> " + device.getAddress());
+                            LogUtils.w(TAG, "Found device with no name. MAC address is -> " + device.getAddress());
                             return;
                         }
 
-                        Log.i(TAG, String.format("Discovery Scan -> device detected " +
+                        LogUtils.i(TAG, String.format("Discovery Scan -> device detected " +
                                 "with name '%s' and MAC address '%s' ", device.getName(), device.getAddress()));
                         if (name.equals(deviceName) || name.contains(deviceName)) {
-                            Log.i(TAG, "Device " + deviceName +" found. Cancelling discovery & connecting");
+                            LogUtils.i(TAG, "Device " + deviceName +" found. Cancelling discovery & connecting");
                             bluetoothAdapter.cancelDiscovery();
                             context.unregisterReceiver(this);
                             scanLock.setResultAndNotify(device);

@@ -5,8 +5,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
 
 @Keep
 public final class MbtEEGPacket {
@@ -31,7 +29,6 @@ public final class MbtEEGPacket {
      *                  list size should be equal to the number of channels if there is
      *                  a status channel.
      */
-    @Keep
     public MbtEEGPacket(@NonNull final ArrayList<ArrayList<Float>> channelsData,
                         @Nullable final ArrayList<Float> qualities) {
 
@@ -50,7 +47,6 @@ public final class MbtEEGPacket {
      *                  list size should be equal to the number of channels if there is
      *                  a status channel.
      */
-    @Keep
     public MbtEEGPacket(@NonNull final ArrayList<ArrayList<Float>> channelsData,
                         @Nullable final ArrayList<Float> qualities, final ArrayList<Float> statusData) {
 
@@ -69,7 +65,6 @@ public final class MbtEEGPacket {
      * Gets the TimeStamp
      * @return The timestamp of type <code>long</code> when this packet has been created
      */
-    @Keep
     public final long getTimeStamp() {
         return this.timestamp;
     }
@@ -85,7 +80,6 @@ public final class MbtEEGPacket {
      * @return the EEG data from all channels
      */
     @NonNull
-    @Keep
     public ArrayList<ArrayList<Float>> getChannelsData() {
         return channelsData;
     }
@@ -94,7 +88,6 @@ public final class MbtEEGPacket {
      * Sets value to all the data from all channels
      * @param channelsData the new value for the data from all channels
      */
-    @Keep
     public void setChannelsData(@NonNull ArrayList<ArrayList<Float>> channelsData) {
         this.channelsData = channelsData;
     }
@@ -112,7 +105,6 @@ public final class MbtEEGPacket {
      * @return the qualities
      */
     @Nullable
-    @Keep
     public ArrayList<Float> getQualities() {
         return qualities;
     }
@@ -121,7 +113,6 @@ public final class MbtEEGPacket {
      * Sets a new value to the qualities list
      * @return the qualities
      */
-    @Keep
     public void setQualities(@NonNull ArrayList<Float> qualities) {
         this.qualities = qualities;
     }

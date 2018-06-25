@@ -2,7 +2,6 @@ package core.eeg.storage;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
 
 import org.apache.commons.lang.ArrayUtils;
 
@@ -10,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import config.MbtConfig;
-import core.bluetooth.BtProtocol;
 import core.eeg.MbtEEGManager;
 import core.eeg.acquisition.MbtDataConversion;
 import core.eeg.signalprocessing.ContextSP;
@@ -21,14 +19,6 @@ import mbtsdk.com.mybraintech.mbtsdk.BuildConfig;
 import utils.MatrixUtils;
 
 import static config.MbtConfig.getEegBufferLengthClientNotif;
-import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
-import static features.MbtFeatures.getEEGByteSize;
-import static features.MbtFeatures.getNbStatusBytes;
-import static features.MbtFeatures.getRawDataBufferSize;
-import static features.MbtFeatures.getRawDataBytesPerWholeChannelsSamples;
-import static features.MbtFeatures.getRawDataPacketSize;
-import static features.MbtFeatures.setNbStatusBytes;
-import static features.MbtFeatures.setRawDataPacketSize;
 
 /**
  * MbtDataBuffering is responsible for storing and managing EEG raw data acquired in temporary buffers.
@@ -64,14 +54,8 @@ public class MbtDataBuffering {
 
         eegManager = eegManagerController;
 
-        pendingRawData = new ArrayList<>();//new byte[getRawDataBufferSize()];
+        pendingRawData = new ArrayList<>();
         mbtEEGPacketsBuffer = new MbtEEGPacket();
-        try {
-            System.loadLibrary(ContextSP.LIBRARY_NAME + BuildConfig.USE_ALGO_VERSION);
-        } catch (final UnsatisfiedLinkError e) {
-            e.printStackTrace();
-        }
-        ContextSP.SP_VERSION = MBTSignalQualityChecker.initQualityChecker();
 
     }
 
@@ -135,7 +119,7 @@ public class MbtDataBuffering {
             notifyClientEEGDataBufferFull();
 
             mbtEEGPacketsBuffer = new MbtEEGPacket( new ArrayList<>(consolidatedEEG.subList(maxElementsToAppend, consolidatedEEG.size())),
-                    null, status.size() != 0 ?
+                    status.size() != 0 ?
                     ( new ArrayList<>(status.subList(maxElementsToAppend, status.size() >= consolidatedEEG.size() ? consolidatedEEG.size() : status.size() ))) : null );
         }
     }
@@ -147,6 +131,7 @@ public class MbtDataBuffering {
             channels.add(new Float[channelData.get(nbChannel).size()]);
             channelData.get(nbChannel).toArray(channels.get(nbChannel));
         }
+
         final float[] qts = (MbtConfig.getScannableDevices().equals(ScannableDevices.MELOMIND) ?
                 MBTSignalQualityChecker.computeQualitiesForPacketNew(MbtFeatures.getSampleRate(),MbtFeatures.getSampleRate(), channels.get(0), channels.get(1)) :
                 MBTSignalQualityChecker.computeQualitiesForPacketNew(MbtFeatures.getSampleRate(),MbtFeatures.getSampleRate(), channels.get(0), channels.get(1), channels.get(2), channels.get(3), channels.get(4), channels.get(5), channels.get(6), channels.get(7), channels.get(8))) ;
@@ -157,15 +142,12 @@ public class MbtDataBuffering {
     /**
      * Reconfigures the temporary buffers that are used to store the raw EEG data until conversion to user-readable EEG data.
      * Reset the buffers, status and packet size
-     * @param samplePerNotif the number of samples per notification
-     * @param nbStatusByte the number of bytes used for one eeg data
      */
-    public void reconfigureBuffers(byte samplePerNotif, final int nbStatusByte){ // statusByteNb parameter should be the internal config value
+    public void reinitBuffers(){
 
-        MbtConfig.setSamplePerNotification(samplePerNotif);
-        setNbStatusBytes(nbStatusByte);
-        setRawDataPacketSize(getRawDataBytesPerWholeChannelsSamples()*samplePerNotif);
-        pendingRawData = new ArrayList<>(getRawDataBufferSize()); //init the buffer that we will use for handle/convert EEG raw data //TODO see if mandatory to reinit this buffer
+        pendingRawData.clear(); //init the buffer that we will use for handle/convert EEG raw data //TODO see if mandatory to reinit this buffer
+        mbtEEGPacketsBuffer = new MbtEEGPacket();
+
     }
 
     /**

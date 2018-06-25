@@ -2,6 +2,7 @@ package utils;
 
 import android.os.Build;
 import android.os.Process;
+import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Base64;
@@ -40,6 +41,7 @@ import javax.crypto.spec.SecretKeySpec;
  * Source code from : https://github.com/tozny/java-aes-crypto/blob/master/aes-crypto/src/main/java/com/tozny/crypto/android/AesCbcWithIntegrity.java
  * Created by Vincent on 16/09/2015.
  */
+@Keep
 public final class EncryptionUtils {
     // If the PRNG fix would not succeed for some reason, we normally will throw an exception.
     // If ALLOW_BROKEN_PRNG is true, however, we will simply log instead.

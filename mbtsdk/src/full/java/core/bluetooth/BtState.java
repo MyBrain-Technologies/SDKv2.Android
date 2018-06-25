@@ -25,6 +25,13 @@ public enum BtState {
     LOCATION_PERMISSION_NOT_GRANTED,
 
     /**
+     * Although android ble supports multiple connection, we currently consider that only one connection at a time is possible.
+     * Instead of forcing the disconnection of the first device, it is preferable to notify user
+     * with error state
+     */
+    ANOTHER_DEVICE_CONNECTED,
+
+    /**
      *  Failed to start scan as BLE scan with the same settings is already started by the app.
      */
     SCAN_FAILED_ALREADY_STARTED,
@@ -37,13 +44,14 @@ public enum BtState {
      * Scanning has just started.
      */
     SCAN_STARTED,
+    
     /**
      * Failed to find device after scanning for a defined amount of time.
      */
     SCAN_TIMEOUT,
 
     /**
-     * Failed to retrieve data
+     * Failed to retrieve data. Bluetooth SPP only
      */
     STREAM_ERROR,
 

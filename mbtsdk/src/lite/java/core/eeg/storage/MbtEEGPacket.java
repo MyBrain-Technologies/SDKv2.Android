@@ -5,15 +5,11 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
 
 @Keep
 public final class MbtEEGPacket {
     @NonNull
     private ArrayList<ArrayList<Float>> channelsData = new ArrayList<>(); //TODO check if we need to set this synchornized
-    @Nullable
-    private ArrayList<Float> qualities = new ArrayList<>();
 
     private ArrayList<Float> statusData = new ArrayList<>();
     @NonNull
@@ -27,39 +23,23 @@ public final class MbtEEGPacket {
     /**
      * Initializes a new instance of the MbtEEGPacket class.
      * @param channelsData The values from all channels
-     * @param qualities The qualities stored in a list. The
-     *                  list size should be equal to the number of channels if there is
-     *                  a status channel.
      */
-    @Keep
-    public MbtEEGPacket(@NonNull final ArrayList<ArrayList<Float>> channelsData,
-                        @Nullable final ArrayList<Float> qualities) {
+    public MbtEEGPacket(@NonNull final ArrayList<ArrayList<Float>> channelsData) {
 
         this.channelsData = channelsData;
-        this.qualities = qualities;
-        if(this.qualities == null){
-            this.qualities = new ArrayList<>();
-        }
+
         this.timestamp = System.currentTimeMillis();
     }
 
     /**
      * Initializes a new instance of the MbtEEGPacket class.
      * @param channelsData The values from all channels
-     * @param qualities The qualities stored in a list. The
-     *                  list size should be equal to the number of channels if there is
-     *                  a status channel.
+     * @param statusData The statuses associated
      */
-    @Keep
-    public MbtEEGPacket(@NonNull final ArrayList<ArrayList<Float>> channelsData,
-                        @Nullable final ArrayList<Float> qualities, final ArrayList<Float> statusData) {
+    public MbtEEGPacket(@NonNull final ArrayList<ArrayList<Float>> channelsData, final ArrayList<Float> statusData) {
 
         this.channelsData = channelsData;
         this.statusData = statusData;
-        this.qualities = qualities;
-        if(this.qualities == null){
-            this.qualities = new ArrayList<>();
-        }
 
         this.timestamp = System.currentTimeMillis();
 
@@ -69,7 +49,6 @@ public final class MbtEEGPacket {
      * Gets the TimeStamp
      * @return The timestamp of type <code>long</code> when this packet has been created
      */
-    @Keep
     public final long getTimeStamp() {
         return this.timestamp;
     }
@@ -85,7 +64,6 @@ public final class MbtEEGPacket {
      * @return the EEG data from all channels
      */
     @NonNull
-    @Keep
     public ArrayList<ArrayList<Float>> getChannelsData() {
         return channelsData;
     }
@@ -94,7 +72,6 @@ public final class MbtEEGPacket {
      * Sets value to all the data from all channels
      * @param channelsData the new value for the data from all channels
      */
-    @Keep
     public void setChannelsData(@NonNull ArrayList<ArrayList<Float>> channelsData) {
         this.channelsData = channelsData;
     }
@@ -107,30 +84,10 @@ public final class MbtEEGPacket {
         return statusData;
     }
 
-    /**
-     * Get the list of qualities
-     * @return the qualities
-     */
-    @Nullable
-    @Keep
-    public ArrayList<Float> getQualities() {
-        return qualities;
-    }
-
-    /**
-     * Sets a new value to the qualities list
-     * @return the qualities
-     */
-    @Keep
-    public void setQualities(@NonNull ArrayList<Float> qualities) {
-        this.qualities = qualities;
-    }
-
     @Override
     public String toString() {
         return "MbtEEGPacket{" +
                 "EEG Data=" + channelsData +
-                ", qualities=" + qualities +
                 ", statusData=" + statusData +
                 ", timestamp=" + timestamp +
                 '}';
@@ -142,7 +99,7 @@ public final class MbtEEGPacket {
      * @return Returns true if the EEG data list contains no elements.
      */
     public boolean isEmpty(){
-        return this.channelsData.isEmpty() && this.qualities.isEmpty() && this.statusData.isEmpty();
+        return this.channelsData.isEmpty() && this.statusData.isEmpty();
     }
 
     /**

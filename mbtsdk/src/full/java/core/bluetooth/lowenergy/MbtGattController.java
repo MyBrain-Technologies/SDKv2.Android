@@ -16,6 +16,7 @@ import java.util.UUID;
 
 import core.bluetooth.BtState;
 import core.recordingsession.metadata.DeviceInfo;
+import utils.LogUtils;
 import utils.MbtLock;
 
 import static core.bluetooth.lowenergy.MelomindCharacteristics.CHARAC_HEADSET_STATUS;
@@ -62,18 +63,9 @@ final class MbtGattController extends BluetoothGattCallback {
 
     private final MbtBluetoothLE bluetoothController;
 
-    public MbtLock<Boolean> notificationLock;
     private final MbtLock<BtState> connectionLock = new MbtLock<>();
-    private final MbtLock<Byte[]> eegConfigRetrievalLock = new MbtLock<>();
-    private final MbtLock<String> readDeviceInfoLock = new MbtLock<>();
-    private final MbtLock<Boolean> enableMailboxNotificationLock = new MbtLock<>();
 
-    private boolean mailboxNotificationsEnabled = false;
-
-    // Generic Descriptor UUID for Notification System
-    private final UUID notificationDescriptorUUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
-
-    public MbtGattController(Context context, MbtBluetoothLE bluetoothController) {
+    MbtGattController(Context context, MbtBluetoothLE bluetoothController) {
         super();
         this.bluetoothController = bluetoothController;
     }
@@ -95,8 +87,8 @@ final class MbtGattController extends BluetoothGattCallback {
         switch(newState) {
             case BluetoothGatt.STATE_CONNECTED:
                 //gatt.requestMtu(MAX_MTU);
-                gatt.discoverServices();
                 this.bluetoothController.notifyConnectionStateChanged(BtState.CONNECTED);
+                gatt.discoverServices();
                 msg += "STATE_CONNECTED and now discovering services...";
                 break;
             case BluetoothGatt.STATE_CONNECTING:
@@ -128,7 +120,7 @@ final class MbtGattController extends BluetoothGattCallback {
                 gatt.close();
                 msg += "Unknown value " + newState;
         }
-        Log.d("", msg);
+        LogUtils.d("", msg);
     }
 
     @Override
@@ -143,7 +135,7 @@ final class MbtGattController extends BluetoothGattCallback {
 
         // Logging all available services
         for (final BluetoothGattService service : gatt.getServices()) {
-            Log.i(TAG, "Found Service with UUID -> " + service.getUuid().toString());
+            LogUtils.i(TAG, "Found Service with UUID -> " + service.getUuid().toString());
         }
         //TODO split function in two parts: first is input checking and second is characteristics initialization
 
@@ -171,7 +163,7 @@ final class MbtGattController extends BluetoothGattCallback {
         // In case one of these is null, we disconnect because something went wrong
         if (this.mainService == null || this.measurement == null || this.battery == null || this.deviceInfoService == null
                 || this.fwVersion == null || this.hwVersion == null || this.serialNumber == null || this.oadPacketsCharac == null || this.mailBox == null || this.headsetStatus == null){
-            Log.e(TAG, "error, not all characteristics have been found");
+            LogUtils.e(TAG, "error, not all characteristics have been found");
             gatt.disconnect();
         } else{
             // everything went well as expected
@@ -195,7 +187,7 @@ final class MbtGattController extends BluetoothGattCallback {
             bluetoothController.notifyDeviceInfoReceived(DeviceInfo.HW_VERSION, new String(characteristic.getValue()));
         }
         if (characteristic.getUuid().compareTo(CHARAC_INFO_SERIAL_NUMBER) == 0) {
-            Log.i(TAG, "received " + new String(characteristic.getValue()));
+            LogUtils.i(TAG, "received " + new String(characteristic.getValue()));
             bluetoothController.notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER, new String(characteristic.getValue()));
         }
 
@@ -207,7 +199,7 @@ final class MbtGattController extends BluetoothGattCallback {
                     sb.append(value);
                     sb.append(';');
                 }
-                Log.e(TAG, "Error: received a [onCharacteristicRead] callback for battery level request " +
+                LogUtils.e(TAG, "Error: received a [onCharacteristicRead] callback for battery level request " +
                         "but the payload of the characteristic is invalid ! \nValue(s) received -> " + sb.toString());
                 return;
             }
@@ -243,13 +235,13 @@ final class MbtGattController extends BluetoothGattCallback {
                     break;
             }
             if (level == -1) {
-                Log.e(TAG, "Error: received a [onCharacteristicRead] callback for battery level request " +
+                LogUtils.e(TAG, "Error: received a [onCharacteristicRead] callback for battery level request " +
                         "but the returned value could not be decoded ! " +
                         "Byte value received -> " + characteristic.getValue()[3]);
             }
             bluetoothController.notifyBatteryReceived(level);
 
-            // Log.i(TAG, "Received a [onCharacteristicRead] callback for battery level request. " +
+            // LogUtils.i(TAG, "Received a [onCharacteristicRead] callback for battery level request. " +
             //         "Value -> " + level);
         }
 
@@ -260,14 +252,14 @@ final class MbtGattController extends BluetoothGattCallback {
         super.onCharacteristicWrite(gatt, characteristic, status);
 
         if(status !=0 ){
-            Log.e(TAG, "error writing characteristic nb : " + status);
+            LogUtils.e(TAG, "error writing characteristic nb : " + status);
         }else{
             if(characteristic.getUuid().compareTo(this.oadPacketsCharac.getUuid()) == 0){
                 /*if(oadFileManager.getmProgInfo().iBlocks == oadFileManager.getmProgInfo().nBlocks){ //TODO
                     if(oadPacketTransferTimeoutLock.isWaiting()){
                         oadPacketTransferTimeoutLock.setResultAndNotify(true);
                     }else{
-                        Log.e(TAG, "error, packet transfer timeout for end not ready");
+                        LogUtils.e(TAG, "error, packet transfer timeout for end not ready");
                     }
 
                     notifyOADEvent(OADEvent.CRC_COMPUTING, oadFileManager.getmProgInfo().nBlocks);
@@ -275,7 +267,7 @@ final class MbtGattController extends BluetoothGattCallback {
                     if(oadPacketTransferTimeoutLock.isWaiting() || oadFileManager.getmProgInfo().iBlocks <=1){
                         sendOADBlock(oadFileManager.getmProgInfo().iBlocks);
                     }else{
-                        Log.e(TAG, " error, lock isn't waiting yet");
+                        LogUtils.e(TAG, " error, lock isn't waiting yet");
                     }
 
                 }*/
@@ -293,7 +285,7 @@ final class MbtGattController extends BluetoothGattCallback {
         }else if(characteristic.getUuid().compareTo(MelomindCharacteristics.CHARAC_HEADSET_STATUS) == 0){
             this.bluetoothController.notifyNewHeadsetStatus(characteristic.getValue());
         }else if(characteristic.getUuid().compareTo(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX) == 0){
-            Log.i(TAG, "mailbox message received with code " + characteristic.getValue()[0] +
+            LogUtils.i(TAG, "mailbox message received with code " + characteristic.getValue()[0] +
                 " and payload " + Arrays.toString(characteristic.getValue()));
             synchronized (this.bluetoothController){
                 this.bluetoothController.notify();
@@ -311,9 +303,9 @@ final class MbtGattController extends BluetoothGattCallback {
         super.onDescriptorWrite(gatt, descriptor, status);
         // Check for EEG Notification status
         if (status == BluetoothGatt.GATT_SUCCESS) {
-            Log.i(TAG, "Received a [onDescriptorWrite] callback with status SUCCESS");
+            LogUtils.i(TAG, "Received a [onDescriptorWrite] callback with status SUCCESS");
         } else {
-            Log.e(TAG, "Received a [onDescriptorWrite] callback with Status: FAILURE.");
+            LogUtils.e(TAG, "Received a [onDescriptorWrite] callback with Status: FAILURE.");
         }
         synchronized (this.bluetoothController){
             bluetoothController.notify();
@@ -335,7 +327,7 @@ final class MbtGattController extends BluetoothGattCallback {
     @Override
     public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
         super.onMtuChanged(gatt, mtu, status);
-        Log.i(TAG, "onMtuChanged with new value " + mtu);
+        LogUtils.i(TAG, "onMtuChanged with new value " + mtu);
         synchronized (this.bluetoothController){
             this.bluetoothController.notify();
         }

@@ -2,7 +2,6 @@ package core.eeg.storage;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
 
 import org.apache.commons.lang.ArrayUtils;
 
@@ -10,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import config.MbtConfig;
-import core.bluetooth.BtProtocol;
 import core.eeg.MbtEEGManager;
 import core.eeg.acquisition.MbtDataConversion;
 import core.eeg.signalprocessing.ContextSP;
@@ -21,14 +19,6 @@ import mbtsdk.com.mybraintech.mbtsdk.BuildConfig;
 import utils.MatrixUtils;
 
 import static config.MbtConfig.getEegBufferLengthClientNotif;
-import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
-import static features.MbtFeatures.getEEGByteSize;
-import static features.MbtFeatures.getNbStatusBytes;
-import static features.MbtFeatures.getRawDataBufferSize;
-import static features.MbtFeatures.getRawDataBytesPerWholeChannelsSamples;
-import static features.MbtFeatures.getRawDataPacketSize;
-import static features.MbtFeatures.setNbStatusBytes;
-import static features.MbtFeatures.setRawDataPacketSize;
 
 /**
  * MbtDataBuffering is responsible for storing and managing EEG raw data acquired in temporary buffers.
@@ -63,7 +53,7 @@ public class MbtDataBuffering {
 
         eegManager = eegManagerController;
 
-        pendingRawData = new ArrayList<>();//new byte[getRawDataBufferSize()];
+        pendingRawData = new ArrayList<>();
         mbtEEGPacketsBuffer = new MbtEEGPacket();
         try {
             System.loadLibrary(ContextSP.LIBRARY_NAME + BuildConfig.USE_ALGO_VERSION);

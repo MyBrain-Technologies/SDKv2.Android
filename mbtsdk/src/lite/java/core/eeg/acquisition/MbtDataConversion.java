@@ -3,14 +3,11 @@ package core.eeg.acquisition;
 import android.support.annotation.NonNull;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 
 import core.bluetooth.BtProtocol;
 import core.eeg.storage.RawEEGSample;
 
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
-import static core.bluetooth.BtProtocol.BLUETOOTH_SPP;
-import static features.MbtFeatures.getNbChannels;
 
 /**
  * MbtDataConversion is responsible for managing conversion from raw EEG data acquired by the Bluetooth headset into readable EEG values
@@ -44,8 +41,6 @@ public class MbtDataConversion {
      */
     @NonNull
     public static ArrayList<ArrayList<Float>> convertRawDataToEEG(@NonNull ArrayList<RawEEGSample> rawEEGdataList, @NonNull BtProtocol protocol) {
-        /*if ((rawEEGdataList.size()*getEEGByteSize()) % getSampleRate() != 0)
-            throw new IllegalArgumentException("EEG Data size is invalid "+ rawEEGdataList.size());*/
 
         ArrayList<ArrayList<Float>> eegData = new ArrayList<>();
 

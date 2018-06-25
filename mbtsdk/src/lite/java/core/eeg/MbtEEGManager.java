@@ -26,11 +26,11 @@ import core.eeg.signalprocessing.MBTSignalQualityChecker;
 import core.eeg.acquisition.MbtDataConversion;
 import core.eeg.storage.MbtDataBuffering;
 import core.eeg.storage.RawEEGSample;
-import engine.clientevents.EEGException;
 import eventbus.EventBusManager;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.BluetoothEEGEvent;
 import utils.AsyncUtils;
+import utils.LogUtils;
 
 import static config.MbtConfig.getSampleRate;
 import static core.eeg.signalprocessing.MBTSignalQualityChecker.computeQualitiesForPacketNew;
@@ -81,7 +81,7 @@ public final class MbtEEGManager extends BaseModuleManager{
      * Reconfigures the temporary buffers that are used to store the raw EEG data until conversion to user-readable EEG data.
      * Reset the buffers arrays, status list, the number of status bytes and the packet Size
      */
-    public void reinitBuffers(){
+    private void reinitBuffers(){
         dataBuffering.reinitBuffers();
         dataAcquisition.resetIndex();
     }
@@ -97,7 +97,7 @@ public final class MbtEEGManager extends BaseModuleManager{
         AsyncUtils.executeAsync(new Runnable() {
             @Override
             public void run() {
-                Log.i(TAG, "computing and sending to application");
+                LogUtils.i(TAG, "computing and sending to application");
 
                 ArrayList<Float> toDecodeStatus = new ArrayList<>();
                 for (RawEEGSample rawEEGSample : toDecodeRawEEG) {
@@ -121,7 +121,7 @@ public final class MbtEEGManager extends BaseModuleManager{
      * @param eegPackets the list that contains EEG packets ready to use for the client.
      */
     public void notifyEEGDataIsReady(@NonNull MbtEEGPacket eegPackets) {
-        Log.d(TAG, "notify EEG Data Is Ready ");
+        LogUtils.d(TAG, "notify EEG Data Is Ready ");
         EventBusManager.postEvent(new ClientReadyEEGEvent(eegPackets));
     }
 
@@ -140,98 +140,6 @@ public final class MbtEEGManager extends BaseModuleManager{
     public void deinitQualityChecker() {
         MBTSignalQualityChecker.deinitQualityChecker();
     }
-
-    /**
-     * Computes the result of the previously done session
-     * @param bestChannel the best quality channel index
-     * @param sampRate the number of value(s) inside each channel
-     * @param packetLength how long is a packet (time x samprate)
-     * @param packets the EEG packets containing the EEG data matrix, their associated status and qualities.
-     * @return the result of the previously done session
-     * @exception IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
-     */
-    @NonNull
-    public HashMap<String, Float> computeStatistics(final int bestChannel, final int sampRate, final int packetLength, final MbtEEGPacket... packets){
-        return MBTComputeStatistics.computeStatistics(bestChannel, sampRate, packetLength, packets);
-    }
-
-    /**
-     * Computes the result of the previously done session
-     * @param threshold the level above which the relaxation indexes are considered in a relaxed state (under this threshold, they are considered not relaxed)
-     * @param snrValues the array that contains the relaxation indexes of the session
-     * @return the qualities for each provided channels
-     * @exception IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
-     */
-    @NonNull
-    public HashMap<String, Float> computeStatisticsSNR(final float threshold, @NonNull final Float[] snrValues){
-        return MBTComputeStatistics.computeStatisticsSNR(threshold, snrValues);
-    }
-
-    /**
-     * Computes the quality for each provided channels
-     * @param consolidatedEEG the user-readable EEG data matrix
-     * @param packetLength how long is a packet (time x samprate)
-     * The Melomind headset has 2 channels and the VPRO headset has 9 channels.
-     * @return an array that contains the quality of each EEG acquisition channels
-     * This array contains 2 qualities (items) if the headset used is MELOMIND.
-     * This array contains 9 qualities (items) if the headset used is VPRO.
-     * @exception IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
-     */
-    public ArrayList<Float> computeEEGSignalQuality(ArrayList<ArrayList<Float>> consolidatedEEG, int packetLength){
-
-        float[] qualities;
-        Float[] channel1 = new Float[getSampleRate()];
-        Float[] channel2 = new Float[getSampleRate()];
-        //MELOMIND & VPRO headset have at least 2 channels
-        Float[] channel3, channel4, channel5, channel6, channel7, channel8, channel9 = null;
-        //For the VPRO, the others channels are initialized after
-        consolidatedEEG.get(0).toArray(channel1);
-        consolidatedEEG.get(1).toArray(channel2);
-
-        if(MbtConfig.getScannableDevices().equals(VPRO)) {
-
-            channel3 = new Float[getSampleRate()];
-            channel4 = new Float[getSampleRate()];
-            channel5 = new Float[getSampleRate()];
-            channel6 = new Float[getSampleRate()];
-            channel7 = new Float[getSampleRate()];
-            channel8 = new Float[getSampleRate()];
-            channel9 = new Float[getSampleRate()];
-
-            consolidatedEEG.get(2).toArray(channel3);
-            consolidatedEEG.get(3).toArray(channel4);
-            consolidatedEEG.get(4).toArray(channel5);
-            consolidatedEEG.get(5).toArray(channel6);
-            consolidatedEEG.get(6).toArray(channel7);
-            consolidatedEEG.get(7).toArray(channel8);
-            consolidatedEEG.get(8).toArray(channel9);
-
-            qualities = computeQualitiesForPacketNew(getSampleRate(),packetLength, channel1, channel2, channel3, channel4, channel5, channel6, channel7, channel8, channel9);
-        }else //MELOMIND headset
-            qualities = computeQualitiesForPacketNew(getSampleRate(),packetLength, channel1, channel2);
-        return (ArrayList<Float>) Arrays.asList(ArrayUtils.toObject(qualities)); //convert float array into Float Arraylist
-    }
-
-    /**
-     * Computes the relaxation index using the provided <code>MbtEEGPacket</code>.
-     * For now, we admit there are only 2 channels for each packet
-     * @param sampRate the samprate of a channel (must be consistent)
-     * @param calibParams the calibration paramters previously performed
-     * the EEG packets containing EEG data, theirs status and qualities.
-     * @return the relaxation index
-     * @exception IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
-     */
-    public float computeRelaxIndex(int sampRate, MBTCalibrationParameters calibParams, MbtEEGPacket... packets){
-        return MBTComputeRelaxIndex.computeRelaxIndex(sampRate,calibParams,packets);
-    }
-
-    /**
-     * Resets the relaxation index.
-     */
-    public void reinitRelaxIndexVariables(){
-        MBTComputeRelaxIndex.reinitRelaxIndexVariables();
-    }
-
 
     /**
      * Gets the MbtManager instance.
@@ -275,7 +183,6 @@ public final class MbtEEGManager extends BaseModuleManager{
      */
     @Subscribe(threadMode = ThreadMode.BACKGROUND)
     public void onEvent(BluetoothEEGEvent event){ //warning : this method is used
-        Log.i(TAG, Arrays.toString(event.getData()));
         dataAcquisition.handleDataAcquired(event.getData());
     }
 

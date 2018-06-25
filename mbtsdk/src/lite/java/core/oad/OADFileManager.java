@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.zip.CRC32;
 
 import utils.ConversionUtils;
+import utils.LogUtils;
 
 /**
  * Class helper offering full parsing and preparation of the binary file to be tranfered via BLE
@@ -170,7 +171,7 @@ public final class OADFileManager {
             }
 
         }
-        Log.i(TAG, "crc32 = " + Integer.toHexString(~crc32) + "      x.getValue = " + Long.toHexString(x.getValue()));
+        LogUtils.i(TAG, "crc32 = " + Integer.toHexString(~crc32) + "      x.getValue = " + Long.toHexString(x.getValue()));
         return (~crc32);
     }
 
@@ -259,7 +260,7 @@ public final class OADFileManager {
             mProgInfo.iBytes += OAD_BLOCK_SIZE;
             mOadBuffer.add(tempBuffer);
         }
-        Log.i(TAG, "buffer complete");
+        LogUtils.i(TAG, "buffer complete");
 
         //Resetting programInfo for the oad session
         mProgInfo.reset();
@@ -307,7 +308,7 @@ public final class OADFileManager {
             stream.close();
         } catch (IOException e) {
             // Handle exceptions here
-            Log.e(TAG, "File open failed: " + filepath + "\n");
+            LogUtils.e(TAG, "File open failed: " + filepath + "\n");
             return false;
         }
 

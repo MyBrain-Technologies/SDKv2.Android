@@ -2,6 +2,7 @@ package utils;
 
 import android.content.Context;
 import android.graphics.Point;
+import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.view.Display;
 import android.view.WindowManager;
@@ -9,7 +10,7 @@ import android.view.WindowManager;
 /**
  * Created by Etienne on 30/12/2016.
  */
-
+@Keep
 public class ScreenUtils {
 
     public static int getScreenWidth(@NonNull Context context) {

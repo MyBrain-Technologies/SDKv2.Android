@@ -108,8 +108,8 @@ public final class MbtManager{
     /**
      * Perform a Bluetooth disconnection.
      */
-    public void disconnectBluetooth(){
-        EventBusManager.postEvent(new DisconnectRequestEvent());
+    public void disconnectBluetooth(boolean isAbortion){
+        EventBusManager.postEvent(new DisconnectRequestEvent(isAbortion));
     }
 
     /**
@@ -205,9 +205,13 @@ public final class MbtManager{
                 connectionStateListener.onError(new ConnectionException(ConnectionException.CONNECTION_FAILURE));
                 break;
 
+            case ANOTHER_DEVICE_CONNECTED:
+                connectionStateListener.onError(new ConnectionException(ConnectionException.ANOTHER_DEVICE_CONNECTED));
+                break;
+
             case DISCONNECTED:
                 connectionStateListener.onStateChanged(connectionStateEvent.getNewState());
-
+                break;
             default:
                 //This newState is not an error, notifying user with the correct callback
                 connectionStateListener.onStateChanged(connectionStateEvent.getNewState());
@@ -264,7 +268,6 @@ public final class MbtManager{
      */
     @Subscribe(threadMode = ThreadMode.MAIN, priority = 1)
     public void onEvent(@NonNull final ClientReadyEEGEvent event) { //warning : do not remove this attribute (consider unsused by the IDE, but actually used)
-        Log.i(TAG, "event ClientReadyEEGEvent received" );
         if(eegListener != null)
             eegListener.onNewPackets(event.getEegPackets());
     }

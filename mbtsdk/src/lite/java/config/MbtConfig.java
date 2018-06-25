@@ -6,7 +6,6 @@ import android.support.annotation.NonNull;
 import features.MbtFeatures;
 import features.ScannableDevices;
 
-@Keep
 public final class MbtConfig {
 
     public static ScannableDevices scannableDevices = ScannableDevices.ALL;

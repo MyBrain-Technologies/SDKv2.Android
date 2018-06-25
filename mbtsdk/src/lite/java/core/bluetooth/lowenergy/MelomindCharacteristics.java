@@ -6,6 +6,7 @@ import java.util.UUID;
  * This class holds the melomind custom bluetooth services and characteristics.
  */
 final class MelomindCharacteristics {
+
     // Services UUIDS
 
     /**

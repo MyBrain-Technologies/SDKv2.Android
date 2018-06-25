@@ -4,14 +4,11 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import config.DeviceConfig;
 import core.eeg.storage.MbtEEGPacket;
-import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.EEGException;
 import engine.clientevents.EegListener;
 import features.MbtFeatures;
-import features.ScannableDevices;
 
 /**
  * This class aims at configuring the stream process. It contains user configurable
@@ -118,10 +115,6 @@ public final class StreamConfig {
         public StreamConfig create(){
             return new StreamConfig(this.eegListener, this.notificationPeriod, this.deviceStatusListener);
         }
-
-
-
-
     }
 
     /**

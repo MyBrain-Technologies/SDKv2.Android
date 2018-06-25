@@ -26,11 +26,11 @@ import core.eeg.signalprocessing.MBTSignalQualityChecker;
 import core.eeg.acquisition.MbtDataConversion;
 import core.eeg.storage.MbtDataBuffering;
 import core.eeg.storage.RawEEGSample;
-import engine.clientevents.EEGException;
 import eventbus.EventBusManager;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.BluetoothEEGEvent;
 import utils.AsyncUtils;
+import utils.LogUtils;
 
 import static config.MbtConfig.getSampleRate;
 import static core.eeg.signalprocessing.MBTSignalQualityChecker.computeQualitiesForPacketNew;
@@ -81,7 +81,7 @@ public final class MbtEEGManager extends BaseModuleManager{
      * Reconfigures the temporary buffers that are used to store the raw EEG data until conversion to user-readable EEG data.
      * Reset the buffers arrays, status list, the number of status bytes and the packet Size
      */
-    public void reinitBuffers(){
+    private void reinitBuffers(){
         dataBuffering.reinitBuffers();
         dataAcquisition.resetIndex();
     }
@@ -97,7 +97,7 @@ public final class MbtEEGManager extends BaseModuleManager{
         AsyncUtils.executeAsync(new Runnable() {
             @Override
             public void run() {
-                Log.i(TAG, "computing and sending to application");
+                LogUtils.i(TAG, "computing and sending to application");
 
                 ArrayList<Float> toDecodeStatus = new ArrayList<>();
                 for (RawEEGSample rawEEGSample : toDecodeRawEEG) {
@@ -121,7 +121,7 @@ public final class MbtEEGManager extends BaseModuleManager{
      * @param eegPackets the list that contains EEG packets ready to use for the client.
      */
     public void notifyEEGDataIsReady(@NonNull MbtEEGPacket eegPackets) {
-        Log.d(TAG, "notify EEG Data Is Ready ");
+        LogUtils.d(TAG, "notify EEG Data Is Ready ");
         EventBusManager.postEvent(new ClientReadyEEGEvent(eegPackets));
     }
 
@@ -275,7 +275,6 @@ public final class MbtEEGManager extends BaseModuleManager{
      */
     @Subscribe(threadMode = ThreadMode.BACKGROUND)
     public void onEvent(BluetoothEEGEvent event){ //warning : this method is used
-        Log.i(TAG, Arrays.toString(event.getData()));
         dataAcquisition.handleDataAcquired(event.getData());
     }
 

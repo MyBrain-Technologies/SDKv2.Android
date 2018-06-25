@@ -19,7 +19,6 @@ public class MbtDeviceManager extends BaseModuleManager{
     public MbtDeviceManager(Context context, MbtManager mbtManagerController, BtProtocol protocol){
         super(context, mbtManagerController);
         this.mContext = context;
-        //EventBusManager.registerOrUnregister(true, this);
         this.protocol = protocol;
     }
 
