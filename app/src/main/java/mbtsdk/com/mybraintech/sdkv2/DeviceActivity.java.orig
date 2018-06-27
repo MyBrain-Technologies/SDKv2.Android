@@ -196,9 +196,14 @@ DeviceActivity extends AppCompatActivity {
         readBatteryButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+<<<<<<< HEAD
+                if(deviceInfoListener != null)
+                    client.readBattery(deviceInfoListener);
+=======
                 if(deviceInfoListener != null){
                     client.readBattery(deviceInfoListener);
                 }
+>>>>>>> 57b2f4f19fb86b72c46553fef664ef634617a059
             }
         });
     }
@@ -216,7 +221,12 @@ DeviceActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if(!isStreaming) { //streaming is not in progress : starting streaming
-                    startStream(new StreamConfig.Builder(eegListener).setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD).create());
+<<<<<<< HEAD
+                    startStream(new StreamConfig.Builder(eegListener).setNotificationPeriod(200).create());
+=======
+                    startStream(new StreamConfig.Builder(eegListener).setNotificationPeriod(400).create());
+                    notifyUser("Starting streaming");
+>>>>>>> 57b2f4f19fb86b72c46553fef664ef634617a059
                 }else { //streaming is in progress : stopping streaming
                     stopStream(); // set false to isStreaming et null to the eegListener
                 }
