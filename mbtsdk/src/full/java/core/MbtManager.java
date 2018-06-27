@@ -3,11 +3,10 @@ package core;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
 
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
-
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -21,6 +20,7 @@ import core.device.DCOffsets;
 import core.device.MbtDeviceManager;
 import core.device.SaturationEvent;
 import core.eeg.MbtEEGManager;
+import core.eeg.signalprocessing.requests.QualityRequest;
 import core.recordingsession.metadata.DeviceInfo;
 import engine.clientevents.ConnectionException;
 import engine.clientevents.DeviceInfoListener;
@@ -99,8 +99,6 @@ public final class MbtManager{
             return;
         }
 
-
-
         this.connectionStateListener = listener;
         EventBusManager.postEvent(new ConnectRequestEvent(name));
     }
@@ -141,6 +139,16 @@ public final class MbtManager{
      */
     public void stopStream(){
         EventBusManager.postEvent(new StreamRequestEvent(false, false));
+    }
+
+    /**
+     * Posts an event to compute the signal quality of the EEG signal
+     */
+    public void computeEEGSignalQuality(ArrayList<ArrayList<Float>> consolidatedEEG){
+        if(consolidatedEEG.get(0).size() > MbtFeatures.DEFAULT_NUMBER_OF_DATA_TO_DISPLAY)
+            EventBusManager.postEvent(new QualityRequest(consolidatedEEG,null));
+        else
+            throw new IllegalArgumentException("You must acquire at least 1 second of EEG data to compute its signal quality");
     }
 
     /**
@@ -217,7 +225,6 @@ public final class MbtManager{
                 connectionStateListener.onStateChanged(connectionStateEvent.getNewState());
                 break;
         }
-
     }
 
     /**
@@ -272,6 +279,11 @@ public final class MbtManager{
             eegListener.onNewPackets(event.getEegPackets());
     }
 
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onEegProcessingEvent(QualityRequest qualityRequest){
+        if(eegListener != null)
+            eegListener.onNewQualities(qualityRequest.getQualities());
+    }
 
     /**
      * Sets the {@link ConnectionStateListener} to the connectionStateListener value

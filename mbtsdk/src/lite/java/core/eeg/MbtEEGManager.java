@@ -2,25 +2,18 @@ package core.eeg;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
-import android.util.Log;
 
-import org.apache.commons.lang.ArrayUtils;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 
-import config.MbtConfig;
+
 import core.BaseModuleManager;
 import core.MbtManager;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.IStreamable;
 import core.eeg.acquisition.MbtDataAcquisition;
-import core.eeg.signalprocessing.MBTCalibrationParameters;
-import core.eeg.signalprocessing.MBTComputeRelaxIndex;
-import core.eeg.signalprocessing.MBTComputeStatistics;
 import core.eeg.storage.MbtEEGPacket;
 import core.eeg.signalprocessing.MBTSignalQualityChecker;
 import core.eeg.acquisition.MbtDataConversion;
@@ -31,11 +24,6 @@ import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.BluetoothEEGEvent;
 import utils.AsyncUtils;
 import utils.LogUtils;
-
-import static config.MbtConfig.getSampleRate;
-import static core.eeg.signalprocessing.MBTSignalQualityChecker.computeQualitiesForPacketNew;
-import static features.ScannableDevices.VPRO;
-
 
 /**
  * MbtEEGManager contains all necessary methods to manage incoming EEG data from the MBT headset.
@@ -130,8 +118,33 @@ public final class MbtEEGManager extends BaseModuleManager{
      * Should be destroyed at the end of the session
      */
     @NonNull
-    public String initQualityChecker() {
-        return MBTSignalQualityChecker.initQualityChecker();
+    public void initQualityChecker() {
+         MBTSignalQualityChecker.initQualityChecker();
+    }
+
+    /**
+     * Computes the quality for each provided channels
+     * @param consolidatedEEG the user-readable EEG data matrix
+     * The Melomind headset has 2 channels and the VPRO headset has 9 channels.
+     * @return an array that contains the quality of each EEG acquisition channels
+     * This array contains 2 qualities (items) if the headset used is MELOMIND.
+     * This array contains 9 qualities (items) if the headset used is VPRO.
+     * @exception IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
+     */
+    public ArrayList<Float> computeEEGSignalQuality(ArrayList<ArrayList<Float>> consolidatedEEG){
+
+        consolidatedEEG = MatrixUtils.invertFloatMatrix(consolidatedEEG);
+        ArrayList<Float[]> channels = new ArrayList<>();
+        for (int nbChannel = 0; nbChannel < MbtFeatures.getNbChannels() ; nbChannel++){
+            channels.add(new Float[consolidatedEEG.get(nbChannel).size()]);
+            consolidatedEEG.get(nbChannel).toArray(channels.get(nbChannel));
+        }
+
+        final float[] qualities = (MbtConfig.getScannableDevices().equals(ScannableDevices.MELOMIND) ?
+                MBTSignalQualityChecker.computeQualitiesForPacketNew(MbtFeatures.getSampleRate(),MbtFeatures.getSampleRate(), channels.get(0), channels.get(1)) :
+                MBTSignalQualityChecker.computeQualitiesForPacketNew(MbtFeatures.getSampleRate(),MbtFeatures.getSampleRate(), channels.get(0), channels.get(1), channels.get(2), channels.get(3), channels.get(4), channels.get(5), channels.get(6), channels.get(7), channels.get(8))) ;
+        ArrayList<Float> listedQualities = new ArrayList<Float>(Arrays.asList(ArrayUtils.toObject(qualities)));
+        return listedQualities;
     }
 
     /**

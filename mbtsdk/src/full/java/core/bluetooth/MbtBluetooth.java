@@ -11,7 +11,6 @@ import android.support.annotation.NonNull;
 
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
-import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +22,6 @@ import core.device.model.VProDevice;
 import core.oad.OADEvent;
 
 import core.recordingsession.metadata.DeviceInfo;
-import engine.clientevents.MbtClientEvents;
 import features.MbtFeatures;
 import utils.LogUtils;
 import utils.MbtLock;
@@ -205,10 +203,6 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
     public BtState getCurrentState() { return currentState; }
 
     public void setCurrentState(BtState state) { this.currentState=state;}
-
-    public void setOadEventListener(MbtClientEvents.OADEventListener oadEventListener) {
-        //this.oadEventListener = oadEventListener;
-    }
 
     @Nullable
     BluetoothAdapter getBluetoothAdapter() {return bluetoothAdapter;}

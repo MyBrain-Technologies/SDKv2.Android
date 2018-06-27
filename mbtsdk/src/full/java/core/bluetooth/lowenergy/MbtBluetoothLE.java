@@ -58,7 +58,6 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 
     private BluetoothLeScanner bluetoothLeScanner;
 
-    @Nullable
     private BluetoothGatt gatt;
 
     /**

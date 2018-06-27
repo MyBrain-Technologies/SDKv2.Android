@@ -49,8 +49,8 @@ public final class MBTComputeRelaxIndex {
             }
 
 
-            qualities[0][qtCnt] = current.getQualities().get(0);
-            qualities[1][qtCnt++] = current.getQualities().get(1);
+            //qualities[0][qtCnt] = current.getQualities().get(0);  //todo decomment
+           // qualities[1][qtCnt++] = current.getQualities().get(1);  //todo decomment
 
             // Merging channels
 // Merging channels
@@ -65,7 +65,7 @@ public final class MBTComputeRelaxIndex {
                 mainMatrix[1][chanCnt++] = matrix[1][it];
             }
         }
-        return nativeComputeRelaxIndex(samprate, calibParams, qualities, mainMatrix);
+        return nativeComputeRelaxIndex(samprate, ContextSP.smoothingDuration, calibParams, qualities, mainMatrix);
     }
 
 
@@ -83,7 +83,7 @@ public final class MBTComputeRelaxIndex {
     private native static void nativeReinitRelaxIndexVariables();
 
 
-    private native static float nativeComputeRelaxIndex(final int samprate,
+    private native static float nativeComputeRelaxIndex(final int samprate, final int smoothingDuration,
                                                         final MBTCalibrationParameters parameters,
                                                         final float[][] qualities, final float[][] matrix);
 

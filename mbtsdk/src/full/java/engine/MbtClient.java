@@ -6,6 +6,7 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -159,6 +160,14 @@ public final class MbtClient {
         mbtManager.startStream(false, streamConfig.getEegListener(), streamConfig.getDeviceStatusListener());
     }
 
+    /**
+     * Computes the quality for each provided channels
+     * @param channels the channel(s) to be computed
+     * @exception IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
+     */
+    public void computeEEGSignalQuality(ArrayList<ArrayList<Float>> channels){
+        mbtManager.computeEEGSignalQuality(channels);
+    }
 
     public void stopStream(){
         mbtManager.stopStream();
@@ -233,16 +242,7 @@ public final class MbtClient {
 //        getRecordingSessionManager().sendJSONtoServer();
 //    }
 //
-//    /**
-//     * Computes the quality for each provided channels
-//     * @param sampRate the number of value(s) inside each channel
-//     * @param packetLength how long is a packet (time x samprate)
-//     * @param channels the channel(s) to be computed
-//     * @exception IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
-//     */
-//    public float[] computeEEGSignalQuality(int sampRate, int packetLength, Float[] channels){
-//        return getEEGManager().computeEEGSignalQuality(sampRate,packetLength,channels);
-//    }
+
 //
 //    /**
 //     * Computes the relaxation index using the provided <code>MBTEEGPacket</code>.

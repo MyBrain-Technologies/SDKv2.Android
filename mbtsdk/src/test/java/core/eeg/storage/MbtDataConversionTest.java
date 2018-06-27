@@ -10,7 +10,7 @@ import core.eeg.acquisition.MbtDataConversion;
 
 public class MbtDataConversionTest {
 
-    @Test (expected = NullPointerException.class)
+    /*@Test (expected = NullPointerException.class)
     public void convertRawDataToEEGNullDataTest() {
         byte[] data = null;  //check that IllegalArgumentException is raised if data is null
         BtProtocol protocol = BtProtocol.BLUETOOTH_LE;
@@ -46,5 +46,5 @@ public class MbtDataConversionTest {
         assertTrue(eegData.size()==nbChannels);
         assertTrue(eegData.get(0).isEmpty());
         assertTrue(eegData.get(1).isEmpty());
-    }
+    }*/
 }

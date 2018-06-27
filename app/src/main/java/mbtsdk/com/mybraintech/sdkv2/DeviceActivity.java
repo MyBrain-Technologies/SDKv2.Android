@@ -144,6 +144,11 @@ DeviceActivity extends AppCompatActivity {
                 }
             }
         }
+
+        @Override
+        public void onNewQualities(ArrayList<Float> qualities) {
+            //todo display the qualities
+        }
     };
 
 

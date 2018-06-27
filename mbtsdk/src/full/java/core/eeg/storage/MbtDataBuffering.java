@@ -120,29 +120,16 @@ public class MbtDataBuffering {
                 mbtEEGPacketsBuffer.getChannelsData().addAll(consolidatedEEG.subList(0, maxElementsToAppend));
                 if(mbtEEGPacketsBuffer.getStatusData() != null)
                     mbtEEGPacketsBuffer.getStatusData().addAll(status.subList(0, (status.size()>= maxElementsToAppend) ? maxElementsToAppend : status.size()));
-            }
+
             notifyClientEEGDataBufferFull();
 
             mbtEEGPacketsBuffer = new MbtEEGPacket( new ArrayList<>(consolidatedEEG.subList(maxElementsToAppend, consolidatedEEG.size())),
-                    null, status.size() != 0 ?
+                     status.size() != 0 ?
                     ( new ArrayList<>(status.subList(maxElementsToAppend, status.size() >= consolidatedEEG.size() ? consolidatedEEG.size() : status.size() ))) : null );
+            }
         }
     }
 
-    private ArrayList<Float> computeSignalQuality(){
-        ArrayList<ArrayList<Float>> channelData = MatrixUtils.invertFloatMatrix(mbtEEGPacketsBuffer.getChannelsData());
-        ArrayList<Float[]> channels = new ArrayList<>();
-        for (int nbChannel = 0; nbChannel < MbtFeatures.getNbChannels() ; nbChannel++){
-            channels.add(new Float[channelData.get(nbChannel).size()]);
-            channelData.get(nbChannel).toArray(channels.get(nbChannel));
-        }
-
-        final float[] qts = (MbtConfig.getScannableDevices().equals(ScannableDevices.MELOMIND) ?
-                MBTSignalQualityChecker.computeQualitiesForPacketNew(MbtFeatures.getSampleRate(),MbtFeatures.getSampleRate(), channels.get(0), channels.get(1)) :
-                MBTSignalQualityChecker.computeQualitiesForPacketNew(MbtFeatures.getSampleRate(),MbtFeatures.getSampleRate(), channels.get(0), channels.get(1), channels.get(2), channels.get(3), channels.get(4), channels.get(5), channels.get(6), channels.get(7), channels.get(8))) ;
-        ArrayList<Float> listedQualities = new ArrayList<Float>(Arrays.asList(ArrayUtils.toObject(qts)));
-        return listedQualities;
-    }
 
     /**
      * Reconfigures the temporary buffers that are used to store the raw EEG data until conversion to user-readable EEG data.
@@ -164,4 +151,11 @@ public class MbtDataBuffering {
         return Math.max(getEegBufferLengthClientNotif(), MbtFeatures.DEFAULT_MAX_PENDING_RAW_DATA_BUFFER_SIZE); //todo ajouter size buffer C++
     }
 
+    /**
+     * getter for unit tests
+     * @return
+     */
+    public ArrayList<RawEEGSample> getPendingRawData() {
+        return pendingRawData;
+    }
 }

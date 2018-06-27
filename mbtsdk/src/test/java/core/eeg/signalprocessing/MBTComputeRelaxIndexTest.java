@@ -12,7 +12,8 @@ import static org.mockito.Mockito.mock;
 public class MBTComputeRelaxIndexTest {
 
     // /!\ Problem : UnsatisfiedLinkError is raised if sampRate = 0 only so we cannot make this test /!\
-    @Test /*(expected = IllegalArgumentException.class)*/
+     /*  @Test
+
     public void computeRelaxIndexCalibParamsEmptyTest() {
         final int sampRate = 0;
         HashMap<String, float[]> params = new HashMap<>();
@@ -142,7 +143,7 @@ public class MBTComputeRelaxIndexTest {
         long timestamp = 1L;
         final MbtEEGPacket packets = new MbtEEGPacket(channelsData, qualities, null, timestamp);
         float relaxIndex = MBTComputeRelaxIndex.computeRelaxIndex(sampRate,calibParams,packets);
-    }
+    }*/
 
     // /!\ Problem : UnsatisfiedLinkError is raised /!\
     /*@Test

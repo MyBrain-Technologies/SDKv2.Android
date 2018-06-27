@@ -8,6 +8,7 @@ import java.util.Arrays;
 
 import config.MbtConfig;
 import core.bluetooth.BtProtocol;
+import core.eeg.signalprocessing.MBTComputeStatistics;
 
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
 import static core.bluetooth.BtProtocol.BLUETOOTH_SPP;
@@ -85,6 +86,7 @@ public final class MbtFeatures{
     public final static ArrayList<MbtAcquisitionLocations> MELOMIND_GROUNDS = new ArrayList<>(Arrays.asList(MbtAcquisitionLocations.M2));
     public final static ArrayList<MbtAcquisitionLocations> VPRO_GROUNDS = new ArrayList<>();//init values with server data
 
+    public static final int DEFAULT_NUMBER_OF_DATA_TO_DISPLAY = 500;
     public static int getNbChannels(){
         return (MbtConfig.getScannableDevices().equals(MELOMIND) ? MELOMIND_NB_CHANNELS : VPRO_NB_CHANNELS);
     }

@@ -98,13 +98,13 @@ public class MbtRecording implements Serializable{
 
             for (MbtEEGPacket MbtEEGPacket : packetArrayList) {
 
-                if(MbtEEGPacket.getQualities() != null){
+                /*if(MbtEEGPacket.getQualities() != null){
                     for (int i = 0; i < MbtEEGPacket.getQualities().size(); i++){
                         if(i >= qualities.size())
                             qualities.add(new ArrayList<Float>());
                         qualities.get(i).add(MbtEEGPacket.getQualities().get(i));
                     }
-                }
+                }*/ //todo decomment
 
 //                qualities.get(0).add((float)MbtEEGPacket.getQualities()getQualityChannel1());
 //                qualities.get(1).add((float)MbtEEGPacket.getQualityChannel2());

@@ -2,6 +2,7 @@ package engine.clientevents;
 
 
 import android.support.annotation.Keep;
+import java.util.ArrayList;
 
 import core.eeg.storage.MbtEEGPacket;
 
@@ -21,4 +22,5 @@ public interface EegListener<U extends BaseException> extends BaseErrorEvent<U>{
      *
      */
     void onNewPackets(MbtEEGPacket eegPackets);
+    void onNewQualities(ArrayList<Float> qualities);
 }
