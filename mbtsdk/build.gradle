@@ -70,8 +70,8 @@ publishing {
             artifactId 'sdk-full'
             version android.defaultConfig.versionName
 
-            artifact(sourcesJar)
-            artifact(javadocJar)
+            artifact(fullSourcesJar)
+            artifact(fullJavadocJar)
             artifact("$buildDir/outputs/aar/${libName}") //we can force send to nexus the version we want by changing the aar name
             pom.withXml {
                 def dependenciesNode = asNode().appendNode('dependencies')
@@ -96,8 +96,8 @@ publishing {
             artifactId 'sdk-lite'
             version android.defaultConfig.versionName
 
-            artifact(sourcesJar)
-            artifact(javadocJar)
+            artifact(liteSourcesJar)
+            artifact(liteJavadocJar)
             artifact("$buildDir/outputs/aar/${libName}") //we can force send to nexus the version we want by changing the aar name
             pom.withXml {
                 def dependenciesNode = asNode().appendNode('dependencies')
@@ -128,27 +128,56 @@ publishing {
 }
 
 //Task to generate sources into Jar file
-task sourcesJar(type: Jar) {
-    from android.sourceSets.main.java.srcDirs
+task liteSourcesJar(type: Jar) {
     classifier = 'sources'
+    from android.sourceSets.main.java.srcDirs
+    from (android.sourceSets.lite.java.srcDirs){
+        exclude('core')
+        exclude('eventbus')
+    }
+}
+
+task fullSourcesJar(type: Jar) {
+    classifier = 'sources'
+    from android.sourceSets.main.java.srcDirs
+    from android.sourceSets.full.java.srcDirs
 }
 
 //Task to generate javadoc as html
-task javadoc(type: Javadoc) {
+task liteJavadoc(type: Javadoc) {
     options.charSet = 'UTF-8'
     failOnError  false
     source = android.sourceSets.main.java.sourceFiles
+    source += android.sourceSets.lite.java.sourceFiles
+
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
 }
 
+task fullJavadoc(type: Javadoc) {
+    options.charSet = 'UTF-8'
+    failOnError  false
+    source = android.sourceSets.main.java.sourceFiles
+    source += android.sourceSets.full.java.sourceFiles
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+}
 
 //Task to generate javadoc as Jar file from html task
-task javadocJar(type: Jar, dependsOn: javadoc) {
+task liteJavadocJar(type: Jar, dependsOn: liteJavadoc) {
     classifier = 'javadoc'
-    from javadoc.destinationDir
+    from liteJavadoc.destinationDir
+}
+
+//Task to generate javadoc as Jar file from html task
+task fullJavadocJar(type: Jar, dependsOn: fullJavadoc) {
+    classifier = 'javadoc'
+    from fullJavadoc.destinationDir
 }
 
 artifacts {
-    archives sourcesJar
-    archives javadocJar
+    archives liteSourcesJar
+    archives fullSourcesJar
+
+    archives liteJavadocJar
+    archives fullJavadocJar
+
 }
