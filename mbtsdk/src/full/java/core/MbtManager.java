@@ -131,14 +131,14 @@ public final class MbtManager{
         this.eegListener = eegListener;
         this.deviceStatusListener = deviceStatusListener;
 
-        EventBusManager.postEvent(new StreamRequestEvent(true, deviceStatusListener != null));
+        EventBusManager.postEvent(new StreamRequestEvent(true, useQualities,deviceStatusListener != null));
     }
 
     /**
      * Posts an event to stop the currently started stream session
      */
     public void stopStream(){
-        EventBusManager.postEvent(new StreamRequestEvent(false, false));
+        EventBusManager.postEvent(new StreamRequestEvent(false, false, false));
     }
 
     /**
@@ -279,11 +279,11 @@ public final class MbtManager{
             eegListener.onNewPackets(event.getEegPackets());
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onEegProcessingEvent(QualityRequest qualityRequest){
-        if(eegListener != null)
-            eegListener.onNewQualities(qualityRequest.getQualities());
-    }
+//    @Subscribe(threadMode = ThreadMode.MAIN)
+//    public void onEegProcessingEvent(QualityRequest qualityRequest){
+//        if(eegListener != null)
+//            eegListener.onNewQualities(qualityRequest.getQualities());
+//    }
 
     /**
      * Sets the {@link ConnectionStateListener} to the connectionStateListener value

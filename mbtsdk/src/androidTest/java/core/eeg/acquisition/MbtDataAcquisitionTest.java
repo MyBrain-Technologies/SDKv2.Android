@@ -75,7 +75,7 @@ public class MbtDataAcquisitionTest {
             dataAcquisition.handleDataAcquired(data);
             Arrays.fill(data,0,0,(byte)0); //reset
         }
-        ArrayList<ArrayList<Float>> eegResult = dataAcquisition.getEegMatrix();
+        ArrayList<ArrayList<Float>> eegResult = dataAcquisition.testGetEegMatrix();
         assertNotNull(eegResult); //problem to solve : test return null eegResult
         assertTrue("size "+eegResult.size()*eegResult.get(0).size(), eegResult.size()*eegResult.get(0).size()==124);
     }
@@ -96,7 +96,7 @@ public class MbtDataAcquisitionTest {
             dataAcquisition.handleDataAcquired(data);
             Arrays.fill(data,0,0,(byte)0); //reset
         }
-        ArrayList<ArrayList<Float>> eegResult = dataAcquisition.getEegMatrix();
+        ArrayList<ArrayList<Float>> eegResult = dataAcquisition.testGetEegMatrix();
         assertNotNull(eegResult); //problem to solve : test return null eegResult
         assertTrue("size "+eegResult.size()*eegResult.get(0).size(), eegResult.size()*eegResult.get(0).size()==124);
 
@@ -109,7 +109,7 @@ public class MbtDataAcquisitionTest {
         Arrays.fill(data, (byte) 1);
 
         //dataAcquisition.handleDataAcquired(data);
-        //assertNull(dataAcquisition.getEegMatrix());
+        //assertNull(dataAcquisition.testGetEegMatrix());
 
 
     }

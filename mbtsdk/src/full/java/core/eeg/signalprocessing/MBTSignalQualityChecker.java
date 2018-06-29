@@ -3,9 +3,10 @@ package core.eeg.signalprocessing;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
 
 import org.apache.commons.lang.ArrayUtils;
+
+import java.util.ArrayList;
 
 /**
  * MBTSignalQualityChecker contains methods for computing the EEG signal quality
@@ -72,25 +73,19 @@ public final class MBTSignalQualityChecker {
      */
     @NonNull
     public static float[] computeQualitiesForPacketNew(final int samprate, final int packetLength,
-                                                       @Nullable final Float[]... channels ) {
+                                                       @Nullable final ArrayList<ArrayList<Float>> channels ) {
 
         if (samprate < 0)
             throw new IllegalArgumentException("samprate MUST BE POSITIVE!");
         if (packetLength < 0)
             throw new IllegalArgumentException("packetLength MUST BE POSITIVE!");
-        if (channels == null || channels.length == 0)
+        if (channels == null || channels.size() == 0)
             throw new IllegalArgumentException("there MUST be at least ONE or MORE channel(s) !");
 
-        final int matrixHeight = channels.length;
+        final int matrixHeight = channels.size();
 
         // Creating 2d Matrix-like array
-        final float[][] matrix = new float[matrixHeight][samprate];
-        for (int it = 0 ; it < matrixHeight ; it++){
-            final Float[] current = channels[it];
-            for (int it2 = 0; it2 < samprate; it2++)
-                matrix[it][it2] = current[it2];
-        }
-        return nativeComputeQualityCheckerNew(matrix, samprate, packetLength);
+        return nativeComputeQualityCheckerNew(MBTSignalProcessingUtils.channelsToMatrixFloat(channels), samprate, packetLength);
     }
 
 
@@ -107,8 +102,6 @@ public final class MBTSignalQualityChecker {
     }
 
 
-
-
     @NonNull
     private native static String nativeInitQualityChecker();
 
@@ -122,7 +115,7 @@ public final class MBTSignalQualityChecker {
     private native static double[] nativeComputeQualities(double[][] matrix, int samprate, int packetLength);
 
     @NonNull
-    public native static float[] nativeComputeQualityCheckerNew(float[][] matrix, int samprate, int packetLengthe);
+    public native static float[] nativeComputeQualityCheckerNew(float[][] matrix, int samprate, int packetLength);
 
 
 }

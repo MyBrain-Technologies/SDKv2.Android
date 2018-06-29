@@ -14,7 +14,6 @@
  */
 
 
-
 MBT_Matrix<float> modifiedInputData;
 unsigned int channelNb;
 

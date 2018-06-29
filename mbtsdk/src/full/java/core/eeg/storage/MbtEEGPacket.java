@@ -15,6 +15,8 @@ public final class MbtEEGPacket {
     @NonNull
     private final long timestamp;
 
+    private ArrayList<Float> qualities;
+
 
     public MbtEEGPacket(){
         timestamp = System.currentTimeMillis();
@@ -119,4 +121,11 @@ public final class MbtEEGPacket {
         return (counterOfZeros == matrixSize); //return true if counter == matrixSize (if matrix contains only 0)
     }
 
+    public ArrayList<Float> getQualities() {
+        return qualities;
+    }
+
+    public void setQualities(ArrayList<Float> qualities) {
+        this.qualities = qualities;
+    }
 }

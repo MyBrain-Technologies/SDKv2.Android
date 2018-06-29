@@ -5,9 +5,8 @@
 #ifndef _Included_mybraintech_com_mbtsdk_core_signalprocessing_MBTSignalQualityChecker
 #define _Included_mybraintech_com_mbtsdk_core_signalprocessing_MBTSignalQualityChecker
 
-#ifdef __cplusplus
 extern "C" {
-#endif
+
 /*
  * Class:     mybraintech_com_mbtsdk_core_signalprocessing_MBTSignalQualityChecker
  * Method:    nativeComputeQualities
@@ -36,7 +35,5 @@ JNIEXPORT void JNICALL
 Java_core_eeg_signalprocessing_MBTSignalQualityChecker_nativeDeinitQualityChecker(JNIEnv *env,
                                                                                  jclass type);
 
-#ifdef __cplusplus
 }
-#endif
 #endif

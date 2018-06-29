@@ -33,10 +33,10 @@ android {
     }
     productFlavors {
         full{
-            buildConfigField "String", "USE_ALGO_VERSION", "\"2.3.0\""
+            buildConfigField "String", "USE_ALGO_VERSION", "\"2.3.1\""
         }
         lite{
-
+            buildConfigField "String", "USE_ALGO_VERSION", "\"2.3.1\""
         }
     }
 }

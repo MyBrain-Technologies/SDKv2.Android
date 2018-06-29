@@ -4,11 +4,8 @@ import android.bluetooth.le.ScanCallback;
 import android.content.Context;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
-import android.util.Log;
 
 import java.util.ArrayList;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import config.MbtConfig;
 import core.MbtManager;
@@ -157,7 +154,7 @@ public final class MbtClient {
 
         MbtConfig.eegBufferLengthClientNotif = (int)((streamConfig.getNotificationPeriod()* MbtFeatures.DEFAULT_SAMPLE_RATE)/1000);
 
-        mbtManager.startStream(false, streamConfig.getEegListener(), streamConfig.getDeviceStatusListener());
+        mbtManager.startStream(streamConfig.shouldComputeQualities(), streamConfig.getEegListener(), streamConfig.getDeviceStatusListener());
     }
 
     /**

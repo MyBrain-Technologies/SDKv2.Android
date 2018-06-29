@@ -2,6 +2,8 @@ package engine.clientevents;
 
 
 import android.support.annotation.Keep;
+import android.support.annotation.NonNull;
+
 import java.util.ArrayList;
 
 import core.eeg.storage.MbtEEGPacket;
@@ -21,6 +23,5 @@ public interface EegListener<U extends BaseException> extends BaseErrorEvent<U>{
      * <p>Warning: the matrix is configured as follow : (EEG, channel)</p>
      *
      */
-    void onNewPackets(MbtEEGPacket eegPackets);
-    void onNewQualities(ArrayList<Float> qualities);
+    void onNewPackets(@NonNull MbtEEGPacket eegPackets);
 }

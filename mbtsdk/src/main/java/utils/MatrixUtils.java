@@ -18,7 +18,7 @@ public class MatrixUtils {
      *
      */
 
-    public static ArrayList<ArrayList<Float>> invertFloatMatrix(ArrayList<ArrayList<Float>> source){
+    public static ArrayList<ArrayList<Float>> invertFloatMatrix(@NonNull ArrayList<ArrayList<Float>> source){
 
         if (source.size() == 0 )
             return null;
@@ -41,7 +41,7 @@ public class MatrixUtils {
      * Inverts the columns and lines of a matrix of Integer
      */
     @NonNull
-    public static ArrayList<ArrayList<Integer>> invertIntegertMatrix(ArrayList<ArrayList<Integer>> source){
+    public static ArrayList<ArrayList<Integer>> invertIntegerMatrix(ArrayList<ArrayList<Integer>> source){
 
         int nbLinesDestination = source.get(0).size();
         int nbColumnsDestination = source.size();
@@ -62,7 +62,7 @@ public class MatrixUtils {
      * Inverts the columns and lines of a matrix of String
      */
     @NonNull
-    public static ArrayList<ArrayList<String>> invertStringtMatrix(ArrayList<ArrayList<String>> source){
+    public static ArrayList<ArrayList<String>> invertStringMatrix(ArrayList<ArrayList<String>> source){
 
         int nbLinesDestination = source.get(0).size();
         int nbColumnsDestination = source.size();

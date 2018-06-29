@@ -56,10 +56,10 @@ public class HomeActivity extends AppCompatActivity{
         public void onStateChanged(@NonNull BtState newState) {
             Log.i(TAG, "Current state updated "+newState);
 
-            if (newState.equals(BtState.CONNECTED) ) {
+            if (newState.equals(BtState.CONNECTING) ) {
                     notifyUser("Connecting to ' " + deviceName +" '");
                 }if (newState.equals(BtState.CONNECTED) ) {
-                notifyUser("Device ' " + deviceName + " ' connected but not ready. Please be patient");
+                //notifyUser("Device ' " + deviceName + " ' connected but not ready. Please be patient");
             }else if (newState.equals(BtState.CONNECTED_AND_READY) ){
                 deinitCurrentActivity(newState);
             }else if (newState.equals(BtState.SCAN_TIMEOUT)||(newState.equals(BtState.CONNECT_FAILURE))){
