@@ -57,9 +57,9 @@ public final class EncryptionUtils {
     private static final String PBE_ALGORITHM = "PBKDF2WithHmacSHA1";
 
     //Made BASE_64_FLAGS public as it's useful to know for compatibility.
-    public static final int BASE64_FLAGS = Base64.NO_WRAP;
+    private static final int BASE64_FLAGS = Base64.NO_WRAP;
     //default for testing
-    static final AtomicBoolean prngFixed = new AtomicBoolean(false);
+    private static final AtomicBoolean prngFixed = new AtomicBoolean(false);
 
     private static final String HMAC_ALGORITHM = "HmacSHA256";
     private static final int HMAC_KEY_LENGTH_BITS = 256;
@@ -199,12 +199,12 @@ public final class EncryptionUtils {
      * @throws GeneralSecurityException if a suitable RNG is not available
      */
     @NonNull
-    public static final byte[] generateIv() throws GeneralSecurityException {
+    public static byte[] generateIv() throws GeneralSecurityException {
         return randomBytes(IV_LENGTH_BYTES);
     }
 
     @NonNull
-    private static final byte[] randomBytes(int length) throws GeneralSecurityException {
+    private static byte[] randomBytes(int length) throws GeneralSecurityException {
         fixPrng();
         final SecureRandom random = SecureRandom.getInstance(RANDOM_ALGORITHM);
         final byte[] b = new byte[length];
@@ -229,7 +229,7 @@ public final class EncryptionUtils {
      * @throws GeneralSecurityException if AES is not implemented on this system
      * @throws UnsupportedEncodingException if UTF-8 is not supported in this system
      */
-    public static final CipherTextIvMac encrypt(@NonNull final String plaintext, @NonNull final SecretKeys secretKeys)
+    public static CipherTextIvMac encrypt(@NonNull final String plaintext, @NonNull final SecretKeys secretKeys)
             throws UnsupportedEncodingException, GeneralSecurityException {
         return encrypt(plaintext, secretKeys, "UTF-8");
     }
@@ -244,7 +244,7 @@ public final class EncryptionUtils {
      * @throws GeneralSecurityException if AES is not implemented on this system
      * @throws UnsupportedEncodingException if the specified encoding is invalid
      */
-    public static final CipherTextIvMac encrypt(final String plaintext, @NonNull final SecretKeys secretKeys, @NonNull final String encoding)
+    public static CipherTextIvMac encrypt(final String plaintext, @NonNull final SecretKeys secretKeys, @NonNull final String encoding)
             throws UnsupportedEncodingException, GeneralSecurityException {
         return encrypt(plaintext.getBytes(encoding), secretKeys);
     }
@@ -258,7 +258,7 @@ public final class EncryptionUtils {
      * @return a tuple of the IV, ciphertext, mac
      * @throws GeneralSecurityException if AES is not implemented on this system
      */
-    public static final CipherTextIvMac encrypt(final byte[] plaintext, final SecretKeys secretKeys)
+    public static CipherTextIvMac encrypt(final byte[] plaintext, final SecretKeys secretKeys)
             throws GeneralSecurityException {
         byte[] iv = generateIv();
         final Cipher aesCipherForEncryption = Cipher.getInstance(CIPHER_TRANSFORMATION);
@@ -307,7 +307,7 @@ public final class EncryptionUtils {
      * @throws GeneralSecurityException if AES is not implemented on this system
      * @throws UnsupportedEncodingException if the encoding is unsupported
      */
-    public static final String decryptString(@NonNull final CipherTextIvMac civ, @NonNull final SecretKeys secretKeys, @NonNull final String encoding)
+    public static String decryptString(@NonNull final CipherTextIvMac civ, @NonNull final SecretKeys secretKeys, @NonNull final String encoding)
             throws UnsupportedEncodingException, GeneralSecurityException {
         return new String(decrypt(civ, secretKeys), encoding);
     }
@@ -322,7 +322,7 @@ public final class EncryptionUtils {
      * @throws GeneralSecurityException if AES is not implemented on this system
      * @throws UnsupportedEncodingException if UTF-8 is not supported
      */
-    public static final String decryptString(@NonNull final CipherTextIvMac civ, @NonNull final SecretKeys secretKeys)
+    public static String decryptString(@NonNull final CipherTextIvMac civ, @NonNull final SecretKeys secretKeys)
             throws UnsupportedEncodingException, GeneralSecurityException {
         return decryptString(civ, secretKeys, "UTF-8");
     }
@@ -335,7 +335,7 @@ public final class EncryptionUtils {
      * @return The raw decrypted bytes
      * @throws GeneralSecurityException if MACs don't match or AES is not implemented
      */
-    public static final byte[] decrypt(final CipherTextIvMac civ, final SecretKeys secretKeys)
+    public static byte[] decrypt(final CipherTextIvMac civ, final SecretKeys secretKeys)
             throws GeneralSecurityException {
 
         final byte[] ivCipherConcat = CipherTextIvMac.ivCipherConcat(civ.getIv(), civ.getCipherText());
@@ -364,7 +364,7 @@ public final class EncryptionUtils {
      * @throws NoSuchAlgorithmException
      * @throws InvalidKeyException
      */
-    public static final byte[] generateMac(final byte[] byteCipherText, final SecretKey integrityKey) throws NoSuchAlgorithmException, InvalidKeyException {
+    public static byte[] generateMac(final byte[] byteCipherText, final SecretKey integrityKey) throws NoSuchAlgorithmException, InvalidKeyException {
         //Now compute the mac for later integrity checking
         final Mac sha256_HMAC = Mac.getInstance(HMAC_ALGORITHM);
         sha256_HMAC.init(integrityKey);
@@ -448,7 +448,7 @@ public final class EncryptionUtils {
      * @param b
      * @return true iff the arrays are exactly equal.
      */
-    public static final boolean constantTimeEq(final byte[] a, final byte[] b) {
+    public static boolean constantTimeEq(final byte[] a, final byte[] b) {
         if (a.length != b.length) {
             return false;
         }
@@ -521,7 +521,7 @@ public final class EncryptionUtils {
          * @return iv:cipherText, a new byte array.
          */
         @NonNull
-        public static final byte[] ivCipherConcat(final byte[] iv, final byte[] cipherText) {
+        public static byte[] ivCipherConcat(final byte[] iv, final byte[] cipherText) {
             final byte[] combined = new byte[iv.length + cipherText.length];
             System.arraycopy(iv, 0, combined, 0, iv.length);
             System.arraycopy(cipherText, 0, combined, iv.length, cipherText.length);
@@ -580,7 +580,7 @@ public final class EncryptionUtils {
      * @return the new buffer
      */
     @NonNull
-    private static final byte[] copyOfRange(@NonNull final byte[] from, final int start, final int end) {
+    private static byte[] copyOfRange(@NonNull final byte[] from, final int start, final int end) {
         final int length = end - start;
         final byte[] result = new byte[length];
         System.arraycopy(from, start, result, 0, length);
@@ -621,7 +621,7 @@ public final class EncryptionUtils {
          * @throws SecurityException if a fix is needed but could not be
          *             applied.
          */
-        public static final void apply() {
+        public static void apply() {
             applyOpenSSLFix();
             installLinuxPRNGSecureRandom();
         }
@@ -633,7 +633,7 @@ public final class EncryptionUtils {
          * @throws SecurityException if the fix is needed but could not be
          *             applied.
          */
-        private static final void applyOpenSSLFix() throws SecurityException {
+        private static void applyOpenSSLFix() throws SecurityException {
             if ((Build.VERSION.SDK_INT < VERSION_CODE_JELLY_BEAN)
                     || (Build.VERSION.SDK_INT > VERSION_CODE_JELLY_BEAN_MR2)) {
                 // No need to apply the fix
@@ -671,7 +671,7 @@ public final class EncryptionUtils {
          * @throws SecurityException if the fix is needed but could not be
          *             applied.
          */
-        private static final void installLinuxPRNGSecureRandom() throws SecurityException {
+        private static void installLinuxPRNGSecureRandom() throws SecurityException {
             if (Build.VERSION.SDK_INT > VERSION_CODE_JELLY_BEAN_MR2) {
                 // No need to apply the fix
                 return;
