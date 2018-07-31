@@ -146,7 +146,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
             //Checking location activation
             LocationManager manager = (LocationManager) mContext.getSystemService(Context.LOCATION_SERVICE );
-            if(manager != null && !manager.isProviderEnabled(LocationManager.GPS_PROVIDER)){
+            if(manager != null && !manager.isProviderEnabled(LocationManager.GPS_PROVIDER) && mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS)){
                 notifyConnectionStateChanged(BtState.LOCATION_IS_REQUIRED);
                 return;
             }

@@ -1,8 +1,12 @@
 package eventbus;
 
+import android.os.Handler;
 import android.support.annotation.NonNull;
 
 import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+
+import utils.LogUtils;
 
 /**
  * EventBusManager.java
@@ -19,6 +23,7 @@ public final class EventBusManager {
      * Each instance is a separate scope in which events are delivered.
      */
     public static final EventBus BUS = EventBus.getDefault();
+    private static final String TAG = EventBusManager.class.getSimpleName();
 
     /**
      * EventBusManager contains all the methods for posting events, registering and unregistering subscribers
@@ -52,4 +57,19 @@ public final class EventBusManager {
     public static void postEvent(Object event){
         BUS.post(event);
     }
+
+
+
+    public static void postEventWithCallback(Object event, Callback callback){
+        BUS.register(callback);
+        BUS.post(event);
+        BUS.unregister(callback);
+    }
+
+
+
+    public interface Callback<T> {
+        public void onEventCallback(T object);
+    }
+
 }

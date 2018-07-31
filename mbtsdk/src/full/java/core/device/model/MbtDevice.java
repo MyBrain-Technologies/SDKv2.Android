@@ -6,6 +6,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import features.MbtAcquisitionLocations;
 
@@ -14,6 +15,7 @@ import features.MbtAcquisitionLocations;
  // */
 @Keep
 public abstract class MbtDevice {
+
     String productName;
     @Nullable
     String hardwareVersion;
@@ -21,69 +23,28 @@ public abstract class MbtDevice {
     String firmwareVersion;
     @Nullable
     String serialNumber;
+
     String deviceAddress;
 
     int sampRate;
+
     int nbChannels;
-    ArrayList<MbtAcquisitionLocations> acquisitionLocations;
-    ArrayList<MbtAcquisitionLocations> referencesLocations;
-    ArrayList<MbtAcquisitionLocations> groundsLocation;
-    int eegPacketLength;
+
+    List<MbtAcquisitionLocations> acquisitionLocations;
+    List<MbtAcquisitionLocations> referencesLocations;
+    List<MbtAcquisitionLocations> groundsLocation;
 
     private InternalConfig internalConfig;
 
-    @Nullable
-    private BluetoothDevice bluetoothDevice; //TODO à enlever si non pertinent
+    @NonNull
+    private final BluetoothDevice bluetoothDevice; //TODO à enlever si non pertinent
 
-    MbtDevice(){
-
+    MbtDevice(BluetoothDevice bluetoothDevice){
+        this.bluetoothDevice = bluetoothDevice;
+        this.deviceAddress = bluetoothDevice.getAddress();
+        this.productName = bluetoothDevice.getName();
+        this.internalConfig = null;
     }
-
-    MbtDevice(@NonNull final String productName, @NonNull final String hardwareVersion,
-              @NonNull final String firmwareVersion,
-              @NonNull final String serialNumber,
-              @NonNull int sampRate,
-              @NonNull int nbChannels,
-              @NonNull ArrayList<MbtAcquisitionLocations> acquisitionLocations,
-              @NonNull ArrayList<MbtAcquisitionLocations> referencesLocations,
-              @NonNull ArrayList<MbtAcquisitionLocations> groundsLocation,
-              @NonNull int eegPacketLength) {
-
-        this.firmwareVersion = firmwareVersion;
-        this.productName = productName;
-        this.serialNumber = serialNumber;
-        this.hardwareVersion = hardwareVersion;
-
-        this.sampRate = sampRate;
-        this.nbChannels = nbChannels;
-        this.acquisitionLocations = acquisitionLocations;
-        this.groundsLocation = groundsLocation;
-        this.referencesLocations = referencesLocations;
-        this.eegPacketLength = eegPacketLength;
-    }
-
-    MbtDevice(@NonNull final String productName,
-              @NonNull final int sampRate,
-              @NonNull int nbChannels,
-              @NonNull ArrayList<MbtAcquisitionLocations> acquisitionLocations,
-              @NonNull ArrayList<MbtAcquisitionLocations> referencesLocations,
-              @NonNull ArrayList<MbtAcquisitionLocations> groundsLocation,
-              @NonNull int eegPacketLength) {
-
-        this.firmwareVersion = null;
-        this.productName = productName;
-        this.serialNumber = null;
-        this.hardwareVersion = null;
-        this.bluetoothDevice = null;
-
-        this.sampRate = sampRate;
-        this.nbChannels = nbChannels;
-        this.groundsLocation = groundsLocation;
-        this.referencesLocations = referencesLocations;
-        this.acquisitionLocations = acquisitionLocations;
-        this.eegPacketLength = eegPacketLength;
-    }
-
 
     /**
      * Gets the version of the firmware
@@ -138,16 +99,13 @@ public abstract class MbtDevice {
     public int getNbChannels() {return this.nbChannels;}
 
     @NonNull
-    public ArrayList<MbtAcquisitionLocations> getAcquisitionLocations() {return this.acquisitionLocations;}
+    public List<MbtAcquisitionLocations> getAcquisitionLocations() {return this.acquisitionLocations;}
 
     @NonNull
-    public ArrayList<MbtAcquisitionLocations> getReferencesLocations() {return this.referencesLocations;}
+    public List<MbtAcquisitionLocations> getReferencesLocations() {return this.referencesLocations;}
 
     @NonNull
-    public ArrayList<MbtAcquisitionLocations> getGroundsLocation() {return this.groundsLocation;}
-
-    @NonNull
-    public int getEegPacketLength() {return this.eegPacketLength;}
+    public List<MbtAcquisitionLocations> getGroundsLocation() {return this.groundsLocation;}
 
     public void setHardwareVersion(@NonNull final String hardwareVersion) {this.hardwareVersion = hardwareVersion;}
 
@@ -176,9 +134,6 @@ public abstract class MbtDevice {
         return bluetoothDevice;
     }
 
-    public void setBluetoothDevice(BluetoothDevice device) {
-        this.bluetoothDevice = device;
-    }
 
     public final static class InternalConfig{
         private byte notchFilterConfig;

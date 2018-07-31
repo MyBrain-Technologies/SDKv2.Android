@@ -27,9 +27,11 @@ import java.util.Queue;
 
 
 import core.bluetooth.BtState;
+import core.device.model.MbtDevice;
 import core.eeg.storage.MbtEEGPacket;
 import engine.MbtClient;
 
+import engine.SimpleRequestCallback;
 import engine.StreamConfig;
 import engine.clientevents.BaseException;
 import engine.clientevents.ConnectionException;
@@ -163,7 +165,12 @@ DeviceActivity extends AppCompatActivity {
 
         client.setConnectionStateListener(connectionStateListener);
 
-
+        client.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
+            @Override
+            public void onRequestComplete(MbtDevice object) {
+                deviceNameTextView.setText(object.getProductName());
+            }
+        });
     }
 
     private void initDisconnectButton() {
@@ -174,8 +181,6 @@ DeviceActivity extends AppCompatActivity {
                 if(isStreaming)
                     stopStream();
                 client.disconnectBluetooth();
-
-
 
             }
         });

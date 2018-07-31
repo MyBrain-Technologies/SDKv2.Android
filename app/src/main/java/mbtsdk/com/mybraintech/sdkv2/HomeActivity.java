@@ -24,7 +24,6 @@ import engine.clientevents.ConnectionException;
 import engine.clientevents.ConnectionStateListener;
 import features.MbtFeatures;
 
-import static features.MbtFeatures.DEVICE_NAME_MAX_LENGTH;
 import static features.MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX;
 import static features.MbtFeatures.VPRO_DEVICE_NAME_PREFIX;
 import static features.ScannableDevices.MELOMIND;
@@ -63,7 +62,7 @@ public class HomeActivity extends AppCompatActivity{
             }else if (newState.equals(BtState.CONNECTED_AND_READY) ){
                 deinitCurrentActivity(newState);
             }else if (newState.equals(BtState.SCAN_TIMEOUT)||(newState.equals(BtState.CONNECT_FAILURE))){
-                notifyUser(getString(R.string.connect_failed) + " "+deviceName);
+                notifyUser(getString(R.string.connect_failed) + " "+ deviceName);
                 updateScanning(false);
                 }else if (newState.equals(BtState.SCAN_STARTED)){
                     notifyUser(getString(R.string.connect_in_progress));
@@ -74,6 +73,7 @@ public class HomeActivity extends AppCompatActivity{
                 }else if (newState.equals(BtState.INTERRUPTED))
                     updateScanning(false);
             //}
+
         }
 
         @Override
@@ -134,20 +134,20 @@ public class HomeActivity extends AppCompatActivity{
 
     private void startScan() {
 
-        if(deviceName.equals(MELOMIND_DEVICE_NAME_PREFIX) || deviceName.equals(VPRO_DEVICE_NAME_PREFIX) ){ //no name entered by the user
+        if(deviceName != null && (deviceName.equals(MELOMIND_DEVICE_NAME_PREFIX) || deviceName.equals(VPRO_DEVICE_NAME_PREFIX)) ){ //no name entered by the user
             //findAvailableDevice();
-            notifyUser("Please enter the name of the device");
+            client.connectBluetooth(new ConnectionConfig.Builder(connectionStateListener)
+                    .deviceName(null)
+                    .maxScanDuration(SCAN_DURATION)
+                    .scanDeviceType(isMelomindDevice() ? MELOMIND : VPRO)
+                    .create());
         }else{ //the user entered a name
-            if( isMbtDeviceName() && deviceName.length() == DEVICE_NAME_MAX_LENGTH ) { //check the device name format
                 client.connectBluetooth(new ConnectionConfig.Builder(connectionStateListener)
                         .deviceName(deviceName)
                         .maxScanDuration(SCAN_DURATION)
                         .scanDeviceType(isMelomindDevice() ? MELOMIND : VPRO)
                         .create());
 
-            }else{ //if the device name entered by the user is empty or is not starting with a mbt prefix
-                notifyUser(getString(R.string.wrong_device_name));
-            }
         }
     }
 

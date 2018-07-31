@@ -17,11 +17,14 @@ import core.bluetooth.MbtBluetoothManager;
 import core.bluetooth.requests.ReadRequestEvent;
 import core.bluetooth.requests.StreamRequestEvent;
 import core.device.DCOffsets;
+import core.device.DeviceEvents;
 import core.device.MbtDeviceManager;
 import core.device.SaturationEvent;
+import core.device.model.MbtDevice;
 import core.eeg.MbtEEGManager;
 import core.eeg.signalprocessing.requests.QualityRequest;
 import core.recordingsession.metadata.DeviceInfo;
+import engine.SimpleRequestCallback;
 import engine.clientevents.ConnectionException;
 import engine.clientevents.DeviceInfoListener;
 import engine.clientevents.DeviceStatusListener;
@@ -34,6 +37,7 @@ import eventbus.events.ConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
 import engine.clientevents.EegListener;
 import features.MbtFeatures;
+import utils.LogUtils;
 
 /**
  * MbtManager is responsible for managing communication between all the package managers
@@ -301,4 +305,20 @@ public final class MbtManager{
     public void setEEGListener(EegListener<EEGException> EEGListener) {
         this.eegListener = EEGListener;
     }
+
+
+    public void requestCurrentConnectedDevice(final SimpleRequestCallback<MbtDevice> callback) {
+
+        EventBusManager.postEventWithCallback(new DeviceEvents.GetDeviceEvent(), new EventBusManager.Callback<DeviceEvents.PostDeviceEvent>(){
+            @Override
+            @Subscribe
+            public void onEventCallback(DeviceEvents.PostDeviceEvent object) {
+                LogUtils.d(TAG, "onRequestComplete in manager");
+                callback.onRequestComplete(object.getDevice());
+            }
+        });
+
+    }
+
+
 }

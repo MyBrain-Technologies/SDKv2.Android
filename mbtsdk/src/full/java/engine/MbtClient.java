@@ -9,6 +9,7 @@ import java.util.ArrayList;
 
 import config.MbtConfig;
 import core.MbtManager;
+import core.device.model.MbtDevice;
 import core.eeg.storage.MbtEEGPacket;
 import core.recordingsession.metadata.DeviceInfo;
 import engine.clientevents.BaseException;
@@ -88,6 +89,7 @@ public final class MbtClient {
      *
      * @param config the {@link ConnectionConfig} instance that holds all the configuration parameters inside.
      */
+    @SuppressWarnings("unchecked")
     public void connectBluetooth(@NonNull ConnectionConfig config){
         MbtConfig.scannableDevices = config.getDeviceType();
 
@@ -190,6 +192,16 @@ public final class MbtClient {
         this.mbtManager.setEEGListener(eegListener);
     }
 
+
+    /**
+     * Perform a request to retrieve the currently connected device. The operation is done in the background
+     * and returned in the main thread with the associated callback.
+     * @param callback the callback which will hold the {@link MbtDevice} instance. Careful,
+     *                 the instance can be null, if no device is currently connected.
+     */
+    public void requestCurrentConnectedDevice(SimpleRequestCallback<MbtDevice> callback){
+        mbtManager.requestCurrentConnectedDevice(callback);
+    }
 
 
 
@@ -309,18 +321,6 @@ public final class MbtClient {
 
 
 
-//    private MbtDevice.InternalConfig getDeviceInternalConfig() {
-//        MbtDevice.InternalConfig internalConfig = null;
-//        switch (MbtConfig.getScannableDevices()) {
-//            case MELOMIND:
-//                internalConfig = getBluetoothManager().getBluetoothProtocol().equals(BtProtocol.BLUETOOTH_LE) ? getBluetoothManager().getMbtBluetoothLE().getMelomindDevice().getInternalConfig() : getBluetoothManager().getMbtBluetoothSPP().getMelomindDevice().getInternalConfig();
-//                break;
-//            case VPRO:
-//                internalConfig = getBluetoothManager().getBluetoothProtocol().equals(BtProtocol.BLUETOOTH_LE) ? getBluetoothManager().getMbtBluetoothLE().getVproDevice().getInternalConfig() : getBluetoothManager().getMbtBluetoothSPP().getVproDevice().getInternalConfig();
-//                break;
-//        }
-//        return internalConfig;
-//    }
 
 //    public void testEEGpackageClientBLE() {
 //        this.mbtManager.getMbtBluetoothManager().getMbtBluetoothLE().testAcquireDataRandomByte();
