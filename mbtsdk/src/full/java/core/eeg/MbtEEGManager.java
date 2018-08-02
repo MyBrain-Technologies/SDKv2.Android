@@ -30,6 +30,7 @@ import eventbus.EventBusManager;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.BluetoothEEGEvent;
 import features.MbtFeatures;
+import mbtsdk.com.mybraintech.mbtsdk.BuildConfig;
 import utils.AsyncUtils;
 import utils.LogUtils;
 import utils.MatrixUtils;
