@@ -22,7 +22,7 @@ import core.device.MbtDeviceManager;
 import core.device.SaturationEvent;
 import core.device.model.MbtDevice;
 import core.eeg.MbtEEGManager;
-import core.eeg.signalprocessing.requests.QualityRequest;
+import core.eeg.requests.QualityRequest;
 import core.recordingsession.metadata.DeviceInfo;
 import engine.SimpleRequestCallback;
 import engine.clientevents.ConnectionException;

@@ -17,6 +17,12 @@ public final class MbtEEGPacket {
 
     private ArrayList<Float> qualities;
 
+    public MbtEEGPacket(MbtEEGPacket packetToClone){
+        this.timestamp = packetToClone.getTimeStamp();
+        this.channelsData = packetToClone.getChannelsData();
+        this.statusData = packetToClone.getStatusData();
+        this.qualities = packetToClone.getQualities();
+    }
 
     public MbtEEGPacket(){
         timestamp = System.currentTimeMillis();

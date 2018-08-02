@@ -55,12 +55,7 @@ public class MbtDataBuffering {
 
         pendingRawData = new ArrayList<>();
         mbtEEGPacketsBuffer = new MbtEEGPacket();
-        try {
-            System.loadLibrary(ContextSP.LIBRARY_NAME + BuildConfig.USE_ALGO_VERSION);
-        } catch (final UnsatisfiedLinkError e) {
-            e.printStackTrace();
-        }
-        ContextSP.SP_VERSION = MBTSignalQualityChecker.initQualityChecker();
+
 
     }
 
@@ -95,8 +90,8 @@ public class MbtDataBuffering {
      * This method is called by {@link #storePendingDataInBuffer(ArrayList)} when the buffer size reaches the maximum
      * allowed size. It notifies EEG manager that the buffer is ready to be converted into consolidated EEG
      */
-    private void notifyClientEEGDataBufferFull() {
-        eegManager.notifyEEGDataIsReady(mbtEEGPacketsBuffer);
+    private void notifyClientEEGDataBufferFull(MbtEEGPacket packet) {
+        eegManager.notifyEEGDataIsReady(packet);
     }
 
 
@@ -107,7 +102,6 @@ public class MbtDataBuffering {
      * @return true if the packet buffer is full (contains a number of data equals to eegBufferLengthNotification), false otherwise.
      */
     public void storeConsolidatedEegPacketInPacketBuffer(@NonNull final ArrayList<ArrayList<Float>> consolidatedEEG, @NonNull ArrayList<Float> status) {
-
 
         int maxElementsToAppend = getBufferLengthClientNotif() - mbtEEGPacketsBuffer.getChannelsData().size();
 
@@ -121,7 +115,7 @@ public class MbtDataBuffering {
                 if(mbtEEGPacketsBuffer.getStatusData() != null)
                     mbtEEGPacketsBuffer.getStatusData().addAll(status.subList(0, (status.size()>= maxElementsToAppend) ? maxElementsToAppend : status.size()));
 
-            notifyClientEEGDataBufferFull();
+            notifyClientEEGDataBufferFull(new MbtEEGPacket(mbtEEGPacketsBuffer));
 
             mbtEEGPacketsBuffer = new MbtEEGPacket( new ArrayList<>(consolidatedEEG.subList(maxElementsToAppend, consolidatedEEG.size())),
                      status.size() != 0 ?

@@ -62,6 +62,7 @@ public final class StreamConfig {
     public static class Builder{
         //long streamDuration = -1L;
         private int notificationPeriod = MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD;
+
         @Nullable
         private DeviceStatusListener deviceStatusListener = null;
         @NonNull

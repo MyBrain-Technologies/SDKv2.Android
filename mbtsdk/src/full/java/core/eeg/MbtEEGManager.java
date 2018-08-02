@@ -1,8 +1,6 @@
 package core.eeg;
 
 import android.content.Context;
-import android.os.Handler;
-import android.os.HandlerThread;
 import android.support.annotation.NonNull;
 
 import org.apache.commons.lang.ArrayUtils;
@@ -13,23 +11,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import config.MbtConfig;
 import core.BaseModuleManager;
 import core.MbtManager;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.IStreamable;
-import core.bluetooth.MbtBluetoothManager;
-import core.bluetooth.requests.BluetoothRequests;
-import core.bluetooth.requests.ConnectRequestEvent;
-import core.bluetooth.requests.DisconnectRequestEvent;
 import core.bluetooth.requests.StreamRequestEvent;
 import core.eeg.acquisition.MbtDataAcquisition;
 import core.eeg.signalprocessing.ContextSP;
 import core.eeg.signalprocessing.MBTCalibrationParameters;
 import core.eeg.signalprocessing.MBTComputeRelaxIndex;
 import core.eeg.signalprocessing.MBTComputeStatistics;
-import core.eeg.signalprocessing.requests.EegRequests;
-import core.eeg.signalprocessing.requests.QualityRequest;
 import core.eeg.storage.MbtEEGPacket;
 import core.eeg.signalprocessing.MBTSignalQualityChecker;
 import core.eeg.acquisition.MbtDataConversion;
@@ -39,7 +30,6 @@ import eventbus.EventBusManager;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.BluetoothEEGEvent;
 import features.MbtFeatures;
-import features.ScannableDevices;
 import utils.AsyncUtils;
 import utils.LogUtils;
 import utils.MatrixUtils;
@@ -79,7 +69,11 @@ public final class MbtEEGManager extends BaseModuleManager {
         this.protocol = protocol;
         this.dataAcquisition = new MbtDataAcquisition(this, protocol);
         this.dataBuffering = new MbtDataBuffering(this);
-
+        try {
+            System.loadLibrary(ContextSP.LIBRARY_NAME + BuildConfig.USE_ALGO_VERSION);
+        } catch (final UnsatisfiedLinkError e) {
+            e.printStackTrace();
+        }
 //        requestThread = new MbtEEGManager.RequestThread("requestThread", Thread.MAX_PRIORITY);
 //        requestThread.start();
 //        requestHandler = new Handler(requestThread.getLooper());
@@ -140,19 +134,25 @@ public final class MbtEEGManager extends BaseModuleManager {
      *
      * @param eegPackets the list that contains EEG packets ready to use for the client.
      */
-    public void notifyEEGDataIsReady(@NonNull MbtEEGPacket eegPackets) {
+    public void notifyEEGDataIsReady(@NonNull final MbtEEGPacket eegPackets) {
         LogUtils.d(TAG, "notify EEG Data Is Ready ");
-        if(hasQualities){
-            eegPackets.setQualities(computeEEGSignalQuality(eegPackets));
-        }
-        EventBusManager.postEvent(new ClientReadyEEGEvent(eegPackets));
+
+        AsyncUtils.executeAsync(new Runnable() {
+            @Override
+            public void run() {
+                if(hasQualities){
+                    eegPackets.setQualities(computeEEGSignalQuality(eegPackets));
+                }
+                EventBusManager.postEvent(new ClientReadyEEGEvent(eegPackets));
+            }
+        });
+
     }
 
     /**
      * Initializes the main quality checker object in the JNI which will live throughout all session.
      * Should be destroyed at the end of the session
      */
-    @NonNull
     private void initQualityChecker() {
         ContextSP.SP_VERSION = MBTSignalQualityChecker.initQualityChecker();
     }
@@ -160,7 +160,7 @@ public final class MbtEEGManager extends BaseModuleManager {
     /**
      * Destroy the main quality checker object in the JNI at the end of the session.
      */
-    public void deinitQualityChecker() {
+    private void deinitQualityChecker() {
         MBTSignalQualityChecker.deinitQualityChecker();
     }
 
@@ -202,11 +202,17 @@ public final class MbtEEGManager extends BaseModuleManager {
      * This array contains 9 qualities (items) if the headset used is VPRO.
      * @throws IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
      */
-    private ArrayList<Float> computeEEGSignalQuality(MbtEEGPacket packet) {
+    private ArrayList<Float> computeEEGSignalQuality(final MbtEEGPacket packet) {
 
         if(packet.getChannelsData() != null && packet.getChannelsData().size()!=0){
             long tsBefore = System.currentTimeMillis();
-            final float[] qualities = MBTSignalQualityChecker.computeQualitiesForPacketNew(MbtFeatures.getSampleRate(), MbtFeatures.getSampleRate(), MatrixUtils.invertFloatMatrix(packet.getChannelsData()));
+            float[] qualities = {-1f,-1f};
+            try{
+                qualities = MBTSignalQualityChecker.computeQualitiesForPacketNew(MbtFeatures.getSampleRate(), MbtFeatures.getSampleRate(), MatrixUtils.invertFloatMatrix(packet.getChannelsData()));
+            } catch (IllegalStateException e){
+                e.printStackTrace();
+            }
+
             LogUtils.i(TAG,"quality computation duration is " + (System.currentTimeMillis()-tsBefore));
             return new ArrayList<>(Arrays.asList(ArrayUtils.toObject(qualities)));
         }
@@ -240,7 +246,6 @@ public final class MbtEEGManager extends BaseModuleManager {
     /**
      * Gets the MbtManager instance.
      * MbtManager is responsible for managing all the package managers
-     *
      * @return the MbtManager instance.
      */
     public MbtManager getMbtManager() {
@@ -249,7 +254,6 @@ public final class MbtEEGManager extends BaseModuleManager {
 
     /**
      * Gets the user-readable EEG data matrix
-     *
      * @return the converted EEG data matrix that contains readable values for any user
      */
     public ArrayList<ArrayList<Float>> getConsolidatedEEG() {
@@ -258,7 +262,6 @@ public final class MbtEEGManager extends BaseModuleManager {
 
     /**
      * Gets the instance of MbtDataAcquisition
-     *
      * @return the instance of MbtDataAcquisition
      */
     public MbtDataAcquisition getDataAcquisition() {
@@ -278,7 +281,6 @@ public final class MbtEEGManager extends BaseModuleManager {
      * onEvent is called by the Event Bus when a BluetoothEEGEvent event is posted
      * This event is published by {@link core.bluetooth.MbtBluetoothManager}:
      * this manager handles Bluetooth communication between the headset and the application and receive raw EEG data from the headset.
-     *
      * @param event contains data transmitted by the publisher : here it contains the raw EEG data array
      */
     @Subscribe(threadMode = ThreadMode.BACKGROUND)
@@ -288,7 +290,6 @@ public final class MbtEEGManager extends BaseModuleManager {
 
     /**
      * Called when a new stream state event has been broadcast on the event bus.
-     *
      * @param newState
      */
     @Subscribe(threadMode = ThreadMode.POSTING)

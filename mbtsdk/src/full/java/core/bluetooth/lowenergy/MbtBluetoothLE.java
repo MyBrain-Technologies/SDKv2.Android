@@ -102,6 +102,10 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         return enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG));
     }
 
+    /**
+     * Enable notifications on HeadsetStatus characteristic in order to have the saturation and DC Offset values
+     * @return
+     */
     public boolean activateDeviceStatusMonitoring(){
         if (!checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_EEG))
             return false;

@@ -3,9 +3,13 @@ package core.eeg.signalprocessing;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
 
 import org.apache.commons.lang.ArrayUtils;
+
+import java.util.ArrayList;
+
+import utils.AsyncUtils;
+import utils.LogUtils;
 
 /**
  * MBTSignalQualityChecker contains methods for computing the EEG signal quality
@@ -14,13 +18,26 @@ import org.apache.commons.lang.ArrayUtils;
  */
 public final class MBTSignalQualityChecker {
 
+    private static final String TAG = MBTSignalQualityChecker.class.getSimpleName();
+
+    public static QCStateMachine qcCurrentState = QCStateMachine.NOT_READY;
+
     /**
      * Initializes the MBT_MainQC object in the JNI which will live throughout all session.
      * Should be destroyed at the end of the session
      */
     @NonNull
     public static String initQualityChecker(){
-        return nativeInitQualityChecker();
+        if(qcCurrentState != QCStateMachine.NOT_READY)
+            return "";
+
+        qcCurrentState = QCStateMachine.INIT;
+
+        String res = nativeInitQualityChecker();
+
+        qcCurrentState = QCStateMachine.IDLE;
+
+        return res;
     }
 
 
@@ -28,39 +45,23 @@ public final class MBTSignalQualityChecker {
      * Destroy the MBT_MainQc object in the JNI at the end of the session.
      */
     public static void deinitQualityChecker(){
-        nativeDeinitQualityChecker();
+
+
+        AsyncUtils.executeAsync(new Runnable() {
+            @Override
+            public void run() {
+                LogUtils.d(TAG, "iscomputing is " + (qcCurrentState == QCStateMachine.COMPUTING ? "true" : "false"));
+                while(qcCurrentState == QCStateMachine.COMPUTING);
+                LogUtils.d(TAG, "deinit quality checker started");
+                qcCurrentState = QCStateMachine.DEINIT;
+                nativeDeinitQualityChecker();
+                qcCurrentState = QCStateMachine.NOT_READY;
+
+            }
+        });
+
     }
 
-    /**
-     * Computes the quality for each provided channels
-     * @param samprate the number of value(s) inside each channel
-     * @param packetLength how long is a packet (time x samprate)
-     * @param channels the channel(s) to be computed
-     * @return the qualities for each provided channels
-     * @exception IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
-     */
-    @NonNull
-    public static double[] computeQualitiesForPacket(final int samprate, final int packetLength,
-                                                     @Nullable final double[]... channels ) {
-
-    if (samprate < 0)
-            throw new IllegalArgumentException("samprate MUST BE POSITIVE!");
-    if (packetLength < 0)
-            throw new IllegalArgumentException("packetLength MUST BE POSITIVE!");
-    if (channels == null || channels.length == 0)
-            throw new IllegalArgumentException("there MUST be at least ONE or MORE channel(s) !");
-
-    final int matrixHeight = channels.length;
-
-    // Creating 2d Matrix-like array
-    final double[][] matrix = new double[matrixHeight][samprate];
-    for (int it = 0 ; it < matrixHeight ; it++){
-        final double[] current = channels[it];
-        for (int it2 = 0; it2 < samprate; it2++)
-            matrix[it][it2] = current[it2];
-    }
-    return nativeComputeQualities(matrix, samprate, packetLength);
-    }
 
     /**
      * Computes the quality for each provided channels
@@ -72,25 +73,25 @@ public final class MBTSignalQualityChecker {
      */
     @NonNull
     public static float[] computeQualitiesForPacketNew(final int samprate, final int packetLength,
-                                                       @Nullable final Float[]... channels ) {
+                                                       @Nullable final ArrayList<ArrayList<Float>> channels ) {
 
         if (samprate < 0)
             throw new IllegalArgumentException("samprate MUST BE POSITIVE!");
         if (packetLength < 0)
             throw new IllegalArgumentException("packetLength MUST BE POSITIVE!");
-        if (channels == null || channels.length == 0)
+        if (channels == null || channels.size() == 0)
             throw new IllegalArgumentException("there MUST be at least ONE or MORE channel(s) !");
 
-        final int matrixHeight = channels.length;
+        //checking first if quality checker is not in an invalid state
+        if(qcCurrentState == QCStateMachine.DEINIT || qcCurrentState == QCStateMachine.NOT_READY)
+            throw new IllegalStateException("quality checker is not in a valid state");
 
-        // Creating 2d Matrix-like array
-        final float[][] matrix = new float[matrixHeight][samprate];
-        for (int it = 0 ; it < matrixHeight ; it++){
-            final Float[] current = channels[it];
-            for (int it2 = 0; it2 < samprate; it2++)
-                matrix[it][it2] = current[it2];
-        }
-        return nativeComputeQualityCheckerNew(matrix, samprate, packetLength);
+        while(qcCurrentState != QCStateMachine.IDLE);
+
+        qcCurrentState = QCStateMachine.COMPUTING;
+        float[] res = nativeComputeQualityCheckerNew(MBTSignalProcessingUtils.channelsToMatrixFloat(channels), samprate, packetLength);
+        qcCurrentState = QCStateMachine.IDLE;
+        return res;
     }
 
 
@@ -107,8 +108,6 @@ public final class MBTSignalQualityChecker {
     }
 
 
-
-
     @NonNull
     private native static String nativeInitQualityChecker();
 
@@ -117,12 +116,14 @@ public final class MBTSignalQualityChecker {
     @NonNull
     private native static float[][] nativeGetModifiedInputData();
 
-
     @NonNull
-    private native static double[] nativeComputeQualities(double[][] matrix, int samprate, int packetLength);
+    public native static float[] nativeComputeQualityCheckerNew(float[][] matrix, int samprate, int packetLength);
 
-    @NonNull
-    public native static float[] nativeComputeQualityCheckerNew(float[][] matrix, int samprate, int packetLengthe);
-
-
+    enum QCStateMachine{
+        NOT_READY,
+        INIT,
+        IDLE,
+        COMPUTING,
+        DEINIT
+    }
 }

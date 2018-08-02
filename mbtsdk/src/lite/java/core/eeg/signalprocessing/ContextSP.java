@@ -27,4 +27,5 @@ public final class ContextSP {
     public final static String LIBRARY_NAME = "mbtalgo_";
 
     public final static int smoothingDuration = 2;
+
 }

@@ -191,10 +191,15 @@ public class MbtDataAcquisition {
         return previousIndex;
     }
 
+
+
+
+
+
     /**
      * Method for unit tests
      */
-    public ArrayList<ArrayList<Float>> getEegMatrix(){
+    public ArrayList<ArrayList<Float>> testGetEegMatrix(){
         return eegManager.getConsolidatedEEG();
     }
 }

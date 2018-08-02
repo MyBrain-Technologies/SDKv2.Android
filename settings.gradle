@@ -1,1 +1,1 @@
-include ':app', ':mbtsdk'
+include ':app', ':mbtsdk', ':app_things'

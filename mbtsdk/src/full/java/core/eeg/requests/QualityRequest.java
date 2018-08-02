@@ -1,4 +1,4 @@
-package core.eeg.signalprocessing.requests;
+package core.eeg.requests;
 
 import java.util.ArrayList;
 

@@ -1,6 +1,5 @@
 package eventbus;
 
-import android.os.Handler;
 import android.support.annotation.NonNull;
 
 import org.greenrobot.eventbus.EventBus;
