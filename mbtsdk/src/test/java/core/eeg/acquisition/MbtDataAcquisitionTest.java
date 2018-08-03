@@ -3,8 +3,10 @@ package core.eeg.acquisition;
 import android.content.Context;
 import android.support.annotation.NonNull;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,7 +19,6 @@ import core.eeg.MbtEEGManager;
 import features.MbtFeatures;
 import features.ScannableDevices;
 
-import static android.support.test.InstrumentationRegistry.getContext;
 import static org.junit.Assert.*;
 
 //@RunWith(RobolectricTestRunner.class)
@@ -25,22 +26,18 @@ public class MbtDataAcquisitionTest {
 
     private MbtDataAcquisition dataAcquisition;
 
+    private Context context = Mockito.mock(Context.class);
+
     @Before
     public void setUp() throws Exception {
-        try {
-            System.loadLibrary("mbtalgo_2.3.0");
-        } catch (@NonNull final UnsatisfiedLinkError e) {
-            e.printStackTrace();
-        }
-        Context context = getContext();
         MbtManager mbtManager = new MbtManager(context);
         MbtEEGManager mbtEEGManager = new MbtEEGManager(context, mbtManager,BtProtocol.BLUETOOTH_LE);
         this.dataAcquisition = new MbtDataAcquisition(mbtEEGManager, BtProtocol.BLUETOOTH_LE);
     }
 
-     @Test
+    @Test
     public void isBitSetZerosTest() {
-       int i = 0;
+        int i = 0;
         byte tempStatus = (byte) 0;
         //Float result = dataAcquisition.isBitSet(tempStatus, i); // private method
         //assertTrue(result.equals(0f)); //check that the tested method return 0f as expected
@@ -86,7 +83,6 @@ public class MbtDataAcquisitionTest {
         assertTrue(MbtFeatures.getNbChannels()==MbtFeatures.VPRO_NB_CHANNELS);
         assertTrue(MbtFeatures.getBluetoothProtocol().equals(BtProtocol.BLUETOOTH_SPP));
 
-        Context context = getContext();
         MbtManager mbtManager = new MbtManager(context);
         MbtEEGManager mbtEEGManager = new MbtEEGManager(context, mbtManager,BtProtocol.BLUETOOTH_SPP);
         this.dataAcquisition = new MbtDataAcquisition(mbtEEGManager, BtProtocol.BLUETOOTH_SPP);
@@ -102,7 +98,7 @@ public class MbtDataAcquisitionTest {
 
     }
 
- @Test
+    @Test
     public void handleDataAbnormalAmountOfDataTest() { //check that we don't have any matrix if a small amount Of EEG Data is given in parameter
 
         byte[] data = new byte[250];
@@ -110,7 +106,10 @@ public class MbtDataAcquisitionTest {
 
         //dataAcquisition.handleDataAcquired(data);
         //assertNull(dataAcquisition.testGetEegMatrix());
+    }
 
+    @After
+    public void tearDown(){
 
     }
 
