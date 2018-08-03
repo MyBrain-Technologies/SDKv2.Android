@@ -8,6 +8,7 @@ import java.util.Arrays;
 
 import config.MbtConfig;
 import core.bluetooth.BtProtocol;
+import core.eeg.signalprocessing.MBTComputeStatistics;
 
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
 import static core.bluetooth.BtProtocol.BLUETOOTH_SPP;
@@ -38,6 +39,10 @@ public final class MbtFeatures{
     public final static int DEFAULT_CLIENT_NOTIFICATION_PERIOD = 1000;
     public static final int MIN_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS = 200;
     public static final int MAX_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS = 60000;
+
+    public static final int MIN_CLIENT_NOTIFICATION_PERIOD_WITH_QUALITIES_IN_MILLIS = 1000;
+    public static final int MAX_CLIENT_NOTIFICATION_PERIOD_WITH_QUALITIES_IN_MILLIS = 1000;
+
     public final static long DEFAULT_BATTERY_READ_PERIOD = 20000;
 
     public final static int DEFAULT_MAX_SCAN_DURATION_IN_MILLIS = 40000;
@@ -85,6 +90,7 @@ public final class MbtFeatures{
     public final static ArrayList<MbtAcquisitionLocations> MELOMIND_GROUNDS = new ArrayList<>(Arrays.asList(MbtAcquisitionLocations.M2));
     public final static ArrayList<MbtAcquisitionLocations> VPRO_GROUNDS = new ArrayList<>();//init values with server data
 
+    public static final int DEFAULT_NUMBER_OF_DATA_TO_DISPLAY = 500;
     public static int getNbChannels(){
         return (MbtConfig.getScannableDevices().equals(MELOMIND) ? MELOMIND_NB_CHANNELS : VPRO_NB_CHANNELS);
     }

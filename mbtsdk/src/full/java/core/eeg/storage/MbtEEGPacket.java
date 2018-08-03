@@ -10,13 +10,19 @@ import java.util.ArrayList;
 public final class MbtEEGPacket {
     @NonNull
     private ArrayList<ArrayList<Float>> channelsData = new ArrayList<>(); //TODO check if we need to set this synchornized
-    @Nullable
-    private ArrayList<Float> qualities = new ArrayList<>();
 
     private ArrayList<Float> statusData = new ArrayList<>();
     @NonNull
     private final long timestamp;
 
+    private ArrayList<Float> qualities;
+
+    public MbtEEGPacket(MbtEEGPacket packetToClone){
+        this.timestamp = packetToClone.getTimeStamp();
+        this.channelsData = packetToClone.getChannelsData();
+        this.statusData = packetToClone.getStatusData();
+        this.qualities = packetToClone.getQualities();
+    }
 
     public MbtEEGPacket(){
         timestamp = System.currentTimeMillis();
@@ -25,37 +31,23 @@ public final class MbtEEGPacket {
     /**
      * Initializes a new instance of the MbtEEGPacket class.
      * @param channelsData The values from all channels
-     * @param qualities The qualities stored in a list. The
-     *                  list size should be equal to the number of channels if there is
-     *                  a status channel.
      */
-    public MbtEEGPacket(@NonNull final ArrayList<ArrayList<Float>> channelsData,
-                        @Nullable final ArrayList<Float> qualities) {
+    public MbtEEGPacket(@NonNull final ArrayList<ArrayList<Float>> channelsData) {
 
         this.channelsData = channelsData;
-        this.qualities = qualities;
-        if(this.qualities == null){
-            this.qualities = new ArrayList<>();
-        }
+
         this.timestamp = System.currentTimeMillis();
     }
 
     /**
      * Initializes a new instance of the MbtEEGPacket class.
      * @param channelsData The values from all channels
-     * @param qualities The qualities stored in a list. The
-     *                  list size should be equal to the number of channels if there is
-     *                  a status channel.
+     * @param statusData The statuses associated
      */
-    public MbtEEGPacket(@NonNull final ArrayList<ArrayList<Float>> channelsData,
-                        @Nullable final ArrayList<Float> qualities, final ArrayList<Float> statusData) {
+    public MbtEEGPacket(@NonNull final ArrayList<ArrayList<Float>> channelsData, final ArrayList<Float> statusData) {
 
         this.channelsData = channelsData;
         this.statusData = statusData;
-        this.qualities = qualities;
-        if(this.qualities == null){
-            this.qualities = new ArrayList<>();
-        }
 
         this.timestamp = System.currentTimeMillis();
 
@@ -100,29 +92,11 @@ public final class MbtEEGPacket {
         return statusData;
     }
 
-    /**
-     * Get the list of qualities
-     * @return the qualities
-     */
-    @Nullable
-    public ArrayList<Float> getQualities() {
-        return qualities;
-    }
-
-    /**
-     * Sets a new value to the qualities list
-     * @return the qualities
-     */
-    public void setQualities(@NonNull ArrayList<Float> qualities) {
-        this.qualities = qualities;
-    }
-
     @Override
     public String toString() {
         return "MbtEEGPacket{" +
                 "EEG Data=" + channelsData +
-                ", qualities=" + qualities +
-                ", status Data=" + statusData +
+                ", statusData=" + statusData +
                 ", timestamp=" + timestamp +
                 '}';
     }
@@ -133,7 +107,7 @@ public final class MbtEEGPacket {
      * @return Returns true if the EEG data list contains no elements.
      */
     public boolean isEmpty(){
-        return this.channelsData.isEmpty() && this.qualities.isEmpty() && this.statusData.isEmpty();
+        return this.channelsData.isEmpty() && this.statusData.isEmpty();
     }
 
     /**
@@ -141,7 +115,7 @@ public final class MbtEEGPacket {
      * Returns false otherwise.
      * @return Returns true if the EEG data list contains only 0.
      */
-    public boolean eegMatrixContainsZerosEegOnly(){
+    public boolean containsZerosEegOnly(){
         int counterOfZeros = 0;
         int matrixSize = this.getChannelsData().size()*this.getChannelsData().get(0).size();
         for (int i = 0; i < this.getChannelsData().size() ; i++){
@@ -153,4 +127,11 @@ public final class MbtEEGPacket {
         return (counterOfZeros == matrixSize); //return true if counter == matrixSize (if matrix contains only 0)
     }
 
+    public ArrayList<Float> getQualities() {
+        return qualities;
+    }
+
+    public void setQualities(ArrayList<Float> qualities) {
+        this.qualities = qualities;
+    }
 }

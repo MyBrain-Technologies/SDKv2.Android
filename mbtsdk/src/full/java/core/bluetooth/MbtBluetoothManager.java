@@ -38,7 +38,7 @@ import core.bluetooth.requests.ReadRequestEvent;
 import core.bluetooth.requests.StreamRequestEvent;
 import core.bluetooth.requests.UpdateConfigurationRequestEvent;
 import core.bluetooth.spp.MbtBluetoothSPP;
-import core.device.RawDeviceMeasure;
+import core.device.DeviceEvents;
 import core.recordingsession.metadata.DeviceInfo;
 import eventbus.EventBusManager;
 import eventbus.events.BluetoothEEGEvent;
@@ -116,9 +116,9 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * - Perform the connect operation if scan is successful.
      * @param deviceName the device bluetooth name.
      */
-    private void scanAndConnect(@NonNull String deviceName){
+    private void scanAndConnect(@Nullable String deviceName){
         if(getCurrentState() == BtState.CONNECTED_AND_READY){
-            if(currentDevice != null && currentDevice.getName().equals(deviceName)){
+            if(deviceName != null && currentDevice != null && currentDevice.getName().equals(deviceName)){
                 notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
             }else{
                 notifyConnectionStateChanged(BtState.ANOTHER_DEVICE_CONNECTED);
@@ -146,7 +146,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
             //Checking location activation
             LocationManager manager = (LocationManager) mContext.getSystemService(Context.LOCATION_SERVICE );
-            if(manager != null && !manager.isProviderEnabled(LocationManager.GPS_PROVIDER)){
+            if(manager != null && !manager.isProviderEnabled(LocationManager.GPS_PROVIDER) && mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS)){
                 notifyConnectionStateChanged(BtState.LOCATION_IS_REQUIRED);
                 return;
             }
@@ -210,7 +210,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     /**
      * This method starts a bluetooth scan operation.
      * if the device to scan is a melomind, the bluetooth LE scanner is invoked.
-     * <p>Requires {@link Manifest.permission#ACCESS_FINE_LOCATION} or {@link Manifest.permission#ACCESS_COARSE_LOCATION} permission.
+     * <p>Requires {@link Manifest.permission#ACCESS_FINE_LOCATION} or {@link Manifest.permission#ACCESS_COARSE_LOCATION} permission
+     * if a GPS sensor is available.
      *
      * If permissions are not given and/or bluetooth device is not Le compatible, discovery scan is started.
      */
@@ -236,7 +237,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * @param deviceName The broadcasting name of the device to scan
      * @return a {@link Future} object holding the {@link BluetoothDevice} instance of the device to scan.
      */
-    private Future<BluetoothDevice> scanSingle(@NonNull final String deviceName){ //todo check that
+    private Future<BluetoothDevice> scanSingle(@Nullable final String deviceName){ //todo check that
         //TODO choose method name accordingly between scan() / scanFor() / ...
 
 
@@ -549,6 +550,13 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
         //TODO improve this method
 
+        //This event is sent to device module if registered
+        if(newState == BtState.CONNECTED_AND_READY && currentDevice != null)
+            EventBusManager.postEvent(new DeviceEvents.NewBluetoothDeviceEvent(currentDevice));
+        else if (newState == BtState.DISCONNECTED)
+            EventBusManager.postEvent(new DeviceEvents.NewBluetoothDeviceEvent(currentDevice = null));
+
+        //This event is sent to MbtManager for user notifications
         EventBusManager.postEvent(new ConnectionStateEvent(newState));
     }
 
@@ -578,7 +586,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
 
     public void notifyNewHeadsetStatus(BtProtocol protocol, @NonNull byte[] payload) {
-        EventBusManager.postEvent(new RawDeviceMeasure(payload));
+        EventBusManager.postEvent(new DeviceEvents.RawDeviceMeasure(payload));
     }
 
     /**
@@ -614,11 +622,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             LogUtils.i(TAG,"bt execution thread is now free");
             requestBeingProcessed = true;
             if(request instanceof ConnectRequestEvent){
-                if(((ConnectRequestEvent)request).getName() == null){
-                    scanDevices(); //not used yet.
-                }else{
-                    scanAndConnect(((ConnectRequestEvent)request).getName());
-                }
+                scanAndConnect(((ConnectRequestEvent)request).getName());
             } else if(request instanceof ReadRequestEvent){
                 performReadOperation(((ReadRequestEvent)request).getDeviceInfo());
             } else if(request instanceof DisconnectRequestEvent){

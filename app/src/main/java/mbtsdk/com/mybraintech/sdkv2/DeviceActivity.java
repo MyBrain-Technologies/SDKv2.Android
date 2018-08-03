@@ -19,19 +19,19 @@ import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
-import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
 import java.util.ArrayList;
 
-import java.util.LinkedList;
 import java.util.Objects;
 import java.util.Queue;
 
 
 import core.bluetooth.BtState;
+import core.device.model.MbtDevice;
 import core.eeg.storage.MbtEEGPacket;
 import engine.MbtClient;
 
+import engine.SimpleRequestCallback;
 import engine.StreamConfig;
 import engine.clientevents.BaseException;
 import engine.clientevents.ConnectionException;
@@ -40,14 +40,13 @@ import engine.clientevents.DeviceInfoListener;
 import engine.clientevents.EEGException;
 import engine.clientevents.EegListener;
 import features.MbtFeatures;
-import org.apache.commons.collections4.queue.CircularFifoQueue;
 
 import static utils.MatrixUtils.invertFloatMatrix;
 
 public class
 DeviceActivity extends AppCompatActivity {
 
-    private static final int MAX_NUMBER_OF_DATA_TO_DSPLAY = 500;
+    private static final int MAX_NUMBER_OF_DATA_TO_DISPLAY = 500;
     private static String TAG = DeviceActivity.class.getName();
     private final int INDEX_STATUS = 0;
 
@@ -131,7 +130,7 @@ DeviceActivity extends AppCompatActivity {
         }
 
         @Override
-        public void onNewPackets(final MbtEEGPacket mbtEEGPackets) {
+        public void onNewPackets(@NonNull final MbtEEGPacket mbtEEGPackets) {
             if(invertFloatMatrix(mbtEEGPackets.getChannelsData()) != null)
                 mbtEEGPackets.setChannelsData(invertFloatMatrix(mbtEEGPackets.getChannelsData()));
 
@@ -139,11 +138,12 @@ DeviceActivity extends AppCompatActivity {
                 if(eegGraph!=null){
                     addEegDataToGraph(mbtEEGPackets);
 
-                    //channel1Quality.setText(getString(R.string.channel_1_qc) + ((mbtEEGPackets.getQualities() != null && mbtEEGPackets.getQualities().get(0) != null) ? mbtEEGPackets.getQualities().get(0) : " -- "));
-                    //channel2Quality.setText(getString(R.string.channel_2_qc) + ( (mbtEEGPackets.getQualities() != null && mbtEEGPackets.getQualities().get(1) != null ) ? mbtEEGPackets.getQualities().get(1) : " -- "));
+                    channel1Quality.setText(getString(R.string.channel_1_qc) + ((mbtEEGPackets.getQualities() != null && mbtEEGPackets.getQualities().get(0) != null) ? mbtEEGPackets.getQualities().get(0) : " -- "));
+                    channel2Quality.setText(getString(R.string.channel_2_qc) + ( (mbtEEGPackets.getQualities() != null && mbtEEGPackets.getQualities().get(1) != null ) ? mbtEEGPackets.getQualities().get(1) : " -- "));
                 }
             }
         }
+
     };
 
 
@@ -165,7 +165,12 @@ DeviceActivity extends AppCompatActivity {
 
         client.setConnectionStateListener(connectionStateListener);
 
-
+        client.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
+            @Override
+            public void onRequestComplete(MbtDevice object) {
+                deviceNameTextView.setText(object.getProductName());
+            }
+        });
     }
 
     private void initDisconnectButton() {
@@ -176,8 +181,6 @@ DeviceActivity extends AppCompatActivity {
                 if(isStreaming)
                     stopStream();
                 client.disconnectBluetooth();
-
-
 
             }
         });
@@ -216,7 +219,7 @@ DeviceActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if(!isStreaming) { //streaming is not in progress : starting streaming
-                    startStream(new StreamConfig.Builder(eegListener).setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD).create());
+                    startStream(new StreamConfig.Builder(eegListener).setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD).useQualities(true).create());
                 }else { //streaming is in progress : stopping streaming
                     stopStream(); // set false to isStreaming et null to the eegListener
                 }
@@ -315,7 +318,7 @@ DeviceActivity extends AppCompatActivity {
             }
             data.notifyDataChanged();
             eegGraph.notifyDataSetChanged();// let the chart know it's data has changed
-            eegGraph.setVisibleXRangeMaximum(MAX_NUMBER_OF_DATA_TO_DSPLAY);// limit the number of visible entries
+            eegGraph.setVisibleXRangeMaximum(MAX_NUMBER_OF_DATA_TO_DISPLAY);// limit the number of visible entries
             eegGraph.moveViewToX((data.getEntryCount()/2));// move to the latest entry
 
         }else{
@@ -331,7 +334,7 @@ DeviceActivity extends AppCompatActivity {
             if(channelData.size()< MbtFeatures.getNbChannels()){
                 throw new IllegalStateException("Incorrect matrix size, one or more channel are missing");
             }else{
-//                if(lineData.getEntryCount()/lineData.getDataSetCount() == MAX_NUMBER_OF_DATA_TO_DSPLAY && bufferedChartData.size()>MAX_NUMBER_OF_DATA_TO_DSPLAY / channelData.get(0).size()) {
+//                if(lineData.getEntryCount()/lineData.getDataSetCount() == MAX_NUMBER_OF_DATA_TO_DISPLAY && bufferedChartData.size()>MAX_NUMBER_OF_DATA_TO_DISPLAY / channelData.get(0).size()) {
 
                 if(channelsHasTheSameNumberOfData(bufferedChartData.element())){
                     for(int currentEegData = 0; currentEegData< bufferedChartData.element().get(0).size(); currentEegData++){ //250 loop
@@ -357,7 +360,7 @@ DeviceActivity extends AppCompatActivity {
             lineData.notifyDataChanged();
 
             eegGraph.notifyDataSetChanged();// let the chart know it's data has changed
-            eegGraph.setVisibleXRangeMaximum(MAX_NUMBER_OF_DATA_TO_DSPLAY); // limit the number of visible entries
+            eegGraph.setVisibleXRangeMaximum(MAX_NUMBER_OF_DATA_TO_DISPLAY); // limit the number of visible entries
             eegGraph.moveViewToX((lineData.getEntryCount()/2));// move the view to the latest entry to avoid manual scrolling
         }else{
             throw new IllegalStateException("Graph not correctly initialized");
@@ -368,13 +371,13 @@ DeviceActivity extends AppCompatActivity {
 
 
         eegDataCounter += mbtEEGPackets.getChannelsData().get(0).size();
-        //if(eegDataCounter <= MAX_NUMBER_OF_DATA_TO_DSPLAY)
+        //if(eegDataCounter <= MAX_NUMBER_OF_DATA_TO_DISPLAY)
             addEntry(mbtEEGPackets.getChannelsData());
 //        else
 //            updateEntry(mbtEEGPackets.getChannelsData());
 //
 //        if(bufferedChartData == null){
-//            bufferedChartData = new CircularFifoQueue<>(MAX_NUMBER_OF_DATA_TO_DSPLAY/mbtEEGPackets.getChannelsData().get(0).size()); //size is the number of packet corresponding to the MAX_NUMBER_OF_DATA_TO_DISPALY
+//            bufferedChartData = new CircularFifoQueue<>(MAX_NUMBER_OF_DATA_TO_DISPLAY/mbtEEGPackets.getChannelsData().get(0).size()); //size is the number of packet corresponding to the MAX_NUMBER_OF_DATA_TO_DISPALY
 //        }
 //        bufferedChartData.add(mbtEEGPackets.getChannelsData());
 

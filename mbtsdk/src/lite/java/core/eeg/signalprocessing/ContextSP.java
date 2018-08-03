@@ -25,4 +25,7 @@ public final class ContextSP {
      * defined by @{@link mbtsdk.com.mybraintech.mbtsdk.BuildConfig} USE_ALGO_VERSION final field
      */
     public final static String LIBRARY_NAME = "mbtalgo_";
+
+    public final static int smoothingDuration = 2;
+
 }

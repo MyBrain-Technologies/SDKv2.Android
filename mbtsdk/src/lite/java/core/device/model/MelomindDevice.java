@@ -1,12 +1,16 @@
 package core.device.model;
 
+import android.bluetooth.BluetoothDevice;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import features.MbtAcquisitionLocations;
+import features.MbtFeatures;
 
 /**
  * Created by manon on 10/10/16.
@@ -14,48 +18,16 @@ import features.MbtAcquisitionLocations;
 @Keep
 public class MelomindDevice extends MbtDevice{
 
-    MelomindDevice(){
-        super();
-    }
-
-    MelomindDevice(@NonNull final String productName, @NonNull final String hardwareVersion,
-                   @NonNull final String firmwareVersion,
-                   @NonNull final String deviceId,
-                   @NonNull final int sampRate,
-                   @NonNull int nbChannels,
-                   @NonNull ArrayList<MbtAcquisitionLocations> acquisitionLocations,
-                   @NonNull ArrayList<MbtAcquisitionLocations> referencesLocations,
-                   @NonNull ArrayList<MbtAcquisitionLocations> groundsLocation,
-                   @NonNull int eegPacketLength) {
-        super(productName, hardwareVersion, firmwareVersion, deviceId, sampRate, nbChannels, acquisitionLocations, referencesLocations, groundsLocation, eegPacketLength);
-
-        this.firmwareVersion = firmwareVersion;
-        this.productName = productName;
-        this.serialNumber = deviceId;
-        this.hardwareVersion = hardwareVersion;
-
-        this.sampRate = sampRate;
-        this.nbChannels = nbChannels;
-        this.acquisitionLocations = acquisitionLocations;
-        this.groundsLocation = groundsLocation;
-        this.referencesLocations = referencesLocations;
-        this.eegPacketLength = eegPacketLength;
-    }
-
-
-    public MelomindDevice(@NonNull String productName, @NonNull int sampRate, @NonNull int nbChannels, @NonNull ArrayList<MbtAcquisitionLocations> acquisitionLocations, @NonNull ArrayList<MbtAcquisitionLocations> referencesLocations, @NonNull ArrayList<MbtAcquisitionLocations> groundsLocation, @NonNull int eegPacketLength) {
-        super(productName, sampRate, nbChannels, acquisitionLocations, referencesLocations, groundsLocation, eegPacketLength);
-        this.firmwareVersion = null;
-        this.productName = productName;
-        this.serialNumber = null;
-        this.hardwareVersion = null;
-
-        this.sampRate = sampRate;
-        this.nbChannels = nbChannels;
-        this.groundsLocation = groundsLocation;
-        this.referencesLocations = referencesLocations;
-        this.acquisitionLocations = acquisitionLocations;
-        this.eegPacketLength = eegPacketLength;
+    public MelomindDevice(@NonNull final BluetoothDevice device){
+        super(device);
+        this.acquisitionLocations = Arrays.asList(MbtAcquisitionLocations.P3, MbtAcquisitionLocations.P4);
+        this.groundsLocation = Arrays.asList(MbtAcquisitionLocations.M2);
+        this.referencesLocations = Arrays.asList(MbtAcquisitionLocations.M1);
+        this.nbChannels = MbtFeatures.MELOMIND_NB_CHANNELS;
+        this.sampRate = MbtFeatures.DEFAULT_SAMPLE_RATE;
+        this.firmwareVersion = "0.0.0";
+        this.hardwareVersion = "0.0.0";
+        this.serialNumber = "0000000000";
     }
 
     /**
@@ -82,7 +54,7 @@ public class MelomindDevice extends MbtDevice{
      * @return the device unique ID
      */
     @Nullable
-    public final String getDeviceId() {
+    public final String getSerialNumber() {
         return this.serialNumber;
     }
 
@@ -129,22 +101,19 @@ public class MelomindDevice extends MbtDevice{
     public final int getNbChannels() {return this.nbChannels;}
 
     @NonNull
-    public final ArrayList<MbtAcquisitionLocations> getAcquisitionLocations() {return this.acquisitionLocations;}
+    public final List<MbtAcquisitionLocations> getAcquisitionLocations() {return this.acquisitionLocations;}
 
     @NonNull
-    public final ArrayList<MbtAcquisitionLocations> getReferencesLocations() {return this.referencesLocations;}
+    public final List<MbtAcquisitionLocations> getReferencesLocations() {return this.referencesLocations;}
 
     @NonNull
-    public final ArrayList<MbtAcquisitionLocations> getGroundsLocation() {return this.groundsLocation;}
-
-    @NonNull
-    public final int getEegPacketLength() {return this.eegPacketLength;}
+    public final List<MbtAcquisitionLocations> getGroundsLocation() {return this.groundsLocation;}
 
     public void setHardwareVersion(@NonNull final String hardwareVersion) {this.hardwareVersion = hardwareVersion;}
 
     public void setFirmwareVersion(@NonNull final String firmwareVersion) {this.firmwareVersion = firmwareVersion;}
 
-    public void setDeviceId(@NonNull final String deviceId) {this.serialNumber = deviceId;}
+    public void setSerialNumber(@NonNull final String deviceId) {this.serialNumber = deviceId;}
 
     public void updateConfiguration(ArrayList<MbtAcquisitionLocations> acquisitionLocationsArrayList, ArrayList<MbtAcquisitionLocations> referenceArrayList, ArrayList<MbtAcquisitionLocations> grounLocationsArrayList){
         this.acquisitionLocations = acquisitionLocationsArrayList;

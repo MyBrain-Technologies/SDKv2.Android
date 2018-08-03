@@ -12,7 +12,7 @@ import features.MbtFeatures;
 
 /**
  * This class aims at configuring the stream process. It contains user configurable
- * parameters to specify how the streaming is going to be performed.
+ * parameters to specify how the streaming is going to be.
  *
  * <p>Use the {@link Builder} class to instanciate this.</p>
  */
@@ -25,7 +25,10 @@ public final class StreamConfig {
 
     private final DeviceStatusListener deviceStatusListener;
 
-    private StreamConfig(EegListener<EEGException> eegListener, int notificationPeriod, DeviceStatusListener deviceStatusListener){
+    private final boolean computeQualities;
+
+    private StreamConfig(boolean computeQualities, EegListener<EEGException> eegListener, int notificationPeriod, DeviceStatusListener deviceStatusListener){
+        this.computeQualities = computeQualities;
         this.eegListener = eegListener;
         this.notificationPeriod = notificationPeriod;
         this.deviceStatusListener = deviceStatusListener;
@@ -43,6 +46,10 @@ public final class StreamConfig {
         return notificationPeriod;
     }
 
+    public boolean shouldComputeQualities() {
+        return computeQualities;
+    }
+
 
     /**
      * Builder class to ease construction of the {@link StreamConfig} instance.
@@ -57,6 +64,8 @@ public final class StreamConfig {
         @NonNull
         private final EegListener<EEGException> eegListener;
 
+        private boolean computeQualities = false;
+
 
         /**
          * The eeg Listener is mandatory.
@@ -66,6 +75,26 @@ public final class StreamConfig {
             this.eegListener = eegListener;
         }
 
+//        public Builder setStreamDuration(long durationInMillis){
+//            this.streamDuration = streamDuration;
+//            return this;
+//        }
+
+        /**
+         * Says whether or not the qualities are automatically computed while streaming EEG.
+         * This requires some specific configuration: One complete period of EEG acquisition is mandatory, ie:
+         * at least {@link MbtFeatures#DEFAULT_SAMPLE_RATE} values are mandatory to compute qualities. It can be simply seen as
+         * one second of data.
+         *
+         * <p>The minimum notification period will be automatically set to 1000ms if qualities are enabled.</p>
+         * <p>If the input {@link #notificationPeriod} is set by the user to less than 1000ms, the {@link EEGException#INVALID_PARAMETERS} error will be thrown</p>
+         * @param useQualities a flag indicating whether or not the qualities shall be computed
+         * @return the builder instance
+         */
+        public Builder useQualities(boolean useQualities){
+            this.computeQualities = useQualities;
+            return this;
+        }
 
         /**
          * Use this method to specify how much eeg you want to receive in the {@link EegListener#onNewPackets(MbtEEGPacket)} method.
@@ -92,22 +121,18 @@ public final class StreamConfig {
 
         @Nullable
         public StreamConfig create(){
-            return new StreamConfig(this.eegListener, this.notificationPeriod, this.deviceStatusListener);
+            return new StreamConfig(this.computeQualities, this.eegListener, this.notificationPeriod, this.deviceStatusListener);
         }
-
-
-
-
     }
 
     /**
      * Checks if the configuration parameters are correct
      * @return true is the configuration is correct, false otherwise
      */
-    public boolean isConfigCorrect() {
-        if(this.notificationPeriod <  MbtFeatures.MIN_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS)
+    boolean isConfigCorrect() {
+        if(this.notificationPeriod <  (this.computeQualities ? MbtFeatures.MIN_CLIENT_NOTIFICATION_PERIOD_WITH_QUALITIES_IN_MILLIS : MbtFeatures.MIN_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS))
             return false;
-        else if(notificationPeriod >  MbtFeatures.MAX_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS )
+        else if(notificationPeriod >  (this.computeQualities ? MbtFeatures.MAX_CLIENT_NOTIFICATION_PERIOD_WITH_QUALITIES_IN_MILLIS : MbtFeatures.MAX_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS))
             return false;
 
         return true;

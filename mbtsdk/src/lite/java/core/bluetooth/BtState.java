@@ -50,7 +50,7 @@ public enum BtState {
     SCAN_TIMEOUT,
 
     /**
-     * Failed to retrieve data
+     * Failed to retrieve data. Bluetooth SPP only
      */
     STREAM_ERROR,
 

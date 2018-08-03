@@ -2,7 +2,6 @@ package core.eeg;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
-import android.util.Log;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.greenrobot.eventbus.Subscribe;
@@ -12,12 +11,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import config.MbtConfig;
 import core.BaseModuleManager;
 import core.MbtManager;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.IStreamable;
+import core.bluetooth.requests.StreamRequestEvent;
 import core.eeg.acquisition.MbtDataAcquisition;
+import core.eeg.signalprocessing.ContextSP;
 import core.eeg.signalprocessing.MBTCalibrationParameters;
 import core.eeg.signalprocessing.MBTComputeRelaxIndex;
 import core.eeg.signalprocessing.MBTComputeStatistics;
@@ -29,12 +29,11 @@ import core.eeg.storage.RawEEGSample;
 import eventbus.EventBusManager;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.BluetoothEEGEvent;
+import features.MbtFeatures;
+import mbtsdk.com.mybraintech.mbtsdk.BuildConfig;
 import utils.AsyncUtils;
 import utils.LogUtils;
-
-import static config.MbtConfig.getSampleRate;
-import static core.eeg.signalprocessing.MBTSignalQualityChecker.computeQualitiesForPacketNew;
-import static features.ScannableDevices.VPRO;
+import utils.MatrixUtils;
 
 
 /**
@@ -50,7 +49,7 @@ import static features.ScannableDevices.VPRO;
  * @version Sophie ZECRI 25/05/2018
  */
 
-public final class MbtEEGManager extends BaseModuleManager{
+public final class MbtEEGManager extends BaseModuleManager {
 
     private static final String TAG = MbtEEGManager.class.getName();
 
@@ -60,19 +59,34 @@ public final class MbtEEGManager extends BaseModuleManager{
 
     private BtProtocol protocol;
 
-    public MbtEEGManager(@NonNull Context context, MbtManager mbtManagerController, @NonNull BtProtocol protocol){
+    private boolean hasQualities = false;
+
+//    private boolean requestBeingProcessed = false;
+//    private MbtEEGManager.RequestThread requestThread;
+//    private Handler requestHandler;
+
+    public MbtEEGManager(@NonNull Context context, MbtManager mbtManagerController, @NonNull BtProtocol protocol) {
         super(context, mbtManagerController);
         this.protocol = protocol;
         this.dataAcquisition = new MbtDataAcquisition(this, protocol);
         this.dataBuffering = new MbtDataBuffering(this);
+        try {
+            System.loadLibrary(ContextSP.LIBRARY_NAME + BuildConfig.USE_ALGO_VERSION);
+        } catch (final UnsatisfiedLinkError e) {
+            e.printStackTrace();
+        }
+//        requestThread = new MbtEEGManager.RequestThread("requestThread", Thread.MAX_PRIORITY);
+//        requestThread.start();
+//        requestHandler = new Handler(requestThread.getLooper());
     }
 
     /**
      * Stores the EEG raw data buffer when the maximum size of the buffer is reached
      * In case packet size is too large for buffer, the overflow buffer is stored in a second buffer
+     *
      * @param rawEEGdata the raw EEG data array acquired by the headset and transmitted by Bluetooth to the application
      */
-    public void storePendingDataInBuffer(@NonNull final ArrayList<RawEEGSample> rawEEGdata){
+    public void storePendingDataInBuffer(@NonNull final ArrayList<RawEEGSample> rawEEGdata) {
         dataBuffering.storePendingDataInBuffer(rawEEGdata);
     }
 
@@ -81,19 +95,19 @@ public final class MbtEEGManager extends BaseModuleManager{
      * Reconfigures the temporary buffers that are used to store the raw EEG data until conversion to user-readable EEG data.
      * Reset the buffers arrays, status list, the number of status bytes and the packet Size
      */
-    private void reinitBuffers(){
+    private void reinitBuffers() {
         dataBuffering.reinitBuffers();
         dataAcquisition.resetIndex();
     }
 
 
-
     /**
      * Convert the raw EEG data array into a readable EEG data matrix of float values
      * and notify that EEG data is ready to the User Interface
+     *
      * @param toDecodeRawEEG the EEG raw data array to convert
      */
-    public void convertToEEG(@NonNull final ArrayList<RawEEGSample> toDecodeRawEEG){
+    public void convertToEEG(@NonNull final ArrayList<RawEEGSample> toDecodeRawEEG) {
         AsyncUtils.executeAsync(new Runnable() {
             @Override
             public void run() {
@@ -101,8 +115,8 @@ public final class MbtEEGManager extends BaseModuleManager{
 
                 ArrayList<Float> toDecodeStatus = new ArrayList<>();
                 for (RawEEGSample rawEEGSample : toDecodeRawEEG) {
-                    if(rawEEGSample.getStatus() != null){
-                        if(rawEEGSample.getStatus() != Float.NaN)
+                    if (rawEEGSample.getStatus() != null) {
+                        if (rawEEGSample.getStatus() != Float.NaN)
                             toDecodeStatus.add(rawEEGSample.getStatus());
                     }
                 }
@@ -118,117 +132,114 @@ public final class MbtEEGManager extends BaseModuleManager{
     /**
      * Publishes a ClientReadyEEGEvent event to the Event Bus to notify the client that the EEG raw data have been converted.
      * The event returns a list of MbtEEGPacket object, that contains the EEG data, and their associated qualities and status
+     *
      * @param eegPackets the list that contains EEG packets ready to use for the client.
      */
-    public void notifyEEGDataIsReady(@NonNull MbtEEGPacket eegPackets) {
+    public void notifyEEGDataIsReady(@NonNull final MbtEEGPacket eegPackets) {
         LogUtils.d(TAG, "notify EEG Data Is Ready ");
-        EventBusManager.postEvent(new ClientReadyEEGEvent(eegPackets));
+
+        AsyncUtils.executeAsync(new Runnable() {
+            @Override
+            public void run() {
+                if(hasQualities){
+                    eegPackets.setQualities(computeEEGSignalQuality(eegPackets));
+                }
+                EventBusManager.postEvent(new ClientReadyEEGEvent(eegPackets));
+            }
+        });
+
     }
 
     /**
      * Initializes the main quality checker object in the JNI which will live throughout all session.
      * Should be destroyed at the end of the session
      */
-    @NonNull
-    public String initQualityChecker() {
-        return MBTSignalQualityChecker.initQualityChecker();
+    private void initQualityChecker() {
+        ContextSP.SP_VERSION = MBTSignalQualityChecker.initQualityChecker();
     }
 
     /**
      * Destroy the main quality checker object in the JNI at the end of the session.
      */
-    public void deinitQualityChecker() {
+    private void deinitQualityChecker() {
         MBTSignalQualityChecker.deinitQualityChecker();
     }
 
     /**
      * Computes the result of the previously done session
-     * @param bestChannel the best quality channel index
-     * @param sampRate the number of value(s) inside each channel
+     *
+     * @param bestChannel  the best quality channel index
+     * @param sampRate     the number of value(s) inside each channel
      * @param packetLength how long is a packet (time x samprate)
-     * @param packets the EEG packets containing the EEG data matrix, their associated status and qualities.
+     * @param packets      the EEG packets containing the EEG data matrix, their associated status and qualities.
      * @return the result of the previously done session
-     * @exception IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
+     * @throws IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
      */
     @NonNull
-    public HashMap<String, Float> computeStatistics(final int bestChannel, final int sampRate, final int packetLength, final MbtEEGPacket... packets){
+    public HashMap<String, Float> computeStatistics(final int bestChannel, final int sampRate, final int packetLength, final MbtEEGPacket... packets) {
         return MBTComputeStatistics.computeStatistics(bestChannel, sampRate, packetLength, packets);
     }
 
     /**
      * Computes the result of the previously done session
+     *
      * @param threshold the level above which the relaxation indexes are considered in a relaxed state (under this threshold, they are considered not relaxed)
      * @param snrValues the array that contains the relaxation indexes of the session
      * @return the qualities for each provided channels
-     * @exception IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
+     * @throws IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
      */
     @NonNull
-    public HashMap<String, Float> computeStatisticsSNR(final float threshold, @NonNull final Float[] snrValues){
+    public HashMap<String, Float> computeStatisticsSNR(final float threshold, @NonNull final Float[] snrValues) {
         return MBTComputeStatistics.computeStatisticsSNR(threshold, snrValues);
     }
 
     /**
      * Computes the quality for each provided channels
-     * @param consolidatedEEG the user-readable EEG data matrix
-     * @param packetLength how long is a packet (time x samprate)
-     * The Melomind headset has 2 channels and the VPRO headset has 9 channels.
+     *
+     * @param packet the user-readable EEG data matrix
+     *                        The Melomind headset has 2 channels and the VPRO headset has 9 channels.
      * @return an array that contains the quality of each EEG acquisition channels
      * This array contains 2 qualities (items) if the headset used is MELOMIND.
      * This array contains 9 qualities (items) if the headset used is VPRO.
-     * @exception IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
+     * @throws IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
      */
-    public ArrayList<Float> computeEEGSignalQuality(ArrayList<ArrayList<Float>> consolidatedEEG, int packetLength){
+    private ArrayList<Float> computeEEGSignalQuality(final MbtEEGPacket packet) {
 
-        float[] qualities;
-        Float[] channel1 = new Float[getSampleRate()];
-        Float[] channel2 = new Float[getSampleRate()];
-        //MELOMIND & VPRO headset have at least 2 channels
-        Float[] channel3, channel4, channel5, channel6, channel7, channel8, channel9 = null;
-        //For the VPRO, the others channels are initialized after
-        consolidatedEEG.get(0).toArray(channel1);
-        consolidatedEEG.get(1).toArray(channel2);
+        if(packet.getChannelsData() != null && packet.getChannelsData().size()!=0){
+            long tsBefore = System.currentTimeMillis();
+            float[] qualities = {-1f,-1f};
+            try{
+                qualities = MBTSignalQualityChecker.computeQualitiesForPacketNew(MbtFeatures.getSampleRate(), MbtFeatures.getSampleRate(), MatrixUtils.invertFloatMatrix(packet.getChannelsData()));
+            } catch (IllegalStateException e){
+                e.printStackTrace();
+            }
 
-        if(MbtConfig.getScannableDevices().equals(VPRO)) {
-
-            channel3 = new Float[getSampleRate()];
-            channel4 = new Float[getSampleRate()];
-            channel5 = new Float[getSampleRate()];
-            channel6 = new Float[getSampleRate()];
-            channel7 = new Float[getSampleRate()];
-            channel8 = new Float[getSampleRate()];
-            channel9 = new Float[getSampleRate()];
-
-            consolidatedEEG.get(2).toArray(channel3);
-            consolidatedEEG.get(3).toArray(channel4);
-            consolidatedEEG.get(4).toArray(channel5);
-            consolidatedEEG.get(5).toArray(channel6);
-            consolidatedEEG.get(6).toArray(channel7);
-            consolidatedEEG.get(7).toArray(channel8);
-            consolidatedEEG.get(8).toArray(channel9);
-
-            qualities = computeQualitiesForPacketNew(getSampleRate(),packetLength, channel1, channel2, channel3, channel4, channel5, channel6, channel7, channel8, channel9);
-        }else //MELOMIND headset
-            qualities = computeQualitiesForPacketNew(getSampleRate(),packetLength, channel1, channel2);
-        return (ArrayList<Float>) Arrays.asList(ArrayUtils.toObject(qualities)); //convert float array into Float Arraylist
+            LogUtils.i(TAG,"quality computation duration is " + (System.currentTimeMillis()-tsBefore));
+            return new ArrayList<>(Arrays.asList(ArrayUtils.toObject(qualities)));
+        }
+//        EventBusManager.postEvent(new QualityRequest(null, listedQualities));
+//        //requestBeingProcessed  = false;
+        return null;
     }
 
     /**
      * Computes the relaxation index using the provided <code>MbtEEGPacket</code>.
      * For now, we admit there are only 2 channels for each packet
-     * @param sampRate the samprate of a channel (must be consistent)
+     *
+     * @param sampRate    the samprate of a channel (must be consistent)
      * @param calibParams the calibration paramters previously performed
-     * the EEG packets containing EEG data, theirs status and qualities.
+     *                    the EEG packets containing EEG data, theirs status and qualities.
      * @return the relaxation index
-     * @exception IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
+     * @throws IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
      */
-    public float computeRelaxIndex(int sampRate, MBTCalibrationParameters calibParams, MbtEEGPacket... packets){
-        return MBTComputeRelaxIndex.computeRelaxIndex(sampRate,calibParams,packets);
+    private float computeRelaxIndex(int sampRate, MBTCalibrationParameters calibParams, MbtEEGPacket... packets) {
+        return MBTComputeRelaxIndex.computeRelaxIndex(sampRate, calibParams, packets);
     }
 
     /**
      * Resets the relaxation index.
      */
-    public void reinitRelaxIndexVariables(){
+    private void reinitRelaxIndexVariables() {
         MBTComputeRelaxIndex.reinitRelaxIndexVariables();
     }
 
@@ -261,8 +272,8 @@ public final class MbtEEGManager extends BaseModuleManager{
     /**
      * Unregister the MbtEEGManager class from the bus to avoid memory leak
      */
-    public void deinit(){ //TODO CALL WHEN MbtEEGManager IS NOT USED ANYMORE TO AVOID MEMORY LEAK
-        EventBusManager.registerOrUnregister(false,this);
+    public void deinit() { //TODO CALL WHEN MbtEEGManager IS NOT USED ANYMORE TO AVOID MEMORY LEAK
+        EventBusManager.registerOrUnregister(false, this);
     }
 
 
@@ -274,7 +285,7 @@ public final class MbtEEGManager extends BaseModuleManager{
      * @param event contains data transmitted by the publisher : here it contains the raw EEG data array
      */
     @Subscribe(threadMode = ThreadMode.BACKGROUND)
-    public void onEvent(BluetoothEEGEvent event){ //warning : this method is used
+    public void onEvent(BluetoothEEGEvent event) { //warning : this method is used
         dataAcquisition.handleDataAcquired(event.getData());
     }
 
@@ -283,9 +294,66 @@ public final class MbtEEGManager extends BaseModuleManager{
      * @param newState
      */
     @Subscribe(threadMode = ThreadMode.POSTING)
-    public void onStreamStateChanged(IStreamable.StreamState newState){
-        if(newState == IStreamable.StreamState.STOPPED)
+    public void onStreamStateChanged(IStreamable.StreamState newState) {
+        if (newState == IStreamable.StreamState.STOPPED)
             reinitBuffers();
     }
+
+    @Subscribe
+    public void onStreamStartedOrStopped(StreamRequestEvent event){
+        if(event.isStart() && event.shouldComputeQualities()){
+            hasQualities = true;
+            initQualityChecker();
+        }
+        else if(!event.isStart())
+            deinitQualityChecker();
+
+    }
+
+
+//    /**
+//     * Add the new {@link EegRequests} to the handler thread that will execute tasks one after another
+//     * This method must return quickly in order not to block the thread.
+//     * @param request the new {@link EegRequests } to execute
+//     */
+//    @Subscribe(threadMode = ThreadMode.ASYNC)
+//    public void onNewEegRequest(final EegRequests request){
+//        LogUtils.i(TAG, "onNewEEGRequest");
+//
+//            requestHandler.post(new Runnable() {
+//                @Override
+//                public void run() {
+//                    requestThread.parseRequest(request);
+//                }
+//            });
+//    }
+
+//    private class RequestThread extends HandlerThread {
+//        RequestThread(String name) {
+//            super(name);
+//        }
+//
+//        RequestThread(String name, int priority) {
+//            super(name, priority);
+//        }
+//
+//        @Override
+//        protected void onLooperPrepared() {
+//            super.onLooperPrepared();
+//        }
+//
+//        /**
+//         * Checks the subclass type of {@link EegRequests} and handles the correct method/action to perform.
+//         *
+//         * @param request the {@link EegRequests} request to execute.
+//         */
+//        void parseRequest(EegRequests request) {
+//            LogUtils.i(TAG, "parsing new request");
+//            requestBeingProcessed = true;
+//            if(request instanceof QualityRequest){
+//                computeEEGSignalQuality(((QualityRequest) request).testGetEegMatrix());
+//            }
+//        }
+//    }
 
 }

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="mbtsdk.com.mybraintech.sdkv2">
+    <uses-permission android:name="com.google.android.things.permission.USE_PERIPHERAL_IO"/>
+
+    <application
+        android:allowBackup="true"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme"
+        android:name="com.mybraintech.app_things.TestApp">
+        <uses-library android:name="com.google.android.things" />
+
+        <activity
+            android:name="com.mybraintech.app_things.HomeActivity"
+            android:windowSoftInputMode="stateAlwaysHidden"
+            >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.IOT_LAUNCHER" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="com.mybraintech.app_things.DeviceActivity"
+            android:configChanges="orientation|screenSize" >
+
+        </activity>
+    </application>
+
+</manifest>
