@@ -46,19 +46,20 @@ public final class MBTSignalQualityChecker {
      */
     public static void deinitQualityChecker(){
 
+        LogUtils.d(TAG, "iscomputing is " + (qcCurrentState == QCStateMachine.COMPUTING ? "true" : "false"));
+        while(qcCurrentState == QCStateMachine.COMPUTING);
+        LogUtils.d(TAG, "deinit quality checker started");
+        qcCurrentState = QCStateMachine.DEINIT;
+        nativeDeinitQualityChecker();
+        qcCurrentState = QCStateMachine.NOT_READY;
 
-        AsyncUtils.executeAsync(new Runnable() {
-            @Override
-            public void run() {
-                LogUtils.d(TAG, "iscomputing is " + (qcCurrentState == QCStateMachine.COMPUTING ? "true" : "false"));
-                while(qcCurrentState == QCStateMachine.COMPUTING);
-                LogUtils.d(TAG, "deinit quality checker started");
-                qcCurrentState = QCStateMachine.DEINIT;
-                nativeDeinitQualityChecker();
-                qcCurrentState = QCStateMachine.NOT_READY;
-
-            }
-        });
+//        AsyncUtils.executeAsync(new Runnable() {
+//            @Override
+//            public void run() {
+//
+//
+//            }
+//        });
 
     }
 
