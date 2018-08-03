@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.Random;
 
 import core.eeg.storage.MbtEEGPacket;
-import mbtsdk.com.mybraintech.mbtsdk.BuildConfig;
 
 import static org.junit.Assert.*;
 
@@ -23,6 +22,7 @@ public class MBTCalibratorTest {
             e.printStackTrace();
         }
     }
+
     @Test
     public void calibrateNewTest() {
         final int sampRate = 250;

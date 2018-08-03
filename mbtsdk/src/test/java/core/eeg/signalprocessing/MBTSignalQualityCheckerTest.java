@@ -2,6 +2,8 @@ package core.eeg.signalprocessing;
 
 import org.junit.Test;
 
+import java.util.ArrayList;
+
 import static org.junit.Assert.*;
 
 public class MBTSignalQualityCheckerTest {
@@ -47,24 +49,24 @@ public class MBTSignalQualityCheckerTest {
     public void computeQualitiesForPacketNegativeSampRate() {
         final int samprate = -1; //check that IllegalArgumentException is raised if sampRate is negative
         final int packetLength = 10;
-        final double[] channel = new double[0];
-        MBTSignalQualityChecker.computeQualitiesForPacket(samprate,packetLength,channel);
+        final ArrayList<ArrayList<Float>> channel = new ArrayList<>();
+        MBTSignalQualityChecker.computeQualitiesForPacketNew(samprate,packetLength,channel);
     }
 
     @Test (expected = IllegalArgumentException.class)
     public void computeQualitiesForPacketNegativePacketLength() {
         final int samprate = 250;
         final int packetLength = -1; //check that IllegalArgumentException is raised if packetsLength is negative
-        final double[] channel = new double[0];
-        MBTSignalQualityChecker.computeQualitiesForPacket(samprate,packetLength,channel);
+        final ArrayList<ArrayList<Float>> channel = new ArrayList<>();
+        MBTSignalQualityChecker.computeQualitiesForPacketNew(samprate,packetLength,channel);
     }
 
     @Test (expected = NullPointerException.class)
     public void computeQualitiesForPacketNullChannel() {
         final int samprate = 250;
         final int packetLength = 250;
-        final double[] channels =  null; //check that Exception is raised if channel is null
-        MBTSignalQualityChecker.computeQualitiesForPacket(samprate,packetLength,channels);
+        final ArrayList<ArrayList<Float>> channels =  null; //check that Exception is raised if channel is null
+        MBTSignalQualityChecker.computeQualitiesForPacketNew(samprate,packetLength,channels);
     }
 
     // /!\ Problem : UnsatisfiedLinkError is raised /!\
