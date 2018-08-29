@@ -66,6 +66,7 @@ public class MbtDataConversion {
             }
             eegData.add(consolidatedEEGSample);
         }
+
         return eegData;
     }
 

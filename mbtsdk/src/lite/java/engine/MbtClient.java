@@ -147,7 +147,7 @@ public final class MbtClient {
         else
             MbtConfig.eegBufferLengthClientNotif = (int)((streamConfig.getNotificationPeriod()* MbtFeatures.DEFAULT_SAMPLE_RATE)/1000);
 
-        mbtManager.startStream(false, streamConfig.getEegListener(), streamConfig.getDeviceStatusListener());
+        mbtManager.startStream(streamConfig.shouldComputeQualities(), streamConfig.getEegListener(), streamConfig.getDeviceStatusListener());
     }
 
 

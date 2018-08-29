@@ -2,6 +2,7 @@ package core.eeg;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.util.Log;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.greenrobot.eventbus.Subscribe;
@@ -120,8 +121,9 @@ public final class MbtEEGManager extends BaseModuleManager {
                             toDecodeStatus.add(rawEEGSample.getStatus());
                     }
                 }
-
                 consolidatedEEG = MbtDataConversion.convertRawDataToEEG(toDecodeRawEEG, protocol); //convert byte table data to Float matrix and store the matrix in MbtEEGManager as eegResult attribute
+                dataAcquisition.consolidatedEEG = consolidatedEEG;
+                Log.e(TAG," consolidated eeg  "+dataAcquisition.consolidatedEEG.toString());//todo remove after tests
 
                 dataBuffering.storeConsolidatedEegPacketInPacketBuffer(consolidatedEEG, toDecodeStatus);// if the packet buffer is full, this method returns the non null packet buffer
 
@@ -201,6 +203,7 @@ public final class MbtEEGManager extends BaseModuleManager {
      * @return an array that contains the quality of each EEG acquisition channels
      * This array contains 2 qualities (items) if the headset used is MELOMIND.
      * This array contains 9 qualities (items) if the headset used is VPRO.
+     * The method computes and displays the duration for quality computation.
      * @throws IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
      */
     private ArrayList<Float> computeEEGSignalQuality(final MbtEEGPacket packet) {
@@ -243,30 +246,12 @@ public final class MbtEEGManager extends BaseModuleManager {
         MBTComputeRelaxIndex.reinitRelaxIndexVariables();
     }
 
-
-    /**
-     * Gets the MbtManager instance.
-     * MbtManager is responsible for managing all the package managers
-     * @return the MbtManager instance.
-     */
-    public MbtManager getMbtManager() {
-        return mbtManager;
-    }
-
     /**
      * Gets the user-readable EEG data matrix
      * @return the converted EEG data matrix that contains readable values for any user
      */
     public ArrayList<ArrayList<Float>> getConsolidatedEEG() {
         return consolidatedEEG;
-    }
-
-    /**
-     * Gets the instance of MbtDataAcquisition
-     * @return the instance of MbtDataAcquisition
-     */
-    public MbtDataAcquisition getDataAcquisition() {
-        return dataAcquisition;
     }
 
     /**

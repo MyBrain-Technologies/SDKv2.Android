@@ -73,12 +73,6 @@ public final class MbtEEGManager extends BaseModuleManager {
         this.dataAcquisition = new MbtDataAcquisition(this, protocol);
         this.dataBuffering = new MbtDataBuffering(this);
 
-        try {
-            System.loadLibrary(ContextSP.LIBRARY_NAME + BuildConfig.USE_ALGO_VERSION);
-        } catch (final UnsatisfiedLinkError e) {
-            e.printStackTrace();
-        }
-
 
 //        requestThread = new MbtEEGManager.RequestThread("requestThread", Thread.MAX_PRIORITY);
 //        requestThread.start();
@@ -161,6 +155,12 @@ public final class MbtEEGManager extends BaseModuleManager {
      * Should be destroyed at the end of the session
      */
     private void initQualityChecker() {
+        try {
+            System.loadLibrary(ContextSP.LIBRARY_NAME + BuildConfig.USE_ALGO_VERSION);
+        } catch (final UnsatisfiedLinkError e) {
+            e.printStackTrace();
+        }
+
         ContextSP.SP_VERSION = MBTSignalQualityChecker.initQualityChecker();
     }
 

@@ -145,15 +145,6 @@ public final class MbtManager{
         EventBusManager.postEvent(new StreamRequestEvent(false, false, false));
     }
 
-    /**
-     * Posts an event to compute the signal quality of the EEG signal
-     */
-    public void computeEEGSignalQuality(ArrayList<ArrayList<Float>> consolidatedEEG){
-        if(consolidatedEEG.get(0).size() > MbtFeatures.DEFAULT_NUMBER_OF_DATA_TO_DISPLAY)
-            EventBusManager.postEvent(new QualityRequest(consolidatedEEG,null));
-        else
-            throw new IllegalArgumentException("You must acquire at least 1 second of EEG data to compute its signal quality");
-    }
 
     /**
      * Called when a new device info event has been broadcast on the event bus.

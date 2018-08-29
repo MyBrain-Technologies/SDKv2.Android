@@ -61,7 +61,7 @@ public class MBTSignalQualityCheckerTest {
         MBTSignalQualityChecker.computeQualitiesForPacketNew(samprate,packetLength,channel);
     }
 
-    @Test (expected = NullPointerException.class)
+    @Test (expected = IllegalArgumentException.class)
     public void computeQualitiesForPacketNullChannel() {
         final int samprate = 250;
         final int packetLength = 250;

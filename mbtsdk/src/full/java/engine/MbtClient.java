@@ -9,6 +9,7 @@ import java.util.ArrayList;
 
 import config.MbtConfig;
 import core.MbtManager;
+import core.bluetooth.BtState;
 import core.device.model.MbtDevice;
 import core.eeg.storage.MbtEEGPacket;
 import core.recordingsession.metadata.DeviceInfo;
@@ -170,7 +171,7 @@ public final class MbtClient {
         else
             MbtConfig.eegBufferLengthClientNotif = (int)((streamConfig.getNotificationPeriod()* MbtFeatures.DEFAULT_SAMPLE_RATE)/1000);
 
-        mbtManager.startStream(false, streamConfig.getEegListener(), streamConfig.getDeviceStatusListener());
+        mbtManager.startStream(streamConfig.shouldComputeQualities(), streamConfig.getEegListener(), streamConfig.getDeviceStatusListener());
     }
 
 
