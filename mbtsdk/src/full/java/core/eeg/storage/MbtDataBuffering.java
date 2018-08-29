@@ -2,6 +2,7 @@ package core.eeg.storage;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import org.apache.commons.lang.ArrayUtils;
 
@@ -50,13 +51,9 @@ public class MbtDataBuffering {
 
 
     public MbtDataBuffering(@NonNull MbtEEGManager eegManagerController) {
-
         eegManager = eegManagerController;
-
         pendingRawData = new ArrayList<>();
         mbtEEGPacketsBuffer = new MbtEEGPacket();
-
-
     }
 
     /**
@@ -70,6 +67,7 @@ public class MbtDataBuffering {
         pendingRawData.addAll(data);
 
         if(pendingRawData.size() >= MbtFeatures.DEFAULT_MAX_PENDING_RAW_DATA_BUFFER_SIZE){
+            Log.e(TAG," buffer size reached");//todo remove after tests
             notifyPendingRawDataBufferFull();
         }
     }

@@ -3,9 +3,9 @@ package core.eeg.acquisition;
 import android.content.Context;
 import android.support.annotation.NonNull;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
 import java.util.ArrayList;
@@ -19,7 +19,9 @@ import core.eeg.MbtEEGManager;
 import features.MbtFeatures;
 import features.ScannableDevices;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 //@RunWith(RobolectricTestRunner.class)
 public class MbtDataAcquisitionTest {
@@ -30,35 +32,57 @@ public class MbtDataAcquisitionTest {
 
     @Before
     public void setUp() throws Exception {
-        MbtManager mbtManager = new MbtManager(context);
-        MbtEEGManager mbtEEGManager = new MbtEEGManager(context, mbtManager,BtProtocol.BLUETOOTH_LE);
-        this.dataAcquisition = new MbtDataAcquisition(mbtEEGManager, BtProtocol.BLUETOOTH_LE);
+        /*try {
+            System.loadLibrary("mbtalgo_2.3.1");
+        } catch (@NonNull final UnsatisfiedLinkError e) {
+            e.printStackTrace();
+        }*/
+        BtProtocol protocol = BtProtocol.BLUETOOTH_LE;
+        this.dataAcquisition = new MbtDataAcquisition(new MbtEEGManager(context, new MbtManager(context),protocol),protocol);
+        assertNotNull(this.dataAcquisition.getTestEegManager());
+
     }
 
     @Test
-    public void isBitSetZerosTest() {
-        int i = 0;
-        byte tempStatus = (byte) 0;
-        //Float result = dataAcquisition.isBitSet(tempStatus, i); // private method
-        //assertTrue(result.equals(0f)); //check that the tested method return 0f as expected
+    public void handleDataTestNotEnoughData() { //check that we have no EEG matrix if the input amount of EEG data is less than the buffer size
+        byte[] data = new byte[]{14, 83, 34, -62, 43, -113, 29, -50, 37, 41, 14, 66, 4, -102, -128, 0, -128, 0};
+        dataAcquisition.handleDataAcquired(data);
+        assertNull("Not enough data for conversion",dataAcquisition.getTestEegMatrix());
     }
 
     @Test
-    public void isBitSetWithOnesTest() {
-        int i = 100000000;
-        byte tempStatus = (byte) 1;
-        //Float result = dataAcquisition.isBitSet(tempStatus, i); // private method
-        //assertTrue(result.equals(1f)); //check that the tested method return 1f as expected
+    public void handleDataAcquiredTestMelomind() {
+        ArrayList<ArrayList<Float>> eegConverted = new ArrayList<>();
+        ArrayList<Float> channel1 = new ArrayList<>(Arrays.asList(0.005089656F,0.0043643597F,0.0020877998F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018539092F,-0.0150310155F,-0.011231219F,-0.0021661639F,0.00833976F,0.014444715F,0.017033014F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F));
+        eegConverted.add(channel1);
+        ArrayList<Float> channel2 = new ArrayList<>(Arrays.asList(
+                0.0063783717F,0.0054414356F,6.7381596E-4F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.015102515F,-0.010817092F,-7.16144E-4F,0.011275835F,0.018626608F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F
+        ));
+        eegConverted.add(channel2);
+        byte[] data = new byte[]{14, 83, 34, -62, 43, -113, 29, -50, 37, 41, 14, 66, 4, -102, -128, 0, -128, 0};
+        dataAcquisition.handleDataAcquired(data);
+        data = new byte[]{14, 84, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0};
+        dataAcquisition.handleDataAcquired(data);
+        data = new byte[]{14, 85, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0};
+        dataAcquisition.handleDataAcquired(data);
+        data = new byte[]{14, 86, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0};
+        dataAcquisition.handleDataAcquired(data);
+        data = new byte[]{14, 87, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0};
+        dataAcquisition.handleDataAcquired(data);
+        data = new byte[]{14, 88, -128, 0, -128, 0, -128, 0, -128, 0, -127, 101, -128, 0, -103, 90, -104, -35};
+        dataAcquisition.handleDataAcquired(data);
+        data = new byte[]{14, 89, -77, 77, -74, 33, -15, 53, -5, 28, 56, -12, 77, 1, 98, -91, 127, 52};
+        dataAcquisition.handleDataAcquired(data);
+        data = new byte[]{14, 90, 116, 82, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1};
+        dataAcquisition.handleDataAcquired(data);
+        data = new byte[]{14, 91, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1};
+        dataAcquisition.handleDataAcquired(data);
+        data = new byte[]{14, 92, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1};
+        dataAcquisition.handleDataAcquired(data);
+        assertNotNull(dataAcquisition.getTestEegManager());
+        assertNotNull(dataAcquisition.getTestEegMatrix());
+        //assertTrue(" Matrix "+dataAcquisition.testGetEegMatrix(),dataAcquisition.testGetEegMatrix().equals(eegConverted));
     }
-
-    @Test
-    public void resetIndexTest() {
-        dataAcquisition.resetIndex();
-        //check that the indexes has been well initialized
-        assertTrue(dataAcquisition.getPreviousIndex() == -1);
-        assertTrue(dataAcquisition.getStartingIndex() == -1);
-    }
-
 
     @Test
     public void handleDataMatrixSizeBLETest() { //check that the output Float matrix size is correct, according to the input array size
@@ -72,7 +96,7 @@ public class MbtDataAcquisitionTest {
             dataAcquisition.handleDataAcquired(data);
             Arrays.fill(data,0,0,(byte)0); //reset
         }
-        ArrayList<ArrayList<Float>> eegResult = dataAcquisition.testGetEegMatrix();
+        ArrayList<ArrayList<Float>> eegResult = dataAcquisition.getTestEegMatrix();
         assertNotNull(eegResult); //problem to solve : test return null eegResult
         assertTrue("size "+eegResult.size()*eegResult.get(0).size(), eegResult.size()*eegResult.get(0).size()==124);
     }
@@ -92,25 +116,46 @@ public class MbtDataAcquisitionTest {
             dataAcquisition.handleDataAcquired(data);
             Arrays.fill(data,0,0,(byte)0); //reset
         }
-        ArrayList<ArrayList<Float>> eegResult = dataAcquisition.testGetEegMatrix();
+        ArrayList<ArrayList<Float>> eegResult = dataAcquisition.getTestEegMatrix();
         assertNotNull(eegResult); //problem to solve : test return null eegResult
         assertTrue("size "+eegResult.size()*eegResult.get(0).size(), eegResult.size()*eegResult.get(0).size()==124);
 
     }
+    /*
 
     @Test
     public void handleDataAbnormalAmountOfDataTest() { //check that we don't have any matrix if a small amount Of EEG Data is given in parameter
 
-        byte[] data = new byte[250];
-        Arrays.fill(data, (byte) 1);
+        //byte[] data = new byte[250];
+        //Arrays.fill(data, (byte) 1);
 
         //dataAcquisition.handleDataAcquired(data);
         //assertNull(dataAcquisition.testGetEegMatrix());
+    }*/
+
+
+    /*@Test
+    public void isBitSetZerosTest() {
+        int i = 0;
+        byte tempStatus = (byte) 0;
+        //Float result = dataAcquisition.isBitSet(tempStatus, i); // private method
+        //assertTrue(result.equals(0f)); //check that the tested method return 0f as expected
     }
 
-    @After
-    public void tearDown(){
+    @Test
+    public void isBitSetWithOnesTest() {
+        int i = 100000000;
+        byte tempStatus = (byte) 1;
+        //Float result = dataAcquisition.isBitSet(tempStatus, i); // private method
+        //assertTrue(result.equals(1f)); //check that the tested method return 1f as expected
+    }*/
 
+    @Test
+    public void resetIndexTest() {
+        dataAcquisition.resetIndex();
+        //check that the indexes has been well initialized
+        assertTrue(dataAcquisition.getPreviousIndex() == -1);
+        assertTrue(dataAcquisition.getStartingIndex() == -1);
     }
 
 }
