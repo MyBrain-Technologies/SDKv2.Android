@@ -40,8 +40,8 @@ public class MbtDataAcquisition {
     @Nullable
     private byte[] statusDataBytes;
 
+
     private BtProtocol protocol;
-    public ArrayList<ArrayList<Float>> consolidatedEEG = null; //todo remove after tests
 
     public MbtDataAcquisition(@NonNull MbtEEGManager eegManagerController, @NonNull BtProtocol bluetoothProtocol) {
         this.protocol = bluetoothProtocol;
@@ -100,7 +100,7 @@ public class MbtDataAcquisition {
      */
     private void fillSingleDataEEGList(boolean isInterpolationEEGSample, byte[] input){
         int count = 0;
-        for (int dataIndex = getRawDataIndexSize() + DEFAULT_BLE_NB_STATUS_BYTES; dataIndex < input.length; dataIndex += getEEGByteSize()*getNbChannels()) { //init the list of raw EEG data (one raw EEG data is an object that contains a 2 (or 3) bytes data array and status
+        for (int dataIndex = getRawDataIndexSize() + getNbStatusBytes(); dataIndex < input.length; dataIndex += getEEGByteSize()*getNbChannels()) { //init the list of raw EEG data (one raw EEG data is an object that contains a 2 (or 3) bytes data array and status
             if(isInterpolationEEGSample){
                 singleRawEEGList.add(RawEEGSample.LOST_PACKET_INTERPOLATOR);
             }else{
@@ -202,7 +202,6 @@ public class MbtDataAcquisition {
      * getter for unit tests
      */
     public ArrayList<ArrayList<Float>> getTestEegMatrix(){
-        //return eegManager.getConsolidatedEEG();
-        return consolidatedEEG; //todo
+        return eegManager.getConsolidatedEEG();
     }
 }

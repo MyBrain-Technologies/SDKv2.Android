@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import static org.junit.Assert.*;
 import core.bluetooth.BtProtocol;
+import core.eeg.acquisition.MbtDataAcquisition;
 import core.eeg.acquisition.MbtDataConversion;
 
 public class MbtDataConversionTest {
@@ -47,4 +48,62 @@ public class MbtDataConversionTest {
         assertTrue(eegData.get(0).isEmpty());
         assertTrue(eegData.get(1).isEmpty());
     }*/
+    @Test
+    public void checkNoSingleNaNValuesTest() { //Check that matrix returned is the same matrix as the input matrix because it has no single channels
+        int nbChannels = 2;
+        int nbData = 10;
+        ArrayList<ArrayList<Float>> eegMatrix = new ArrayList<>();
+        ArrayList<Float> data = new ArrayList<>();
+        for (int i=0; i<nbChannels; i++){
+            data.add(i*1f);
+        }
+        for (int i=0 ; i<nbData ; i++){
+            eegMatrix.add(data);
+        }
+        boolean containsNan = false;
+        for (int i=0; i<nbData; i++){ //check before conversion : contains NaN must be true
+            if(eegMatrix.get(i).size()==1)
+                containsNan = true;
+            assertFalse(containsNan);
+        }
+        containsNan = false;
+        eegMatrix = MbtDataConversion.checkSingleNaNValues(eegMatrix);
+        for (int i=0; i<nbData; i++){ //check after conversion : contains NaN must be true
+            if(eegMatrix.get(i).size()==1)
+                containsNan = true;
+            assertFalse(containsNan);
+        }
+    }
+
+    @Test
+    public void checkSingleNaNValuesTest() { //Check that matrix with missing channels are filled by the checkSingleNanValues method
+        int nbChannels = 2;
+        int nbData = 10;
+        ArrayList<ArrayList<Float>> eegMatrix = new ArrayList<>();
+        ArrayList<Float> data = new ArrayList<>();
+        for (int i=0; i<nbChannels; i++){
+            if(i==0)
+                data.add(i*1f);
+        }
+        for (int i=0 ; i<nbData ; i++){
+            eegMatrix.add(data);
+        }
+        boolean containsNan = false;
+        for (int i=0; i<nbData; i++){ //check before conversion : contains NaN must be true
+            if(eegMatrix.get(i).size()==1)
+                containsNan = true;
+
+            assertTrue(containsNan);
+        }
+        containsNan = false;
+
+
+        eegMatrix = MbtDataConversion.checkSingleNaNValues(eegMatrix);
+        for (int i=0; i<nbData; i++){ //check after conversion : contains NaN must be true
+            if(eegMatrix.get(i).size()==1)
+                containsNan = true;
+
+            assertFalse(containsNan);
+        }
+    }
 }

@@ -1,6 +1,7 @@
 package core.eeg.acquisition;
 
 import android.support.annotation.NonNull;
+import android.util.Log;
 
 import java.util.ArrayList;
 
@@ -47,7 +48,7 @@ public class MbtDataConversion {
         ArrayList<Float> consolidatedEEGSample;
 
         for (RawEEGSample singleRawEEGdata : rawEEGdataList){ // for each channel of the headset
-            consolidatedEEGSample = new ArrayList<Float>();
+            consolidatedEEGSample = new ArrayList<>();
 
             if(singleRawEEGdata.getBytesEEG() == null){
 
@@ -67,7 +68,8 @@ public class MbtDataConversion {
             eegData.add(consolidatedEEGSample);
         }
 
-        return eegData;
+
+        return checkSingleNaNValues(eegData);
     }
 
     public static float convertDCOffsetToEEG(byte[] offset){
@@ -86,4 +88,22 @@ public class MbtDataConversion {
     }
 
 
+    /**
+     * Check if the matrix given in parameter contains one channel instead of 2 channels.
+     * This case appears in case of a NaN values.
+     * The method corrects the matrix by adding a NaN in the second channel
+     * @param eegMatrix the matrix to check and correct (1 channel can miss in case of NaN)
+     * @return the corrected input matrix (this matrix has 2 channels as expected)
+     */
+    public static ArrayList<ArrayList<Float>> checkSingleNaNValues(ArrayList<ArrayList<Float>> eegMatrix){
+        for (int nbChannels = 0 ; nbChannels < eegMatrix.size() ; nbChannels++){
+            for (int nbData = 0 ; nbData < eegMatrix.get(nbChannels).size() ; nbData++){
+                if(eegMatrix.get(nbChannels).size()== 1 /*&& eegMatrix.get(nbChannels).get(0).isNaN()*/){
+                    eegMatrix.get(nbChannels).add(Float.NaN);
+                    Log.e(TAG,"One channel with One NaN found : adding a second Nan (new size "+eegMatrix.get(nbChannels).size());
+                }
+            }
+        }
+        return eegMatrix;
+    }
 }

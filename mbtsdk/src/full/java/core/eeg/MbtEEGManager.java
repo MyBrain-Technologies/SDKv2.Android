@@ -112,6 +112,7 @@ public final class MbtEEGManager extends BaseModuleManager {
         AsyncUtils.executeAsync(new Runnable() {
             @Override
             public void run() {
+                consolidatedEEG = new ArrayList<>();
                 LogUtils.i(TAG, "computing and sending to application");
 
                 ArrayList<Float> toDecodeStatus = new ArrayList<>();
@@ -122,8 +123,7 @@ public final class MbtEEGManager extends BaseModuleManager {
                     }
                 }
                 consolidatedEEG = MbtDataConversion.convertRawDataToEEG(toDecodeRawEEG, protocol); //convert byte table data to Float matrix and store the matrix in MbtEEGManager as eegResult attribute
-                dataAcquisition.consolidatedEEG = consolidatedEEG;
-                Log.e(TAG," consolidated eeg  "+dataAcquisition.consolidatedEEG.toString());//todo remove after tests
+                Log.e(TAG," consolidated eeg  "+consolidatedEEG.toString());//todo remove after tests
 
                 dataBuffering.storeConsolidatedEegPacketInPacketBuffer(consolidatedEEG, toDecodeStatus);// if the packet buffer is full, this method returns the non null packet buffer
 
@@ -340,5 +340,4 @@ public final class MbtEEGManager extends BaseModuleManager {
 //            }
 //        }
 //    }
-
 }
