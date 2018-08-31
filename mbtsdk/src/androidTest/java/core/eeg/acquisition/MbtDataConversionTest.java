@@ -1,16 +1,75 @@
-package core.eeg.storage;
+package core.eeg.acquisition;
 
+import android.content.Context;
+
+import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import static org.junit.Assert.*;
+import java.util.Random;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+
+import core.MbtManager;
 import core.bluetooth.BtProtocol;
-import core.eeg.acquisition.MbtDataAcquisition;
-import core.eeg.acquisition.MbtDataConversion;
+import core.eeg.MbtEEGManager;
+import core.eeg.signalprocessing.ContextSP;
+import core.eeg.storage.RawEEGSample;
+import mbtsdk.com.mybraintech.mbtsdk.BuildConfig;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class MbtDataConversionTest {
 
+    private Context context = Mockito.mock(Context.class);
+
+    @Before
+    public void setUp(){
+        try {
+            System.loadLibrary(ContextSP.LIBRARY_NAME + BuildConfig.USE_ALGO_VERSION);
+        } catch (final UnsatisfiedLinkError e) {
+            e.printStackTrace();
+        }
+    }
+    @Test
+    public void convertRawDataToEEGTest() { //Check that matrix returned has 2 channels as expected
+        BtProtocol protocol = BtProtocol.BLUETOOTH_LE;
+        MbtDataAcquisition dataAcquisition = new MbtDataAcquisition(new MbtEEGManager(context, new MbtManager(context),protocol),protocol);
+        int nbData = 18;
+        int nbChannels = 2;
+        int nbBytesData = 2;
+        int nbIndexBytes = 2;
+        byte[] rawData = new byte[nbData];
+        new Random().nextBytes(rawData);
+
+        final CompletableFuture<Void> future= CompletableFuture.runAsync(()->{
+            for (int i=0;i<10;i++){
+                dataAcquisition.handleDataAcquired(rawData);
+            }
+
+        }, Executors.newCachedThreadPool());
+
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        assertTrue(future.isDone());// if the async task has been completed
+        ArrayList<RawEEGSample> rawEEGSample = dataAcquisition.getTestRawEEGSample();
+        rawEEGSample.set(1,new RawEEGSample(null, Float.NaN));
+        ArrayList<ArrayList<Float>> eegMatrix = MbtDataConversion.convertRawDataToEEG(rawEEGSample,protocol);
+        assertNotNull(eegMatrix);
+        assertTrue("EEG matrix size "+eegMatrix.size() ,eegMatrix.size()==(nbData-nbIndexBytes)/(nbBytesData*nbChannels));
+        assertTrue(eegMatrix.get(0).size()==nbChannels);
+        for (ArrayList<Float> eegData: eegMatrix) {
+            assertTrue("  Raw data "+ Arrays.toString(rawData)+"  Converted data "+ eegData.toString(),eegData.size()==2);
+        }
+
+    }
     /*@Test (expected = NullPointerException.class)
     public void convertRawDataToEEGNullDataTest() {
         byte[] data = null;  //check that IllegalArgumentException is raised if data is null

@@ -204,4 +204,8 @@ public class MbtDataAcquisition {
     public ArrayList<ArrayList<Float>> getTestEegMatrix(){
         return eegManager.getConsolidatedEEG();
     }
+
+    public ArrayList<RawEEGSample> getTestRawEEGSample(){
+        return singleRawEEGList;
+    }
 }

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 
 import core.bluetooth.BtProtocol;
 import core.eeg.storage.RawEEGSample;
+import features.MbtFeatures;
 
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
 
@@ -47,12 +48,14 @@ public class MbtDataConversion {
 
         ArrayList<Float> consolidatedEEGSample;
 
-        for (RawEEGSample singleRawEEGdata : rawEEGdataList){ // for each channel of the headset
+        for (RawEEGSample singleRawEEGdata : rawEEGdataList){ // for each acquisition of the headset
             consolidatedEEGSample = new ArrayList<>();
 
             if(singleRawEEGdata.getBytesEEG() == null){
 
-                consolidatedEEGSample.add(Float.NaN); //... fill the EEG data matrix with a NaN value for
+                for (int nbChannel = 0 ; nbChannel < MbtFeatures.getNbChannels() ; nbChannel++){
+                    consolidatedEEGSample.add(Float.NaN); //... fill the EEG data matrix with a NaN value for
+                }
             }else{
                 for (byte[] bytes : singleRawEEGdata.getBytesEEG()) {
                     int temp = 0x0000000;
@@ -69,7 +72,7 @@ public class MbtDataConversion {
         }
 
 
-        return checkSingleNaNValues(eegData);
+        return eegData;
     }
 
     public static float convertDCOffsetToEEG(byte[] offset){

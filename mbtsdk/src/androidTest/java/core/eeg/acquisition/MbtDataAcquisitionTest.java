@@ -21,6 +21,7 @@ import core.eeg.signalprocessing.ContextSP;
 import features.MbtFeatures;
 import features.ScannableDevices;
 import mbtsdk.com.mybraintech.mbtsdk.BuildConfig;
+import utils.MatrixUtils;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -53,54 +54,65 @@ public class MbtDataAcquisitionTest {
         assertNull("Not enough data for conversion",dataAcquisition.getTestEegMatrix());
     }
 
-    /*@Test
-    //@UiThreadTest
-    public void handleDataAcquiredTestOutput() {
+    @Test
+    public void handleDataAcquiredTestDefinedOutput() { // check that the result of EEG matrix computation is equal to the pre-generated matrix with a given input of eeg raw array
+        int nbData = 10;
+        int nbChannels = 2;
+        int sizeArray = 18;
         final ArrayList<ArrayList<Float>> eegConverted = new ArrayList<>();
-        ArrayList<Float> channel1 = new ArrayList<>(Arrays.asList(0.005089656F,0.0043643597F,0.0020877998F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018539092F,-0.0150310155F,-0.011231219F,-0.0021661639F,0.00833976F,0.014444715F,0.017033014F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F));
-        eegConverted.add(channel1);
-        ArrayList<Float> channel2 = new ArrayList<>(Arrays.asList(0.0063783717F,0.0054414356F,6.7381596E-4F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.015102515F,-0.010817092F,-7.16144E-4F,0.011275835F,0.018626608F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F));
-        eegConverted.add(channel2);
-        byte[] data = new byte[]{14, 83, 34, -62, 43, -113, 29, -50, 37, 41, 14, 66, 4, -102, -128, 0, -128, 0};
-        dataAcquisition.handleDataAcquired(data);
-        data = new byte[]{14, 84, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0};
-        dataAcquisition.handleDataAcquired(data);
-        data = new byte[]{14, 85, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0};
-        dataAcquisition.handleDataAcquired(data);
-        data = new byte[]{14, 86, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0};
-        dataAcquisition.handleDataAcquired(data);
-        data = new byte[]{14, 87, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0};
-        dataAcquisition.handleDataAcquired(data);
-        data = new byte[]{14, 88, -128, 0, -128, 0, -128, 0, -128, 0, -127, 101, -128, 0, -103, 90, -104, -35};
-        dataAcquisition.handleDataAcquired(data);
-        data = new byte[]{14, 89, -77, 77, -74, 33, -15, 53, -5, 28, 56, -12, 77, 1, 98, -91, 127, 52};
-        dataAcquisition.handleDataAcquired(data);
-        data = new byte[]{14, 90, 116, 82, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1};
-        dataAcquisition.handleDataAcquired(data);
-        data = new byte[]{14, 91, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1};
-        dataAcquisition.handleDataAcquired(data);
-        data = new byte[]{14, 92, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1};
-        dataAcquisition.handleDataAcquired(data);
-        assertNotNull(dataAcquisition.getTestEegManager());
-        assertNotNull(dataAcquisition.getTestEegMatrix());
-        //assertTrue(" Result "+dataAcquisition.getTestEegMatrix().size()+" | Pre-generated "+eegConverted.size(),dataAcquisition.getTestEegMatrix().equals(eegConverted));
-        //assertFalse(" Result "+dataAcquisition.getTestEegMatrix().size()+" | Pre-generated "+eegConverted.size(),dataAcquisition.getTestEegMatrix().equals(eegConverted));
+        eegConverted.add(new ArrayList<>(Arrays.asList(0.005089656F,0.0043643597F,0.0020877998F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018539092F,-0.0150310155F,-0.011231219F,-0.0021661639F,0.00833976F,0.014444715F,0.017033014F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F)));
+        eegConverted.add(new ArrayList<>(Arrays.asList(0.0063783717F,0.0054414356F,6.7381596E-4F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.018743295F,-0.015102515F,-0.010817092F,-7.16144E-4F,0.011275835F,0.018626608F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F,0.018742723F)));
 
-    }*/
+        byte[][] data = new byte[10][sizeArray];
+        data [0] = new byte[]{14, 83, 34, -62, 43, -113, 29, -50, 37, 41, 14, 66, 4, -102, -128, 0, -128, 0};
+        data [1] = new byte[]{14, 84, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0};
+        data [2] = new byte[]{14, 85, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0};
+        data [3] = new byte[]{14, 86, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0};
+        data [4] = new byte[]{14, 87, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0, -128, 0};
+        data [5] = new byte[]{14, 88, -128, 0, -128, 0, -128, 0, -128, 0, -127, 101, -128, 0, -103, 90, -104, -35};
+        data [6] = new byte[]{14, 89, -77, 77, -74, 33, -15, 53, -5, 28, 56, -12, 77, 1, 98, -91, 127, 52};
+        data [7] = new byte[]{14, 90, 116, 82, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1};
+        data [8] = new byte[]{14, 91, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1};
+        data [9] = new byte[]{14, 92, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1};
+
+        final CompletableFuture<Void> future= CompletableFuture.runAsync(()->{
+            for (int i=0; i< nbData; i++){
+                dataAcquisition.handleDataAcquired(data[i]);
+            }
+
+        },Executors.newCachedThreadPool());
+
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        ArrayList<ArrayList<Float>> eegResultMatrix = MatrixUtils.invertFloatMatrix(dataAcquisition.getTestEegMatrix());
+        assertTrue(future.isDone());// if the async task has been completed
+        assertNotNull(dataAcquisition.getTestEegManager());
+        assertNotNull(eegResultMatrix);
+        assertTrue(eegResultMatrix.size()==nbChannels);
+        assertTrue(eegResultMatrix.get(0).size()==4*nbData);
+        assertTrue(" Result size "+eegResultMatrix.size()+" | Pre-generated size"+eegConverted.size(),eegResultMatrix.size()==eegConverted.size());
+        assertTrue(eegResultMatrix.get(0).size()==eegConverted.get(0).size());
+        assertTrue(" Result "+eegResultMatrix.size()+" | Pre-generated "+eegConverted.size(),eegResultMatrix.equals(eegConverted));
+    }
 
     @Test
     public void handleDataMatrixSizeBLETest() { //check that the output Float matrix size is correct, according to the input array size
         int nbData = 10;
         int nbChannels = 2;
+        int sizeArray = 18;
         MbtConfig.setScannableDevices(ScannableDevices.MELOMIND);
         assertTrue(MbtFeatures.getNbChannels()==MbtFeatures.MELOMIND_NB_CHANNELS);
         assertTrue(MbtFeatures.getBluetoothProtocol().equals(BtProtocol.BLUETOOTH_LE));
 
+        byte[] rawData = new byte[]{14, 92, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1};
         final CompletableFuture<Void> future= CompletableFuture.runAsync(()->{ //as handledataacquired calls methods that contain an async task where the eeg result matrix is returned, we must wait that the eeg matrix computation is done
 
             for (int i=0; i<nbData; i++) {
-                byte[] rawData = new byte[]{14, 92, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1};
                 dataAcquisition.handleDataAcquired(rawData);
+                assertTrue(rawData.length == 18);
             }
         },Executors.newCachedThreadPool());
 
@@ -114,11 +126,8 @@ public class MbtDataAcquisitionTest {
         assertNotNull(eegResult);
         assertTrue("channel size "+eegResult.size(),eegResult.size()>0);
         assertTrue("nb channel  "+eegResult.size(),eegResult.size()==4*nbData);
-        assertTrue(eegResult.get(0).size() >0);
-        assertTrue(eegResult.get(0).size()==nbChannels);
+        assertTrue("eeg.get(0).size "+eegResult.get(0).size(),eegResult.get(0).size()==nbChannels);
         assertTrue(eegResult.get(0).size()*eegResult.size()==nbChannels*4*nbData);
-        /*
-        assertTrue("size "+eegResult.size()*eegResult.get(0).size(), eegResult.size()*eegResult.get(0).size()==124);*/
     }
 
     @Test
@@ -130,12 +139,11 @@ public class MbtDataAcquisitionTest {
         assertTrue(MbtFeatures.getBluetoothProtocol().equals(BtProtocol.BLUETOOTH_LE));
 
         byte[] data = new byte[18];
+        new Random().nextBytes(data); //Generates random bytes and places them into a user-supplied byte array
         final CompletableFuture<Void> future = CompletableFuture.runAsync(() -> { //as handledataacquired calls methods that contain an async task where the eeg result matrix is returned, we must wait that the eeg matrix computation is done
 
             for (int i = 0; i < nbData; i++) {// buffer size = 1000=16*62,5 => matrix size always = 1000/2 = 500
-                new Random().nextBytes(data); //Generates random bytes and places them into a user-supplied byte array
                 dataAcquisition.handleDataAcquired(data);
-                assertTrue(data.length == 18);
             }
         }, Executors.newCachedThreadPool());
 
@@ -147,64 +155,47 @@ public class MbtDataAcquisitionTest {
         assertTrue(future.isDone());// if the async task has been completed
         ArrayList<ArrayList<Float>> eegResult = dataAcquisition.getTestEegMatrix();
         assertNotNull(eegResult);
-        assertTrue("channel size " + eegResult.size(), eegResult.size() > 0);
-        assertTrue("nb channel " + eegResult.get(0).size() + " | random data " + eegResult.get(0).toString(), eegResult.size() == 4 * nbData);
-        //assertTrue(eegResult.get(0).size()==nbChannels);
+        assertTrue("channel size "+eegResult.size(),eegResult.size()>0);
+        assertTrue("nb channel  "+eegResult.size(),eegResult.size()==4*nbData);
+        assertTrue(eegResult.get(0).size() >0);
+        assertTrue(eegResult.get(0).size()==nbChannels);
+        assertTrue(" matrix size "+eegResult.get(0).size()*eegResult.size(),eegResult.get(0).size()*eegResult.size()==nbChannels*4*nbData);
 
-        //assertTrue(eegResult.get(0).size() >0);
-        //assertTrue(eegResult.get(0).size()==nbChannels);
-
-        //assertTrue("size "+eegResult.size()*eegResult.get(0).size(), eegResult.size()*eegResult.get(0).size()==124);
     }
-/*
-    @Test
-    public void handleDataMatrixSizeSPPTest() { //check that the output Float matrix size is correct, according to the input array size
-        MbtConfig.setScannableDevices(ScannableDevices.VPRO);
-        assertTrue(MbtFeatures.getNbChannels()==MbtFeatures.VPRO_NB_CHANNELS);
-        assertTrue(MbtFeatures.getBluetoothProtocol().equals(BtProtocol.BLUETOOTH_SPP));
 
-        MbtManager mbtManager = new MbtManager(context);
-        MbtEEGManager mbtEEGManager = new MbtEEGManager(context, mbtManager,BtProtocol.BLUETOOTH_SPP);
-        this.dataAcquisition = new MbtDataAcquisition(mbtEEGManager, BtProtocol.BLUETOOTH_SPP);
-        byte[] data = new byte[250];
-        for (int i=0; i<10; i++){ //buffer size=6750=62,5*108(Packet size) => matrix size = 6750/3 - 250 (-250 because matrix.get(0) removed for SPP)
-            new Random().nextBytes(data); //Generates random bytes and places them into a user-supplied byte array
-            dataAcquisition.handleDataAcquired(data);
-            Arrays.fill(data,0,0,(byte)0); //reset
+    @Test
+    public void handleDataMatrixSizeBLETestRandom22bytes() { //check that the output Float matrix size is correct, according to the input array size with a 22 bytes array, the output size should be 80 (same size as the previous test)
+        int nbData = 10;
+        int nbChannels = 2;
+        int sizeArray = 250;
+        MbtConfig.setScannableDevices(ScannableDevices.MELOMIND);
+        assertTrue(MbtFeatures.getNbChannels()==MbtFeatures.MELOMIND_NB_CHANNELS);
+        assertTrue(MbtFeatures.getBluetoothProtocol().equals(BtProtocol.BLUETOOTH_LE));
+
+        byte[] data = new byte[sizeArray];
+        new Random().nextBytes(data); //Generates random bytes and places them into a user-supplied byte array
+        final CompletableFuture<Void> future = CompletableFuture.runAsync(() -> { //as handledataacquired calls methods that contain an async task where the eeg result matrix is returned, we must wait that the eeg matrix computation is done
+
+            for (int i = 0; i < nbData; i++) {// buffer size = 1000=16*62,5 => matrix size always = 1000/2 (in case nbChannel is 2) = 500
+                dataAcquisition.handleDataAcquired(data);
+            }
+        }, Executors.newCachedThreadPool());
+
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
+        assertTrue(future.isDone());// if the async task has been completed
         ArrayList<ArrayList<Float>> eegResult = dataAcquisition.getTestEegMatrix();
-        assertNotNull(eegResult); //problem to solve : test return null eegResult
-        assertTrue("size "+eegResult.size()*eegResult.get(0).size(), eegResult.size()*eegResult.get(0).size()==124);
+        assertNotNull(eegResult);
+        assertTrue("channel size "+eegResult.size(),eegResult.size()>0);
+        assertTrue("nb channel  "+eegResult.size(),eegResult.size()==sizeArray/4);
+        assertTrue(eegResult.get(0).size() >0);
+        assertTrue(eegResult.get(0).size()==nbChannels);
+        assertTrue("matrix size "+eegResult.get(0).size()*eegResult.size(),eegResult.get(0).size()*eegResult.size()==(sizeArray/4)*nbChannels);
 
-    }*/
-    /*
-
-    @Test
-    public void handleDataAbnormalAmountOfDataTest() { //check that we don't have any matrix if a small amount Of EEG Data is given in parameter
-
-        //byte[] data = new byte[250];
-        //Arrays.fill(data, (byte) 1);
-
-        //dataAcquisition.handleDataAcquired(data);
-        //assertNull(dataAcquisition.testGetEegMatrix());
-    }*/
-
-
-    /*@Test
-    public void isBitSetZerosTest() {
-        int i = 0;
-        byte tempStatus = (byte) 0;
-        //Float result = dataAcquisition.isBitSet(tempStatus, i); // private method
-        //assertTrue(result.equals(0f)); //check that the tested method return 0f as expected
     }
-
-    @Test
-    public void isBitSetWithOnesTest() {
-        int i = 100000000;
-        byte tempStatus = (byte) 1;
-        //Float result = dataAcquisition.isBitSet(tempStatus, i); // private method
-        //assertTrue(result.equals(1f)); //check that the tested method return 1f as expected
-    }*/
 
     @Test
     public void resetIndexTest() {
@@ -213,5 +204,6 @@ public class MbtDataAcquisitionTest {
         assertTrue(dataAcquisition.getPreviousIndex() == -1);
         assertTrue(dataAcquisition.getStartingIndex() == -1);
     }
+
 
 }
