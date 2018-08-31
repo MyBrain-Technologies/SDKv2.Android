@@ -85,7 +85,7 @@ public class MbtDataAcquisition {
         fillSingleDataEEGList(false, data);
 
         //4th step : store and convert
-        handleAndConvertData();
+        storeData();
 
         previousIndex = currentIndex;
     }
@@ -147,21 +147,10 @@ public class MbtDataAcquisition {
 
 
     /**
-     * Stores EEG raw data received from Bluetooth Device in the pending buffer.
-     * The lost EEG raw data packets are identified in the pending buffer .
-     * In case packet size is too large for buffer, the overflowing EEG data is stored in an overflow buffer
-     *
+     * Stores the new EEG raw data received from Bluetooth Device in a pending buffer.
      */
-    private void storeEEGDataInBuffers() {
-        eegManager.storePendingDataInBuffer(singleRawEEGList); //we store the pending buffer in both case (overflow or no overflow)
-    }
-
-    /**
-     * Store new raw bluetooth EEG in buffer and checks if buffer is full. If buffer is full,
-     * conversion is started and buffer is flushed
-     */
-    private void handleAndConvertData() {
-        storeEEGDataInBuffers();
+    private void storeData() {
+        eegManager.storePendingDataInBuffer(singleRawEEGList); //we store the data in the pending buffer
 
     }
 

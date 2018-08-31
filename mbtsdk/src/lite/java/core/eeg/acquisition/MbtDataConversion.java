@@ -69,7 +69,7 @@ public class MbtDataConversion {
         return eegData;
     }
 
-    public static float convertDCOffsetToEEG(byte[] offset){
+    public static float convertRawDCOffsetBLE(byte[] offset){
         int digit = 0x00000000;
         digit = ((offset[0] & 0xFF) << (SHIFT_DC_OFFSET)) | ((offset[1] & 0xFF) << (SHIFT_DC_OFFSET-8));
 

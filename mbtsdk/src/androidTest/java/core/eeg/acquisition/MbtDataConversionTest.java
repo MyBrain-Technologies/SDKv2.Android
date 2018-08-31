@@ -19,7 +19,6 @@ import core.eeg.signalprocessing.ContextSP;
 import core.eeg.storage.RawEEGSample;
 import mbtsdk.com.mybraintech.mbtsdk.BuildConfig;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -107,62 +106,40 @@ public class MbtDataConversionTest {
         assertTrue(eegData.get(0).isEmpty());
         assertTrue(eegData.get(1).isEmpty());
     }*/
+
     @Test
-    public void checkNoSingleNaNValuesTest() { //Check that matrix returned is the same matrix as the input matrix because it has no single channels
-        int nbChannels = 2;
-        int nbData = 10;
-        ArrayList<ArrayList<Float>> eegMatrix = new ArrayList<>();
-        ArrayList<Float> data = new ArrayList<>();
-        for (int i=0; i<nbChannels; i++){
-            data.add(i*1f);
-        }
-        for (int i=0 ; i<nbData ; i++){
-            eegMatrix.add(data);
-        }
-        boolean containsNan = false;
-        for (int i=0; i<nbData; i++){ //check before conversion : contains NaN must be true
-            if(eegMatrix.get(i).size()==1)
-                containsNan = true;
-            assertFalse(containsNan);
-        }
-        containsNan = false;
-        eegMatrix = MbtDataConversion.checkSingleNaNValues(eegMatrix);
-        for (int i=0; i<nbData; i++){ //check after conversion : contains NaN must be true
-            if(eegMatrix.get(i).size()==1)
-                containsNan = true;
-            assertFalse(containsNan);
-        }
+    public void convertRawDCOffsetBLEResultConversionTest() { //check that the computed result of raw data conversion is equal to a pre-generated expected result
+
+        float expectedOffset = 0.01857856f;
+        byte[] offset = new byte[]{23, -18};
+        float computedDcOffset = MbtDataConversion.convertRawDCOffsetBLE(offset);
+
+        assertTrue(computedDcOffset == expectedOffset);
     }
 
     @Test
-    public void checkSingleNaNValuesTest() { //Check that matrix with missing channels are filled by the checkSingleNanValues method
-        int nbChannels = 2;
-        int nbData = 10;
-        ArrayList<ArrayList<Float>> eegMatrix = new ArrayList<>();
-        ArrayList<Float> data = new ArrayList<>();
-        for (int i=0; i<nbChannels; i++){
-            if(i==0)
-                data.add(i*1f);
-        }
-        for (int i=0 ; i<nbData ; i++){
-            eegMatrix.add(data);
-        }
-        boolean containsNan = false;
-        for (int i=0; i<nbData; i++){ //check before conversion : contains NaN must be true
-            if(eegMatrix.get(i).size()==1)
-                containsNan = true;
-
-            assertTrue(containsNan);
-        }
-        containsNan = false;
-
-
-        eegMatrix = MbtDataConversion.checkSingleNaNValues(eegMatrix);
-        for (int i=0; i<nbData; i++){ //check after conversion : contains NaN must be true
-            if(eegMatrix.get(i).size()==1)
-                containsNan = true;
-
-            assertFalse(containsNan);
-        }
+    public void convertRawDCOffsetBLENegativeTest(){ //check that the computed result of raw data conversion is equal to a pre-generated expected result
+        byte[] offset = new byte[]{-1, -18};
+        float dcoffset = MbtDataConversion.convertRawDCOffsetBLE(offset);
+        assertTrue("result "+dcoffset,dcoffset==-1.6473599E-4f);
     }
+    @Test
+    public void convertRawDCOffsetBLEPositiveTest(){ //check that the computed result of raw data conversion is equal to a pre-generated expected result
+        byte[] offset = new byte[]{1, 18};
+        float dcoffset = MbtDataConversion.convertRawDCOffsetBLE(offset);
+        assertTrue("result "+dcoffset,dcoffset==0.002507648f);
+    }
+
+    @Test
+    public void convertRawDCOffsetBLETestRandom() { // check that the computed result of conversion of a randomly generated array of raw data is included between -0,03 and +0,3.
+        float dcOffset;
+        byte[] offset = new byte[2];
+        new Random().nextBytes(offset);
+        dcOffset = MbtDataConversion.convertRawDCOffsetBLE(offset);
+
+        assertTrue("input "+Arrays.toString(offset)+" | dc offset "+dcOffset,dcOffset>-0.03);
+        assertTrue("input "+Arrays.toString(offset)+" | dc offset "+dcOffset,dcOffset<0.03);
+    }
+
+
 }

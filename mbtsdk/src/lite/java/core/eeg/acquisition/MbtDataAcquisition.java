@@ -82,7 +82,7 @@ public class MbtDataAcquisition {
         fillSingleDataEEGList(false, data);
 
         //4th step : store and convert
-        handleAndConvertData();
+        storeData();
 
         previousIndex = currentIndex;
 
@@ -160,7 +160,7 @@ public class MbtDataAcquisition {
      * Store new raw bluetooth EEG in buffer and checks if buffer is full. If buffer is full,
      * conversion is started and buffer is flushed
      */
-    private void handleAndConvertData() {
+    private void storeData() {
         storeEEGDataInBuffers();
 
     }

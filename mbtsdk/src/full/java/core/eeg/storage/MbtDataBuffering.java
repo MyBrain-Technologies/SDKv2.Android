@@ -69,6 +69,7 @@ public class MbtDataBuffering {
         if(pendingRawData.size() >= MbtFeatures.DEFAULT_MAX_PENDING_RAW_DATA_BUFFER_SIZE){
             Log.e(TAG," buffer size reached");//todo remove after tests
             notifyPendingRawDataBufferFull();
+            resetPendingBuffer();
         }
     }
 
@@ -80,7 +81,7 @@ public class MbtDataBuffering {
     private void notifyPendingRawDataBufferFull() {
         final ArrayList<RawEEGSample> rawEEGtoConvert = (ArrayList<RawEEGSample>) pendingRawData.clone(); //the pending raw data is stored in toDecodeBytes to be converted in readable EEG values
         eegManager.convertToEEG(rawEEGtoConvert);
-        pendingRawData.clear();
+
     }
 
 
@@ -99,7 +100,7 @@ public class MbtDataBuffering {
      * We wait to have a full packet buffer to send these EEG values to the UI.
      * @return true if the packet buffer is full (contains a number of data equals to eegBufferLengthNotification), false otherwise.
      */
-    public void storeConsolidatedEegPacketInPacketBuffer(@NonNull final ArrayList<ArrayList<Float>> consolidatedEEG, @NonNull ArrayList<Float> status) {
+    public void storeConsolidatedEegInPacketBuffer(@NonNull final ArrayList<ArrayList<Float>> consolidatedEEG, @NonNull ArrayList<Float> status) {
 
         int maxElementsToAppend = getBufferLengthClientNotif() - mbtEEGPacketsBuffer.getChannelsData().size();
 
@@ -115,6 +116,7 @@ public class MbtDataBuffering {
 
             notifyClientEEGDataBufferFull(new MbtEEGPacket(mbtEEGPacketsBuffer));
 
+            //Reset the packet buffre and store overflow data in it
             mbtEEGPacketsBuffer = new MbtEEGPacket( new ArrayList<>(consolidatedEEG.subList(maxElementsToAppend, consolidatedEEG.size())),
                      status.size() != 0 ?
                     ( new ArrayList<>(status.subList(maxElementsToAppend, status.size() >= consolidatedEEG.size() ? consolidatedEEG.size() : status.size() ))) : null );
@@ -149,5 +151,12 @@ public class MbtDataBuffering {
      */
     public ArrayList<RawEEGSample> getPendingRawData() {
         return pendingRawData;
+    }
+
+    /**
+     * Clear the pending buffer
+     */
+    private void resetPendingBuffer(){
+        pendingRawData.clear();
     }
 }

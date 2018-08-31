@@ -100,7 +100,7 @@ public class MbtDataBuffering {
      * We wait to have a full packet buffer to send these EEG values to the UI.
      * @return true if the packet buffer is full (contains a number of data equals to eegBufferLengthNotification), false otherwise.
      */
-    public void storeConsolidatedEegPacketInPacketBuffer(@NonNull final ArrayList<ArrayList<Float>> consolidatedEEG, @NonNull ArrayList<Float> status) {
+    public void storeConsolidatedEegInPacketBuffer(@NonNull final ArrayList<ArrayList<Float>> consolidatedEEG, @NonNull ArrayList<Float> status) {
 
         int maxElementsToAppend = getBufferLengthClientNotif() - mbtEEGPacketsBuffer.getChannelsData().size();
 

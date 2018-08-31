@@ -28,6 +28,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+/**
+ * Instrumented tests for MbtDataAcquisition where C++ algorithms are called
+ */
 public class MbtDataAcquisitionTest {
 
     private MbtDataAcquisition dataAcquisition;

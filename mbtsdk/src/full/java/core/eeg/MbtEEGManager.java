@@ -125,7 +125,7 @@ public final class MbtEEGManager extends BaseModuleManager {
                 consolidatedEEG = MbtDataConversion.convertRawDataToEEG(toDecodeRawEEG, protocol); //convert byte table data to Float matrix and store the matrix in MbtEEGManager as eegResult attribute
                 Log.e(TAG," consolidated eeg  "+consolidatedEEG.toString());//todo remove after tests
 
-                dataBuffering.storeConsolidatedEegPacketInPacketBuffer(consolidatedEEG, toDecodeStatus);// if the packet buffer is full, this method returns the non null packet buffer
+                dataBuffering.storeConsolidatedEegInPacketBuffer(consolidatedEEG, toDecodeStatus);// if the packet buffer is full, this method returns the non null packet buffer
 
             }
         });
@@ -165,21 +165,6 @@ public final class MbtEEGManager extends BaseModuleManager {
      */
     private void deinitQualityChecker() {
         MBTSignalQualityChecker.deinitQualityChecker();
-    }
-
-    /**
-     * Computes the result of the previously done session
-     *
-     * @param bestChannel  the best quality channel index
-     * @param sampRate     the number of value(s) inside each channel
-     * @param packetLength how long is a packet (time x samprate)
-     * @param packets      the EEG packets containing the EEG data matrix, their associated status and qualities.
-     * @return the result of the previously done session
-     * @throws IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
-     */
-    @NonNull
-    public HashMap<String, Float> computeStatistics(final int bestChannel, final int sampRate, final int packetLength, final MbtEEGPacket... packets) {
-        return MBTComputeStatistics.computeStatistics(bestChannel, sampRate, packetLength, packets);
     }
 
     /**
