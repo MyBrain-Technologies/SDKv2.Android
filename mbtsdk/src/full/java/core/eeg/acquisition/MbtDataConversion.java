@@ -75,7 +75,10 @@ public class MbtDataConversion {
         return eegData;
     }
 
-    public static float convertRawDCOffsetBLE(byte[] offset){
+    public static float convertRawDataToDcOffset(byte[] offset){
+        if (offset == null || offset.length < 2)
+            throw new IllegalArgumentException("input array must contain at least 2 elements !");
+
         int digit = 0x00000000;
         digit = ((offset[0] & 0xFF) << (SHIFT_DC_OFFSET)) | ((offset[1] & 0xFF) << (SHIFT_DC_OFFSET-8));
 
@@ -87,5 +90,4 @@ public class MbtDataConversion {
 
         return digit * VOLTAGE_BLE;
     }
-
 }

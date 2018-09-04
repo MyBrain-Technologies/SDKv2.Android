@@ -41,7 +41,7 @@ public final class MBTCalibrator {
             qualities[0][qtCnt] = 1f;
             qualities[1][qtCnt++] = 0f;
 
-// Merging channels
+ //Merging channels
             Float[] channel1 = new Float[current.getChannelsData().get(0).size()];
             channel1 = current.getChannelsData().get(0).toArray(channel1);
             Float[] channel2 = new Float[current.getChannelsData().get(1).size()];
@@ -53,7 +53,7 @@ public final class MBTCalibrator {
                 mainMatrix[1][chanCnt++] = matrix[1][it];
             }
         }
-//        Log.d(TAG, "count " + count++);
+        Log.d(TAG, "count " + count++);
         return nativeCalibrateNew(sampRate, packetLength, packets.length, smoothingDuration, qualities, mainMatrix);
     }
 
@@ -61,7 +61,7 @@ public final class MBTCalibrator {
     public static HashMap<String, float[]> calibrateTest(final int sampRate, final int packetLength){
         final float[][] qualities = new float[2][250];
         final float[][] mainMatrix = new float[2][250];
-        return nativeCalibrateNew(sampRate, packetLength, 30, 4, null, mainMatrix);
+        return nativeCalibrateNew(sampRate, packetLength, 30, ContextSP.smoothingDuration, null, mainMatrix);
     }
 
     @NonNull

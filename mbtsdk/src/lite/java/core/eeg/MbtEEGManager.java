@@ -2,6 +2,7 @@ package core.eeg;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.util.Log;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.greenrobot.eventbus.Subscribe;
@@ -21,8 +22,6 @@ import core.eeg.signalprocessing.ContextSP;
 import core.eeg.signalprocessing.MBTCalibrationParameters;
 import core.eeg.signalprocessing.MBTComputeRelaxIndex;
 import core.eeg.signalprocessing.MBTComputeStatistics;
-import core.eeg.requests.EegRequests;
-import core.eeg.requests.QualityRequest;
 import core.eeg.storage.MbtEEGPacket;
 import core.eeg.signalprocessing.MBTSignalQualityChecker;
 import core.eeg.acquisition.MbtDataConversion;
@@ -72,8 +71,11 @@ public final class MbtEEGManager extends BaseModuleManager {
         this.protocol = protocol;
         this.dataAcquisition = new MbtDataAcquisition(this, protocol);
         this.dataBuffering = new MbtDataBuffering(this);
-
-
+        try {
+            System.loadLibrary(ContextSP.LIBRARY_NAME + BuildConfig.USE_ALGO_VERSION);
+        } catch (final UnsatisfiedLinkError e) {
+            e.printStackTrace();
+        }
 //        requestThread = new MbtEEGManager.RequestThread("requestThread", Thread.MAX_PRIORITY);
 //        requestThread.start();
 //        requestHandler = new Handler(requestThread.getLooper());
@@ -97,7 +99,6 @@ public final class MbtEEGManager extends BaseModuleManager {
     private void reinitBuffers() {
         dataBuffering.reinitBuffers();
         dataAcquisition.resetIndex();
-        deinitQualityChecker();
     }
 
 
@@ -111,6 +112,7 @@ public final class MbtEEGManager extends BaseModuleManager {
         AsyncUtils.executeAsync(new Runnable() {
             @Override
             public void run() {
+                consolidatedEEG = new ArrayList<>();
                 LogUtils.i(TAG, "computing and sending to application");
 
                 ArrayList<Float> toDecodeStatus = new ArrayList<>();
@@ -120,8 +122,8 @@ public final class MbtEEGManager extends BaseModuleManager {
                             toDecodeStatus.add(rawEEGSample.getStatus());
                     }
                 }
-
                 consolidatedEEG = MbtDataConversion.convertRawDataToEEG(toDecodeRawEEG, protocol); //convert byte table data to Float matrix and store the matrix in MbtEEGManager as eegResult attribute
+                Log.e(TAG," consolidated eeg  "+consolidatedEEG.toString());//todo remove after tests
 
                 dataBuffering.storeConsolidatedEegInPacketBuffer(consolidatedEEG, toDecodeStatus);// if the packet buffer is full, this method returns the non null packet buffer
 
@@ -155,12 +157,6 @@ public final class MbtEEGManager extends BaseModuleManager {
      * Should be destroyed at the end of the session
      */
     private void initQualityChecker() {
-        try {
-            System.loadLibrary(ContextSP.LIBRARY_NAME + BuildConfig.USE_ALGO_VERSION);
-        } catch (final UnsatisfiedLinkError e) {
-            e.printStackTrace();
-        }
-
         ContextSP.SP_VERSION = MBTSignalQualityChecker.initQualityChecker();
     }
 
@@ -169,21 +165,6 @@ public final class MbtEEGManager extends BaseModuleManager {
      */
     private void deinitQualityChecker() {
         MBTSignalQualityChecker.deinitQualityChecker();
-    }
-
-    /**
-     * Computes the result of the previously done session
-     *
-     * @param bestChannel  the best quality channel index
-     * @param sampRate     the number of value(s) inside each channel
-     * @param packetLength how long is a packet (time x samprate)
-     * @param packets      the EEG packets containing the EEG data matrix, their associated status and qualities.
-     * @return the result of the previously done session
-     * @throws IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
-     */
-    @NonNull
-    public HashMap<String, Float> computeStatistics(final int bestChannel, final int sampRate, final int packetLength, final MbtEEGPacket... packets) {
-        return MBTComputeStatistics.computeStatistics(bestChannel, sampRate, packetLength, packets);
     }
 
     /**
@@ -207,6 +188,7 @@ public final class MbtEEGManager extends BaseModuleManager {
      * @return an array that contains the quality of each EEG acquisition channels
      * This array contains 2 qualities (items) if the headset used is MELOMIND.
      * This array contains 9 qualities (items) if the headset used is VPRO.
+     * The method computes and displays the duration for quality computation.
      * @throws IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
      */
     private ArrayList<Float> computeEEGSignalQuality(final MbtEEGPacket packet) {
@@ -249,30 +231,12 @@ public final class MbtEEGManager extends BaseModuleManager {
         MBTComputeRelaxIndex.reinitRelaxIndexVariables();
     }
 
-
-    /**
-     * Gets the MbtManager instance.
-     * MbtManager is responsible for managing all the package managers
-     * @return the MbtManager instance.
-     */
-    public MbtManager getMbtManager() {
-        return mbtManager;
-    }
-
     /**
      * Gets the user-readable EEG data matrix
      * @return the converted EEG data matrix that contains readable values for any user
      */
     public ArrayList<ArrayList<Float>> getConsolidatedEEG() {
         return consolidatedEEG;
-    }
-
-    /**
-     * Gets the instance of MbtDataAcquisition
-     * @return the instance of MbtDataAcquisition
-     */
-    public MbtDataAcquisition getDataAcquisition() {
-        return dataAcquisition;
     }
 
     /**
@@ -303,7 +267,6 @@ public final class MbtEEGManager extends BaseModuleManager {
     public void onStreamStateChanged(IStreamable.StreamState newState) {
         if (newState == IStreamable.StreamState.STOPPED)
             reinitBuffers();
-
     }
 
     @Subscribe
@@ -312,6 +275,8 @@ public final class MbtEEGManager extends BaseModuleManager {
             hasQualities = true;
             initQualityChecker();
         }
+        else if(!event.isStart())
+            deinitQualityChecker();
 
     }
 
@@ -360,5 +325,4 @@ public final class MbtEEGManager extends BaseModuleManager {
 //            }
 //        }
 //    }
-
 }

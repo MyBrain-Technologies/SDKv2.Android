@@ -52,9 +52,9 @@ public class MbtDeviceManager extends BaseModuleManager{
             float[] dcOffsets = new float[2]; // parsing last 4 bytes as they represent the dcOffsets
             byte[] temp = new byte[2];
             System.arraycopy(rawDeviceMeasure.getRawMeasure(), 4, temp, 0, 2);
-            dcOffsets[1] = MbtDataConversion.convertRawDCOffsetBLE(temp);
+            dcOffsets[1] = MbtDataConversion.convertRawDataToDcOffset(temp);
             System.arraycopy(rawDeviceMeasure.getRawMeasure(), 6, temp, 0, 2);
-            dcOffsets[0] = MbtDataConversion.convertRawDCOffsetBLE(temp);
+            dcOffsets[0] = MbtDataConversion.convertRawDataToDcOffset(temp);
             EventBusManager.postEvent(new DCOffsets(timestamp, dcOffsets));
         }
     }

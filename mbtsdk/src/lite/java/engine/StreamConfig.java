@@ -19,7 +19,11 @@ import features.MbtFeatures;
 @Keep
 public final class StreamConfig {
 
+    //private final long streamDuration; //For later use
+
     private final int notificationPeriod;
+
+    //private final DeviceConfig deviceConfig; Will be used in future release
 
     private final EegListener<EEGException> eegListener;
 
@@ -118,6 +122,20 @@ public final class StreamConfig {
             return this;
         }
 
+        /**
+         * Use this method if you want to monitor headset's electrodes saturation and eeg offset.
+         * Set it to null if unnecesary.
+         *
+         * <p>It is by default set to NULL</p>
+         *
+         * @param deviceStatusListener the device status listener
+         * @return the device instance
+         */
+        @NonNull
+        public Builder addSaturationAndOffsetListener(@Nullable DeviceStatusListener deviceStatusListener){
+            this.deviceStatusListener = deviceStatusListener;
+            return this;
+        }
 
         @Nullable
         public StreamConfig create(){

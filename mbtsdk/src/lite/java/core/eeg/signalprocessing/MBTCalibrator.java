@@ -38,8 +38,9 @@ public final class MBTCalibrator {
             else{
                 qualities[0][qtCnt] = current.getQualities().get(0);
                 qualities[1][qtCnt++] = current.getQualities().get(1);
-            }*/ //todo decomment
-
+            }*/ //todo decomment & remove the 2 next lines
+            qualities[0][qtCnt] = 1f;
+            qualities[1][qtCnt++] = 0f;
 
  //Merging channels
             Float[] channel1 = new Float[current.getChannelsData().get(0).size()];
@@ -61,7 +62,7 @@ public final class MBTCalibrator {
     public static HashMap<String, float[]> calibrateTest(final int sampRate, final int packetLength){
         final float[][] qualities = new float[2][250];
         final float[][] mainMatrix = new float[2][250];
-        return nativeCalibrateNew(sampRate, packetLength, 30, ContextSP.smoothingDuration, qualities, mainMatrix);
+        return nativeCalibrateNew(sampRate, packetLength, 30, ContextSP.smoothingDuration, null, mainMatrix);
     }
 
     @NonNull
