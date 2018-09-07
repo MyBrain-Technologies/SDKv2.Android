@@ -1,6 +1,5 @@
 package com.mybraintech.app_things;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
@@ -22,16 +21,14 @@ import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 
 import java.util.ArrayList;
-
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Queue;
-
 
 import core.bluetooth.BtState;
 import core.device.model.MbtDevice;
 import core.eeg.storage.MbtEEGPacket;
 import engine.MbtClient;
-
 import engine.SimpleRequestCallback;
 import engine.StreamConfig;
 import engine.clientevents.BaseException;
@@ -132,6 +129,7 @@ public class DeviceActivity extends AppCompatActivity{
 
         @Override
         public void onNewPackets(@NonNull final MbtEEGPacket mbtEEGPackets) {
+            Log.i(TAG, Arrays.deepToString(mbtEEGPackets.getFeatures()));
             if(invertFloatMatrix(mbtEEGPackets.getChannelsData()) != null)
                 mbtEEGPackets.setChannelsData(invertFloatMatrix(mbtEEGPackets.getChannelsData()));
 
@@ -143,6 +141,7 @@ public class DeviceActivity extends AppCompatActivity{
                     channel2Quality.setText(getString(R.string.channel_2_qc) + ( (mbtEEGPackets.getQualities() != null && mbtEEGPackets.getQualities().get(1) != null ) ? mbtEEGPackets.getQualities().get(1) : " -- "));
                 }
             }
+
         }
 
     };

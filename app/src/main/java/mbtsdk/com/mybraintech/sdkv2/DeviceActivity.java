@@ -22,6 +22,7 @@ import com.github.mikephil.charting.data.LineDataSet;
 
 import java.util.ArrayList;
 
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Queue;
 
@@ -131,6 +132,7 @@ DeviceActivity extends AppCompatActivity {
 
         @Override
         public void onNewPackets(@NonNull final MbtEEGPacket mbtEEGPackets) {
+            Log.i(TAG, Arrays.deepToString(mbtEEGPackets.getFeatures()));
             if(invertFloatMatrix(mbtEEGPackets.getChannelsData()) != null)
                 mbtEEGPackets.setChannelsData(invertFloatMatrix(mbtEEGPackets.getChannelsData()));
 

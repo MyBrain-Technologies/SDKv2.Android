@@ -144,6 +144,7 @@ public final class MbtEEGManager extends BaseModuleManager {
             public void run() {
                 if (hasQualities) {
                     eegPackets.setQualities(MbtEEGManager.this.computeEEGSignalQuality(eegPackets));
+                    eegPackets.setFeatures(MBTSignalQualityChecker.getFeatures());
                 }
                 EventBusManager.postEvent(new ClientReadyEEGEvent(eegPackets));
             }
@@ -197,6 +198,7 @@ public final class MbtEEGManager extends BaseModuleManager {
             float[] qualities = {-1f,-1f};
             try{
                 qualities = MBTSignalQualityChecker.computeQualitiesForPacketNew(MbtFeatures.getSampleRate(), MbtFeatures.getSampleRate(), MatrixUtils.invertFloatMatrix(packet.getChannelsData()));
+
             } catch (IllegalStateException e){
                 e.printStackTrace();
             }

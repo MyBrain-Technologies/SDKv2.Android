@@ -1,23 +1,12 @@
 package core.eeg.storage;
 
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.util.Log;
-
-import org.apache.commons.lang.ArrayUtils;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
-import config.MbtConfig;
 import core.eeg.MbtEEGManager;
 import core.eeg.acquisition.MbtDataConversion;
-import core.eeg.signalprocessing.ContextSP;
-import core.eeg.signalprocessing.MBTSignalQualityChecker;
 import features.MbtFeatures;
-import features.ScannableDevices;
-import mbtsdk.com.mybraintech.mbtsdk.BuildConfig;
-import utils.MatrixUtils;
 
 import static config.MbtConfig.getEegBufferLengthClientNotif;
 
