@@ -123,7 +123,7 @@ public final class MbtEEGManager extends BaseModuleManager {
                     }
                 }
                 consolidatedEEG = MbtDataConversion.convertRawDataToEEG(toDecodeRawEEG, protocol); //convert byte table data to Float matrix and store the matrix in MbtEEGManager as eegResult attribute
-                Log.e(TAG," consolidated eeg  "+consolidatedEEG.toString());//todo remove after tests
+                //Log.e(TAG," consolidated eeg  "+consolidatedEEG.toString());//todo remove after tests
 
                 dataBuffering.storeConsolidatedEegPacketInPacketBuffer(consolidatedEEG, toDecodeStatus);// if the packet buffer is full, this method returns the non null packet buffer
 
@@ -145,6 +145,7 @@ public final class MbtEEGManager extends BaseModuleManager {
             public void run() {
                 if(hasQualities){
                     eegPackets.setQualities(computeEEGSignalQuality(eegPackets));
+                    eegPackets.setFeatures(MBTSignalQualityChecker.getFeatures());
                 }
                 EventBusManager.postEvent(new ClientReadyEEGEvent(eegPackets));
             }
@@ -213,6 +214,7 @@ public final class MbtEEGManager extends BaseModuleManager {
             float[] qualities = {-1f,-1f};
             try{
                 qualities = MBTSignalQualityChecker.computeQualitiesForPacketNew(MbtFeatures.getSampleRate(), MbtFeatures.getSampleRate(), MatrixUtils.invertFloatMatrix(packet.getChannelsData()));
+
             } catch (IllegalStateException e){
                 e.printStackTrace();
             }

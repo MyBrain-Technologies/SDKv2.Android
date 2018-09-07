@@ -55,7 +55,7 @@ public class MbtDataAcquisition {
      */
     @Nullable
     public synchronized void handleDataAcquired(@NonNull final byte[] data) {
-        Log.e(TAG, " raw |"+Arrays.toString(data));//todo remove after tests
+        //Log.e(TAG, " raw |"+Arrays.toString(data));//todo remove after tests
 
         singleRawEEGList = new ArrayList<>();
 

@@ -35,5 +35,10 @@ JNIEXPORT void JNICALL
 Java_core_eeg_signalprocessing_MBTSignalQualityChecker_nativeDeinitQualityChecker(JNIEnv *env,
                                                                                  jclass type);
 
+
+JNIEXPORT jobjectArray JNICALL
+Java_core_eeg_signalprocessing_MBTSignalQualityChecker_nativeGetFeatures(JNIEnv *env, jclass type);
+
+
 }
 #endif
