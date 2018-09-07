@@ -1,11 +1,13 @@
 package core.eeg.acquisition;
 
 import android.support.annotation.NonNull;
+import android.util.Log;
 
 import java.util.ArrayList;
 
 import core.bluetooth.BtProtocol;
 import core.eeg.storage.RawEEGSample;
+import features.MbtFeatures;
 
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
 
@@ -42,16 +44,23 @@ public class MbtDataConversion {
     @NonNull
     public static ArrayList<ArrayList<Float>> convertRawDataToEEG(@NonNull ArrayList<RawEEGSample> rawEEGdataList, @NonNull BtProtocol protocol) {
 
+        if (rawEEGdataList == null)
+            return null;
+        if (protocol == null || protocol.equals(BtProtocol.BLUETOOTH_A2DP))
+            return null;
+
         ArrayList<ArrayList<Float>> eegData = new ArrayList<>();
 
         ArrayList<Float> consolidatedEEGSample;
 
-        for (RawEEGSample singleRawEEGdata : rawEEGdataList){ // for each channel of the headset
-            consolidatedEEGSample = new ArrayList<Float>();
+        for (RawEEGSample singleRawEEGdata : rawEEGdataList){ // for each acquisition of the headset
+            consolidatedEEGSample = new ArrayList<>();
 
             if(singleRawEEGdata.getBytesEEG() == null){
 
-                consolidatedEEGSample.add(Float.NaN); //... fill the EEG data matrix with a NaN value for
+                for (int nbChannel = 0 ; nbChannel < MbtFeatures.getNbChannels() ; nbChannel++){
+                    consolidatedEEGSample.add(Float.NaN); //... fill the EEG data matrix with a NaN value for
+                }
             }else{
                 for (byte[] bytes : singleRawEEGdata.getBytesEEG()) {
                     int temp = 0x0000000;
@@ -66,23 +75,24 @@ public class MbtDataConversion {
             }
             eegData.add(consolidatedEEGSample);
         }
+
+
         return eegData;
     }
 
-    public static float convertDCOffsetToEEG(byte[] offset){
+    public static float convertRawDataToDcOffset(byte[] offset){
+        if (offset == null || offset.length < 2)
+            return -1;
+
         int digit = 0x00000000;
         digit = ((offset[0] & 0xFF) << (SHIFT_DC_OFFSET)) | ((offset[1] & 0xFF) << (SHIFT_DC_OFFSET-8));
 
-        if ((digit & CHECK_SIGN_BLE) > 0) { // value is negative
-            digit = (int) (digit | NEGATIVE_MASK_BLE );
-        }
-        else{
-            // value is positive
-            digit = (int) (digit & POSITIVE_MASK_BLE);
+        if ((digit & CHECK_SIGN_BLE) > 0) {
+            digit = (int) (digit | NEGATIVE_MASK_BLE );// value is negative
+        }else{
+            digit = (int) (digit & POSITIVE_MASK_BLE);// value is positive
         }
 
         return digit * VOLTAGE_BLE;
     }
-
-
 }

@@ -167,7 +167,7 @@ Java_core_eeg_signalprocessing_MBTComputeRelaxIndex_nativeComputeRelaxIndex(JNIE
 
 
 JNIEXPORT jobject JNICALL
-core_eeg_signalprocessing_MBTComputeRelaxIndex_nativeGetSessionMetadata(JNIEnv *env,
+Java_core_eeg_signalprocessing_MBTComputeRelaxIndex_nativeGetSessionMetadata(JNIEnv *env,
                                                                             jclass type){
 
     // first, constructing c++ map
@@ -216,7 +216,7 @@ core_eeg_signalprocessing_MBTComputeRelaxIndex_nativeGetSessionMetadata(JNIEnv *
 
 
 JNIEXPORT void JNICALL
-core_eeg_signalprocessing_MBTComputeRelaxIndex_nativeReinitRelaxIndexVariables(JNIEnv *env,
+Java_core_eeg_signalprocessing_MBTComputeRelaxIndex_nativeReinitRelaxIndexVariables(JNIEnv *env,
                                                                                    jclass type) {
     pastRelaxIndex.clear();
     smoothedRelaxIndex.clear();

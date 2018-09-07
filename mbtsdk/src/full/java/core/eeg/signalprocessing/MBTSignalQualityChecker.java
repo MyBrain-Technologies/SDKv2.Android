@@ -52,15 +52,6 @@ public final class MBTSignalQualityChecker {
         qcCurrentState = QCStateMachine.DEINIT;
         nativeDeinitQualityChecker();
         qcCurrentState = QCStateMachine.NOT_READY;
-
-//        AsyncUtils.executeAsync(new Runnable() {
-//            @Override
-//            public void run() {
-//
-//
-//            }
-//        });
-
     }
 
 
@@ -110,6 +101,14 @@ public final class MBTSignalQualityChecker {
 
 
     @NonNull
+    public static float[][] getFeatures(){
+
+        return nativeGetFeatures();
+    }
+
+
+
+    @NonNull
     private native static String nativeInitQualityChecker();
 
     private native static void nativeDeinitQualityChecker();
@@ -119,6 +118,9 @@ public final class MBTSignalQualityChecker {
 
     @NonNull
     public native static float[] nativeComputeQualityCheckerNew(float[][] matrix, int samprate, int packetLength);
+
+    public native static float[][] nativeGetFeatures();
+
 
     enum QCStateMachine{
         NOT_READY,

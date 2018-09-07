@@ -14,6 +14,7 @@ public final class ConnectionException extends BaseException {
     private static final String BASE_INVALID_PARAMETERS = "Invalid parameter: ";
     public static final String INVALID_NAME = BASE_INVALID_PARAMETERS + "Input name does not match the required format. Name must start with melo_ or vpro_";
     public static final String INVALID_SCAN_DURATION = BASE_INVALID_PARAMETERS + "Scan duration is too small. It must be at least 10sec. Please change duration and try again";
+    public static final String INVALID_CONNECTION_DURATION = BASE_INVALID_PARAMETERS + "Connection duration is too small. It must be at least 10sec. Please change duration and try again";
 
     public ConnectionException(String exception){
         super(exception);

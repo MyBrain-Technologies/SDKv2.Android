@@ -73,10 +73,15 @@ public class RawEEGSample {
     @Override
     public String toString() {
         StringBuilder s = new StringBuilder();
-        for (byte[] bytes : bytesEEG) {
-            s.append(Arrays.toString(bytes));
-        }
+        if(bytesEEG != null){
+            for (byte[] bytes : bytesEEG) {
+                s.append(Arrays.toString(bytes));
+            }
+        }else
+            s.append(" null ");
+
         s.append(" and status " + statusEEG);
         return s.toString();
     }
+
 }

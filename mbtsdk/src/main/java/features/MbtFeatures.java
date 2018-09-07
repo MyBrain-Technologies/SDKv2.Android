@@ -8,7 +8,6 @@ import java.util.Arrays;
 
 import config.MbtConfig;
 import core.bluetooth.BtProtocol;
-import core.eeg.signalprocessing.MBTComputeStatistics;
 
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
 import static core.bluetooth.BtProtocol.BLUETOOTH_SPP;

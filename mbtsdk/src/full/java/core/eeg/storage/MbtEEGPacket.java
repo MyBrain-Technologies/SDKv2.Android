@@ -9,7 +9,7 @@ import java.util.ArrayList;
 @Keep
 public final class MbtEEGPacket {
     @NonNull
-    private ArrayList<ArrayList<Float>> channelsData = new ArrayList<>(); //TODO check if we need to set this synchornized
+    private ArrayList<ArrayList<Float>> channelsData = new ArrayList<>(); //TODO check if we need to set this synchronized
 
     private ArrayList<Float> statusData = new ArrayList<>();
     @NonNull
@@ -17,11 +17,15 @@ public final class MbtEEGPacket {
 
     private ArrayList<Float> qualities;
 
+    private float[][] features = null;
+
+
     public MbtEEGPacket(MbtEEGPacket packetToClone){
         this.timestamp = packetToClone.getTimeStamp();
         this.channelsData = packetToClone.getChannelsData();
         this.statusData = packetToClone.getStatusData();
         this.qualities = packetToClone.getQualities();
+        this.features = packetToClone.getFeatures();
     }
 
     public MbtEEGPacket(){
@@ -133,5 +137,13 @@ public final class MbtEEGPacket {
 
     public void setQualities(ArrayList<Float> qualities) {
         this.qualities = qualities;
+    }
+
+    public float[][] getFeatures() {
+        return features;
+    }
+
+    public void setFeatures(float[][] features) {
+        this.features = features;
     }
 }

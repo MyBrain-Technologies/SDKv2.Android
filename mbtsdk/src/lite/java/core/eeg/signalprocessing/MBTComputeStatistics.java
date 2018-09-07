@@ -28,10 +28,10 @@ public class MBTComputeStatistics {
         int chanCnt = 0;
         for (final MbtEEGPacket current : packets) {
             // Merging qualities
-            // qualities[0][qtCnt] = current.getQualities().get(0); //todo decomment
-            // qualities[1][qtCnt++] = current.getQualities().get(1);//todo decomment
+            // qualities[0][qtCnt] = current.getQualities().get(0);  //todo decomment
+            // qualities[1][qtCnt++] = current.getQualities().get(1);  //todo decomment
 
- // Merging channels
+// Merging channels
             Float[] channel1 = new Float[current.getChannelsData().get(0).size()];
             channel1 = current.getChannelsData().get(0).toArray(channel1);
             Float[] channel2 = new Float[current.getChannelsData().get(1).size()];
@@ -44,7 +44,7 @@ public class MBTComputeStatistics {
             }
         }
 
-            bestChannelData = mainMatrix[bestChannel];
+        bestChannelData = mainMatrix[bestChannel];
 
         HashMap<String, Float> result = new HashMap<>();
         long timeBefore = System.currentTimeMillis();

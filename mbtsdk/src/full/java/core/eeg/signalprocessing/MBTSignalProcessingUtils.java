@@ -21,8 +21,9 @@ final class MBTSignalProcessingUtils {
      */
     @NonNull
     static double[][] channelsToMatrixDouble(@Nullable Float[]... channels) {
-        if (channels == null || channels.length == 0)
+        if (channels == null || channels.length == 0){
             throw new IllegalArgumentException("there MUST be at least ONE or MORE channel(s) !");
+        }
 
         final int height = channels.length;
         final int samprate = channels[0].length;
@@ -49,9 +50,9 @@ final class MBTSignalProcessingUtils {
      */
     @NonNull
     static float[][] channelsToMatrixFloat(@Nullable Float[]... channels) {
-        if (channels == null || channels.length == 0)
+        if (channels == null || channels.length == 0) {
             throw new IllegalArgumentException("there MUST be at least ONE or MORE channel(s) !");
-
+        }
         final int height = channels.length;
         final int samprate = channels[0].length;
 
@@ -77,9 +78,9 @@ final class MBTSignalProcessingUtils {
      */
     @NonNull
     static float[][] channelsToMatrixFloat(@Nullable ArrayList<ArrayList<Float>> channels) {
-        if (channels == null || channels.size() == 0)
+        if (channels == null || channels.size() == 0) {
             throw new IllegalArgumentException("there MUST be at least ONE or MORE channel(s) !");
-
+        }
         final int height = channels.size();
         final int samprate = channels.get(0).size();
 

@@ -15,54 +15,50 @@ import static org.junit.Assert.assertTrue;
 
 public class MBTComputeRelaxIndexTest {
 
-       @Test
-
+    /**
+     * check that IllegalArgumentException is raised if calibparams has empty parameters
+     */
+    @Test (expected = IllegalArgumentException.class)
     public void computeRelaxIndexCalibParamsEmptyTest() {
-        final int sampRate = 0;
-        HashMap<String, float[]> params = new HashMap<>();
-        params.put("Example",new float[0]);
-        final MBTCalibrationParameters calibParams =  new MBTCalibrationParameters(params);  //check that IllegalArgumentException is raised if calibparams is empty
+        int sampRate = 250;
+        final MBTCalibrationParameters calibParams =  new MBTCalibrationParameters(new HashMap<>());
         final ArrayList<ArrayList<Float>> channelsData = new ArrayList<>();
-        channelsData.add(new ArrayList<>());
-        channelsData.add(new ArrayList<>());
-        ArrayList<Float> qualities = new ArrayList<>();
-        qualities.add(1F);
-        qualities.add(1F);
-        //final MbtEEGPacket packets = new MbtEEGPacket(channelsData, qualities, null, timestamp);
-        //float relaxIndex = MBTComputeRelaxIndex.computeRelaxIndex(sampRate,calibParams,packets);
+        channelsData.add(new ArrayList<>(Arrays.asList(1f,2f,3f)));
+        channelsData.add(new ArrayList<>(Arrays.asList(4f,5f,6f)));
+        final MbtEEGPacket packets = new MbtEEGPacket(channelsData, null);
+        MBTComputeRelaxIndex.computeRelaxIndex(sampRate,calibParams,packets);
     }
 
+    /**
+     * check that IllegalArgumentException is raised if calibparams is null
+     */
     @Test (expected = IllegalArgumentException.class)
     public void computeRelaxIndexCalibParamsNullTest() {
-        final int sampRate = 0;
-        HashMap<String, float[]> params = new HashMap<>();
-        params.put("Example",new float[1]);
-        final MBTCalibrationParameters calibParams =  null ;  //check that IllegalArgumentException is raised if calibparams is null
+        final int sampRate = 250;
+        final MBTCalibrationParameters calibParams =  null ;
         final ArrayList<ArrayList<Float>> channelsData = new ArrayList<>();
-        channelsData.add(new ArrayList<>());
-        channelsData.add(new ArrayList<>());
-        ArrayList<Float> qualities = new ArrayList<>();
-        qualities.add(1F);
-        qualities.add(1F);
+        channelsData.add(new ArrayList<>(Arrays.asList(1f,2f,3f)));
+        channelsData.add(new ArrayList<>(Arrays.asList(4f,5f,6f)));
         final MbtEEGPacket packets = new MbtEEGPacket(channelsData, null);
-        float relaxIndex = MBTComputeRelaxIndex.computeRelaxIndex(sampRate,calibParams,packets);
+        MBTComputeRelaxIndex.computeRelaxIndex(sampRate,calibParams,packets);
     }
 
+    /**
+     * check that IllegalArgumentException is raised if EEG packets is null
+     */
     @Test (expected = NullPointerException.class)
     public void computeRelaxIndexPacketsNullTest() {
-        final int sampRate = 0;
+        final int sampRate = 250;
         HashMap<String, float[]> params = new HashMap<>();
-        params.put("Example",new float[1]);
+        params.put("example",new float[]{1f});
         final MBTCalibrationParameters calibParams =  new MBTCalibrationParameters(params);
-        final ArrayList<ArrayList<Float>> channelsData = new ArrayList<>();
-        channelsData.add(new ArrayList<>());
-        channelsData.add(new ArrayList<>());
-        ArrayList<Float> qualities = new ArrayList<>();
-        qualities.add(1F);
-        final MbtEEGPacket packets = null;  //check that IllegalArgumentException is raised if packets is null
-        float relaxIndex = MBTComputeRelaxIndex.computeRelaxIndex(sampRate,calibParams,packets);
+        final MbtEEGPacket packets = null;
+        MBTComputeRelaxIndex.computeRelaxIndex(sampRate,calibParams,packets);
     }
 
+    /**
+     * check that IllegalArgumentException is raised if EEG packets is empty (no EEG packets in input)
+     */
     @Test (expected = IllegalArgumentException.class)
     public void computeRelaxIndexPacketsEmptyTest() {
         final int sampRate = 0;
@@ -74,13 +70,15 @@ public class MBTComputeRelaxIndexTest {
         channelsData.add(new ArrayList<>());
         ArrayList<Float> qualities = new ArrayList<>();
         qualities.add(1F);
-        final MbtEEGPacket[] packets = new MbtEEGPacket[0];  //check that IllegalArgumentException is raised if packets is empty
-        MBTComputeRelaxIndex.computeRelaxIndex(sampRate,calibParams,packets);
+        MBTComputeRelaxIndex.computeRelaxIndex(sampRate,calibParams);
     }
 
+    /**
+     * check that IllegalArgumentException is raised if sampRate is negative
+     */
     @Test (expected = IllegalArgumentException.class)
     public void computeRelaxIndexNegativeSampRateTest() {
-        final int sampRate = -1;  //check that IllegalArgumentException is raised if sampRate is negative
+        final int sampRate = -1;
         HashMap<String, float[]> params = new HashMap<>();
         params.put("Example",new float[1]);
         final MBTCalibrationParameters calibParams =  new MBTCalibrationParameters(params);
@@ -93,30 +91,38 @@ public class MBTComputeRelaxIndexTest {
         float relaxIndex = MBTComputeRelaxIndex.computeRelaxIndex(sampRate,calibParams,packets);
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
-    public void computeRelaxIndexEmptyQualitiesTest() {
-        final int sampRate = 1;
+
+    /**
+     * check that computed relax index has a relevant value and is equal to the expected output
+     */
+    @Test
+    public void computeRelaxIndexGoodQualitiesTest() {
+        final int sampRate = 2;
+        float expectedOutput = 0.5f;
         HashMap<String, float[]> params = new HashMap<>();
-        params.put("Example", new float[1]);
+        params.put("Example", new float[]{1f});
         final MBTCalibrationParameters calibParams =  new MBTCalibrationParameters(params);
         final ArrayList<ArrayList<Float>> channelsData = new ArrayList<>();
-        channelsData.add(new ArrayList<>());
-        channelsData.add(new ArrayList<>());
+        channelsData.add(new ArrayList<>(Arrays.asList(1f,2f,3f)));
+        channelsData.add(new ArrayList<>(Arrays.asList(4f,5f,6f)));
         final MbtEEGPacket packets = new MbtEEGPacket(channelsData, null);
         float relaxIndex = MBTComputeRelaxIndex.computeRelaxIndex(sampRate,calibParams,packets);
+        assertTrue(relaxIndex > 0);
+        assertTrue( relaxIndex < 1);
+        assertTrue(" relax index= "+relaxIndex,relaxIndex == expectedOutput);
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void computeRelaxIndexEmptyChannelsTest() {
         final int sampRate = 1;
         HashMap<String, float[]> params = new HashMap<>();
-        params.put("Example", new float[1]);
         final MBTCalibrationParameters calibParams =  new MBTCalibrationParameters(params);
+        assertTrue(calibParams.getSize() ==  0);
         final ArrayList<ArrayList<Float>> channelsData = new ArrayList<>(); //check that exception is raised if channelsdata is empty
-        ArrayList<Float> qualities = new ArrayList<>();
         final MbtEEGPacket packets = new MbtEEGPacket(channelsData, null);
-        float relaxIndex = MBTComputeRelaxIndex.computeRelaxIndex(sampRate,calibParams,packets);
+        MBTComputeRelaxIndex.computeRelaxIndex(sampRate,calibParams,packets);
     }
+
 
     @Test
     public void getSessionMetadataTest() {
@@ -148,25 +154,5 @@ public class MBTComputeRelaxIndexTest {
         assertTrue(computedOutput.get("smoothedRelaxIndexes").length==0);// check that the smoothedRelaxIndex has been cleared
         assertTrue(computedOutput.get("histFrequencies").length==0);// check that the histFreq has been cleared
         assertTrue(computedOutput.equals(expectedOutput));
-    }
-
-    /**
-     * check that computed relax index has a relevant value and is equal to the expected output
-     */
-    @Test
-    public void computeRelaxIndexGoodQualitiesTest() {
-        final int sampRate = 2;
-        float expectedOutput = 0.5f;
-        HashMap<String, float[]> params = new HashMap<>();
-        params.put("Example", new float[]{1f});
-        final MBTCalibrationParameters calibParams =  new MBTCalibrationParameters(params);
-        final ArrayList<ArrayList<Float>> channelsData = new ArrayList<>();
-        channelsData.add(new ArrayList<>(Arrays.asList(1f,2f,3f)));
-        channelsData.add(new ArrayList<>(Arrays.asList(4f,5f,6f)));
-        final MbtEEGPacket packets = new MbtEEGPacket(channelsData, null);
-        float relaxIndex = MBTComputeRelaxIndex.computeRelaxIndex(sampRate,calibParams,packets);
-        assertTrue(relaxIndex > 0);
-        assertTrue( relaxIndex < 1);
-        assertTrue(" relax index= "+relaxIndex,relaxIndex == expectedOutput);
     }
 }
