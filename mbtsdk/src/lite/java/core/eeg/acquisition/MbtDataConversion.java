@@ -44,6 +44,11 @@ public class MbtDataConversion {
     @NonNull
     public static ArrayList<ArrayList<Float>> convertRawDataToEEG(@NonNull ArrayList<RawEEGSample> rawEEGdataList, @NonNull BtProtocol protocol) {
 
+        if (rawEEGdataList == null)
+            return null;
+        if (protocol == null || protocol.equals(BtProtocol.BLUETOOTH_A2DP))
+            return null;
+
         ArrayList<ArrayList<Float>> eegData = new ArrayList<>();
 
         ArrayList<Float> consolidatedEEGSample;
@@ -76,6 +81,9 @@ public class MbtDataConversion {
     }
 
     public static float convertRawDataToDcOffset(byte[] offset){
+        if (offset == null || offset.length < 2)
+            return -1;
+
         int digit = 0x00000000;
         digit = ((offset[0] & 0xFF) << (SHIFT_DC_OFFSET)) | ((offset[1] & 0xFF) << (SHIFT_DC_OFFSET-8));
 
@@ -87,5 +95,4 @@ public class MbtDataConversion {
 
         return digit * VOLTAGE_BLE;
     }
-
 }

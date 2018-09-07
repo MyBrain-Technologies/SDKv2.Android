@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 
 import config.MbtConfig;
@@ -19,6 +20,7 @@ import core.eeg.MbtEEGManager;
 import core.eeg.storage.RawEEGSample;
 import features.MbtFeatures;
 import features.ScannableDevices;
+import utils.AsyncUtils;
 import utils.MatrixUtils;
 
 import static org.junit.Assert.assertNotNull;
@@ -197,22 +199,25 @@ public class MbtDataAcquisitionTest {
         data [8] = new byte[]{14, 91, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1};
         data [9] = new byte[]{14, 92, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1};
 
-        final CompletableFuture<Void> future= CompletableFuture.runAsync(()->{
-            for (int i=0; i< nbAcquisition; i++){
-                dataAcquisition.handleDataAcquired(data[i]);
-            }
 
-        }, Executors.newCachedThreadPool());
+        final CompletableFuture<Void> future = CompletableFuture.runAsync(()->{ //as handledataacquired calls methods that contain an async task where the eeg result matrix is returned, we must wait that the eeg matrix computation is done
+
+            for (int i=0; i<nbAcquisition; i++) {
+                dataAcquisition.handleDataAcquired(data[i]);
+                assertTrue(data[i].length == 18);
+            }
+        },Executors.newCachedThreadPool());
 
         try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
+            future.get();
+        } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
+
         ArrayList<ArrayList<Float>> eegResultMatrix = MatrixUtils.invertFloatMatrix(dataAcquisition.getTestEegMatrix());
+        assertNotNull(eegResultMatrix);
         assertTrue(future.isDone());// if the async task has been completed
         assertNotNull(dataAcquisition.getTestEegManager());
-        assertNotNull(eegResultMatrix);
         assertTrue(eegResultMatrix.size()== nbChannels);
         assertTrue(eegResultMatrix.get(0).size() == ((sizeArray-nbBytesIndex)/(nbBytesIndex*nbBytes))*nbAcquisition);
         assertTrue(" Result size "+eegResultMatrix.size()+" | Pre-generated size"+eegConverted.size(),eegResultMatrix.size() == eegConverted.size());
@@ -244,8 +249,8 @@ public class MbtDataAcquisitionTest {
         },Executors.newCachedThreadPool());
 
         try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
+            future.get();
+        } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
         assertTrue(future.isDone());// if the async task has been completed
@@ -273,16 +278,18 @@ public class MbtDataAcquisitionTest {
 
         byte[] data = new byte[sizeArray];
         new Random().nextBytes(data); //Generates random bytes and places them into a user-supplied byte array
-        final CompletableFuture<Void> future = CompletableFuture.runAsync(() -> { //as handledataacquired calls methods that contain an async task where the eeg result matrix is returned, we must wait that the eeg matrix computation is done
 
-            for (int i = 0; i < nbAcquisition; i++) {// buffer size = 1000=16*62,5 => matrix size always = 1000/2 = 500
+        final CompletableFuture<Void> future= CompletableFuture.runAsync(()->{ //as handledataacquired calls methods that contain an async task where the eeg result matrix is returned, we must wait that the eeg matrix computation is done
+
+            for (int i=0; i<nbAcquisition; i++) {
                 dataAcquisition.handleDataAcquired(data);
+                assertTrue(data.length == 18);
             }
-        }, Executors.newCachedThreadPool());
+        },Executors.newCachedThreadPool());
 
         try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
+            future.get();
+        } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
         assertTrue(future.isDone());// if the async task has been completed
@@ -308,26 +315,26 @@ public class MbtDataAcquisitionTest {
 
         byte[] data = new byte[sizeArray];
         new Random().nextBytes(data); //Generates random bytes and places them into a user-supplied byte array
-        final CompletableFuture<Void> future = CompletableFuture.runAsync(() -> { //as handledataacquired calls methods that contain an async task where the eeg result matrix is returned, we must wait that the eeg matrix computation is done
 
+        final CompletableFuture<Void> future = CompletableFuture.runAsync(() -> { //as handledataacquired calls methods that contain an async task where the eeg result matrix is returned, we must wait that the eeg matrix computation is done
             for (int i = 0; i < nbAcquisition; i++) {// buffer size = 1000=16*62,5 => matrix size always = 1000/2 (in case nbChannel is 2) = 500
                 dataAcquisition.handleDataAcquired(data);
             }
         }, Executors.newCachedThreadPool());
 
         try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
+            future.get();
+        } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
         assertTrue(future.isDone());// if the async task has been completed
         ArrayList<ArrayList<Float>> eegResult = dataAcquisition.getTestEegMatrix();
         assertNotNull(eegResult);
         assertTrue("channel size "+eegResult.size(),eegResult.size()>0);
-        assertTrue("nb channel  "+eegResult.size(),eegResult.size()==sizeArray/((sizeArray-nbBytesIndex)/(nbChannels*nbBytes)));
+        assertTrue("expected "+sizeArray/4+" nb channel  "+eegResult.size(),eegResult.size()==sizeArray/4);
         assertTrue(eegResult.get(0).size() >0);
         assertTrue(eegResult.get(0).size()==nbChannels);
-        assertTrue("matrix size "+eegResult.get(0).size()*eegResult.size(),eegResult.get(0).size()*eegResult.size()==(sizeArray/((sizeArray-nbBytesIndex)/(nbChannels*nbBytes)))*nbChannels);
+        assertTrue("matrix size "+eegResult.get(0).size()*eegResult.size(),eegResult.get(0).size()*eegResult.size()==(sizeArray/4*nbChannels));
 
     }
 }

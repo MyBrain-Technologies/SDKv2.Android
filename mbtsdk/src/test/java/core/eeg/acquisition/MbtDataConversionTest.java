@@ -16,6 +16,7 @@ import core.eeg.storage.RawEEGSample;
 import mbtsdk.com.mybraintech.mbtsdk.BuildConfig;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class MbtDataConversionTest {
@@ -109,43 +110,49 @@ public class MbtDataConversionTest {
         assertTrue(" expected "+expectedMatrix+" but was "+eegMatrix, expectedMatrix.equals(eegMatrix));
 
     }
-    /*@Test (expected = NullPointerException.class)
+
+    /**
+     * Check that convertRawDataToEEG method return null is input data is null
+     */
+    @Test
     public void convertRawDataToEEGNullDataTest() {
-        byte[] data = null;  //check that IllegalArgumentException is raised if data is null
+        ArrayList<RawEEGSample> data = null;  //check that IllegalArgumentException is raised if data is null
         BtProtocol protocol = BtProtocol.BLUETOOTH_LE;
-        int nbChannels = 2;
-        MbtDataConversion.convertRawDataToEEG(data, protocol);
+        assertNull(MbtDataConversion.convertRawDataToEEG(data, protocol));
     }
 
-    @Test (expected = ArithmeticException.class)
-    public void convertRawDataToEEGZeroChannelTest() {
-        byte[] data = new byte[250];
-        for(int i=0;i<250;i++){
-            data[i] = (byte) 1;
-        }
-        BtProtocol protocol = BtProtocol.BLUETOOTH_LE;
-        int nbChannels = 0; //if nbChannels =0, then divider =0 then we expect that length/divider will raise Arithmetic exception
-        MbtDataConversion.convertRawDataToEEG(data, protocol);
+    /**
+     * Check that convertRawDataToEEG method return null is input protocol is null
+     */
+    @Test
+    public void convertRawDataToEEGNullProtocolTest() {
+        ArrayList<RawEEGSample> data = new ArrayList<>();  //check that IllegalArgumentException is raised if data is null
+        BtProtocol protocol = null;
+        assertNull(MbtDataConversion.convertRawDataToEEG(data, protocol));
     }
 
-    @Test (expected = IllegalArgumentException.class)
-    public void convertRawDataToEEG250RawDataTest() {
-        byte[] data = new byte[251]; //check that if data.length % 250 is not equals 0, exception is raised
-        Arrays.fill(data, (byte)1);
-        BtProtocol protocol = BtProtocol.BLUETOOTH_LE;
-        MbtDataConversion.convertRawDataToEEG(data, protocol);
+    /**
+     * Check that convertRawDataToEEG method return null is input protocol is A2DP
+     */
+    @Test
+    public void convertRawDataToEEGBadProtocolTest() {
+        ArrayList<RawEEGSample> data = new ArrayList<>();  //check that IllegalArgumentException is raised if data is null
+        BtProtocol protocol = BtProtocol.BLUETOOTH_A2DP;
+        assertNull(MbtDataConversion.convertRawDataToEEG(data, protocol));
     }
 
+    /**
+     * Check that convertRawDataToEEG generates an empty result if the input contains an empty array of EEG data
+     */
     @Test
     public void convertRawDataToEEGEmptyDataTest() {
-        byte[] data = new byte[0]; // check that the method will return empty result if input data is empty
+        ArrayList<RawEEGSample> data = new ArrayList<>(); // check that the method will return empty result if input data is empty
+        data.add(new RawEEGSample(new ArrayList<>(),null));
         BtProtocol protocol = BtProtocol.BLUETOOTH_LE;
-        int nbChannels = 2;
         ArrayList<ArrayList<Float>> eegData = MbtDataConversion.convertRawDataToEEG(data, protocol);
-        assertTrue(eegData.size()==nbChannels);
+        assertTrue(eegData.size()==1);
         assertTrue(eegData.get(0).isEmpty());
-        assertTrue(eegData.get(1).isEmpty());
-    }*/
+    }
 
     /**
      * check that the computed result of raw data conversion is equal to a pre-generated expected result
@@ -195,21 +202,21 @@ public class MbtDataConversionTest {
     }
 
     /**
-     * Check that the IllegalArgumentException is raised if the input array size is lower than 2
+     * Check that -1 is return if the input array size is lower than 2
      */
-    @Test (expected = IllegalArgumentException.class)
+    @Test
     public void convertRawDCOffsetTestExceptionEmpty(){
         byte[] offset = new byte[1];
-        MbtDataConversion.convertRawDataToDcOffset(offset);
+        assertTrue(MbtDataConversion.convertRawDataToDcOffset(offset) == -1);
     }
 
     /**
-     * Check that the IllegalArgumentException is raised if the input array is null
+     * Check that -1 is returned if the input array is null
      */
-    @Test (expected = IllegalArgumentException.class)
+    @Test
     public void convertRawDCOffsetTestExceptionNull(){
         byte[] offset = null;
-        MbtDataConversion.convertRawDataToDcOffset(offset);
+        assertTrue(MbtDataConversion.convertRawDataToDcOffset(offset) == -1f);
     }
 
 

@@ -36,7 +36,6 @@ public final class MBTComputeRelaxIndex {
         if (packets == null || packets.length == 0)
             throw new IllegalArgumentException("there MUST be at least ONE or MORE packet(s) !");
 
-        //Log.i(TAG, "starting relax index computation...");
         final float[][] qualities = new float[2][packets.length];
         final float[][] mainMatrix = new float[2][packets.length * samprate];
 
@@ -44,16 +43,12 @@ public final class MBTComputeRelaxIndex {
         int chanCnt = 0;
         for (final MbtEEGPacket current : packets) {
             // Merging qualities
-            if(current == null){
-//                Log.e(TAG, "error null value");
-            }
 
-
-            //qualities[0][qtCnt] = current.getQualities().get(0);  //todo decomment
-           // qualities[1][qtCnt++] = current.getQualities().get(1);  //todo decomment
+            // qualities[0][qtCnt] = current.getQualities().get(0); //todo decomment
+            // qualities[1][qtCnt++] = current.getQualities().get(1); //todo decomment
 
             // Merging channels
-// Merging channels
+
             Float[] channel1 = new Float[current.getChannelsData().get(0).size()];
             channel1 = current.getChannelsData().get(0).toArray(channel1);
             Float[] channel2 = new Float[current.getChannelsData().get(1).size()];

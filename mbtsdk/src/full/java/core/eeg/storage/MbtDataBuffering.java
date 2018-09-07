@@ -67,7 +67,6 @@ public class MbtDataBuffering {
         pendingRawData.addAll(data);
 
         if(pendingRawData.size() >= MbtFeatures.DEFAULT_MAX_PENDING_RAW_DATA_BUFFER_SIZE){
-            Log.e(TAG," buffer size reached");//todo remove after tests
             notifyPendingRawDataBufferFull();
             resetPendingBuffer();
         }

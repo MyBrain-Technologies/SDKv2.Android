@@ -83,7 +83,6 @@ public final class MbtEEGManager extends BaseModuleManager {
 
     /**
      * Stores the EEG raw data buffer when the maximum size of the buffer is reached
-     * In case packet size is too large for buffer, the overflow buffer is stored in a second buffer
      *
      * @param rawEEGdata the raw EEG data array acquired by the headset and transmitted by Bluetooth to the application
      */
@@ -109,22 +108,25 @@ public final class MbtEEGManager extends BaseModuleManager {
      * @param toDecodeRawEEG the EEG raw data array to convert
      */
     public void convertToEEG(@NonNull final ArrayList<RawEEGSample> toDecodeRawEEG) {
-        AsyncUtils.executeAsync(() -> {
-            consolidatedEEG = new ArrayList<>();
-            LogUtils.i(TAG, "computing and sending to application");
 
-            ArrayList<Float> toDecodeStatus = new ArrayList<>();
-            for (RawEEGSample rawEEGSample : toDecodeRawEEG) {
-                if (rawEEGSample.getStatus() != null) {
-                    if (rawEEGSample.getStatus() != Float.NaN)
-                        toDecodeStatus.add(rawEEGSample.getStatus());
+        AsyncUtils.executeAsync(new Runnable() {
+            @Override
+            public void run() {
+                consolidatedEEG = new ArrayList<>();
+                LogUtils.i(TAG, "computing and sending to application");
+
+                ArrayList<Float> toDecodeStatus = new ArrayList<>();
+                for (RawEEGSample rawEEGSample : toDecodeRawEEG) {
+                    if (rawEEGSample.getStatus() != null) {
+                        if (rawEEGSample.getStatus() != Float.NaN)
+                            toDecodeStatus.add(rawEEGSample.getStatus());
+                    }
                 }
+                consolidatedEEG = MbtDataConversion.convertRawDataToEEG(toDecodeRawEEG, protocol); //convert byte table data to Float matrix and store the matrix in MbtEEGManager as eegResult attribute
+
+                dataBuffering.storeConsolidatedEegInPacketBuffer(consolidatedEEG, toDecodeStatus);// if the packet buffer is full, this method returns the non null packet buffer
+
             }
-            consolidatedEEG = MbtDataConversion.convertRawDataToEEG(toDecodeRawEEG, protocol); //convert byte table data to Float matrix and store the matrix in MbtEEGManager as eegResult attribute
-            Log.e(TAG," consolidated eeg  "+consolidatedEEG.toString());//todo remove after tests
-
-            dataBuffering.storeConsolidatedEegInPacketBuffer(consolidatedEEG, toDecodeStatus);// if the packet buffer is full, this method returns the non null packet buffer
-
         });
     }
 
@@ -137,11 +139,14 @@ public final class MbtEEGManager extends BaseModuleManager {
     public void notifyEEGDataIsReady(@NonNull final MbtEEGPacket eegPackets) {
         LogUtils.d(TAG, "notify EEG Data Is Ready ");
 
-        AsyncUtils.executeAsync(() -> {
-            if(hasQualities){
-                eegPackets.setQualities(computeEEGSignalQuality(eegPackets));
+        AsyncUtils.executeAsync(new Runnable() {
+            @Override
+            public void run() {
+                if (hasQualities) {
+                    eegPackets.setQualities(MbtEEGManager.this.computeEEGSignalQuality(eegPackets));
+                }
+                EventBusManager.postEvent(new ClientReadyEEGEvent(eegPackets));
             }
-            EventBusManager.postEvent(new ClientReadyEEGEvent(eegPackets));
         });
 
     }
@@ -319,4 +324,12 @@ public final class MbtEEGManager extends BaseModuleManager {
 //            }
 //        }
 //    }
+
+    public void setTestConsolidatedEEG(ArrayList<ArrayList<Float>> consolidatedEEG) {
+        this.consolidatedEEG = consolidatedEEG;
+    }
+
+    public void setTestHasQualities(boolean hasQualities) {
+        this.hasQualities = hasQualities;
+    }
 }

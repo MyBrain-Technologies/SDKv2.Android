@@ -20,6 +20,8 @@ public class MatrixUtils {
 
     public static ArrayList<ArrayList<Float>> invertFloatMatrix(@NonNull ArrayList<ArrayList<Float>> source){
 
+        if(source == null)
+            return null;
         if (source.size() == 0 )
             return null;
 

@@ -67,7 +67,6 @@ public class MbtDataBuffering {
         pendingRawData.addAll(data);
 
         if(pendingRawData.size() >= MbtFeatures.DEFAULT_MAX_PENDING_RAW_DATA_BUFFER_SIZE){
-            Log.e(TAG," buffer size reached");//todo remove after tests
             notifyPendingRawDataBufferFull();
             resetPendingBuffer();
         }
@@ -116,7 +115,7 @@ public class MbtDataBuffering {
 
                 notifyClientEEGDataBufferFull(new MbtEEGPacket(mbtEEGPacketsBuffer));
 
-                //Reset the packet buffre and store overflow data in it
+                //Reset the packet buffer and store overflow data
                 mbtEEGPacketsBuffer = new MbtEEGPacket( new ArrayList<>(consolidatedEEG.subList(maxElementsToAppend, consolidatedEEG.size())),
                         status.size() != 0 ?
                                 ( new ArrayList<>(status.subList(maxElementsToAppend, status.size() >= consolidatedEEG.size() ? consolidatedEEG.size() : status.size() ))) : null );
@@ -151,6 +150,18 @@ public class MbtDataBuffering {
      */
     public ArrayList<RawEEGSample> getPendingRawData() {
         return pendingRawData;
+    }
+
+    public MbtEEGPacket getTestMbtEEGPacketsBuffer() {
+        return mbtEEGPacketsBuffer;
+    }
+
+    public void setTestPendingRawData(ArrayList<RawEEGSample> pendingRawData) {
+        this.pendingRawData = pendingRawData;
+    }
+
+    public void setTestMbtEEGPacketsBuffer(MbtEEGPacket mbtEEGPacketsBuffer) {
+        this.mbtEEGPacketsBuffer = mbtEEGPacketsBuffer;
     }
 
     /**

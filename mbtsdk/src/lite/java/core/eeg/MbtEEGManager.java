@@ -83,7 +83,6 @@ public final class MbtEEGManager extends BaseModuleManager {
 
     /**
      * Stores the EEG raw data buffer when the maximum size of the buffer is reached
-     * In case packet size is too large for buffer, the overflow buffer is stored in a second buffer
      *
      * @param rawEEGdata the raw EEG data array acquired by the headset and transmitted by Bluetooth to the application
      */
@@ -109,6 +108,7 @@ public final class MbtEEGManager extends BaseModuleManager {
      * @param toDecodeRawEEG the EEG raw data array to convert
      */
     public void convertToEEG(@NonNull final ArrayList<RawEEGSample> toDecodeRawEEG) {
+
         AsyncUtils.executeAsync(new Runnable() {
             @Override
             public void run() {
@@ -123,7 +123,6 @@ public final class MbtEEGManager extends BaseModuleManager {
                     }
                 }
                 consolidatedEEG = MbtDataConversion.convertRawDataToEEG(toDecodeRawEEG, protocol); //convert byte table data to Float matrix and store the matrix in MbtEEGManager as eegResult attribute
-                Log.e(TAG," consolidated eeg  "+consolidatedEEG.toString());//todo remove after tests
 
                 dataBuffering.storeConsolidatedEegInPacketBuffer(consolidatedEEG, toDecodeStatus);// if the packet buffer is full, this method returns the non null packet buffer
 
@@ -143,8 +142,8 @@ public final class MbtEEGManager extends BaseModuleManager {
         AsyncUtils.executeAsync(new Runnable() {
             @Override
             public void run() {
-                if(hasQualities){
-                    eegPackets.setQualities(computeEEGSignalQuality(eegPackets));
+                if (hasQualities) {
+                    eegPackets.setQualities(MbtEEGManager.this.computeEEGSignalQuality(eegPackets));
                 }
                 EventBusManager.postEvent(new ClientReadyEEGEvent(eegPackets));
             }
@@ -325,4 +324,12 @@ public final class MbtEEGManager extends BaseModuleManager {
 //            }
 //        }
 //    }
+
+    public void setTestConsolidatedEEG(ArrayList<ArrayList<Float>> consolidatedEEG) {
+        this.consolidatedEEG = consolidatedEEG;
+    }
+
+    public void setTestHasQualities(boolean hasQualities) {
+        this.hasQualities = hasQualities;
+    }
 }

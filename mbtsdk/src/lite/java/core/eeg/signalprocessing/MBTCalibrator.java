@@ -1,6 +1,5 @@
 package core.eeg.signalprocessing;
 
-import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -16,9 +15,9 @@ import core.eeg.storage.MbtEEGPacket;
  */
 public final class MBTCalibrator {
     private static final String TAG = MBTCalibrator.class.getSimpleName();
-    static int count = 0;
     @NonNull
     public static HashMap<String, float[]> calibrateNew(final int sampRate, final int packetLength, final int smoothingDuration, @Nullable final MbtEEGPacket... packets){
+
         if (sampRate < 0)
             throw new IllegalArgumentException("samprate MUST BE POSITIVE!");
         if (packetLength < 0)
@@ -33,28 +32,27 @@ public final class MBTCalibrator {
         int chanCnt = 0;
         for (final MbtEEGPacket current : packets) {
             // Merging qualities
-            /*if(current.getQualities() == null)
+            if(current.getQualities() == null)
                 Log.e(TAG, "NULL QUALITIES");
             else{
                 qualities[0][qtCnt] = current.getQualities().get(0);
                 qualities[1][qtCnt++] = current.getQualities().get(1);
-            }*/ //todo decomment & remove the 2 next lines
-            qualities[0][qtCnt] = 1f;
-            qualities[1][qtCnt++] = 0f;
+            }
 
- //Merging channels
+            //Merging channels
             Float[] channel1 = new Float[current.getChannelsData().get(0).size()];
             channel1 = current.getChannelsData().get(0).toArray(channel1);
             Float[] channel2 = new Float[current.getChannelsData().get(1).size()];
             channel2 = current.getChannelsData().get(1).toArray(channel2);
 
             final float[][] matrix = MBTSignalProcessingUtils.channelsToMatrixFloat(channel1, channel2);
-            for (int it = 0; it < sampRate; it++) {
-                mainMatrix[0][chanCnt] = matrix[0][it];
-                mainMatrix[1][chanCnt++] = matrix[1][it];
+            if(matrix[0].length > 0) {
+                for (int it = 0; it < sampRate; it++) {
+                    mainMatrix[0][chanCnt] = matrix[0][it];
+                    mainMatrix[1][chanCnt++] = matrix[1][it];
+                }
             }
         }
-        Log.d(TAG, "count " + count++);
         return nativeCalibrateNew(sampRate, packetLength, packets.length, smoothingDuration, qualities, mainMatrix);
     }
 
