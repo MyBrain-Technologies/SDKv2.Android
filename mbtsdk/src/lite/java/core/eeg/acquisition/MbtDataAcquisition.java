@@ -14,6 +14,7 @@ import features.MbtFeatures;
 import utils.LogUtils;
 
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
+import static features.MbtFeatures.DEFAULT_BLE_NB_STATUS_BYTES;
 import static features.MbtFeatures.getEEGByteSize;
 import static features.MbtFeatures.getNbChannels;
 import static features.MbtFeatures.getNbStatusBytes;
@@ -39,6 +40,7 @@ public class MbtDataAcquisition {
     @Nullable
     private byte[] statusDataBytes;
 
+
     private BtProtocol protocol;
 
     public MbtDataAcquisition(@NonNull MbtEEGManager eegManagerController, @NonNull BtProtocol bluetoothProtocol) {
@@ -52,15 +54,15 @@ public class MbtDataAcquisition {
      * @param data the raw EEG data array acquired by the headset and transmitted by Bluetooth to the application
      */
     @Nullable
-    public synchronized ArrayList<ArrayList<Float>> handleDataAcquired(@NonNull final byte[] data) {
+    public synchronized void handleDataAcquired(@NonNull final byte[] data) {
 
         singleRawEEGList = new ArrayList<>();
 
-        if(data.length < 2)
-            return null;
+        if(data.length < getRawDataIndexSize())
+            return;
 
         //1st step : check index
-        final int currentIndex = (data[0] & 0xff) << 8 | (data[1] & 0xff);
+        final int currentIndex = (data[0] & 0xff) << 8 | (data[1] & 0xff); //index bytes are the 2 first bytes for BLE only
 
         if(previousIndex == -1){
             previousIndex = currentIndex -1;
@@ -82,11 +84,9 @@ public class MbtDataAcquisition {
         fillSingleDataEEGList(false, data);
 
         //4th step : store and convert
-        handleAndConvertData();
+        storeData();
 
         previousIndex = currentIndex;
-
-        return eegManager.getConsolidatedEEG();
     }
 
 
@@ -103,10 +103,9 @@ public class MbtDataAcquisition {
             if(isInterpolationEEGSample){
                 singleRawEEGList.add(RawEEGSample.LOST_PACKET_INTERPOLATOR);
             }else{
-
                 ArrayList<byte[]> channelsEEGs = new ArrayList<>();
-                for(int i = 0; i < getNbChannels(); i++){
-                    byte[] bytesEEG = Arrays.copyOfRange(input, dataIndex + i*getEEGByteSize(), dataIndex + (i+1)*getEEGByteSize());
+                for(int nbChannels = 0; nbChannels < getNbChannels(); nbChannels++){
+                    byte[] bytesEEG = Arrays.copyOfRange(input, dataIndex + nbChannels*getEEGByteSize(), dataIndex + (nbChannels+1)*getEEGByteSize());
                     channelsEEGs.add(bytesEEG);
                 }
                 singleRawEEGList.add(new RawEEGSample(channelsEEGs, generateStatusData(count++)));
@@ -147,21 +146,10 @@ public class MbtDataAcquisition {
 
 
     /**
-     * Stores EEG raw data received from Bluetooth Device in the pending buffer.
-     * The lost EEG raw data packets are identified in the pending buffer .
-     * In case packet size is too large for buffer, the overflowing EEG data is stored in an overflow buffer
-     *
+     * Stores the new EEG raw data received from Bluetooth Device in a pending buffer.
      */
-    private void storeEEGDataInBuffers() {
-        eegManager.storePendingDataInBuffer(singleRawEEGList); //we store the pending buffer in both case (overflow or no overflow)
-    }
-
-    /**
-     * Store new raw bluetooth EEG in buffer and checks if buffer is full. If buffer is full,
-     * conversion is started and buffer is flushed
-     */
-    private void handleAndConvertData() {
-        storeEEGDataInBuffers();
+    private void storeData() {
+        eegManager.storePendingDataInBuffer(singleRawEEGList); //we store the data in the pending buffer
 
     }
 
@@ -191,15 +179,38 @@ public class MbtDataAcquisition {
         return previousIndex;
     }
 
-
-
-
-
+    /**
+     * getter for unit tests
+     */
+    public MbtEEGManager getTestEegManager() {
+        return eegManager;
+    }
 
     /**
-     * Method for unit tests
+     * getter for unit tests
      */
-    public ArrayList<ArrayList<Float>> testGetEegMatrix(){
+    public ArrayList<ArrayList<Float>> getTestEegMatrix(){
         return eegManager.getConsolidatedEEG();
+    }
+
+    public ArrayList<RawEEGSample> getTestRawEEGSample(){
+        return singleRawEEGList;
+    }
+
+    public ArrayList<RawEEGSample> getTestSingleRawEEGList() {
+        return singleRawEEGList;
+    }
+
+    public void setTestPreviousIndex(int previousIndex) {
+        this.previousIndex = previousIndex;
+    }
+
+    public void setTestSingleRawEEGList(ArrayList<RawEEGSample> singleRawEEGList) {
+        this.singleRawEEGList = singleRawEEGList;
+    }
+
+    @Nullable
+    public byte[] getTestStatusDataBytes() {
+        return statusDataBytes;
     }
 }

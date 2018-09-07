@@ -55,15 +55,14 @@ public class MbtDataAcquisition {
      */
     @Nullable
     public synchronized void handleDataAcquired(@NonNull final byte[] data) {
-        Log.e(TAG, " raw |"+Arrays.toString(data));//todo remove after tests
 
         singleRawEEGList = new ArrayList<>();
 
-        if(data.length < 2)
+        if(data.length < getRawDataIndexSize())
             return;
 
         //1st step : check index
-        final int currentIndex = (data[0] & 0xff) << 8 | (data[1] & 0xff);
+        final int currentIndex = (data[0] & 0xff) << 8 | (data[1] & 0xff); //index bytes are the 2 first bytes for BLE only
 
         if(previousIndex == -1){
             previousIndex = currentIndex -1;
@@ -85,7 +84,7 @@ public class MbtDataAcquisition {
         fillSingleDataEEGList(false, data);
 
         //4th step : store and convert
-        handleAndConvertData();
+        storeData();
 
         previousIndex = currentIndex;
     }
@@ -105,8 +104,8 @@ public class MbtDataAcquisition {
                 singleRawEEGList.add(RawEEGSample.LOST_PACKET_INTERPOLATOR);
             }else{
                 ArrayList<byte[]> channelsEEGs = new ArrayList<>();
-                for(int i = 0; i < getNbChannels(); i++){
-                    byte[] bytesEEG = Arrays.copyOfRange(input, dataIndex + i*getEEGByteSize(), dataIndex + (i+1)*getEEGByteSize());
+                for(int nbChannels = 0; nbChannels < getNbChannels(); nbChannels++){
+                    byte[] bytesEEG = Arrays.copyOfRange(input, dataIndex + nbChannels*getEEGByteSize(), dataIndex + (nbChannels+1)*getEEGByteSize());
                     channelsEEGs.add(bytesEEG);
                 }
                 singleRawEEGList.add(new RawEEGSample(channelsEEGs, generateStatusData(count++)));
@@ -147,21 +146,10 @@ public class MbtDataAcquisition {
 
 
     /**
-     * Stores EEG raw data received from Bluetooth Device in the pending buffer.
-     * The lost EEG raw data packets are identified in the pending buffer .
-     * In case packet size is too large for buffer, the overflowing EEG data is stored in an overflow buffer
-     *
+     * Stores the new EEG raw data received from Bluetooth Device in a pending buffer.
      */
-    private void storeEEGDataInBuffers() {
-        eegManager.storePendingDataInBuffer(singleRawEEGList); //we store the pending buffer in both case (overflow or no overflow)
-    }
-
-    /**
-     * Store new raw bluetooth EEG in buffer and checks if buffer is full. If buffer is full,
-     * conversion is started and buffer is flushed
-     */
-    private void handleAndConvertData() {
-        storeEEGDataInBuffers();
+    private void storeData() {
+        eegManager.storePendingDataInBuffer(singleRawEEGList); //we store the data in the pending buffer
 
     }
 
@@ -207,5 +195,22 @@ public class MbtDataAcquisition {
 
     public ArrayList<RawEEGSample> getTestRawEEGSample(){
         return singleRawEEGList;
+    }
+
+    public ArrayList<RawEEGSample> getTestSingleRawEEGList() {
+        return singleRawEEGList;
+    }
+
+    public void setTestPreviousIndex(int previousIndex) {
+        this.previousIndex = previousIndex;
+    }
+
+    public void setTestSingleRawEEGList(ArrayList<RawEEGSample> singleRawEEGList) {
+        this.singleRawEEGList = singleRawEEGList;
+    }
+
+    @Nullable
+    public byte[] getTestStatusDataBytes() {
+        return statusDataBytes;
     }
 }

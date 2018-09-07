@@ -48,7 +48,7 @@ public final class MBTComputeRelaxIndex {
            // qualities[1][qtCnt++] = current.getQualities().get(1); //todo decomment
 
              // Merging channels
-// Merging channels
+
             Float[] channel1 = new Float[current.getChannelsData().get(0).size()];
             channel1 = current.getChannelsData().get(0).toArray(channel1);
             Float[] channel2 = new Float[current.getChannelsData().get(1).size()];

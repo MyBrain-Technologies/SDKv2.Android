@@ -52,15 +52,6 @@ public final class MBTSignalQualityChecker {
         qcCurrentState = QCStateMachine.DEINIT;
         nativeDeinitQualityChecker();
         qcCurrentState = QCStateMachine.NOT_READY;
-
-//        AsyncUtils.executeAsync(new Runnable() {
-//            @Override
-//            public void run() {
-//
-//
-//            }
-//        });
-
     }
 
 
