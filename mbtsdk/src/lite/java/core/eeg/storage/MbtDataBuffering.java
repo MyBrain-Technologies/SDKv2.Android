@@ -2,6 +2,7 @@ package core.eeg.storage;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import org.apache.commons.lang.ArrayUtils;
 
@@ -50,12 +51,9 @@ public class MbtDataBuffering {
 
 
     public MbtDataBuffering(@NonNull MbtEEGManager eegManagerController) {
-
         eegManager = eegManagerController;
-
         pendingRawData = new ArrayList<>();
         mbtEEGPacketsBuffer = new MbtEEGPacket();
-
     }
 
     /**
@@ -70,6 +68,7 @@ public class MbtDataBuffering {
 
         if(pendingRawData.size() >= MbtFeatures.DEFAULT_MAX_PENDING_RAW_DATA_BUFFER_SIZE){
             notifyPendingRawDataBufferFull();
+            resetPendingBuffer();
         }
     }
 
@@ -81,7 +80,7 @@ public class MbtDataBuffering {
     private void notifyPendingRawDataBufferFull() {
         final ArrayList<RawEEGSample> rawEEGtoConvert = (ArrayList<RawEEGSample>) pendingRawData.clone(); //the pending raw data is stored in toDecodeBytes to be converted in readable EEG values
         eegManager.convertToEEG(rawEEGtoConvert);
-        pendingRawData.clear();
+
     }
 
 
@@ -100,7 +99,7 @@ public class MbtDataBuffering {
      * We wait to have a full packet buffer to send these EEG values to the UI.
      * @return true if the packet buffer is full (contains a number of data equals to eegBufferLengthNotification), false otherwise.
      */
-    public void storeConsolidatedEegPacketInPacketBuffer(@NonNull final ArrayList<ArrayList<Float>> consolidatedEEG, @NonNull ArrayList<Float> status) {
+    public void storeConsolidatedEegInPacketBuffer(@NonNull final ArrayList<ArrayList<Float>> consolidatedEEG, @NonNull ArrayList<Float> status) {
 
         int maxElementsToAppend = getBufferLengthClientNotif() - mbtEEGPacketsBuffer.getChannelsData().size();
 
@@ -114,11 +113,12 @@ public class MbtDataBuffering {
                 if(mbtEEGPacketsBuffer.getStatusData() != null)
                     mbtEEGPacketsBuffer.getStatusData().addAll(status.subList(0, (status.size()>= maxElementsToAppend) ? maxElementsToAppend : status.size()));
 
-            notifyClientEEGDataBufferFull(new MbtEEGPacket(mbtEEGPacketsBuffer));
+                notifyClientEEGDataBufferFull(new MbtEEGPacket(mbtEEGPacketsBuffer));
 
-            mbtEEGPacketsBuffer = new MbtEEGPacket( new ArrayList<>(consolidatedEEG.subList(maxElementsToAppend, consolidatedEEG.size())),
-                     status.size() != 0 ?
-                    ( new ArrayList<>(status.subList(maxElementsToAppend, status.size() >= consolidatedEEG.size() ? consolidatedEEG.size() : status.size() ))) : null );
+                //Reset the packet buffer and store overflow data
+                mbtEEGPacketsBuffer = new MbtEEGPacket( new ArrayList<>(consolidatedEEG.subList(maxElementsToAppend, consolidatedEEG.size())),
+                        status.size() != 0 ?
+                                ( new ArrayList<>(status.subList(maxElementsToAppend, status.size() >= consolidatedEEG.size() ? consolidatedEEG.size() : status.size() ))) : null );
             }
         }
     }
@@ -150,5 +150,24 @@ public class MbtDataBuffering {
      */
     public ArrayList<RawEEGSample> getPendingRawData() {
         return pendingRawData;
+    }
+
+    public MbtEEGPacket getTestMbtEEGPacketsBuffer() {
+        return mbtEEGPacketsBuffer;
+    }
+
+    public void setTestPendingRawData(ArrayList<RawEEGSample> pendingRawData) {
+        this.pendingRawData = pendingRawData;
+    }
+
+    public void setTestMbtEEGPacketsBuffer(MbtEEGPacket mbtEEGPacketsBuffer) {
+        this.mbtEEGPacketsBuffer = mbtEEGPacketsBuffer;
+    }
+
+    /**
+     * Clear the pending buffer
+     */
+    private void resetPendingBuffer(){
+        pendingRawData.clear();
     }
 }

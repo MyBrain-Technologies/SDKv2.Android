@@ -216,4 +216,46 @@ Java_core_eeg_signalprocessing_MBTSignalQualityChecker_nativeDeinitQualityChecke
     delete mainQC;
 }
 
+/**
+ * Function nativeGetModifiedInputData
+ */
+JNIEXPORT jobjectArray JNICALL
+Java_core_eeg_signalprocessing_MBTSignalQualityChecker_nativeGetFeatures(JNIEnv *env,
+                                                                                  jclass type) {
 
+    MBT_Matrix<float> modifiedInputData = mainQC->MBT_get_m_testFeatures();
+
+    // Get the float array class
+    jclass floatArrayClass = env->FindClass("[F");
+
+    // Check if we properly got the float array class
+    if (floatArrayClass == NULL)
+    {
+        return NULL;
+    }
+
+    jobjectArray array = env->NewObjectArray((jsize)channelNb, floatArrayClass, NULL);
+    for (unsigned int channelIndex = 0; channelIndex < channelNb; channelIndex++)
+    {
+        std::vector<float> channelData = modifiedInputData.row(channelIndex);
+
+        jfloatArray current = env->NewFloatArray((jsize) channelData.size());
+        if (current == NULL)
+            return NULL; // ouf of memory
+
+        jfloat temp[channelData.size()];
+
+        for(unsigned int i = 0; i < channelData.size(); i++){
+            temp[i] = channelData.at(i);
+        }
+
+        env->SetFloatArrayRegion(current, 0, (jsize) channelData.size(), temp);
+
+        env->SetObjectArrayElement(array, (jsize) channelIndex, current);
+
+        env->DeleteLocalRef(current);
+
+    }
+
+    return array;
+}

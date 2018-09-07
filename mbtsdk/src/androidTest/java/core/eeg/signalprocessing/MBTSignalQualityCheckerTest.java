@@ -42,7 +42,7 @@ public class MBTSignalQualityCheckerTest {
 
 
     @Before
-    public void setUp() throws Exception{
+    public void setUp() {
         try {
             System.loadLibrary("mbtalgo_2.3.1");
         } catch (@NonNull final UnsatisfiedLinkError e) {
@@ -57,7 +57,7 @@ public class MBTSignalQualityCheckerTest {
 
 
 
-    public void testInitQualityChecker() throws Exception {
+    public void testInitQualityChecker(){
         assertEquals(MBTSignalQualityChecker.qcCurrentState, MBTSignalQualityChecker.QCStateMachine.NOT_READY);
         String version = MBTSignalQualityChecker.initQualityChecker();
         assertEquals(version,"2.3.1");
@@ -100,7 +100,7 @@ public class MBTSignalQualityCheckerTest {
 
 
     @Test
-    public void computeQualitiesGuidedTestingQC() throws Exception {
+    public void computeQualitiesGuidedTestingQC()  {
         assertTrue(MBTSignalQualityChecker.qcCurrentState == MBTSignalQualityChecker.QCStateMachine.IDLE);
         if(context!=null)
             computeQualities(MMFILE630_ROWSIZE,MMFILE630_TEST,MMFILE630_RESULT);
@@ -108,7 +108,7 @@ public class MBTSignalQualityCheckerTest {
     }
 
     @Test
-    public void computeQualitiesHeadsetOnTable() throws Exception {
+    public void computeQualitiesHeadsetOnTable()  {
         assertTrue(MBTSignalQualityChecker.qcCurrentState == MBTSignalQualityChecker.QCStateMachine.IDLE);
         if(context!=null)
             computeQualities(MMFILE422_ROWSIZE,MMFILE422_TEST,MMFILE422_RESULT);
@@ -116,14 +116,14 @@ public class MBTSignalQualityCheckerTest {
     }
 
     @Test
-    public void computeQualitiesTestingLong() throws Exception {
+    public void computeQualitiesTestingLong()  {
         assertTrue(MBTSignalQualityChecker.qcCurrentState == MBTSignalQualityChecker.QCStateMachine.IDLE);
         if(context!=null)
             computeQualities(MMFILE1200_ROWSIZE,MMFILE1200_TEST,MMFILE1200_RESULT);
 
     }
 
-    public void deinitQualityChecker() throws Exception{
+    public void deinitQualityChecker() {
 
         Log.d("deinit", "state is " + MBTSignalQualityChecker.qcCurrentState);
 
@@ -213,7 +213,7 @@ public class MBTSignalQualityCheckerTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         deinitQualityChecker();
     }
 

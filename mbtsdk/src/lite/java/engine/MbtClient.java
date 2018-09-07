@@ -1,8 +1,11 @@
 package engine;
 
+import android.bluetooth.le.ScanCallback;
 import android.content.Context;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
+
+import java.util.ArrayList;
 
 import config.MbtConfig;
 import core.MbtManager;
@@ -76,6 +79,10 @@ public final class MbtClient {
         this.mbtManager = builder.mbtManager;
     }
 
+    public void scanDevicesForType(ScannableDevices deviceType, long duration, ScanCallback scanCallback){
+        //TODO
+    }
+
     /**
      * Call this method to establish a bluetooth connection with a remote device.
      * It is possible to connect either a Melomind or a VPro device through this method. You need to specify
@@ -127,6 +134,23 @@ public final class MbtClient {
     public void readBattery(@NonNull final DeviceInfoListener listener) {
         mbtManager.readBluetooth(DeviceInfo.BATTERY, listener);
     }
+
+    public void readFwVersion(@NonNull DeviceInfoListener listener){
+        mbtManager.readBluetooth(DeviceInfo.FW_VERSION, listener);
+    }
+
+    public void readHwVersion(@NonNull DeviceInfoListener listener){
+        mbtManager.readBluetooth(DeviceInfo.HW_VERSION, listener);
+    }
+
+    public void readSerialNumber(@NonNull DeviceInfoListener listener){
+        mbtManager.readBluetooth(DeviceInfo.SERIAL_NUMBER, listener);
+    }
+
+//
+//    public void stopReadBattery(){
+//
+//    }
 
     /**
      * Initiates an EEG streaming ie, send a message to the headset to deliver EEG to the application.
