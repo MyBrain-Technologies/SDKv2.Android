@@ -1,0 +1,25 @@
+pipeline {
+    agent {
+        dockerfile {
+            filename 'jenkins/Dockerfile'
+	    args '-u root:root'
+        }
+    }
+    stages {
+        stage('build') { 
+            steps {
+                sh 'cd mbtsdk && gradle build' 
+            }
+        }
+        stage('compress build folder') { 
+            steps {
+                sh 'cd mbtsdk && tar -zcvf build.tar.gz build' 
+            }
+        }	
+	stage('copy archive') {
+            steps {
+                sh 'echo 'Where to copy the archive file?' 
+            }
+	} 
+    }
+}
