@@ -1,11 +1,16 @@
 package mbtsdk.com.mybraintech.sdkv2;
 
+import android.bluetooth.BluetoothAdapter;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -34,11 +39,9 @@ import engine.MbtClient;
 
 import engine.SimpleRequestCallback;
 import engine.StreamConfig;
-import engine.clientevents.BaseException;
-import engine.clientevents.ConnectionException;
-import engine.clientevents.ConnectionStateListener;
+import engine.clientevents.BaseError;
+import engine.clientevents.ConnectionStateReceiver;
 import engine.clientevents.DeviceInfoListener;
-import engine.clientevents.EEGException;
 import engine.clientevents.EegListener;
 import features.MbtFeatures;
 
@@ -77,22 +80,23 @@ DeviceActivity extends AppCompatActivity {
 
     private boolean isStreaming = false;
 
-    private ConnectionStateListener<ConnectionException> connectionStateListener = new ConnectionStateListener<ConnectionException>() {
-        @Override
-        public void onError(ConnectionException exception) {
-            notifyUser(getString(R.string.disconnect_failed));
-        }
+    private ConnectionStateReceiver connectionStateReceiver = new ConnectionStateReceiver(){
 
         @Override
-        public void onStateChanged(@NonNull BtState newState) {
-            currentState = newState;
-            Log.i(TAG,"current state "+newState);
-            if(currentState.equals(BtState.DISCONNECTED) ){
+        public void onReceive(Context context, Intent intent) {
+            currentState = (BtState) intent.getSerializableExtra("newState");
+            Log.i(TAG, "Received broadcast "+currentState);
+
+            if(currentState.equals(BtState.DISCONNECTED)){
                 notifyUser(getString(R.string.disconnected_headset));
                 if(isStreaming)
                     notifyUser("Please try to connect again");
                 returnOnPreviousActivity();
             }
+        }
+
+        public void onError(BaseError error, String additionnalInfo) {
+            notifyUser(getString(R.string.disconnect_failed));
         }
     };
 
@@ -116,18 +120,18 @@ DeviceActivity extends AppCompatActivity {
         }
 
         @Override
-        public void onError(BaseException exception) {
+        public void onError(BaseError error, String additionnalInfo) {
             notifyUser(getString(R.string.error_read_battery));
         }
     };
 
     private BtState currentState;
 
-    private EegListener<EEGException> eegListener = new EegListener<EEGException>() {
+    private EegListener<BaseError> eegListener = new EegListener<BaseError>() {
 
         @Override
-        public void onError(EEGException exception) {
-            Toast.makeText(DeviceActivity.this, exception.toString(), Toast.LENGTH_SHORT).show();
+        public void onError(BaseError error, String additionnalInfo) {
+            Toast.makeText(DeviceActivity.this, error.toString(), Toast.LENGTH_SHORT).show();
         }
 
         @Override
@@ -149,13 +153,14 @@ DeviceActivity extends AppCompatActivity {
     };
 
 
+    @RequiresApi(api = Build.VERSION_CODES.HONEYCOMB_MR1)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_device);
         client = MbtClient.getClientInstance();
 
-        currentState = (BtState) getIntent().getSerializableExtra(HomeActivity.BT_STATE);
+        currentState = (BtState) getIntent().getSerializableExtra(HomeActivity.BLUETOOTH_STATE);
 
         initToolBar();
         initChannelsTextView();
@@ -165,7 +170,9 @@ DeviceActivity extends AppCompatActivity {
         initStartStopStreamingButton();
         initEegGraph();
 
-        client.setConnectionStateListener(connectionStateListener);
+        client.setConnectionStateReceiver(connectionStateReceiver);
+        LocalBroadcastManager.getInstance(this).registerReceiver(connectionStateReceiver,
+                new IntentFilter(MbtFeatures.INTENT_CONNECTION_STATE_CHANGED));
 
         client.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
             @Override
@@ -188,6 +195,7 @@ DeviceActivity extends AppCompatActivity {
         });
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.HONEYCOMB_MR1)
     private void initDeviceNameTextView() {
         deviceNameTextView = findViewById(R.id.deviceNameTextView);
         if(getIntent().hasExtra(HomeActivity.DEVICE_NAME)){
@@ -392,13 +400,18 @@ DeviceActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         client.disconnectBluetooth();
-        client.setConnectionStateListener(null);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(connectionStateReceiver);
+        connectionStateReceiver = null;
+        deviceInfoListener = null;
+        eegListener = null;
+        client.setConnectionStateReceiver(null);
         returnOnPreviousActivity();
     }
 
     private void returnOnPreviousActivity(){
         eegListener = null;
-        connectionStateListener = null;
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(connectionStateReceiver);
+        connectionStateReceiver = null;
         deviceInfoListener = null;
         finish();
         startActivity(new Intent(DeviceActivity.this,HomeActivity.class));

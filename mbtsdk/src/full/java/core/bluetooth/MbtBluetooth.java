@@ -7,9 +7,11 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Build;
 import android.support.annotation.NonNull;
 
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
 import android.text.TextUtils;
 
 import java.util.ArrayList;
@@ -53,19 +55,21 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
 
     protected MbtBluetoothManager mbtBluetoothManager;
 
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     public MbtBluetooth(Context context, MbtBluetoothManager mbtBluetoothManager) {
         this.context = context.getApplicationContext();
         this.mbtBluetoothManager = mbtBluetoothManager;
 
         final BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-        if (manager != null) {
+        if (manager != null)
             this.bluetoothAdapter = manager.getAdapter();
-        }
-        if(this.bluetoothAdapter == null){
+
+        if(this.bluetoothAdapter == null)
             this.bluetoothAdapter = BluetoothAdapter.getDefaultAdapter(); //try another way to get the adapter
-        }
+
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.ECLAIR)
     @Nullable
     @Override
     public BluetoothDevice startScanDiscovery(@Nullable final String deviceName) {
@@ -87,6 +91,7 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
         final IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
         context.registerReceiver(new BroadcastReceiver() {
+            @RequiresApi(api = Build.VERSION_CODES.ECLAIR)
             public final void onReceive(@NonNull final Context context, @NonNull final Intent intent) {
                 final String action = intent.getAction();
                 if(action == null)
@@ -122,6 +127,7 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
         return scanLock.waitAndGetResult();
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.ECLAIR)
     @Override
     public void stopScanDiscovery() {
         if(scanLock != null && scanLock.isWaiting()){

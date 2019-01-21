@@ -5,6 +5,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import core.eeg.storage.MbtEEGPacket;
+import engine.clientevents.BaseError;
 import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.EEGException;
 import engine.clientevents.EegListener;
@@ -25,13 +26,13 @@ public final class StreamConfig {
 
     //private final DeviceConfig deviceConfig; Will be used in future release
 
-    private final EegListener<EEGException> eegListener;
+    private final EegListener<BaseError> eegListener;
 
     private final DeviceStatusListener deviceStatusListener;
 
     private final boolean computeQualities;
 
-    private StreamConfig(boolean computeQualities, EegListener<EEGException> eegListener, int notificationPeriod, DeviceStatusListener deviceStatusListener){
+    private StreamConfig(boolean computeQualities, EegListener<BaseError> eegListener, int notificationPeriod, DeviceStatusListener deviceStatusListener){
         this.computeQualities = computeQualities;
         this.eegListener = eegListener;
         this.notificationPeriod = notificationPeriod;
@@ -66,7 +67,7 @@ public final class StreamConfig {
         @Nullable
         private DeviceStatusListener deviceStatusListener = null;
         @NonNull
-        private final EegListener<EEGException> eegListener;
+        private final EegListener<BaseError> eegListener;
 
         private boolean computeQualities = false;
 
@@ -75,7 +76,7 @@ public final class StreamConfig {
          * The eeg Listener is mandatory.
          * @param eegListener
          */
-        public Builder(@NonNull EegListener<EEGException> eegListener){
+        public Builder(@NonNull EegListener<BaseError> eegListener){
             this.eegListener = eegListener;
         }
 

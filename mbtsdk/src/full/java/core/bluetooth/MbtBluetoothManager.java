@@ -11,6 +11,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
@@ -116,6 +117,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * - Perform the connect operation if scan is successful.
      * @param deviceName the device bluetooth name.
      */
+    @RequiresApi(api = Build.VERSION_CODES.ECLAIR)
     private void scanAndConnect(@Nullable String deviceName){
         if(getCurrentState() == BtState.CONNECTED_AND_READY){
             if(deviceName != null && currentDevice != null && currentDevice.getName().equals(deviceName)){
@@ -126,7 +128,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             return;
         }
 
-        
         isConnectionInterrupted = false; // resetting the flag when starting a new connection
         if(!BluetoothAdapter.getDefaultAdapter().isEnabled()){
             notifyConnectionStateChanged(BtState.DISABLED);
@@ -217,6 +218,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      */
     //Lister les input:
     // - Device Type / Bluetooth protocol
+    @RequiresApi(api = Build.VERSION_CODES.ECLAIR)
     private void scanDevices(/*, MbtScanCallback scanCallback*/){
         //TODO choose method name accordingly between scan() / scanFor() / ...
 
@@ -242,6 +244,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
 
         return AsyncUtils.executeAsync(new Callable<BluetoothDevice>() {
+            @RequiresApi(api = Build.VERSION_CODES.ECLAIR)
             @Nullable
             @Override
             public BluetoothDevice call() throws Exception {
@@ -262,6 +265,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     /**
      * This method stops the currently running bluetooth scan, either Le scan or discovery scan
      */
+    @RequiresApi(api = Build.VERSION_CODES.ECLAIR)
     private void stopCurrentScan(){
         LogUtils.i(TAG, "stopping current scan");
         if (MbtConfig.scannableDevices == ScannableDevices.MELOMIND && ContextCompat.checkSelfPermission(mContext,
@@ -530,6 +534,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             cancelPendingConnection();
         else
             requestHandler.post(new Runnable() {
+                @RequiresApi(api = Build.VERSION_CODES.ECLAIR)
                 @Override
                 public void run() {
                     requestThread.parseRequest(request);
@@ -612,6 +617,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
          * Checks the subclass type of {@link BluetoothRequests} and handles the correct method/action to perform.
          * @param request the {@link BluetoothRequests} request to execute.
          */
+        @RequiresApi(api = Build.VERSION_CODES.ECLAIR)
         void parseRequest(BluetoothRequests request){
             LogUtils.i(TAG,"parsing new request");
             //BluetoothRequests request = pendingRequests.remove();

@@ -89,6 +89,8 @@ public final class MbtFeatures{
     public final static ArrayList<MbtAcquisitionLocations> MELOMIND_GROUNDS = new ArrayList<>(Arrays.asList(MbtAcquisitionLocations.M2));
     public final static ArrayList<MbtAcquisitionLocations> VPRO_GROUNDS = new ArrayList<>();//init values with server data
 
+    public final static String INTENT_CONNECTION_STATE_CHANGED = "connectionStateChanged";
+
     public static final int DEFAULT_NUMBER_OF_DATA_TO_DISPLAY = 500;
     public static int getNbChannels(){
         return (MbtConfig.getScannableDevices().equals(MELOMIND) ? MELOMIND_NB_CHANNELS : VPRO_NB_CHANNELS);

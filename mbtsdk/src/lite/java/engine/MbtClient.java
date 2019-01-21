@@ -1,24 +1,24 @@
 package engine;
 
 import android.bluetooth.le.ScanCallback;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 
-import java.util.ArrayList;
 
 import config.MbtConfig;
 import core.MbtManager;
-import core.bluetooth.BtState;
 import core.device.model.MbtDevice;
 import core.eeg.storage.MbtEEGPacket;
 import core.recordingsession.metadata.DeviceInfo;
-import engine.clientevents.BaseException;
-import engine.clientevents.ConnectionException;
-import engine.clientevents.ConnectionStateListener;
+import engine.clientevents.BaseError;
+import engine.clientevents.ConfigError;
+import engine.clientevents.ConnectionStateReceiver;
 import engine.clientevents.DeviceInfoListener;
-import engine.clientevents.EEGException;
 import engine.clientevents.EegListener;
+import engine.clientevents.HeadsetDeviceError;
 import features.MbtFeatures;
 import features.ScannableDevices;
 
@@ -87,7 +87,7 @@ public final class MbtClient {
      * Call this method to establish a bluetooth connection with a remote device.
      * It is possible to connect either a Melomind or a VPro device through this method. You need to specify
      * the device type in the {@link ConnectionConfig} input instance with the {@link ScannableDevices} type.
-     * <p>If the parameters are invalid, the method returns immediately and {@link ConnectionStateListener#onError(BaseException)} method is called</p>
+     * <p>If the parameters are invalid, the method returns immediately and {@link ConnectionStateReceiver#onError(engine.clientevents.BaseError, String)} method is called</p>
      *
      * @param config the {@link ConnectionConfig} instance that holds all the configuration parameters inside.
      */
@@ -97,19 +97,18 @@ public final class MbtClient {
 
         //MbtConfig.bluetoothConnectionTimeout = config.getConnectionTimeout();
         if(config.getMaxScanDuration() < MbtFeatures.MIN_SCAN_DURATION){
-            config.getConnectionStateListener().onError(new ConnectionException(ConnectionException.INVALID_SCAN_DURATION));
+            config.getConnectionStateReceiver().onError(ConfigError.ERROR_INVALID_PARAMS,ConfigError.SCANNING_MINIMUM_DURATION);
             return;
         }
 
         if(config.getDeviceType() == ScannableDevices.VPRO){
-            config.getConnectionStateListener().onError(new ConnectionException("ERROR, VPRO not supported in this version. Only MELOMIND available"));
+            config.getConnectionStateReceiver().onError(HeadsetDeviceError.ERROR_VPRO_INCOMPATIBLE,null);
             return;
         }
 
-        MbtConfig.scannableDevices = config.getDeviceType();
         MbtConfig.bluetoothScanTimeout = config.getMaxScanDuration();
 
-        this.mbtManager.connectBluetooth(config.getDeviceName(), config.getConnectionStateListener());
+        this.mbtManager.connectBluetooth(config.getDeviceName(), config.getConnectionStateReceiver());
     }
 
     /**
@@ -157,8 +156,8 @@ public final class MbtClient {
      *
      * <p>You can customize some parameters in the {@link StreamConfig}class.</p>
      *
-     * <p>If the parameters are incorrect, the function returns directly and the {@link EegListener#onError(BaseException)} method is called</p>
-     * If something wrong happens during the operation, {@link EegListener#onError(BaseException)} method is called.
+     * <p>If the parameters are incorrect, the function returns directly and the {@link EegListener#onError(engine.clientevents.BaseError,String)} method is called</p>
+     * If something wrong happens during the operation, {@link EegListener#onError(engine.clientevents.BaseError,String)} method is called.
      *
      * <p>If everything went well, the EEG will be available in the {@link EegListener#onNewPackets(MbtEEGPacket)} callback.</p>
      *
@@ -167,7 +166,8 @@ public final class MbtClient {
     @SuppressWarnings("unchecked")
     public void startStream(@NonNull StreamConfig streamConfig){
         if(!streamConfig.isConfigCorrect())
-            streamConfig.getEegListener().onError(new EEGException(EEGException.INVALID_PARAMETERS));
+            streamConfig.getEegListener().onError(ConfigError.ERROR_INVALID_PARAMS, streamConfig.shouldComputeQualities() ?
+                    ConfigError.NOTIFICATION_PERIOD_RANGE_QUALITIES : ConfigError.NOTIFICATION_PERIOD_RANGE);
         else
             MbtConfig.eegBufferLengthClientNotif = (int)((streamConfig.getNotificationPeriod()* MbtFeatures.DEFAULT_SAMPLE_RATE)/1000);
 
@@ -187,7 +187,7 @@ public final class MbtClient {
     /**
      * Stops a pending connection process. If successful,
      * the new state {@link core.bluetooth.BtState#INTERRUPTED} is sent to the user in the
-     * {@link ConnectionStateListener#onStateChanged(BtState)} callback.
+     * {@link ConnectionStateReceiver#onReceive(Context, Intent)} callback.
      *
      * <p>If the device is already connected, it simply disconnects the device.</p>
      */
@@ -196,18 +196,18 @@ public final class MbtClient {
     }
 
     /**
-     * Sets the {@link ConnectionStateListener} to the connectionStateListener value
-     * @param connectionStateListener the new {@link ConnectionStateListener}. Set it to null if you want to reset the listener
+     * Sets the {@link BroadcastReceiver} to the connectionStateReceiver value
+     * @param connectionStateReceiver the new {@link BroadcastReceiver}. Set it to null if you want to reset the listener
      */
-    public void setConnectionStateListener(ConnectionStateListener<ConnectionException> connectionStateListener){
-        this.mbtManager.setConnectionStateListener(connectionStateListener);
+    public void setConnectionStateReceiver(ConnectionStateReceiver connectionStateReceiver){
+        this.mbtManager.setConnectionStateReceiver(connectionStateReceiver);
     }
 
     /**
      * Sets the {@link EegListener} to the connectionStateListener value
      * @param eegListener the new {@link EegListener}. Set it to null if you want to reset the listener
      */
-    public void setEEGListener(EegListener<EEGException> eegListener){
+    public void setEEGListener(EegListener<BaseError> eegListener){
         this.mbtManager.setEEGListener(eegListener);
     }
 

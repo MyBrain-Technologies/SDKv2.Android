@@ -1,11 +1,13 @@
 package engine;
 
+import android.content.BroadcastReceiver;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import engine.clientevents.ConnectionException;
 import engine.clientevents.ConnectionStateListener;
+import engine.clientevents.ConnectionStateReceiver;
 import features.MbtFeatures;
 import features.ScannableDevices;
 
@@ -28,15 +30,15 @@ public final class ConnectionConfig {
 
     private final ScannableDevices deviceType;
 
-    private final ConnectionStateListener<ConnectionException> connectionStateListener;
+    private final ConnectionStateReceiver connectionStateReceiver;
 
-    private ConnectionConfig(String deviceName, int maxScanDuration, int connectionTimeout, boolean connectAudio, ScannableDevices deviceType, ConnectionStateListener<ConnectionException> connectionStateListener){
+    private ConnectionConfig(String deviceName, int maxScanDuration, int connectionTimeout, boolean connectAudio, ScannableDevices deviceType, ConnectionStateReceiver connectionStateReceiver){
         this.deviceName = deviceName;
         this.maxScanDuration = maxScanDuration;
         this.connectionTimeout = connectionTimeout;
         this.deviceType = deviceType;
         this.connectAudio = (deviceType == ScannableDevices.MELOMIND && connectAudio);
-        this.connectionStateListener = connectionStateListener;
+        this.connectionStateReceiver = connectionStateReceiver;
     }
 
     /**
@@ -63,8 +65,8 @@ public final class ConnectionConfig {
         return deviceType;
     }
 
-    public ConnectionStateListener getConnectionStateListener() {
-        return connectionStateListener;
+    public ConnectionStateReceiver getConnectionStateReceiver() {
+        return connectionStateReceiver;
     }
 
     /**
@@ -79,11 +81,11 @@ public final class ConnectionConfig {
         private boolean connectAudio = false;
         private ScannableDevices deviceType = ScannableDevices.ALL;
         @NonNull
-        private final ConnectionStateListener<ConnectionException> connectionStateListener;
+        private final ConnectionStateReceiver connectionStateReceiver;
 
 
-        public Builder(@NonNull ConnectionStateListener<ConnectionException> stateListener){
-            this.connectionStateListener = stateListener;
+        public Builder(@NonNull ConnectionStateReceiver connectionStateReceiver){
+            this.connectionStateReceiver = connectionStateReceiver;
         }
 
         /**
@@ -154,7 +156,7 @@ public final class ConnectionConfig {
 
         @NonNull
         public ConnectionConfig create(){
-            return new ConnectionConfig(this.deviceName, this.maxScanDuration, this.connectionTimeout, this.connectAudio, this.deviceType, this.connectionStateListener);
+            return new ConnectionConfig(this.deviceName, this.maxScanDuration, this.connectionTimeout, this.connectAudio, this.deviceType, this.connectionStateReceiver);
         }
 
 
