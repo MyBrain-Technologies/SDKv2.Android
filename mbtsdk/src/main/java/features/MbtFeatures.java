@@ -3,11 +3,13 @@ package features;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 
+import java.net.PortUnreachableException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 import config.MbtConfig;
 import core.bluetooth.BtProtocol;
+import utils.FirmwareUtils;
 
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
 import static core.bluetooth.BtProtocol.BLUETOOTH_SPP;
@@ -44,11 +46,12 @@ public final class MbtFeatures{
 
     public final static long DEFAULT_BATTERY_READ_PERIOD = 20000;
 
-    public final static int DEFAULT_MAX_SCAN_DURATION_IN_MILLIS = 40000;
+    public final static int DEFAULT_MAX_SCAN_DURATION_IN_MILLIS = 30000;
     public final static int DEFAULT_MAX_CONNECTION_DURATION_IN_MILLIS = 40000;
 
     // MELOMIND & VPRO FEATURES
     public static final String MELOMIND_DEVICE_NAME_PREFIX = "melo_";
+    public static final String A2DP_DEVICE_NAME_PREFIX = "audio_";
     public static final String VPRO_DEVICE_NAME_PREFIX = "VPro";
 
     public static final String MELOMIND_DEVICE_NAME = "Melomind";

@@ -121,4 +121,7 @@ public class MelomindDevice extends MbtDevice{
         this.groundsLocation = grounLocationsArrayList;
     }
 
+    public static boolean isMelomind(BluetoothDevice device) {
+        return (device != null && device.getName() != null && device.getName().contains(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX));
+    }
 }

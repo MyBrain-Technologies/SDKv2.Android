@@ -1,6 +1,5 @@
 package mbtsdk.com.mybraintech.sdkv2;
 
-import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;

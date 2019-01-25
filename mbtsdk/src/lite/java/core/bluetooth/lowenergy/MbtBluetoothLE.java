@@ -347,7 +347,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         //Using reflexion here because min API is 21 and transport layer is not available publicly until API 23
         try {
             final Method connectGattMethod = device.getClass()
-                    .getMethod("connectGatt",
+                    .getMethod(CONNECT_GATT_METHOD,
                             Context.class, boolean.class, BluetoothGattCallback.class, int.class);
 
             final int transport = device.getClass().getDeclaredField("TRANSPORT_LE").getInt(null);

@@ -1,12 +1,8 @@
 package engine;
 
-import android.content.BroadcastReceiver;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-
-import engine.clientevents.ConnectionException;
-import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.ConnectionStateReceiver;
 import features.MbtFeatures;
 import features.ScannableDevices;
@@ -57,6 +53,10 @@ public final class ConnectionConfig {
         return connectionTimeout;
     }
 
+    /**
+     * By default, Bluetooth connection is only initiated for Data streaming but not for the Audio streaming
+     * @return
+     */
     public boolean isConnectAudio() {
         return connectAudio;
     }

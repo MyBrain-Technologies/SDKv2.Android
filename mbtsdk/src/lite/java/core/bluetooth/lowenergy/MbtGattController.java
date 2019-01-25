@@ -86,9 +86,9 @@ final class MbtGattController extends BluetoothGattCallback {
         String msg = "Connection state change : ";
         switch(newState) {
             case BluetoothGatt.STATE_CONNECTED:
-                //gatt.requestMtu(MAX_MTU);
                 this.bluetoothController.notifyConnectionStateChanged(BtState.CONNECTED);
                 gatt.discoverServices();
+                this.bluetoothController.notifyConnectionStateChanged(BtState.DISCOVERING_SERVICES);
                 msg += "STATE_CONNECTED and now discovering services...";
                 break;
             case BluetoothGatt.STATE_CONNECTING:
@@ -98,7 +98,7 @@ final class MbtGattController extends BluetoothGattCallback {
             case BluetoothGatt.STATE_DISCONNECTED:
                 // This if is necessary because we might have disconnect after something went wrong while connecting
                 if (this.connectionLock.isWaiting())
-                    this.connectionLock.setResultAndNotify(BtState.CONNECT_FAILURE);
+                    this.connectionLock.setResultAndNotify(BtState.CONNECTION_FAILURE);
                 else {                    // in this case the connection went well for a while, but just got lost
                     gatt.close();
                     //this.gatt = null;
@@ -189,6 +189,10 @@ final class MbtGattController extends BluetoothGattCallback {
         if (characteristic.getUuid().compareTo(CHARAC_INFO_SERIAL_NUMBER) == 0) {
             LogUtils.i(TAG, "received " + new String(characteristic.getValue()));
             bluetoothController.notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER, new String(characteristic.getValue()));
+
+            this.bluetoothController.notifyConnectionStateChanged(BtState.BONDING);
+            if(this.connectionLock.isWaiting())
+                this.connectionLock.setResultAndNotify(BtState.BONDING);
         }
 
 

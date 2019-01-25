@@ -1,6 +1,5 @@
 package mbtsdk.com.mybraintech.sdkv2;
 
-import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -16,6 +15,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.Switch;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -27,7 +27,6 @@ import engine.clientevents.BaseError;
 import engine.clientevents.ConnectionStateReceiver;
 import features.MbtFeatures;
 
-import static android.bluetooth.BluetoothAdapter.ACTION_STATE_CHANGED;
 import static features.MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX;
 import static features.MbtFeatures.VPRO_DEVICE_NAME_PREFIX;
 import static features.ScannableDevices.MELOMIND;
@@ -44,6 +43,9 @@ public class HomeActivity extends AppCompatActivity{
 
     private EditText deviceNameField;
     private String deviceName;
+
+    private Switch connectAudioSwitch;
+    private boolean connectAudioIfDeviceCompatible ;
 
     private Spinner devicePrefixSpinner;
     private String devicePrefix;
@@ -87,8 +89,13 @@ public class HomeActivity extends AppCompatActivity{
         isCancel = false;
 
         initDeviceNameField();
+        initConnectAudioSwitch();
         initScanButton();
         initDevicePrefix();
+    }
+
+    private void initConnectAudioSwitch() {
+        connectAudioSwitch = findViewById(R.id.connectAudio);
     }
 
     private void initDevicePrefix() {
@@ -117,6 +124,7 @@ public class HomeActivity extends AppCompatActivity{
                 notifyUser(getString(R.string.scan_in_progress));
                 devicePrefix = String.valueOf(devicePrefixSpinner.getSelectedItem()); //get the prefix chosed by the user in the Spinner
                 deviceName = devicePrefix+deviceNameField.getText().toString(); //get the name entered by the user in the EditText
+                connectAudioIfDeviceCompatible = connectAudioSwitch.isChecked();
                 if(isCancel){ //Scan in progress : a second click means that the user is trying to cancel the scan
                    cancelScan();
                 }else{ // Scan is not in progress : starting a new scan in order to connect to a Mbt Device
@@ -138,6 +146,7 @@ public class HomeActivity extends AppCompatActivity{
                             null : deviceName ) //null is given in parameters if no name has been entered by the user
                     .maxScanDuration(SCAN_DURATION)
                     .scanDeviceType(isMelomindDevice() ? MELOMIND : VPRO)
+                    .connectAudioIfDeviceCompatible(connectAudioIfDeviceCompatible)
                     .create());
 
     }

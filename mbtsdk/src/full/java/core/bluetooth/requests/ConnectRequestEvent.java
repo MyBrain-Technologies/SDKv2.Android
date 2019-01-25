@@ -1,18 +1,22 @@
 package core.bluetooth.requests;
 
-import core.bluetooth.requests.BluetoothRequests;
-
 /**
  * An event class when a connection request is being sent by the user.
  */
 public class ConnectRequestEvent extends BluetoothRequests {
         private String name;
+        private boolean connectAudioInA2DP;
 
-        public ConnectRequestEvent(String name){
+        public ConnectRequestEvent(String name, boolean connectAudioInA2DP){
             this.name = name;
+            this.connectAudioInA2DP = connectAudioInA2DP;
         }
 
         public String getName(){
             return this.name;
+        }
+
+        public boolean connectAudioInA2DP(){
+            return this.connectAudioInA2DP;
         }
 }

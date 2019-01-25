@@ -31,7 +31,7 @@ public interface IConnectable {
      * @param newState The new bluetooth connection state. Refer to @{@link BtState}
      * for the complete list of states.
      */
-    void notifyConnectionStateChanged(@NonNull final BtState newState);
+    void notifyConnectionStateChanged(@NonNull final BtState newState, final boolean isBleState);
 
     /**
      * @return whether or not the device is correctly connected, ie if current state is {@link BtState#CONNECTED_AND_READY}

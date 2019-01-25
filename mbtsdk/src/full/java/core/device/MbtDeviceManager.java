@@ -3,6 +3,7 @@ package core.device;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.util.Log;
 
 
 import org.greenrobot.eventbus.Subscribe;
@@ -16,6 +17,7 @@ import core.device.model.MbtDevice;
 import core.device.model.MelomindDevice;
 import core.device.model.VProDevice;
 import core.eeg.acquisition.MbtDataConversion;
+import core.oad.OADFileManager;
 import eventbus.EventBusManager;
 import eventbus.events.DeviceInfoEvent;
 import features.ScannableDevices;
@@ -108,4 +110,47 @@ public class MbtDeviceManager extends BaseModuleManager{
         EventBusManager.postEvent(new DeviceEvents.PostDeviceEvent(mCurrentDevice));
     }
 
+    private boolean isFirmwareVersionUpToDate(){
+        Log.i(TAG, "Current Firmware version is " + getmCurrentDevice().getFirmwareVersion());
+        //First, get fw version as number
+        String[] deviceFwVersion = getmCurrentDevice().getFirmwareVersion().split("\\.");
+
+        if(deviceFwVersion.length < 3 || getmCurrentDevice().getFirmwareVersion().equals(MbtDevice.DEFAULT_FW_VERSION)){
+            Log.e(TAG, "read firmware version is invalid: size < 3");
+            return true;
+        }
+
+        //Compare it to latest bin file either from server or locally
+        String[] binFwVersion = OADFileManager.getMostRecentFwVersion(mContext);
+        if(binFwVersion == null){
+            Log.e(TAG, "no binary found");
+            return true;
+        }
+        if(binFwVersion.length > 3){ //trimming initial array
+            String[] tmp = new String[3];
+            System.arraycopy(binFwVersion, 0, tmp, 0, tmp.length);
+            binFwVersion = tmp.clone();
+        }
+
+        for (String s : binFwVersion) {
+            if(s == null){
+                Log.e(TAG, "error when parsing fw version");
+                return true;
+            }
+        }
+
+        boolean isUpToDate = true;
+        for(int i = 0; i < deviceFwVersion.length; i++){
+
+            if(Integer.parseInt(deviceFwVersion[i]) > Integer.parseInt(binFwVersion[i])){ //device value is stricly superior to bin value so it's even more recent
+                break;
+            }else if(Integer.parseInt(deviceFwVersion[i])< Integer.parseInt(binFwVersion[i])){ //device value is inferior to bin. update is necessary
+                isUpToDate = false;
+                Log.i(TAG, "update is necessary");
+                break;
+            }
+        }
+
+        return isUpToDate;
+    }
 }

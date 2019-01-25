@@ -102,8 +102,9 @@ public final class MbtClient {
         }
 
         MbtConfig.bluetoothScanTimeout = config.getMaxScanDuration();
+        MbtConfig.connectAudioIfDeviceCompatible = config.isConnectAudio();
 
-        this.mbtManager.connectBluetooth(config.getDeviceName(), config.getConnectionStateReceiver());
+        this.mbtManager.connectBluetooth(config.getDeviceName(), config.isConnectAudio(), config.getConnectionStateReceiver());
     }
 
     /**
@@ -181,7 +182,7 @@ public final class MbtClient {
 
     /**
      * Stops a pending connection process. If successful,
-     * the new state {@link core.bluetooth.BtState#INTERRUPTED} is sent to the user in the
+     * the new state {@link core.bluetooth.BtState#CONNECTION_INTERRUPTED} is sent to the user in the
      * {@link ConnectionStateReceiver#onReceive(Context, Intent)} callback.
      *
      * <p>If the device is already connected, it simply disconnects the device.</p>

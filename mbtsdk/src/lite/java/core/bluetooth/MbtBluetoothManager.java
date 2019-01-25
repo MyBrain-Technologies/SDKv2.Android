@@ -168,7 +168,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         }
         BluetoothDevice bluetoothDevice;
         if(currentDevice == null){
-            notifyConnectionStateChanged(isConnectionInterrupted ? BtState.INTERRUPTED : BtState.SCAN_TIMEOUT);
+            notifyConnectionStateChanged(isConnectionInterrupted ? BtState.SCAN_INTERRUPTED : BtState.SCAN_TIMEOUT);
             return;
         }else {
             LogUtils.i(TAG, "scanned device is " + currentDevice.toString());
@@ -189,7 +189,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      */
     private void connect(@NonNull BluetoothDevice device){
         if(isConnectionInterrupted){
-            notifyConnectionStateChanged(BtState.INTERRUPTED);
+            notifyConnectionStateChanged(BtState.CONNECTION_INTERRUPTED);
             return;
         }
 
@@ -544,7 +544,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      */
     public void notifyConnectionStateChanged(BtState newState) {
         if(newState == BtState.CONNECTED_AND_READY ||newState == BtState.DISCONNECTED || newState == BtState.SCAN_TIMEOUT || newState == BtState.DISABLED || newState == BtState.INTERNAL_FAILURE
-                || newState == BtState.LOCATION_IS_REQUIRED ||newState == BtState.LOCATION_PERMISSION_NOT_GRANTED || newState == BtState.INTERRUPTED || newState == BtState.ANOTHER_DEVICE_CONNECTED){
+                || newState == BtState.LOCATION_IS_REQUIRED ||newState == BtState.LOCATION_PERMISSION_NOT_GRANTED || newState == BtState.SCAN_INTERRUPTED || newState == BtState.ANOTHER_DEVICE_CONNECTED){
             requestBeingProcessed = false;
         }
 

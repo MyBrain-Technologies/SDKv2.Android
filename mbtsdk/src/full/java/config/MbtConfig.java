@@ -35,13 +35,15 @@ public final class MbtConfig {
 
     private static boolean acquisitionEnabledLowBattery;
 
-    public static int bluetoothConnectionTimeout;
+    private static int bluetoothConnectionTimeout;
 
     public static int bluetoothScanTimeout;
 
     private static int bluetoothPairingTimeout;
 
     private static String serverURL;
+
+    public static boolean connectAudioIfDeviceCompatible;
 
     public static int getEegBufferLengthClientNotif() {
         return eegBufferLengthClientNotif;
@@ -99,6 +101,9 @@ public final class MbtConfig {
         return scannableDevices;
     }
 
+    public static boolean connectAudioIfDeviceCompatible() {
+        return connectAudioIfDeviceCompatible;
+    }
 
     public static class MbtConfigBuilder {
 
@@ -127,6 +132,8 @@ public final class MbtConfig {
         private int bluetoothPairingTimeout;
 
         private String serverURL;
+
+        private boolean connectAudioIfDeviceCompatible;
 
         @NonNull
         public MbtConfigBuilder setEegPacketLength(final int eegPacketLength) {
@@ -209,6 +216,12 @@ public final class MbtConfig {
         }
 
         @NonNull
+        public MbtConfigBuilder connectAudio(final boolean connectAudio) {
+            this.connectAudioIfDeviceCompatible = connectAudio;
+            return this;
+        }
+
+        @NonNull
         public MbtConfig create() {
             return new MbtConfig(this);
         }
@@ -228,6 +241,7 @@ public final class MbtConfig {
         bluetoothScanTimeout = builder.bluetoothScanTimeout;
         bluetoothPairingTimeout = builder.bluetoothPairingTimeout;
         serverURL = builder.serverURL;
+        connectAudioIfDeviceCompatible = builder.connectAudioIfDeviceCompatible;
     }
 
     public static void setScannableDevices(ScannableDevices scannableDevices) {

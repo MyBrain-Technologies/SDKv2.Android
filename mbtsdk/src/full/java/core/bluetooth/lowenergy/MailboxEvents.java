@@ -22,6 +22,27 @@ final class MailboxEvents{
             static final byte MBX_SET_AMP_GAIN = 13;        // Set the eeg signal amplifier gain
             static final byte MBX_GET_EEG_CONFIG = 14;      // Get the current configuration of the Notch filter, the bandpass filter, and the amplifier gain.
             static final byte MBX_P300_ENABLE = 15;         // Enable or disable the p300 functionnality of the melomind.
-            static final byte MBX_DC_OFFSET_ENABLE = 15;         // Enable or disable the DC offset measurement computation and sending.
+            static final byte MBX_DC_OFFSET_ENABLE = 16;         // Enable or disable the DC offset measurement computation and sending.
+            static final byte MBX_CONNECT_IN_A2DP = 17;         // Request the melomind to start an A2DP connection
+            static final byte MBX_DISCONNECT_IN_A2DP = 18;         // Request the melomind to stop an A2DP connection
+
             static final byte MBX_BAD_EVT = (byte)0xFF;
+
+            /**
+             * Event codes related to #MBX_CONNECT_IN_A2DP event
+             */
+            static final byte CMD_CODE_CONNECT_IN_A2DP_IN_PROGRESS = 0x01;
+            static final byte CMD_CODE_CONNECT_IN_A2DP_FAILED_BAD_BDADDR = 0x02;
+            static final byte CMD_CODE_CONNECT_IN_A2DP_FAILED_ALREADY_CONNECTED = 0x04;
+            static final byte CMD_CODE_CONNECT_IN_A2DP_FAILED_TIMEOUT = 0x08;
+            static final byte CMD_CODE_CONNECT_IN_A2DP_LINKKEY_INVALID = 0x10;
+            static final byte CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED = 0x20;
+            static final byte CMD_CODE_CONNECT_IN_A2DP_SUCCESS = (byte)0x80;
+
+            /**
+             * Event codes related to #MBX_CONNECT_IN_A2DP event
+             */
+            static final byte CMD_CODE_DISCONNECT_IN_A2DP_FAILED = 0x01;
+            static final byte CMD_CODE_DISCONNECT_IN_A2DP_SUCCESS = (byte)0xFF;
+
 }

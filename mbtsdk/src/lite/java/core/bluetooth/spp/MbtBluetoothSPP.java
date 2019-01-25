@@ -132,7 +132,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
                 return true;
             }
         } catch (@NonNull final IOException ioe) {
-            notifyConnectionStateChanged(BtState.CONNECT_FAILURE);
+            notifyConnectionStateChanged(BtState.CONNECTION_FAILURE);
             LogUtils.e(TAG, "Exception while connecting ->" + ioe.getMessage());
             Log.getStackTraceString(ioe);
         }
@@ -241,7 +241,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
             notifyConnectionStateChanged(BtState.DISCONNECTED);
         } catch (@NonNull final IOException e) {
             LogUtils.e(TAG, "Error while closing streams -> \n" + e.getMessage());
-            notifyConnectionStateChanged(BtState.INTERRUPTED);
+            notifyConnectionStateChanged(BtState.CONNECTION_INTERRUPTED);
             Log.getStackTraceString(e);
         }
     }
@@ -395,7 +395,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
                     this.requestDisconnect = false; // consumed
                     notifyConnectionStateChanged(BtState.DISCONNECTED);
                 } else
-                    notifyConnectionStateChanged(BtState.INTERRUPTED);
+                    notifyConnectionStateChanged(BtState.CONNECTION_INTERRUPTED);
                 break;
             }
         }

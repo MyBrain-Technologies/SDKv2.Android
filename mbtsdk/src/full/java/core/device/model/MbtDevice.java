@@ -16,6 +16,8 @@ import features.MbtAcquisitionLocations;
 @Keep
 public abstract class MbtDevice {
 
+    public static final String DEFAULT_FW_VERSION = "0.0.0";
+
     String productName;
     @Nullable
     String hardwareVersion;

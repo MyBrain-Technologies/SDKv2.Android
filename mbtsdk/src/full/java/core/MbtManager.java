@@ -1,11 +1,12 @@
 package core;
 
-import android.bluetooth.BluetoothAdapter;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
@@ -36,7 +37,6 @@ import engine.clientevents.BluetoothError;
 import engine.clientevents.ConnectionStateReceiver;
 import engine.clientevents.DeviceInfoListener;
 import engine.clientevents.DeviceStatusListener;
-import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.EegError;
 import engine.clientevents.HeadsetDeviceError;
 import eventbus.EventBusManager;
@@ -69,7 +69,6 @@ public final class MbtManager{
      * the application callbacks. EventBus is not available outside the SDK so the user is notified
      * using custom callback interfaces.
      */
-    //private ConnectionStateListener<ConnectionException> connectionStateListener;
     private ConnectionStateReceiver connectionStateReceiver;
     private EegListener<BaseError> eegListener;
     private DeviceInfoListener<BaseError> deviceInfoListener;
@@ -80,6 +79,7 @@ public final class MbtManager{
      *
      * @param context
      */
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     public MbtManager(Context context) {
         this.mContext = context;
         this.registeredModuleManagers = new HashSet<>();
@@ -105,14 +105,14 @@ public final class MbtManager{
      * @param name the device name to connect to. Might be null if not known by the user.
      * @param connectionStateReceiver a set of callback that will notify the user about connection progress.
      */
-    public void connectBluetooth(@Nullable String name, @NonNull ConnectionStateReceiver connectionStateReceiver){
+    public void connectBluetooth(@Nullable String name, boolean connectAudioInA2DP, @NonNull ConnectionStateReceiver connectionStateReceiver){
         if(name != null && (!name.startsWith(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX) && !name.startsWith(MbtFeatures.VPRO_DEVICE_NAME_PREFIX))){
             connectionStateReceiver.onError(HeadsetDeviceError.ERROR_PREFIX_NAME,null);
             return;
         }
 
         this.connectionStateReceiver = connectionStateReceiver;
-        EventBusManager.postEvent(new ConnectRequestEvent(name));
+        EventBusManager.postEvent(new ConnectRequestEvent(name, connectAudioInA2DP));
     }
 
     /**
@@ -284,8 +284,8 @@ public final class MbtManager{
 
 
     /**
-     * Sets an extended {@link BroadcastReceiver} to the connectionStateListener value
-     * @param connectionStateReceiver the new {@link ConnectionStateListener}. Set it to null if you want to reset the listener
+     * Sets an extended {@link BroadcastReceiver} to the connectionStateReceiver value
+     * @param connectionStateReceiver the new {@link ConnectionStateReceiver}. Set it to null if you want to reset the listener
      */
     public void setConnectionStateReceiver(ConnectionStateReceiver connectionStateReceiver) {
         this.connectionStateReceiver = connectionStateReceiver;
@@ -293,7 +293,7 @@ public final class MbtManager{
 
 
     /**
-     * Sets the {@link EegListener} to the connectionStateListener value
+     * Sets the {@link EegListener} to the connectionStateReceiver value
      * @param EEGListener the new {@link EegListener}. Set it to null if you want to reset the listener
      */
     public void setEEGListener(EegListener<BaseError> EEGListener) {
@@ -313,6 +313,4 @@ public final class MbtManager{
         });
 
     }
-
-
 }

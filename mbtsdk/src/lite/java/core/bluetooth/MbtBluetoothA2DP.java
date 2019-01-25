@@ -125,7 +125,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                 // Safe to connect to melomind via A2DP
                 try {
                     final boolean result = (boolean) a2dpProxy.getClass()
-                            .getMethod("connect", BluetoothDevice.class)
+                            .getMethod(CONNECT_METHOD, BluetoothDevice.class)
                             .invoke(a2dpProxy, device);
 
                     if (!result) { // according to doc : "false on immediate error, true otherwise"
