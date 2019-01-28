@@ -11,31 +11,32 @@ public final class BluetoothError extends BaseError {
 
     public static String ERROR_LABEL = DOMAIN + " Error :";
 
-    public static BluetoothError ERROR_NOT_CONNECTED                    = new BluetoothError(CODE_RANGE,"No connected headset.");
-    public static BluetoothError ERROR_LOST_CONNECTION                 = new BluetoothError( CODE_RANGE+1,  "Lost Headset Connection.");
-    public static BluetoothError ERROR_ALREADY_CONNECTED                = new BluetoothError( CODE_RANGE+2,  "Headset already connected");
-    public static BluetoothError ERROR_ALREADY_DISCONNECTED             = new BluetoothError( CODE_RANGE+3,  "Headset already disconnected");
-    public static BluetoothError ERROR_ALREADY_SCANNING                 = new BluetoothError( CODE_RANGE+4,  "Scanning already started.");
-    public static BluetoothError ERROR_ALREADY_STOPPPED_SCANNING        = new BluetoothError( CODE_RANGE+5,  "Scanning already stopped.");
-    public static BluetoothError ERROR_READ_DEVICE_INFO                 = new BluetoothError( CODE_RANGE+6,  "Headset connected but impossible to get Device Info value.");
-    public static BluetoothError ERROR_TIMEOUT_SCANNING                 = new BluetoothError( CODE_RANGE+7,  "Bluetooth scanning could not be completed within the permitted time.");
-    public static BluetoothError ERROR_TIMEOUT_CONNECTION               = new BluetoothError( CODE_RANGE+8,  "Bluetooth connection could not be completed within the permitted time.");
-    public static BluetoothError ERROR_TIMEOUT_DISCONNECTION            = new BluetoothError( CODE_RANGE+9,  "Bluetooth disconnection could not be completed within the permitted time.");
-    public static BluetoothError ERROR_TIMEOUT_READING_CHARACTERISTIC   = new BluetoothError( CODE_RANGE+10,  "Reading characteristic value has failed or could not be completed within the permitted time.");
-    public static BluetoothError ERROR_TIMEOUT                          = new BluetoothError( CODE_RANGE+11,  "Bluetooth operation has failed or could not be completed within the permitted time.");
-    public static BluetoothError ERROR_REFUSED_PAIRING                  = new BluetoothError( CODE_RANGE+12,  "User refused to pair the headset.");
-    public static BluetoothError ERROR_UNPAIRED                         = new BluetoothError( CODE_RANGE+13,  "Unpaired headset.");
-    public static BluetoothError ERROR_PAIRING_FAILED                   = new BluetoothError( CODE_RANGE+14,  "Pairing failed.");
-    public static BluetoothError ERROR_CONFLICT_CONNECTED_HEADSET       = new BluetoothError( CODE_RANGE+15,  "Headsets names are not matching.");
-    public static BluetoothError ERROR_A2DP_CONNECT_FAILED              = new BluetoothError( CODE_RANGE+16,  "Bluetooth A2DP connection failed.");
-    public static BluetoothError ERROR_BLE_CONNECT_FAILED               = new BluetoothError( CODE_RANGE+17,  "Bluetooth Low Energy connection failed.");
-    public static BluetoothError ERROR_CONNECT_FAILED                   = new BluetoothError( CODE_RANGE+18,  "Bluetooth connection failed.");
-    public static BluetoothError ERROR_DISCOVER                         = new BluetoothError( CODE_RANGE+19,  "Failed to discover services and characteristics.");
-    public static BluetoothError ERROR_ALREADY_CONNECTED_ANOTHER        = new BluetoothError( CODE_RANGE+20,  "Another device is already connected.");
-    public static BluetoothError ERROR_ALREADY_CONNECTED_ELSEWHERE      = new BluetoothError( CODE_RANGE+21,  "Audio is already connected to another device.");
-    public static BluetoothError ERROR_ALREADY_CONNECTED_JACK           = new BluetoothError( CODE_RANGE+22,  "Jack cable already connected.");
-    public static BluetoothError ERROR_NOT_SUPPORTED                    = new BluetoothError( CODE_RANGE+23,  "Bluetooth Low Energy not supported for this mobile device (incompatible Android OS version).");
-    public static BluetoothError ERROR_SCANNING_NOT_STARTED             = new BluetoothError( CODE_RANGE+24,  "Bluetooth Scanning could not be started.");
+    public static BluetoothError ERROR_NOT_CONNECTED                        = new BluetoothError(CODE_RANGE,"No connected headset.");
+    public static BluetoothError ERROR_LOST_CONNECTION                      = new BluetoothError( CODE_RANGE+1,  "Lost Headset Connection.");
+    public static BluetoothError ERROR_ALREADY_CONNECTED                    = new BluetoothError( CODE_RANGE+2,  "Headset already connected");
+    public static BluetoothError ERROR_ALREADY_DISCONNECTED                 = new BluetoothError( CODE_RANGE+3,  "Headset already disconnected");
+    public static BluetoothError ERROR_ALREADY_SCANNING                     = new BluetoothError( CODE_RANGE+4,  "Scanning already started.");
+    public static BluetoothError ERROR_ALREADY_STOPPPED_SCANNING            = new BluetoothError( CODE_RANGE+5,  "Scanning already stopped.");
+    public static BluetoothError ERROR_SCANNING_INTERRUPTED                 = new BluetoothError( CODE_RANGE+6,  "Bluetooth Scanning has been interrupted.");
+    public static BluetoothError ERROR_SCANNING_TIMEOUT                     = new BluetoothError( CODE_RANGE+7,  "Bluetooth scanning could not be completed within the permitted time.");
+    public static BluetoothError ERROR_CONNECTION_TIMEOUT                   = new BluetoothError( CODE_RANGE+8,  "Bluetooth connection could not be completed within the permitted time.");
+    public static BluetoothError ERROR_DISCONNECTION_TIMEOUT                = new BluetoothError( CODE_RANGE+9,  "Bluetooth disconnection could not be completed within the permitted time.");
+    public static BluetoothError ERROR_READING_DEVICE_INFO                  = new BluetoothError( CODE_RANGE+10,  "Reading Device Informations values has failed or could not be completed within the permitted time.");
+    public static BluetoothError ERROR_TIMEOUT                              = new BluetoothError( CODE_RANGE+11,  "Bluetooth operation has failed or could not be completed within the permitted time.");
+    public static BluetoothError ERROR_REFUSED_PAIRING                      = new BluetoothError( CODE_RANGE+12,  "User refused to pair the headset.");
+    public static BluetoothError ERROR_UNPAIRED                             = new BluetoothError( CODE_RANGE+13,  "Unpaired headset.");
+    public static BluetoothError ERROR_PAIRING_FAILED                       = new BluetoothError( CODE_RANGE+14,  "Pairing failed.");
+    public static BluetoothError ERROR_CONFLICT_CONNECTED_HEADSET           = new BluetoothError( CODE_RANGE+15,  "Headsets names are not matching.");
+    public static BluetoothError ERROR_A2DP_CONNECT_FAILED                  = new BluetoothError( CODE_RANGE+16,  "Bluetooth A2DP connection failed.");
+    public static BluetoothError ERROR_BLE_CONNECT_FAILED                   = new BluetoothError( CODE_RANGE+17,  "Bluetooth Low Energy connection failed.");
+    public static BluetoothError ERROR_CONNECT_FAILED                       = new BluetoothError( CODE_RANGE+18,  "Bluetooth connection failed.");
+    public static BluetoothError ERROR_DISCOVERING_SERVICES                 = new BluetoothError( CODE_RANGE+19,  "Discovering services and characteristics has failed or could not be completed within the permitted time..");
+    public static BluetoothError ERROR_ALREADY_CONNECTED_ANOTHER            = new BluetoothError( CODE_RANGE+20,  "Another device is already connected.");
+    public static BluetoothError ERROR_ALREADY_CONNECTED_ELSEWHERE          = new BluetoothError( CODE_RANGE+21,  "Audio is already connected to another device.");
+    public static BluetoothError ERROR_ALREADY_CONNECTED_JACK               = new BluetoothError( CODE_RANGE+22,  "Jack cable already connected.");
+    public static BluetoothError ERROR_NOT_SUPPORTED                        = new BluetoothError( CODE_RANGE+23,  "Bluetooth Low Energy not supported for this mobile device (incompatible Android OS version).");
+    public static BluetoothError ERROR_SCANNING_NOT_STARTED                 = new BluetoothError( CODE_RANGE+24,  "Bluetooth Scanning could not be started.");
+    public static BluetoothError ERROR_SCANNING_FAILED                      = new BluetoothError( CODE_RANGE+25,  "Bluetooth Scanning failed.");
 
     private BluetoothError(int code, String exception){
         super(DOMAIN, code, exception);

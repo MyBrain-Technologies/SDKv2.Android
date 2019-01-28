@@ -22,9 +22,12 @@ import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
 
+import org.apache.commons.lang.ArrayUtils;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -38,6 +41,7 @@ import core.bluetooth.BtState;
 import core.bluetooth.IStreamable;
 import core.bluetooth.MbtBluetooth;
 import core.bluetooth.MbtBluetoothManager;
+import core.eeg.acquisition.MbtDataConversion;
 import features.MbtFeatures;
 import utils.LogUtils;
 import utils.MbtLock;
@@ -79,7 +83,6 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     public MbtBluetoothLE(@NonNull Context context, MbtBluetoothManager mbtBluetoothManager) {
         super(context, mbtBluetoothManager);
         this.mbtGattController = new MbtGattController(context, this);
-        this.setCurrentState(BtState.IDLE);
     }
 
     /**
@@ -167,7 +170,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * Whenever there is a new headset status received, this method is called to notify the bluetooth manager about it.
      * @param payload the new headset status as a raw byte array. This byte array has to be parsed afterward.
      */
-    public void notifyNewHeadsetStatus(byte[] payload){
+    void notifyNewHeadsetStatus(byte[] payload){
         this.mbtBluetoothManager.notifyNewHeadsetStatus(BtProtocol.BLUETOOTH_LE, payload);
     }
 
@@ -259,7 +262,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     public BluetoothDevice startLowEnergyScan(boolean filterOnDeviceService, @Nullable String deviceName) {
         if (super.bluetoothAdapter == null || super.bluetoothAdapter.getBluetoothLeScanner() == null ){
             Log.e(TAG, "Unable to get LE scanner");
-            notifyConnectionStateChanged(BtState.INTERNAL_FAILURE, true);
+            notifyConnectionStateChanged(BtState.SCAN_FAILED, true);
             return null;
         }else
             this.bluetoothLeScanner = super.bluetoothAdapter.getBluetoothLeScanner();
@@ -296,9 +299,8 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public void stopLowEnergyScan() {
 
-        if(super.scanLock != null && super.scanLock.isWaiting()){
+        if(super.scanLock != null && super.scanLock.isWaiting())
             super.scanLock.setResultAndNotify(null);
-        }
 
         if(this.bluetoothLeScanner != null)
             this.bluetoothLeScanner.stopScan(this.leScanCallback);
@@ -324,7 +326,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             MbtBluetoothLE.super.scanLock.setResultAndNotify(device);
         }
 
-        @RequiresApi(api = Build.VERSION_CODES.ECLAIR)
+        @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
         public final void onScanFailed(final int errorCode) { //Callback when scan could not be started.
             super.onScanFailed(errorCode);
             String msg = "Could not start scan. Reason -> ";
@@ -334,16 +336,10 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
                     notifyConnectionStateChanged(BtState.SCAN_FAILED_ALREADY_STARTED, true);
                     break;
                 case SCAN_FAILED_APPLICATION_REGISTRATION_FAILED:
-                    msg += "App could not be registered";
-                    notifyConnectionStateChanged(BtState.SCAN_FAILED_APPLICATION_REGISTRATION_FAILED, true);
-                    break;
                 case SCAN_FAILED_FEATURE_UNSUPPORTED:
-                    msg += "Failed to start power optimized scan. Feature is not supported by device";
-                    notifyConnectionStateChanged(BtState.SCAN_FAILED_FEATURE_UNSUPPORTED, true);
-                    break;
                 case SCAN_FAILED_INTERNAL_ERROR:
                     msg += "Internal Error. No more details.";
-                    notifyConnectionStateChanged(BtState.INTERNAL_FAILURE, true);
+                    notifyConnectionStateChanged(BtState.SCAN_FAILED, true);
                     break;
             }
             LogUtils.e(TAG, msg);
@@ -456,6 +452,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 
         if (!this.gatt.readCharacteristic(gatt.getService(service).getCharacteristic(characteristic))) {
             LogUtils.e(TAG, "Error: failed to initiate read characteristic operation");
+            notifyConnectionStateChanged(BtState.READING_FAILURE, true);
             return false;
         }
 
@@ -500,14 +497,12 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      */
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     private boolean checkServiceAndCharacteristicValidity(@NonNull UUID service, @NonNull UUID characteristic){
-        if(gatt == null)
+        if(gatt == null ||
+                gatt.getService(service) == null ||
+                    gatt.getService(service).getCharacteristic(characteristic) == null) {
+            notifyConnectionStateChanged(BtState.READING_FAILURE, true);
             return false;
-
-        if(gatt.getService(service) == null)
-            return false;
-
-        if(gatt.getService(service).getCharacteristic(characteristic) == null)
-            return false;
+        }
 
         return true;
     }
@@ -604,8 +599,8 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      */
     @RequiresApi(api = Build.VERSION_CODES.ECLAIR)
     @Override
-    public void notifyConnectionStateChanged(@NonNull BtState newState, boolean isBleState) {
-        super.notifyConnectionStateChanged(newState, isBleState);
+    public void notifyConnectionStateChanged(@NonNull BtState newState, boolean notifyUserClient) {
+        super.notifyConnectionStateChanged(newState, notifyUserClient);
         if(newState == BtState.DISCONNECTED){
             if(isStreaming()){
                 streamingState = StreamState.IDLE;
@@ -754,5 +749,10 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     public void requestBonding(){
         startReadOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_BATTERY_LEVEL);
         mbtGattController.bondingWaitAndGetResult(10000);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
+    void notifyMailboxEventReceived(BluetoothGattCharacteristic characteristic) {
+        this.mbtGattController.notifyMailboxEventReceived(characteristic);
     }
 }

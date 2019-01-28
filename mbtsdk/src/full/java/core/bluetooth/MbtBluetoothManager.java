@@ -50,7 +50,7 @@ import engine.clientevents.BaseError;
 import engine.clientevents.ConnectionStateReceiver;
 import eventbus.EventBusManager;
 import eventbus.events.BluetoothEEGEvent;
-import eventbus.events.ConnectionStateEvent;
+import eventbus.events.NewConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
 import features.MbtFeatures;
 import features.ScannableDevices;
@@ -58,7 +58,6 @@ import utils.AsyncUtils;
 import utils.FirmwareUtils;
 import utils.LogUtils;
 
-import static core.bluetooth.BtProtocol.BLUETOOTH_A2DP;
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
 import static core.bluetooth.BtProtocol.BLUETOOTH_SPP;
 
@@ -107,13 +106,16 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
             Log.d(TAG, "received intent " + action + " for device " + (device != null ? device.getName() : null));
             if(action != null){
-                if(action.equals(MbtBluetoothA2DP.A2DP_CONNECTED_EVENT))
-                    notifyStateChanged(BtState.CONNECTED, BLUETOOTH_A2DP);
+                if(action.equals(MbtBluetoothA2DP.A2DP_CONNECTED_EVENT)){
+                    MbtBluetoothManager.this.mbtBluetoothA2DP.setCurrentState(BtState.CONNECTED_AND_READY);
+                }
                 AsyncUtils.executeAsync(new Runnable() {
                     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
                     @Override
                     public void run() {
-                        connectBLEFromA2DP(device.getName().replace(MbtFeatures.A2DP_DEVICE_NAME_PREFIX, MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX));
+                        if (device != null) {
+                            connectBLEFromA2DP(device.getName().replace(MbtFeatures.A2DP_DEVICE_NAME_PREFIX, MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX));
+                        }
                     }
                 });
             }
@@ -159,11 +161,10 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      */
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     private void scanAndConnect(@Nullable String deviceName, boolean connectAudioInA2dp){
-        if(getCurrentState() == BtState.CONNECTED_AND_READY){ //user requested connection but the device is already connected
-            notifyConnectionStateChanged( (deviceName != null && currentDevice != null && currentDevice.getName().equals(deviceName)) ?
-                    BtState.CONNECTED_AND_READY : BtState.ANOTHER_DEVICE_CONNECTED, //if the user requests a connection to an already connected headset,or to a second headset whereas the mobile is already connected to a first headset
-                    true);
-            return;
+        if(getCurrentState() == BtState.CONNECTED_AND_READY){
+            if(deviceName != null && currentDevice != null && !currentDevice.getName().equals(deviceName) )  //user requested connection but the device is already connected to a different device
+                notifyConnectionStateChanged(BtState.ANOTHER_DEVICE_CONNECTED,true); //the mobile is already connected to a first headset
+            return; //return if user requested connection but the expected device is already connected, no need to notify the user
         }
 
         isConnectionInterrupted = false; // resetting the flag when starting a new connection
@@ -190,7 +191,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 return;
             }
         }else //VPro todo
-            notifyConnectionStateChanged(BtState.SCAN_FAILED_FEATURE_UNSUPPORTED,true);
+            notifyConnectionStateChanged(BtState.SCAN_FAILED,true);
 
 
         //first step is scanning
@@ -219,6 +220,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 @Override
                 public void onRequestComplete(MbtDevice object) {
                   if(new FirmwareUtils(object.getFirmwareVersion()).isFwValidForFeature(FirmwareUtils.FWFeature.BLE_BONDING)){
+                      notifyConnectionStateChanged(BtState.BONDING, true);
                       mbtBluetoothLE.requestBonding();
                       if(connectAudioInA2dp) {
                           connectA2DPFromBLE();
@@ -536,7 +538,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             this.notifyConnectionStateChanged(BtState.SCAN_INTERRUPTED, true);
             if(futureScannedDevice != null)
                 futureScannedDevice.cancel(false);
-        }else if(getCurrentState() == BtState.CONNECTING || getCurrentState() == BtState.CONNECTED){
+        }else if(getCurrentState() == BtState.CONNECTING || getCurrentState() == BtState.CONNECTED || getCurrentState() == BtState.DISCOVERING_SERVICES || getCurrentState() == BtState.READING_DEVICE_INFO || getCurrentState() == BtState.BONDING){
             this.notifyConnectionStateChanged(BtState.CONNECTION_INTERRUPTED, true);
             disconnect();
         }
@@ -615,12 +617,12 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         //This event is sent to device module if registered
         if(newState == BtState.CONNECTED_AND_READY && currentDevice != null)
             EventBusManager.postEvent(new DeviceEvents.NewBluetoothDeviceEvent(currentDevice));
-        else if (newState == BtState.DISCONNECTED)
+        else if (newState == BtState.DISCONNECTED || newState == BtState.CONNECTION_FAILURE || newState == BtState.CONNECTION_INTERRUPTED)
             EventBusManager.postEvent(new DeviceEvents.NewBluetoothDeviceEvent(currentDevice = null));
 
         //This event is sent to MbtManager for user notifications
         if(notifyUserClient)
-            EventBusManager.postEvent(new ConnectionStateEvent(newState));
+            EventBusManager.postEvent(new NewConnectionStateEvent(newState));
     }
 
 
@@ -802,7 +804,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     @WorkerThread
     private synchronized void connectA2DPFromBLE(){
-        if(!isGattConnected()) {
+        if(!isGattConnected()) { //A2DP cannot be connected from BLE if BLE connection state is not CONNECTED_AND_READY
             notifyConnectionStateChanged(BtState.CONNECTION_FAILURE, true);
             return;
         }

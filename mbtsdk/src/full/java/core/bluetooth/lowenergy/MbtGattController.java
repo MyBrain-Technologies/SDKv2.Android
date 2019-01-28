@@ -13,10 +13,14 @@ import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
 
+import org.apache.commons.lang.ArrayUtils;
+
 import java.util.Arrays;
 import java.util.Random;
 
+import config.AmpGainConfig;
 import core.bluetooth.BtState;
+import core.eeg.acquisition.MbtDataConversion;
 import core.recordingsession.metadata.DeviceInfo;
 import features.MbtFeatures;
 import utils.AsyncUtils;
@@ -74,6 +78,10 @@ final class MbtGattController extends BluetoothGattCallback {
     private final MbtLock<Integer> connectA2DPLock = new MbtLock<>();
     private final MbtLock<Integer> disconnectA2DPLock = new MbtLock<>();
     private final MbtLock<Boolean> bondLock = new MbtLock<>();
+    private final MbtLock<Integer> p300activationLock = new MbtLock<>();
+    private final MbtLock<Byte[]> eegConfigRetrievalLock = new MbtLock<>();
+    private final MbtLock<String> ampGainNotificationLock = new MbtLock<>();
+    private final MbtLock<String> readDeviceInfoLock = new MbtLock<>();
 
 
     MbtGattController(Context context, MbtBluetoothLE bluetoothController) {
@@ -91,6 +99,7 @@ final class MbtGattController extends BluetoothGattCallback {
         super.onPhyRead(gatt, txPhy, rxPhy, status);
     }
 
+
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     @Override
     public void onConnectionStateChange(@NonNull BluetoothGatt gatt, int status, int newState) {
@@ -98,10 +107,9 @@ final class MbtGattController extends BluetoothGattCallback {
         String msg = "Connection state change : ";
         switch(newState) {
             case BluetoothGatt.STATE_CONNECTED:
-                //gatt.requestMtu(MAX_MTU);
-                this.bluetoothController.notifyConnectionStateChanged(BtState.CONNECTED, true);
-                gatt.discoverServices();
+                this.bluetoothController.notifyConnectionStateChanged(BtState.CONNECTED, true); // This state is not really useful
                 this.bluetoothController.notifyConnectionStateChanged(BtState.DISCOVERING_SERVICES, true);
+                gatt.discoverServices(); //Discovers services offered by a remote device as well as their characteristics and descriptors. This is an asynchronous operation. Once service discovery is completed, the BluetoothGattCallback.onServicesDiscovered callback is triggered. If the discovery was successful, the remote services can be retrieved using the getServices function
 
                 msg += "STATE_CONNECTED and now discovering services...";
                 break;
@@ -142,7 +150,7 @@ final class MbtGattController extends BluetoothGattCallback {
     public void onServicesDiscovered(@NonNull BluetoothGatt gatt, int status) {
         super.onServicesDiscovered(gatt, status);
 
-        // Checking if services were indeed discovered or not
+        // Checking if services were indeed discovered or not : getServices should be not null and contains values at this point
         if (gatt.getServices() == null || gatt.getServices().isEmpty()) {
             gatt.disconnect();
             this.bluetoothController.notifyConnectionStateChanged(BtState.DISCOVERING_FAILURE, true);
@@ -185,16 +193,14 @@ final class MbtGattController extends BluetoothGattCallback {
 
         } else{
             // everything went well as expected
-            if(this.connectionLock.isWaiting())
-                this.connectionLock.setResultAndNotify(BtState.READING_DEVICE_INFO);
+//            if(this.connectionLock.isWaiting())
+//                this.connectionLock.setResultAndNotify(BtState.READING_DEVICE_INFO);
             this.bluetoothController.notifyConnectionStateChanged(BtState.READING_DEVICE_INFO, true);
             AsyncUtils.executeAsync(new Runnable() {
                 @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
                 @Override
                 public void run() {
                     MbtGattController.this.requestDeviceInformations(DeviceInfo.FW_VERSION);
-                    MbtGattController.this.requestDeviceInformations(DeviceInfo.HW_VERSION);
-                    MbtGattController.this.requestDeviceInformations(DeviceInfo.SERIAL_NUMBER);
                 }
             });
 
@@ -204,6 +210,12 @@ final class MbtGattController extends BluetoothGattCallback {
         //startOrStopBatteryReader(true);
     }
 
+    /**
+     * Callback triggered when gatt.readCharacteristic is called and no failure occured
+     * @param gatt
+     * @param characteristic
+     * @param status
+     */
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     @Override
     public void onCharacteristicRead(BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, int status) {
@@ -221,7 +233,7 @@ final class MbtGattController extends BluetoothGattCallback {
             bluetoothController.notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER, new String(characteristic.getValue()));
 
             if(this.connectionLock.isWaiting())
-                this.connectionLock.setResultAndNotify(BtState.BONDING);
+                this.connectionLock.setResultAndNotify(BtState.CONNECTED_AND_READY);
         }
 
         if (characteristic.getUuid().compareTo(CHARAC_MEASUREMENT_BATTERY_LEVEL) == 0) {
@@ -327,6 +339,7 @@ final class MbtGattController extends BluetoothGattCallback {
             synchronized (this.bluetoothController){
                 this.bluetoothController.notify();
             }
+            this.bluetoothController.notifyMailboxEventReceived(characteristic);
         }
     }
 
@@ -438,5 +451,131 @@ final class MbtGattController extends BluetoothGattCallback {
 
     void bondingWaitAndGetResult(int timeout){
         bondLock.waitAndGetResult(timeout);
+    }
+
+    void notifyMailboxEventReceived(BluetoothGattCharacteristic characteristic) {
+        switch(characteristic.getValue()[0]){
+            case MailboxEvents.MBX_SET_ADS_CONFIG:
+                break;
+            case MailboxEvents.MBX_SET_AUDIO_CONFIG:
+                break;
+            //case MailboxEvents.MBX_SET_PRODUCT_NAME:
+            case MailboxEvents.MBX_SET_SERIAL_NUMBER:
+                Log.i(TAG, "characteristic size is " + characteristic.getValue().length);
+//                        ByteBuffer buf = ByteBuffer.allocate(characteristic.getgetValue().length-1);
+//                        for (int i = 1; i < characteristic.getValue().length; i++){
+//                            buf.put(characteristic.getValue()[i]);
+//                        }
+//
+//                        if(this.renamingNotificationLock.isWaiting())
+//                            this.renamingNotificationLock.setResultAndNotify(characteristic.getStringValue(1));
+//                            this.renamingNotificationLock.setResultAndNotify(new String(buf.array()));
+                break;
+            case MailboxEvents.MBX_START_OTA_TXF:
+                break;
+            case MailboxEvents.MBX_LEAD_OFF_EVT:
+
+                break;
+            case MailboxEvents.MBX_OTA_MODE_EVT:
+//                if(characteristic.getValue().length >= 2){
+//                    if(this.oadcheckFwPlusLengthLock.isWaiting()){
+//                        this.oadcheckFwPlusLengthLock.setResultAndNotify((int)characteristic.getValue()[1]);
+//                    }
+//                }
+                break;
+            case MailboxEvents.MBX_OTA_IDX_RESET_EVT:
+                //In case fw missed a block, here is the code which get the block index requested by firmware. iBlocks is set back to the requested value.
+                if(characteristic.getValue().length >= 3){
+//                    if(oadFileManager != null){
+//
+//                        byte[] idx = {characteristic.getValue()[1], characteristic.getValue()[2]};
+//
+//                               /* ByteBuffer b = ByteBuffer.allocate(2);
+//                                b.put(characteristic.getValue()[1]);
+//                                b.put(characteristic.getValue()[2]);*/
+//                        short s = ByteBuffer.wrap(idx).order(ByteOrder.LITTLE_ENDIAN).getShort();
+//                        oadFileManager.getmProgInfo().iBlocks = s;
+//                        Log.i(TAG, "Fw missed block nb " + s + "restarting back from block " + s);
+//                        if(s==0) //Force restart as it could be blocked
+//                            sendOADBlock(0);
+//                    }
+                }
+                break;
+            case MailboxEvents.MBX_OTA_STATUS_EVT:
+//                if(value.length >= 2){
+//                    if(this.oadCRCComputation.isWaiting()){
+//                        byte b = characteristic.getValue()[1];
+//                        this.oadCRCComputation.setResultAndNotify((b > 0));
+//                    }
+//                }
+                break;
+
+            case MailboxEvents.MBX_SYS_GET_STATUS:
+                Log.i(TAG, "sys status" + Arrays.toString(characteristic.getValue()));
+                if(characteristic.getValue().length >= 5){
+                }
+                break;
+
+            case MailboxEvents.MBX_SET_NOTCH_FILT:
+                Log.i(TAG, "received notification - Notch filter: " + new String(characteristic.getValue()));
+
+                break;
+
+            case MailboxEvents.MBX_SET_AMP_GAIN:
+                Log.i(TAG, "received notification - amp gain : " + Arrays.toString(characteristic.getValue()));
+
+                if(this.ampGainNotificationLock.isWaiting())
+                    this.ampGainNotificationLock.setResultAndNotify(characteristic.getStringValue(1));
+                break;
+
+            case MailboxEvents.MBX_GET_EEG_CONFIG:
+                Log.i(TAG, "received notification - eeg config: " + Arrays.toString(characteristic.getValue()));
+
+                if(eegConfigRetrievalLock.isWaiting()){
+                    eegConfigRetrievalLock.setResultAndNotify(ArrayUtils.toObject(characteristic.getValue()));
+                }
+                //TODO remove parsing from here
+                byte gainCode = characteristic.getValue()[3]; //read the 3rd byte that contain the Gain value TODO: add defines for this offset !
+
+                if (gainCode == AmpGainConfig.AMP_GAIN_X12_DEFAULT.getNumVal()) {
+                    MbtDataConversion.EEG_AMP_GAIN = 12;
+                } else if (gainCode == AmpGainConfig.AMP_GAIN_X8_MEDIUM.getNumVal()) {
+                    MbtDataConversion.EEG_AMP_GAIN = 8;
+                } else if (gainCode == AmpGainConfig.AMP_GAIN_X6_LOW.getNumVal()) {
+                    MbtDataConversion.EEG_AMP_GAIN = 6;
+                } else if (gainCode == AmpGainConfig.AMP_GAIN_X4_VLOW.getNumVal()) {
+                    MbtDataConversion.EEG_AMP_GAIN = 4;
+                }else {
+                    //else do not change the eegAmpGain value.
+                    Log.i(TAG, "Gain code received in eeg config notification is unreadable, value: " + gainCode);
+                }
+
+                break;
+
+            case MailboxEvents.MBX_P300_ENABLE:
+                Log.i(TAG, "received answer from p300 activation");
+                p300activationLock.setResultAndNotify((int)(characteristic.getValue()[1]));
+                break;
+
+            case MailboxEvents.MBX_DC_OFFSET_ENABLE:
+                break;
+
+            case MailboxEvents.MBX_CONNECT_IN_A2DP:
+                Log.i(TAG, "received A2DP connection code " + (int)(characteristic.getValue()[1]));
+                if(connectA2DPLock.isWaiting() && ((characteristic.getValue()[1] & MailboxEvents.CMD_CODE_CONNECT_IN_A2DP_IN_PROGRESS) != 0x01))
+                    connectA2DPLock.setResultAndNotify((int)(characteristic.getValue()[1]));
+                break;
+
+            case MailboxEvents.MBX_DISCONNECT_IN_A2DP:
+                Log.i(TAG, "received A2DP connection code " + (int)(characteristic.getValue()[1]));
+                if(disconnectA2DPLock.isWaiting())
+                    disconnectA2DPLock.setResultAndNotify((int)(characteristic.getValue()[1]));
+                break;
+
+            case (byte)0xFF:
+            default:
+                break;
+
+        }
     }
 }

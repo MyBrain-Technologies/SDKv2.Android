@@ -58,14 +58,9 @@ public enum BtState {
     SCAN_FAILED_ALREADY_STARTED,
 
     /**
-     * Failed to start scan as app cannot be registered. This state is a android.bluetooth.le.ScanCallback state reported if the scan failed.
+     * Failed to start scanning operation
      */
-    SCAN_FAILED_APPLICATION_REGISTRATION_FAILED,
-
-    /**
-     * Failed to start power optimized scan as this feature is not supported. This state is a android.bluetooth.le.ScanCallback state reported if the scan failed.
-     */
-    SCAN_FAILED_FEATURE_UNSUPPORTED,
+    SCAN_FAILED,
 
     /**
      * In case all the connection prerequisites are valid, a scanning has just started to look for an available headset using the LE scan discovery.
@@ -93,7 +88,7 @@ public enum BtState {
 
 
     /**
-     * Failed to connect : remote server not found (not in range or turned off)
+     * Failed to establish bluetooth connection with the device : this can be a BLE connection or an A2DP connection
      */
     CONNECTION_FAILURE,
 

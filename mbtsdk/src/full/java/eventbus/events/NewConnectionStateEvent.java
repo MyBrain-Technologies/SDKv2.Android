@@ -4,10 +4,10 @@ import android.support.annotation.NonNull;
 
 import core.bluetooth.BtState;
 
-public class ConnectionStateEvent {
+public class NewConnectionStateEvent {
     private BtState newState;
 
-    public ConnectionStateEvent(@NonNull BtState newState){
+    public NewConnectionStateEvent(@NonNull BtState newState){
         this.newState = newState;
     }
 

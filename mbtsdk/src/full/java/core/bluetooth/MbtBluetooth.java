@@ -105,7 +105,7 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
                         final String deviceNameFound = device.getName();
                         if (TextUtils.isEmpty(deviceNameFound)) {
                             LogUtils.w(TAG, "Found device with no name. MAC address is -> " + device.getAddress());
-                            notifyConnectionStateChanged(BtState.INTERNAL_FAILURE, true);
+                            notifyConnectionStateChanged(BtState.SCAN_FAILED, true);
                             return;
                         }
 

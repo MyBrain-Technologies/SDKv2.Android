@@ -42,7 +42,7 @@ import core.device.DeviceEvents;
 import core.recordingsession.metadata.DeviceInfo;
 import eventbus.EventBusManager;
 import eventbus.events.BluetoothEEGEvent;
-import eventbus.events.ConnectionStateEvent;
+import eventbus.events.NewConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
 import features.MbtFeatures;
 import features.ScannableDevices;
@@ -557,7 +557,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             EventBusManager.postEvent(new DeviceEvents.NewBluetoothDeviceEvent(currentDevice = null));
 
         //This event is sent to MbtManager for user notifications
-        EventBusManager.postEvent(new ConnectionStateEvent(newState));
+        EventBusManager.postEvent(new NewConnectionStateEvent(newState));
     }
 
 

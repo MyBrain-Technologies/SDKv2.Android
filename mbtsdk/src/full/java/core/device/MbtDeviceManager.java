@@ -62,11 +62,11 @@ public class MbtDeviceManager extends BaseModuleManager{
     }
 
 
-    public MbtDevice getmCurrentDevice() {
+    private MbtDevice getmCurrentDevice() {
         return mCurrentDevice;
     }
 
-    public void setmCurrentDevice(MbtDevice mCurrentDevice) {
+    private void setmCurrentDevice(MbtDevice mCurrentDevice) {
         this.mCurrentDevice = mCurrentDevice;
     }
 
@@ -153,4 +153,8 @@ public class MbtDeviceManager extends BaseModuleManager{
 
         return isUpToDate;
     }
-}
+
+    @Subscribe
+    public void onGetDeviceAd(DeviceEvents.GetDeviceEvent event){
+        EventBusManager.postEvent(new DeviceEvents.PostDeviceEvent(mCurrentDevice));
+    }}

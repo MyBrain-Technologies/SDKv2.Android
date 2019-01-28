@@ -44,7 +44,6 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     public MbtBluetoothA2DP(@NonNull Context context, MbtBluetoothManager mbtBluetoothManager) {
         super(context, mbtBluetoothManager);
-        this.setCurrentState(BtState.IDLE);
         if (this.bluetoothAdapter != null)
             new A2DPAccessor().initA2DPProxy(context, this.bluetoothAdapter);
     }
@@ -160,7 +159,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                     final Boolean status = timerLock.waitAndGetResult(timeout);
                     if (status != null && status) {
                         LogUtils.i(TAG, "Successfully connected via A2DP to " + device.getAddress());
-                        notifyConnectionStateChanged(BtState.CONNECTED, false);
+                        notifyConnectionStateChanged(BtState.CONNECTED_AND_READY, false);
                         return true;
                     } else
                         LogUtils.i(TAG, "Cannot connect to A2DP on device" + device.getAddress());

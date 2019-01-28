@@ -18,6 +18,7 @@ public final class FirmwareError extends BaseError{
     public static FirmwareError ERROR_PREPARING_REQUEST_FAILED      = new FirmwareError(CODE_RANGE+4, "Preparing OAD Transfer request failed.");
     public static FirmwareError ERROR_UNCOMPLETE_UPDATE             = new FirmwareError(CODE_RANGE+5, "OAD Transfer is not complete");
     public static FirmwareError ERROR_WRONG_FIRMWARE_VERSION        = new FirmwareError(CODE_RANGE+6, "Current firmware version does not match the update version");
+    public static FirmwareError ERROR_FIRMWARE_UPGRADE_FAILED        = new FirmwareError(CODE_RANGE+7, "Firmware upgrading failed or could not be completed within the permitted time.");
 
     private FirmwareError(int code, String exception) {
         super(DOMAIN, code, exception);

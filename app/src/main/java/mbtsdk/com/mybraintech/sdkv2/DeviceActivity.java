@@ -95,7 +95,7 @@ DeviceActivity extends AppCompatActivity {
         }
 
         public void onError(BaseError error, String additionnalInfo) {
-            notifyUser(getString(R.string.disconnect_failed));
+            notifyUser(error.getMessage()+(additionnalInfo != null ? additionnalInfo : ""));
         }
     };
 

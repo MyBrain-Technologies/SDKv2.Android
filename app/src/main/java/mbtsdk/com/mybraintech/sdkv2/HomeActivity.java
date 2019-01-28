@@ -59,9 +59,8 @@ public class HomeActivity extends AppCompatActivity{
     private ConnectionStateReceiver connectionStateReceiver = new ConnectionStateReceiver() {
         @Override
         public void onError(BaseError error, String additionnalInfo) {
-            notifyUser(error.toString());
+            notifyUser(error.getMessage()+ (additionnalInfo != null ? additionnalInfo : ""));
             updateScanning(false);
-            error.printStackTrace();
         }
 
         @Override
