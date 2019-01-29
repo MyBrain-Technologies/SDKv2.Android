@@ -364,4 +364,11 @@ public final class MbtClient {
             return new MbtClient(this);
         }
     }
+
+    public class MbtClientExtra{
+
+       public static final String EXTRA_NEW_STATE = "newState";
+
+    }
 }
+

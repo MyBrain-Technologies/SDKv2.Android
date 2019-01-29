@@ -1,13 +1,10 @@
 package core;
 
-import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.annotation.RequiresApi;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
@@ -32,17 +29,15 @@ import core.device.model.MbtDevice;
 import core.eeg.MbtEEGManager;
 import core.eeg.requests.QualityRequest;
 import core.recordingsession.metadata.DeviceInfo;
+import engine.MbtClient;
 import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
-import engine.clientevents.BasicError;
 import engine.clientevents.BluetoothError;
 import engine.clientevents.ConnectionStateReceiver;
 import engine.clientevents.DeviceInfoListener;
 import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.EegError;
-import engine.clientevents.FirmwareError;
 import engine.clientevents.HeadsetDeviceError;
-import engine.clientevents.MobileDeviceError;
 import eventbus.EventBusManager;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.NewConnectionStateEvent;
@@ -83,7 +78,6 @@ public final class MbtManager{
      *
      * @param context
      */
-    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     public MbtManager(Context context) {
         this.mContext = context;
         this.registeredModuleManagers = new HashSet<>();
@@ -219,64 +213,15 @@ public final class MbtManager{
             return;
         Log.i(TAG, "New state received : "+connectionStateEvent.getNewState());
 
-        if(connectionStateEvent.getNewState().equals(BtState.CONNECTED_AND_READY) || connectionStateEvent.getNewState().equals(BtState.DISCONNECTED)){
+        if(connectionStateEvent.getNewState().equals(BtState.CONNECTED_AND_READY) || connectionStateEvent.getNewState().equals(BtState.DISCONNECTED) || connectionStateEvent.getNewState().equals(BtState.AUDIO_DISCONNECTED)){
             Intent connectionStateIntent = new Intent(MbtFeatures.INTENT_CONNECTION_STATE_CHANGED);
-            connectionStateIntent.putExtra("newState",
+            connectionStateIntent.putExtra(MbtClient.MbtClientExtra.EXTRA_NEW_STATE,
                     connectionStateEvent.getNewState().equals(BtState.CONNECTED_AND_READY) ?
-                            BtState.CONNECTED_AND_READY : BtState.DISCONNECTED);
+                            connectionStateEvent.getNewState() : BtState.DISCONNECTED);
 
             LocalBroadcastManager.getInstance(mContext).sendBroadcast(connectionStateIntent);
-        }else {
-            BaseError error = BasicError.ERROR_UNKNOWN;
-            switch (connectionStateEvent.getNewState()){
-
-                case NO_BLUETOOTH:
-                    error = BluetoothError.ERROR_NOT_SUPPORTED;
-                    break;
-                case BLUETOOTH_DISABLED:
-                    error = MobileDeviceError.ERROR_BLUETOOTH_DISABLED;
-                    break;
-                case LOCATION_IS_REQUIRED:
-                    error = MobileDeviceError.ERROR_GPS_DISABLED;
-                    break;
-                case LOCATION_PERMISSION_NOT_GRANTED:
-                    error = MobileDeviceError.ERROR_LOCATION_PERMISSION;
-                    break;
-                case SCAN_FAILED_ALREADY_STARTED:
-                    error = BluetoothError.ERROR_ALREADY_SCANNING;
-                    break;
-                case SCAN_FAILED:
-                    error = BluetoothError.ERROR_SCANNING_FAILED;
-                    break;
-                case ANOTHER_DEVICE_CONNECTED:
-                    error = BluetoothError.ERROR_ALREADY_CONNECTED_ANOTHER;
-                    break;
-                case SCAN_TIMEOUT:
-                    error = BluetoothError.ERROR_SCANNING_TIMEOUT;
-                    break;
-                case SCAN_INTERRUPTED:
-                    error = BluetoothError.ERROR_SCANNING_INTERRUPTED;
-                    break;
-                case CONNECTION_FAILURE:
-                    error = BluetoothError.ERROR_CONNECT_FAILED;
-                    break;
-                case CONNECTION_INTERRUPTED:
-                case DISCOVERING_FAILURE:
-                case READING_FAILURE:
-                    error = BluetoothError.ERROR_CONNECTION_TIMEOUT;
-                    break;
-                case BONDING_FAILURE:
-                    error = BluetoothError.ERROR_CONNECT_FAILED;
-                    break;
-                case UPGRADE_FAILED:
-                    error = FirmwareError.ERROR_FIRMWARE_UPGRADE_FAILED;
-                    break;
-
-            }
-            connectionStateReceiver.onError(error, null);
-
-        }
-
+        }else if (connectionStateEvent.getError() != null)
+            connectionStateReceiver.onError(connectionStateEvent.getError(), null);
     }
 
     /**

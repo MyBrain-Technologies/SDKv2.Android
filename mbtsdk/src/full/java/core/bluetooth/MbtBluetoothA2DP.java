@@ -7,10 +7,8 @@ import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.content.Intent;
 import android.media.AudioManager;
-import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 import java.lang.reflect.InvocationTargetException;
@@ -32,8 +30,11 @@ import utils.MbtLock;
 
 public final class MbtBluetoothA2DP extends MbtBluetooth{
     private final static String TAG = MbtBluetoothA2DP.class.getSimpleName();
+
     static final String A2DP_CONNECTED_EVENT = "A2DP_CONNECTED_EVENT";
     static final String A2DP_DISCONNECTED_EVENT = "A2DP_DISCONNECTED_EVENT";
+    private final static String CONNECT_METHOD = "connect";
+    private final static String DISCONNECT_METHOD = "disconnect";
 
     private final MbtLock<Boolean> timerLock = new MbtLock<>();
 
@@ -41,7 +42,6 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
 
     private BluetoothDevice connectedDevice;
 
-    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     public MbtBluetoothA2DP(@NonNull Context context, MbtBluetoothManager mbtBluetoothManager) {
         super(context, mbtBluetoothManager);
         if (this.bluetoothAdapter != null)
@@ -54,14 +54,13 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
      * This method can handle the case where the end-user device is already connected to the melomind via
      * the A2DP protocol or to another device in which case it will disconnected (Android support only
      * one A2DP headset at the time).
-     * @param device    the device to connect to
+     * @param deviceToConnect    the device to connect to
      * @param context   the application context
      * @return          <code>true</code> upon success, <code>false otherwise</code>
      */
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
-    public boolean connect(@NonNull Context context, @NonNull BluetoothDevice device) {
-        LogUtils.i(TAG, "Attempting to connect A2DP to " + device.getName());
+    public boolean connect(@NonNull Context context, @NonNull BluetoothDevice deviceToConnect) {
+        LogUtils.i(TAG, "Attempting to connect A2DP to " + deviceToConnect.getName());
 
         // First we retrieve the Audio Manager that will help monitor the A2DP status
         // and then the instance of Bluetooth A2DP to make the necessaries calls
@@ -73,112 +72,114 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
         }
 
         // First we check if the end-user device is currently connected to an A2DP device
-        if (context.getSystemService(Context.AUDIO_SERVICE) != null) {
-            if (hasA2DPDeviceConnected()) {
-                // End-user is indeed connected to an A2DP device. We retrieve it to see if it is the melomind
-                LogUtils.i(TAG, "User device is currently connected to an A2DP Headset. Checking if it is the melomind");
+        if (hasA2DPDeviceConnected()) {
+            // End-user is indeed connected to an A2DP device. We retrieve it to see if it is the melomind
+            LogUtils.i(TAG, "User device is currently connected to an A2DP Headset. Checking if it is the melomind");
 
-                if (a2dpProxy.getConnectedDevices() == null || a2dpProxy.getConnectedDevices().isEmpty())
-                    connect(context,device); // Somehow end-user is no longer connected (should not happen)
+            if (a2dpProxy.getConnectedDevices() == null || a2dpProxy.getConnectedDevices().isEmpty())
+                connect(context,deviceToConnect); // Somehow end-user is no longer connected (should not happen)
 
-                // we assume there is only one, because Android can only support one at the time
-                final BluetoothDevice connected = a2dpProxy.getConnectedDevices().get(0);
-                if (connected.getAddress().equals(device.getAddress())) { // already connected to the Melomind !
-                    LogUtils.i(TAG, "Already connected to the melomind.");
-                    notifyConnectionStateChanged(BtState.CONNECTED_AND_READY, false);
-                    return true;
-                } else {
-                    // The user device is currently connected to a headset that is not the melomind
-                    // so we disconnect it now and then we connect it to the melomind
-                    try {
-                        final boolean result = (boolean) a2dpProxy.getClass().getMethod(DISCONNECT_METHOD, BluetoothDevice.class)
-                                .invoke(a2dpProxy, connected);
-
-                        if (!result) { // according to doc : "false on immediate error, true otherwise"
-                            return false;
-                        }
-                        // Since the disconnecting process is asynchronous we use a timer to monitor the status for a short while
-                        new Timer(true).scheduleAtFixedRate(new TimerTask() {
-                            public final void run() {
-                                if (!hasA2DPDeviceConnected()) { // the user device is no longer to connected to the wrong headset
-                                    cancel();
-                                    timerLock.setResultAndNotify(true);
-                                }
-                            }
-                        }, 100, 500);
-
-                        final Boolean status = timerLock.waitAndGetResult(5000);
-                        if (status != null && status) {
-                            LogUtils.i(TAG, "successfully disconnected from A2DP device -> " + connected.getName());
-                            LogUtils.i(TAG, "Now connecting A2DP to " + device.getAddress());
-                            return connect(context,device);
-                        } else {
-                            LogUtils.e(TAG, "failed to connect with A2DP! Lock has expired...");
-                            // TODO fail to disconnect from wrong headset (should not happen)
-                            return false;
-                        }
-                    } catch (@NonNull final NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-                        final String errorMsg = " -> " + e.getMessage();
-                        if (e instanceof NoSuchMethodException)
-                            LogUtils.e(TAG, "Failed to find disconnect method via reflexion" + errorMsg);
-                        else if (e instanceof IllegalAccessException)
-                            LogUtils.e(TAG, "Failed to access disconnect method via reflexion" + errorMsg);
-                        else if (e instanceof InvocationTargetException)
-                            LogUtils.e(TAG, "Failed to invoke disconnect method via reflexion" + errorMsg);
-                        else
-                            LogUtils.e(TAG, "Unable to disconnect to current headset with reflexion. Reason" + errorMsg);
-                        Log.getStackTraceString(e);
-                    }
-                }
+            // we assume there is only one, because Android can only support one at the time
+            final BluetoothDevice deviceConnected = a2dpProxy.getConnectedDevices().get(0);
+            if (deviceConnected.getAddress().equals(deviceToConnect.getAddress())) { // already connected to the Melomind !
+                LogUtils.i(TAG, "Already connected to the melomind.");
+                notifyConnectionStateChanged(BtState.AUDIO_CONNECTED, false);
+                return true;
             } else {
-                // Safe to connect to melomind via A2DP
+                // The user device is currently connected to a headset that is not the melomind
+                // so we disconnect it now and then we connect it to the melomind
                 try {
-                    final boolean result = (boolean) a2dpProxy.getClass()
-                            .getMethod(CONNECT_METHOD, BluetoothDevice.class)
-                            .invoke(a2dpProxy, device);
+                    final boolean result = (boolean) a2dpProxy.getClass().getMethod(DISCONNECT_METHOD, BluetoothDevice.class)
+                            .invoke(a2dpProxy, deviceConnected);
 
                     if (!result) { // according to doc : "false on immediate error, true otherwise"
-                        LogUtils.e(TAG, "Failed to initiate connection via A2DP!");
+                        notifyConnectionStateChanged(BtState.CONNECTION_FAILURE, true);
                         return false;
                     }
-
-                    final MbtLock<Boolean> timerLock = new MbtLock<>();
-
                     // Since the disconnecting process is asynchronous we use a timer to monitor the status for a short while
                     new Timer(true).scheduleAtFixedRate(new TimerTask() {
                         public final void run() {
-                            if (hasA2DPDeviceConnected()) {
+                            if (!hasA2DPDeviceConnected()) { // the user device is no longer connected to the wrong headset
                                 cancel();
                                 timerLock.setResultAndNotify(true);
+                                notifyConnectionStateChanged(BtState.AUDIO_DISCONNECTED, true);
                             }
                         }
-                    }, 100, 1500);
-
-                    // we give 20 seconds to the user to accepting bonding request
-                    final long timeout = device.getBondState() == BluetoothDevice.BOND_BONDED ? 10000 : 25000;
-                    final Boolean status = timerLock.waitAndGetResult(timeout);
+                    }, 100, 500);
+                    final Boolean status = timerLock.waitAndGetResult(5000);
                     if (status != null && status) {
-                        LogUtils.i(TAG, "Successfully connected via A2DP to " + device.getAddress());
-                        notifyConnectionStateChanged(BtState.CONNECTED_AND_READY, false);
-                        return true;
-                    } else
-                        LogUtils.i(TAG, "Cannot connect to A2DP on device" + device.getAddress());
-                    return false; // TODO fail to connect to melomind A2DP
+                        LogUtils.i(TAG, "successfully disconnected from A2DP device -> " + deviceConnected.getName());
+                        LogUtils.i(TAG, "Now connecting A2DP to " + deviceToConnect.getAddress());
+                        return connect(context,deviceToConnect);
+                    } else {
+                        LogUtils.e(TAG, "failed to connect A2DP! Lock has expired...");
+                        // TODO fail to disconnect from wrong headset (should not happen)
+                        notifyConnectionStateChanged(BtState.CONNECTION_FAILURE, true);
+                        return false;
+                    }
                 } catch (@NonNull final NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
                     final String errorMsg = " -> " + e.getMessage();
                     if (e instanceof NoSuchMethodException)
-                        LogUtils.e(TAG, "Failed to find connect method via reflexion" + errorMsg);
+                        LogUtils.e(TAG, "Failed to find disconnect method via reflexion" + errorMsg);
                     else if (e instanceof IllegalAccessException)
-                        LogUtils.e(TAG, "Failed to access connect method via reflexion" + errorMsg);
-                    else if (e instanceof InvocationTargetException)
-                        LogUtils.e(TAG, "Failed to invoke connect method via reflexion" + errorMsg);
+                        LogUtils.e(TAG, "Failed to access disconnect method via reflexion" + errorMsg);
                     else
-                        LogUtils.e(TAG, "Unable to connect to melomind with reflexion. Reason" + errorMsg);
+                        LogUtils.e(TAG, "Failed to invoke disconnect method via reflexion" + errorMsg);
                     Log.getStackTraceString(e);
                 }
             }
+        } else {
+            // Safe to connect to melomind via A2DP
+            try {
+                final boolean result = (boolean) a2dpProxy.getClass()
+                        .getMethod(CONNECT_METHOD, BluetoothDevice.class)
+                        .invoke(a2dpProxy, deviceToConnect);
+
+                if (!result) { // according to doc : "false on immediate error, true otherwise"
+                    LogUtils.e(TAG, "Failed to initiate connection via A2DP!");
+                    notifyConnectionStateChanged(BtState.CONNECTION_FAILURE, true);
+                    return false;
+                }
+
+                final MbtLock<Boolean> timerLock = new MbtLock<>();
+
+                // Since the disconnecting process is asynchronous we use a timer to monitor the status for a short while
+                new Timer(true).scheduleAtFixedRate(new TimerTask() {
+                    public final void run() {
+                        if (hasA2DPDeviceConnected()) {
+                            cancel();
+                            timerLock.setResultAndNotify(true);
+                        }
+                    }
+                }, 100, 1500);
+
+                // we give 20 seconds to the user to accepting bonding request
+                final long timeout = deviceToConnect.getBondState() == BluetoothDevice.BOND_BONDED ? 10000 : 25000;
+                final Boolean status = timerLock.waitAndGetResult(timeout);
+                if (status != null && status) {
+                    LogUtils.i(TAG, "Successfully connected via A2DP to " + deviceToConnect.getAddress());
+                    notifyConnectionStateChanged(BtState.AUDIO_CONNECTED, false);
+                    return true;
+                } else {
+                    LogUtils.i(TAG, "Cannot connect to A2DP on device" + deviceToConnect.getAddress());
+                    notifyConnectionStateChanged(BtState.CONNECTION_FAILURE, true);
+                    return false; // TODO fail to connect to melomind A2DP
+                }
+            } catch (@NonNull final NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+                final String errorMsg = " -> " + e.getMessage();
+                if (e instanceof NoSuchMethodException)
+                    LogUtils.e(TAG, "Failed to find connect method via reflexion" + errorMsg);
+                else if (e instanceof IllegalAccessException)
+                    LogUtils.e(TAG, "Failed to access connect method via reflexion" + errorMsg);
+                else LogUtils.e(TAG, "Failed to invoke connect method via reflexion" + errorMsg);
+                Log.getStackTraceString(e);
+            }
         }
         return false;
+    }
+
+    private void disconnectExternalDevice(){
+
     }
 
     /**
@@ -189,7 +190,6 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
      * one A2DP headset at the time).
      * @return <code>true</code> by default
      */
-    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     @Override
     public boolean disconnect() {
         if(timerLock.isWaiting()){
@@ -228,9 +228,8 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
     }
 
 
-    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
-    private void disconnectA2DPFromBLE() {
-        mbtBluetoothManager.disconnectA2DPFromBLE();
+    private boolean disconnectA2DPFromBLE() {
+        return mbtBluetoothManager.disconnectA2DPFromBLE();
     }
 
     @Override
@@ -239,30 +238,32 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
         return false;
     }
 
+    void resetA2dpProxy(int state) {
+        if(state == BluetoothAdapter.STATE_ON && a2dpProxy == null && this.bluetoothAdapter != null)
+            new A2DPAccessor().initA2DPProxy(context, this.bluetoothAdapter);
+    }
 
-    @RequiresApi(api = Build.VERSION_CODES.HONEYCOMB)
+
     private final class A2DPAccessor implements BluetoothProfile.ServiceListener {
         private final MbtLock<BluetoothA2dp> lock = new MbtLock<>();
         private A2DPMonitor a2DPMonitor = new A2DPMonitor();
         /**
-         * This method blocks for 5 seconds while attempting to retrieve the instance of <code>BluetoothA2dp</code>
+         * This method blocks for 5 sec
+         * onds while attempting to retrieve the instance of <code>BluetoothA2dp</code>
          * @param context   the application context
          * @param adapter   the Bluetooth Adapter to retrieve the BluetoothA2DP from
          * @return          the instance of <code>BluetoothA2dp</code> , <code>null</code> otherwise
          */
-        @RequiresApi(api = Build.VERSION_CODES.HONEYCOMB)
         @Nullable
         final BluetoothA2dp getA2dp(@NonNull final Context context, @NonNull final BluetoothAdapter adapter) {
             adapter.getProfileProxy(context, this, BluetoothProfile.A2DP);
             return this.lock.waitAndGetResult(5000);
         }
 
-        @RequiresApi(api = Build.VERSION_CODES.HONEYCOMB)
         final void initA2DPProxy(@NonNull final Context context, @NonNull final BluetoothAdapter adapter){
             adapter.getProfileProxy(context, this, BluetoothProfile.A2DP);
         }
 
-        @RequiresApi(api = Build.VERSION_CODES.HONEYCOMB)
         public final void onServiceConnected(final int profile, final BluetoothProfile proxy) {
             Log.i(TAG, "onServiceConnected A2DP");
             if(this.lock.isWaiting())
@@ -308,7 +309,6 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
 
         private class Task extends TimerTask{
 
-            @RequiresApi(api = Build.VERSION_CODES.HONEYCOMB)
             @Override
             public void run() {
 
@@ -322,8 +322,6 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                             Intent intent = new Intent(A2DP_CONNECTED_EVENT);
                             intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
                             context.sendBroadcast(intent);
-                        }else{
-                            //TODO see if we need to perform any action in this case
                         }
 
                     }else{
@@ -337,11 +335,13 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                 }
             }
         }
-
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.CUPCAKE)
-    private boolean hasA2DPDeviceConnected(){
+    /**
+     * Checks whether a Bluetooth A2DP audio peripheral is connected or not.
+     * @return true if a Bluetooth A2DP audio peripheral is connected, false otherwise
+     */
+    boolean hasA2DPDeviceConnected(){
         // First we retrieve the Audio Manager that will help monitor the A2DP status
         // and then the instance of Bluetooth A2DP to make the necessaries calls
         final AudioManager audioManager = (AudioManager)context.getSystemService(Context.AUDIO_SERVICE);
@@ -352,7 +352,6 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
         return audioManager.isBluetoothA2dpOn();
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.HONEYCOMB)
     private List<BluetoothDevice> getA2DPConnectedDevices(){
         if(a2dpProxy == null)
             return Collections.emptyList();

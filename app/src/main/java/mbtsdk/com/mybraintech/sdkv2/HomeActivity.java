@@ -65,7 +65,7 @@ public class HomeActivity extends AppCompatActivity{
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            BtState newState = (BtState) intent.getSerializableExtra("newState");
+            BtState newState = (BtState) intent.getSerializableExtra(MbtClient.MbtClientExtra.EXTRA_NEW_STATE);
             Log.i(TAG, "Received broadcast "+newState);
 
             if (newState.equals(BtState.CONNECTED_AND_READY) ){

@@ -7,18 +7,15 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.Build;
 import android.support.annotation.NonNull;
 
 import android.support.annotation.Nullable;
-import android.support.annotation.RequiresApi;
 import android.text.TextUtils;
 import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.locks.Lock;
 
 import core.device.model.MelomindDevice;
 import core.oad.OADEvent;
@@ -39,10 +36,6 @@ import utils.MbtLock;
 public abstract class MbtBluetooth implements IScannable, IConnectable{
 
     private final static String TAG = "MBT Bluetooth";
-    protected final static String CONNECT_METHOD = "connect";
-    protected final static String CONNECT_GATT_METHOD = "connectGatt";
-    protected final static String DISCONNECT_METHOD = "disconnect";
-    protected final static String REMOVE_BOND_METHOD = "removeBond";
     private BtState currentState = BtState.IDLE;
 
     @Nullable
@@ -58,7 +51,6 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
 
     protected MbtBluetoothManager mbtBluetoothManager;
 
-    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     public MbtBluetooth(Context context, MbtBluetoothManager mbtBluetoothManager) {
         this.context = context.getApplicationContext();
         this.mbtBluetoothManager = mbtBluetoothManager;
@@ -72,7 +64,6 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
 
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.ECLAIR)
     @Nullable
     @Override
     public BluetoothDevice startScanDiscovery(@Nullable final String deviceName) {
@@ -83,7 +74,7 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
         final Set<BluetoothDevice> bonded = this.bluetoothAdapter.getBondedDevices();
         if (bonded != null && !bonded.isEmpty()) {
             for (final BluetoothDevice device : bonded) {
-                if (MelomindDevice.isMelomind(device) && device.getName().equals(deviceName)) { // device found
+                if (MelomindDevice.isMelomindName(device) && device.getName().equals(deviceName)) { // device found
                     return device;
                 }
             }
@@ -94,7 +85,6 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
         final IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
         context.registerReceiver(new BroadcastReceiver() {
-            @RequiresApi(api = Build.VERSION_CODES.ECLAIR)
             public final void onReceive(@NonNull final Context context, @NonNull final Intent intent) {
                 final String action = intent.getAction();
                 if(action == null)
@@ -111,7 +101,7 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
 
                         LogUtils.i(TAG, String.format("Discovery Scan -> device detected " +
                                 "with name '%s' and MAC address '%s' ", deviceNameFound, device.getAddress()));
-                        if (deviceName != null && MelomindDevice.isMelomind(device) && (deviceNameFound.equals(deviceName) || deviceNameFound.contains(deviceName))) {
+                        if (deviceName != null && MelomindDevice.isMelomindName(device) && (deviceNameFound.equals(deviceName) || deviceNameFound.contains(deviceName))) {
                             LogUtils.i(TAG, "Device " + deviceName +" found. Cancelling discovery & connecting");
                             bluetoothAdapter.cancelDiscovery();
                             context.unregisterReceiver(this);
@@ -131,7 +121,6 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
         return scanLock.waitAndGetResult();
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.ECLAIR)
     @Override
     public void stopScanDiscovery() {
         if(scanLock != null && scanLock.isWaiting()){
@@ -144,7 +133,6 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
 
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.ECLAIR)
     public void notifyDeviceInfoReceived(@NonNull DeviceInfo deviceInfo, @NonNull String deviceValue){ // This method will be called when a DeviceInfoReceived is posted (fw or hw or serial number) by MbtBluetoothLE or MbtBluetoothSPP
         mbtBluetoothManager.notifyDeviceInfoReceived(deviceInfo, deviceValue);
     }
@@ -155,7 +143,6 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
 //        }
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.ECLAIR)
     @Override
     public void notifyConnectionStateChanged(@NonNull BtState newState, boolean notifyUserClient) {
         this.currentState = newState;
@@ -168,7 +155,6 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
 //        }
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.ECLAIR)
     public void notifyBatteryReceived(int value){
         mbtBluetoothManager.notifyDeviceInfoReceived(DeviceInfo.BATTERY, String.valueOf(value));
     }
@@ -199,7 +185,6 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
         return mbtBluetoothManager;
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.ECLAIR)
     public synchronized final boolean enableBluetoothOnDevice(){
         if (this.bluetoothAdapter != null && this.bluetoothAdapter.isEnabled())
             return true;

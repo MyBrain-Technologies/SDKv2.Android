@@ -9,8 +9,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import config.MbtConfig;
 import features.MbtAcquisitionLocations;
 import features.MbtFeatures;
+import features.ScannableDevices;
 
 /**
  * Created by manon on 10/10/16.
@@ -121,7 +123,11 @@ public class MelomindDevice extends MbtDevice{
         this.groundsLocation = grounLocationsArrayList;
     }
 
-    public static boolean isMelomind(BluetoothDevice device) {
+    public static boolean isMelomindName(BluetoothDevice device) {
         return (device != null && device.getName() != null && device.getName().contains(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX));
+    }
+
+    public static boolean isMelomindRequested(){
+        return MbtConfig.scannableDevices == ScannableDevices.MELOMIND;
     }
 }

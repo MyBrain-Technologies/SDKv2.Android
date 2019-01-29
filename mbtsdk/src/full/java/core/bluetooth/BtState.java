@@ -174,6 +174,15 @@ public enum BtState {
     DISCONNECTED,
 
     /**
+     * When audio only is connected
+     */
+    AUDIO_CONNECTED,
+    /**
+     * When audio only is connected
+     */
+    AUDIO_DISCONNECTED,
+
+    /**
      * Replacing the current firmware installed by installing a different version of the firmware (should be the last firmware version, but it can also be an downgrading to an old version).
      * This operation requires a connected headset to be performed. Once the upgrade is done, a disconnection is performed to reboot the system.
      */
@@ -183,5 +192,7 @@ public enum BtState {
      * Failed to replace the current firmware installed with a new one. This failure trigger a disconnection.
      */
     UPGRADE_FAILED
+
+
 
 }

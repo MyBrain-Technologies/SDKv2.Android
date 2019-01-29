@@ -10,7 +10,6 @@ import android.content.Context;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 import org.apache.commons.lang.ArrayUtils;
@@ -22,9 +21,7 @@ import config.AmpGainConfig;
 import core.bluetooth.BtState;
 import core.eeg.acquisition.MbtDataConversion;
 import core.recordingsession.metadata.DeviceInfo;
-import features.MbtFeatures;
 import utils.AsyncUtils;
-import utils.FirmwareUtils;
 import utils.LogUtils;
 import utils.MbtLock;
 
@@ -46,7 +43,6 @@ import static core.bluetooth.lowenergy.MelomindCharacteristics.SERVICE_MEASUREME
  *
  * @see BluetoothGattCallback
  */
-@RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
 final class MbtGattController extends BluetoothGattCallback {
     private final static String TAG = MbtGattController.class.getSimpleName();
 
@@ -81,7 +77,6 @@ final class MbtGattController extends BluetoothGattCallback {
     private final MbtLock<Integer> p300activationLock = new MbtLock<>();
     private final MbtLock<Byte[]> eegConfigRetrievalLock = new MbtLock<>();
     private final MbtLock<String> ampGainNotificationLock = new MbtLock<>();
-    private final MbtLock<String> readDeviceInfoLock = new MbtLock<>();
 
 
     MbtGattController(Context context, MbtBluetoothLE bluetoothController) {
@@ -100,7 +95,6 @@ final class MbtGattController extends BluetoothGattCallback {
     }
 
 
-    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     @Override
     public void onConnectionStateChange(@NonNull BluetoothGatt gatt, int status, int newState) {
         super.onConnectionStateChange(gatt, status, newState);
@@ -145,7 +139,6 @@ final class MbtGattController extends BluetoothGattCallback {
         LogUtils.d("", msg);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     @Override
     public void onServicesDiscovered(@NonNull BluetoothGatt gatt, int status) {
         super.onServicesDiscovered(gatt, status);
@@ -197,7 +190,6 @@ final class MbtGattController extends BluetoothGattCallback {
 //                this.connectionLock.setResultAndNotify(BtState.READING_DEVICE_INFO);
             this.bluetoothController.notifyConnectionStateChanged(BtState.READING_DEVICE_INFO, true);
             AsyncUtils.executeAsync(new Runnable() {
-                @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
                 @Override
                 public void run() {
                     MbtGattController.this.requestDeviceInformations(DeviceInfo.FW_VERSION);
@@ -216,7 +208,6 @@ final class MbtGattController extends BluetoothGattCallback {
      * @param characteristic
      * @param status
      */
-    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     @Override
     public void onCharacteristicRead(BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, int status) {
         super.onCharacteristicRead(gatt, characteristic, status);
@@ -294,7 +285,6 @@ final class MbtGattController extends BluetoothGattCallback {
 
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     @Override
     public void onCharacteristicWrite(BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, int status) {
         super.onCharacteristicWrite(gatt, characteristic, status);
@@ -324,7 +314,6 @@ final class MbtGattController extends BluetoothGattCallback {
         }
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     @Override
     public void onCharacteristicChanged(BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic) {
         super.onCharacteristicChanged(gatt, characteristic);
@@ -348,7 +337,6 @@ final class MbtGattController extends BluetoothGattCallback {
         super.onDescriptorRead(gatt, descriptor, status);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     @Override
     public void onDescriptorWrite(BluetoothGatt gatt, @NonNull BluetoothGattDescriptor descriptor, int status) {
         super.onDescriptorWrite(gatt, descriptor, status);
@@ -404,7 +392,6 @@ final class MbtGattController extends BluetoothGattCallback {
     }
 
 
-    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     void connectA2DPMailbox() {
         byte[] buffer = {MailboxEvents.MBX_CONNECT_IN_A2DP, (byte)0x25, (byte)0xA2};
         //Send buffer
@@ -418,19 +405,18 @@ final class MbtGattController extends BluetoothGattCallback {
         connectA2DPLock.waitAndGetResult(15000);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
-    void disconnectA2DPMailbox() {
+    int disconnectA2DPMailbox() {
         byte[] buffer = {MailboxEvents.MBX_DISCONNECT_IN_A2DP, (byte)0x85, (byte)0x11};
         //Send buffer
         this.mailBox.setValue(buffer);
         if (!this.bluetoothController.gatt.writeCharacteristic(this.mailBox)) {
             Log.e(TAG, "Error: failed to send A2Dp connection request");
-            return;
+            return -1;
         }
-        disconnectA2DPLock.waitAndGetResult(15000);
+        Integer res = disconnectA2DPLock.waitAndGetResult(15000);
+        return res == null ? MailboxEvents.CMD_CODE_CONNECT_IN_A2DP_FAILED_TIMEOUT : res;
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     private void requestDeviceInformations(DeviceInfo deviceinfo) {
         switch(deviceinfo){
             case FW_VERSION:
@@ -451,6 +437,11 @@ final class MbtGattController extends BluetoothGattCallback {
 
     void bondingWaitAndGetResult(int timeout){
         bondLock.waitAndGetResult(timeout);
+    }
+
+    void bondingSetResultAndNotify(boolean result){
+        if(bondLock.isWaiting()) // it means that this is a BLE bonding
+            bondLock.setResultAndNotify(result);
     }
 
     void notifyMailboxEventReceived(BluetoothGattCharacteristic characteristic) {

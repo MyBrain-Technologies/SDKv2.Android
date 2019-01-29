@@ -134,7 +134,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         }
 
         //Checking location permission
-        if (MbtConfig.scannableDevices == ScannableDevices.MELOMIND){
+        if (MelomindDevice.isMelomindRequested()){
             if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && ContextCompat.checkSelfPermission(mContext,
                     Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_DENIED
                     && ContextCompat.checkSelfPermission(mContext,
@@ -222,7 +222,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
         //Check device type from config.deviceType
 
-        if (MbtConfig.scannableDevices == ScannableDevices.MELOMIND && ContextCompat.checkSelfPermission(mContext,
+        if (MelomindDevice.isMelomindRequested() && ContextCompat.checkSelfPermission(mContext,
                 Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(mContext,
                 Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
             mbtBluetoothLE.startLowEnergyScan(true, null); //TODO handle this
@@ -264,7 +264,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      */
     private void stopCurrentScan(){
         LogUtils.i(TAG, "stopping current scan");
-        if (MbtConfig.scannableDevices == ScannableDevices.MELOMIND && ContextCompat.checkSelfPermission(mContext,
+        if (MelomindDevice.isMelomindRequested() && ContextCompat.checkSelfPermission(mContext,
                 Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(mContext,
                 Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
             mbtBluetoothLE.stopLowEnergyScan(); //TODO handle this
