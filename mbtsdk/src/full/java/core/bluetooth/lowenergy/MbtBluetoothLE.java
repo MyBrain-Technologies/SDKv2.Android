@@ -33,12 +33,14 @@ import java.util.UUID;
 
 import config.AmpGainConfig;
 import config.FilterConfig;
+import config.MbtConfig;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.BtState;
 import core.bluetooth.IStreamable;
 import core.bluetooth.MbtBluetooth;
 import core.bluetooth.MbtBluetoothManager;
 import features.MbtFeatures;
+import features.ScannableDevices;
 import utils.LogUtils;
 
 /**
@@ -188,7 +190,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @return  <code>true</code> if the notification has been successfully established within the 2 seconds of allotted time,
      * @return <code>false</code> for any error
      */
-    private synchronized boolean enableOrDisableNotificationsOnCharacteristic(boolean enableNotification, @NonNull BluetoothGattCharacteristic characteristic) {
+    synchronized boolean enableOrDisableNotificationsOnCharacteristic(boolean enableNotification, @NonNull BluetoothGattCharacteristic characteristic) {
         if(!isConnected())
             return false;
 
@@ -253,7 +255,11 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @return Each found device that matches the specified filters
      */
     public BluetoothDevice startLowEnergyScan(boolean filterOnDeviceService, @Nullable String deviceName) {
-        if (super.bluetoothAdapter == null || super.bluetoothAdapter.getBluetoothLeScanner() == null ){
+        if(MbtConfig.scannableDevices.equals(ScannableDevices.VPRO)) {
+            notifyConnectionStateChanged(BtState.SCAN_FAILED, true);
+            return null;
+        }
+        if (super.bluetoothAdapter == null || super.bluetoothAdapter.getBluetoothLeScanner() == null){
             Log.e(TAG, "Unable to get LE scanner");
             notifyConnectionStateChanged(BtState.SCAN_FAILED, true);
             return null;
@@ -290,6 +296,11 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * If a lock is currently waiting, the lock is disabled.
      */
     public void stopLowEnergyScan() {
+
+        if(MbtConfig.scannableDevices.equals(ScannableDevices.VPRO)) {
+            notifyConnectionStateChanged(BtState.SCAN_FAILED, true);
+            return;
+        }
 
         if(super.scanLock != null && super.scanLock.isWaiting())
             super.scanLock.setResultAndNotify(null);
@@ -419,9 +430,11 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @param characteristic the characteristic to read
      * @return immediatly false on error, true true if read operation has started correctly
      */
-    private boolean startReadOperation(@NonNull UUID characteristic){
-        if(!isConnected())
+    boolean startReadOperation(@NonNull UUID characteristic){
+        if(!isConnected()) {
+            notifyConnectionStateChanged(BtState.READING_FAILURE, true);
             return false;
+        }
 
         UUID service;
 
@@ -433,8 +446,10 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             service = MelomindCharacteristics.SERVICE_MEASUREMENT;
         }
 
-        if(!checkServiceAndCharacteristicValidity(service, characteristic))
+        if(!checkServiceAndCharacteristicValidity(service, characteristic)) {
+            notifyConnectionStateChanged(BtState.READING_FAILURE, true);
             return false;
+        }
 
         if (!this.gatt.readCharacteristic(gatt.getService(service).getCharacteristic(characteristic))) {
             LogUtils.e(TAG, "Error: failed to initiate read characteristic operation");
@@ -453,7 +468,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @param payload the payload to write to the characteristic
      * @return immediatly false on error, true otherwise
      */
-    private synchronized boolean startWriteOperation(@NonNull UUID characteristic, byte[] payload){
+    synchronized boolean startWriteOperation(@NonNull UUID characteristic, byte[] payload){
         if(!checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT, characteristic))
             return false;
 
@@ -480,7 +495,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @param characteristic the characteristic to check
      * @return false if something not valid, true otherwise
      */
-    private boolean checkServiceAndCharacteristicValidity(@NonNull UUID service, @NonNull UUID characteristic){
+    boolean checkServiceAndCharacteristicValidity(@NonNull UUID service, @NonNull UUID characteristic){
         if(gatt == null ||
                 gatt.getService(service) == null ||
                     gatt.getService(service).getCharacteristic(characteristic) == null) {
@@ -497,7 +512,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @param characteristic the characteristic UUID.
      * @return true is already enabled notifications, false otherwise.
      */
-    private boolean isNotificationEnabledOnCharacteristic(@NonNull UUID service, @NonNull UUID characteristic){
+    boolean isNotificationEnabledOnCharacteristic(@NonNull UUID service, @NonNull UUID characteristic){
         if(!checkServiceAndCharacteristicValidity(service, characteristic))
             return false;
 
@@ -557,7 +572,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @param characteristic the characteristic which had its notification state changed
      * @param wasEnableRequest if the request was to enable (true) or disable (false) request.
      */
-    public void onNotificationStateChanged(boolean isSuccess, BluetoothGattCharacteristic characteristic, boolean wasEnableRequest) {
+    void onNotificationStateChanged(boolean isSuccess, BluetoothGattCharacteristic characteristic, boolean wasEnableRequest) {
         if(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG.equals(characteristic.getUuid())){
             if(wasEnableRequest && isSuccess){
                 notifyStreamStateChanged(StreamState.STARTED);

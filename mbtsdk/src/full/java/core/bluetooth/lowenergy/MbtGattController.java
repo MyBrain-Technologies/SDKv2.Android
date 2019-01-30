@@ -417,7 +417,7 @@ final class MbtGattController extends BluetoothGattCallback {
         return res == null ? MailboxEvents.CMD_CODE_CONNECT_IN_A2DP_FAILED_TIMEOUT : res;
     }
 
-    private void requestDeviceInformations(DeviceInfo deviceinfo) {
+    void requestDeviceInformations(DeviceInfo deviceinfo) {
         switch(deviceinfo){
             case FW_VERSION:
                 this.bluetoothController.readFwVersion();

@@ -228,7 +228,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
     }
 
 
-    private boolean disconnectA2DPFromBLE() {
+    boolean disconnectA2DPFromBLE() {
         return mbtBluetoothManager.disconnectA2DPFromBLE();
     }
 
@@ -244,7 +244,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
     }
 
 
-    private final class A2DPAccessor implements BluetoothProfile.ServiceListener {
+    final class A2DPAccessor implements BluetoothProfile.ServiceListener {
         private final MbtLock<BluetoothA2dp> lock = new MbtLock<>();
         private A2DPMonitor a2DPMonitor = new A2DPMonitor();
         /**
@@ -287,7 +287,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
     /**
      *
      */
-    private class A2DPMonitor {
+    class A2DPMonitor {
         private Timer pollingTimer;
         private List<BluetoothDevice> connectedA2DpDevices;
 
@@ -352,7 +352,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
         return audioManager.isBluetoothA2dpOn();
     }
 
-    private List<BluetoothDevice> getA2DPConnectedDevices(){
+    List<BluetoothDevice> getA2DPConnectedDevices(){
         if(a2dpProxy == null)
             return Collections.emptyList();
 

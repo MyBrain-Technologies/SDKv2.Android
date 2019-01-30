@@ -123,14 +123,11 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
 
     @Override
     public void stopScanDiscovery() {
-        if(scanLock != null && scanLock.isWaiting()){
+        if(scanLock != null && scanLock.isWaiting())
             scanLock.setResultAndNotify(null);
-        }
 
         if(bluetoothAdapter != null && bluetoothAdapter.isDiscovering())
             bluetoothAdapter.cancelDiscovery();
-
-
     }
 
     public void notifyDeviceInfoReceived(@NonNull DeviceInfo deviceInfo, @NonNull String deviceValue){ // This method will be called when a DeviceInfoReceived is posted (fw or hw or serial number) by MbtBluetoothLE or MbtBluetoothSPP
