@@ -1,7 +1,6 @@
 package core.bluetooth.requests;
 
-import core.bluetooth.requests.BluetoothRequests;
-import core.recordingsession.metadata.DeviceInfo;
+import core.device.model.DeviceInfo;
 
 /**
  * An event class when a read request is being sent by the user.

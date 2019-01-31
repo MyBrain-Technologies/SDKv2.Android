@@ -17,10 +17,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import core.device.model.DeviceInfo;
 import core.device.model.MelomindDevice;
 import core.oad.OADEvent;
 
-import core.recordingsession.metadata.DeviceInfo;
 import utils.LogUtils;
 import utils.MbtLock;
 
@@ -46,8 +46,6 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
     protected final MbtLock<BluetoothDevice> scanLock = new MbtLock<>();
     @NonNull
     protected List<BluetoothDevice> scannedDevices = new ArrayList<>();
-
-    protected final MbtLock<BtState> connectionLock = new MbtLock<>();
 
     protected MbtBluetoothManager mbtBluetoothManager;
 

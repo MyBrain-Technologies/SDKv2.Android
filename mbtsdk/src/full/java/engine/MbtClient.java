@@ -10,9 +10,9 @@ import android.support.annotation.NonNull;
 
 import config.MbtConfig;
 import core.MbtManager;
+import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
 import core.eeg.storage.MbtEEGPacket;
-import core.recordingsession.metadata.DeviceInfo;
 import engine.clientevents.BaseError;
 import engine.clientevents.ConfigError;
 import engine.clientevents.ConnectionStateReceiver;

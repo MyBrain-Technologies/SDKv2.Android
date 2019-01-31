@@ -23,12 +23,16 @@ import android.util.Log;
         private static final int OAD_WITHOUT_REQUEST_PRIORITY_HIGH_MIN_VERSION_MINOR = 10;
 
         private static final int BLE_BONDING_VERSION_MAIN = 1;
-        private static final int BLE_BONDING_VERSION_MAJOR = 6; //todo check 1.7.0
+        private static final int BLE_BONDING_VERSION_MAJOR = 6;
         private static final int BLE_BONDING_VERSION_MINOR = 7;
 
         private static final int A2DP_FROM_HEADSET_VERSION_MAIN = 1;
         private static final int A2DP_FROM_HEADSET_VERSION_MAJOR = 6;
         private static final int A2DP_FROM_HEADSET_VERSION_MINOR = 7;
+
+        private static final int WRITE_EXTERNAL_NAME_VERSION_MAIN = 1;
+        private static final int WRITE_EXTERNAL_NAME_VERSION_MAJOR = 7;
+        private static final int WRITE_EXTERNAL_NAME_VERSION_MINOR = 1;
 
         private final String minor;
         private final String major;
@@ -96,6 +100,10 @@ import android.util.Log;
                     b = verifyFeature(A2DP_FROM_HEADSET_VERSION_MAIN, A2DP_FROM_HEADSET_VERSION_MAJOR, A2DP_FROM_HEADSET_VERSION_MINOR);
                     break;
 
+                case REGISTER_EXTERNAL_NAME:
+                    b = verifyFeature(WRITE_EXTERNAL_NAME_VERSION_MAIN, WRITE_EXTERNAL_NAME_VERSION_MAJOR, WRITE_EXTERNAL_NAME_VERSION_MINOR);
+                    break;
+
                 default:
                     break;
             }
@@ -158,7 +166,8 @@ import android.util.Log;
             HEADSET_STATUS,
             OAD_WITHOUT_CONNECTION_PRIORITY,
             BLE_BONDING,
-            A2DP_FROM_HEADSET
+            A2DP_FROM_HEADSET,
+            REGISTER_EXTERNAL_NAME
         }
 
 //        /**

@@ -118,6 +118,11 @@ DeviceActivity extends AppCompatActivity {
         }
 
         @Override
+        public void onModelNumberReceived(String modelNumber) {
+
+        }
+
+        @Override
         public void onError(BaseError error, String additionnalInfo) {
             notifyUser(getString(R.string.error_read_battery));
         }
@@ -174,7 +179,7 @@ DeviceActivity extends AppCompatActivity {
         client.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
             @Override
             public void onRequestComplete(MbtDevice object) {
-                deviceNameTextView.setText(object.getProductName());
+                deviceNameTextView.setText(object.getExternalName());
             }
         });
     }

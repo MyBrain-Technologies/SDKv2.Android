@@ -1,4 +1,4 @@
-package core.recordingsession.metadata;
+package core.device.model;
 
 /**
  * Created by Etienne on 14/10/2016.
@@ -23,5 +23,10 @@ public enum DeviceInfo {
     /**
      * Corresponds to a device battery measure
      */
-    BATTERY
+    BATTERY,
+
+    /**
+     * Correspond to a call to model number value, which is supposed to contain the external identifier
+     */
+    MODEL_NUMBER
 }

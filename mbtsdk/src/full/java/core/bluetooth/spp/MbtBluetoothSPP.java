@@ -22,7 +22,7 @@ import core.bluetooth.BtState;
 import core.bluetooth.IStreamable;
 import core.bluetooth.MbtBluetooth;
 import core.bluetooth.MbtBluetoothManager;
-import core.recordingsession.metadata.DeviceInfo;
+import core.device.model.DeviceInfo;
 import utils.AsyncUtils;
 import utils.LogUtils;
 
@@ -126,7 +126,6 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
                 });
                 btState = BtState.CONNECTED;
                 notifyConnectionStateChanged(BtState.CONNECTED, true);
-                //notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER, toConnect.getAddress());
                 notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER,toConnect.getAddress());
                 LogUtils.i(TAG,toConnect.getName() + " Connected");
                 return true;

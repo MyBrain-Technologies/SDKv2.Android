@@ -35,7 +35,7 @@ public enum BtState {
     /**
      *  Location is required in order to start the LE scan. GPS is disabled
      */
-    LOCATION_IS_REQUIRED,
+    LOCATION_DISABLED,
 
     /**
      *  Location is required in order to start the LE scan. Location may or may not be enabled, the user forgot
@@ -191,7 +191,9 @@ public enum BtState {
     /**
      * Failed to replace the current firmware installed with a new one. This failure trigger a disconnection.
      */
-    UPGRADE_FAILED
+    UPGRADE_FAILED,
+
+    SENDIND_QR_CODE
 
 
 

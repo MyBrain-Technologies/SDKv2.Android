@@ -101,6 +101,10 @@ public class MbtDeviceManager extends BaseModuleManager{
                 if(event.getInfo() != null)
                     mCurrentDevice.setSerialNumber((String) event.getInfo());
                 break;
+            case MODEL_NUMBER:
+                if(event.getInfo() != null)
+                    mCurrentDevice.setExternalName((String) event.getInfo());
+                    break;
         }
     }
 

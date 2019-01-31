@@ -57,8 +57,6 @@ import utils.LogUtils;
 public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     private static final String TAG = MbtBluetoothLE.class.getSimpleName();
 
-    public static final String BLE_CONNECTED_EVENT = "BLE_CONNECTED_EVENT";
-    public static final String BLE_DISCONNECTED_EVENT = "BLE_DISCONNECTED_EVENT";
     private final static String CONNECT_GATT_METHOD = "connectGatt";
     private final static String REMOVE_BOND_METHOD = "removeBond";
     /**
@@ -350,7 +348,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * This method removes bonding of the device.
      * @param device
      */
-    private void unpairDevice(BluetoothDevice device) {
+    void unpairDevice(BluetoothDevice device) {
         try {
             Method m = device.getClass()
                     .getMethod(REMOVE_BOND_METHOD, (Class[]) null);
@@ -371,6 +369,9 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     @TargetApi(Build.VERSION_CODES.KITKAT)
     @Override
     public boolean connect(Context context, BluetoothDevice device) {
+
+        if(device == null || context == null)
+            return false;
 
         //Using reflexion here because min API is 21 and transport layer is not available publicly until API 23
         try {
@@ -450,6 +451,8 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             notifyConnectionStateChanged(BtState.READING_FAILURE, true);
             return false;
         }
+        if(!getCurrentState().equals(BtState.BONDING)) //bonding is triggered automatically if we read any characteristic
+            notifyConnectionStateChanged(BtState.READING_DEVICE_INFO, true);
 
         if (!this.gatt.readCharacteristic(gatt.getService(service).getCharacteristic(characteristic))) {
             LogUtils.e(TAG, "Error: failed to initiate read characteristic operation");
@@ -555,16 +558,13 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         return startReadOperation(MelomindCharacteristics.CHARAC_INFO_SERIAL_NUMBER);
     }
 
-
-    public void testAcquireDataRandomByte(){ //eeg matrix size
-        byte[] data = new byte[250];
-        for (int i=0; i<63; i++){// buffer size = 1000=16*62,5 => matrix size always = 1000/2 = 500
-            new Random().nextBytes(data); //Generates random bytes and places them into a user-supplied byte array
-            this.notifyNewDataAcquired(data);
-            Arrays.fill(data,0,0,(byte)0);
-        }
+    /**
+     * Initiates a read model number operation on this correct BtProtocol
+     */
+    public boolean readModelNumber(){
+        LogUtils.i(TAG, "read product name requested");
+        return startReadOperation(MelomindCharacteristics.CHARAC_INFO_MODEL_NUMBER);
     }
-
 
     /**
      * Callback called by the {@link MbtGattController gatt controller} when the notification state has changed.
@@ -618,6 +618,8 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         if(!isConnected()){
             return false;
         }
+        if(newMTU >= 121 || newMTU <= 23)
+            return false;
 
         if(this.gatt == null)
             return false;
@@ -700,14 +702,10 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     }
 
     public void disconnectHeadsetAlreadyConnected(String deviceName, boolean isGattConnected){
-        if(gatt != null && !getGattDeviceName().equals(deviceName) && isGattConnected){
+        if(gatt != null && !gatt.getDevice().getName().equals(deviceName) && isGattConnected){
             gatt.disconnect();
             mbtGattController.disconnectionWaitAndGetResult(5000);
         }
-    }
-
-    public String getGattDeviceName(){
-        return gatt.getDevice().getName();
     }
 
     public void connectA2DPFromBLE() {
@@ -733,7 +731,8 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         return mbtGattController.disconnectA2DPMailbox() == MailboxEvents.CMD_CODE_DISCONNECT_IN_A2DP_SUCCESS;
     }
 
-    public void requestBonding(){
+    public void triggerBonding(){
+        notifyConnectionStateChanged(BtState.BONDING, true);
         startReadOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_BATTERY_LEVEL);
         mbtGattController.bondingWaitAndGetResult(10000);
     }
@@ -744,5 +743,20 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 
     void notifyMailboxEventReceived(BluetoothGattCharacteristic characteristic) {
         this.mbtGattController.notifyMailboxEventReceived(characteristic);
+    }
+
+    public synchronized boolean sendExternalName(String externalName) {
+        if(enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX))){
+            return mbtGattController.sendExternalName(externalName);
+        }
+        return false;
+    }
+
+    void notifyBleIsDisconnected(String deviceName){
+        mbtBluetoothManager.reconnectIfAudioConnected(deviceName);
+    }
+
+    boolean isDownloadingFirmware(){
+       return mbtBluetoothManager.isDownloadingFW();
     }
 }

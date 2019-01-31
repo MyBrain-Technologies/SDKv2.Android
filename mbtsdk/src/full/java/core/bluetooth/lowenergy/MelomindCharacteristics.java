@@ -80,6 +80,11 @@ final class MelomindCharacteristics {
     final static UUID CHARAC_INFO_FIRMWARE_VERSION = UUID.fromString("00002a26-0000-1000-8000-00805f9b34fb");
 
     /**
+     * The Device Firmware Version characteristic UUID from the Device Info Service. Short UUID 0x2A26
+     */
+    final static UUID CHARAC_INFO_MODEL_NUMBER = UUID.fromString("00002a24-0000-1000-8000-00805f9b34fb");
+
+    /**
      * The Device Software Version characteristic UUID from the Device Info Service. Short UUID 0x2A28
      */
     final static UUID CHARAC_INFO_SOFTWARE_VERSION= UUID.fromString("00002a28-0000-1000-8000-00805f9b34fb");

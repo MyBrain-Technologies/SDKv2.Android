@@ -36,7 +36,7 @@ public class MelomindDevice extends MbtDevice{
      * Gets the version of the firmware
      * @return the version of the firmware
      */
-    @NonNull
+    @Nullable
     public final String getFirmwareVersion() {
         return this.firmwareVersion;
     }
@@ -91,15 +91,13 @@ public class MelomindDevice extends MbtDevice{
      * Gets the version of the hardware used
      * @return the heardware version
      */
-    @NonNull
+    @Nullable
     public final String getHardwareVersion() {
         return this.hardwareVersion;
     }
 
-    @NonNull
     public final int getSampRate() {return this.sampRate;}
 
-    @NonNull
     public final int getNbChannels() {return this.nbChannels;}
 
     @NonNull
@@ -129,5 +127,15 @@ public class MelomindDevice extends MbtDevice{
 
     public static boolean isMelomindRequested(){
         return MbtConfig.scannableDevices == ScannableDevices.MELOMIND;
+    }
+
+    @Override
+    public void setExternalName(String externalName) {
+        super.setExternalName(externalName);
+    }
+
+    @Override
+    public String getExternalName() {
+        return super.getExternalName();
     }
 }

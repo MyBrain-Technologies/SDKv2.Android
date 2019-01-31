@@ -5,10 +5,10 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import features.MbtAcquisitionLocations;
+import features.MbtFeatures;
 
 /**
  * Created by manon on 10/10/16.
@@ -25,6 +25,8 @@ public abstract class MbtDevice {
     String firmwareVersion;
     @Nullable
     String serialNumber;
+    @Nullable
+    String externalName;
 
     String deviceAddress;
 
@@ -46,6 +48,7 @@ public abstract class MbtDevice {
         this.deviceAddress = bluetoothDevice.getAddress();
         this.productName = bluetoothDevice.getName();
         this.internalConfig = null;
+        this.externalName = MbtFeatures.MELOMIND_DEVICE_NAME;
     }
 
     /**
@@ -80,7 +83,7 @@ public abstract class MbtDevice {
      * Gets the version of the hardware used
      * @return the hardware version
      */
-    @NonNull
+    @Nullable
     public String getHardwareVersion() {
         return this.hardwareVersion;
     }
@@ -94,10 +97,8 @@ public abstract class MbtDevice {
         return deviceAddress;
     }
 
-    @NonNull
     public int getSampRate() {return this.sampRate;}
 
-    @NonNull
     public int getNbChannels() {return this.nbChannels;}
 
     @NonNull
@@ -131,11 +132,19 @@ public abstract class MbtDevice {
         this.internalConfig = internalConfig;
     }
 
+    public void setExternalName(@Nullable String externalName){
+        this.externalName = externalName;
+    }
+
     @Nullable
+    public String getExternalName(){
+        return externalName;
+    }
+
+    @NonNull
     public BluetoothDevice getBluetoothDevice() {
         return bluetoothDevice;
     }
-
 
     public final static class InternalConfig{
         private byte notchFilterConfig;
@@ -174,6 +183,7 @@ public abstract class MbtDevice {
             return nbPackets;
         }
 
+
         @Override
         public String toString() {
             return "InternalConfig{" +
@@ -185,5 +195,4 @@ public abstract class MbtDevice {
                     '}';
         }
     }
-
 }

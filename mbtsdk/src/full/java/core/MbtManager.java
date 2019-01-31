@@ -25,10 +25,10 @@ import core.device.DCOffsets;
 import core.device.DeviceEvents;
 import core.device.MbtDeviceManager;
 import core.device.SaturationEvent;
+import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
 import core.eeg.MbtEEGManager;
 import core.eeg.requests.QualityRequest;
-import core.recordingsession.metadata.DeviceInfo;
 import engine.MbtClient;
 import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
@@ -202,6 +202,14 @@ public final class MbtManager{
                         deviceInfoListener.onError(HeadsetDeviceError.ERROR_TIMEOUT_SERIAL_NUMBER, null);
                     else
                         deviceInfoListener.onSerialNumberReceived((String) event.getInfo());
+                }
+                break;
+            case MODEL_NUMBER:
+                if(deviceInfoListener != null) {
+                    if (event.getInfo() == null)
+                        deviceInfoListener.onError(HeadsetDeviceError.ERROR_TIMEOUT_SERIAL_NUMBER, null);
+                    else
+                        deviceInfoListener.onModelNumberReceived((String) event.getInfo());
                 }
                 break;
         }

@@ -4,7 +4,8 @@ import android.support.annotation.Nullable;
 
 import java.io.Serializable;
 
-import core.recordingsession.metadata.DeviceInfo;
+import core.device.model.DeviceInfo;
+
 
 public class DeviceInfoEvent<T> implements Serializable{
 

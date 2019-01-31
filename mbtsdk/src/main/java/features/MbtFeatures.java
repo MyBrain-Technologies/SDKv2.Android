@@ -52,10 +52,11 @@ public final class MbtFeatures{
     // MELOMIND & VPRO FEATURES
     public static final String MELOMIND_DEVICE_NAME_PREFIX = "melo_";
     public static final String A2DP_DEVICE_NAME_PREFIX = "audio_";
+    public static final String A2DP_DEVICE_NAME_PREFIX_LEGACY = "melo_";
     public static final String VPRO_DEVICE_NAME_PREFIX = "VPro";
 
-    public static final String MELOMIND_DEVICE_NAME = "Melomind";
-    public static final String VPRO_DEVICE_NAME = "VPro";
+    public static final String MELOMIND_DEVICE_NAME = "melomind";
+    public static final String VPRO_DEVICE_NAME = "vpro";
     public static final String ALL_DEVICE_NAME = "All";
 
     public final static int MELOMIND_NB_CHANNELS = 2;

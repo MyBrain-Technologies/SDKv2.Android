@@ -18,8 +18,10 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import core.device.model.MbtDevice;
+import core.device.model.MelomindsQRDataBase;
 import engine.SimpleRequestCallback;
 import features.MbtFeatures;
+import utils.AsyncUtils;
 import utils.FirmwareUtils;
 import utils.LogUtils;
 import utils.MbtLock;
@@ -31,8 +33,6 @@ import utils.MbtLock;
 public final class MbtBluetoothA2DP extends MbtBluetooth{
     private final static String TAG = MbtBluetoothA2DP.class.getSimpleName();
 
-    static final String A2DP_CONNECTED_EVENT = "A2DP_CONNECTED_EVENT";
-    static final String A2DP_DISCONNECTED_EVENT = "A2DP_DISCONNECTED_EVENT";
     private final static String CONNECT_METHOD = "connect";
     private final static String DISCONNECT_METHOD = "disconnect";
 
@@ -318,17 +318,21 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                         //Here, we have a new A2DP connection then we notify BTManager if this new input
                         //As one a2dp output is possible at a time on android, it is possible to consider that last item in list is the current one
                         BluetoothDevice device = getA2DPConnectedDevices().get(getA2DPConnectedDevices().size()-1);
-                        if(device.getName().startsWith(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX) || device.getName().startsWith(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX)){
-                            Intent intent = new Intent(A2DP_CONNECTED_EVENT);
-                            intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
-                            context.sendBroadcast(intent);
+                        if((device.getName().startsWith(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX) || device.getName().startsWith(MbtFeatures.A2DP_DEVICE_NAME_PREFIX))
+                        || (device.getName().startsWith(MelomindsQRDataBase.QR_PREFIX) && device.getName().length() == MelomindsQRDataBase.QR_LENGTH)
+                        && hasA2DPDeviceConnected()){
+                                notifyConnectionStateChanged(BtState.AUDIO_CONNECTED, true);
+                                AsyncUtils.executeAsync(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        mbtBluetoothManager.connectBLEFromA2DP(device.getName());
+                                    }
+                                });
                         }
 
                     }else{
                         //Here, either the A2DP connection has dropped or a new A2DP device is connecting.
-                        //Intent intent = new Intent(BTManager.A2DP_DISCONNECTED_EVENT);
-                        Intent intent = new Intent(A2DP_DISCONNECTED_EVENT);
-                        context.sendBroadcast(intent);
+                        notifyConnectionStateChanged(BtState.AUDIO_DISCONNECTED, true);
                     }
                     //In any case, it is mandatory to updated our local connected A2DP list
                     connectedA2DpDevices = getA2DPConnectedDevices();
