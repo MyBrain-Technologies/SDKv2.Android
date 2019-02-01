@@ -21,6 +21,7 @@ import core.device.model.DeviceInfo;
 import core.device.model.MelomindDevice;
 import core.oad.OADEvent;
 
+import utils.AsyncUtils;
 import utils.LogUtils;
 import utils.MbtLock;
 
@@ -142,6 +143,15 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
     public void notifyConnectionStateChanged(@NonNull BtState newState, boolean notifyUserClient) {
         this.currentState = newState;
         mbtBluetoothManager.notifyConnectionStateChanged(newState, notifyUserClient);
+    }
+
+    void notifyAudioIsConnected(BluetoothDevice device){
+        AsyncUtils.executeAsync(new Runnable() {
+            @Override
+            public void run() {
+                mbtBluetoothManager.connectBLEFromA2DP(device.getName());
+            }
+        });
     }
 
     void notifyMailboxEvent(byte code, Object value){

@@ -37,7 +37,7 @@ public class MbtBluetoothManagerTest {
 
     @Test
     public void scanAndConnect() {
-        bluetoothManager.scanAndConnect("melo_01010101",true);
+        //bluetoothManager.scanAndConnect("melo_01010101",true);
     }
 
     @Test
@@ -174,5 +174,15 @@ public class MbtBluetoothManagerTest {
 
     @Test
     public void isAlreadyConnectedToRequestedDevice() {
+    }
+
+    private class MbtManagerWrapper extends MbtManager{
+
+        /**
+         * @param context
+         */
+        public MbtManagerWrapper(Context context) {
+            super(context);
+        }
     }
 }

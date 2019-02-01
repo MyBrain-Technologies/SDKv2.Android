@@ -119,6 +119,11 @@ DeviceActivity extends AppCompatActivity {
         }
 
         @Override
+        public void onModelNumberReceived(String modelNumber) {
+
+        }
+
+        @Override
         public void onError(BaseError error, String additionnalInfo) {
             notifyUser(getString(R.string.error_read_battery));
         }

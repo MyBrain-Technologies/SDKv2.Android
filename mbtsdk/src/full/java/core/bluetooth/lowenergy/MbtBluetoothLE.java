@@ -54,7 +54,7 @@ import utils.LogUtils;
  *
  */
 
-public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
+public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     private static final String TAG = MbtBluetoothLE.class.getSimpleName();
 
     private final static String CONNECT_GATT_METHOD = "connectGatt";
@@ -431,7 +431,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @param characteristic the characteristic to read
      * @return immediatly false on error, true true if read operation has started correctly
      */
-    boolean startReadOperation(@NonNull UUID characteristic){
+   boolean startReadOperation(@NonNull UUID characteristic){
         if(!isConnected()) {
             notifyConnectionStateChanged(BtState.READING_FAILURE, true);
             return false;
@@ -471,7 +471,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @param payload the payload to write to the characteristic
      * @return immediatly false on error, true otherwise
      */
-    synchronized boolean startWriteOperation(@NonNull UUID characteristic, byte[] payload){
+   synchronized boolean startWriteOperation(@NonNull UUID characteristic, byte[] payload){
         if(!checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT, characteristic))
             return false;
 
@@ -498,7 +498,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @param characteristic the characteristic to check
      * @return false if something not valid, true otherwise
      */
-    boolean checkServiceAndCharacteristicValidity(@NonNull UUID service, @NonNull UUID characteristic){
+   boolean checkServiceAndCharacteristicValidity(@NonNull UUID service, @NonNull UUID characteristic){
         if(gatt == null ||
                 gatt.getService(service) == null ||
                     gatt.getService(service).getCharacteristic(characteristic) == null) {
@@ -523,7 +523,6 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             return false;
 
         return Arrays.equals(this.gatt.getService(service).getCharacteristic(characteristic).getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID).getValue(), BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-
     }
 
 

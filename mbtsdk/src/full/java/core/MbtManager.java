@@ -1,5 +1,6 @@
 package core;
 
+import android.arch.core.BuildConfig;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -46,12 +47,16 @@ import engine.clientevents.EegListener;
 import features.MbtFeatures;
 import utils.LogUtils;
 
+import static mbtsdk.com.mybraintech.mbtsdk.BuildConfig.BLUETOOTH_ENABLED;
+import static mbtsdk.com.mybraintech.mbtsdk.BuildConfig.DEVICE_ENABLED;
+import static mbtsdk.com.mybraintech.mbtsdk.BuildConfig.EEG_ENABLED;
+
 /**
  * MbtManager is responsible for managing communication between all the package managers
  *
  * @author Sophie ZECRI on 29/05/2018
  */
-public final class MbtManager{
+public class MbtManager{
     private static final String TAG = MbtManager.class.getName();
 
     /**
@@ -84,10 +89,12 @@ public final class MbtManager{
 
         EventBusManager.registerOrUnregister(true, this);
 
-        registerManager(new MbtDeviceManager(mContext, this, MbtFeatures.getBluetoothProtocol()));
-        registerManager(new MbtBluetoothManager(mContext, this));
-        registerManager(new MbtEEGManager(mContext, this, MbtFeatures.getBluetoothProtocol()));
-
+        if(DEVICE_ENABLED)
+            registerManager(new MbtDeviceManager(mContext, this, MbtFeatures.getBluetoothProtocol()));
+        if(BLUETOOTH_ENABLED)
+            registerManager(new MbtBluetoothManager(mContext, this));
+        if(EEG_ENABLED)
+            registerManager(new MbtEEGManager(mContext, this, MbtFeatures.getBluetoothProtocol()));
     }
 
     /**
@@ -319,6 +326,9 @@ public final class MbtManager{
                 callback.onRequestComplete(object.getDevice());
             }
         });
+    }
 
+    public Set<BaseModuleManager> getRegisteredModuleManagers() {
+        return registeredModuleManagers;
     }
 }

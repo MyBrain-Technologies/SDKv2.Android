@@ -94,18 +94,17 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private Handler requestHandler;
 
     private boolean isConnectionInterrupted = false;
-    private boolean isDownloadingFW = false;
+    /**+**/private boolean isDownloadingFW = false;
 
     private Future<BluetoothDevice> futureScannedDevice;
     private BluetoothDevice currentDevice;
     //private MbtDeviceAcquisition deviceAcquisition;
 
-    private int backgroundReconnectionRetryCounter = 0;
+    /**+**/private int backgroundReconnectionRetryCounter = 0;
 
-    private ConnectionStateReceiver receiver = new ConnectionStateReceiver() {
+    /**+**/private ConnectionStateReceiver receiver = new ConnectionStateReceiver() {
         @Override
         public void onError(BaseError error, String additionnalInfo) {
-            //todo post event
         }
 
         @Override
@@ -133,25 +132,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         }
     };
 
-    public void reconnectIfAudioConnected(String device){
-        if(mbtBluetoothA2DP.isConnected() && ++backgroundReconnectionRetryCounter < 0 )
-            AsyncUtils.executeAsync(new Runnable() {
-                @Override
-                public void run() {
-                    if (device != null)
-                        connectBLEFromA2DP(device);
-                }
-            });
-        else{
-            backgroundReconnectionRetryCounter = 0; //reset counter
-            mbtBluetoothLE.notifyConnectionStateChanged(BtState.DISCONNECTED, true);
-        }
-    }
-
-    public void resetBackgroundReconnectionRetryCounter(){
-        backgroundReconnectionRetryCounter = 0;
-    }
-
     /**
      * Constructor of the manager.
      * @param context the application context
@@ -175,7 +155,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         requestThread.start();
         requestHandler = new Handler(requestThread.getLooper());
 
-        registerReceiverIntents(context, new ArrayList<>(Arrays.asList(
+        /**+**/registerReceiverIntents(context, new ArrayList<>(Arrays.asList(
                 BluetoothDevice.ACTION_BOND_STATE_CHANGED,
                 BluetoothAdapter.ACTION_STATE_CHANGED)));
     }
@@ -185,7 +165,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * @param context
      * @param actions
      */
-    void registerReceiverIntents(Context context, ArrayList<String> actions){
+    /**+**/void registerReceiverIntents(Context context, ArrayList<String> actions){
         for (String action : actions){
             IntentFilter intentFilter = new IntentFilter(action);
             context.registerReceiver(receiver, intentFilter);
@@ -220,7 +200,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
         //third step is A2DP connection if user requested it on the connection config
         if(isBleConnected()){
-            requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
+            /**+**/requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
                 @Override
                 public void onRequestComplete(MbtDevice object) {
                     bondAndConnectAudioIfRequested(object, useAudio);
@@ -229,7 +209,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         }
     }
 
-    boolean isBluetoothEnabled(){
+    /**+**/private boolean isBluetoothEnabled(){
         boolean isBluetoothEnabled = true;
         if(!BluetoothAdapter.getDefaultAdapter().isEnabled() && !this.mbtBluetoothLE.enableBluetoothOnDevice()){ //check if Bluetooth is on
             notifyConnectionStateChanged(BtState.BLUETOOTH_DISABLED, true);
@@ -238,7 +218,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         return isBluetoothEnabled;
     }
 
-    boolean isLocationEnabledAndGranted(){
+    /**+**/private boolean isLocationEnabledAndGranted(){
         boolean isLocationEnabledAndGranted = true;
         if (MelomindDevice.isMelomindRequested()){
             //Checking location permission
@@ -262,7 +242,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         return isLocationEnabledAndGranted;
     }
 
-    boolean isAlreadyConnected(String deviceName, boolean connectAudioInA2dp){
+    /**+**/private boolean isAlreadyConnected(String deviceName, boolean connectAudioInA2dp){
         boolean isAlreadyConnected = false;
         if(isConnected(connectAudioInA2dp)){
             notifyConnectionStateChanged( isAlreadyConnectedToRequestedDevice(deviceName) ?
@@ -292,7 +272,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         return deviceIsFound;
     }
 
-    void bondAndConnectAudioIfRequested(MbtDevice device, boolean useAudio){
+    /**+**/private void bondAndConnectAudioIfRequested(MbtDevice device, boolean useAudio){
         if(new FirmwareUtils(device.getFirmwareVersion()).isFwValidForFeature(FirmwareUtils.FWFeature.BLE_BONDING)){
             mbtBluetoothLE.triggerBonding();
             if (device.getExternalName() != null && device.getExternalName().equals(MbtFeatures.MELOMIND_DEVICE_NAME) //send the QR code found in the database if the headset do not know its own QR code
@@ -331,7 +311,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * @param device the Bluetooth device to connect to
      * @return immediately the following : false if device is null, true if connection step has been started
      */
-    void connect(@NonNull BluetoothDevice device, BtProtocol bluetoothProtocol){
+    private void connect(@NonNull BluetoothDevice device, BtProtocol bluetoothProtocol){
         if(isConnectionInterrupted){
             notifyConnectionStateChanged(BtState.CONNECTION_INTERRUPTED, true);
             return;
@@ -348,7 +328,25 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 mbtBluetoothA2DP.connect(mContext, device); //never call if check on mbtfeatures.getbluetoothProtocol
                 break;
         }
+    }
 
+    public void reconnectIfAudioConnected(String device){
+        if(mbtBluetoothA2DP.isConnected() && ++backgroundReconnectionRetryCounter < 0 )
+            AsyncUtils.executeAsync(new Runnable() {
+                @Override
+                public void run() {
+                    if (device != null)
+                        connectBLEFromA2DP(device);
+                }
+            });
+        else{
+            backgroundReconnectionRetryCounter = 0; //reset counter
+            mbtBluetoothLE.notifyConnectionStateChanged(BtState.DISCONNECTED, true);
+        }
+    }
+
+    public void resetBackgroundReconnectionRetryCounter(){
+        backgroundReconnectionRetryCounter = 0;
     }
 
     /**

@@ -315,21 +315,13 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                 if(!connectedA2DpDevices.equals(getA2DPConnectedDevices())){
                     //It means that something has changed. Now we need to find out what changed
                     if(connectedA2DpDevices.size() < getA2DPConnectedDevices().size()){
-                        //Here, we have a new A2DP connection then we notify BTManager if this new input
+                        //Here, we have a new A2DP connection then we notify bluetooth manager if this new input
                         //As one a2dp output is possible at a time on android, it is possible to consider that last item in list is the current one
                         BluetoothDevice device = getA2DPConnectedDevices().get(getA2DPConnectedDevices().size()-1);
                         if((device.getName().startsWith(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX) || device.getName().startsWith(MbtFeatures.A2DP_DEVICE_NAME_PREFIX))
                         || (device.getName().startsWith(MelomindsQRDataBase.QR_PREFIX) && device.getName().length() == MelomindsQRDataBase.QR_LENGTH)
-                        && hasA2DPDeviceConnected()){
-                                notifyConnectionStateChanged(BtState.AUDIO_CONNECTED, true);
-                                AsyncUtils.executeAsync(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        mbtBluetoothManager.connectBLEFromA2DP(device.getName());
-                                    }
-                                });
-                        }
-
+                        && hasA2DPDeviceConnected())
+                            notifyAudioIsConnected(device);
                     }else{
                         //Here, either the A2DP connection has dropped or a new A2DP device is connecting.
                         notifyConnectionStateChanged(BtState.AUDIO_DISCONNECTED, true);

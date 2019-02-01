@@ -12,20 +12,35 @@ android {
         flavorDimensions "default"
         testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'
     }
+
     buildTypes {
         release {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-
             libraryVariants.all { variant ->
                 variant.outputs.all {
                     outputFileName = "lib_${variant.flavorName}_${variant.buildType.name}_${defaultConfig.versionName}.aar"
                 }
             }
+            buildConfigField "boolean", "EEG_ENABLED", "true"
+            buildConfigField "boolean", "BLUETOOTH_ENABLED", "true"
+            buildConfigField "boolean", "DEVICE_ENABLED", "true"
         }
         debug {
+            buildConfigField "boolean", "EEG_ENABLED", "true"
+            buildConfigField "boolean", "BLUETOOTH_ENABLED", "true"
+            buildConfigField "boolean", "DEVICE_ENABLED", "true"
+        }
+        unitTests {
+            initWith (buildTypes.debug)
+            buildConfigField "boolean", "EEG_ENABLED", "false"
+            buildConfigField "boolean", "BLUETOOTH_ENABLED", "true"
+            buildConfigField "boolean", "DEVICE_ENABLED", "false"
         }
     }
+
+    testBuildType "unitTests"
+
     externalNativeBuild {
         ndkBuild {
             path 'jni/Android.mk'
