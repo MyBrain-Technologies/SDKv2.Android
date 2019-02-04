@@ -82,6 +82,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
 
     @Override
     public boolean connect(Context context, @Nullable BluetoothDevice device) {
+        Log.i(TAG," connect  ");
         if (device != null)
             return connectToDevice(device);
         return false;

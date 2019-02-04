@@ -353,9 +353,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             final int transport = device.getClass().getDeclaredField("TRANSPORT_LE").getInt(null);
             this.gatt = (BluetoothGatt) connectGattMethod.invoke(device, context, false, mbtGattController, transport);
             LogUtils.i(TAG, "this.gatt = " + this.gatt.toString());
-            return true; //TODO test
-//            final BtState state = super.connectionLock.waitAndGetResult(20000);
-//            return state != null && state == BtState.CONNECTED_AND_READY;
+            return true;
 
         } catch (@NonNull final NoSuchMethodException | NoSuchFieldException | IllegalAccessException
                 | InvocationTargetException e) {

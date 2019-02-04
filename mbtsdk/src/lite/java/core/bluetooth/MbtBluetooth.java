@@ -49,8 +49,6 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
     @NonNull
     protected List<BluetoothDevice> scannedDevices = new ArrayList<>();
 
-    protected final MbtLock<BtState> connectionLock = new MbtLock<>();
-
     protected MbtBluetoothManager mbtBluetoothManager;
 
     public MbtBluetooth(Context context, MbtBluetoothManager mbtBluetoothManager) {

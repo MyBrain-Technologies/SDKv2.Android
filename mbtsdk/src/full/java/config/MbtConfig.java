@@ -39,6 +39,8 @@ public final class MbtConfig {
 
     public static int bluetoothScanTimeout;
 
+    private static int bluetoothA2dpConnectionTimeout = 5000;
+
     private static int bluetoothPairingTimeout;
 
     private static String serverURL;
@@ -103,6 +105,10 @@ public final class MbtConfig {
 
     public static boolean connectAudioIfDeviceCompatible() {
         return connectAudioIfDeviceCompatible;
+    }
+
+    public static int getBluetoothA2dpConnectionTimeout() {
+        return bluetoothA2dpConnectionTimeout;
     }
 
     public static class MbtConfigBuilder {

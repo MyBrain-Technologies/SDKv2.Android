@@ -59,12 +59,14 @@ public class HomeActivity extends AppCompatActivity{
     private ConnectionStateReceiver connectionStateReceiver = new ConnectionStateReceiver() {
         @Override
         public void onError(BaseError error, String additionnalInfo) {
+            Log.e(TAG, "onError received "+error.getMessage()+ (additionnalInfo != null ? additionnalInfo : ""));
             notifyUser(error.getMessage()+ (additionnalInfo != null ? additionnalInfo : ""));
             updateScanning(false);
         }
 
         @Override
         public void onReceive(Context context, Intent intent) {
+            Log.e(TAG, "onReceived "+context+ " intent "+intent.toString());
             BtState newState = (BtState) intent.getSerializableExtra(MbtClient.MbtClientExtra.EXTRA_NEW_STATE);
             Log.i(TAG, "Received broadcast "+newState);
 

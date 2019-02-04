@@ -195,4 +195,23 @@ public abstract class MbtDevice {
                     '}';
         }
     }
+
+    @Override
+    public String toString() {
+        return "MbtDevice{" +
+                "productName='" + productName + '\'' +
+                ", hardwareVersion='" + hardwareVersion + '\'' +
+                ", firmwareVersion='" + firmwareVersion + '\'' +
+                ", serialNumber='" + serialNumber + '\'' +
+                ", externalName='" + externalName + '\'' +
+                ", deviceAddress='" + deviceAddress + '\'' +
+                ", sampRate=" + sampRate +
+                ", nbChannels=" + nbChannels +
+                ", acquisitionLocations=" + acquisitionLocations +
+                ", referencesLocations=" + referencesLocations +
+                ", groundsLocation=" + groundsLocation +
+                ", internalConfig=" + internalConfig +
+                ", bluetoothDevice=" + bluetoothDevice +
+                '}';
+    }
 }

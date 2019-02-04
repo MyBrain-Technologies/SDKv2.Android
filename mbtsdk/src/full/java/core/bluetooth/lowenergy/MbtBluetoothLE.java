@@ -253,6 +253,8 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @return Each found device that matches the specified filters
      */
     public BluetoothDevice startLowEnergyScan(boolean filterOnDeviceService, @Nullable String deviceName) {
+        Log.i(TAG," start low energy scan on device "+deviceName);
+
         if(MbtConfig.scannableDevices.equals(ScannableDevices.VPRO)) {
             notifyConnectionStateChanged(BtState.SCAN_FAILED, true);
             return null;
@@ -369,6 +371,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     @TargetApi(Build.VERSION_CODES.KITKAT)
     @Override
     public boolean connect(Context context, BluetoothDevice device) {
+        Log.i(TAG," connect  ");
 
         if(device == null || context == null)
             return false;
@@ -382,9 +385,8 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             final int transport = device.getClass().getDeclaredField("TRANSPORT_LE").getInt(null);
             this.gatt = (BluetoothGatt) connectGattMethod.invoke(device, context, false, mbtGattController, transport);
             LogUtils.i(TAG, "this.gatt = " + this.gatt.toString());
-            return true; //TODO test
-//            final BtState state = super.connectionLock.waitAndGetResult(20000);
-//            return state != null && state == BtState.CONNECTED_AND_READY;
+            Log.i(TAG," this.gatt = " + this.gatt.toString());
+            return true;
 
         } catch (@NonNull final NoSuchMethodException | NoSuchFieldException | IllegalAccessException
                 | InvocationTargetException e) {
@@ -432,36 +434,32 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @return immediatly false on error, true true if read operation has started correctly
      */
    boolean startReadOperation(@NonNull UUID characteristic){
-        if(!isConnected()) {
-            notifyConnectionStateChanged(BtState.READING_FAILURE, true);
+       if(!isConnected() && !getCurrentState().equals(BtState.DISCOVERING_SERVICES) && !getCurrentState().equals(BtState.READING_DEVICE_INFO) && !getCurrentState().equals(BtState.BONDING)) {
+            notifyConnectionStateChanged( getCurrentState().equals(BtState.BONDING) ?
+                            BtState.BONDING_FAILURE : BtState.READING_FAILURE, true);
             return false;
         }
-
-        UUID service;
-
-        if (characteristic.equals(MelomindCharacteristics.CHARAC_INFO_FIRMWARE_VERSION)
+       UUID service = (characteristic.equals(MelomindCharacteristics.CHARAC_INFO_FIRMWARE_VERSION)
                 || characteristic.equals(MelomindCharacteristics.CHARAC_INFO_HARDWARE_VERSION)
-                || characteristic.equals(MelomindCharacteristics.CHARAC_INFO_SERIAL_NUMBER)) {
-            service = MelomindCharacteristics.SERVICE_DEVICE_INFOS;
-        }else{
-            service = MelomindCharacteristics.SERVICE_MEASUREMENT;
-        }
+                || characteristic.equals(MelomindCharacteristics.CHARAC_INFO_SERIAL_NUMBER)
+                || characteristic.equals(MelomindCharacteristics.CHARAC_INFO_MODEL_NUMBER)) ?
+             MelomindCharacteristics.SERVICE_DEVICE_INFOS : MelomindCharacteristics.SERVICE_MEASUREMENT;
 
         if(!checkServiceAndCharacteristicValidity(service, characteristic)) {
-            notifyConnectionStateChanged(BtState.READING_FAILURE, true);
+            notifyConnectionStateChanged( getCurrentState().equals(BtState.BONDING) ?
+                    BtState.BONDING_FAILURE : BtState.READING_FAILURE, true);
             return false;
         }
-        if(!getCurrentState().equals(BtState.BONDING)) //bonding is triggered automatically if we read any characteristic
-            notifyConnectionStateChanged(BtState.READING_DEVICE_INFO, true);
 
-        if (!this.gatt.readCharacteristic(gatt.getService(service).getCharacteristic(characteristic))) {
-            LogUtils.e(TAG, "Error: failed to initiate read characteristic operation");
-            notifyConnectionStateChanged(BtState.READING_FAILURE, true);
+       if (!this.gatt.readCharacteristic(gatt.getService(service).getCharacteristic(characteristic))) {
+           LogUtils.e(TAG, "Error: failed to initiate read characteristic operation");
+            if(getCurrentState().equals(BtState.BONDING) || getCurrentState().equals(BtState.READING_DEVICE_INFO))
+                notifyConnectionStateChanged( getCurrentState().equals(BtState.BONDING) ? // bonding is triggered by a reading battery operation
+                    BtState.BONDING_FAILURE : BtState.READING_FAILURE, true);
             return false;
         }
 
         LogUtils.i(TAG, "Successfully initiated read characteristic operation");
-
         return true;
     }
 
@@ -499,15 +497,11 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @return false if something not valid, true otherwise
      */
    boolean checkServiceAndCharacteristicValidity(@NonNull UUID service, @NonNull UUID characteristic){
-        if(gatt == null ||
-                gatt.getService(service) == null ||
-                    gatt.getService(service).getCharacteristic(characteristic) == null) {
-            notifyConnectionStateChanged(BtState.READING_FAILURE, true);
-            return false;
-        }
-
-        return true;
-    }
+       Log.i(TAG," check service and characteristic validity");
+       return gatt != null &&
+               gatt.getService(service) != null &&
+               gatt.getService(service).getCharacteristic(characteristic) != null;
+   }
 
     /**
      * Checks if the charateristic has notifications already enabled or not.
@@ -703,7 +697,6 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     public void disconnectHeadsetAlreadyConnected(String deviceName, boolean isGattConnected){
         if(gatt != null && !gatt.getDevice().getName().equals(deviceName) && isGattConnected){
             gatt.disconnect();
-            mbtGattController.disconnectionWaitAndGetResult(5000);
         }
     }
 
@@ -722,6 +715,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     }
 
     public boolean disconnectA2DPFromBLE() {
+        Log.i(TAG, "disconnected A2DP from BLE");
         if(gatt == null ||
                 !enableOrDisableNotificationsOnCharacteristic(true,
                         gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).
@@ -731,20 +725,12 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     }
 
     public void triggerBonding(){
-        notifyConnectionStateChanged(BtState.BONDING, true);
+        Log.i(TAG, "bonding : about to read battery level");
         startReadOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_BATTERY_LEVEL);
-        mbtGattController.bondingWaitAndGetResult(10000);
-    }
-
-    public void notifyDeviceIsBonded(){
-        mbtGattController.bondingSetResultAndNotify(true);
-    }
-
-    void notifyMailboxEventReceived(BluetoothGattCharacteristic characteristic) {
-        this.mbtGattController.notifyMailboxEventReceived(characteristic);
     }
 
     public synchronized boolean sendExternalName(String externalName) {
+        Log.i(TAG, "send external name");
         if(enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX))){
             return mbtGattController.sendExternalName(externalName);
         }

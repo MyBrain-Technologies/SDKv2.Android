@@ -63,8 +63,6 @@ final class MbtGattController extends BluetoothGattCallback {
 
     private final MbtBluetoothLE bluetoothController;
 
-    private final MbtLock<BtState> connectionLock = new MbtLock<>();
-
     MbtGattController(Context context, MbtBluetoothLE bluetoothController) {
         super();
         this.bluetoothController = bluetoothController;
@@ -97,9 +95,8 @@ final class MbtGattController extends BluetoothGattCallback {
                 break;
             case BluetoothGatt.STATE_DISCONNECTED:
                 // This if is necessary because we might have disconnect after something went wrong while connecting
-                if (this.connectionLock.isWaiting())
-                    this.connectionLock.setResultAndNotify(BtState.CONNECTION_FAILURE);
-                else {                    // in this case the connection went well for a while, but just got lost
+
+                                   // in this case the connection went well for a while, but just got lost
                     gatt.close();
                     //this.gatt = null;
                     try {
@@ -108,7 +105,7 @@ final class MbtGattController extends BluetoothGattCallback {
                         e.printStackTrace();
                     }
                     this.bluetoothController.notifyConnectionStateChanged(BtState.DISCONNECTED);
-                }
+
                 msg += "STATE_DISCONNECTED";
                 break;
             case BluetoothGatt.STATE_DISCONNECTING:
@@ -167,8 +164,6 @@ final class MbtGattController extends BluetoothGattCallback {
             gatt.disconnect();
         } else{
             // everything went well as expected
-            if(this.connectionLock.isWaiting())
-                this.connectionLock.setResultAndNotify(BtState.CONNECTED_AND_READY);
             this.bluetoothController.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
         }
 
@@ -191,8 +186,6 @@ final class MbtGattController extends BluetoothGattCallback {
             bluetoothController.notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER, new String(characteristic.getValue()));
 
             this.bluetoothController.notifyConnectionStateChanged(BtState.BONDING);
-            if(this.connectionLock.isWaiting())
-                this.connectionLock.setResultAndNotify(BtState.BONDING);
         }
 
 
