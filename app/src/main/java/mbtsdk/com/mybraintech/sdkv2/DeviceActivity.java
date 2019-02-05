@@ -179,7 +179,7 @@ DeviceActivity extends AppCompatActivity {
         client.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
             @Override
             public void onRequestComplete(MbtDevice object) {
-                deviceNameTextView.setText(object.getExternalName());
+                deviceNameTextView.setText(object.getProductName()+" | "+object.getExternalName());
             }
         });
     }

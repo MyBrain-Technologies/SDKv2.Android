@@ -3,10 +3,10 @@ package core.bluetooth.requests;
 /**
  * An event class when a connection request is being sent by the user.
  */
-public class ConnectRequestEvent extends BluetoothRequests {
+public class ScanRequestEvent extends BluetoothRequests {
         private String name;
 
-        public ConnectRequestEvent(String name){
+        public ScanRequestEvent(String name){
             this.name = name;
         }
 

@@ -37,6 +37,8 @@ public final class BluetoothError extends BaseError {
     public static BluetoothError ERROR_NOT_SUPPORTED                        = new BluetoothError( CODE_RANGE+23,  "Bluetooth Low Energy not supported for this mobile device (incompatible Android OS version).");
     public static BluetoothError ERROR_SCANNING_NOT_STARTED                 = new BluetoothError( CODE_RANGE+24,  "Bluetooth Scanning could not be started.");
     public static BluetoothError ERROR_SCANNING_FAILED                      = new BluetoothError( CODE_RANGE+25,  "Bluetooth Scanning failed.");
+    public static BluetoothError ERROR_CONNECTION_INTERRUPTED               = new BluetoothError( CODE_RANGE+26,  "Bluetooth Connection has been interrupted.");
+
 
     private BluetoothError(int code, String exception){
         super(DOMAIN, code, exception);

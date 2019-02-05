@@ -21,6 +21,8 @@ import core.bluetooth.requests.ConnectRequestEvent;
 import core.bluetooth.requests.DisconnectRequestEvent;
 import core.bluetooth.MbtBluetoothManager;
 import core.bluetooth.requests.ReadRequestEvent;
+import core.bluetooth.requests.ScanAndConnectRequestEvent;
+import core.bluetooth.requests.ScanRequestEvent;
 import core.bluetooth.requests.StreamRequestEvent;
 import core.device.DCOffsets;
 import core.device.DeviceEvents;
@@ -117,7 +119,7 @@ public class MbtManager{
         }
 
         this.connectionStateReceiver = connectionStateReceiver;
-        EventBusManager.postEvent(new ConnectRequestEvent(name, connectAudioInA2DP));
+        EventBusManager.postEvent(new ScanAndConnectRequestEvent(name, connectAudioInA2DP));
     }
 
     /**
@@ -317,7 +319,6 @@ public class MbtManager{
 
 
     public void requestCurrentConnectedDevice(final SimpleRequestCallback<MbtDevice> callback) {
-
         EventBusManager.postEventWithCallback(new DeviceEvents.GetDeviceEvent(), new EventBusManager.Callback<DeviceEvents.PostDeviceEvent>(){
             @Override
             @Subscribe

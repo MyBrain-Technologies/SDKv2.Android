@@ -1,6 +1,5 @@
 package core.device;
 
-import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.util.Log;
@@ -71,40 +70,41 @@ public class MbtDeviceManager extends BaseModuleManager{
     }
 
     @Subscribe
-    public void onNewDeviceConnected(DeviceEvents.NewBluetoothDeviceEvent device){
-        LogUtils.d(TAG, "new device connected");
-        if(MbtConfig.getScannableDevices() == ScannableDevices.MELOMIND)
-            setmCurrentDevice(device.getDevice() != null ? new MelomindDevice(device.getDevice()) : null);
-        else if(MbtConfig.getScannableDevices() == ScannableDevices.VPRO)
-            setmCurrentDevice(device.getDevice() != null ? new VProDevice(device.getDevice()) : null);
+    public void onNewDeviceConnected(DeviceEvents.NewBluetoothDeviceEvent deviceEvent){
+        LogUtils.d(TAG, "new device "+ (deviceEvent.getDevice() != null ? "connected" : "disconnected"));
+        if (MbtConfig.getScannableDevices() == ScannableDevices.MELOMIND)
+            setmCurrentDevice(deviceEvent.getDevice() != null ? new MelomindDevice(deviceEvent.getDevice()) : null);
+        else if (MbtConfig.getScannableDevices() == ScannableDevices.VPRO)
+            setmCurrentDevice(deviceEvent.getDevice() != null ? new VProDevice(deviceEvent.getDevice()) : null);
     }
 
     /**
      * Called when a new device info event has been broadcast on the event bus.
-     * @param event
      */
     @Subscribe(threadMode = ThreadMode.POSTING)
     public void onDeviceInfoEvent(DeviceInfoEvent event){
-        switch(event.getInfotype()){
-            case BATTERY:
-                LogUtils.d(TAG, "received" + (String) event.getInfo() + " for battery level");
-                break;
-            case FW_VERSION:
-                if(event.getInfo() != null)
-                    mCurrentDevice.setFirmwareVersion((String) event.getInfo());
-                break;
-            case HW_VERSION:
-                if(event.getInfo() != null)
-                    mCurrentDevice.setHardwareVersion((String) event.getInfo());
-                break;
-            case SERIAL_NUMBER:
-                if(event.getInfo() != null)
-                    mCurrentDevice.setSerialNumber((String) event.getInfo());
-                break;
-            case MODEL_NUMBER:
-                if(event.getInfo() != null)
-                    mCurrentDevice.setExternalName((String) event.getInfo());
+        if(mCurrentDevice != null){
+            switch(event.getInfotype()){
+                case BATTERY:
+                    LogUtils.d(TAG, "received " + event.getInfo() + " for battery level");
                     break;
+                case FW_VERSION:
+                    if(event.getInfo() != null)
+                        mCurrentDevice.setFirmwareVersion((String) event.getInfo());
+                    break;
+                case HW_VERSION:
+                    if(event.getInfo() != null)
+                        mCurrentDevice.setHardwareVersion((String) event.getInfo());
+                    break;
+                case SERIAL_NUMBER:
+                    if(event.getInfo() != null)
+                        mCurrentDevice.setSerialNumber((String) event.getInfo());
+                    break;
+                case MODEL_NUMBER:
+                    if(event.getInfo() != null)
+                        mCurrentDevice.setExternalName((String) event.getInfo());
+                    break;
+            }
         }
     }
 
@@ -157,11 +157,6 @@ public class MbtDeviceManager extends BaseModuleManager{
         }
 
         return isUpToDate;
-    }
-
-    @Subscribe
-    public void onGetDeviceAd(DeviceEvents.GetDeviceEvent event){
-        EventBusManager.postEvent(new DeviceEvents.PostDeviceEvent(mCurrentDevice));
     }
 
     public static short getBatteryPercentageFromByteValue(byte value){

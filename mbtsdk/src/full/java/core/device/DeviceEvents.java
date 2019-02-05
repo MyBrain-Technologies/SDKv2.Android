@@ -31,10 +31,11 @@ public interface DeviceEvents {
         @Nullable
         private final MbtDevice device;
 
-        public PostDeviceEvent(@Nullable MbtDevice device){
+        PostDeviceEvent(@Nullable MbtDevice device){
             this.device = device;
         }
 
+        @Nullable
         public MbtDevice getDevice() {
             return device;
         }
@@ -49,6 +50,7 @@ public interface DeviceEvents {
             this.device = device;
         }
 
+        @Nullable
         public BluetoothDevice getDevice() {
             return device;
         }
@@ -61,12 +63,11 @@ public interface DeviceEvents {
     public class RawDeviceMeasure {
         private byte[] rawMeasure;
 
-
         public RawDeviceMeasure(@NonNull byte[] rawMeasure){
             this.rawMeasure = rawMeasure;
         }
 
-        public byte[] getRawMeasure() {
+        byte[] getRawMeasure() {
             return rawMeasure;
         }
     }

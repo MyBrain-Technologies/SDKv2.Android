@@ -113,8 +113,6 @@ public final class MbtEEGManager extends BaseModuleManager {
             @Override
             public void run() {
                 consolidatedEEG = new ArrayList<>();
-                LogUtils.i(TAG, "computing and sending to application");
-
                 ArrayList<Float> toDecodeStatus = new ArrayList<>();
                 for (RawEEGSample rawEEGSample : toDecodeRawEEG) {
                     if (rawEEGSample.getStatus() != null) {

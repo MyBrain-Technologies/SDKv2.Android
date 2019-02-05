@@ -110,6 +110,7 @@ final class MbtGattController extends BluetoothGattCallback {
                 Log.d(TAG, "received intent " + action + " for device " + (device != null ? device.getName() : null));
                 if (action.equals(BluetoothDevice.ACTION_BOND_STATE_CHANGED))
                     if(intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE,0) == BluetoothDevice.BOND_BONDED){
+                        Log.d(TAG, "Bonded");
                         new Handler().postDelayed(new Runnable() {
                             @Override
                             public void run() {
@@ -173,7 +174,8 @@ final class MbtGattController extends BluetoothGattCallback {
 //                            bluetoothController.unpairDevice(gatt.getDevice()); // disconnection due to device reboot in order to install the update
 //
 //                    }
-                this.bluetoothController.notifyConnectionStateChanged(BtState.DISCONNECTED, true);
+                this.bluetoothController.notifyConnectionStateChanged( bluetoothController.getCurrentState().equals(BtState.DEVICE_FOUND) ?
+                        BtState.CONNECTION_FAILURE :  BtState.DISCONNECTED, true);
 
                 if(status != 0 && !bluetoothController.isDownloadingFirmware()) { //0 means it is a disconnection on purpose
                     bluetoothController.notifyBleIsDisconnected(gatt.getDevice().getName());
@@ -260,9 +262,6 @@ final class MbtGattController extends BluetoothGattCallback {
                 public void run() {
                     bluetoothController.notifyConnectionStateChanged(BtState.READING_DEVICE_INFO, true);
                     MbtGattController.this.requestDeviceInformations(DeviceInfo.FW_VERSION);
-//                    MbtGattController.this.requestDeviceInformations(DeviceInfo.HW_VERSION);
-//                    MbtGattController.this.requestDeviceInformations(DeviceInfo.SERIAL_NUMBER);
-//                    MbtGattController.this.requestDeviceInformations(DeviceInfo.MODEL_NUMBER);
                 }
             });
 
@@ -281,7 +280,8 @@ final class MbtGattController extends BluetoothGattCallback {
     @Override
     public void onCharacteristicRead(BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, int status) {
         super.onCharacteristicRead(gatt, characteristic, status);
-        LogUtils.i(TAG, "received charac value " + new String(characteristic.getValue()));
+        if(characteristic.getValue() != null)
+            LogUtils.i(TAG, "received charac value " + new String(characteristic.getValue()));
 
         if (characteristic.getUuid().compareTo(CHARAC_INFO_FIRMWARE_VERSION) == 0) {
             String firmwareVersionValue = new String(characteristic.getValue());
@@ -293,32 +293,36 @@ final class MbtGattController extends BluetoothGattCallback {
         if (characteristic.getUuid().compareTo(CHARAC_INFO_SERIAL_NUMBER) == 0) {
             bluetoothController.notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER, new String(characteristic.getValue()));
         }
+        if (characteristic.getUuid().compareTo(CHARAC_INFO_MODEL_NUMBER) == 0) {
+            bluetoothController.notifyDeviceInfoReceived(DeviceInfo.MODEL_NUMBER, new String(characteristic.getValue()));
+        }
 
         if (characteristic.getUuid().compareTo(CHARAC_MEASUREMENT_BATTERY_LEVEL) == 0) {
             if(bondLock.isWaiting() && status == 0) //ie SUCCESS so no bonding in progress
                 bondLock.setResultAndNotify(false);
 
-            if (characteristic.getValue().length < 4) {
-                final StringBuffer sb = new StringBuffer();
-                for (final byte value : characteristic.getValue()) {
-                    sb.append(value);
-                    sb.append(';');
+            if (characteristic.getValue()!= null){
+                if (characteristic.getValue().length < 4) {
+                    final StringBuffer sb = new StringBuffer();
+                    for (final byte value : characteristic.getValue()) {
+                        sb.append(value);
+                        sb.append(';');
+                    }
+                    LogUtils.e(TAG, "Error: received a [onCharacteristicRead] callback for battery level request " +
+                            "but the payload of the characteristic is invalid ! \nValue(s) received -> " + sb.toString());
+                    return;
                 }
-                LogUtils.e(TAG, "Error: received a [onCharacteristicRead] callback for battery level request " +
-                        "but the payload of the characteristic is invalid ! \nValue(s) received -> " + sb.toString());
-                return;
-            }
 
-            final short level = MbtDeviceManager.getBatteryPercentageFromByteValue(characteristic.getValue()[0]);
-            if (level == -1) {
-                LogUtils.e(TAG, "Error: received a [onCharacteristicRead] callback for battery level request " +
-                        "but the returned value could not be decoded ! " +
-                        "Byte value received -> " + characteristic.getValue()[3]);
+                final short level = MbtDeviceManager.getBatteryPercentageFromByteValue(characteristic.getValue()[0]);
+                if (level == -1) {
+                    LogUtils.e(TAG, "Error: received a [onCharacteristicRead] callback for battery level request " +
+                            "but the returned value could not be decoded ! " +
+                            "Byte value received -> " + characteristic.getValue()[3]);
+                }
+                bluetoothController.notifyBatteryReceived(level);
+                LogUtils.i(TAG, "Received a [onCharacteristicRead] callback for battery level request. " +
+                        "Value -> " + level);
             }
-            bluetoothController.notifyBatteryReceived(level);
-
-            // LogUtils.i(TAG, "Received a [onCharacteristicRead] callback for battery level request. " +
-            //         "Value -> " + level);
         }
     }
 
@@ -444,20 +448,23 @@ final class MbtGattController extends BluetoothGattCallback {
 
     void requestDeviceInformations(DeviceInfo deviceinfo) {
         Log.i(TAG, "request device info ");
+        boolean readingOperationSucceeded = false;
         switch(deviceinfo){
             case FW_VERSION:
-                this.bluetoothController.readFwVersion();
+                readingOperationSucceeded = this.bluetoothController.readFwVersion();
                 break;
             case HW_VERSION:
-                this.bluetoothController.readHwVersion();
+                readingOperationSucceeded =this.bluetoothController.readHwVersion();
                 break;
             case SERIAL_NUMBER:
-                this.bluetoothController.readSerialNumber();
+                readingOperationSucceeded =this.bluetoothController.readSerialNumber();
                 break;
             case MODEL_NUMBER:
-                this.bluetoothController.readModelNumber();
+                readingOperationSucceeded =this.bluetoothController.readModelNumber();
                 break;
         }
+        if(!readingOperationSucceeded)
+            this.bluetoothController.disconnect();
     }
 
     void notifyMailboxEventReceived(BluetoothGattCharacteristic characteristic) {
@@ -579,7 +586,6 @@ final class MbtGattController extends BluetoothGattCallback {
     }
 
     boolean sendExternalName(String externalName) {
-        Log.i(TAG, "send external name");
         if(externalName == null)
             return false;
         String nameReceivedFromHeadset = "";
@@ -598,7 +604,6 @@ final class MbtGattController extends BluetoothGattCallback {
             Log.e(TAG, "Error: failed to send external name update");
             return false;
         }
-        bluetoothController.notifyConnectionStateChanged(BtState.SENDIND_QR_CODE, true);
         Log.i(TAG, "Success sending external name update");
 
         try {
