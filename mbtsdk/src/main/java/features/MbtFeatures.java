@@ -110,6 +110,10 @@ public final class MbtFeatures{
         return (MbtConfig.getScannableDevices().equals(MELOMIND) ? BLUETOOTH_LE : BLUETOOTH_SPP);
     }
 
+    public static boolean useLowEnergyProtocol(){
+        return getBluetoothProtocol().equals(BLUETOOTH_LE);
+    }
+
     @NonNull
     public static ArrayList<MbtAcquisitionLocations> getLocations(){
         return (MbtConfig.getScannableDevices().equals(MELOMIND) ? MELOMIND_LOCATIONS : VPRO_LOCATIONS);

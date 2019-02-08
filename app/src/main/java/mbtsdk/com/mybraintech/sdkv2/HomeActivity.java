@@ -35,7 +35,15 @@ import static features.ScannableDevices.VPRO;
 public class HomeActivity extends AppCompatActivity{
 
     private static String TAG = HomeActivity.class.getName();
+    /**
+     * Duration to find a headset
+     */
     private final static int SCAN_DURATION = 30000;
+    /**
+     * Duration to connect a headset once it has been found
+     */
+    private final static int CONNECTION_DURATION = 30000;
+
     public final static String DEVICE_NAME = "DEVICE_NAME";
     public final static String BLUETOOTH_STATE = "BLUETOOTH_STATE";
 
@@ -45,7 +53,7 @@ public class HomeActivity extends AppCompatActivity{
     private String deviceName;
 
     private Switch connectAudioSwitch;
-    private boolean connectAudioIfDeviceCompatible ;
+    private boolean connectAudioIfDeviceCompatible = false;
 
     private Spinner devicePrefixSpinner;
     private String devicePrefix;
@@ -149,6 +157,7 @@ public class HomeActivity extends AppCompatActivity{
                             ((deviceName != null) && (deviceName.equals(MELOMIND_DEVICE_NAME_PREFIX) || deviceName.equals(VPRO_DEVICE_NAME_PREFIX)) ) ? //if no no name has been entered by the user, the default device name is the headset prefix
                             null : deviceName ) //null is given in parameters if no name has been entered by the user
                     .maxScanDuration(SCAN_DURATION)
+                    .maxConnectionDuration(CONNECTION_DURATION)
                     .scanDeviceType(isMelomindDevice() ? MELOMIND : VPRO)
                     .connectAudioIfDeviceCompatible(connectAudioIfDeviceCompatible)
                     .create());

@@ -17,11 +17,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import config.MbtConfig;
 import core.device.model.DeviceInfo;
 import core.device.model.MelomindDevice;
 import core.oad.OADEvent;
 
 import utils.AsyncUtils;
+import utils.EnumUtils;
 import utils.LogUtils;
 import utils.MbtLock;
 
@@ -37,7 +39,8 @@ import utils.MbtLock;
 public abstract class MbtBluetooth implements IScannable, IConnectable{
 
     private final static String TAG = "MBT Bluetooth";
-    private BtState currentState = BtState.IDLE;
+
+    public BtState currentState = BtState.IDLE;
 
     @Nullable
     protected BluetoothAdapter bluetoothAdapter;
@@ -45,8 +48,9 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
     protected final Context context;
 
     protected final MbtLock<BluetoothDevice> scanLock = new MbtLock<>();
-    @NonNull
-    protected List<BluetoothDevice> scannedDevices = new ArrayList<>();
+    protected final MbtLock<Boolean> connectionLock = new MbtLock<>();
+
+    protected BluetoothDevice scannedDevice;
 
     protected MbtBluetoothManager mbtBluetoothManager;
 
@@ -65,7 +69,7 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
 
     @Nullable
     @Override
-    public BluetoothDevice startScanDiscovery(@Nullable final String deviceName) {
+    public BluetoothDevice startScanDiscovery() {
         if(bluetoothAdapter == null)
             return null;
 
@@ -73,7 +77,7 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
         final Set<BluetoothDevice> bonded = this.bluetoothAdapter.getBondedDevices();
         if (bonded != null && !bonded.isEmpty()) {
             for (final BluetoothDevice device : bonded) {
-                if (MelomindDevice.isMelomindName(device) && device.getName().equals(deviceName)) { // device found
+                if (MelomindDevice.isMelomindName(device) && device.getName().equals(MbtConfig.getNameOfDeviceRequested())) { // device found
                     return device;
                 }
             }
@@ -94,14 +98,14 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
                         final String deviceNameFound = device.getName();
                         if (TextUtils.isEmpty(deviceNameFound)) {
                             LogUtils.w(TAG, "Found device with no name. MAC address is -> " + device.getAddress());
-                            notifyConnectionStateChanged(BtState.SCAN_FAILED, true);
+                            notifyConnectionStateChanged(BtState.SCAN_FAILURE);
                             return;
                         }
 
                         LogUtils.i(TAG, String.format("Discovery Scan -> device detected " +
                                 "with name '%s' and MAC address '%s' ", deviceNameFound, device.getAddress()));
-                        if (deviceName != null && MelomindDevice.isMelomindName(device) && (deviceNameFound.equals(deviceName) || deviceNameFound.contains(deviceName))) {
-                            LogUtils.i(TAG, "Device " + deviceName +" found. Cancelling discovery & connecting");
+                        if (MbtConfig.getNameOfDeviceRequested() != null && MelomindDevice.isMelomindName(device) && (deviceNameFound.equals(MbtConfig.getNameOfDeviceRequested()) || deviceNameFound.contains(MbtConfig.getNameOfDeviceRequested()))) {
+                            LogUtils.i(TAG, "Device " + MbtConfig.getNameOfDeviceRequested() +" found. Cancelling discovery & connecting");
                             bluetoothAdapter.cancelDiscovery();
                             context.unregisterReceiver(this);
                             scanLock.setResultAndNotify(device);
@@ -115,9 +119,14 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
 
             }
         }, filter);
-        bluetoothAdapter.startDiscovery();
-        notifyConnectionStateChanged(BtState.SCAN_STARTED, true);
-        return scanLock.waitAndGetResult();
+        boolean isScanStarted = bluetoothAdapter.startDiscovery();
+        BluetoothDevice deviceFound = null;
+        LogUtils.i(TAG, "Scan started.");
+        if(isScanStarted && currentState.equals(BtState.READY_FOR_BLUETOOTH_OPERATION)){
+            mbtBluetoothManager.updateConnectionState(); //current state is set to SCAN_STARTED
+            deviceFound = scanLock.waitAndGetResult();
+        }
+        return deviceFound;
     }
 
     @Override
@@ -139,10 +148,16 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
 //        }
     }
 
+    /**
+     * Set the current bluetooth connection state to the value given in parameter
+     * and notify the bluetooth manager of this change.
+     * This method should be called if something went wrong during the connection process, as it stops the connection prccess.
+     * The updateConnectionState() method with no parameter should be call if nothing went wrong and user wants to continue the connection process
+     */
     @Override
-    public void notifyConnectionStateChanged(@NonNull BtState newState, boolean notifyUserClient) {
+    public void notifyConnectionStateChanged(@NonNull BtState newState) {
         this.currentState = newState;
-        mbtBluetoothManager.notifyConnectionStateChanged(newState, notifyUserClient);
+        mbtBluetoothManager.notifyConnectionStateChanged(newState);
     }
 
     void notifyAudioIsConnected(BluetoothDevice device){
@@ -172,10 +187,6 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
 //                this.headsetStatusListener.onNewDCOffsetMeasured(value);
 //        }
     }
-
-    public BtState getCurrentState() { return currentState; }
-
-    public void setCurrentState(BtState state) { this.currentState = state;}
 
     @Nullable
     BluetoothAdapter getBluetoothAdapter() {return bluetoothAdapter;}
@@ -217,4 +228,5 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
         }
         return b;
     }
+
 }

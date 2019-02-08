@@ -88,9 +88,12 @@ public final class MbtClient {
      */
     @SuppressWarnings("unchecked")
     public void connectBluetooth(@NonNull ConnectionConfig config){
-        MbtConfig.scannableDevices = config.getDeviceType();
+        MbtConfig.setScannableDevices(config.getDeviceType());
+        MbtConfig.setBluetoothScanTimeout(config.getMaxScanDuration());
+        MbtConfig.setConnectAudioIfDeviceCompatible(config.useAudio());
+        MbtConfig.setNameOfDeviceRequested(config.getDeviceName());
+        MbtConfig.setBluetoothConnectionTimeout(config.getMaxConnectionDuration());
 
-        //MbtConfig.bluetoothConnectionTimeout = config.getConnectionTimeout();
         if(config.getMaxScanDuration() < MbtFeatures.MIN_SCAN_DURATION){
             config.getConnectionStateReceiver().onError(ConfigError.ERROR_INVALID_PARAMS,ConfigError.SCANNING_MINIMUM_DURATION);
             return;
@@ -101,10 +104,9 @@ public final class MbtClient {
             return;
         }
 
-        MbtConfig.bluetoothScanTimeout = config.getMaxScanDuration();
-        MbtConfig.connectAudioIfDeviceCompatible = config.isConnectAudio();
 
-        this.mbtManager.connectBluetooth(config.getDeviceName(), config.isConnectAudio(), config.getConnectionStateReceiver());
+
+        this.mbtManager.connectBluetooth(config.getConnectionStateReceiver());
     }
 
     /**
@@ -165,7 +167,7 @@ public final class MbtClient {
             streamConfig.getEegListener().onError(ConfigError.ERROR_INVALID_PARAMS, streamConfig.shouldComputeQualities() ?
                     ConfigError.NOTIFICATION_PERIOD_RANGE_QUALITIES : ConfigError.NOTIFICATION_PERIOD_RANGE);
         else
-            MbtConfig.eegBufferLengthClientNotif = (int)((streamConfig.getNotificationPeriod()* MbtFeatures.DEFAULT_SAMPLE_RATE)/1000);
+            MbtConfig.setEegBufferLengthClientNotif((int)((streamConfig.getNotificationPeriod()* MbtFeatures.DEFAULT_SAMPLE_RATE)/1000));
 
         mbtManager.startStream(streamConfig.shouldComputeQualities(), streamConfig.getEegListener(), streamConfig.getDeviceStatusListener());
     }

@@ -11,8 +11,6 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.WorkerThread;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
@@ -36,10 +34,9 @@ import core.BaseModuleManager;
 import core.MbtManager;
 import core.bluetooth.lowenergy.MbtBluetoothLE;
 import core.bluetooth.requests.BluetoothRequests;
+import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
 import core.bluetooth.requests.DisconnectRequestEvent;
 import core.bluetooth.requests.ReadRequestEvent;
-import core.bluetooth.requests.ScanAndConnectRequestEvent;
-import core.bluetooth.requests.ScanRequestEvent;
 import core.bluetooth.requests.StreamRequestEvent;
 import core.bluetooth.requests.UpdateConfigurationRequestEvent;
 import core.bluetooth.spp.MbtBluetoothSPP;
@@ -50,10 +47,7 @@ import core.device.model.MelomindDevice;
 import core.device.model.MelomindsQRDataBase;
 import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
-import engine.clientevents.BluetoothError;
 import engine.clientevents.ConnectionStateReceiver;
-import engine.clientevents.FirmwareError;
-import engine.clientevents.MobileDeviceError;
 import eventbus.EventBusManager;
 import eventbus.events.BluetoothEEGEvent;
 import eventbus.events.NewConnectionStateEvent;
@@ -61,6 +55,7 @@ import eventbus.events.DeviceInfoEvent;
 import features.MbtFeatures;
 import utils.AsyncUtils;
 import utils.BroadcastUtils;
+import utils.EnumUtils;
 import utils.FirmwareUtils;
 import utils.LogUtils;
 
@@ -98,10 +93,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     /**+**/private boolean isDownloadingFW = false;
 
     private Future<BluetoothDevice> futureScannedDevice;
-    private BluetoothDevice currentDevice;
     //private MbtDeviceAcquisition deviceAcquisition;
-
-    /**+**/private boolean useAudio = false;
 
     /**+**/private int backgroundReconnectionRetryCounter = 0;
 
@@ -116,7 +108,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             if(action != null){
                 final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 Log.d(TAG, " received intent " + action + " for device " + (device != null ? device.getName() : null));
-                if(useAudio && action.equals(BluetoothAdapter.ACTION_STATE_CHANGED))
+                if(MbtConfig.connectAudioIfDeviceCompatible() && action.equals(BluetoothAdapter.ACTION_STATE_CHANGED))
                     mbtBluetoothA2DP.resetA2dpProxy(intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1));
             }
         }
@@ -151,280 +143,311 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     }
 
     /**
-     * This method do the following operations:
-     * - First scan for {@link BluetoothDevice } filtering on deviceName. The scan is performed by LE scanner if possible
-     * and if the device is LE compatible. Otherwise, the discovery scan is performed instead.
-     * - Perform the connect operation if scan is successful.
-     * @param deviceName the device bluetooth name.
+     * Check the bluetooth prerequisites before starting any bluetooth operation.
+     *
      */
-    private void scanAndConnect(@Nullable String deviceName, boolean useAudio){
-        this.isConnectionInterrupted = false; // resetting the flag when starting a new connection
-        this.useAudio = useAudio;
+    private void getReadyForBluetoothOperation(){
+        //Request sent to the BUS in order to get device from the device manager : the BUS should return a null object if it's the first connection, or return a non null object if the user requests connection whereas a headset is already connected
+        requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
+            @Override
+            public void onRequestComplete(MbtDevice device) { //when the BUS has returned the device object
+                boolean isReadyForBluetoothAction = true;
 
-        if(isAlreadyConnected(deviceName))
-            return;
+                if(device != null && isAlreadyConnected(device)) // assert that headset is not already connected
+                    isReadyForBluetoothAction = false;
 
-        if(isBluetoothDisabled()) //check if Bluetooth is on
-            return;
+                if(isBluetoothDisabled()) //assert that Bluetooth is on
+                    isReadyForBluetoothAction = false;
 
-        if(isLocationDisabledOrNotGranted()) //check if location is enabled and permissions are granted
-            return;
+                if(!isLocationDisabledOrNotGranted()) //assert that Location is on and Location permissions are granted
+                    isReadyForBluetoothAction = false;
 
-        if(!scan(deviceName))//first step is scanning
-            return;
-
-        connect(currentDevice, (MelomindDevice.isMelomindRequested()) ? //second step is BLE (Melomind) /SPP (Vpro) connection to the found device
-                BLUETOOTH_LE : BLUETOOTH_SPP);
-
-    }
-
-    private boolean isReadyForBluetoothAction(String deviceName){
-        if(isAlreadyConnected(deviceName))
-            return false;
-
-        if(isBluetoothDisabled()) //check if Bluetooth is on
-            return false;
-
-        return !isLocationDisabledOrNotGranted();
-    }
-
-    private boolean startScan(String deviceName){
-        boolean deviceIsFound = true;
-        try {
-            futureScannedDevice = scanDeviceAsync(deviceName);
-            Log.i(TAG," future scanned device "+futureScannedDevice.toString());
-            currentDevice = futureScannedDevice.get(MbtConfig.getBluetoothScanTimeout(), TimeUnit.MILLISECONDS);
-
-            //todo following part in other method
-            Log.i(TAG," scanned device from future Name "+currentDevice.getName()+" | Address "+currentDevice.getAddress()+" | Bond state "+currentDevice.getBondState()+" | Type "+currentDevice.getType());
-        } catch (@NonNull InterruptedException | ExecutionException | TimeoutException | CancellationException e) {
-            LogUtils.i(TAG, "Exception raised during scanning : \n " + e.toString());
-        }finally {
-            stopCurrentScan();
-        }
-        if(currentDevice == null){
-            notifyConnectionStateChanged((isConnectionInterrupted ? BtState.SCAN_INTERRUPTED : BtState.SCAN_TIMEOUT), true);
-            deviceIsFound = false;
-        }else {
-            LogUtils.i(TAG, "scanned device is " + currentDevice.toString());
-            notifyConnectionStateChanged(BtState.DEVICE_FOUND, true);
-        }
-        return deviceIsFound;
-    }
-
-    private void startConnection(boolean useAudio){
-        this.useAudio = useAudio;
-        this.isConnectionInterrupted = false; // resetting the flag when starting a new connection
-
-        connect(currentDevice, (MelomindDevice.isMelomindRequested()) ? //second step is BLE (Melomind) /SPP (Vpro) connection to the found device
-                BLUETOOTH_LE : BLUETOOTH_SPP);
-    }
-
-    /**+**/
-    private boolean isBluetoothDisabled(){
-        boolean isBluetoothDisabled = false;
-        if(!BluetoothAdapter.getDefaultAdapter().isEnabled() && !this.mbtBluetoothLE.enableBluetoothOnDevice()){ //check if Bluetooth is on
-            notifyConnectionStateChanged(BtState.BLUETOOTH_DISABLED, true);
-            isBluetoothDisabled = true;
-        }
-        return isBluetoothDisabled;
-    }
-
-    /**+**/
-    private boolean isLocationDisabledOrNotGranted(){
-        boolean isLocationDisabledOrNotGranted = false;
-        if (MelomindDevice.isMelomindRequested()){
-            //Checking location permission
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && ContextCompat.checkSelfPermission(mContext,
-                    Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_DENIED
-                    && ContextCompat.checkSelfPermission(mContext,
-                    Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED){
-
-                notifyConnectionStateChanged(BtState.LOCATION_PERMISSION_NOT_GRANTED, true);
-                isLocationDisabledOrNotGranted = true;
+                if(isReadyForBluetoothAction && getCurrentState().equals(BtState.IDLE))
+                    updateConnectionState(); //current state is set to READY_FOR_BLUETOOTH_OPERATION
+                switchToNextConnectionStep();
             }
+        });
 
-            //Checking location activation
-            LocationManager manager = (LocationManager) mContext.getSystemService(Context.LOCATION_SERVICE);
-            if(manager != null && !manager.isProviderEnabled(LocationManager.GPS_PROVIDER) && mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS)){
-                notifyConnectionStateChanged(BtState.LOCATION_DISABLED, true);
-                isLocationDisabledOrNotGranted = true;
-            }
-        }else //VPro todo
-            notifyConnectionStateChanged(BtState.SCAN_FAILED,true);
-        return isLocationDisabledOrNotGranted;
+
     }
 
-    /**+**/
-    private boolean isAlreadyConnected(String deviceName){
-        boolean isAlreadyConnected = false;
-        if(isConnected()){
-            notifyConnectionStateChanged( isAlreadyConnectedToRequestedDevice(deviceName) ?
-                    BtState.CONNECTED_AND_READY : BtState.ANOTHER_DEVICE_CONNECTED, true);
-            isAlreadyConnected = true;
-        }
-        return isAlreadyConnected;
-    }
-
-    private boolean scan(String deviceName){
-        Log.i(TAG," start scan "+deviceName);
-        boolean deviceIsFound = true;
-        try {
-            futureScannedDevice = scanDeviceAsync(deviceName);
-            Log.i(TAG," future scanned device "+futureScannedDevice.toString());
-            currentDevice = futureScannedDevice.get(MbtConfig.getBluetoothScanTimeout(), TimeUnit.MILLISECONDS);
-            Log.i(TAG," scanned device from future Name "+currentDevice.getName()+" | Address "+currentDevice.getAddress()+" | Bond state "+currentDevice.getBondState()+" | Type "+currentDevice.getType());
-        } catch (@NonNull InterruptedException | ExecutionException | TimeoutException | CancellationException e) {
-            LogUtils.i(TAG, "Exception raised during scanning : \n " + e.toString());
-        }finally {
-            stopCurrentScan();
-        }
-        if(currentDevice == null){
-            notifyConnectionStateChanged((isConnectionInterrupted ? BtState.SCAN_INTERRUPTED : BtState.SCAN_TIMEOUT), true);
-            deviceIsFound = false;
-        }else {
-            LogUtils.i(TAG, "scanned device is " + currentDevice.toString());
-            notifyConnectionStateChanged(BtState.DEVICE_FOUND, true);
-        }
-        return deviceIsFound;
-    }
-
-    /**+**/private void bond(MbtDevice device){
-        if(new FirmwareUtils(device.getFirmwareVersion()).isFwValidForFeature(FirmwareUtils.FWFeature.BLE_BONDING)){ //bonding is not supported for firmware versions older than 1.7.1 so we consider than the connection process is completed
-            if(device.getBluetoothDevice().getType() == BluetoothDevice.DEVICE_TYPE_LE && device.getBluetoothDevice().getBondState() != BluetoothDevice.BOND_BONDED)
-                notifyConnectionStateChanged(BtState.BONDING, true);
-            //mbtBluetoothLE.triggerBonding();
-            Log.i(TAG, "external " + device.getExternalName());
-            device.setExternalName(MbtFeatures.MELOMIND_DEVICE_NAME); //todo remove
-            if (device.getExternalName() != null && device.getExternalName().equals(MbtFeatures.MELOMIND_DEVICE_NAME) //send the QR code found in the database if the headset do not know its own QR code
-                    && new FirmwareUtils(device.getFirmwareVersion()).isFwValidForFeature(FirmwareUtils.FWFeature.REGISTER_EXTERNAL_NAME)) {
-                Log.i(TAG, "Headset do not know its number : sending external name to device with id " + device.getSerialNumber());
-                try {
-                    Thread.sleep(1500);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                if (device.getSerialNumber() != null)
-                    mbtBluetoothLE.sendExternalName(new MelomindsQRDataBase(mContext, true, false).get(device.getSerialNumber().replace(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX,"")));
-            }
-            try {
-                Thread.sleep(300);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-
-        mbtBluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY, true);
-
-        if(isDownloadingFW)
-            isDownloadingFW = false;
-    }
-
-    private void connectAudio(MbtDevice device){
-        if(useAudio){
-            connectA2DP(currentDevice, new FirmwareUtils(device.getFirmwareVersion()).isFwValidForFeature(FirmwareUtils.FWFeature.BLE_BONDING));
-            Log.i(TAG, "Audio "+ (mbtBluetoothA2DP.isConnected() ? "is connected." : "has failed to connect."));
-        }
-    }
-
-    /**
-     * ConnectRequestEvent to a specific BluetoothDevice. This allows to skip the scanning part and jump directly to connection step.
-     * The method returns immediately if a connection interruption has been sent by the user
-     * @param device the Bluetooth device to connect to
-     * @return immediately the following : false if device is null, true if connection step has been started
-     */
-    private void connect(@NonNull BluetoothDevice device, BtProtocol bluetoothProtocol){
-        Log.i(TAG," connect device "+device+" protocol "+bluetoothProtocol);
-        boolean isConnectionSucces = false;
-        if(isConnectionInterrupted){
-            notifyConnectionStateChanged(BtState.CONNECTION_INTERRUPTED, true);
-            return;
-        }
-
-        switch (bluetoothProtocol){
-            case BLUETOOTH_LE:
-                isConnectionSucces = mbtBluetoothLE.connect(mContext, device);
-                break;
-            case BLUETOOTH_SPP:
-                isConnectionSucces = mbtBluetoothSPP.connect(mContext, device);
-                break;
-            case BLUETOOTH_A2DP:
-                isConnectionSucces = mbtBluetoothA2DP.connect(mContext, device); //never call if check on mbtfeatures.getbluetoothProtocol
-                break;
-        }
-        Log.i(TAG," is connection success "+isConnectionSucces);
-    }
-
-    public void reconnectIfAudioConnected(String device){
-        Log.i(TAG," reconnect if audio connected");
-        if(mbtBluetoothA2DP.isConnected() && ++backgroundReconnectionRetryCounter < 0 )
-            AsyncUtils.executeAsync(new Runnable() {
-                @Override
-                public void run() {
-                    if (device != null)
-                        connectBLEFromA2DP(device);
-                }
-            });
-        else{
-            backgroundReconnectionRetryCounter = 0; //reset counter
-            mbtBluetoothLE.notifyConnectionStateChanged(BtState.DISCONNECTED, true);
-        }
-    }
-
-    public void resetBackgroundReconnectionRetryCounter(){
-        Log.i(TAG," reset background reconnection counter");
-        backgroundReconnectionRetryCounter = 0;
+    private void switchToNextConnectionStep(){
+        requestBeingProcessed = false;
+        EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent());
     }
 
     /**
      * This method starts a bluetooth scan operation.
-     * if the device to scan is a melomind, the bluetooth LE scanner is invoked.
+     * if the device to scan is a melomind, the bluetooth LE scanner is invoked. Otherwise, the classic discovery scan is invoked.
      * <p>Requires {@link Manifest.permission#ACCESS_FINE_LOCATION} or {@link Manifest.permission#ACCESS_COARSE_LOCATION} permission
      * if a GPS sensor is available.
      *
      * If permissions are not given and/or bluetooth device is not Le compatible, discovery scan is started.
      */
-    //Lister les input:
-    // - Device Type / Bluetooth protocol
-    void scanDevices(/*, MbtScanCallback scanCallback*/){
-        //TODO choose method name accordingly between scan() / scanFor() / ...
+    private void startScan(){
+        try {
+            futureScannedDevice = startScanAsync();
+            futureScannedDevice.get(MbtConfig.getBluetoothScanTimeout(), TimeUnit.MILLISECONDS);
+        } catch (CancellationException | InterruptedException | ExecutionException | TimeoutException e) {
+            updateConnectionState((e instanceof TimeoutException ) ?
+                    BtState.SCAN_TIMEOUT : BtState.SCAN_FAILURE);
+            LogUtils.i(TAG, "Exception raised during scanning : \n " + e.toString());
+        } finally {
+            stopCurrentScan();
+        }
+        switchToNextConnectionStep();
+    }
 
-        //Check device type from config.deviceType
+    private void connect(BtProtocol protocol){
+        Log.i(TAG,"device to connect Name: "+getCurrentScannedDevice().getName()+ " | address: ");
+        boolean isConnectionSucces = false;
+        this.isConnectionInterrupted = false; // resetting the flag when starting a new connection
+        switch (protocol){
+            case BLUETOOTH_LE:
+                isConnectionSucces = mbtBluetoothLE.connect(mContext, getCurrentScannedDevice());
+                break;
+            case BLUETOOTH_SPP:
+                isConnectionSucces = mbtBluetoothSPP.connect(mContext, getCurrentScannedDevice());
+                break;
+            case BLUETOOTH_A2DP:
+                isConnectionSucces = mbtBluetoothA2DP.connect(mContext, getCurrentScannedDevice());
+                break;
+        }
+        Log.i(TAG," is connection success "+isConnectionSucces);
+    }
 
-        if (MelomindDevice.isMelomindRequested() && ContextCompat.checkSelfPermission(mContext,
-                Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(mContext,
-                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
-            mbtBluetoothLE.startLowEnergyScan(true, null); //TODO handle this
+    /**
+     * This connection step is the BLE (Melomind) /SPP (Vpro) connection to the found device
+     * It allows communication between the headset device and the SDK for data streaming (EEG, battery level, etc.)
+     **/
+    private void startConnectionForDataStreaming(){
+        connect(MelomindDevice.isMelomindRequested() ? BLUETOOTH_LE : BLUETOOTH_SPP);
+    }
 
-        else
-            mbtBluetoothLE.startScanDiscovery(MbtFeatures.getDeviceName());
+    /**
+     * Once a device is connected in Bluetooth Low Energy / SPP for data streaming, we consider that the Bluetooth connection process is not fully completed.
+     * The services offered by a remote device as well as their characteristics and descriptors are discovered to ensure that Data Streaming can be performed.
+     * It means that the Bluetooth Manager retrieve all the services, which can be seen as categories of data that the headset is transmitting
+     * This is an asynchronous operation.
+     * Once service discovery is completed, the BluetoothGattCallback.onServicesDiscovered callback is triggered.
+     * If the discovery was successful, the remote services can be retrieved using the getServices function
+     */
+    private void startDiscoveringServices(){
+        if(getCurrentState().ordinal() >= BtState.CONNECTION_SUCCESS.ordinal()){ //if connection is in progress and BLE is at least connected, we can discover services
+            Future futureDiscoveredServices = AsyncUtils.executeAsync(new Callable<Boolean>() {
+                @Override
+                public Boolean call() {
+                    Boolean servicesDiscovered = MbtBluetoothManager.this.mbtBluetoothLE.discoverServices();
+                    if(!servicesDiscovered)
+                        updateConnectionState(BtState.DISCOVERING_FAILURE);
+                    else if(getCurrentState().equals(BtState.CONNECTION_SUCCESS))
+                        updateConnectionState(); //current state is set to DISCOVERING_SERVICES
+                    return servicesDiscovered;
+                }
+            });
+            try {
+                if (futureDiscoveredServices != null)
+                    futureDiscoveredServices.get(MbtConfig.getBluetoothDiscoverTimeout(), TimeUnit.MILLISECONDS);
+
+            } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                e.printStackTrace();
+            }
+            switchToNextConnectionStep();
+        }else
+            updateConnectionState(BtState.DISCOVERING_FAILURE);
+    }
+
+    /**
+     * As headset transmits its sensed data to the SDK using Bluetooth,
+     * the mobile device Bluetooth must be currently enabled and ready for use.
+     * The Bluetooth Manager must always check this prerequisite before starting any connection operation by calling the isBluetoothDisabled() method.
+     * @return false is Bluetooth is ON /enabled,
+     * or true is Bluetooth is OFF / disabled.
+     **/
+    private boolean isBluetoothDisabled(){
+        boolean isBluetoothDisabled = false;
+        if(!BluetoothAdapter.getDefaultAdapter().isEnabled() && !this.mbtBluetoothLE.enableBluetoothOnDevice()){
+            updateConnectionState(BtState.BLUETOOTH_DISABLED);
+            isBluetoothDisabled = true;
+        }
+        return isBluetoothDisabled;
+    }
+
+    /**
+     * As the Bluetooth scan requires access to the mobile device Location,
+     * the Bluetooth Manager must always check this prerequisite before starting any connection operation by calling the isLocationDisabledOrNotGranted() method.
+     * @return false is Location is ON /enabled and Location permission is granted,
+     * or true is Location is OFF / disabled, and/or Location permission is not granted.
+     **/
+    private boolean isLocationDisabledOrNotGranted(){
+        boolean isLocationDisabledOrNotGranted = false;
+        //Checking location permission
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && ContextCompat.checkSelfPermission(mContext,
+                Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_DENIED
+                && ContextCompat.checkSelfPermission(mContext,
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED){
+
+            updateConnectionState(BtState.LOCATION_PERMISSION_NOT_GRANTED);
+            isLocationDisabledOrNotGranted = true;
+        }
+
+        //Checking location activation
+        LocationManager manager = (LocationManager) mContext.getSystemService(Context.LOCATION_SERVICE);
+        if(manager != null && !manager.isProviderEnabled(LocationManager.GPS_PROVIDER) && mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS)){
+            updateConnectionState(BtState.LOCATION_DISABLED);
+            isLocationDisabledOrNotGranted = true;
+        }
+        return isLocationDisabledOrNotGranted;
+    }
+
+    /**
+     * As the Bluetooth scan requires access to the mobile device Location,
+     * the Bluetooth Manager must always check this prerequisite before starting any connection operation by calling the isLocationDisabledOrNotGranted() method.
+     * @return true if a headset is already connected in BLE and Audio (if Audio has been enabled)
+     * or if no headset is connected.
+     **/
+    private boolean isAlreadyConnected(MbtDevice currentConnectedDevice){
+        boolean isAlreadyConnected = false;
+            if(isConnected()){
+                if(!isAlreadyConnectedToRequestedDevice(MbtConfig.getNameOfDeviceRequested(), currentConnectedDevice)) {
+                    updateConnectionState(BtState.ANOTHER_DEVICE_CONNECTED);
+                }else
+                    updateConnectionState(BtState.CONNECTED_AND_READY);
+                isAlreadyConnected = true;
+            }
+        return isAlreadyConnected;
+    }
+
+    /**+**/private void bond(){
+        requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
+            @Override
+            public void onRequestComplete(MbtDevice device) {
+                if(new FirmwareUtils(device.getFirmwareVersion()).isFwValidForFeature(FirmwareUtils.FWFeature.BLE_BONDING)){ //bonding is not supported for firmware versions older than 1.7.1 so we consider than the connection process is completed
+                    if(device.getBluetoothDevice().getType() == BluetoothDevice.DEVICE_TYPE_LE) { //LOW ENERGY BONDING ONLY
+                        updateConnectionState();
+                        mbtBluetoothLE.triggerBonding();
+                    }
+                    Log.i(TAG, "external " + device.getExternalName());
+                    device.setExternalName(MbtFeatures.MELOMIND_DEVICE_NAME); //todo remove
+                    if (device.getExternalName() != null && device.getExternalName().equals(MbtFeatures.MELOMIND_DEVICE_NAME) //send the QR code found in the database if the headset do not know its own QR code
+                            && new FirmwareUtils(device.getFirmwareVersion()).isFwValidForFeature(FirmwareUtils.FWFeature.REGISTER_EXTERNAL_NAME)) {
+                        Log.i(TAG, "Headset do not know its number : sending external name to device with id " + device.getSerialNumber());
+                        try {
+                            Thread.sleep(1500);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        if (device.getSerialNumber() != null)
+                            mbtBluetoothLE.sendExternalName(new MelomindsQRDataBase(mContext, true, false).get(device.getSerialNumber().replace(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX,"")));
+                    }
+                    try {
+                        Thread.sleep(300);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+//                mbtBluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY,  null);
+
+                if(isDownloadingFW)
+                    isDownloadingFW = false;
+            }
+        });
+    }
+
+    private void sendExternalName() {
+        requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
+            @Override
+            public void onRequestComplete(MbtDevice device) {
+                if (device.getExternalName() != null && device.getExternalName().equals(MbtFeatures.MELOMIND_DEVICE_NAME) //send the QR code found in the database if the headset do not know its own QR code
+                        && new FirmwareUtils(device.getFirmwareVersion()).isFwValidForFeature(FirmwareUtils.FWFeature.REGISTER_EXTERNAL_NAME)) {
+                    Log.i(TAG, "Headset do not know its number : sending external name to device with id " + device.getSerialNumber());
+                    try {
+                        Thread.sleep(1500);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    if (device.getSerialNumber() != null)
+                        mbtBluetoothLE.sendExternalName(new MelomindsQRDataBase(mContext, true, false).get(device.getSerialNumber().replace(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX, "")));
+                }
+            }
+        });
+
+    }
+
+    /**
+     *
+     */
+    private void startConnectionForAudioStreaming(){
+        if(MbtConfig.connectAudioIfDeviceCompatible()) {
+            requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
+                @Override
+                public void onRequestComplete(MbtDevice device) {
+                    boolean connectionFromBlePossible = new FirmwareUtils(device.getFirmwareVersion()).isFwValidForFeature(FirmwareUtils.FWFeature.BLE_BONDING);
+                    if(isBleConnected() && connectionFromBlePossible) { //A2DP cannot be connected from BLE if BLE connection state is not CONNECTED_AND_READY
+                        mbtBluetoothLE.connectA2DPFromBLE();
+                    }else
+                        connect(BLUETOOTH_A2DP);
+                    Log.i(TAG, "Audio " + (mbtBluetoothA2DP.isConnected() ? "is connected." : "has failed to connect."));
+
+                }
+            });
+        }
+    }
+
+    /**
+     * If BLE connection is lost and Audio is still connected, the Bluetooth manager try to reconnect it
+     * The method returns immediately if a connection interruption has been sent by the user
+     * @param deviceName the name of the Bluetooth device to connect to
+     * @return immediately the following : false if device is null, true if connection step has been started
+     */
+
+
+    public void reconnectIfAudioConnected(String deviceName){
+        Log.i(TAG," reconnect Bluetooth Low Energy if audio is connected");
+        if(deviceName == null)
+            return;
+        if(mbtBluetoothA2DP.isConnected() && ++backgroundReconnectionRetryCounter < 0 )
+            AsyncUtils.executeAsync(new Runnable() {
+                @Override
+                public void run() {
+                    connectBLEFromA2DP(deviceName);
+                }
+            });
+        else{
+            backgroundReconnectionRetryCounter = 0; //reset counter
+        }
+    }
+
+    void resetBackgroundReconnectionRetryCounter(){
+        Log.i(TAG," reset background reconnection counter");
+        backgroundReconnectionRetryCounter = 0;
     }
 
 
     /**
      * Start scanning a single device by filtering on its name. This method is asynchronous
-     * @param deviceName The broadcasting name of the device to scan
      * @return a {@link Future} object holding the {@link BluetoothDevice} instance of the device to scan.
      */
-    private Future<BluetoothDevice> scanDeviceAsync(@Nullable final String deviceName){ //todo check that
-        Log.i(TAG," scan device async "+deviceName);
+    private Future<BluetoothDevice> startScanAsync() {
+        Log.i(TAG, " scan device async " + MbtConfig.getNameOfDeviceRequested());
         return AsyncUtils.executeAsync(new Callable<BluetoothDevice>() {
-            @Nullable
             @Override
             public BluetoothDevice call() {
-                return (MbtFeatures.getBluetoothProtocol()== BLUETOOTH_LE) ?
-                            mbtBluetoothLE.startLowEnergyScan(true, deviceName) : mbtBluetoothSPP.startScanDiscovery(deviceName);
+                BluetoothDevice deviceFound = (MbtFeatures.useLowEnergyProtocol()) ?
+                        mbtBluetoothLE.startLowEnergyScan(true) : mbtBluetoothSPP.startScanDiscovery();
+                if(deviceFound == null)
+                    notifyConnectionStateChanged(BtState.SCAN_FAILURE); //todo check that it is not unuseful
+                return deviceFound;
             }
         });
     }
-
 
     /**
      * This method stops the currently running bluetooth scan, either Le scan or discovery scan
      */
     private void stopCurrentScan(){
         LogUtils.i(TAG, "stopping current scan");
-        if (MelomindDevice.isMelomindRequested() && ContextCompat.checkSelfPermission(mContext,
+        if (MbtConfig.isCurrentDeviceAMelomind() && ContextCompat.checkSelfPermission(mContext,
                 Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(mContext,
                 Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
             mbtBluetoothLE.stopLowEnergyScan(); //TODO handle this
@@ -524,7 +547,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * Initiates the acquisition of EEG data. This method chooses between the correct BtProtocol.
      * If there is already a streaming session in progress, nothing happens and the method returns silently.
      */
-    void startStream(boolean enableDeviceStatusMonitoring){
+    void startStreamOperation(boolean enableDeviceStatusMonitoring){
         if(!mbtBluetoothLE.isConnected()){
             notifyStreamStateChanged(IStreamable.StreamState.DISCONNECTED);
             return;
@@ -550,7 +573,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * Initiates the acquisition of EEG data from the correct BtProtocol
      * If there is no streaming session in progress, nothing happens and the method returns silently.
      */
-    void stopStream(){
+    void stopStreamOperation(){
         if(!mbtBluetoothLE.isStreaming())
             return;
 
@@ -624,7 +647,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private void disconnect(BtProtocol protocol) {
         switch(protocol){
             case BLUETOOTH_LE:
-                if(mbtBluetoothLE.getCurrentState().equals(BtState.CONNECTED_AND_READY))
+                if(isConnected())
                     this.mbtBluetoothLE.disconnect();
                 break;
             case BLUETOOTH_SPP:
@@ -644,30 +667,26 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private void cancelPendingConnection() {
         LogUtils.i(TAG, "cancelling pending connection");
         isConnectionInterrupted = true;
-        if(getCurrentState() == BtState.SCAN_STARTED){
-            //this.notifyConnectionStateChanged(BtState.SCAN_INTERRUPTED, true);
-            if(futureScannedDevice != null)
+        if(getCurrentState().equals(BtState.SCAN_STARTED)){
+            if(futureScannedDevice != null && !futureScannedDevice.isDone()) //if scanning is still in progress
                 futureScannedDevice.cancel(false);
-        }else if(getCurrentState() == BtState.CONNECTING || getCurrentState() == BtState.CONNECTED || getCurrentState() == BtState.DISCOVERING_SERVICES || getCurrentState() == BtState.READING_DEVICE_INFO || getCurrentState() == BtState.BONDING || getCurrentState() == BtState.SENDIND_QR_CODE || getCurrentState() == BtState.DISCONNECTED){
-            this.notifyConnectionStateChanged(BtState.CONNECTION_INTERRUPTED, true);
-            disconnect(MelomindDevice.isMelomindRequested() ? BtProtocol.BLUETOOTH_LE : BtProtocol.BLUETOOTH_SPP);
+        }else if(getCurrentState().equals(BtState.CONNECTING) || getCurrentState().equals(BtState.CONNECTION_SUCCESS) || getCurrentState().equals(BtState.DISCOVERING_SERVICES) || getCurrentState().isReadingDeviceInfoState() || getCurrentState().equals(BtState.BONDING) || getCurrentState().equals(BtState.SENDIND_QR_CODE) || getCurrentState().equals(BtState.DISCONNECTED)){
+            updateConnectionState(BtState.CONNECTION_INTERRUPTED);
+            disconnect(MbtConfig.isCurrentDeviceAMelomind() ? BtProtocol.BLUETOOTH_LE : BtProtocol.BLUETOOTH_SPP);
         }
     }
-
-
 
     /**
      * Gets current state according to bluetooth protocol value
      * @return
      */
     private BtState getCurrentState(){
-        if(MbtFeatures.getBluetoothProtocol() == BLUETOOTH_LE)
-            return mbtBluetoothLE.getCurrentState();
-
-        return mbtBluetoothSPP.getCurrentState();
+        return MbtFeatures.useLowEnergyProtocol() ? mbtBluetoothLE.currentState : mbtBluetoothSPP.currentState;
     }
 
-
+    private BluetoothDevice getCurrentScannedDevice(){
+        return (MbtFeatures.useLowEnergyProtocol()) ? mbtBluetoothLE.scannedDevice : mbtBluetoothSPP.scannedDevice;
+    }
 
     /**
      * Posts a BluetoothEEGEvent event to the bus so that MbtEEGManager can handle raw EEG data received
@@ -677,15 +696,12 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         EventBusManager.postEvent(new BluetoothEEGEvent(data)); //MbtEEGManager will convert data from raw packets to eeg values
     }
 
-
     /**
      * Unregister the MbtBluetoothManager class from the bus to avoid memory leak
      */
     void deinit(){
         EventBusManager.registerOrUnregister(false,this);
     }
-
-
 
     /**
      * Add the new {@link BluetoothRequests} to the handler thread that will execute tasks one after another
@@ -711,69 +727,23 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * that contains the new {@link BtState}
      * @param newState the new {@link BtState}
      */
-    public void notifyConnectionStateChanged(@NonNull BtState newState, boolean notifyUserClient) {
+    public void notifyConnectionStateChanged(@NonNull BtState newState) {
         Log.i(TAG, "new state = "+newState);
-        if(newState == BtState.CONNECTED_AND_READY || newState == BtState.DISCONNECTED || newState == BtState.SCAN_TIMEOUT || newState == BtState.BLUETOOTH_DISABLED || newState == BtState.INTERNAL_FAILURE
-                || newState == BtState.LOCATION_DISABLED || newState == BtState.LOCATION_PERMISSION_NOT_GRANTED || newState == BtState.SCAN_INTERRUPTED || newState == BtState.ANOTHER_DEVICE_CONNECTED){
-            requestBeingProcessed = false;
-        }
-        //This event is sent to device module if registered
-        if(newState == BtState.CONNECTED && currentDevice != null)
-            EventBusManager.postEvent(new DeviceEvents.NewBluetoothDeviceEvent(currentDevice));
-        else if (newState == BtState.DISCONNECTED || newState == BtState.CONNECTION_FAILURE || newState == BtState.CONNECTION_INTERRUPTED)
-            EventBusManager.postEvent(new DeviceEvents.NewBluetoothDeviceEvent(currentDevice = null));
-
-        //This event is sent to MbtManager for user notifications
-        if(notifyUserClient)
-            EventBusManager.postEvent(new NewConnectionStateEvent(newState, getConnectionError(newState)));
-    }
-
-    private BaseError getConnectionError(BtState newState) {
-        BaseError error = null;
-        switch (newState) {
-            case NO_BLUETOOTH:
-                error = BluetoothError.ERROR_NOT_SUPPORTED;
-                break;
-            case BLUETOOTH_DISABLED:
-                error = MobileDeviceError.ERROR_BLUETOOTH_DISABLED;
-                break;
-            case LOCATION_DISABLED:
-                error = MobileDeviceError.ERROR_GPS_DISABLED;
-                break;
-            case LOCATION_PERMISSION_NOT_GRANTED:
-                error = MobileDeviceError.ERROR_LOCATION_PERMISSION;
-                break;
-            case SCAN_FAILED_ALREADY_STARTED:
-                error = BluetoothError.ERROR_ALREADY_SCANNING;
-                break;
-            case SCAN_FAILED:
-                error = BluetoothError.ERROR_SCANNING_FAILED;
-                break;
-            case ANOTHER_DEVICE_CONNECTED:
-                error = BluetoothError.ERROR_ALREADY_CONNECTED_ANOTHER;
+        switch (newState){ //This event is sent to device module if registered
+            case DEVICE_FOUND:
+                EventBusManager.postEvent(new DeviceEvents.NewBluetoothDeviceScannedEvent(getCurrentScannedDevice()));
                 break;
             case SCAN_TIMEOUT:
-                error = BluetoothError.ERROR_SCANNING_TIMEOUT;
-                break;
+            case SCAN_FAILURE:
             case SCAN_INTERRUPTED:
-                error = BluetoothError.ERROR_SCANNING_INTERRUPTED;
-                break;
-            case CONNECTION_INTERRUPTED:
-                error = BluetoothError.ERROR_SCANNING_INTERRUPTED;
-                break;
+            case DISCONNECTED:
             case CONNECTION_FAILURE:
-            case DISCOVERING_FAILURE:
-            case READING_FAILURE:
-            case BONDING_FAILURE:
-                error = BluetoothError.ERROR_CONNECT_FAILED;
-                break;
-            case UPGRADE_FAILED:
-                error = FirmwareError.ERROR_FIRMWARE_UPGRADE_FAILED;
+            case CONNECTION_INTERRUPTED:
+                EventBusManager.postEvent(new DeviceEvents.NewBluetoothDeviceConnectedEvent(null));
                 break;
         }
-        return error;
+        EventBusManager.postEvent(new NewConnectionStateEvent(newState, newState.getAssociatedError()));//This event is sent to MbtManager for user notifications
     }
-
 
     /**
      * This method is called from Bluetooth classes and is meant to post an event to the main manager
@@ -785,15 +755,9 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         LogUtils.i(TAG, "post device info");
         requestBeingProcessed = false;
         EventBusManager.postEvent(new DeviceInfoEvent<String>(deviceInfo, deviceValue));
-        if(getCurrentState().equals(BtState.READING_DEVICE_INFO)) {
-            if(deviceInfo.equals(DeviceInfo.FW_VERSION)){
-                mbtBluetoothLE.readHwVersion();
-            }else if(deviceInfo.equals(DeviceInfo.HW_VERSION)){
-                mbtBluetoothLE.readSerialNumber();
-            }else if(deviceInfo.equals(DeviceInfo.SERIAL_NUMBER)){
-                mbtBluetoothLE.readModelNumber();
-            }else if(deviceInfo.equals(DeviceInfo.MODEL_NUMBER))
-                finalizeConnectionProcess();
+        if(getCurrentState().isReadingDeviceInfoState()){
+            updateConnectionState();
+            switchToNextConnectionStep(); //todo check is switch is called when received or at the end of startReadOperation method
         }
     }
 
@@ -803,8 +767,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             @Override
             public void onRequestComplete(MbtDevice headsetDevice) {
                 if(headsetDevice != null) {
-                    bond(headsetDevice);
-                    connectAudio(headsetDevice);
+                    bond();
+                    startConnectionForAudioStreaming();
                 }
             }
         });
@@ -819,7 +783,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         requestBeingProcessed = false;
         EventBusManager.postEvent(newStreamState);
     }
-
 
     public void notifyNewHeadsetStatus(BtProtocol protocol, @NonNull byte[] payload) {
         EventBusManager.postEvent(new DeviceEvents.RawDeviceMeasure(payload));
@@ -857,20 +820,20 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             while (requestBeingProcessed);
             LogUtils.i(TAG, "bluetooth execution thread is now free");
             requestBeingProcessed = true;
-            if (request instanceof ScanAndConnectRequestEvent) {
-                scanAndConnect(((ScanAndConnectRequestEvent) request).getName(), ((ScanAndConnectRequestEvent) request).connectAudioInA2DP());
+            if (request instanceof StartOrContinueConnectionRequestEvent) {
+                startOrContinueConnectionOperation();
             } else if (request instanceof ReadRequestEvent) {
-                performReadOperation(((ReadRequestEvent) request).getDeviceInfo());
+                startReadOperation(((ReadRequestEvent) request).getDeviceInfo());
             } else if (request instanceof DisconnectRequestEvent) {
                 if (((DisconnectRequestEvent) request).isInterrupted())
                     cancelPendingConnection();
                 else
-                    disconnect(MelomindDevice.isMelomindRequested() ? BtProtocol.BLUETOOTH_LE : BtProtocol.BLUETOOTH_SPP);
+                    disconnect(MbtConfig.isCurrentDeviceAMelomind() ? BtProtocol.BLUETOOTH_LE : BtProtocol.BLUETOOTH_SPP); //todo disconnect audio
             } else if (request instanceof StreamRequestEvent) {
                 if (((StreamRequestEvent) request).isStart())
-                    startStream(((StreamRequestEvent) request).shouldMonitorDeviceStatus());
+                    startStreamOperation(((StreamRequestEvent) request).shouldMonitorDeviceStatus());
                 else
-                    stopStream();
+                    stopStreamOperation();
             } else if (request instanceof UpdateConfigurationRequestEvent) {
                 configureHeadset(((UpdateConfigurationRequestEvent) request).getConfig());
             }
@@ -881,7 +844,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
          * is called to parse which read operation is to be executed according to the {@link DeviceInfo}.
          * @param deviceInfo the {@link DeviceInfo} info that determine which read to operation to execute.
          */
-        void performReadOperation(DeviceInfo deviceInfo) {
+        void startReadOperation(DeviceInfo deviceInfo) {
             switch(deviceInfo){
                 case BATTERY:
                     readBattery();
@@ -903,17 +866,106 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             }
         }
 
-        void followBluetoothProcess(BluetoothRequests request){
-            switch (mbtBluetoothLE.getCurrentState()){
+        /**
+         * This method do the following operations:
+         * - 1) Check the prerequisites to ensure that the connection can be performed
+         * - 2) Scan for {@link BluetoothDevice } filtering on deviceName. The scan is performed by LE scanner if possible
+         * and if the device is LE compatible. Otherwise, the discovery scan is performed instead.
+         * - Perform the connect operation if scan is successful.
+         */
+        void startOrContinueConnectionOperation(){
+            switch (getCurrentState()){
                 case IDLE:
-                    if(request instanceof ScanRequestEvent)
-                        startScan(((ScanRequestEvent) request).getName());
+                    getReadyForBluetoothOperation();
                     break;
-                case SCAN_STARTED:
+                case READY_FOR_BLUETOOTH_OPERATION:
+                    startScan();
+                    break;
+                case DEVICE_FOUND:
+                    startConnectionForDataStreaming();
+                    break;
+                case CONNECTING:
+                    //should never arrive here : the connection is in progress
+                    break;
+                case CONNECTION_SUCCESS:
+                    startDiscoveringServices();
+                    break;
+                case DISCOVERING_SUCCESS:
+                    startReadOperation(DeviceInfo.FW_VERSION); // read all device info (except battery) according to enum order : first firmware , second hardware, third serial number then model number
+                    break;
+                case READING_FIRMWARE_VERSION: //should not arrive here as there is no READING SUCCESS STATE, we consider that the READING_HARDWARE_VERSION state is launched only if the Firmware reading operation is a success
+                    break;
+                case READING_HARDWARE_VERSION: //equivalent to READING_FIRMWARE_VERSION_SUCCESS
+                    startReadOperation(DeviceInfo.HW_VERSION); // read all device info (except battery) according to enum order : first firmware , second hardware, third serial number then model number
+                    break;
+                case READING_SERIAL_NUMBER: //equivalent to READING_HARDWARE_VERSION_SUCCESS
+                    startReadOperation(DeviceInfo.SERIAL_NUMBER); // read all device info (except battery) according to enum order : first firmware , second hardware, third serial number then model number
+                    break;
+                case READING_MODEL_NUMBER: //equivalent to READING_SERIAL_NUMBER_SUCCESS
+                    startReadOperation(DeviceInfo.MODEL_NUMBER); // read all device info (except battery) according to enum order : first firmware , second hardware, third serial number then model number
+                    break;
+                case READING_SUCCESS: //equivalent to READING_MODEL_NUMBER_SUCCESS
+                    startBonding();
+                    break;
+                case BONDED:
+                    sendExternalName();
+                    break;
+                case QR_CODE_SENT:
+                    if(MbtConfig.connectAudioIfDeviceCompatible())
+                        startConnectionForAudioStreaming();
                     break;
             }
-
         }
+    }
+
+    private void startBonding() {
+        //bond();//todo
+        updateConnectionState();
+        switchToNextConnectionStep();
+
+    }
+
+    void requestCurrentConnectedDevice(final SimpleRequestCallback<MbtDevice> callback) {
+        EventBusManager.postEventWithCallback(new DeviceEvents.GetDeviceEvent(), new EventBusManager.Callback<DeviceEvents.PostDeviceEvent>(){
+            @Override
+            @Subscribe
+            public void onEventCallback(DeviceEvents.PostDeviceEvent device) {
+                Log.i(TAG," on request complete");
+                callback.onRequestComplete(device.getDevice());
+            }
+        });
+    }
+
+    /**
+     * Set the current bluetooth connection state to the value given in parameter
+     * and notify the bluetooth manager of this change.
+     * This method should be called if something went wrong during the connection process, as it stops the connection prccess.
+     * The updateConnectionState() method with no parameter should be call if nothing went wrong and user wants to continue the connection process
+     */
+    private void updateConnectionState(BtState state){
+        if(MbtConfig.isCurrentDeviceAMelomind())
+            mbtBluetoothLE.notifyConnectionStateChanged(state);
+        else
+            mbtBluetoothSPP.notifyConnectionStateChanged(state);
+    }
+    /**
+     * Set the current bluetooth connection state to the value of the next step in chronological order (according to enum order)
+     * and notify the bluetooth manager of this change.
+     * This method should be called if no error occured.
+     */
+    public void updateConnectionState(){
+        updateConnectionState(EnumUtils.getNextConnectionStep(getCurrentState()));
+    }
+
+    /**
+     * Return true if the user has requested connection with an already connected device, false otherwise
+     */
+    private boolean isAlreadyConnectedToRequestedDevice(String nameDeviceToConnect, MbtDevice deviceConnected){
+        return (nameDeviceToConnect != null && deviceConnected != null && deviceConnected.getBluetoothDevice().getName().equals(nameDeviceToConnect));
+    }
+
+    public boolean isDownloadingFW() {
+        return isDownloadingFW;
     }
 
     /**
@@ -938,82 +990,28 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * @return <code>true</code> if connected, <code>false</code> otherwise
      */
     public final boolean isConnected() {
-        return (useAudio ? (isBleConnected() && isAudioConnected()) : isBleConnected());
+        return (MbtConfig.connectAudioIfDeviceCompatible() ? (isBleConnected() && isAudioConnected()) : isBleConnected());
     }
 
-    // Raise events
-    void notifyStateChanged(final BtState newState, BtProtocol protocol) {
-        if(protocol.equals(BtProtocol.BLUETOOTH_LE)) {
-            this.mbtBluetoothLE.setCurrentState(newState);
-            notifyConnectionStateChanged(newState, true);
-        }else
-            this.mbtBluetoothA2DP.setCurrentState(newState);
-    }
+//    boolean disconnectA2DPFromBLE() {
+//        Log.i(TAG, " disconnect A2dp");
+//        if(!isBleConnected())
+//            return false;
+//        return mbtBluetoothLE.disconnectA2DPFromBLE();
+//    }
 
     /**
-     * Detects that a melomind is connected in A2DP, then starts a connection process to the BLE.
+     * Starts a Low Energy connection process if a Melomind is connected for Audio Streaming in A2DP.
      */
     synchronized void connectBLEFromA2DP(@NonNull String deviceName) {
         Log.i(TAG, "connect BLE from a2dp ");
-
-        if(deviceName == null)
-            return;
-
-        this.mbtBluetoothA2DP.notifyConnectionStateChanged(BtState.AUDIO_CONNECTED, false); //meaning one melomind is  already connected in A2DP.
-
-        String bleName = (deviceName.startsWith(MbtFeatures.A2DP_DEVICE_NAME_PREFIX_LEGACY) || deviceName.startsWith(MbtFeatures.A2DP_DEVICE_NAME_PREFIX)) ?
-                //audio_ prefix is replaced by a melo_ prefix
-                deviceName.replace(MbtFeatures.A2DP_DEVICE_NAME_PREFIX, MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX) :
-                //BLE name = melo_ with the QRcode digits
-            MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX + new MelomindsQRDataBase(mContext, true, true).get(deviceName);
-
-
-        Log.i(TAG, "associated BLE name is " + bleName);
-        //Disconnecting another melomind if already one connected in BLE
-        mbtBluetoothLE.disconnectHeadsetAlreadyConnected(deviceName, isBleConnected());
-
-        scanAndConnect(deviceName, MbtConfig.connectAudioIfDeviceCompatible);
-    }
-
-    void requestCurrentConnectedDevice(final SimpleRequestCallback<MbtDevice> callback) {
-        EventBusManager.postEventWithCallback(new DeviceEvents.GetDeviceEvent(), new EventBusManager.Callback<DeviceEvents.PostDeviceEvent>(){
-            @Override
-            @Subscribe
-            public void onEventCallback(DeviceEvents.PostDeviceEvent device) {
-                Log.i(TAG," on request complete");
-                callback.onRequestComplete(device.getDevice());
-            }
-        });
-    }
-
-    /**
-     * This methods aims at configuring the remote headset by adjusting a set of parameters.
-     * Small sleeps have been added in the method in order to make sure gatt is free.
-     */
-    @WorkerThread
-    private synchronized void connectA2DP(BluetoothDevice device, boolean connectFromBle){
-        Log.i(TAG," connect A2dp");
-        if(isBleConnected() && connectFromBle) { //A2DP cannot be connected from BLE if BLE connection state is not CONNECTED_AND_READY
-             this.mbtBluetoothLE.connectA2DPFromBLE();
-        }else if(device != null)
-            this.connect(device, BLUETOOTH_A2DP);
-    }
-
-    boolean disconnectA2DPFromBLE() {
-        Log.i(TAG, " disconnect A2dp");
-        if(!isBleConnected())
-            return false;
-        return mbtBluetoothLE.disconnectA2DPFromBLE();
-    }
-
-    /**
-     * Return true if the user has requested connection with an already connected device, false otherwise
-     */
-    private boolean isAlreadyConnectedToRequestedDevice(String deviceName){
-        return (deviceName != null && currentDevice != null && currentDevice.getName().equals(deviceName));
-    }
-
-    public boolean isDownloadingFW() {
-        return isDownloadingFW;
+        if(mbtBluetoothA2DP.isConnected()){
+            String bleName = (deviceName.startsWith(MbtFeatures.A2DP_DEVICE_NAME_PREFIX_LEGACY) || deviceName.startsWith(MbtFeatures.A2DP_DEVICE_NAME_PREFIX)) ?
+                    deviceName.replace(MbtFeatures.A2DP_DEVICE_NAME_PREFIX, MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX) : //audio_ prefix is replaced by a melo_ prefix
+                    MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX + new MelomindsQRDataBase(mContext, true, true).get(deviceName);//BLE name = melo_ with the QRcode digits
+            Log.i(TAG, "associated BLE name is " + bleName);
+            mbtBluetoothLE.disconnectHeadsetAlreadyConnected(deviceName); //Disconnect if another melomind if already connected in BLE
+            //todo manage connect by sending ConnectRequest
+        }
     }
 }

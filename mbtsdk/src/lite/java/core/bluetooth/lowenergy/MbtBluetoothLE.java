@@ -257,7 +257,7 @@ public final class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 //        if (deviceName != null) {
 //            LogUtils.i(TAG, "ENABLED NAME FILTER");
 //            final ScanFilter filterName = new ScanFilter.Builder()
-//                    .setDeviceName(deviceName)
+//                    .setNameOfDeviceRequested(deviceName)
 //                    .build();
 //
 //            mFilters.add(filterName);

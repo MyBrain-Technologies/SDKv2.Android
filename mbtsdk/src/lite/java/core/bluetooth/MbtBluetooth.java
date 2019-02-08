@@ -172,8 +172,6 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
 
     public BtState getCurrentState() { return currentState; }
 
-    public void setCurrentState(BtState state) { this.currentState=state;}
-
     @Nullable
     BluetoothAdapter getBluetoothAdapter() {return bluetoothAdapter;}
 

@@ -1,5 +1,6 @@
 package core.device;
 
+import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.util.Log;
@@ -28,7 +29,7 @@ public class MbtDeviceManager extends BaseModuleManager{
     private static final String TAG = MbtDeviceManager.class.getSimpleName();
     private BtProtocol protocol;
 
-    private MbtDevice mCurrentDevice;
+    private MbtDevice mCurrentConnectedDevice;
 
     public MbtDeviceManager(Context context, MbtManager mbtManagerController, BtProtocol protocol){
         super(context, mbtManagerController);
@@ -61,21 +62,27 @@ public class MbtDeviceManager extends BaseModuleManager{
     }
 
 
-    private MbtDevice getmCurrentDevice() {
-        return mCurrentDevice;
+    private MbtDevice getmCurrentConnectedDevice() {
+        return mCurrentConnectedDevice;
     }
 
-    private void setmCurrentDevice(MbtDevice mCurrentDevice) {
-        this.mCurrentDevice = mCurrentDevice;
+    private void setmCurrentConnectedDevice(MbtDevice mCurrentConnectedDevice) {
+        this.mCurrentConnectedDevice = mCurrentConnectedDevice;
     }
 
     @Subscribe
-    public void onNewDeviceConnected(DeviceEvents.NewBluetoothDeviceEvent deviceEvent){
-        LogUtils.d(TAG, "new device "+ (deviceEvent.getDevice() != null ? "connected" : "disconnected"));
+    public void onNewDeviceConnected(DeviceEvents.NewBluetoothDeviceScannedEvent deviceEvent) {
+        LogUtils.d(TAG, "new device "+ (deviceEvent.getDevice() != null ? "scanned" : " null"));
         if (MbtConfig.getScannableDevices() == ScannableDevices.MELOMIND)
-            setmCurrentDevice(deviceEvent.getDevice() != null ? new MelomindDevice(deviceEvent.getDevice()) : null);
+            setmCurrentConnectedDevice(deviceEvent.getDevice() != null ? new MelomindDevice(deviceEvent.getDevice()) : null);
         else if (MbtConfig.getScannableDevices() == ScannableDevices.VPRO)
-            setmCurrentDevice(deviceEvent.getDevice() != null ? new VProDevice(deviceEvent.getDevice()) : null);
+            setmCurrentConnectedDevice(deviceEvent.getDevice() != null ? new VProDevice(deviceEvent.getDevice()) : null);
+    }
+
+    @Subscribe
+    public void onNewDeviceConnected(DeviceEvents.NewBluetoothDeviceConnectedEvent deviceEvent){
+        LogUtils.d(TAG, "new device "+ (deviceEvent.getDevice() != null ? "connected" : "disconnected"));
+
     }
 
     /**
@@ -83,26 +90,26 @@ public class MbtDeviceManager extends BaseModuleManager{
      */
     @Subscribe(threadMode = ThreadMode.POSTING)
     public void onDeviceInfoEvent(DeviceInfoEvent event){
-        if(mCurrentDevice != null){
+        if(mCurrentConnectedDevice != null){
             switch(event.getInfotype()){
                 case BATTERY:
                     LogUtils.d(TAG, "received " + event.getInfo() + " for battery level");
                     break;
                 case FW_VERSION:
                     if(event.getInfo() != null)
-                        mCurrentDevice.setFirmwareVersion((String) event.getInfo());
+                        mCurrentConnectedDevice.setFirmwareVersion((String) event.getInfo());
                     break;
                 case HW_VERSION:
                     if(event.getInfo() != null)
-                        mCurrentDevice.setHardwareVersion((String) event.getInfo());
+                        mCurrentConnectedDevice.setHardwareVersion((String) event.getInfo());
                     break;
                 case SERIAL_NUMBER:
                     if(event.getInfo() != null)
-                        mCurrentDevice.setSerialNumber((String) event.getInfo());
+                        mCurrentConnectedDevice.setSerialNumber((String) event.getInfo());
                     break;
                 case MODEL_NUMBER:
                     if(event.getInfo() != null)
-                        mCurrentDevice.setExternalName((String) event.getInfo());
+                        mCurrentConnectedDevice.setExternalName((String) event.getInfo());
                     break;
             }
         }
@@ -112,15 +119,15 @@ public class MbtDeviceManager extends BaseModuleManager{
     @Subscribe
     public void onGetDevice(DeviceEvents.GetDeviceEvent event){
         Log.i(TAG," return current device to the BUS ");
-        EventBusManager.postEvent(new DeviceEvents.PostDeviceEvent(mCurrentDevice));
+        EventBusManager.postEvent(new DeviceEvents.PostDeviceEvent(mCurrentConnectedDevice));
     }
 
     private boolean isFirmwareVersionUpToDate(){
-        Log.i(TAG, "Current Firmware version is " + getmCurrentDevice().getFirmwareVersion());
+        Log.i(TAG, "Current Firmware version is " + getmCurrentConnectedDevice().getFirmwareVersion());
         //First, get fw version as number
-        String[] deviceFwVersion = getmCurrentDevice().getFirmwareVersion().split("\\.");
+        String[] deviceFwVersion = getmCurrentConnectedDevice().getFirmwareVersion().split("\\.");
 
-        if(deviceFwVersion.length < 3 || getmCurrentDevice().getFirmwareVersion().equals(MbtDevice.DEFAULT_FW_VERSION)){
+        if(deviceFwVersion.length < 3 || getmCurrentConnectedDevice().getFirmwareVersion().equals(MbtDevice.DEFAULT_FW_VERSION)){
             Log.e(TAG, "read firmware version is invalid: size < 3");
             return true;
         }

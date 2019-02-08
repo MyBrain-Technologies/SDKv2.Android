@@ -15,7 +15,7 @@ interface IScannable {
      * Start a classic discovery scan in order to find a bluetooth device
      * @param
      */
-    BluetoothDevice startScanDiscovery(String deviceName);
+    BluetoothDevice startScanDiscovery();
 
     /**
      * Disconnect from the peripheral device

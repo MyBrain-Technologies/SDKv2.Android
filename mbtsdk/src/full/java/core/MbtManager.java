@@ -1,6 +1,5 @@
 package core;
 
-import android.arch.core.BuildConfig;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -15,14 +14,13 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
+import config.MbtConfig;
 import core.bluetooth.BtState;
 import core.bluetooth.IStreamable;
-import core.bluetooth.requests.ConnectRequestEvent;
+import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
 import core.bluetooth.requests.DisconnectRequestEvent;
 import core.bluetooth.MbtBluetoothManager;
 import core.bluetooth.requests.ReadRequestEvent;
-import core.bluetooth.requests.ScanAndConnectRequestEvent;
-import core.bluetooth.requests.ScanRequestEvent;
 import core.bluetooth.requests.StreamRequestEvent;
 import core.device.DCOffsets;
 import core.device.DeviceEvents;
@@ -109,17 +107,16 @@ public class MbtManager{
 
     /**
      * Perform a new Bluetooth connection.
-     * @param name the device name to connect to. Might be null if not known by the user.
      * @param connectionStateReceiver a set of callback that will notify the user about connection progress.
      */
-    public void connectBluetooth(@Nullable String name, boolean connectAudioInA2DP, @NonNull ConnectionStateReceiver connectionStateReceiver){
-        if(name != null && (!name.startsWith(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX) && !name.startsWith(MbtFeatures.VPRO_DEVICE_NAME_PREFIX))){
+    public void connectBluetooth(@NonNull ConnectionStateReceiver connectionStateReceiver){
+        if(MbtConfig.getNameOfDeviceRequested() != null && (!MbtConfig.getNameOfDeviceRequested().startsWith(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX) && !MbtConfig.getNameOfDeviceRequested().startsWith(MbtFeatures.VPRO_DEVICE_NAME_PREFIX))){
             connectionStateReceiver.onError(HeadsetDeviceError.ERROR_PREFIX_NAME,null);
             return;
         }
 
         this.connectionStateReceiver = connectionStateReceiver;
-        EventBusManager.postEvent(new ScanAndConnectRequestEvent(name, connectAudioInA2DP));
+        EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent());
     }
 
     /**
@@ -230,7 +227,7 @@ public class MbtManager{
             return;
         Log.i(TAG, "New state received : "+connectionStateEvent.getNewState());
 
-        if(connectionStateEvent.getNewState().equals(BtState.CONNECTED_AND_READY) || connectionStateEvent.getNewState().equals(BtState.DISCONNECTED) || connectionStateEvent.getNewState().equals(BtState.AUDIO_DISCONNECTED)){
+        if(connectionStateEvent.getNewState().equals(BtState.CONNECTED_AND_READY) || connectionStateEvent.getNewState().equals(BtState.DISCONNECTED)){
             Intent connectionStateIntent = new Intent(MbtFeatures.INTENT_CONNECTION_STATE_CHANGED);
             connectionStateIntent.putExtra(MbtClient.MbtClientExtra.EXTRA_NEW_STATE,
                     connectionStateEvent.getNewState().equals(BtState.CONNECTED_AND_READY) ?

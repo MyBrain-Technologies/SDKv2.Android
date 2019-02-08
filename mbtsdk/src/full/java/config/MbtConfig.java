@@ -9,7 +9,7 @@ import features.ScannableDevices;
 @Keep
 public final class MbtConfig {
 
-    public static ScannableDevices scannableDevices = ScannableDevices.MELOMIND;
+    private static ScannableDevices scannableDevices = ScannableDevices.MELOMIND;
 
     private static int eegPacketLength = 250;
 
@@ -23,7 +23,7 @@ public final class MbtConfig {
      * so that the user can do what he wants with this new packets
      * (for example plot the values on a chart).
      */
-    public static int eegBufferLengthClientNotif = MbtFeatures.DEFAULT_EEG_PACKET_LENGTH; //number of MbtEEGPackets to store in the buffer before notifying the client
+    private static int eegBufferLengthClientNotif = MbtFeatures.DEFAULT_EEG_PACKET_LENGTH; //number of MbtEEGPackets to store in the buffer before notifying the client
 
     private static boolean batteryEventsLogsEnabled;
 
@@ -37,7 +37,9 @@ public final class MbtConfig {
 
     private static int bluetoothConnectionTimeout;
 
-    public static int bluetoothScanTimeout;
+    private static int bluetoothScanTimeout;
+
+    private static int bluetoothDiscoverTimeout = 10000;
 
     private static int bluetoothA2dpConnectionTimeout = 5000;
 
@@ -45,7 +47,9 @@ public final class MbtConfig {
 
     private static String serverURL;
 
-    public static boolean connectAudioIfDeviceCompatible;
+    private static boolean connectAudioIfDeviceCompatible = false;
+
+    private static String nameOfDeviceRequested = "";
 
     public static int getEegBufferLengthClientNotif() {
         return eegBufferLengthClientNotif;
@@ -83,6 +87,10 @@ public final class MbtConfig {
         return bluetoothScanTimeout;
     }
 
+    public static int getBluetoothDiscoverTimeout() {
+        return bluetoothDiscoverTimeout;
+    }
+
     public static int getBluetoothPairingTimeout() {
         return bluetoothPairingTimeout;
     }
@@ -103,13 +111,35 @@ public final class MbtConfig {
         return scannableDevices;
     }
 
+
+
     public static boolean connectAudioIfDeviceCompatible() {
         return connectAudioIfDeviceCompatible;
+    }
+    public static void setConnectAudioIfDeviceCompatible(boolean connectAudio) {
+         connectAudioIfDeviceCompatible = connectAudio;
+    }
+
+    public static String getNameOfDeviceRequested() {
+        return nameOfDeviceRequested;
     }
 
     public static int getBluetoothA2dpConnectionTimeout() {
         return bluetoothA2dpConnectionTimeout;
     }
+
+    public static void setEegBufferLengthClientNotif(int length) {
+        eegBufferLengthClientNotif = length;
+    }
+
+    public static void setBluetoothScanTimeout(int maxScanDuration) {
+        bluetoothScanTimeout = maxScanDuration;
+    }
+
+    public static void setBluetoothConnectionTimeout(int maxConnectionDuration) {
+        bluetoothConnectionTimeout = maxConnectionDuration;
+    }
+
 
     public static class MbtConfigBuilder {
 
@@ -140,6 +170,8 @@ public final class MbtConfig {
         private String serverURL;
 
         private boolean connectAudioIfDeviceCompatible;
+
+        private String deviceName;
 
         @NonNull
         public MbtConfigBuilder setEegPacketLength(final int eegPacketLength) {
@@ -228,6 +260,12 @@ public final class MbtConfig {
         }
 
         @NonNull
+        public MbtConfigBuilder setDeviceName(final String deviceName) {
+            this.deviceName = deviceName;
+            return this;
+        }
+
+        @NonNull
         public MbtConfig create() {
             return new MbtConfig(this);
         }
@@ -248,14 +286,28 @@ public final class MbtConfig {
         bluetoothPairingTimeout = builder.bluetoothPairingTimeout;
         serverURL = builder.serverURL;
         connectAudioIfDeviceCompatible = builder.connectAudioIfDeviceCompatible;
+        nameOfDeviceRequested = builder.deviceName;
     }
 
     public static void setScannableDevices(ScannableDevices scannableDevices) {
         MbtConfig.scannableDevices = scannableDevices;
     }
 
+    public static boolean isCurrentDeviceAMelomind() {
+        return scannableDevices.equals(ScannableDevices.MELOMIND);
+    }
+
+    public static boolean isCurrentDeviceAVpro() {
+        return scannableDevices.equals(ScannableDevices.VPRO);
+    }
+
     public static void setSamplePerNotification(int samplePerNotification) {
         MbtConfig.samplePerNotification = samplePerNotification;
     }
+
+    public static void setNameOfDeviceRequested(String nameOfDeviceRequested) {
+        MbtConfig.nameOfDeviceRequested = nameOfDeviceRequested;
+    }
+
 
 }

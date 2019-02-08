@@ -5,6 +5,12 @@ package core.device.model;
  */
 
 public enum DeviceInfo {
+
+    /**
+     * Corresponds to a device battery measure
+     */
+    BATTERY,
+
     /**
      * Corresponds to a call to firmware version value.
      */
@@ -21,12 +27,8 @@ public enum DeviceInfo {
     SERIAL_NUMBER,
 
     /**
-     * Corresponds to a device battery measure
-     */
-    BATTERY,
-
-    /**
      * Correspond to a call to model number value, which is supposed to contain the external identifier
      */
     MODEL_NUMBER
 }
+

@@ -52,4 +52,10 @@ public final class AsyncUtils {
         }
         return asyncResult;
     }
+
+    public static Future submitAsync(@Nullable final Runnable runnable){
+        if (runnable == null)
+            throw new IllegalArgumentException("callable MUST NOT be NULL");
+        return executor.submit(runnable);
+    }
 }

@@ -129,7 +129,7 @@ public class MbtBluetoothManagerTest {
     }
 
     @Test
-    public void notifyConnectionStateChanged() {
+    public void updateConnectionState() {
     }
 
     @Test

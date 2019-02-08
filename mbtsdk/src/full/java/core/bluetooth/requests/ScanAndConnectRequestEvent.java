@@ -5,18 +5,13 @@ package core.bluetooth.requests;
  */
 public class ScanAndConnectRequestEvent extends BluetoothRequests {
     private String name;
-    private boolean connectAudioInA2DP;
 
-    public ScanAndConnectRequestEvent(String name, boolean connectAudioInA2DP){
+    public ScanAndConnectRequestEvent(String name){
         this.name = name;
-        this.connectAudioInA2DP = connectAudioInA2DP;
     }
 
     public String getName(){
         return this.name;
     }
 
-    public boolean connectAudioInA2DP(){
-        return this.connectAudioInA2DP;
-    }
 }
