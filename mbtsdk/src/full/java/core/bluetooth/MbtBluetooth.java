@@ -13,9 +13,8 @@ import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import config.MbtConfig;
 import core.device.model.DeviceInfo;
@@ -23,9 +22,9 @@ import core.device.model.MelomindDevice;
 import core.oad.OADEvent;
 
 import utils.AsyncUtils;
-import utils.EnumUtils;
 import utils.LogUtils;
 import utils.MbtLock;
+import utils.MbtLockNew;
 
 /**
  *
@@ -47,8 +46,10 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
 
     protected final Context context;
 
-    protected final MbtLock<BluetoothDevice> scanLock = new MbtLock<>();
-    protected final MbtLock<Boolean> connectionLock = new MbtLock<>();
+    protected final MbtLockNew scanLock = new MbtLockNew();
+    protected final MbtLockNew<Boolean> connectDataLock = new MbtLockNew<>();
+    protected final MbtLockNew<Integer> connectAudioLock = new MbtLockNew<>();
+    protected final MbtLockNew<Boolean> bondLock = new MbtLockNew<>();
 
     protected BluetoothDevice scannedDevice;
 
@@ -69,16 +70,17 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
 
     @Nullable
     @Override
-    public BluetoothDevice startScanDiscovery() {
+    public boolean startScanDiscovery() {
+        boolean isScanStarted = false;
         if(bluetoothAdapter == null)
-            return null;
+            return isScanStarted;
 
         //Checking first if device is already paired.
         final Set<BluetoothDevice> bonded = this.bluetoothAdapter.getBondedDevices();
         if (bonded != null && !bonded.isEmpty()) {
             for (final BluetoothDevice device : bonded) {
                 if (MelomindDevice.isMelomindName(device) && device.getName().equals(MbtConfig.getNameOfDeviceRequested())) { // device found
-                    return device;
+                    return isScanStarted;
                 }
             }
         }
@@ -108,7 +110,7 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
                             LogUtils.i(TAG, "Device " + MbtConfig.getNameOfDeviceRequested() +" found. Cancelling discovery & connecting");
                             bluetoothAdapter.cancelDiscovery();
                             context.unregisterReceiver(this);
-                            scanLock.setResultAndNotify(device);
+                            scanLock.waitAndGetResult();
                         }
                         break;
                     case BluetoothAdapter.ACTION_DISCOVERY_FINISHED:
@@ -119,20 +121,19 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
 
             }
         }, filter);
-        boolean isScanStarted = bluetoothAdapter.startDiscovery();
-        BluetoothDevice deviceFound = null;
+        isScanStarted = bluetoothAdapter.startDiscovery();
         LogUtils.i(TAG, "Scan started.");
         if(isScanStarted && currentState.equals(BtState.READY_FOR_BLUETOOTH_OPERATION)){
             mbtBluetoothManager.updateConnectionState(); //current state is set to SCAN_STARTED
-            deviceFound = scanLock.waitAndGetResult();
+            scanLock.waitAndGetResult(MbtConfig.getBluetoothScanTimeout(), TimeUnit.MILLISECONDS);
         }
-        return deviceFound;
+        return isScanStarted;
     }
 
     @Override
     public void stopScanDiscovery() {
         if(scanLock != null && scanLock.isWaiting())
-            scanLock.setResultAndNotify(null);
+            scanLock.unlock();
 
         if(bluetoothAdapter != null && bluetoothAdapter.isDiscovering())
             bluetoothAdapter.cancelDiscovery();
@@ -160,13 +161,11 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
         mbtBluetoothManager.notifyConnectionStateChanged(newState);
     }
 
-    void notifyAudioIsConnected(BluetoothDevice device){
-        AsyncUtils.executeAsync(new Runnable() {
-            @Override
-            public void run() {
-                mbtBluetoothManager.connectBLEFromA2DP(device.getName());
-            }
-        });
+    public void notifyConnectionStateChanged(BtState newState, boolean notifyManager){
+        if(notifyManager)
+            notifyConnectionStateChanged(newState);
+        else
+            this.currentState = newState;
     }
 
     void notifyMailboxEvent(byte code, Object value){
@@ -176,6 +175,10 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
     }
 
     public void notifyBatteryReceived(int value){
+        if(currentState.equals(BtState.BONDING)){
+            if(bondLock.isWaiting())
+                bondLock.unlock();
+        }
         mbtBluetoothManager.notifyDeviceInfoReceived(DeviceInfo.BATTERY, String.valueOf(value));
     }
 

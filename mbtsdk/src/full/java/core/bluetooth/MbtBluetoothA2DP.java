@@ -267,8 +267,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
 
     @Override
     public boolean isConnected() {
-        //TODO
-        return false;
+        return currentState.equals(BtState.CONNECTED_AND_READY);
     }
 
     void resetA2dpProxy(int state) {
@@ -370,7 +369,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                         if((device.getName().startsWith(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX) || device.getName().startsWith(MbtFeatures.A2DP_DEVICE_NAME_PREFIX))
                         || (device.getName().startsWith(MelomindsQRDataBase.QR_PREFIX) && device.getName().length() == MelomindsQRDataBase.QR_LENGTH)
                         && hasA2DPDeviceConnected())
-                            notifyAudioIsConnected(device);
+                            mbtBluetoothManager.connectBLEFromA2DP(device.getName());
                     }else{
                         //Here, either the A2DP connection has dropped or a new A2DP device is connecting.
                         notifyConnectionStateChanged(BtState.DISCONNECTED);

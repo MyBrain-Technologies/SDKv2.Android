@@ -1,27 +1,19 @@
 package core.bluetooth.lowenergy;
 
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.content.Context;
-import android.content.Intent;
-import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
-import org.apache.commons.lang.ArrayUtils;
 
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -29,16 +21,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import config.AmpGainConfig;
+import config.MbtConfig;
 import core.bluetooth.BtState;
 import core.device.MbtDeviceManager;
 import core.device.model.DeviceInfo;
 import core.eeg.acquisition.MbtDataConversion;
-import engine.clientevents.BaseError;
-import engine.clientevents.ConnectionStateReceiver;
 import utils.AsyncUtils;
-import utils.BroadcastUtils;
 import utils.LogUtils;
-import utils.MbtLock;
+import utils.MbtLockNew;
 
 import static core.bluetooth.lowenergy.MelomindCharacteristics.CHARAC_HEADSET_STATUS;
 import static core.bluetooth.lowenergy.MelomindCharacteristics.CHARAC_INFO_FIRMWARE_VERSION;
@@ -87,48 +77,14 @@ final class MbtGattController extends BluetoothGattCallback {
     @Nullable
     private BluetoothGattCharacteristic modelNumber = null;
 
-
     private final MbtBluetoothLE bluetoothController;
-//
-//    private final MbtLock<Integer> connectA2DPLock = new MbtLock<>();
-//    private final MbtLock<Integer> disconnectA2DPLock = new MbtLock<>();
-//    private final MbtLock<Boolean> bondLock = new MbtLock<>();
-//    private final MbtLock<Integer> p300activationLock = new MbtLock<>();
-//    private final MbtLock<Byte[]> eegConfigRetrievalLock = new MbtLock<>();
-//    private final MbtLock<String> ampGainNotificationLock = new MbtLock<>();
-//    private final MbtLock<String> writeExternalNameLock = new MbtLock<>();
 
-    private ConnectionStateReceiver receiver = new ConnectionStateReceiver() {
-        @Override
-        public void onError(BaseError error, String additionnalInfo) { }
+    private MbtLockNew<String> writeExternalNameLock = new MbtLockNew<>();
 
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if(action != null){
-                final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                Log.d(TAG, "received intent " + action + " for device " + (device != null ? device.getName() : null));
-                if (action.equals(BluetoothDevice.ACTION_BOND_STATE_CHANGED))
-                    if(intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE,0) == BluetoothDevice.BOND_BONDED){
-                        Log.d(TAG, "Bonded");
-                        new Handler().postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                //if(bondLock.isWaiting()) // it means that this is a BLE bonding
-                                    //bondLock.setResultAndNotify(true);
-                            }
-                        },1000);
-                    }
-            }
-        }
-    };
 
     MbtGattController(Context context, MbtBluetoothLE bluetoothController) {
         super();
         this.bluetoothController = bluetoothController;
-        BroadcastUtils.registerReceiverIntents(context, new ArrayList<>(Arrays.asList(
-                BluetoothDevice.ACTION_BOND_STATE_CHANGED)),
-                receiver);
     }
 
     @Override
@@ -262,10 +218,10 @@ final class MbtGattController extends BluetoothGattCallback {
 
     /**
      * Callback triggered when gatt.readCharacteristic is called and no failure occured
-     * @param gatt
-     * @param characteristic
-     * @param status
-     */
+     * @param gatt GATT client invoked {@link BluetoothGatt#readCharacteristic}
+     * @param characteristic Characteristic that was read from the associated remote device.
+     * @param status {@link BluetoothGatt#GATT_SUCCESS} if the read operation was completed successfully.
+     * */
     @Override
     public void onCharacteristicRead(BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, int status) {
         super.onCharacteristicRead(gatt, characteristic, status);
@@ -287,9 +243,6 @@ final class MbtGattController extends BluetoothGattCallback {
         }
 
         if (characteristic.getUuid().compareTo(CHARAC_MEASUREMENT_BATTERY_LEVEL) == 0) {
-            //if(bondLock.isWaiting() && status == 0) //ie SUCCESS so no bonding in progress
-                //bondLock.setResultAndNotify(false);
-
             if (characteristic.getValue()!= null){
                 if (characteristic.getValue().length < 4) {
                     final StringBuffer sb = new StringBuffer();
@@ -319,8 +272,8 @@ final class MbtGattController extends BluetoothGattCallback {
     public void onCharacteristicWrite(BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, int status) {
         super.onCharacteristicWrite(gatt, characteristic, status);
 
-        if(status !=0 ){
-            LogUtils.e(TAG, "error writing characteristic nb : " + status);
+        if(status != BluetoothGatt.GATT_SUCCESS ){
+            LogUtils.e(TAG, "error writing characteristic status code is : " + status);
         }else{
             if(characteristic.getUuid().compareTo(this.oadPacketsCharac.getUuid()) == 0){
                 /*if(oadFileManager.getmProgInfo().iBlocks == oadFileManager.getmProgInfo().nBlocks){ //TODO
@@ -435,27 +388,6 @@ final class MbtGattController extends BluetoothGattCallback {
 //        return res == null ? MailboxEvents.CMD_CODE_CONNECT_IN_A2DP_FAILED_TIMEOUT : res;
 //    }
 
-    void requestDeviceInformations(DeviceInfo deviceinfo) {
-        Log.i(TAG, "request device info ");
-        boolean readingOperationSucceeded = false;
-        switch(deviceinfo){
-            case FW_VERSION:
-                readingOperationSucceeded = this.bluetoothController.readFwVersion();
-                break;
-            case HW_VERSION:
-                readingOperationSucceeded =this.bluetoothController.readHwVersion();
-                break;
-            case SERIAL_NUMBER:
-                readingOperationSucceeded =this.bluetoothController.readSerialNumber();
-                break;
-            case MODEL_NUMBER:
-                readingOperationSucceeded =this.bluetoothController.readModelNumber();
-                break;
-        }
-        if(!readingOperationSucceeded)
-            this.bluetoothController.disconnect();
-    }
-
     void notifyMailboxEventReceived(BluetoothGattCharacteristic characteristic) {
         switch(characteristic.getValue()[0]){
             case MailboxEvents.MBX_SET_ADS_CONFIG:
@@ -470,8 +402,8 @@ final class MbtGattController extends BluetoothGattCallback {
                 for (int i = 1; i < characteristic.getValue().length; i++){
                     buf.put(characteristic.getValue()[i]);
                 }
-                //if(this.writeExternalNameLock.isWaiting())
-                    //this.writeExternalNameLock.setResultAndNotify(characteristic.getStringValue(1));
+                if(this.writeExternalNameLock.isWaiting())
+                    this.writeExternalNameLock.setResultAndNotify(characteristic.getStringValue(1));
                 break;
 
             case MailboxEvents.MBX_START_OTA_TXF:
@@ -557,8 +489,8 @@ final class MbtGattController extends BluetoothGattCallback {
 
             case MailboxEvents.MBX_CONNECT_IN_A2DP:
                 Log.i(TAG, "received A2DP connection code " + (int)(characteristic.getValue()[1]));
-                //if(connectA2DPLock.isWaiting() && ((characteristic.getValue()[1] & MailboxEvents.CMD_CODE_CONNECT_IN_A2DP_IN_PROGRESS) != 0x01))
-                //    connectA2DPLock.setResultAndNotify((int)(characteristic.getValue()[1]));
+                if((characteristic.getValue()[1] & MailboxEvents.CMD_CODE_CONNECT_IN_A2DP_IN_PROGRESS) != 0x01)
+                    bluetoothController.notifyAudioConnectionStateChanged(characteristic.getValue()[1]);
                 break;
 
             case MailboxEvents.MBX_DISCONNECT_IN_A2DP:
@@ -587,8 +519,7 @@ final class MbtGattController extends BluetoothGattCallback {
 
         byte[] buf = nameToBytes.array();
 
-        //Send buffer
-        this.mailBox.setValue(buf);
+        this.mailBox.setValue(buf);//Send buffer
         if (!this.bluetoothController.gatt.writeCharacteristic(this.mailBox)) {
             Log.e(TAG, "Error: failed to send external name update");
             return false;
@@ -596,25 +527,28 @@ final class MbtGattController extends BluetoothGattCallback {
         Log.i(TAG, "Success sending external name update");
 
         try {
-            Future<String> futureNameReceivedFromHeadset = AsyncUtils.executeAsync(new Callable<String>() {
-                @Override
-                public String call() {
-                    return /*writeExternalNameLock.waitAndGetResult()*/null; //todo
-                }
-            });
-            if (futureNameReceivedFromHeadset != null) {
-                nameReceivedFromHeadset = futureNameReceivedFromHeadset.get(3000, TimeUnit.MILLISECONDS);
-                Log.i(TAG, "External name update completed. Expected name after update: " + externalName + "| Actual name stored by the headset: "+ nameReceivedFromHeadset);
-            }else {
-                Log.e(TAG, "Error: failed to receive the confirmation of External name update within the allocated 3 second " +
-                        "or fetched value was invalid !");
-                return false;
-            }
-
+            Future<String> futureNameReceivedFromHeadset = sendExternalNameAsync();
+            nameReceivedFromHeadset = futureNameReceivedFromHeadset.get(MbtConfig.getBluetoothSendingExternalNameTimeout(), TimeUnit.MILLISECONDS);
+            Log.i(TAG, "External name update completed. Expected name after update: " + externalName + "| Actual name stored by the headset: "+ nameReceivedFromHeadset);
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            e.printStackTrace();
+            Log.i(TAG, "External name sending has " + (e instanceof  TimeoutException ? "timed out" : "failed")); //errors are not reported
+        } finally {
+            stopSendingExternalName();
         }
+        return nameReceivedFromHeadset.equals(externalName); //check is the headset has well stored its QR code value after the update
+    }
 
-        return nameReceivedFromHeadset.equals(externalName);
+    private Future<String> sendExternalNameAsync(){
+        return AsyncUtils.executeAsync(new Callable<String>() {
+            @Override
+            public String call() {
+                return writeExternalNameLock.waitAndGetResult(MbtConfig.getBluetoothSendingExternalNameTimeout(), TimeUnit.MILLISECONDS);
+            }
+        });
+    }
+
+    private void stopSendingExternalName(){
+        if(writeExternalNameLock != null && writeExternalNameLock.isWaiting())
+            writeExternalNameLock.unlock();
     }
 }

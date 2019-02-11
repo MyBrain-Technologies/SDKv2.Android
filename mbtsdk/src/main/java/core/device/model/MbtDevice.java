@@ -24,7 +24,7 @@ public abstract class MbtDevice {
     @Nullable
     String firmwareVersion;
     @Nullable
-    String serialNumber;
+    String deviceId;
     @Nullable
     String externalName;
 
@@ -75,8 +75,8 @@ public abstract class MbtDevice {
      * @return the device unique ID
      */
     @Nullable
-    public String getSerialNumber() {
-        return this.serialNumber;
+    public String getDeviceId() {
+        return this.deviceId;
     }
 
     /**
@@ -114,7 +114,7 @@ public abstract class MbtDevice {
 
     public void setFirmwareVersion(@NonNull final String firmwareVersion) {this.firmwareVersion = firmwareVersion;}
 
-    public void setSerialNumber(@NonNull final String serialNumber) {this.serialNumber = serialNumber;}
+    public void setDeviceId(@NonNull final String deviceId) {this.deviceId = deviceId;}
 
     public void setProductName(@NonNull final String productName){
         this.productName = productName;
@@ -202,7 +202,7 @@ public abstract class MbtDevice {
                 "productName='" + productName + '\'' +
                 ", hardwareVersion='" + hardwareVersion + '\'' +
                 ", firmwareVersion='" + firmwareVersion + '\'' +
-                ", serialNumber='" + serialNumber + '\'' +
+                ", deviceId='" + deviceId + '\'' +
                 ", externalName='" + externalName + '\'' +
                 ", deviceAddress='" + deviceAddress + '\'' +
                 ", sampRate=" + sampRate +

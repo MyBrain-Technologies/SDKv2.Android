@@ -13,7 +13,7 @@ public class BroadcastUtils {
      * @param context
      * @param actions
      */
-    /**+**/public static void registerReceiverIntents(Context context, ArrayList<String> actions, BroadcastReceiver receiver){
+    public static void registerReceiverIntents(Context context, ArrayList<String> actions, BroadcastReceiver receiver){
         for (String action : actions){
             IntentFilter intentFilter = new IntentFilter(action);
             context.registerReceiver(receiver, intentFilter);

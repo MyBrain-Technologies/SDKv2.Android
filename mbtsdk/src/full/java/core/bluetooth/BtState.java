@@ -4,10 +4,11 @@ import android.support.annotation.Keep;
 import android.support.annotation.Nullable;
 
 import engine.clientevents.BaseError;
+import engine.clientevents.BasicError;
 import engine.clientevents.BluetoothError;
+import engine.clientevents.EegError;
 import engine.clientevents.FirmwareError;
 import engine.clientevents.MobileDeviceError;
-import utils.EnumUtils;
 
 /**
  * The Bluetooth current state describes the state of connection between a headset device and a mobile device.
@@ -29,65 +30,65 @@ public enum BtState {
      * For example, he is awaiting for the user to call the connect method.
      * The IDLE state is automatically returned few minutes after the DISCONNECTED state is returned (= after disconnection or lost connection or failure during the connection process).
      */
-    IDLE(0),
+    IDLE(),
 
     /**
      * All the prerequisites are ok to start a bluetooth connection operation (device is not already connected, bluetooth is enabled, location is enabled & location permission is granted)
      */
-    READY_FOR_BLUETOOTH_OPERATION(1),
+    READY_FOR_BLUETOOTH_OPERATION(),
 
     /**
      * In case all the connection prerequisites are valid, a scanning has just started to look for an available headset using the LE scan discovery.
      * The Low Energy Scanner is used first, as it is more efficient than the classical Bluetooth discovery Scanner.
      * A specific headset can be targeted if the user specify a headset name when he call the connect method.
      */
-    SCAN_STARTED(2),
+    SCAN_STARTED(),
 
     /**
      * Used to notify user when a device has been found during scanning. The device can be a specific
      * one if the user specified one, or the first device scanned if no device has been specified.
      */
-    DEVICE_FOUND(3),
+    DEVICE_FOUND(),
 
     /**
      * Currently attempting to connect to a Bluetooth remote endpoint
      */
-    CONNECTING(4),
+    CONNECTING(),
 
     /**
      * Successfully connected in BLE or SPP
      */
-    CONNECTION_SUCCESS(5),
+    CONNECTION_SUCCESS(),
 
     /**
      *  Retrieving the services and characteristics (list of data where a value is associated to a name) that the connected headset deliver.
      *  This operation is included in the connection process to ensure that a communication has well been established between the headset and the mobile device.
      *  (If the communication has not been established, the data sent by the headset cannot be retrieved by the SDK, so we consider that the connection is not valid)
      */
-    DISCOVERING_SERVICES(6),
+    DISCOVERING_SERVICES(),
 
     /**
      * Successfully received the services delivered by the connected headset.
      */
-    DISCOVERING_SUCCESS(7),
+    DISCOVERING_SUCCESS(),
 
     /**
      * Getting the headset device informations such as the Serial number, the Firmware or the Hardware version by reading the values returned by the characteristics discovery.
      * This operation is included in the connection process to ensure that the received characteristics can be read (and contains values / are not empty ?) by the SDK.
      * (If the communication is established, but no data (empty data ?) is sent by the headset, we consider that the connection is not valid)
      */
-     READING_FIRMWARE_VERSION(8),
+     READING_FIRMWARE_VERSION(),
 
-     READING_HARDWARE_VERSION(9),
+     READING_HARDWARE_VERSION(),
 
-     READING_SERIAL_NUMBER(10),
+     READING_SERIAL_NUMBER(),
 
-     READING_MODEL_NUMBER(11),
+     READING_MODEL_NUMBER(),
 
     /**
      * Succes to get all the device informations (Serial number, Firmware version, Hardware version, Model number).
      */
-    READING_SUCCESS(12),
+    READING_SUCCESS(),
 
     /**
      * Exchanging and storing of the long term keys for the next times a connection is initiated.
@@ -95,57 +96,86 @@ public enum BtState {
      * Headsets whose firmware version are lower than 1.7.0 can not handle this operation so the bonding step is just skipped.
      * We consider that the headset is connected and ready to acquire data after the Device Info reading operation has returned values (= has not failed).
      */
-    BONDING(13),
+    BONDING(),
 
 
     /**
      * Successfully completed bonding operation
      */
-    BONDED(14),
+    BONDED(),
 
     /**
      * Sending the QR Code as an external name to the headset
      */
 
-    SENDIND_QR_CODE(14),
+    SENDIND_QR_CODE(),
 
     /**
      * Succesfully QR Code sending operation
      */
-    QR_CODE_SENT(15),
+    QR_CODE_SENT(),
 
     /**
      * Successfully connected and ready to use. This state is used when communication is finally possible,
      * For example, we consider that a Melomind headset is usable for streaming if services are discovered, device info have been read, headset is bonded and QR code has been sent if necesseray
      */
-    CONNECTED_AND_READY(EnumUtils.LAST_ORDER_BLUETOOTH_STATE),
+    CONNECTED_AND_READY(),
+
+
+    /// FROM THIS STATE, THE CONNECTION PROCESS IS CONSIDERED COMPLETED : THE FOLLOWING STATES DEALS WITH OTHERS BLUETOOTH OPERATIONS
+
+    /**
+     * Replacing the current firmware installed by installing a different version of the firmware (should be the last firmware version, but it can also be an downgrading to an old version).
+     * This operation requires a connected headset to be performed. Once the upgrade is done, a disconnection is performed to reboot the system.
+     */
+    UPGRADING(),
+
+    /**
+     * Failed to replace the current firmware installed with a new one. This failure trigger a disconnection.
+     */
+    UPGRADING_FAILURE(FirmwareError.ERROR_FIRMWARE_UPGRADE_FAILED),
+
+    /**
+     * When connection is being disconnected
+     */
+    DISCONNECTING(),
+
+    /**
+     * When connection was lost
+     */
+    DISCONNECTED(),
+
+
+    /// FROM THIS STATE, THE CONNECTION PROCESS IS CONSIDERED COMPLETED : THE FOLLOWING STATES ARE ERRORS THAT CAN OCCUR DURING A BLUETOOTH OPERATION
+
+
     /**
      * Bluetooth is available on device but not enabled (turned on).
      */
-    BLUETOOTH_DISABLED(EnumUtils.NONE_ORDER_ENUM, MobileDeviceError.ERROR_BLUETOOTH_DISABLED),
+    BLUETOOTH_DISABLED(MobileDeviceError.ERROR_BLUETOOTH_DISABLED),
     /**
      * Should not occur (see Android Manifest <code>uses-feature android:name="android.hardware.bluetooth_le" android:required="true"</code>.
      * <p>The device does not have a Bluetooth interface or does not support Bluetooth Low Ebergy</p>
      *
      */
-    NO_BLUETOOTH(EnumUtils.NONE_ORDER_ENUM, BluetoothError.ERROR_NOT_SUPPORTED),
+    NO_BLUETOOTH(BluetoothError.ERROR_NOT_SUPPORTED),
 
     /**
      * When something went wrong but is not necessarily related to Android itself
      */
-    INTERNAL_FAILURE(EnumUtils.NONE_ORDER_ENUM),
+    INTERNAL_FAILURE(BasicError.ERROR_UNKNOWN),
 
     /**
      *  Location is required in order to start the LE scan. GPS is disabled
      */
-    LOCATION_DISABLED(EnumUtils.NONE_ORDER_ENUM, MobileDeviceError.ERROR_GPS_DISABLED),
+    LOCATION_DISABLED(MobileDeviceError.ERROR_GPS_DISABLED),
 
     /**
      *  Location is required in order to start the LE scan. Location may or may not be enabled, the user forgot
      *  to grant permissions to access FINE or COARSE location
      *  <p><strong>Note:</strong> this is needed only in Android M and next.</p>
      */
-    LOCATION_PERMISSION_NOT_GRANTED(EnumUtils.NONE_ORDER_ENUM, MobileDeviceError.ERROR_LOCATION_PERMISSION),
+    LOCATION_PERMISSION_NOT_GRANTED(MobileDeviceError.ERROR_LOCATION_PERMISSION),
 
     /**
      * Although android BLE supports multiple connection, we currently consider that only one connection at a time is possible.
@@ -153,88 +183,71 @@ public enum BtState {
      * with error state so that the user can choose if he wants to disconnect the already connected device or not.
      * The connection process that was running is automatically cancelled (stopped) if this state occurs and the SDK will returned to a CONNECTED_AND_READY state.
      */
-    ANOTHER_DEVICE_CONNECTED(EnumUtils.NONE_ORDER_ENUM, BluetoothError.ERROR_ALREADY_CONNECTED_ANOTHER),
+    ANOTHER_DEVICE_CONNECTED(BluetoothError.ERROR_ALREADY_CONNECTED_ANOTHER),
 
     /**
      *  Failed to start scan as BLE scan with the same settings is already started by the app. This state is a android.bluetooth.le.ScanCallback state reported if the scan failed.
      */
-    SCAN_FAILED_ALREADY_STARTED(EnumUtils.NONE_ORDER_ENUM, BluetoothError.ERROR_ALREADY_SCANNING),
+    SCAN_FAILED_ALREADY_STARTED(BluetoothError.ERROR_ALREADY_SCANNING),
 
     /**
      * Failed to start scanning operation
      */
-    SCAN_FAILURE(EnumUtils.NONE_ORDER_ENUM, BluetoothError.ERROR_SCANNING_FAILED),
+    SCAN_FAILURE(BluetoothError.ERROR_SCANNING_FAILED),
 
     /**
      * Failed to find device during a scanning within a defined allocated amount of time.
      * The connection process that was running is automatically cancelled (stopped) if this state occurs and the device will returned to an "IDLE" state.
      */
-    SCAN_TIMEOUT(EnumUtils.NONE_ORDER_ENUM, BluetoothError.ERROR_SCANNING_TIMEOUT),
+    SCAN_TIMEOUT(BluetoothError.ERROR_SCANNING_TIMEOUT),
 
     /**
      * When the user requests to cancel (stop) the scanning process that is in progress.
      * The connection process that was running is automatically cancelled (stopped) if this state occurs and the device will returned to an "IDLE" state.
      */
-    SCAN_INTERRUPTED(EnumUtils.NONE_ORDER_ENUM, BluetoothError.ERROR_SCANNING_INTERRUPTED),
+    SCAN_INTERRUPTED(BluetoothError.ERROR_SCANNING_INTERRUPTED),
 
     /**
      * When the user requests to cancel (stop) the connection process that is in progress.
      * The connection process that was running is automatically cancelled (stopped) if this state occurs. This failure trigger a disconnection.
      */
-    CONNECTION_INTERRUPTED(EnumUtils.NONE_ORDER_ENUM, BluetoothError.ERROR_CONNECTION_INTERRUPTED),
+    CONNECTION_INTERRUPTED(BluetoothError.ERROR_CONNECTION_INTERRUPTED),
 
     /**
      * Failed to establish bluetooth connection with the device : this can be a BLE connection or an A2DP connection
      */
-    CONNECTION_FAILURE(EnumUtils.NONE_ORDER_ENUM, BluetoothError.ERROR_CONNECT_FAILED),
+    CONNECTION_FAILURE(BluetoothError.ERROR_CONNECT_FAILED),
 
     /**
      * Failed to retrieve the services and characteristics of the connected headset.
      * The connection process that was running is automatically cancelled (stopped) if this state occurs.
      * This failure trigger a disconnection.
      */
-    DISCOVERING_FAILURE(EnumUtils.NONE_ORDER_ENUM, BluetoothError.ERROR_CONNECT_FAILED),
+    DISCOVERING_FAILURE(BluetoothError.ERROR_CONNECT_FAILED),
 
     /**
      * Failed to get the device informations (Serial number, Firmware version, Hardware version, Model number).
      * The connection process that was running is automatically cancelled (stopped) if this state occurs.
      * This failure trigger a disconnection.
      */
-    READING_FAILURE(EnumUtils.NONE_ORDER_ENUM, BluetoothError.ERROR_CONNECT_FAILED),
+    READING_FAILURE(BluetoothError.ERROR_CONNECT_FAILED),
     /**
      * Failed to exchange and/or store the long term keys.
      * The connection process that was running is automatically cancelled (stopped) if this state occurs.
      * This failure trigger a disconnection.
      */
-    BONDING_FAILURE(EnumUtils.NONE_ORDER_ENUM, BluetoothError.ERROR_CONNECT_FAILED),
+    BONDING_FAILURE(BluetoothError.ERROR_CONNECT_FAILED),
+
+    AUDIO_CONNECTED,
+
+    AUDIO_DISCONNECTED,
 
     /**
      * Failed to retrieve data. Bluetooth SPP only
      */
-    STREAM_ERROR(EnumUtils.NONE_ORDER_ENUM),
+    STREAM_ERROR(EegError.ERROR_FAIL_START_STREAMING);
 
-    /**
-     * Replacing the current firmware installed by installing a different version of the firmware (should be the last firmware version, but it can also be an downgrading to an old version).
-     * This operation requires a connected headset to be performed. Once the upgrade is done, a disconnection is performed to reboot the system.
-     */
-    UPGRADING(EnumUtils.NONE_ORDER_ENUM),
 
-    /**
-     * Failed to replace the current firmware installed with a new one. This failure trigger a disconnection.
-     */
-    UPGRADING_FAILURE(EnumUtils.NONE_ORDER_ENUM, FirmwareError.ERROR_FIRMWARE_UPGRADE_FAILED),
-
-    /**
-     * When connection is being disconnected
-     */
-    DISCONNECTING(EnumUtils.NONE_ORDER_ENUM),
-
-    /**
-     * When connection was lost
-     */
-    DISCONNECTED(EnumUtils.NONE_ORDER_ENUM);
-
-    private Integer order;
 
     /**
      * If something went wrong during the Bluetooth connection process, the operation is stopped and the headset is disconnected.
@@ -249,32 +262,36 @@ public enum BtState {
     private BaseError associatedError;
 
     /**
-     * If the current state is not considered as a failure state, the order is the chronological position of the state that should occur during the Bluetooth connection process.
-     * The order value is included between 0 and the value of BtState.CONNECTED_AND_READY.ordinal(),
+     * This contructor is used for the states that are not considered as a failure state (more explanation are available on the description of the associatedError variable)
+     * It is included between 0 and the value of BtState.CONNECTED_AND_READY.ordinal(),
      * which returns the ordinal of this enumeration constant (its position in its enum declaration, where the initial constant is assigned an ordinal of zero).
      * For example, the IDLE state is the initial state so its order value is 0.
-     * @param order
      */
-    BtState(Integer order) {
-        this.order = order;
-    }
+    BtState() { }
 
-    BtState(Integer order,@Nullable BaseError error) {
-        this.order = order;
+    /**
+     * This contructor is used for the states that are considered as a failure state
+     * @param error is the Error to return to the SDK user
+     */
+    BtState(@Nullable BaseError error) {
         this.associatedError = error;
     }
 
+    /**
+     * The order is the chronological position of the state that should occur during the Bluetooth connection process.
+     * It is equal to the ordinal value
+     */
     public Integer getOrder() {
-        return order;
+        return this.ordinal();
     }
 
     @Nullable
     public BaseError getAssociatedError() {
-        return this.isAFailureState() ? associatedError : null;
+        return associatedError;
     }
 
     public boolean isAFailureState(){
-        return this.getOrder().equals(EnumUtils.NONE_ORDER_ENUM);
+        return this.associatedError != null;
     }
 
     public boolean isReadingDeviceInfoState(){
@@ -285,4 +302,14 @@ public enum BtState {
         return this.equals(BtState.READING_MODEL_NUMBER);
     }
 
+    public boolean isConnectionInProgress(){
+        return this.getOrder() < CONNECTED_AND_READY.ordinal();
+    }
+
+    /**
+     * @return the step that follow (in chronological order, based on the enum value) the current step
+     */
+    public BtState getNextConnectionStep(){
+        return (!this.isAFailureState() && this.isConnectionInProgress()) ? BtState.values()[this.ordinal()+1]: null;
+    }
 }
