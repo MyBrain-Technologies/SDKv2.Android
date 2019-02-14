@@ -48,7 +48,7 @@
         android:id="@+id/connectAudio"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Audio Streaming"
+        android:text="Bluetooth Audio Streaming"
         app:layout_constraintTop_toTopOf="@id/guidelineTopSwitch"
         app:layout_constraintBottom_toBottomOf="@id/guidelineBottomSwitch"
         app:layout_constraintEnd_toEndOf="@+id/guidelineEnd"

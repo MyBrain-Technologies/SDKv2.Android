@@ -146,7 +146,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
 
     @Override
     public boolean isConnected() {
-        return currentState == BtState.CONNECTED_AND_READY;
+        return getCurrentState() == BtState.CONNECTED_AND_READY;
     }
 
     @Override

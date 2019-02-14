@@ -29,7 +29,7 @@ public class MelomindDevice extends MbtDevice{
         this.sampRate = MbtFeatures.DEFAULT_SAMPLE_RATE;
         this.firmwareVersion = "0.0.0";
         this.hardwareVersion = "0.0.0";
-        this.serialNumber = "0000000000";
+        this.deviceId = "0000000000";
     }
 
     /**
@@ -57,7 +57,7 @@ public class MelomindDevice extends MbtDevice{
      */
     @Nullable
     public final String getSerialNumber() {
-        return this.serialNumber;
+        return this.deviceId;
     }
 
     @NonNull
@@ -113,7 +113,7 @@ public class MelomindDevice extends MbtDevice{
 
     public void setFirmwareVersion(@NonNull final String firmwareVersion) {this.firmwareVersion = firmwareVersion;}
 
-    public void setSerialNumber(@NonNull final String deviceId) {this.serialNumber = deviceId;}
+    public void setSerialNumber(@NonNull final String deviceId) {this.deviceId = deviceId;}
 
     public void updateConfiguration(ArrayList<MbtAcquisitionLocations> acquisitionLocationsArrayList, ArrayList<MbtAcquisitionLocations> referenceArrayList, ArrayList<MbtAcquisitionLocations> grounLocationsArrayList){
         this.acquisitionLocations = acquisitionLocationsArrayList;
@@ -121,12 +121,14 @@ public class MelomindDevice extends MbtDevice{
         this.groundsLocation = grounLocationsArrayList;
     }
 
-    public static boolean isMelomindName(BluetoothDevice device) {
-        return (device != null && device.getName() != null && device.getName().contains(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX));
+    public static boolean hasMelomindName(BluetoothDevice device) {
+        return (device != null
+                && device.getName() != null
+                && isDeviceNameValidForMelomind(device.getName()));
     }
 
-    public static boolean isMelomindRequested(){
-        return MbtConfig.scannableDevices == ScannableDevices.MELOMIND;
+    public static boolean isDeviceNameValidForMelomind(String deviceName){
+        return (deviceName.startsWith(MbtFeatures.A2DP_DEVICE_NAME_PREFIX_LEGACY) || deviceName.startsWith(MbtFeatures.A2DP_DEVICE_NAME_PREFIX));
     }
 
     @Override

@@ -104,8 +104,6 @@ public final class MbtClient {
             return;
         }
 
-
-
         this.mbtManager.connectBluetooth(config.getConnectionStateReceiver());
     }
 

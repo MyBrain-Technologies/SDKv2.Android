@@ -5,6 +5,13 @@ package core.bluetooth.requests;
  */
 public class StartOrContinueConnectionRequestEvent extends BluetoothRequests {
 
-        public StartOrContinueConnectionRequestEvent(){ }
+        private boolean isClientUserRequest;
 
+        public StartOrContinueConnectionRequestEvent(boolean isClientUserRequest){
+                this.isClientUserRequest = isClientUserRequest;
+        }
+
+        public boolean isClientUserRequest() {
+                return isClientUserRequest;
+        }
 }

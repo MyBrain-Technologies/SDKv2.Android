@@ -47,7 +47,7 @@ public final class MbtFeatures{
     public final static long DEFAULT_BATTERY_READ_PERIOD = 20000;
 
     public final static int DEFAULT_MAX_SCAN_DURATION_IN_MILLIS = 30000;
-    public final static int DEFAULT_MAX_CONNECTION_DURATION_IN_MILLIS = 40000;
+    public final static int DEFAULT_MAX_CONNECTION_DURATION_IN_MILLIS = 30000;
 
     // MELOMIND & VPRO FEATURES
     public static final String MELOMIND_DEVICE_NAME_PREFIX = "melo_";
@@ -209,4 +209,5 @@ public final class MbtFeatures{
     public static int getSamplePerNotification() {
         return DEFAULT_SAMPLE_PER_NOTIF;
     }
+
 }

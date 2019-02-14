@@ -116,7 +116,7 @@ public class MbtManager{
         }
 
         this.connectionStateReceiver = connectionStateReceiver;
-        EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent());
+        EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent(true));
     }
 
     /**
@@ -229,13 +229,11 @@ public class MbtManager{
 
         if(connectionStateEvent.getNewState().equals(BtState.CONNECTED_AND_READY) || connectionStateEvent.getNewState().equals(BtState.DISCONNECTED)){
             Intent connectionStateIntent = new Intent(MbtFeatures.INTENT_CONNECTION_STATE_CHANGED);
-            connectionStateIntent.putExtra(MbtClient.MbtClientExtra.EXTRA_NEW_STATE,
-                    connectionStateEvent.getNewState().equals(BtState.CONNECTED_AND_READY) ?
-                            connectionStateEvent.getNewState() : BtState.DISCONNECTED);
+            connectionStateIntent.putExtra(MbtClient.MbtClientExtra.EXTRA_NEW_STATE, connectionStateEvent.getNewState());
 
             LocalBroadcastManager.getInstance(mContext).sendBroadcast(connectionStateIntent);
-        }else if (connectionStateEvent.getError() != null)
-            connectionStateReceiver.onError(connectionStateEvent.getError(), null);
+        }else if (connectionStateEvent.getNewState().isAFailureState())
+            connectionStateReceiver.onError(connectionStateEvent.getNewState().getAssociatedError(), null);
     }
 
     /**

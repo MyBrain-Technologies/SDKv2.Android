@@ -73,7 +73,6 @@ dependencies {
     implementation 'com.android.support:appcompat-v7:27.1.1'
     implementation 'org.greenrobot:eventbus:3.1.1'
     implementation 'com.google.code.gson:gson:2.8.5'
-    implementation 'com.google.guava:guava:27.0.1-jre'
 
     doclava 'com.google.doclava:doclava:1.0.6'
     testImplementation 'org.mockito:mockito-core:2.16.0'

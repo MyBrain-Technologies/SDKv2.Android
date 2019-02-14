@@ -30,65 +30,71 @@ public enum BtState {
      * For example, he is awaiting for the user to call the connect method.
      * The IDLE state is automatically returned few minutes after the DISCONNECTED state is returned (= after disconnection or lost connection or failure during the connection process).
      */
-    IDLE(),
+    IDLE,
 
     /**
      * All the prerequisites are ok to start a bluetooth connection operation (device is not already connected, bluetooth is enabled, location is enabled & location permission is granted)
      */
-    READY_FOR_BLUETOOTH_OPERATION(),
+    READY_FOR_BLUETOOTH_OPERATION,
 
     /**
      * In case all the connection prerequisites are valid, a scanning has just started to look for an available headset using the LE scan discovery.
      * The Low Energy Scanner is used first, as it is more efficient than the classical Bluetooth discovery Scanner.
      * A specific headset can be targeted if the user specify a headset name when he call the connect method.
      */
-    SCAN_STARTED(),
+    SCAN_STARTED,
 
     /**
      * Used to notify user when a device has been found during scanning. The device can be a specific
      * one if the user specified one, or the first device scanned if no device has been specified.
      */
-    DEVICE_FOUND(),
+    DEVICE_FOUND,
 
     /**
      * Currently attempting to connect to a Bluetooth remote endpoint
      */
-    CONNECTING(),
+    CONNECTING,
 
     /**
      * Successfully connected in BLE or SPP
      */
-    CONNECTION_SUCCESS(),
+    CONNECTION_SUCCESS,
 
     /**
      *  Retrieving the services and characteristics (list of data where a value is associated to a name) that the connected headset deliver.
      *  This operation is included in the connection process to ensure that a communication has well been established between the headset and the mobile device.
      *  (If the communication has not been established, the data sent by the headset cannot be retrieved by the SDK, so we consider that the connection is not valid)
      */
-    DISCOVERING_SERVICES(),
+    DISCOVERING_SERVICES,
 
     /**
      * Successfully received the services delivered by the connected headset.
      */
-    DISCOVERING_SUCCESS(),
+    DISCOVERING_SUCCESS,
 
     /**
      * Getting the headset device informations such as the Serial number, the Firmware or the Hardware version by reading the values returned by the characteristics discovery.
      * This operation is included in the connection process to ensure that the received characteristics can be read (and contains values / are not empty ?) by the SDK.
      * (If the communication is established, but no data (empty data ?) is sent by the headset, we consider that the connection is not valid)
      */
-     READING_FIRMWARE_VERSION(),
+     READING_FIRMWARE_VERSION,
 
-     READING_HARDWARE_VERSION(),
+     READING_FIRMWARE_VERSION_SUCCESS,
 
-     READING_SERIAL_NUMBER(),
+     READING_HARDWARE_VERSION,
 
-     READING_MODEL_NUMBER(),
+     READING_HARDWARE_VERSION_SUCCESS,
+
+     READING_SERIAL_NUMBER,
+
+     READING_SERIAL_NUMBER_SUCCESS,
+
+     READING_MODEL_NUMBER,
 
     /**
      * Succes to get all the device informations (Serial number, Firmware version, Hardware version, Model number).
      */
-    READING_SUCCESS(),
+    READING_SUCCESS,
 
     /**
      * Exchanging and storing of the long term keys for the next times a connection is initiated.
@@ -96,31 +102,29 @@ public enum BtState {
      * Headsets whose firmware version are lower than 1.7.0 can not handle this operation so the bonding step is just skipped.
      * We consider that the headset is connected and ready to acquire data after the Device Info reading operation has returned values (= has not failed).
      */
-    BONDING(),
+    BONDING,
 
 
     /**
      * Successfully completed bonding operation
      */
-    BONDED(),
+    BONDED,
 
     /**
      * Sending the QR Code as an external name to the headset
      */
 
-    SENDIND_QR_CODE(),
-
-    /**
-     * Succesfully QR Code sending operation
-     */
-    QR_CODE_SENT(),
+    SENDIND_QR_CODE,
 
     /**
      * Successfully connected and ready to use. This state is used when communication is finally possible,
      * For example, we consider that a Melomind headset is usable for streaming if services are discovered, device info have been read, headset is bonded and QR code has been sent if necesseray
      */
-    CONNECTED_AND_READY(),
+    CONNECTED_AND_READY,
 
+    AUDIO_CONNECTED,
+
+    AUDIO_DISCONNECTED,
 
     /// FROM THIS STATE, THE CONNECTION PROCESS IS CONSIDERED COMPLETED : THE FOLLOWING STATES DEALS WITH OTHERS BLUETOOTH OPERATIONS
 
@@ -128,7 +132,7 @@ public enum BtState {
      * Replacing the current firmware installed by installing a different version of the firmware (should be the last firmware version, but it can also be an downgrading to an old version).
      * This operation requires a connected headset to be performed. Once the upgrade is done, a disconnection is performed to reboot the system.
      */
-    UPGRADING(),
+    UPGRADING,
 
     /**
      * Failed to replace the current firmware installed with a new one. This failure trigger a disconnection.
@@ -138,12 +142,12 @@ public enum BtState {
     /**
      * When connection is being disconnected
      */
-    DISCONNECTING(),
+    DISCONNECTING,
 
     /**
      * When connection was lost
      */
-    DISCONNECTED(),
+    DISCONNECTED,
 
 
     /// FROM THIS STATE, THE CONNECTION PROCESS IS CONSIDERED COMPLETED : THE FOLLOWING STATES ARE ERRORS THAT CAN OCCUR DURING A BLUETOOTH OPERATION
@@ -238,10 +242,6 @@ public enum BtState {
      */
     BONDING_FAILURE(BluetoothError.ERROR_CONNECT_FAILED),
 
-    AUDIO_CONNECTED,
-
-    AUDIO_DISCONNECTED,
-
     /**
      * Failed to retrieve data. Bluetooth SPP only
      */
@@ -294,12 +294,22 @@ public enum BtState {
         return this.associatedError != null;
     }
 
-    public boolean isReadingDeviceInfoState(){
-        return (this.equals(READING_FIRMWARE_VERSION) || this.equals(READING_HARDWARE_VERSION) || this.equals(READING_SERIAL_NUMBER) || this.equals(READING_MODEL_NUMBER));
+    /**
+     * A reset to IDLE state need to be performed if headset is disconnect, or if the connection process failed before having reached the CONNECTION_SUCCESS state
+     */
+    public boolean isResettableState(BtState previousState){
+        return (this.equals(DISCONNECTED) || (this.isDisconnectableState() && previousState.ordinal() < BtState.CONNECTION_SUCCESS.ordinal()));
     }
 
-    public boolean isReadingLastDeviceInfoState(){
-        return this.equals(BtState.READING_MODEL_NUMBER);
+    /**
+     * A disconnection need to be performed if the connection process failed while the headset was connected
+     */
+    public boolean isDisconnectableState(){
+        return (this.isAFailureState());
+    }
+
+    public boolean isReadingDeviceInfoState(){
+        return (this.equals(READING_FIRMWARE_VERSION) || this.equals(READING_HARDWARE_VERSION) || this.equals(READING_SERIAL_NUMBER) || this.equals(READING_MODEL_NUMBER));
     }
 
     public boolean isConnectionInProgress(){

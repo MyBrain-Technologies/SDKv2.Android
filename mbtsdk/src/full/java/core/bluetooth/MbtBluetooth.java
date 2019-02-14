@@ -7,24 +7,22 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
 
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import config.MbtConfig;
 import core.device.model.DeviceInfo;
 import core.device.model.MelomindDevice;
 import core.oad.OADEvent;
 
-import utils.AsyncUtils;
 import utils.LogUtils;
 import utils.MbtLock;
-import utils.MbtLockNew;
 
 /**
  *
@@ -39,17 +37,13 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
 
     private final static String TAG = "MBT Bluetooth";
 
-    public BtState currentState = BtState.IDLE;
+    private BtState currentState = BtState.IDLE;
+    private AtomicReference<BtState> currentStateAtomic = new AtomicReference<>();
 
     @Nullable
     protected BluetoothAdapter bluetoothAdapter;
 
     protected final Context context;
-
-    protected final MbtLockNew scanLock = new MbtLockNew();
-    protected final MbtLockNew<Boolean> connectDataLock = new MbtLockNew<>();
-    protected final MbtLockNew<Integer> connectAudioLock = new MbtLockNew<>();
-    protected final MbtLockNew<Boolean> bondLock = new MbtLockNew<>();
 
     protected BluetoothDevice scannedDevice;
 
@@ -66,6 +60,7 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
         if(this.bluetoothAdapter == null)
             this.bluetoothAdapter = BluetoothAdapter.getDefaultAdapter(); //try another way to get the adapter
 
+        currentStateAtomic.set(currentState);
     }
 
     @Nullable
@@ -75,16 +70,6 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
         if(bluetoothAdapter == null)
             return isScanStarted;
 
-        //Checking first if device is already paired.
-        final Set<BluetoothDevice> bonded = this.bluetoothAdapter.getBondedDevices();
-        if (bonded != null && !bonded.isEmpty()) {
-            for (final BluetoothDevice device : bonded) {
-                if (MelomindDevice.isMelomindName(device) && device.getName().equals(MbtConfig.getNameOfDeviceRequested())) { // device found
-                    return isScanStarted;
-                }
-            }
-        }
-        
         // at this point, device was not found among bonded devices so let's start a discovery scan
         LogUtils.i(TAG, "Starting Classic Bluetooth Discovery Scan");
         final IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
@@ -106,15 +91,16 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
 
                         LogUtils.i(TAG, String.format("Discovery Scan -> device detected " +
                                 "with name '%s' and MAC address '%s' ", deviceNameFound, device.getAddress()));
-                        if (MbtConfig.getNameOfDeviceRequested() != null && MelomindDevice.isMelomindName(device) && (deviceNameFound.equals(MbtConfig.getNameOfDeviceRequested()) || deviceNameFound.contains(MbtConfig.getNameOfDeviceRequested()))) {
+                        if (MbtConfig.getNameOfDeviceRequested() != null && MelomindDevice.hasMelomindName(device) && (deviceNameFound.equals(MbtConfig.getNameOfDeviceRequested()) || deviceNameFound.contains(MbtConfig.getNameOfDeviceRequested()))) {
                             LogUtils.i(TAG, "Device " + MbtConfig.getNameOfDeviceRequested() +" found. Cancelling discovery & connecting");
                             bluetoothAdapter.cancelDiscovery();
                             context.unregisterReceiver(this);
-                            scanLock.waitAndGetResult();
+                            mbtBluetoothManager.updateConnectionState(true); //current state is set to DEVICE_FOUND and future is completed
+
                         }
                         break;
                     case BluetoothAdapter.ACTION_DISCOVERY_FINISHED:
-                        if (scanLock.isWaiting()) // restarting discovery while still waiting
+                        if (getCurrentState().equals(BtState.DISCOVERING_SERVICES)) // restarting discovery while still waiting
                             bluetoothAdapter.startDiscovery();
                         break;
                 }
@@ -123,18 +109,14 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
         }, filter);
         isScanStarted = bluetoothAdapter.startDiscovery();
         LogUtils.i(TAG, "Scan started.");
-        if(isScanStarted && currentState.equals(BtState.READY_FOR_BLUETOOTH_OPERATION)){
-            mbtBluetoothManager.updateConnectionState(); //current state is set to SCAN_STARTED
-            scanLock.waitAndGetResult(MbtConfig.getBluetoothScanTimeout(), TimeUnit.MILLISECONDS);
+        if(isScanStarted && getCurrentState().equals(BtState.READY_FOR_BLUETOOTH_OPERATION)){
+            mbtBluetoothManager.updateConnectionState(false); //current state is set to SCAN_STARTED
         }
         return isScanStarted;
     }
 
     @Override
     public void stopScanDiscovery() {
-        if(scanLock != null && scanLock.isWaiting())
-            scanLock.unlock();
-
         if(bluetoothAdapter != null && bluetoothAdapter.isDiscovering())
             bluetoothAdapter.cancelDiscovery();
     }
@@ -157,15 +139,32 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
      */
     @Override
     public void notifyConnectionStateChanged(@NonNull BtState newState) {
-        this.currentState = newState;
+        LogUtils.i(TAG," current state before =  "+currentState);
+        BtState previousState = currentState;
+        currentState = newState;
+        LogUtils.i(TAG," current state after =  "+currentState);
+        currentStateAtomic.set(currentState);
         mbtBluetoothManager.notifyConnectionStateChanged(newState);
+        if(currentState.isResettableState(previousState)){ //if a disconnection occurred
+            resetCurrentState();//reset the current connection state to IDLE
+        }
+        if(currentState.isDisconnectableState()){ //if a failure occurred
+            disconnect(); //disconnect if a headset is connected
+        }
+    }
+
+    private void resetCurrentState(){
+        LogUtils.i(TAG," reset current state");
+        notifyConnectionStateChanged(BtState.IDLE);
     }
 
     public void notifyConnectionStateChanged(BtState newState, boolean notifyManager){
         if(notifyManager)
             notifyConnectionStateChanged(newState);
-        else
+        else {
             this.currentState = newState;
+            currentStateAtomic.set(currentState);
+        }
     }
 
     void notifyMailboxEvent(byte code, Object value){
@@ -175,10 +174,6 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
     }
 
     public void notifyBatteryReceived(int value){
-        if(currentState.equals(BtState.BONDING)){
-            if(bondLock.isWaiting())
-                bondLock.unlock();
-        }
         mbtBluetoothManager.notifyDeviceInfoReceived(DeviceInfo.BATTERY, String.valueOf(value));
     }
 
@@ -231,5 +226,7 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
         }
         return b;
     }
+
+    public BtState getCurrentState() { return currentStateAtomic.get(); }
 
 }

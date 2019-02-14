@@ -40,11 +40,13 @@ public final class MbtConfig {
 
     private static int bluetoothScanTimeout;
 
+    private final static int bluetoothReadingTimeout = 15000;
+
     private final static int bluetoothDiscoverTimeout = 10000;
 
-    private final static int bluetoothBondingTimeout = 10000;
+    private final static int bluetoothBondingTimeout = 30000;
 
-    private final static int bluetoothSendingExternalNameTimeout = 3000;
+    private final static int bluetoothSendingExternalNameTimeout = 15000;
 
     private final static int bluetoothA2dpConnectionTimeout = 20000;
 
@@ -151,6 +153,10 @@ public final class MbtConfig {
 
     public static int getBluetoothSendingExternalNameTimeout() {
         return bluetoothSendingExternalNameTimeout;
+    }
+
+    public static int getBluetoothReadingTimeout() {
+        return bluetoothReadingTimeout;
     }
 
     public static class MbtConfigBuilder {

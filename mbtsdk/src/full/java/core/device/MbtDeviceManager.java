@@ -105,7 +105,7 @@ public class MbtDeviceManager extends BaseModuleManager{
                     break;
                 case SERIAL_NUMBER:
                     if(event.getInfo() != null)
-                        mCurrentConnectedDevice.setSerialNumber((String) event.getInfo());
+                        mCurrentConnectedDevice.setDeviceId((String) event.getInfo());
                     break;
                 case MODEL_NUMBER:
                     if(event.getInfo() != null)

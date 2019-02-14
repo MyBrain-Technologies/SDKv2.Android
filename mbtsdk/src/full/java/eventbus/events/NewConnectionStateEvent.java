@@ -8,11 +8,9 @@ import engine.clientevents.BaseError;
 
 public class NewConnectionStateEvent {
     private BtState newState;
-    @Nullable private BaseError error;
 
-    public NewConnectionStateEvent(@NonNull BtState newState,@Nullable BaseError error){
+    public NewConnectionStateEvent(@NonNull BtState newState){
         this.newState = newState;
-        this.error = error;
     }
 
 
@@ -20,8 +18,4 @@ public class NewConnectionStateEvent {
         return newState;
     }
 
-    @Nullable
-    public BaseError getError() {
-        return error;
-    }
 }
