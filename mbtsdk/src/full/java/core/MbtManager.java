@@ -227,7 +227,7 @@ public class MbtManager{
             return;
         Log.i(TAG, "New state received : "+connectionStateEvent.getNewState());
 
-        if(connectionStateEvent.getNewState().equals(BtState.CONNECTED_AND_READY) || connectionStateEvent.getNewState().equals(BtState.DISCONNECTED)){
+        if(connectionStateEvent.getNewState().equals(BtState.CONNECTED_AND_READY) || (connectionStateEvent.getNewState().equals(BtState.DISCONNECTED))){
             Intent connectionStateIntent = new Intent(MbtFeatures.INTENT_CONNECTION_STATE_CHANGED);
             connectionStateIntent.putExtra(MbtClient.MbtClientExtra.EXTRA_NEW_STATE, connectionStateEvent.getNewState());
 
@@ -318,7 +318,6 @@ public class MbtManager{
             @Override
             @Subscribe
             public void onEventCallback(DeviceEvents.PostDeviceEvent object) {
-                LogUtils.i(TAG, "mbt manager callback device posted");
                 callback.onRequestComplete(object.getDevice());
             }
         });

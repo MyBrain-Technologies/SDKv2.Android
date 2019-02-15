@@ -273,7 +273,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             futureOperation.get(10000,TimeUnit.MILLISECONDS);
             return true;
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            e.printStackTrace();
+            LogUtils.d(TAG,"Enabling notification failed : "+e);
             return false;
         }
     }
@@ -497,13 +497,14 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @return immediatly false on error, true otherwise
      */
    synchronized boolean startWriteOperation(@NonNull UUID characteristic, byte[] payload){
+       LogUtils.i(TAG, "start write operation");
         if(!checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT, characteristic))
             return false;
 
         //Send buffer
         this.gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(characteristic).setValue(payload);
         if (!this.gatt.writeCharacteristic(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(characteristic))) { //the mbtgattcontroller onCharacteristicWrite callback is invoked, reporting the result of the operation.
-            //LogUtils.e(TAG, "Error: failed to write characteristic " + characteristic.toString());
+            LogUtils.e(TAG, "Error: failed to write characteristic " + characteristic.toString());
             return false;
         }
 
@@ -616,8 +617,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     }
 
     void notifyMailboxEventReceived(BtState state){
-        if((isConnected() && state.equals(BtState.AUDIO_CONNECTED)) || state.equals(BtState.AUDIO_DISCONNECTED))
-            mbtBluetoothManager.notifyConnectionStateChanged(state);
+        mbtBluetoothManager.notifyConnectionStateChanged(state);
     }
 
     void updateConnectionState(boolean isFutureCompleted){
@@ -625,7 +625,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     }
 
     void completeFutureOperation(){
-        if(futureOperation != null && !futureOperation.isCancelled() && !futureOperation.isCancelled())
+        if(futureOperation != null && !futureOperation.isDone() && !futureOperation.isCancelled())
             futureOperation.complete(true);
     }
 
@@ -661,7 +661,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             futureOperation = new CompletableFuture<>();
              isSuccess = futureOperation.get(10000,TimeUnit.MILLISECONDS);
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            e.printStackTrace();
+            LogUtils.i(TAG,"MTU change failed");
         }
         return isSuccess;
     }

@@ -146,6 +146,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                 }
             }
         } else {
+            LogUtils.i(TAG, "Iinitiate connection via A2DP!");
             // Safe to connect to melomind via A2DP
             try {
                 final boolean result = (boolean) a2dpProxy.getClass()
@@ -179,6 +180,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                 }catch (CancellationException | InterruptedException | ExecutionException | TimeoutException e) {
                     if(e instanceof CancellationException)
                         futureConnection = null;
+                       LogUtils.i(TAG," A2dp Connection failed: "+e);
                 }
                 if (status != null && status) {
                     LogUtils.i(TAG, "Successfully connected via A2DP to " + deviceToConnect.getAddress());
@@ -217,10 +219,9 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
     @Override
     public boolean disconnect() {
         if(futureConnection != null && !futureConnection.isDone()){
-            LogUtils.d(TAG, "release a2dp future in order to ease disconnection");
             futureConnection.cancel(true);
         }else {
-            LogUtils.d(TAG, "disconnect");
+            LogUtils.d(TAG, "disconnect a2dp");
             if (this.bluetoothAdapter != null) {
                 connectedDevice = null;
                 if (a2dpProxy != null && !a2dpProxy.getConnectedDevices().isEmpty())
@@ -322,7 +323,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
             try {
                 futureInit.get(MbtConfig.getBluetoothA2dpConnectionTimeout(), TimeUnit.MILLISECONDS);
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                e.printStackTrace();
+                LogUtils.i(TAG," Init a2dp proxy failed "+e);
             }
         }
 
@@ -399,6 +400,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
         setCurrentState(newState);
         if(newState.equals(BtState.AUDIO_DISCONNECTED) && futureDisconnection!= null && !futureDisconnection.isDone() && !futureDisconnection.isCancelled())
             futureDisconnection.complete(true);
+        else if (newState.equals(BtState.AUDIO_CONNECTED) && futureConnection!= null && !futureConnection.isDone() && !futureConnection.isCancelled())
+            futureConnection.complete(true);
     }
-
 }

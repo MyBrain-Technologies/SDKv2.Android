@@ -140,10 +140,10 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
     @Override
     public void notifyConnectionStateChanged(@NonNull BtState newState) {
         if(!newState.equals(currentState)){
-            LogUtils.i(TAG," current state before =  "+currentState);
+            LogUtils.i(TAG," current state was =  "+currentState);
             BtState previousState = currentState;
             currentState = newState;
-            LogUtils.i(TAG," current state after =  "+currentState);
+            LogUtils.i(TAG," is now  =  "+currentState);
             currentStateAtomic.set(currentState);
             mbtBluetoothManager.notifyConnectionStateChanged(newState);
             if(currentState.isResettableState(previousState)){ //if a disconnection occurred
@@ -232,7 +232,9 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
     public BtState getCurrentState() { return currentStateAtomic.get(); }
 
     void setCurrentState(BtState currentState) {
+        LogUtils.i(TAG,"current state was = "+currentState);
         this.currentState = currentState;
         this.currentStateAtomic.set(currentState);
+        LogUtils.i(TAG,"is now = "+currentStateAtomic.get());
     }
 }

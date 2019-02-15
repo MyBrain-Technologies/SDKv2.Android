@@ -38,11 +38,11 @@ public class HomeActivity extends AppCompatActivity{
     /**
      * Duration to find a headset
      */
-    private final static int SCAN_DURATION = 30000;
+    private final static int SCAN_DURATION = 20000;
     /**
      * Duration to connect a headset once it has been found
      */
-    private final static int CONNECTION_DURATION = 30000;
+    private final static int CONNECTION_DURATION = 20000;
 
     public final static String DEVICE_NAME = "DEVICE_NAME";
     public final static String BLUETOOTH_STATE = "BLUETOOTH_STATE";

@@ -95,8 +95,10 @@ DeviceActivity extends AppCompatActivity {
         }
 
         public void onError(BaseError error, String additionnalInfo) {
-            notifyUser(getString(R.string.disconnect_failed));
-        }
+            notifyUser(getString(R.string.no_connected_headset));
+            if(isStreaming)
+                notifyUser("Please try to connect again");
+            returnOnPreviousActivity();        }
     };
 
     private DeviceInfoListener deviceInfoListener = new DeviceInfoListener() {

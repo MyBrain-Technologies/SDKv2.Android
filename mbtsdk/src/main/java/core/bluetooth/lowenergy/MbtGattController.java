@@ -251,15 +251,19 @@ final class MbtGattController extends BluetoothGattCallback {
     @Override
     public void onCharacteristicWrite(BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, int status) {
         super.onCharacteristicWrite(gatt, characteristic, status);
-    LogUtils.d(TAG,"characteristic written : "+(status == BluetoothGatt.GATT_SUCCESS ? "success ": "failure")+ " for characteristic "+characteristic.getUuid());
-//        if (status == BluetoothGatt.GATT_SUCCESS) {
-//        }
+    LogUtils.d(TAG,"on characteristic write : "+(status == BluetoothGatt.GATT_SUCCESS ? "success ": "failure")+ " for characteristic "+characteristic.getUuid());
+        if (characteristic.getUuid().compareTo(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX) == 0) {
+            LogUtils.i(TAG, "mailbox message received with code " + characteristic.getValue()[0] +
+                    " and payload " + Arrays.toString(characteristic.getValue()));
+            this.notifyMailboxEventReceived(characteristic);
+        }
         bluetoothController.completeFutureOperation();
     }
 
     @Override
     public void onCharacteristicChanged(BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic) {
         super.onCharacteristicChanged(gatt, characteristic);
+        LogUtils.i(TAG, "on Characteristic changed " );
 
         if (characteristic.getUuid().compareTo(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG) == 0) {
             this.bluetoothController.notifyNewDataAcquired(characteristic.getValue());
@@ -311,7 +315,7 @@ final class MbtGattController extends BluetoothGattCallback {
 
     }
 
-    void notifyMailboxEventReceived(BluetoothGattCharacteristic characteristic) {
+    private void notifyMailboxEventReceived(BluetoothGattCharacteristic characteristic) {
         switch (characteristic.getValue()[0]) {
             case MailboxEvents.MBX_SET_ADS_CONFIG:
                 break;
@@ -407,13 +411,13 @@ final class MbtGattController extends BluetoothGattCallback {
                 break;
 
             case MailboxEvents.MBX_CONNECT_IN_A2DP:
-                LogUtils.i(TAG, "received A2DP connection code " + (int) (characteristic.getValue()[1]));
-                if ((characteristic.getValue()[1] & MailboxEvents.CMD_CODE_CONNECT_IN_A2DP_IN_PROGRESS) != 0x01)
+                LogUtils.i(TAG, "received mailbox response for A2DP connection " + (int) (characteristic.getValue()[1]));
+                //if ((characteristic.getValue()[1] & MailboxEvents.CMD_CODE_CONNECT_IN_A2DP_IN_PROGRESS) != 0x01)
                     bluetoothController.notifyMailboxEventReceived(BtState.AUDIO_CONNECTED);
                 break;
 
             case MailboxEvents.MBX_DISCONNECT_IN_A2DP:
-                LogUtils.i(TAG, "received A2DP connection code " + (int) (characteristic.getValue()[1]));
+                LogUtils.i(TAG, "received mailbox response for A2DP disconnection" + (int) (characteristic.getValue()[1]));
                 bluetoothController.notifyMailboxEventReceived(BtState.AUDIO_DISCONNECTED);
                 break;
 

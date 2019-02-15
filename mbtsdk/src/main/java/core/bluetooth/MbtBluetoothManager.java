@@ -184,9 +184,10 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 if (((DisconnectRequestEvent) request).isInterrupted())
                     cancelPendingConnection(((DisconnectRequestEvent) request).isInterrupted());
                 else {
-                    disconnect(MbtConfig.isCurrentDeviceAMelomind() ? BtProtocol.BLUETOOTH_LE : BtProtocol.BLUETOOTH_SPP);
                     if(isAudioBluetoothConnected())
                         disconnect(BtProtocol.BLUETOOTH_A2DP);
+                    disconnect(MbtConfig.isCurrentDeviceAMelomind() ? BtProtocol.BLUETOOTH_LE : BtProtocol.BLUETOOTH_SPP);
+
                 }
             } else if (request instanceof StreamRequestEvent) {
                 if (((StreamRequestEvent) request).isStart())
@@ -674,8 +675,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
     private void startConnectionForAudioStreaming(){
         LogUtils.i(TAG, "start connection audio streaming");
-        if(MbtConfig.connectAudioIfDeviceCompatible()) {
-            LogUtils.i(TAG," request Current Connected Device start audio");
+        if(MbtConfig.connectAudioIfDeviceCompatible() && !isAudioBluetoothConnected()) {
             isRequestCompleted = false;
             requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
                 @Override
@@ -687,10 +687,10 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                             AsyncUtils.executeAsync(new Runnable() {
                                 @Override
                                 public void run() {
-                                    if(isDataBluetoothConnected() && connectionFromBleAvailable) { //A2DP cannot be connected from BLE if BLE connection state is not CONNECTED_AND_READY
+                                    if(isDataBluetoothConnected() && connectionFromBleAvailable) { //A2DP cannot be connected from BLE if BLE connection state is not CONNECTED_AND_READY //todo decomment
                                         mbtBluetoothLE.connectA2DPFromBLE();
                                     }
-                                    else if(!isAudioBluetoothConnected())// if connectA2DPFromBLE failed or is not supported by the headset firmware version
+                                    else// if connectA2DPFromBLE failed or is not supported by the headset firmware version
                                         connect(BLUETOOTH_A2DP);
                                 }
                             });
@@ -709,7 +709,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 }
             });
             if(!mbtBluetoothA2DP.isConnected())
-                LogUtils.e(TAG, "FINAL CONNECTION FAILURE");//mbtBluetoothA2DP.notifyConnectionStateChanged(BtState.CONNECTION_FAILURE); //at this point : current state should be AUDIO_CONNECTED if audio connection succeeded
+                mbtBluetoothA2DP.notifyConnectionStateChanged(BtState.CONNECTION_FAILURE); //at this point : current state should be AUDIO_CONNECTED if audio connection succeeded
         }
         requestBeingProcessed = false;
         LogUtils.i(TAG, "connection for audio streaming done");
@@ -743,7 +743,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      */
 
 
-    public void reconnectIfAudioConnected(String deviceName){
+    public void reconnectBleIfA2dpConnected(String deviceName){
         LogUtils.i(TAG," reconnect Bluetooth Low Energy if audio is connected");
         if(deviceName == null)
             return;
@@ -759,18 +759,13 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         }
     }
 
-    void resetBackgroundReconnectionRetryCounter(){
-        LogUtils.i(TAG," reset background reconnection counter");
-        backgroundReconnectionRetryCounter = 0;
-    }
-
     /**
      * This method manages a set of calls to perform in order to reconfigure some of the headset's
      * parameters. All parameters are held in a {@link DeviceConfig instance}
      * Each new parameter is updated one after the other. All method inside are blocking.
      * @param config the {@link DeviceConfig} instance to get new parameters from.
      */
-    void configureHeadset(@NonNull DeviceConfig config){
+    private void configureHeadset(@NonNull DeviceConfig config){
         boolean stepSuccess = true;
         if(config != null){
             //Checking whether or not there are params to send
@@ -852,7 +847,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * Initiates the acquisition of EEG data. This method chooses between the correct BtProtocol.
      * If there is already a streaming session in progress, nothing happens and the method returns silently.
      */
-    void startStreamOperation(boolean enableDeviceStatusMonitoring){
+    private void startStreamOperation(boolean enableDeviceStatusMonitoring){
         if(!mbtBluetoothLE.isConnected()){
             notifyStreamStateChanged(IStreamable.StreamState.DISCONNECTED);
             return;
@@ -878,7 +873,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * Initiates the acquisition of EEG data from the correct BtProtocol
      * If there is no streaming session in progress, nothing happens and the method returns silently.
      */
-    void stopStreamOperation(){
+    private void stopStreamOperation(){
         if(!mbtBluetoothLE.isStreaming())
             return;
 
@@ -893,7 +888,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      */
     private void disconnect(BtProtocol protocol) {
         LogUtils.i(TAG, "Disconnect");
-        if(isConnected() || getCurrentState().isConnectionInProgress()){
+        if(isAudioBluetoothConnected() || isDataBluetoothConnected() || getCurrentState().isConnectionInProgress()){
             switch(protocol){
                 case BLUETOOTH_LE:
                     this.mbtBluetoothLE.disconnect();
@@ -915,9 +910,10 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private void cancelPendingConnection(boolean isClientUserAbortion) {
         LogUtils.i(TAG, "cancelling pending connection");
         requestBeingProcessed = false;
-        disconnect(MbtConfig.isCurrentDeviceAMelomind() ? BtProtocol.BLUETOOTH_LE : BtProtocol.BLUETOOTH_SPP);
         if(isAudioBluetoothConnected())
-           disconnect(BLUETOOTH_A2DP);
+            disconnect(BLUETOOTH_A2DP);
+        disconnect(MbtConfig.isCurrentDeviceAMelomind() ? BtProtocol.BLUETOOTH_LE : BtProtocol.BLUETOOTH_SPP);
+
         if(isClientUserAbortion){
             isConnectionInterrupted = true;
             updateConnectionState(BtState.CONNECTION_INTERRUPTED);
@@ -957,6 +953,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 break;
             case AUDIO_CONNECTED:
                 mbtBluetoothA2DP.notifyConnectionStateChanged(newState,false);
+                stopFutureOperation(false);
                 if(!mbtBluetoothLE.isConnected() && MbtConfig.connectAudioIfDeviceCompatible()) //if audio is connected (and BLE is not) when the user request connection to a headset
                     connectBLEFromA2DP(mbtBluetoothA2DP.getConnectedDevice().getName());
                 break;
@@ -1002,12 +999,10 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     }
 
     void requestCurrentConnectedDevice(final SimpleRequestCallback<MbtDevice> callback) {
-        LogUtils.i(TAG," request Current Connected Device");
         EventBusManager.postEventWithCallback(new DeviceEvents.GetDeviceEvent(), new EventBusManager.Callback<DeviceEvents.PostDeviceEvent>(){
             @Override
             @Subscribe
             public void onEventCallback(DeviceEvents.PostDeviceEvent device) {
-                LogUtils.i(TAG," on request complete");
                 callback.onRequestComplete(device.getDevice());
             }
         });
@@ -1020,7 +1015,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * The updateConnectionState() method with no parameter should be call if nothing went wrong and user wants to continue the connection process
      */
     private void updateConnectionState(BtState state){
-        LogUtils.i(TAG, "update state if not null and not interrupted "+state);
         if(state != null && (!isConnectionInterrupted || state.equals(BtState.CONNECTION_INTERRUPTED))){
             if(MbtConfig.isCurrentDeviceAMelomind())
                 mbtBluetoothLE.notifyConnectionStateChanged(state);
@@ -1043,17 +1037,12 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     }
 
     private void stopFutureOperation(boolean isCancel){
-        LogUtils.i(TAG, "complete or cancel future operation : iscancel "+isCancel);
-        if(futureOperation != null)
-            LogUtils.i(TAG, "is future done ? "+futureOperation.isDone());
         if(futureOperation != null && !futureOperation.isDone() && !futureOperation.isCancelled()){
             if(isCancel)
                 futureOperation.cancel(true);
             else
                 futureOperation.complete(null);
         }
-        if(futureOperation != null)
-            LogUtils.i(TAG, "is future done after complete method call ? "+futureOperation.isDone());
     }
 
     /**
@@ -1101,7 +1090,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     }
 
     void disconnectA2DPFromBLE() {
-        LogUtils.i(TAG, " disconnect A2dp");
+        LogUtils.i(TAG, " disconnect A2dp from ble");
         if(isDataBluetoothConnected())
             mbtBluetoothLE.disconnectA2DPFromBLE();
     }

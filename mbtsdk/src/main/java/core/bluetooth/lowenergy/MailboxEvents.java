@@ -40,7 +40,7 @@ final class MailboxEvents{
             static final byte CMD_CODE_CONNECT_IN_A2DP_SUCCESS = (byte)0x80;
 
             /**
-             * Event codes related to #MBX_CONNECT_IN_A2DP event
+             * Event codes related to #MBX_DISCONNECT_IN_A2DP event
              */
             static final byte CMD_CODE_DISCONNECT_IN_A2DP_FAILED = 0x01;
             static final byte CMD_CODE_DISCONNECT_IN_A2DP_SUCCESS = (byte)0xFF;
