@@ -318,13 +318,13 @@ public class MbtManager{
             @Override
             @Subscribe
             public void onEventCallback(DeviceEvents.PostDeviceEvent object) {
-                LogUtils.d(TAG, "onRequestComplete in manager");
+                LogUtils.i(TAG, "mbt manager callback device posted");
                 callback.onRequestComplete(object.getDevice());
             }
         });
     }
 
-    public Set<BaseModuleManager> getRegisteredModuleManagers() {
+    Set<BaseModuleManager> getRegisteredModuleManagers() {
         return registeredModuleManagers;
     }
 }

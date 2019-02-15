@@ -77,6 +77,7 @@ DeviceActivity extends AppCompatActivity {
     private String lastReadBatteryLevel = "";
 
     private boolean isStreaming = false;
+    private boolean isDisconnecting = false;
 
     private ConnectionStateReceiver connectionStateReceiver = new ConnectionStateReceiver(){
 
@@ -85,7 +86,7 @@ DeviceActivity extends AppCompatActivity {
             currentState = (BtState) intent.getSerializableExtra(MbtClient.MbtClientExtra.EXTRA_NEW_STATE);
             Log.i(TAG, "Received broadcast "+currentState);
 
-            if(currentState.equals(BtState.DISCONNECTED)){
+            if(currentState.equals(BtState.DISCONNECTED) || isDisconnecting){
                 notifyUser(getString(R.string.disconnected_headset));
                 if(isStreaming)
                     notifyUser("Please try to connect again");
@@ -192,7 +193,7 @@ DeviceActivity extends AppCompatActivity {
                 if(isStreaming)
                     stopStream();
                 client.disconnectBluetooth();
-
+                isDisconnecting = true;
             }
         });
     }
@@ -401,6 +402,7 @@ DeviceActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         client.disconnectBluetooth();
+        isDisconnecting = true;
         LocalBroadcastManager.getInstance(this).unregisterReceiver(connectionStateReceiver);
         connectionStateReceiver = null;
         deviceInfoListener = null;

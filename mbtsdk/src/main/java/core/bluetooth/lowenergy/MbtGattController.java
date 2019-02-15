@@ -145,7 +145,7 @@ final class MbtGattController extends BluetoothGattCallback {
      */
     @Override
     public void onServicesDiscovered(@NonNull BluetoothGatt gatt, int status) {
-        Log.i(TAG, "services discovered ");
+        LogUtils.i(TAG, "on services discovered ");
         super.onServicesDiscovered(gatt, status);
 
         // Checking if services were indeed discovered or not : getServices should be not null and contains values at this point
@@ -204,6 +204,7 @@ final class MbtGattController extends BluetoothGattCallback {
     @Override
     public void onCharacteristicRead(BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, int status) {
         super.onCharacteristicRead(gatt, characteristic, status);
+        LogUtils.i(TAG, "on Characteristic read " );
         if (characteristic.getValue() != null)
             LogUtils.i(TAG, "received charac value " + new String(characteristic.getValue()));
 
@@ -250,31 +251,10 @@ final class MbtGattController extends BluetoothGattCallback {
     @Override
     public void onCharacteristicWrite(BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, int status) {
         super.onCharacteristicWrite(gatt, characteristic, status);
-
-        if (status != BluetoothGatt.GATT_SUCCESS) {
-            LogUtils.e(TAG, "error writing characteristic status code is : " + status);
-        } else {
-            if (characteristic.getUuid().compareTo(this.oadPacketsCharac.getUuid()) == 0) {
-                /*if(oadFileManager.getmProgInfo().iBlocks == oadFileManager.getmProgInfo().nBlocks){ //TODO
-                    if(oadPacketTransferTimeoutLock.isWaiting()){
-                        oadPacketTransferTimeoutLock.setResultAndNotify(true);
-                    }else{
-                        LogUtils.e(TAG, "error, packet transfer timeout for end not ready");
-                    }
-
-                    notifyOADEvent(OADEvent.CRC_COMPUTING, oadFileManager.getmProgInfo().nBlocks);
-                }else{
-                    if(oadPacketTransferTimeoutLock.isWaiting() || oadFileManager.getmProgInfo().iBlocks <=1){
-                        sendOADBlock(oadFileManager.getmProgInfo().iBlocks);
-                    }else{
-                        LogUtils.e(TAG, " error, lock isn't waiting yet");
-                    }
-
-                }*/
-
-            }
-            bluetoothController.completeFutureOperation();
-        }
+    LogUtils.d(TAG,"characteristic written : "+(status == BluetoothGatt.GATT_SUCCESS ? "success ": "failure")+ " for characteristic "+characteristic.getUuid());
+//        if (status == BluetoothGatt.GATT_SUCCESS) {
+//        }
+        bluetoothController.completeFutureOperation();
     }
 
     @Override
@@ -330,19 +310,6 @@ final class MbtGattController extends BluetoothGattCallback {
         bluetoothController.completeFutureOperation();
 
     }
-
-//    int disconnectA2DPMailbox() {
-//        byte[] buffer = {MailboxEvents.MBX_DISCONNECT_IN_A2DP, (byte)0x85, (byte)0x11};
-//        //Send buffer
-//        this.mailBox.setValue(buffer);
-//        if (!this.bluetoothController.gatt.writeCharacteristic(this.mailBox)) {
-//            Log.e(TAG, "Error: failed to send A2Dp disconnection request");
-//            this.bluetoothController.notifyConnectionStateChanged(BtState.INTERNAL_FAILURE);
-//            return -1;
-//        }
-//        Integer res = disconnectA2DPLock.waitAndGetResult(15000);
-//        return res == null ? MailboxEvents.CMD_CODE_CONNECT_IN_A2DP_FAILED_TIMEOUT : res;
-//    }
 
     void notifyMailboxEventReceived(BluetoothGattCharacteristic characteristic) {
         switch (characteristic.getValue()[0]) {
@@ -405,23 +372,23 @@ final class MbtGattController extends BluetoothGattCallback {
                 break;
 
             case MailboxEvents.MBX_SYS_GET_STATUS:
-                Log.i(TAG, "sys status" + Arrays.toString(characteristic.getValue()));
+                LogUtils.i(TAG, "sys status" + Arrays.toString(characteristic.getValue()));
 //                if(characteristic.getValue().length >= 5){
 //                }
                 break;
 
             case MailboxEvents.MBX_SET_NOTCH_FILT:
-                Log.i(TAG, "received notification - Notch filter: " + new String(characteristic.getValue()));
+                LogUtils.i(TAG, "received notification - Notch filter: " + new String(characteristic.getValue()));
                 break;
 
             case MailboxEvents.MBX_SET_AMP_GAIN:
-                Log.i(TAG, "received notification - amp gain : " + Arrays.toString(characteristic.getValue()));
+                LogUtils.i(TAG, "received notification - amp gain : " + Arrays.toString(characteristic.getValue()));
                 //if(this.ampGainNotificationLock.isWaiting())
                 // this.ampGainNotificationLock.setResultAndNotify(characteristic.getStringValue(1));
                 break;
 
             case MailboxEvents.MBX_GET_EEG_CONFIG:
-                Log.i(TAG, "received notification - eeg config: " + Arrays.toString(characteristic.getValue()));
+                LogUtils.i(TAG, "received notification - eeg config: " + Arrays.toString(characteristic.getValue()));
                 int gainValue = AmpGainConfig.getGainFromByteValue(characteristic.getValue()[3]);//read the 3rd byte that contain the Gain value TODO: add defines for this offset !
                 if (gainValue != 0) {
                     MbtDataConversion.EEG_AMP_GAIN = gainValue;
@@ -432,7 +399,7 @@ final class MbtGattController extends BluetoothGattCallback {
                 break;
 
             case MailboxEvents.MBX_P300_ENABLE:
-                Log.i(TAG, "received answer from p300 activation");
+                LogUtils.i(TAG, "received answer from p300 activation");
                 // p300activationLock.setResultAndNotify((int)(characteristic.getValue()[1]));
                 break;
 
@@ -440,15 +407,14 @@ final class MbtGattController extends BluetoothGattCallback {
                 break;
 
             case MailboxEvents.MBX_CONNECT_IN_A2DP:
-                Log.i(TAG, "received A2DP connection code " + (int) (characteristic.getValue()[1]));
+                LogUtils.i(TAG, "received A2DP connection code " + (int) (characteristic.getValue()[1]));
                 if ((characteristic.getValue()[1] & MailboxEvents.CMD_CODE_CONNECT_IN_A2DP_IN_PROGRESS) != 0x01)
-                    bluetoothController.notifyMailboxEventReceived();
+                    bluetoothController.notifyMailboxEventReceived(BtState.AUDIO_CONNECTED);
                 break;
 
             case MailboxEvents.MBX_DISCONNECT_IN_A2DP:
-                Log.i(TAG, "received A2DP connection code " + (int) (characteristic.getValue()[1]));
-                //if(disconnectA2DPLock.isWaiting())
-                //    disconnectA2DPLock.setResultAndNotify((int)(characteristic.getValue()[1]));
+                LogUtils.i(TAG, "received A2DP connection code " + (int) (characteristic.getValue()[1]));
+                bluetoothController.notifyMailboxEventReceived(BtState.AUDIO_DISCONNECTED);
                 break;
 
             case (byte) 0xFF:
