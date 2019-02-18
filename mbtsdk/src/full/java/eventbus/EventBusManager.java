@@ -3,9 +3,9 @@ package eventbus;
 import android.support.annotation.NonNull;
 
 import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
 
-import utils.LogUtils;
+import engine.clientevents.BaseError;
+import engine.clientevents.BaseErrorEvent;
 
 /**
  * EventBusManager.java
@@ -57,17 +57,23 @@ public final class EventBusManager {
         BUS.post(event);
     }
 
-
-
-    public static void postEventWithCallback(Object event, Callback callback){
+    public static void postEventWithCallback(Object event, Object callback){
         BUS.register(callback);
         BUS.post(event);
         BUS.unregister(callback);
     }
 
-
+    public static Object postEventWithCallbackAndReturnResult(Object event, Object callback){
+        BUS.register(callback);
+        BUS.post(event);
+        BUS.unregister(callback);
+        return callback;
+    }
 
     public interface Callback<T> {
+        public Object onEventCallback(T object);
+    }
+    public interface CallbackVoid<T> {
         public void onEventCallback(T object);
     }
 

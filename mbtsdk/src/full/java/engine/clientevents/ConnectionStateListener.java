@@ -12,5 +12,6 @@ public interface ConnectionStateListener<U extends BaseError> extends BaseErrorE
          * Callback indicating the current state of the bluetooth communication
          * See {@link BtState} for all possible states
          */
-        void onStateChanged(@NonNull final BtState newState);
+        void onDeviceConnected();
+        void onDeviceDisconnected();
     }

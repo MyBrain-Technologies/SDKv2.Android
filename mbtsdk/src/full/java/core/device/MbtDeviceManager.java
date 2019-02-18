@@ -94,6 +94,7 @@ public class MbtDeviceManager extends BaseModuleManager{
             switch(event.getInfotype()){
                 case BATTERY:
                     LogUtils.d(TAG, "received " + event.getInfo() + " for battery level");
+
                     break;
                 case FW_VERSION:
                     if(event.getInfo() != null)

@@ -241,9 +241,10 @@ final class MbtGattController extends BluetoothGattCallback {
                             "but the returned value could not be decoded ! " +
                             "Byte value received -> " + characteristic.getValue()[3]);
                 }
-                bluetoothController.notifyBatteryReceived(level, status == BluetoothGatt.GATT_SUCCESS);
                 LogUtils.i(TAG, "Received a [onCharacteristicRead] callback for battery level request. " +
                         "Value -> " + level);
+                bluetoothController.notifyBatteryReceived(level, status == BluetoothGatt.GATT_SUCCESS);
+
             }
         }
     }

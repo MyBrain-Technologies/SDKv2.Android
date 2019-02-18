@@ -34,16 +34,17 @@ import engine.MbtClient;
 import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
 import engine.clientevents.BluetoothError;
+import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.ConnectionStateReceiver;
 import engine.clientevents.DeviceInfoListener;
 import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.EegError;
+import engine.clientevents.EegListener;
 import engine.clientevents.HeadsetDeviceError;
 import eventbus.EventBusManager;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.NewConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
-import engine.clientevents.EegListener;
 import features.MbtFeatures;
 import utils.LogUtils;
 
@@ -73,7 +74,7 @@ public class MbtManager{
      * the application callbacks. EventBus is not available outside the SDK so the user is notified
      * using custom callback interfaces.
      */
-    private ConnectionStateReceiver connectionStateReceiver;
+    private ConnectionStateListener<BaseError> connectionStateListener;
     private EegListener<BaseError> eegListener;
     private DeviceInfoListener<BaseError> deviceInfoListener;
     @Nullable
@@ -107,16 +108,14 @@ public class MbtManager{
 
     /**
      * Perform a new Bluetooth connection.
-     * @param connectionStateReceiver a set of callback that will notify the user about connection progress.
+     * @param connectionStateListener a set of callback that will notify the user about connection progress.
      */
-    public void connectBluetooth(@NonNull ConnectionStateReceiver connectionStateReceiver){
-        if(MbtConfig.getNameOfDeviceRequested() != null && (!MbtConfig.getNameOfDeviceRequested().startsWith(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX) && !MbtConfig.getNameOfDeviceRequested().startsWith(MbtFeatures.VPRO_DEVICE_NAME_PREFIX))){
-            connectionStateReceiver.onError(HeadsetDeviceError.ERROR_PREFIX_NAME,null);
-            return;
-        }
-
-        this.connectionStateReceiver = connectionStateReceiver;
-        EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent(true));
+    public void connectBluetooth(@NonNull ConnectionStateListener<BaseError> connectionStateListener){
+        this.connectionStateListener = connectionStateListener;
+        if(MbtConfig.getNameOfDeviceRequested() != null && (!MbtConfig.getNameOfDeviceRequested().startsWith(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX) && !MbtConfig.getNameOfDeviceRequested().startsWith(MbtFeatures.VPRO_DEVICE_NAME_PREFIX)))
+            this.connectionStateListener.onError(HeadsetDeviceError.ERROR_PREFIX_NAME,null);
+        else
+            EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent(true));
     }
 
     /**
@@ -129,13 +128,13 @@ public class MbtManager{
     /**
      * Perform a bluetooth read operation.
      * @param deviceInfo the type of info to read
-     * @param listener a set of callback to notify user about the results.
      */
     public void readBluetooth(@NonNull DeviceInfo deviceInfo, @NonNull DeviceInfoListener listener){
         this.deviceInfoListener = listener;
-
         EventBusManager.postEvent(new ReadRequestEvent(deviceInfo));
     }
+
+
 
     /**
      * Posts an event to initiate a stream session.
@@ -143,7 +142,7 @@ public class MbtManager{
      * @param eegListener the eeg listener
      * @param deviceStatusListener to notify the user about device status real time modifications.
      */
-    public void startStream(boolean useQualities, @NonNull EegListener eegListener, @Nullable DeviceStatusListener deviceStatusListener){
+    public void startStream(boolean useQualities, @NonNull EegListener<BaseError> eegListener, @Nullable DeviceStatusListener deviceStatusListener){
         this.eegListener = eegListener;
         this.deviceStatusListener = deviceStatusListener;
 
@@ -169,71 +168,42 @@ public class MbtManager{
 
     /**
      * Called when a new device info event has been broadcast on the event bus.
-     * @param event
      */
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onDeviceInfoEvent(DeviceInfoEvent event){
-        switch(event.getInfotype()){
-            case BATTERY:
-                if(deviceInfoListener != null){
-                    if(event.getInfo() == null )
-                        deviceInfoListener.onError(HeadsetDeviceError.ERROR_TIMEOUT_BATTERY,null);
-                    else {
-                        if(event.getInfo().equals(-1))
-                            deviceInfoListener.onError(HeadsetDeviceError.ERROR_DECODE_BATTERY, null);
-                        else
-                            deviceInfoListener.onBatteryChanged((String) event.getInfo());
-                    }
-                }
-                break;
-            case FW_VERSION:
-                if(deviceInfoListener != null){
-                    if(event.getInfo() == null )
-                        deviceInfoListener.onError(HeadsetDeviceError.ERROR_TIMEOUT_FIRMWARE_VERSION,null);
+        if(event.getInfotype().equals(DeviceInfo.BATTERY)){
+            LogUtils.i(TAG," manager received battery level "+event.getInfo());
+            if(deviceInfoListener != null){
+                if(event.getInfo() == null )
+                    deviceInfoListener.onError(HeadsetDeviceError.ERROR_TIMEOUT_BATTERY,null);
+                else {
+                    if(event.getInfo().equals(-1))
+                        deviceInfoListener.onError(HeadsetDeviceError.ERROR_DECODE_BATTERY, null);
                     else
-                        deviceInfoListener.onFwVersionReceived((String) event.getInfo());
+                        deviceInfoListener.onBatteryChanged((String) event.getInfo());
                 }
-                break;
-            case HW_VERSION:
-                if(deviceInfoListener != null){
-                    if(event.getInfo() == null )
-                        deviceInfoListener.onError(HeadsetDeviceError.ERROR_TIMEOUT_HARDWARE_VERSION,null);
-                    else
-                        deviceInfoListener.onHwVersionReceived((String) event.getInfo());
-                }
-                break;
-            case SERIAL_NUMBER:
-                if(deviceInfoListener != null) {
-                    if (event.getInfo() == null)
-                        deviceInfoListener.onError(HeadsetDeviceError.ERROR_TIMEOUT_SERIAL_NUMBER, null);
-                    else
-                        deviceInfoListener.onSerialNumberReceived((String) event.getInfo());
-                }
-                break;
-            case MODEL_NUMBER:
-                if(deviceInfoListener != null) {
-                    if (event.getInfo() == null)
-                        deviceInfoListener.onError(HeadsetDeviceError.ERROR_TIMEOUT_SERIAL_NUMBER, null);
-                    else
-                        deviceInfoListener.onModelNumberReceived((String) event.getInfo());
-                }
-                break;
+            }
         }
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onConnectionStateChanged(NewConnectionStateEvent connectionStateEvent){
-        if(connectionStateReceiver == null)
+    public void onConnectionStateChanged(NewConnectionStateEvent connectionStateEvent) {
+        if (connectionStateListener == null)
             return;
-        Log.i(TAG, "New state received : "+connectionStateEvent.getNewState());
+        Log.i(TAG, "New state received : " + connectionStateEvent.getNewState());
 
-        if(connectionStateEvent.getNewState().equals(BtState.CONNECTED_AND_READY) || (connectionStateEvent.getNewState().equals(BtState.DISCONNECTED))){
-            Intent connectionStateIntent = new Intent(MbtFeatures.INTENT_CONNECTION_STATE_CHANGED);
-            connectionStateIntent.putExtra(MbtClient.MbtClientExtra.EXTRA_NEW_STATE, connectionStateEvent.getNewState());
-
-            LocalBroadcastManager.getInstance(mContext).sendBroadcast(connectionStateIntent);
-        }else if (connectionStateEvent.getNewState().isAFailureState())
-            connectionStateReceiver.onError(connectionStateEvent.getNewState().getAssociatedError(), null);
+        switch (connectionStateEvent.getNewState()) {
+            case CONNECTED_AND_READY:
+                connectionStateListener.onDeviceConnected();
+                break;
+            case DISCONNECTED:
+                connectionStateListener.onDeviceDisconnected();
+                break;
+            default:
+                if (connectionStateEvent.getNewState().isAFailureState())
+                    connectionStateListener.onError(connectionStateEvent.getNewState().getAssociatedError(), null);
+                break;
+        }
     }
 
     /**
@@ -296,16 +266,16 @@ public class MbtManager{
 
 
     /**
-     * Sets an extended {@link BroadcastReceiver} to the connectionStateReceiver value
-     * @param connectionStateReceiver the new {@link ConnectionStateReceiver}. Set it to null if you want to reset the listener
+     * Sets an extended {@link BroadcastReceiver} to the connectionStateListener value
+     * @param connectionStateListener the new {@link ConnectionStateReceiver}. Set it to null if you want to reset the listener
      */
-    public void setConnectionStateReceiver(ConnectionStateReceiver connectionStateReceiver) {
-        this.connectionStateReceiver = connectionStateReceiver;
+    public void setConnectionStateListener(ConnectionStateListener<BaseError> connectionStateListener) {
+        this.connectionStateListener = connectionStateListener;
     }
 
 
     /**
-     * Sets the {@link EegListener} to the connectionStateReceiver value
+     * Sets the {@link EegListener} to the connectionStateListener value
      * @param EEGListener the new {@link EegListener}. Set it to null if you want to reset the listener
      */
     public void setEEGListener(EegListener<BaseError> EEGListener) {
@@ -314,7 +284,7 @@ public class MbtManager{
 
 
     public void requestCurrentConnectedDevice(final SimpleRequestCallback<MbtDevice> callback) {
-        EventBusManager.postEventWithCallback(new DeviceEvents.GetDeviceEvent(), new EventBusManager.Callback<DeviceEvents.PostDeviceEvent>(){
+        EventBusManager.postEventWithCallback(new DeviceEvents.GetDeviceEvent(), new EventBusManager.CallbackVoid<DeviceEvents.PostDeviceEvent>(){
             @Override
             @Subscribe
             public void onEventCallback(DeviceEvents.PostDeviceEvent object) {

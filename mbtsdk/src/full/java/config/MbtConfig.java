@@ -35,7 +35,7 @@ public final class MbtConfig {
 
     private static boolean acquisitionEnabledLowBattery;
 
-    private static int bluetoothConnectionTimeout;
+    private static int bluetoothConnectionTimeout = 30000;
 
 
     private static int bluetoothScanTimeout;
@@ -141,10 +141,6 @@ public final class MbtConfig {
 
     public static void setBluetoothScanTimeout(int maxScanDuration) {
         bluetoothScanTimeout = maxScanDuration;
-    }
-
-    public static void setBluetoothConnectionTimeout(int maxConnectionDuration) {
-        bluetoothConnectionTimeout = maxConnectionDuration;
     }
 
     public static int getBluetoothBondingTimeout() {

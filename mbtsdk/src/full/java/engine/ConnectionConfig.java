@@ -3,6 +3,9 @@ package engine;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+
+import engine.clientevents.BaseError;
+import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.ConnectionStateReceiver;
 import features.MbtFeatures;
 import features.ScannableDevices;
@@ -20,21 +23,18 @@ public final class ConnectionConfig {
 
     private final int maxScanDuration;
 
-    private final int maxConnectionDuration;
-
     private final boolean connectAudio;
 
     private final ScannableDevices deviceType;
 
-    private final ConnectionStateReceiver connectionStateReceiver;
+    private final ConnectionStateListener<BaseError> connectionStateListener;
 
-    private ConnectionConfig(String deviceName, int maxScanDuration, int connectionTimeout, boolean connectAudio, ScannableDevices deviceType, ConnectionStateReceiver connectionStateReceiver){
+    private ConnectionConfig(String deviceName, int maxScanDuration, boolean connectAudio, ScannableDevices deviceType, ConnectionStateListener<BaseError> connectionStateListener){
         this.deviceName = deviceName;
         this.maxScanDuration = maxScanDuration;
-        this.maxConnectionDuration = connectionTimeout;
         this.deviceType = deviceType;
         this.connectAudio = (deviceType == ScannableDevices.MELOMIND && connectAudio);
-        this.connectionStateReceiver = connectionStateReceiver;
+        this.connectionStateListener = connectionStateListener;
     }
 
     /**
@@ -49,10 +49,6 @@ public final class ConnectionConfig {
         return maxScanDuration;
     }
 
-    public int getMaxConnectionDuration() {
-        return maxConnectionDuration;
-    }
-
     /**
      * By default, Bluetooth connection is only initiated for Data streaming but not for the Audio streaming
      */
@@ -64,8 +60,8 @@ public final class ConnectionConfig {
         return deviceType;
     }
 
-    ConnectionStateReceiver getConnectionStateReceiver() {
-        return connectionStateReceiver;
+    ConnectionStateListener getConnectionStateListener() {
+        return connectionStateListener;
     }
 
     /**
@@ -76,15 +72,14 @@ public final class ConnectionConfig {
         @Nullable
         private String deviceName = null;
         private int maxScanDuration = MbtFeatures.DEFAULT_MAX_SCAN_DURATION_IN_MILLIS;
-        private int maxConnectionDuration = MbtFeatures.DEFAULT_MAX_CONNECTION_DURATION_IN_MILLIS;
         private boolean connectAudio = false;
         private ScannableDevices deviceType = ScannableDevices.ALL;
         @NonNull
-        private final ConnectionStateReceiver connectionStateReceiver;
+        private final ConnectionStateListener<BaseError> connectionStateListener;
 
 
-        public Builder(@NonNull ConnectionStateReceiver connectionStateReceiver){
-            this.connectionStateReceiver = connectionStateReceiver;
+        public Builder(@NonNull ConnectionStateListener<BaseError> connectionStateListener){
+            this.connectionStateListener = connectionStateListener;
         }
 
         /**
@@ -113,12 +108,6 @@ public final class ConnectionConfig {
         @NonNull
         public Builder maxScanDuration(int maxScanDurationInMillis){
             this.maxScanDuration = maxScanDurationInMillis;
-            return this;
-        }
-
-        @NonNull
-        public Builder maxConnectionDuration(int maxDurationInMillis){
-            this.maxConnectionDuration = maxDurationInMillis;
             return this;
         }
 
@@ -161,7 +150,7 @@ public final class ConnectionConfig {
 
         @NonNull
         public ConnectionConfig create(){
-            return new ConnectionConfig(this.deviceName, this.maxScanDuration, this.maxConnectionDuration, this.connectAudio, this.deviceType, this.connectionStateReceiver);
+            return new ConnectionConfig(this.deviceName, this.maxScanDuration, this.connectAudio, this.deviceType, this.connectionStateListener);
         }
 
 

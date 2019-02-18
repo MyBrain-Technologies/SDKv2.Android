@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothDevice;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
 
 /**
@@ -74,7 +75,7 @@ public interface DeviceEvents {
     /**
      *
      */
-    public class RawDeviceMeasure {
+    class RawDeviceMeasure {
         private byte[] rawMeasure;
 
         public RawDeviceMeasure(@NonNull byte[] rawMeasure){
@@ -85,4 +86,5 @@ public interface DeviceEvents {
             return rawMeasure;
         }
     }
+
 }

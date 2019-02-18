@@ -187,7 +187,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                     if(isAudioBluetoothConnected())
                         disconnect(BtProtocol.BLUETOOTH_A2DP);
                     disconnect(MbtConfig.isCurrentDeviceAMelomind() ? BtProtocol.BLUETOOTH_LE : BtProtocol.BLUETOOTH_SPP);
-
                 }
             } else if (request instanceof StreamRequestEvent) {
                 if (((StreamRequestEvent) request).isStart())
@@ -451,9 +450,10 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 isConnectionSucces = mbtBluetoothA2DP.connect(mContext, getCurrentScannedDevice());
                 break;
         }
-        if(isConnectionSucces)
-            updateConnectionState(false);
-        else if(!protocol.equals(BLUETOOTH_A2DP))
+        LogUtils.i(TAG,"updateConnectionState "+(protocol.equals(BLUETOOTH_A2DP) ? mbtBluetoothA2DP.getCurrentState() : getCurrentState()));
+        if(isConnectionSucces) {
+            updateConnectionState((protocol.equals(BLUETOOTH_A2DP) && isAudioBluetoothConnected()) || (!protocol.equals(BLUETOOTH_A2DP) && isDataBluetoothConnected()));
+        } else if(!protocol.equals(BLUETOOTH_A2DP))
             updateConnectionState(BtState.CONNECTION_FAILURE);
         LogUtils.i(TAG," is connection started "+isConnectionSucces);
     }
@@ -850,10 +850,12 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private void startStreamOperation(boolean enableDeviceStatusMonitoring){
         if(!mbtBluetoothLE.isConnected()){
             notifyStreamStateChanged(IStreamable.StreamState.DISCONNECTED);
+            requestBeingProcessed = false;
             return;
         }
 
         if(mbtBluetoothLE.isStreaming()){
+            requestBeingProcessed = false;
             return;
         }
 
@@ -874,9 +876,10 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * If there is no streaming session in progress, nothing happens and the method returns silently.
      */
     private void stopStreamOperation(){
-        if(!mbtBluetoothLE.isStreaming())
+        if(!mbtBluetoothLE.isStreaming()) {
+            requestBeingProcessed = false;
             return;
-
+        }
         if(!mbtBluetoothLE.stopStream()){
             requestBeingProcessed  = false;
             EventBusManager.postEvent(IStreamable.StreamState.FAILED);
@@ -953,6 +956,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 break;
             case AUDIO_CONNECTED:
                 mbtBluetoothA2DP.notifyConnectionStateChanged(newState,false);
+                LogUtils.i(TAG, "stop future operation manager");
                 stopFutureOperation(false);
                 if(!mbtBluetoothLE.isConnected() && MbtConfig.connectAudioIfDeviceCompatible()) //if audio is connected (and BLE is not) when the user request connection to a headset
                     connectBLEFromA2DP(mbtBluetoothA2DP.getConnectedDevice().getName());
@@ -979,7 +983,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * @param deviceValue the new value as String
      */
     void notifyDeviceInfoReceived(DeviceInfo deviceInfo, String deviceValue){
-        LogUtils.i(TAG, "post device info");
+        LogUtils.i(TAG, "post device info "+deviceValue);
         requestBeingProcessed = false;
         EventBusManager.postEvent(new DeviceInfoEvent<String>(deviceInfo, deviceValue));
     }
@@ -999,7 +1003,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     }
 
     void requestCurrentConnectedDevice(final SimpleRequestCallback<MbtDevice> callback) {
-        EventBusManager.postEventWithCallback(new DeviceEvents.GetDeviceEvent(), new EventBusManager.Callback<DeviceEvents.PostDeviceEvent>(){
+        EventBusManager.postEventWithCallback(new DeviceEvents.GetDeviceEvent(), new EventBusManager.CallbackVoid<DeviceEvents.PostDeviceEvent>(){
             @Override
             @Subscribe
             public void onEventCallback(DeviceEvents.PostDeviceEvent device) {
@@ -1079,7 +1083,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
     /**
      * Gets current state according to bluetooth protocol value
-     * @return
      */
     private BtState getCurrentState(){
         return MbtFeatures.useLowEnergyProtocol() ? mbtBluetoothLE.getCurrentState() : mbtBluetoothSPP.getCurrentState();
@@ -1091,7 +1094,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
     void disconnectA2DPFromBLE() {
         LogUtils.i(TAG, " disconnect A2dp from ble");
-        if(isDataBluetoothConnected())
+        if(isDataBluetoothConnected() && isAudioBluetoothConnected())
             mbtBluetoothLE.disconnectA2DPFromBLE();
     }
 

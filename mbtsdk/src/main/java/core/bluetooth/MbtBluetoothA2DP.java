@@ -87,8 +87,8 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
             // End-user is indeed connected to an A2DP device. We retrieve it to see if it is the melomind
             LogUtils.i(TAG, "User device is currently connected to an A2DP Headset. Checking if it is the melomind");
 
-            if (a2dpProxy.getConnectedDevices() == null || a2dpProxy.getConnectedDevices().isEmpty())
-                connect(context,deviceToConnect); // Somehow end-user is no longer connected (should not happen)
+//            if (a2dpProxy.getConnectedDevices() == null || a2dpProxy.getConnectedDevices().isEmpty())
+//                connect(context,deviceToConnect); // Somehow end-user is no longer connected (should not happen)
 
             // we assume there is only one, because Android can only support one at the time
             final BluetoothDevice deviceConnected = a2dpProxy.getConnectedDevices().get(0);
@@ -155,7 +155,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
 
                 if (!result) { // according to doc : "false on immediate error, true otherwise"
                     LogUtils.e(TAG, "Failed to initiate connection via A2DP!");
-                    //notifyConnectionStateChanged(BtState.CONNECTION_FAILURE);
+                    notifyConnectionStateChanged(BtState.CONNECTION_FAILURE);
                     return false;
                 }
 
@@ -184,7 +184,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                 }
                 if (status != null && status) {
                     LogUtils.i(TAG, "Successfully connected via A2DP to " + deviceToConnect.getAddress());
-                    //notifyConnectionStateChanged(BtState.AUDIO_CONNECTED);
+                    notifyConnectionStateChanged(BtState.AUDIO_CONNECTED);
                     return true;
                 } else {
                     LogUtils.i(TAG, "Cannot connect to A2DP on device" + deviceToConnect.getAddress());
@@ -400,7 +400,9 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
         setCurrentState(newState);
         if(newState.equals(BtState.AUDIO_DISCONNECTED) && futureDisconnection!= null && !futureDisconnection.isDone() && !futureDisconnection.isCancelled())
             futureDisconnection.complete(true);
-        else if (newState.equals(BtState.AUDIO_CONNECTED) && futureConnection!= null && !futureConnection.isDone() && !futureConnection.isCancelled())
+        else if (newState.equals(BtState.AUDIO_CONNECTED) && futureConnection!= null && !futureConnection.isDone() && !futureConnection.isCancelled()) {
+            LogUtils.i(TAG," audio connected complete futureconnection");
             futureConnection.complete(true);
+        }
     }
 }

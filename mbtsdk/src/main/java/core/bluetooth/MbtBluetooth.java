@@ -175,7 +175,7 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
 //        }
     }
 
-    public void notifyBatteryReceived(int value){
+    protected void notifyBatteryReceived(int value){
         mbtBluetoothManager.notifyDeviceInfoReceived(DeviceInfo.BATTERY, String.valueOf(value));
     }
 

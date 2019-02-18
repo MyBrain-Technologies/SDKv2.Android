@@ -11,8 +11,6 @@ public class BroadcastUtils {
     private static boolean isReceiverRegistered = false;
     /**
      * Register receiver for a list of actions
-     * @param context
-     * @param actions
      */
     public static void registerReceiverIntents(Context context, ArrayList<String> actions, BroadcastReceiver receiver){
         for (String action : actions){
@@ -22,10 +20,14 @@ public class BroadcastUtils {
         }
     }
 
-    public static void unregisterReceiver(Context context, BroadcastReceiver broadcastReceiver){
-        if(isReceiverRegistered){
-            context.unregisterReceiver(broadcastReceiver);
-            isReceiverRegistered = false;
+    public static void unregisterReceiver(Context context, BroadcastReceiver broadcastReceiver) {
+        try {
+            if (isReceiverRegistered) {
+                context.unregisterReceiver(broadcastReceiver);
+                isReceiverRegistered = false;
+            }
+        }catch (IllegalArgumentException e){
+            LogUtils.w("BroadcastUtils", "Unregistering failed : the receiver was not registered.");
         }
     }
 }

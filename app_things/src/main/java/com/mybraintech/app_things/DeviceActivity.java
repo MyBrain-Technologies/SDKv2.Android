@@ -38,11 +38,13 @@ import engine.MbtClient;
 import engine.SimpleRequestCallback;
 import engine.StreamConfig;
 import engine.clientevents.BaseError;
+import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.ConnectionStateReceiver;
 import engine.clientevents.DeviceInfoListener;
 import engine.clientevents.EegListener;
 import features.MbtFeatures;
 import mbtsdk.com.mybraintech.sdkv2.R;
+import utils.LogUtils;
 
 import static utils.MatrixUtils.invertFloatMatrix;
 
@@ -77,52 +79,35 @@ DeviceActivity extends AppCompatActivity {
     private Button readBatteryButton;
     private String lastReadBatteryLevel = "";
 
+    private boolean isConnected = false;
     private boolean isStreaming = false;
 
-    private ConnectionStateReceiver connectionStateReceiver = new ConnectionStateReceiver(){
+
+    private ConnectionStateListener connectionStateListener = new ConnectionStateListener(){
 
         @Override
-        public void onReceive(Context context, Intent intent) {
-            currentState = (BtState) intent.getSerializableExtra("newState");
-            Log.i(TAG, "Received broadcast "+currentState);
+        public void onDeviceConnected() {
+            isConnected = true;
+        }
 
-            if(currentState.equals(BtState.DISCONNECTED)){
-                notifyUser(getString(R.string.disconnected_headset));
-                if(isStreaming)
-                    notifyUser("Please try to connect again");
-                returnOnPreviousActivity();
-            }
+        @Override
+        public void onDeviceDisconnected() {
+            LogUtils.i(TAG," device disconnected");
+            isConnected = false;
+            //returnOnPreviousActivity();
         }
 
         public void onError(BaseError error, String additionnalInfo) {
-            notifyUser(getString(R.string.no_connected_headset));
-            if(isStreaming)
-                notifyUser("Please try to connect again");
-            returnOnPreviousActivity();        }
+            notifyUser(error.getMessage()+(additionnalInfo != null ? additionnalInfo : ""));
+        }
     };
+
 
     private DeviceInfoListener deviceInfoListener = new DeviceInfoListener() {
         @Override
         public void onBatteryChanged(String newLevel) {
             lastReadBatteryLevel = newLevel;
             notifyUser("Current battery level : "+lastReadBatteryLevel+" %");
-        }
-
-        @Override
-        public void onFwVersionReceived(String fwVersion) {
-        }
-
-        @Override
-        public void onHwVersionReceived(String hwVersion) {
-        }
-
-        @Override
-        public void onSerialNumberReceived(String serialNumber) {
-        }
-
-        @Override
-        public void onModelNumberReceived(String modelNumber) {
-
         }
 
         @Override
@@ -175,10 +160,7 @@ DeviceActivity extends AppCompatActivity {
         initStartStopStreamingButton();
         initEegGraph();
 
-        client.setConnectionStateReceiver(connectionStateReceiver);
-        LocalBroadcastManager.getInstance(this).registerReceiver(connectionStateReceiver,
-                new IntentFilter(MbtFeatures.INTENT_CONNECTION_STATE_CHANGED));
-
+        client.setConnectionStateListener(connectionStateListener);
         client.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
             @Override
             public void onRequestComplete(MbtDevice object) {
@@ -213,9 +195,8 @@ DeviceActivity extends AppCompatActivity {
         readBatteryButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(deviceInfoListener != null){
+                if(deviceInfoListener != null)
                     client.readBattery(deviceInfoListener);
-                }
             }
         });
     }
@@ -404,19 +385,15 @@ DeviceActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         client.disconnectBluetooth();
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(connectionStateReceiver);
-        connectionStateReceiver = null;
-        deviceInfoListener = null;
+        connectionStateListener = null;
         eegListener = null;
-        client.setConnectionStateReceiver(null);
+        client.setConnectionStateListener(null);
         returnOnPreviousActivity();
     }
 
     private void returnOnPreviousActivity(){
         eegListener = null;
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(connectionStateReceiver);
-        connectionStateReceiver = null;
-        deviceInfoListener = null;
+        connectionStateListener = null;
         finish();
         startActivity(new Intent(DeviceActivity.this,HomeActivity.class));
     }
