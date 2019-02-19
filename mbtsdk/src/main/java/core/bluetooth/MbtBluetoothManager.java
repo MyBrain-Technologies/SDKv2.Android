@@ -344,6 +344,9 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 if(isLocationDisabledOrNotGranted()) //assert that Location is on and Location permissions are granted
                     return;
 
+                if(MbtConfig.connectAudioIfDeviceCompatible()) //if user requested audio connection
+                    mbtBluetoothA2DP.initA2dpProxy(); //initialization to check if a Melomind is already connected in A2DP : as the next step is the scanning, the SDK is able to filter on the name of this device
+
                 if(getCurrentState().equals(BtState.IDLE))
                     updateConnectionState(false); //current state is set to READY_FOR_BLUETOOTH_OPERATION
                 LogUtils.i(TAG, " ready for Bluetooth Operation");
@@ -436,25 +439,23 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     }
 
     private void connect(BtProtocol protocol){
-        LogUtils.i(TAG,"connect: "+getCurrentScannedDevice().getName());
         boolean isConnectionSucces = false;
         this.isConnectionInterrupted = false; // resetting the flag when starting a new connection
         switch (protocol){
             case BLUETOOTH_LE:
-                isConnectionSucces = mbtBluetoothLE.connect(mContext, getCurrentScannedDevice());
+                isConnectionSucces = mbtBluetoothLE.connect(mContext, getCurrentScannedDevice(false));
                 break;
             case BLUETOOTH_SPP:
-                isConnectionSucces = mbtBluetoothSPP.connect(mContext, getCurrentScannedDevice());
+                isConnectionSucces = mbtBluetoothSPP.connect(mContext, getCurrentScannedDevice(false));
                 break;
             case BLUETOOTH_A2DP:
-                isConnectionSucces = mbtBluetoothA2DP.connect(mContext, getCurrentScannedDevice());
+                isConnectionSucces = mbtBluetoothA2DP.connect(mContext, getCurrentScannedDevice(true));
                 break;
         }
         LogUtils.i(TAG,"updateConnectionState "+(protocol.equals(BLUETOOTH_A2DP) ? mbtBluetoothA2DP.getCurrentState() : getCurrentState()));
         if(isConnectionSucces) {
             updateConnectionState((protocol.equals(BLUETOOTH_A2DP) && isAudioBluetoothConnected()) || (!protocol.equals(BLUETOOTH_A2DP) && isDataBluetoothConnected()));
-        } else if(!protocol.equals(BLUETOOTH_A2DP))
-            updateConnectionState(BtState.CONNECTION_FAILURE);
+        }
         LogUtils.i(TAG," is connection started "+isConnectionSucces);
     }
 
@@ -962,7 +963,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                     connectBLEFromA2DP(mbtBluetoothA2DP.getConnectedDevice().getName());
                 break;
             case DEVICE_FOUND:
-                EventBusManager.postEvent(new DeviceEvents.NewBluetoothDeviceScannedEvent(getCurrentScannedDevice()));
+                EventBusManager.postEvent(new DeviceEvents.NewBluetoothDeviceScannedEvent(getCurrentScannedDevice(false)));
                 break;
             case SCAN_TIMEOUT:
             case SCAN_FAILURE:
@@ -973,7 +974,10 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 EventBusManager.postEvent(new DeviceEvents.NewBluetoothDeviceConnectedEvent(null));
                 break;
         }
-        EventBusManager.postEvent(new NewConnectionStateEvent(newState));//This event is sent to MbtManager for user notifications
+        if(mbtBluetoothA2DP.getCurrentState().equals(BtState.CONNECTION_FAILURE))
+            EventBusManager.postEvent(new NewConnectionStateEvent(newState, " Impossible to connect Bluetooth for audio streaming."));//This event is sent to MbtManager for user notifications
+        else
+            EventBusManager.postEvent(new NewConnectionStateEvent(newState));//This event is sent to MbtManager for user notifications
     }
 
     /**
@@ -1032,10 +1036,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * This method should be called if no error occured.
      */
     public void updateConnectionState(boolean isFutureCompleted){
-        LogUtils.i(TAG, "update connection state and stop future if completed is true : "+isFutureCompleted);
         if(!isConnectionInterrupted)
             updateConnectionState(getCurrentState().getNextConnectionStep());
-        LogUtils.i(TAG, "update connection state stop future "+isFutureCompleted);
         if(isFutureCompleted)
             stopFutureOperation(false);
     }
@@ -1061,7 +1063,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      *
      * @return <code>true</code> if connected, <code>false</code> otherwise
      */
-    private boolean isDataBluetoothConnected() {
+    boolean isDataBluetoothConnected() {
         return  MbtFeatures.useLowEnergyProtocol() ? mbtBluetoothLE.isConnected() : mbtBluetoothSPP.isConnected();
     }
 
@@ -1088,8 +1090,11 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         return MbtFeatures.useLowEnergyProtocol() ? mbtBluetoothLE.getCurrentState() : mbtBluetoothSPP.getCurrentState();
     }
 
-    private BluetoothDevice getCurrentScannedDevice(){
-        return (MbtFeatures.useLowEnergyProtocol()) ? mbtBluetoothLE.scannedDevice : mbtBluetoothSPP.scannedDevice;
+    private BluetoothDevice getCurrentScannedDevice(Boolean isAudioDevice){
+        if(isAudioDevice)
+            return mbtBluetoothLE.getGatt().getDevice();
+        else
+            return (MbtFeatures.useLowEnergyProtocol()) ? mbtBluetoothLE.scannedDevice : mbtBluetoothSPP.scannedDevice;
     }
 
     void disconnectA2DPFromBLE() {

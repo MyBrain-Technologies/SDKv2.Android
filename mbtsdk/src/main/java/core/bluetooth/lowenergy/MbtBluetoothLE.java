@@ -396,9 +396,9 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     @TargetApi(Build.VERSION_CODES.KITKAT)
     @Override
     public boolean connect(Context context, BluetoothDevice device) {
-        LogUtils.i(TAG," connect in Low Energy ");
         if(device == null || context == null)
             return false;
+        LogUtils.i(TAG," connect in Low Energy "+device.getName()+" address is "+device.getAddress());
 
         //Using reflexion here because min API is 21 and transport layer is not available publicly until API 23
         try {
@@ -801,5 +801,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             updateConnectionState(true); //current state is set to BONDED
     }
 
-
+    public BluetoothGatt getGatt() { //todo delete
+        return gatt;
+    }
 }

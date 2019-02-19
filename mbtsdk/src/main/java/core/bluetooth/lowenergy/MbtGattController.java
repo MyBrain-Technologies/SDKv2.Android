@@ -264,7 +264,6 @@ final class MbtGattController extends BluetoothGattCallback {
     @Override
     public void onCharacteristicChanged(BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic) {
         super.onCharacteristicChanged(gatt, characteristic);
-        LogUtils.i(TAG, "on Characteristic changed " );
 
         if (characteristic.getUuid().compareTo(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG) == 0) {
             this.bluetoothController.notifyNewDataAcquired(characteristic.getValue());

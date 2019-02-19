@@ -200,8 +200,9 @@ public class MbtManager{
                 connectionStateListener.onDeviceDisconnected();
                 break;
             default:
-                if (connectionStateEvent.getNewState().isAFailureState())
-                    connectionStateListener.onError(connectionStateEvent.getNewState().getAssociatedError(), null);
+                if (connectionStateEvent.getNewState().isAFailureState()) {
+                    connectionStateListener.onError(connectionStateEvent.getNewState().getAssociatedError(), connectionStateEvent.getAdditionnalInfo());
+                }
                 break;
         }
     }

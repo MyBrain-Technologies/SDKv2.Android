@@ -232,7 +232,7 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
     public BtState getCurrentState() { return currentStateAtomic.get(); }
 
     void setCurrentState(BtState currentState) {
-        LogUtils.i(TAG,"current state was = "+currentState);
+        LogUtils.i(TAG,"set current state was = "+currentState);
         this.currentState = currentState;
         this.currentStateAtomic.set(currentState);
         LogUtils.i(TAG,"is now = "+currentStateAtomic.get());
