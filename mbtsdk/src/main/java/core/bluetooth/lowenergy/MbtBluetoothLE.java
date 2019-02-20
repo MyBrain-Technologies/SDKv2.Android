@@ -20,6 +20,7 @@ import android.os.Handler;
 import android.os.ParcelUuid;
 import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 
@@ -47,6 +48,7 @@ import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
 import engine.clientevents.BaseError;
 import engine.clientevents.ConnectionStateReceiver;
+import features.MbtFeatures;
 import utils.BroadcastUtils;
 import utils.LogUtils;
 
@@ -68,6 +70,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     private final static String CONNECT_GATT_METHOD = "connectGatt";
     private final static String REMOVE_BOND_METHOD = "removeBond";
 
+    @RequiresApi(Build.VERSION_CODES.N)
     private CompletableFuture<Boolean> futureOperation = new CompletableFuture();
     /**
      * An internal event used to notify MbtBluetoothLE that A2DP has disconnected.
@@ -89,20 +92,22 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-            if(action != null){
+            if(action != null) {
                 final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 LogUtils.d(TAG, "received intent " + action + " for device " + (device != null ? device.getName() : null));
-                if (action.equals(BluetoothDevice.ACTION_BOND_STATE_CHANGED))
-                    if(intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE,0) == BluetoothDevice.BOND_BONDED){
+                if (action.equals(BluetoothDevice.ACTION_BOND_STATE_CHANGED)){
+                    LogUtils.i(TAG, "Bond state changed "+intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, 0));
+                    if (intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, 0) == BluetoothDevice.BOND_BONDED) {
                         LogUtils.i(TAG, "Bonded state received");
                         new Handler().postDelayed(new Runnable() {
                             @Override
                             public void run() {
-                                if(getCurrentState().equals(BtState.BONDING))
+                                if (getCurrentState().equals(BtState.BONDING))
                                     updateConnectionState(true); //current state is set to BONDED & and future is completed
                             }
-                        },1000);
+                        }, 1000);
                     }
+                }
             }
         }
     };
@@ -287,13 +292,8 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      */
     public boolean startLowEnergyScan(boolean filterOnDeviceService) {
         LogUtils.i(TAG," start low energy scan on device "+MbtConfig.getNameOfDeviceRequested());
+        List<ScanFilter> mFilters = new ArrayList<>();
 
-        scannedDevice = null;
-
-        if(MbtConfig.isCurrentDeviceAVpro()) {
-            notifyConnectionStateChanged(BtState.SCAN_FAILURE);
-            return false;
-        }
         if (super.bluetoothAdapter == null || super.bluetoothAdapter.getBluetoothLeScanner() == null){
             Log.e(TAG, "Unable to get LE scanner");
             notifyConnectionStateChanged(BtState.SCAN_FAILURE);
@@ -301,7 +301,8 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         }else
             this.bluetoothLeScanner = super.bluetoothAdapter.getBluetoothLeScanner();
 
-        List<ScanFilter> mFilters = new ArrayList<>();
+        scannedDevice = null;
+
         if (filterOnDeviceService) {
             LogUtils.i(TAG, "ENABLED SERVICE FILTER");
             final ScanFilter.Builder filterService = new ScanFilter.Builder()
@@ -399,6 +400,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         if(device == null || context == null)
             return false;
         LogUtils.i(TAG," connect in Low Energy "+device.getName()+" address is "+device.getAddress());
+        BroadcastUtils.registerReceiverIntents(context, receiver, BluetoothDevice.ACTION_BOND_STATE_CHANGED);
 
         //Using reflexion here because min API is 21 and transport layer is not available publicly until API 23
         try {
@@ -408,7 +410,6 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 
             final int transport = device.getClass().getDeclaredField("TRANSPORT_LE").getInt(null);
             this.gatt = (BluetoothGatt) connectGattMethod.invoke(device, context, false, mbtGattController, transport);
-            LogUtils.i(TAG," connect request sent");
             return true;
 
         } catch (@NonNull final NoSuchMethodException | NoSuchFieldException | IllegalAccessException | InvocationTargetException e) {
@@ -429,7 +430,6 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 
     /**
      * Disconnects from the currently connected {@link BluetoothGatt gatt instance} and sets it to null
-     * @return
      */
     @Override
     public boolean disconnect() {
@@ -607,12 +607,10 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     @Override
     public void notifyConnectionStateChanged(@NonNull BtState newState) {
         super.notifyConnectionStateChanged(newState);
-        switch (newState){
-            case DISCONNECTED:
-                if (isStreaming())
-                    notifyStreamStateChanged(StreamState.DISCONNECTED);
-                    BroadcastUtils.unregisterReceiver(context,receiver);
-                break;
+        if(newState.equals(BtState.DISCONNECTED)) {
+            if (isStreaming())
+                notifyStreamStateChanged(StreamState.DISCONNECTED);
+            BroadcastUtils.unregisterReceiver(context, receiver);
         }
     }
 
@@ -779,9 +777,6 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     public void bond(MbtDevice device) {
         LogUtils.i(TAG, "start bonding");
         if(device.getBluetoothDevice().getType() == BluetoothDevice.DEVICE_TYPE_LE || device.getBluetoothDevice().getType() == BluetoothDevice.DEVICE_TYPE_DUAL) { //LOW ENERGY BONDING ONLY
-            BroadcastUtils.registerReceiverIntents(context, new ArrayList<>(Arrays.asList(
-                    BluetoothDevice.ACTION_BOND_STATE_CHANGED)),
-                    receiver);
             updateConnectionState(false); //current state is set to BONDING
             mbtBluetoothManager.startReadOperation(DeviceInfo.BATTERY); //trigger bonding indirectly
         }else
@@ -794,11 +789,14 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             updateConnectionState(true); //current state is set to READING_FIRMWARE_VERSION_SUCCESS or READING_HARDWARE_VERSION_SUCCESS or READING_SERIAL_NUMBER_SUCCESS or READING_SUCCESS if reading device info and future is completed
         }
     }
-    void notifyBatteryReceived(int value, boolean isSuccess){
-       LogUtils.i(TAG," battery received");
-        super.notifyBatteryReceived(value);
-        if(getCurrentState().equals(BtState.BONDING) && isSuccess || scannedDevice.getBondState() == BluetoothDevice.BOND_BONDED)
-            updateConnectionState(true); //current state is set to BONDED
+    void notifyBatteryReceived(int value, boolean isSuccess) {
+        if (!isSuccess) //authentication failed : bonding has been done but the sdk need to relaunch a read battery operation
+            readBattery();
+        else {
+            super.notifyBatteryReceived(value);
+            if (getCurrentState().equals(BtState.BONDING) && scannedDevice.getBondState() == BluetoothDevice.BOND_BONDED)
+                updateConnectionState(true); //current state is set to BONDED
+        }
     }
 
     public BluetoothGatt getGatt() { //todo delete

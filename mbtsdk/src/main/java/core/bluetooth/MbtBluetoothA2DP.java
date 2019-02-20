@@ -162,7 +162,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                     public final void run() {
                         if (hasA2DPDeviceConnected()) {
                             cancel();
-                            if(!futureConnection.isDone() && !futureConnection.isCancelled())
+                            if(futureConnection!= null && !futureConnection.isDone() && !futureConnection.isCancelled())
                                 futureConnection.complete(true);
                         }
                     }
@@ -319,6 +319,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
             LogUtils.i(TAG, "init A2DP Proxy ");
             adapter.getProfileProxy(context, this, BluetoothProfile.A2DP); //establish the connection to the proxy
             try {
+                futureInit = new CompletableFuture<>();
                 futureInit.get(MbtConfig.getBluetoothA2dpConnectionTimeout(), TimeUnit.MILLISECONDS);
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 LogUtils.i(TAG," No audio connected device "+e);
@@ -354,6 +355,10 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
             this.connectedA2DpDevices = Collections.emptyList();
         }
 
+        public boolean isStarted() {
+            return pollingTimer != null;
+        }
+
         public void start(int pollingMillis) {
             LogUtils.i(TAG, "starting a2dp monitoring timer");
             this.pollingTimer = new Timer();
@@ -380,11 +385,10 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                                && ((connectedDevice.getName().startsWith(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX) || connectedDevice.getName().startsWith(MbtFeatures.A2DP_DEVICE_NAME_PREFIX)) //if device name is a valid BLE name
                                     || (connectedDevice.getName().startsWith(MelomindsQRDataBase.QR_PREFIX) && connectedDevice.getName().length() == MelomindsQRDataBase.QR_LENGTH))) { //or if device name is a valid QR Code name
 
-                            if(!futureInit.isDone() && !futureInit.isCancelled())
-                                futureInit.complete(true);
-                            if(MbtConfig.getNameOfDeviceRequested() == null) //is not null if the user entered a device name
-                                MbtConfig.setNameOfDeviceRequested(connectedDevice.getName());
+                            LogUtils.i(TAG, "task monitor audio connected ");
                             notifyConnectionStateChanged(BtState.AUDIO_CONNECTED, true);
+                            if(futureInit!= null && !futureInit.isDone() && !futureInit.isCancelled())
+                                futureInit.complete(true);
                         }
                     }else //Here, either the A2DP connection has dropped or a new A2DP device is connecting.
                         notifyConnectionStateChanged(BtState.AUDIO_DISCONNECTED);
@@ -399,9 +403,19 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
         setCurrentState(newState);
         if(newState.equals(BtState.AUDIO_DISCONNECTED) && futureDisconnection!= null && !futureDisconnection.isDone() && !futureDisconnection.isCancelled())
             futureDisconnection.complete(true);
-        else if (newState.equals(BtState.AUDIO_CONNECTED) && futureConnection!= null && !futureConnection.isDone() && !futureConnection.isCancelled()) {
-            LogUtils.i(TAG," audio connected complete futureconnection");
-            futureConnection.complete(true);
+        else if (newState.equals(BtState.AUDIO_CONNECTED)) {
+            if(futureConnection!= null && !futureConnection.isDone() && !futureConnection.isCancelled()){
+                LogUtils.i(TAG," audio connected complete futureconnection");
+                futureConnection.complete(true);
+            }
+            if(notifyManager) //if audio is connected (and BLE is not) when the user request connection to a headset
+                mbtBluetoothManager.notifyConnectionStateChanged(BtState.AUDIO_CONNECTED);
+        }
+    }
+
+    void reset(){
+        if (this.bluetoothAdapter != null) {
+            this.bluetoothAdapter.closeProfileProxy(BluetoothA2dp.A2DP, a2dpProxy); //todo monitor.stop
         }
     }
 }

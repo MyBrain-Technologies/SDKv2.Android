@@ -12,11 +12,13 @@ public class BroadcastUtils {
     /**
      * Register receiver for a list of actions
      */
-    public static void registerReceiverIntents(Context context, ArrayList<String> actions, BroadcastReceiver receiver){
-        for (String action : actions){
-            IntentFilter intentFilter = new IntentFilter(action);
-            context.registerReceiver(receiver, intentFilter);
-            isReceiverRegistered = true;
+    public static void registerReceiverIntents(Context context, BroadcastReceiver receiver, String... actions){
+        if(!isReceiverRegistered){
+            for (String action : actions){
+                IntentFilter intentFilter = new IntentFilter(action);
+                context.registerReceiver(receiver, intentFilter);
+                isReceiverRegistered = true;
+            }
         }
     }
 

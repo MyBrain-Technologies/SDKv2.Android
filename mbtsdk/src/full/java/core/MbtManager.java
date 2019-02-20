@@ -15,7 +15,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import config.MbtConfig;
-import core.bluetooth.BtState;
 import core.bluetooth.IStreamable;
 import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
 import core.bluetooth.requests.DisconnectRequestEvent;
@@ -190,7 +189,7 @@ public class MbtManager{
     public void onConnectionStateChanged(NewConnectionStateEvent connectionStateEvent) {
         if (connectionStateListener == null)
             return;
-        Log.i(TAG, "New state received : " + connectionStateEvent.getNewState());
+        //Log.d(TAG, "New state received : " + connectionStateEvent.getNewState());
 
         switch (connectionStateEvent.getNewState()) {
             case CONNECTED_AND_READY:

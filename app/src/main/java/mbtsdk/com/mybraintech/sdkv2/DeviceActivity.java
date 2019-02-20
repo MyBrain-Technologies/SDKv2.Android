@@ -141,7 +141,6 @@ DeviceActivity extends AppCompatActivity {
             @Override
             public void onBatteryChanged(String newLevel) {
                 lastReadBatteryLevel = newLevel;
-                LogUtils.i(TAG, "battery received in activity "+lastReadBatteryLevel);
                 notifyUser("Current battery level : "+lastReadBatteryLevel+" %");
             }
 

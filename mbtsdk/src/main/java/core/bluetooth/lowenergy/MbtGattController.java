@@ -204,25 +204,27 @@ final class MbtGattController extends BluetoothGattCallback {
     @Override
     public void onCharacteristicRead(BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, int status) {
         super.onCharacteristicRead(gatt, characteristic, status);
-        LogUtils.i(TAG, "on Characteristic read " );
         if (characteristic.getValue() != null)
-            LogUtils.i(TAG, "received charac value " + new String(characteristic.getValue()));
+            LogUtils.i(TAG, "onCharacteristicRead : " + new String(characteristic.getValue()));
 
-        if (characteristic.getUuid().compareTo(CHARAC_INFO_FIRMWARE_VERSION) == 0) {
-            String firmwareVersionValue = new String(characteristic.getValue());
-            bluetoothController.notifyDeviceInfoReceived(DeviceInfo.FW_VERSION, firmwareVersionValue);
-        }
-        if (characteristic.getUuid().compareTo(CHARAC_INFO_HARDWARE_VERSION) == 0) {
+        if (characteristic.getUuid().compareTo(CHARAC_INFO_FIRMWARE_VERSION) == 0)
+            bluetoothController.notifyDeviceInfoReceived(DeviceInfo.FW_VERSION, new String(characteristic.getValue()));
+
+        if (characteristic.getUuid().compareTo(CHARAC_INFO_HARDWARE_VERSION) == 0)
             bluetoothController.notifyDeviceInfoReceived(DeviceInfo.HW_VERSION, new String(characteristic.getValue()));
-        }
-        if (characteristic.getUuid().compareTo(CHARAC_INFO_SERIAL_NUMBER) == 0) {
+
+        if (characteristic.getUuid().compareTo(CHARAC_INFO_SERIAL_NUMBER) == 0)
             bluetoothController.notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER, new String(characteristic.getValue()));
-        }
-        if (characteristic.getUuid().compareTo(CHARAC_INFO_MODEL_NUMBER) == 0) {
+
+        if (characteristic.getUuid().compareTo(CHARAC_INFO_MODEL_NUMBER) == 0)
             bluetoothController.notifyDeviceInfoReceived(DeviceInfo.MODEL_NUMBER, new String(characteristic.getValue()));
-        }
 
         if (characteristic.getUuid().compareTo(CHARAC_MEASUREMENT_BATTERY_LEVEL) == 0) {
+            LogUtils.i(TAG, "battery level status : " + status);
+            int GATT_AUTHENTICATION_FAIL = 0x89;
+            if(status == GATT_AUTHENTICATION_FAIL)
+                bluetoothController.notifyBatteryReceived(0, false);
+
             if (characteristic.getValue() != null) {
                 if (characteristic.getValue().length < 4) {
                     final StringBuffer sb = new StringBuffer();
@@ -244,7 +246,6 @@ final class MbtGattController extends BluetoothGattCallback {
                 LogUtils.i(TAG, "Received a [onCharacteristicRead] callback for battery level request. " +
                         "Value -> " + level);
                 bluetoothController.notifyBatteryReceived(level, status == BluetoothGatt.GATT_SUCCESS);
-
             }
         }
     }
@@ -412,8 +413,7 @@ final class MbtGattController extends BluetoothGattCallback {
 
             case MailboxEvents.MBX_CONNECT_IN_A2DP:
                 LogUtils.i(TAG, "received mailbox response for A2DP connection " + (int) (characteristic.getValue()[1]));
-                //if ((characteristic.getValue()[1] & MailboxEvents.CMD_CODE_CONNECT_IN_A2DP_IN_PROGRESS) != 0x01)
-                    bluetoothController.notifyMailboxEventReceived(BtState.AUDIO_CONNECTED);
+                bluetoothController.notifyMailboxEventReceived(BtState.AUDIO_CONNECTED);
                 break;
 
             case MailboxEvents.MBX_DISCONNECT_IN_A2DP:

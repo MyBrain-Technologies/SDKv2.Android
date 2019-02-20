@@ -44,7 +44,7 @@ public final class MbtConfig {
 
     private final static int bluetoothDiscoverTimeout = 10000;
 
-    private final static int bluetoothBondingTimeout = 15000;
+    private final static int bluetoothBondingTimeout = 10000;
 
     private final static int bluetoothSendingExternalNameTimeout = 15000;
 
