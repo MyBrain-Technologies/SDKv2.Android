@@ -29,7 +29,6 @@ import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
 import core.eeg.MbtEEGManager;
 import core.eeg.requests.QualityRequest;
-import engine.MbtClient;
 import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
 import engine.clientevents.BluetoothError;
@@ -189,7 +188,7 @@ public class MbtManager{
     public void onConnectionStateChanged(NewConnectionStateEvent connectionStateEvent) {
         if (connectionStateListener == null)
             return;
-        //Log.d(TAG, "New state received : " + connectionStateEvent.getNewState());
+        //LogUtils.i(TAG, "New state received : " + connectionStateEvent.getNewState());
 
         switch (connectionStateEvent.getNewState()) {
             case CONNECTED_AND_READY:
@@ -199,9 +198,8 @@ public class MbtManager{
                 connectionStateListener.onDeviceDisconnected();
                 break;
             default:
-                if (connectionStateEvent.getNewState().isAFailureState()) {
+                if (connectionStateEvent.getNewState().isAFailureState())
                     connectionStateListener.onError(connectionStateEvent.getNewState().getAssociatedError(), connectionStateEvent.getAdditionnalInfo());
-                }
                 break;
         }
     }

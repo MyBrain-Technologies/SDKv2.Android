@@ -16,12 +16,14 @@ import android.widget.Switch;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 import engine.ConnectionConfig;
 import engine.MbtClient;
 import engine.clientevents.BaseError;
 import engine.clientevents.ConnectionStateListener;
 import features.MbtFeatures;
+import utils.LogUtils;
 
 import static features.MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX;
 import static features.MbtFeatures.VPRO_DEVICE_NAME_PREFIX;
@@ -38,6 +40,7 @@ public class HomeActivity extends AppCompatActivity{
 
     public final static String DEVICE_NAME = "DEVICE_NAME";
     public final static String BLUETOOTH_STATE = "BLUETOOTH_STATE";
+    public final static String PREVIOUS_ACTIVITY = "PREVIOUS_ACTIVITY";
 
     private MbtClient client;
 
@@ -56,7 +59,7 @@ public class HomeActivity extends AppCompatActivity{
 
     private Toast toast;
 
-    private ConnectionStateListener connectionStateListener = new ConnectionStateListener() {
+    private ConnectionStateListener<BaseError> connectionStateListener = new ConnectionStateListener<BaseError>() {
         @Override
         public void onError(BaseError error, String additionnalInfo) {
             Log.e(TAG, "onError received "+error.getMessage()+ (additionnalInfo != null ? additionnalInfo : ""));
@@ -67,6 +70,7 @@ public class HomeActivity extends AppCompatActivity{
 
         @Override
         public void onDeviceConnected() {
+            LogUtils.i(TAG, "home activity deinit");
             toast.cancel();
             deinitCurrentActivity(true);
         }
@@ -88,6 +92,11 @@ public class HomeActivity extends AppCompatActivity{
         toast = Toast.makeText(HomeActivity.this, "", Toast.LENGTH_LONG);
         client = MbtClient.getClientInstance();
         isCancelled = false;
+
+        if(getIntent().hasExtra(HomeActivity.PREVIOUS_ACTIVITY)){
+            if(getIntent().getStringExtra(HomeActivity.PREVIOUS_ACTIVITY)!=null)
+                client.setConnectionStateListener(connectionStateListener);
+        }
 
         initDeviceNameField();
         initConnectAudioSwitch();

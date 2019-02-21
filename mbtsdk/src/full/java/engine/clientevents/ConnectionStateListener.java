@@ -1,8 +1,6 @@
 package engine.clientevents;
 
-import android.content.BroadcastReceiver;
 import android.support.annotation.Keep;
-import android.support.annotation.NonNull;
 
 import core.bluetooth.BtState;
 

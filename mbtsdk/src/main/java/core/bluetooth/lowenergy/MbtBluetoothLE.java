@@ -46,7 +46,10 @@ import core.bluetooth.MbtBluetooth;
 import core.bluetooth.MbtBluetoothManager;
 import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
+import core.device.model.MelomindDevice;
+import core.device.model.MelomindsQRDataBase;
 import engine.clientevents.BaseError;
+import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.ConnectionStateReceiver;
 import features.MbtFeatures;
 import utils.BroadcastUtils;
@@ -334,10 +337,6 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      */
     public void stopLowEnergyScan() {
         LogUtils.i(TAG, "stop low energy scan");
-        if(MbtConfig.isCurrentDeviceAVpro()) {
-            notifyConnectionStateChanged(BtState.SCAN_FAILURE);
-            return;
-        }
         if(this.bluetoothLeScanner != null)
             this.bluetoothLeScanner.stopScan(this.leScanCallback);
         if(!getCurrentState().equals(BtState.DEVICE_FOUND) && !getCurrentState().equals(BtState.CONNECTING))
@@ -441,14 +440,16 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         return false;
     }
 
-    public void disconnect(String deviceName) {
-        if (gatt.getDevice() != null && gatt.getDevice().getName().equals(deviceName))
-            disconnect();
+    public boolean isCurrentDeviceNameEqual(String deviceName){
+        return (gatt != null && gatt.getDevice() != null && gatt.getDevice().getName().equals(deviceName));
     }
 
-        /**
-         * {@inheritDoc}
-         */
+    public String getBleDeviceNameFromA2dp(String deviceName, Context mContext){
+       return MelomindDevice.isDeviceNameValidForMelomind(deviceName) ?
+                deviceName.replace(MbtFeatures.A2DP_DEVICE_NAME_PREFIX, MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX) : //audio_ prefix is replaced by a melo_ prefix
+                MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX + new MelomindsQRDataBase(mContext, true, true).get(deviceName);
+    }
+
     @Override
     public boolean isConnected() {
         return getCurrentState() == BtState.CONNECTED_AND_READY;

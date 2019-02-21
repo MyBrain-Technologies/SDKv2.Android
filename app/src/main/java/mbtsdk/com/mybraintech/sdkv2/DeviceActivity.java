@@ -407,7 +407,9 @@ DeviceActivity extends AppCompatActivity {
         eegListener = null;
         connectionStateListener = null;
         finish();
-        startActivity(new Intent(DeviceActivity.this,HomeActivity.class));
+        Intent intent = new Intent(DeviceActivity.this,HomeActivity.class);
+        intent.putExtra(HomeActivity.PREVIOUS_ACTIVITY, DeviceActivity.TAG);
+        startActivity(intent);
     }
 
     @Override
