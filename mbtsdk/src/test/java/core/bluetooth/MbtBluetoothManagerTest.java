@@ -129,10 +129,6 @@ public class MbtBluetoothManagerTest {
     }
 
     @Test
-    public void updateConnectionState() {
-    }
-
-    @Test
     public void getConnectionError() {
     }
 

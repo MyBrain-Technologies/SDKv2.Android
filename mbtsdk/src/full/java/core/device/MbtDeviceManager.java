@@ -71,7 +71,7 @@ public class MbtDeviceManager extends BaseModuleManager{
     }
 
     @Subscribe
-    public void onNewDeviceConnected(DeviceEvents.NewBluetoothDeviceScannedEvent deviceEvent) {
+    public void onNewDeviceConnected(DeviceEvents.NewBluetoothDeviceEvent deviceEvent) {
         LogUtils.d(TAG, "new device "+ (deviceEvent.getDevice() != null ? "scanned" : " null"));
         if (MbtConfig.getScannableDevices() == ScannableDevices.MELOMIND)
             setmCurrentConnectedDevice(deviceEvent.getDevice() != null ? new MelomindDevice(deviceEvent.getDevice()) : null);
@@ -192,8 +192,6 @@ public class MbtDeviceManager extends BaseModuleManager{
                 level = 100;
                 break;
             case (byte) 0xFF:
-                level = 999;
-                break;
             default:
                 level = -1;
                 break;

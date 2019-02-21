@@ -33,7 +33,7 @@ import engine.clientevents.EEGException;
 import engine.clientevents.ReadException;
 import eventbus.EventBusManager;
 import eventbus.events.ClientReadyEEGEvent;
-import eventbus.events.NewConnectionStateEvent;
+import eventbus.events.ConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
 import engine.clientevents.EegListener;
 import features.MbtFeatures;
@@ -190,7 +190,7 @@ public final class MbtManager{
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onConnectionStateChanged(NewConnectionStateEvent connectionStateEvent){
+    public void onConnectionStateChanged(ConnectionStateEvent connectionStateEvent){
         if(connectionStateListener == null)
             return;
 

@@ -14,8 +14,6 @@ import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
 
-import java.util.concurrent.atomic.AtomicReference;
-
 import config.MbtConfig;
 import core.device.model.DeviceInfo;
 import core.device.model.MelomindDevice;
@@ -35,10 +33,9 @@ import utils.MbtLock;
 
 public abstract class MbtBluetooth implements IScannable, IConnectable{
 
-    private final static String TAG = "MBT Bluetooth";
+    private final static String TAG = MbtBluetooth.class.getName();;
 
-    private BtState currentState = BtState.IDLE;
-    private AtomicReference<BtState> currentStateAtomic = new AtomicReference<>();
+    private volatile BtState currentState = BtState.IDLE;
 
     @Nullable
     protected BluetoothAdapter bluetoothAdapter;
@@ -59,8 +56,6 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
 
         if(this.bluetoothAdapter == null)
             this.bluetoothAdapter = BluetoothAdapter.getDefaultAdapter(); //try another way to get the adapter
-
-        currentStateAtomic.set(currentState);
     }
 
     @Nullable
@@ -91,8 +86,8 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
 
                         LogUtils.i(TAG, String.format("Discovery Scan -> device detected " +
                                 "with name '%s' and MAC address '%s' ", deviceNameFound, device.getAddress()));
-                        if (MbtConfig.getNameOfDeviceRequested() != null && MelomindDevice.hasMelomindName(device) && (deviceNameFound.equals(MbtConfig.getNameOfDeviceRequested()) || deviceNameFound.contains(MbtConfig.getNameOfDeviceRequested()))) {
-                            LogUtils.i(TAG, "Device " + MbtConfig.getNameOfDeviceRequested() +" found. Cancelling discovery & connecting");
+                        if (mbtBluetoothManager.getDeviceNameRequested() != null && MelomindDevice.hasMelomindName(device) && (deviceNameFound.equals(mbtBluetoothManager.getDeviceNameRequested()) || deviceNameFound.contains(mbtBluetoothManager.getDeviceNameRequested()))) {
+                            LogUtils.i(TAG, "Device " + mbtBluetoothManager.getDeviceNameRequested() +" found. Cancelling discovery & connecting");
                             bluetoothAdapter.cancelDiscovery();
                             context.unregisterReceiver(this);
                             mbtBluetoothManager.updateConnectionState(true); //current state is set to DEVICE_FOUND and future is completed
@@ -135,7 +130,7 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
      * Set the current bluetooth connection state to the value given in parameter
      * and notify the bluetooth manager of this change.
      * This method should be called if something went wrong during the connection process, as it stops the connection prccess.
-     * The updateConnectionState() method with no parameter should be call if nothing went wrong and user wants to continue the connection process
+     * The {@link MbtBluetoothManager#updateConnectionState(boolean)}  method with no parameter should be call if nothing went wrong and user wants to continue the connection process
      */
     @Override
     public void notifyConnectionStateChanged(@NonNull BtState newState) {
@@ -143,7 +138,6 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
             BtState previousState = currentState;
             currentState = newState;
             LogUtils.i(TAG," current state is now  =  "+currentState);
-            currentStateAtomic.set(currentState);
             mbtBluetoothManager.notifyConnectionStateChanged(newState);
             if(currentState.isResettableState(previousState)){ //if a disconnection occurred
                 resetCurrentState();//reset the current connection state to IDLE
@@ -164,7 +158,6 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
             notifyConnectionStateChanged(newState);
         else {
             this.currentState = newState;
-            currentStateAtomic.set(currentState);
         }
     }
 
@@ -228,14 +221,13 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
         return b;
     }
 
-    public BtState getCurrentState() { return currentStateAtomic.get(); }
+    public BtState getCurrentState() { return currentState; }
 
     void setCurrentState(BtState currentState) {
         if(!this.currentState.equals(currentState)){
             LogUtils.i(TAG,"set current state was = "+currentState);
             this.currentState = currentState;
-            this.currentStateAtomic.set(currentState);
-            LogUtils.i(TAG,"is now = "+currentStateAtomic.get());
+            LogUtils.i(TAG,"is now = "+currentState);
         }
     }
 }

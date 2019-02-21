@@ -57,11 +57,11 @@ public interface DeviceEvents {
         }
     }
 
-    public class NewBluetoothDeviceScannedEvent {
+    public class NewBluetoothDeviceEvent {
         @Nullable
         private final BluetoothDevice device;
 
-        public NewBluetoothDeviceScannedEvent(@Nullable BluetoothDevice device){
+        public NewBluetoothDeviceEvent(@Nullable BluetoothDevice device){
             this.device = device;
         }
 

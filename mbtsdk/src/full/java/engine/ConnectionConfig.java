@@ -6,7 +6,6 @@ import android.support.annotation.Nullable;
 
 import engine.clientevents.BaseError;
 import engine.clientevents.ConnectionStateListener;
-import engine.clientevents.ConnectionStateReceiver;
 import features.MbtFeatures;
 import features.ScannableDevices;
 

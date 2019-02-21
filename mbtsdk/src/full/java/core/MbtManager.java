@@ -41,7 +41,7 @@ import engine.clientevents.EegListener;
 import engine.clientevents.HeadsetDeviceError;
 import eventbus.EventBusManager;
 import eventbus.events.ClientReadyEEGEvent;
-import eventbus.events.NewConnectionStateEvent;
+import eventbus.events.ConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
 import features.MbtFeatures;
 import utils.LogUtils;
@@ -108,12 +108,12 @@ public class MbtManager{
      * Perform a new Bluetooth connection.
      * @param connectionStateListener a set of callback that will notify the user about connection progress.
      */
-    public void connectBluetooth(@NonNull ConnectionStateListener<BaseError> connectionStateListener){
+    public void connectBluetooth(@NonNull ConnectionStateListener<BaseError> connectionStateListener, String deviceNameRequested){
         this.connectionStateListener = connectionStateListener;
-        if(MbtConfig.getNameOfDeviceRequested() != null && (!MbtConfig.getNameOfDeviceRequested().startsWith(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX) && !MbtConfig.getNameOfDeviceRequested().startsWith(MbtFeatures.VPRO_DEVICE_NAME_PREFIX)))
+        if(deviceNameRequested != null && (!deviceNameRequested.startsWith(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX) && !deviceNameRequested.startsWith(MbtFeatures.VPRO_DEVICE_NAME_PREFIX)))
             this.connectionStateListener.onError(HeadsetDeviceError.ERROR_PREFIX_NAME,null);
         else
-            EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent(true));
+            EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent(true, deviceNameRequested));
     }
 
     /**
@@ -185,7 +185,7 @@ public class MbtManager{
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onConnectionStateChanged(NewConnectionStateEvent connectionStateEvent) {
+    public void onConnectionStateChanged(ConnectionStateEvent connectionStateEvent) {
         if (connectionStateListener == null)
             return;
         //LogUtils.i(TAG, "New state received : " + connectionStateEvent.getNewState());

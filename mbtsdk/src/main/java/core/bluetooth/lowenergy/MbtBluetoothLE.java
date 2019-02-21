@@ -72,6 +72,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 
     private final static String CONNECT_GATT_METHOD = "connectGatt";
     private final static String REMOVE_BOND_METHOD = "removeBond";
+    private final static String REFRESH_METHOD = "refresh";
 
     @RequiresApi(Build.VERSION_CODES.N)
     private CompletableFuture<Boolean> futureOperation = new CompletableFuture();
@@ -294,7 +295,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @return Each found device that matches the specified filters
      */
     public boolean startLowEnergyScan(boolean filterOnDeviceService) {
-        LogUtils.i(TAG," start low energy scan on device "+MbtConfig.getNameOfDeviceRequested());
+        LogUtils.i(TAG," start low energy scan on device "+mbtBluetoothManager.getDeviceNameRequested());
         List<ScanFilter> mFilters = new ArrayList<>();
 
         if (super.bluetoothAdapter == null || super.bluetoothAdapter.getBluetoothLeScanner() == null){
@@ -311,8 +312,8 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             final ScanFilter.Builder filterService = new ScanFilter.Builder()
                     .setServiceUuid(new ParcelUuid(MelomindCharacteristics.SERVICE_MEASUREMENT));
 
-            if(MbtConfig.getNameOfDeviceRequested() != null)
-                filterService.setDeviceName(MbtConfig.getNameOfDeviceRequested());
+            if(mbtBluetoothManager.getDeviceNameRequested() != null)
+                filterService.setDeviceName(mbtBluetoothManager.getDeviceNameRequested());
 
             mFilters.add(filterService.build());
         }
@@ -322,7 +323,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
                 .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
                 .build();
 
-        LogUtils.i(TAG, String.format("Starting Low Energy Scan with filtering on name '%s' and service UUID '%s'", MbtConfig.getNameOfDeviceRequested(), MelomindCharacteristics.SERVICE_MEASUREMENT));
+        LogUtils.i(TAG, String.format("Starting Low Energy Scan with filtering on name '%s' and service UUID '%s'", mbtBluetoothManager.getDeviceNameRequested(), MelomindCharacteristics.SERVICE_MEASUREMENT));
         this.bluetoothLeScanner.startScan(mFilters, settings, this.leScanCallback);
         LogUtils.i(TAG, "Scan started.");
         if(getCurrentState().equals(BtState.READY_FOR_BLUETOOTH_OPERATION))
@@ -447,7 +448,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     public String getBleDeviceNameFromA2dp(String deviceName, Context mContext){
        return MelomindDevice.isDeviceNameValidForMelomind(deviceName) ?
                 deviceName.replace(MbtFeatures.A2DP_DEVICE_NAME_PREFIX, MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX) : //audio_ prefix is replaced by a melo_ prefix
-                MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX + new MelomindsQRDataBase(mContext, true, true).get(deviceName);
+                MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX + new MelomindsQRDataBase(mContext,  true).get(deviceName);
     }
 
     @Override
@@ -800,7 +801,14 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         }
     }
 
-    public BluetoothGatt getGatt() { //todo delete
-        return gatt;
+    private boolean refreshDeviceCache(BluetoothGatt gatt) {
+        try {
+            Method localMethod = gatt.getClass().getMethod(REFRESH_METHOD);
+            if (localMethod != null)
+                return (boolean) (Boolean) localMethod.invoke(gatt);
+        } catch (Exception localException) {
+            Log.e(TAG, "An exception occured while refreshing device");
+        }
+        return false;
     }
 }

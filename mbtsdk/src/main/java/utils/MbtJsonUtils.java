@@ -9,7 +9,7 @@ package utils;
  */
 
 public final class MbtJsonUtils {
-    private final static String TAG = "MbtJsonUtils";
+    private final static String TAG = MbtJsonUtils.class.getName();;
 
 //    @Nullable
 //    public static final String serializeEEGData(@NonNull final MbtDevice deviceInfo,

@@ -43,8 +43,6 @@ import static core.bluetooth.lowenergy.MelomindCharacteristics.SERVICE_MEASUREME
  */
 final class MbtGattController extends BluetoothGattCallback {
     private final static String TAG = MbtGattController.class.getSimpleName();
-    private final static String REFRESH_METHOD = "refresh";
-
 
     @Nullable
     private BluetoothGattService mainService = null;
@@ -111,7 +109,8 @@ final class MbtGattController extends BluetoothGattCallback {
                 this.bluetoothController.notifyConnectionStateChanged(BtState.DISCONNECTING);
                 break;
             case BluetoothGatt.STATE_DISCONNECTED:
-                refreshDeviceCache(gatt);// in this case the connection went well for a while, but just got lost
+                //if(isDownloadingFirmware) //todo OAD
+                //    refreshDeviceCache(gatt);// in this case the connection went well for a while, but just got lost
                 gatt.close();
                 LogUtils.i(TAG,"gattcontroller notified that headset is disconnected ");
                 this.bluetoothController.notifyConnectionStateChanged(BtState.DISCONNECTED);
@@ -122,18 +121,6 @@ final class MbtGattController extends BluetoothGattCallback {
                 msg += "Unknown value " + newState;
         }
         LogUtils.d("", msg);
-    }
-
-    private boolean refreshDeviceCache(BluetoothGatt gatt) {
-        try {
-            Method localMethod = gatt.getClass().getMethod(REFRESH_METHOD);
-            if (localMethod != null) {
-                return (boolean) (Boolean) localMethod.invoke(gatt);
-            }
-        } catch (Exception localException) {
-            Log.e(TAG, "An exception occured while refreshing device");
-        }
-        return false;
     }
 
     /**

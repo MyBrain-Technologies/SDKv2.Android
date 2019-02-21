@@ -320,6 +320,6 @@ public enum BtState {
      * @return the step that follow (in chronological order, based on the enum value) the current step
      */
     public BtState getNextConnectionStep(){
-        return (!this.isAFailureState() && this.isConnectionInProgress()) ? BtState.values()[this.ordinal()+1]: null;
+        return (!this.isAFailureState() && this.isConnectionInProgress()) ? BtState.values()[this.ordinal()+1]: IDLE;
     }
 }

@@ -233,7 +233,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                             mbtBluetoothManager.disconnectA2DPFromBLE();
                             try {
                                 futureDisconnection = new CompletableFuture<>();
-                                futureDisconnection.get(MbtConfig.getBluetoothA2dpConnectionTimeout(), TimeUnit.MILLISECONDS);
+                                futureDisconnection.get(MbtConfig.getBluetoothA2DpConnectionTimeout(), TimeUnit.MILLISECONDS);
                             } catch (CancellationException | InterruptedException | ExecutionException | TimeoutException e) {
                                if(e instanceof CancellationException)
                                    futureDisconnection = null;
@@ -371,11 +371,8 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                 if(!connectedA2DpDevices.equals(getA2DPConnectedDevices())){ //It means that something has changed. Now we need to find out what changed (getAD2PConnectedDevices returns the connected devices for this specific profile.)
                     if(connectedA2DpDevices.size() < getA2DPConnectedDevices().size()){ //Here, we have a new A2DP connection then we notify bluetooth manager
                         connectedDevice = getA2DPConnectedDevices().get(getA2DPConnectedDevices().size()-1); //As one a2dp output is possible at a time on android, it is possible to consider that last item in list is the current one
-                        if(hasA2DPDeviceConnected() && connectedDevice.getName()!= null //if a Bluetooth A2DP audio peripheral is connected to a device whose name is not null.
-                               && ((connectedDevice.getName().startsWith(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX) || connectedDevice.getName().startsWith(MbtFeatures.A2DP_DEVICE_NAME_PREFIX)) //if device name is a valid BLE name
-                                    || (connectedDevice.getName().startsWith(MelomindsQRDataBase.QR_PREFIX) && connectedDevice.getName().length() == MelomindsQRDataBase.QR_LENGTH))) { //or if device name is a valid QR Code name
-
-                            LogUtils.i(TAG, "Detected connected device "+connectedDevice.getName() +" address is "+connectedDevice.getAddress());
+                        if(hasA2DPDeviceConnected() && connectedDevice.getName()!= null && isAudioDeviceNameValid(connectedDevice.getName())) {//if a Bluetooth A2DP audio peripheral is connected to a device whose name is not null.
+                            LogUtils.d(TAG, "Detected connected device "+connectedDevice.getName() +" address is "+connectedDevice.getAddress());
                             notifyConnectionStateChanged(BtState.AUDIO_CONNECTED, true);
                             if(futureInit!= null && !futureInit.isDone() && !futureInit.isCancelled())
                                 futureInit.complete(true);
@@ -387,6 +384,11 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                 }
             }
         }
+    }
+
+    private boolean isAudioDeviceNameValid(String name){
+        return (name.startsWith(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX) || name.startsWith(MbtFeatures.A2DP_DEVICE_NAME_PREFIX)) //if device name is a valid BLE name
+                || (name.startsWith(MelomindsQRDataBase.QR_PREFIX) && name.length() == MelomindsQRDataBase.QR_LENGTH); //or if device name is a valid QR Code name
     }
 
     public void notifyConnectionStateChanged(BtState newState, boolean notifyManager){

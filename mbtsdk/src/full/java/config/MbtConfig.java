@@ -35,28 +35,21 @@ public final class MbtConfig {
 
     private static boolean acquisitionEnabledLowBattery;
 
-    private static int bluetoothConnectionTimeout = 30000;
-
+    private final static int BLUETOOTH_CONNECTION_TIMEOUT = 30000;
 
     private static int bluetoothScanTimeout;
 
-    private final static int bluetoothReadingTimeout = 15000;
+    private final static int BLUETOOTH_READING_TIMEOUT = 5000;
 
-    private final static int bluetoothDiscoverTimeout = 10000;
+    private final static int BLUETOOTH_DISCOVER_TIMEOUT = 5000;
 
-    private final static int bluetoothBondingTimeout = 10000;
+    private final static int BLUETOOTH_BONDING_TIMEOUT = 5000;
 
-    private final static int bluetoothSendingExternalNameTimeout = 15000;
-
-    private final static int bluetoothA2dpConnectionTimeout = 5000;
-
-    private static int bluetoothPairingTimeout;
+    private final static int BLUETOOTH_A2DP_CONNECTION_TIMEOUT = 5000;
 
     private static String serverURL;
 
     private static boolean connectAudioIfDeviceCompatible = false;
-
-    private static String nameOfDeviceRequested = "";
 
     public static int getEegBufferLengthClientNotif() {
         return eegBufferLengthClientNotif;
@@ -83,7 +76,7 @@ public final class MbtConfig {
     }
 
     public static int getBluetoothConnectionTimeout() {
-        return bluetoothConnectionTimeout;
+        return BLUETOOTH_CONNECTION_TIMEOUT;
     }
 
     public static int getEegPacketLength() {
@@ -95,11 +88,7 @@ public final class MbtConfig {
     }
 
     public static int getBluetoothDiscoverTimeout() {
-        return bluetoothDiscoverTimeout;
-    }
-
-    public static int getBluetoothPairingTimeout() {
-        return bluetoothPairingTimeout;
+        return BLUETOOTH_DISCOVER_TIMEOUT;
     }
 
     public static String getServerURL() {
@@ -127,12 +116,8 @@ public final class MbtConfig {
          connectAudioIfDeviceCompatible = connectAudio;
     }
 
-    public static String getNameOfDeviceRequested() {
-        return nameOfDeviceRequested;
-    }
-
-    public static int getBluetoothA2dpConnectionTimeout() {
-        return bluetoothA2dpConnectionTimeout;
+    public static int getBluetoothA2DpConnectionTimeout() {
+        return BLUETOOTH_A2DP_CONNECTION_TIMEOUT;
     }
 
     public static void setEegBufferLengthClientNotif(int length) {
@@ -144,15 +129,12 @@ public final class MbtConfig {
     }
 
     public static int getBluetoothBondingTimeout() {
-        return bluetoothBondingTimeout;
+        return BLUETOOTH_BONDING_TIMEOUT;
     }
 
-    public static int getBluetoothSendingExternalNameTimeout() {
-        return bluetoothSendingExternalNameTimeout;
-    }
 
     public static int getBluetoothReadingTimeout() {
-        return bluetoothReadingTimeout;
+        return BLUETOOTH_READING_TIMEOUT;
     }
 
     public static class MbtConfigBuilder {
@@ -175,11 +157,7 @@ public final class MbtConfig {
 
         private boolean acquisitionEnabledLowBattery;
 
-        private int bluetoothConnectionTimeout;
-
         private int bluetoothScanTimeout;
-
-        private int bluetoothPairingTimeout;
 
         private String serverURL;
 
@@ -244,20 +222,8 @@ public final class MbtConfig {
         }
 
         @NonNull
-        public MbtConfigBuilder setBluetoothConnectionTimeout(final int bluetoothConnectionTimeout) {
-            this.bluetoothConnectionTimeout = bluetoothConnectionTimeout;
-            return this;
-        }
-
-        @NonNull
         public MbtConfigBuilder setBluetoothScanTimeout(final int bluetoothScanTimeout) {
             this.bluetoothScanTimeout = bluetoothScanTimeout;
-            return this;
-        }
-
-        @NonNull
-        public MbtConfigBuilder setBluetoothPairingTimeout(final int bluetoothPairingTimeout) {
-            this.bluetoothPairingTimeout = bluetoothPairingTimeout;
             return this;
         }
 
@@ -295,12 +261,9 @@ public final class MbtConfig {
         offlineModeEnabled = builder.offlineModeEnabled;
         maxIdleDurationForDisconnecting = builder.maxIdleDurationForDisconnecting;
         acquisitionEnabledLowBattery = builder.acquisitionEnabledLowBattery;
-        bluetoothConnectionTimeout = builder.bluetoothConnectionTimeout;
         bluetoothScanTimeout = builder.bluetoothScanTimeout;
-        bluetoothPairingTimeout = builder.bluetoothPairingTimeout;
         serverURL = builder.serverURL;
         connectAudioIfDeviceCompatible = builder.connectAudioIfDeviceCompatible;
-        nameOfDeviceRequested = builder.deviceName;
     }
 
     public static void setScannableDevices(ScannableDevices scannableDevices) {
@@ -318,10 +281,5 @@ public final class MbtConfig {
     public static void setSamplePerNotification(int samplePerNotification) {
         MbtConfig.samplePerNotification = samplePerNotification;
     }
-
-    public static void setNameOfDeviceRequested(String nameOfDeviceRequested) {
-        MbtConfig.nameOfDeviceRequested = nameOfDeviceRequested;
-    }
-
 
 }

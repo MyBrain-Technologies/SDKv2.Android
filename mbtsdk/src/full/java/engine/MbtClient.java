@@ -92,7 +92,6 @@ public final class MbtClient {
         MbtConfig.setScannableDevices(config.getDeviceType());
         MbtConfig.setBluetoothScanTimeout(config.getMaxScanDuration());
         MbtConfig.setConnectAudioIfDeviceCompatible(config.useAudio());
-        MbtConfig.setNameOfDeviceRequested(config.getDeviceName());
 
         if(config.getMaxScanDuration() < MbtFeatures.MIN_SCAN_DURATION){
             config.getConnectionStateListener().onError(ConfigError.ERROR_INVALID_PARAMS,ConfigError.SCANNING_MINIMUM_DURATION);
@@ -104,7 +103,7 @@ public final class MbtClient {
             return;
         }
 
-        this.mbtManager.connectBluetooth(config.getConnectionStateListener());
+        this.mbtManager.connectBluetooth(config.getConnectionStateListener(), config.getDeviceName());
     }
 
     /**
