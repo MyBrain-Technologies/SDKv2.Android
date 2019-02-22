@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
-import config.MbtConfig;
+import core.bluetooth.BtProtocol;
 import core.bluetooth.IStreamable;
 import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
 import core.bluetooth.requests.DisconnectRequestEvent;
@@ -44,6 +44,7 @@ import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.ConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
 import features.MbtFeatures;
+import features.ScannableDevices;
 import utils.LogUtils;
 
 import static mbtsdk.com.mybraintech.mbtsdk.BuildConfig.BLUETOOTH_ENABLED;
@@ -89,11 +90,11 @@ public class MbtManager{
         EventBusManager.registerOrUnregister(true, this);
 
         if(DEVICE_ENABLED)
-            registerManager(new MbtDeviceManager(mContext, this, MbtFeatures.getBluetoothProtocol()));
+            registerManager(new MbtDeviceManager(mContext, MbtManager.this));
         if(BLUETOOTH_ENABLED)
-            registerManager(new MbtBluetoothManager(mContext, this));
+            registerManager(new MbtBluetoothManager(mContext, MbtManager.this));
         if(EEG_ENABLED)
-            registerManager(new MbtEEGManager(mContext, this, MbtFeatures.getBluetoothProtocol()));
+            registerManager(new MbtEEGManager(mContext, MbtManager.this, BtProtocol.BLUETOOTH_LE)); //todo change protocol must not be initialized here : when connectBluetooth is called
     }
 
     /**
@@ -108,12 +109,14 @@ public class MbtManager{
      * Perform a new Bluetooth connection.
      * @param connectionStateListener a set of callback that will notify the user about connection progress.
      */
-    public void connectBluetooth(@NonNull ConnectionStateListener<BaseError> connectionStateListener, String deviceNameRequested){
+    public void connectBluetooth(@NonNull ConnectionStateListener<BaseError> connectionStateListener, String deviceNameRequested, ScannableDevices deviceTypeRequested){
         this.connectionStateListener = connectionStateListener;
         if(deviceNameRequested != null && (!deviceNameRequested.startsWith(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX) && !deviceNameRequested.startsWith(MbtFeatures.VPRO_DEVICE_NAME_PREFIX)))
             this.connectionStateListener.onError(HeadsetDeviceError.ERROR_PREFIX_NAME,null);
-        else
-            EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent(true, deviceNameRequested));
+        else {
+            EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent(true, deviceNameRequested, deviceTypeRequested));
+            //EventBusManager.postEvent(new DeviceEvents.PostDeviceTypeEvent(deviceTypeRequested)); //notify device manager
+        }
     }
 
     /**

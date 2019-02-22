@@ -1,6 +1,5 @@
 package core.device;
 
-import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.util.Log;
@@ -9,10 +8,8 @@ import android.util.Log;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
-import config.MbtConfig;
 import core.BaseModuleManager;
 import core.MbtManager;
-import core.bluetooth.BtProtocol;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindDevice;
 import core.device.model.VProDevice;
@@ -27,14 +24,14 @@ import utils.LogUtils;
 public class MbtDeviceManager extends BaseModuleManager{
 
     private static final String TAG = MbtDeviceManager.class.getSimpleName();
-    private BtProtocol protocol;
+
+    private ScannableDevices deviceType;
 
     private MbtDevice mCurrentConnectedDevice;
 
-    public MbtDeviceManager(Context context, MbtManager mbtManagerController, BtProtocol protocol){
+    public MbtDeviceManager(Context context, MbtManager mbtManagerController){
         super(context, mbtManagerController);
         this.mContext = context;
-        this.protocol = protocol;
     }
 
 
@@ -72,10 +69,11 @@ public class MbtDeviceManager extends BaseModuleManager{
 
     @Subscribe
     public void onNewDeviceConnected(DeviceEvents.NewBluetoothDeviceEvent deviceEvent) {
+        deviceType = deviceEvent.getDeviceType();
         LogUtils.d(TAG, "new device "+ (deviceEvent.getDevice() != null ? "scanned" : " null"));
-        if (MbtConfig.getScannableDevices() == ScannableDevices.MELOMIND)
+        if (deviceType == ScannableDevices.MELOMIND)
             setmCurrentConnectedDevice(deviceEvent.getDevice() != null ? new MelomindDevice(deviceEvent.getDevice()) : null);
-        else if (MbtConfig.getScannableDevices() == ScannableDevices.VPRO)
+        else if (deviceType == ScannableDevices.VPRO)
             setmCurrentConnectedDevice(deviceEvent.getDevice() != null ? new VProDevice(deviceEvent.getDevice()) : null);
     }
 

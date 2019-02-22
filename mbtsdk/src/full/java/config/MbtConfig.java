@@ -9,8 +9,6 @@ import features.ScannableDevices;
 @Keep
 public final class MbtConfig {
 
-    private static ScannableDevices scannableDevices = ScannableDevices.MELOMIND;
-
     private static int eegPacketLength = 250;
 
     public static int sampleRate = 250;
@@ -102,11 +100,6 @@ public final class MbtConfig {
     public static int getSamplePerNotification() {
         return samplePerNotification;
     }
-
-    public static ScannableDevices getScannableDevices() {
-        return scannableDevices;
-    }
-
 
 
     public static boolean connectAudioIfDeviceCompatible() {
@@ -264,18 +257,6 @@ public final class MbtConfig {
         bluetoothScanTimeout = builder.bluetoothScanTimeout;
         serverURL = builder.serverURL;
         connectAudioIfDeviceCompatible = builder.connectAudioIfDeviceCompatible;
-    }
-
-    public static void setScannableDevices(ScannableDevices scannableDevices) {
-        MbtConfig.scannableDevices = scannableDevices;
-    }
-
-    public static boolean isCurrentDeviceAMelomind() {
-        return scannableDevices.equals(ScannableDevices.MELOMIND);
-    }
-
-    public static boolean isCurrentDeviceAVpro() {
-        return scannableDevices.equals(ScannableDevices.VPRO);
     }
 
     public static void setSamplePerNotification(int samplePerNotification) {

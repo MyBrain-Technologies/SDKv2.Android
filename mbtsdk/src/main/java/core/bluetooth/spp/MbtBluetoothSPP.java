@@ -1,12 +1,17 @@
 package core.bluetooth.spp;
 
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothSocket;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.WorkerThread;
+import android.text.TextUtils;
 import android.util.Log;
 
 import java.io.DataInputStream;
@@ -21,6 +26,7 @@ import core.bluetooth.IStreamable;
 import core.bluetooth.MbtBluetooth;
 import core.bluetooth.MbtBluetoothManager;
 import core.device.model.DeviceInfo;
+import core.device.model.MelomindDevice;
 import utils.AsyncUtils;
 import utils.LogUtils;
 
@@ -72,6 +78,62 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
         this.deviceAddress = deviceAddress;
     }
 
+
+    @Nullable
+    public boolean startScanDiscovery() {
+        boolean isScanStarted = false;
+        if(bluetoothAdapter == null)
+            return isScanStarted;
+
+        // at this point, device was not found among bonded devices so let's start a discovery scan
+        LogUtils.i(TAG, "Starting Classic Bluetooth Discovery Scan");
+        final IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+        context.registerReceiver(new BroadcastReceiver() {
+            public final void onReceive(@NonNull final Context context, @NonNull final Intent intent) {
+                final String action = intent.getAction();
+                if(action == null)
+                    return;
+                switch (action) {
+                    case BluetoothDevice.ACTION_FOUND:
+                        final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                        final String deviceNameFound = device.getName();
+                        if (TextUtils.isEmpty(deviceNameFound)) {
+                            LogUtils.w(TAG, "Found device with no name. MAC address is -> " + device.getAddress());
+                            notifyConnectionStateChanged(BtState.SCAN_FAILURE);
+                            return;
+                        }
+
+                        LogUtils.i(TAG, String.format("Discovery Scan -> device detected " +
+                                "with name '%s' and MAC address '%s' ", deviceNameFound, device.getAddress()));
+                        if (mbtBluetoothManager.getDeviceNameRequested() != null && MelomindDevice.hasMelomindName(device) && (deviceNameFound.equals(mbtBluetoothManager.getDeviceNameRequested()) || deviceNameFound.contains(mbtBluetoothManager.getDeviceNameRequested()))) {
+                            LogUtils.i(TAG, "Device " + mbtBluetoothManager.getDeviceNameRequested() +" found. Cancelling discovery & connecting");
+                            bluetoothAdapter.cancelDiscovery();
+                            context.unregisterReceiver(this);
+                            mbtBluetoothManager.updateConnectionState(true); //current state is set to DEVICE_FOUND and future is completed
+
+                        }
+                        break;
+                    case BluetoothAdapter.ACTION_DISCOVERY_FINISHED:
+                        if (getCurrentState().equals(BtState.DISCOVERING_SERVICES)) // restarting discovery while still waiting
+                            bluetoothAdapter.startDiscovery();
+                        break;
+                }
+
+            }
+        }, filter);
+        isScanStarted = bluetoothAdapter.startDiscovery();
+        LogUtils.i(TAG, "Scan started.");
+        if(isScanStarted && getCurrentState().equals(BtState.READY_FOR_BLUETOOTH_OPERATION)){
+            mbtBluetoothManager.updateConnectionState(false); //current state is set to SCAN_STARTED
+        }
+        return isScanStarted;
+    }
+
+    public void stopScanDiscovery() {
+        if(bluetoothAdapter != null && bluetoothAdapter.isDiscovering())
+            bluetoothAdapter.cancelDiscovery();
+    }
 
     @Override
     public boolean connect(Context context, @Nullable BluetoothDevice device) {

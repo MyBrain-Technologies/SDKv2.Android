@@ -23,7 +23,6 @@ import engine.MbtClient;
 import engine.clientevents.BaseError;
 import engine.clientevents.ConnectionStateListener;
 import features.MbtFeatures;
-import utils.LogUtils;
 
 import static features.MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX;
 import static features.MbtFeatures.VPRO_DEVICE_NAME_PREFIX;
