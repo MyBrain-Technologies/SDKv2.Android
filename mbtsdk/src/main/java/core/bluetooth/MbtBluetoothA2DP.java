@@ -19,6 +19,7 @@ import java.util.TimerTask;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -29,6 +30,7 @@ import engine.SimpleRequestCallback;
 import features.MbtFeatures;
 import utils.FirmwareUtils;
 import utils.LogUtils;
+import utils.MbtLock;
 
 /**
  * Created by Etienne on 08/02/2018.
@@ -45,9 +47,12 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
 
     private BluetoothDevice connectedDevice;
 
-    private CompletableFuture<Boolean> futureInit = new CompletableFuture<>();
-    private CompletableFuture<Boolean> futureConnection = new CompletableFuture<>();
-    private CompletableFuture<Boolean> futureDisconnection = new CompletableFuture<>();
+    private Future<Boolean> futureInit;
+    private Future<Boolean> futureConnection;
+    private Future<Boolean> futureDisconnection;
+    private MbtLock<Boolean> lockInit;
+    private MbtLock<Boolean> lockConnection;
+    private MbtLock<Boolean> lockDisconnection;
 
     public MbtBluetoothA2DP(@NonNull Context context, MbtBluetoothManager mbtBluetoothManager) {
         super(context, mbtBluetoothManager);
@@ -110,18 +115,17 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                         public final void run() {
                             if (!hasA2DPDeviceConnected()) { // the user device is no longer connected to the wrong headset
                                 cancel();
-                                futureConnection.complete(true);
+                                stopWaitingOperation(false, true, false, false);
                                 notifyConnectionStateChanged(BtState.AUDIO_DISCONNECTED);
                             }
                         }
                     }, 100, 500);
                     Boolean status = false;
                     try {
-                        futureConnection = new CompletableFuture<>();
-                        status = futureConnection.get(5000, TimeUnit.MILLISECONDS);
+                        waitOperationResult(5000, true, false, false);
                     } catch (CancellationException | InterruptedException | ExecutionException | TimeoutException e) {
                         if(e instanceof CancellationException)
-                            futureConnection = null;
+                            cancelWaitingOperation(true);
                     }
                     if (status != null && status) {
                         LogUtils.i(TAG, "successfully disconnected from A2DP device -> " + deviceConnected.getName());
@@ -162,21 +166,20 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                     public final void run() {
                         if (hasA2DPDeviceConnected()) {
                             cancel();
-                            if(futureConnection!= null && !futureConnection.isDone() && !futureConnection.isCancelled())
-                                futureConnection.complete(true);
+                            stopWaitingOperation(false, true, false, false);
+
                         }
                     }
                 }, 100, 1500);
 
                 // we give 20 seconds to the user to accepting bonding request
-                final long timeout = deviceToConnect.getBondState() == BluetoothDevice.BOND_BONDED ? 10000 : 25000;
+                final int timeout = deviceToConnect.getBondState() == BluetoothDevice.BOND_BONDED ? 10000 : 25000;
                 Boolean status = false;
                 try{
-                    futureConnection = new CompletableFuture<>();
-                    status = futureConnection.get(timeout, TimeUnit.MILLISECONDS);
+                    waitOperationResult(timeout, true, false, false);
                 }catch (CancellationException | InterruptedException | ExecutionException | TimeoutException e) {
                     if(e instanceof CancellationException)
-                        futureConnection = null;
+                        cancelWaitingOperation(true);
                     LogUtils.i(TAG," A2dp Connection failed: "+e);
                 }
                 if (status != null && status) {
@@ -231,11 +234,10 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                         if(new FirmwareUtils(device.getFirmwareVersion()).isFwValidForFeature(FirmwareUtils.FWFeature.A2DP_FROM_HEADSET)){
                             mbtBluetoothManager.disconnectA2DPFromBLE();
                             try {
-                                futureDisconnection = new CompletableFuture<>();
-                                futureDisconnection.get(MbtConfig.getBluetoothA2DpConnectionTimeout(), TimeUnit.MILLISECONDS);
+                                waitOperationResult(MbtConfig.getBluetoothA2DpConnectionTimeout(), false,true,false);
                             } catch (CancellationException | InterruptedException | ExecutionException | TimeoutException e) {
                                if(e instanceof CancellationException)
-                                   futureDisconnection = null;
+                                   cancelWaitingOperation(false);
                             } finally {
                                 if(futureDisconnection != null && !futureDisconnection.isDone() && !futureDisconnection.isCancelled())
                                         futureDisconnection.cancel(true);
@@ -313,8 +315,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
             LogUtils.i(TAG, "init A2DP Proxy ");
             adapter.getProfileProxy(context, this, BluetoothProfile.A2DP); //establish the connection to the proxy
             try {
-                futureInit = new CompletableFuture<>();
-                futureInit.get(3000, TimeUnit.MILLISECONDS);
+                waitOperationResult(3000, false,false,true);
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 LogUtils.i(TAG," No audio connected device "+e);
             }
@@ -373,8 +374,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                         if(hasA2DPDeviceConnected() && connectedDevice.getName()!= null && isAudioDeviceNameValid(connectedDevice.getName())) {//if a Bluetooth A2DP audio peripheral is connected to a device whose name is not null.
                             LogUtils.d(TAG, "Detected connected device "+connectedDevice.getName() +" address is "+connectedDevice.getAddress());
                             notifyConnectionStateChanged(BtState.AUDIO_CONNECTED, true);
-                            if(futureInit!= null && !futureInit.isDone() && !futureInit.isCancelled())
-                                futureInit.complete(true);
+                            stopWaitingOperation(false, false, false, true);
                         }
                     }else //Here, either the A2DP connection has dropped or a new A2DP device is connecting.
                         notifyConnectionStateChanged(BtState.AUDIO_DISCONNECTED);
@@ -392,14 +392,86 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
 
     public void notifyConnectionStateChanged(BtState newState, boolean notifyManager){
         setCurrentState(newState);
-        if(newState.equals(BtState.AUDIO_DISCONNECTED) && futureDisconnection!= null && !futureDisconnection.isDone() && !futureDisconnection.isCancelled())
-            futureDisconnection.complete(true);
+        if(newState.equals(BtState.AUDIO_DISCONNECTED) &&
+                ((futureDisconnection!= null && !futureDisconnection.isDone() && !futureDisconnection.isCancelled())
+                        || (lockDisconnection!= null && lockDisconnection.isWaiting())))
+            stopWaitingOperation(false, false, true, false);
         else if (newState.equals(BtState.AUDIO_CONNECTED)) {
-            if(futureConnection!= null && !futureConnection.isDone() && !futureConnection.isCancelled())
-                futureConnection.complete(true);
-
+            stopWaitingOperation(false, true, false, false);
             if(notifyManager) //if audio is connected (and BLE is not) when the user request connection to a headset
                 mbtBluetoothManager.notifyConnectionStateChanged(BtState.AUDIO_CONNECTED);
+        }
+    }
+    private void waitOperationResult(int timeout, boolean isConnection,  boolean isDisconnection, boolean isInit) throws InterruptedException, ExecutionException, TimeoutException {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            if(isConnection) {
+                futureConnection = new CompletableFuture<>();
+                futureConnection.get(timeout, TimeUnit.MILLISECONDS);
+            }else if(isDisconnection){
+                futureDisconnection = new CompletableFuture<>();
+                futureDisconnection.get(timeout, TimeUnit.MILLISECONDS);
+            } else if(isInit){
+                futureInit = new CompletableFuture<>();
+                futureInit.get(timeout, TimeUnit.MILLISECONDS);
+            }
+        }else {
+            if(isConnection){
+                lockConnection = new MbtLock<>();
+                lockConnection.waitAndGetResult(timeout);
+            }else if (isDisconnection){
+                lockDisconnection = new MbtLock<>();
+                lockDisconnection.waitAndGetResult(timeout);
+            }else if(isInit){
+                lockInit = new MbtLock<>();
+                lockInit.waitAndGetResult(timeout);
+            }
+
+        }
+    }
+
+    private void stopWaitingOperation(boolean isCancel,  boolean isConnection,  boolean isDisconnection, boolean isInit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            if(isConnection) {
+                if(futureConnection != null && !futureConnection.isDone() && !futureConnection.isCancelled())
+                    if(isCancel)
+                        futureConnection.cancel(true);
+                    else
+                        ((CompletableFuture) futureConnection).complete(true);
+            }else if(isDisconnection) {
+                if (futureDisconnection != null && !futureDisconnection.isDone() && !futureDisconnection.isCancelled())
+                    if (isCancel)
+                        futureDisconnection.cancel(true);
+                    else
+                        ((CompletableFuture) futureDisconnection).complete(true);
+            } else if(isInit){
+                if (futureInit != null && !futureInit.isDone() && !futureInit.isCancelled())
+                    if (isCancel)
+                        futureInit.cancel(true);
+                    else
+                        ((CompletableFuture) futureInit).complete(true);
+            }
+        } else {
+            if(lockConnection != null && !lockConnection.isWaiting())
+                lockConnection.setResultAndNotify(isCancel ? null : true);
+            else if(lockDisconnection != null && lockDisconnection.isWaiting())
+                lockDisconnection.setResultAndNotify(isCancel ? null : true);
+            else if(lockInit != null && lockInit.isWaiting())
+                lockInit.setResultAndNotify(isCancel ? null : true);
+
+        }
+    }
+
+    private void cancelWaitingOperation(boolean isConnection){
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+            if (!isConnection)
+                futureConnection = null;
+            else
+                futureDisconnection = null;
+        else {
+            if(!isConnection)
+                lockConnection = null;
+            else
+                lockDisconnection = null;
         }
     }
 }

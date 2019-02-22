@@ -33,12 +33,12 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import config.AmpGainConfig;
 import config.FilterConfig;
-import config.MbtConfig;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.BtState;
 import core.bluetooth.IStreamable;
@@ -49,11 +49,11 @@ import core.device.model.MbtDevice;
 import core.device.model.MelomindDevice;
 import core.device.model.MelomindsQRDataBase;
 import engine.clientevents.BaseError;
-import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.ConnectionStateReceiver;
 import features.MbtFeatures;
 import utils.BroadcastUtils;
 import utils.LogUtils;
+import utils.MbtLock;
 
 /**
  *
@@ -75,7 +75,9 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     private final static String REFRESH_METHOD = "refresh";
 
     @RequiresApi(Build.VERSION_CODES.N)
-    private CompletableFuture<Boolean> futureOperation = new CompletableFuture();
+    private Future<Boolean> futureOperation;
+    private MbtLock<Boolean> lockOperation;
+
     /**
      * An internal event used to notify MbtBluetoothLE that A2DP has disconnected.
      */
@@ -278,8 +280,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
                 "enable notification... now waiting for confirmation from headset.");
 
         try {
-            futureOperation = new CompletableFuture<>();
-            futureOperation.get(10000,TimeUnit.MILLISECONDS);
+            waitOperationResult(10000);
             return true;
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             LogUtils.d(TAG,"Enabling notification failed : "+e);
@@ -624,11 +625,6 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         mbtBluetoothManager.updateConnectionState(isFutureCompleted); //do nothing if the current state is CONNECTED_AND_READY
     }
 
-    void completeFutureOperation(){
-        if(futureOperation != null && !futureOperation.isDone() && !futureOperation.isCancelled())
-            futureOperation.complete(true);
-    }
-
     /**
      * Initiates a change MTU request in order to have bigger (or smaller) bluetooth notifications.
      * The default size is also the minimum size : 23
@@ -658,8 +654,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 
         Boolean isSuccess = false;
         try {
-            futureOperation = new CompletableFuture<>();
-             isSuccess = futureOperation.get(10000,TimeUnit.MILLISECONDS);
+             isSuccess = waitOperationResult(10000);
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             LogUtils.i(TAG,"MTU change failed");
         }
@@ -810,5 +805,26 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             Log.e(TAG, "An exception occured while refreshing device");
         }
         return false;
+    }
+
+    private Boolean waitOperationResult(int timeout) throws InterruptedException, ExecutionException, TimeoutException {
+        Boolean result;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            futureOperation = new CompletableFuture<>();
+            result = futureOperation.get(timeout, TimeUnit.MILLISECONDS);
+        } else {
+            lockOperation = new MbtLock<>();
+            result = lockOperation.waitAndGetResult(timeout);
+        }
+        return result;
+    }
+
+    void stopWaitingOperation(){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            if (futureOperation != null && !futureOperation.isDone() && !futureOperation.isCancelled())
+                ((CompletableFuture) futureOperation).complete(true);
+        }else
+            if(lockOperation != null && lockOperation.isWaiting())
+                lockOperation.setResultAndNotify(true);
     }
 }

@@ -11,7 +11,6 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 
 
-import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -246,7 +245,7 @@ final class MbtGattController extends BluetoothGattCallback {
 //                    " and payload " + Arrays.toString(characteristic.getValue()));
 //            this.notifyMailboxEventReceived(characteristic);
 //        }
-        bluetoothController.completeFutureOperation();
+        bluetoothController.stopWaitingOperation();
     }
 
     @Override
@@ -261,7 +260,7 @@ final class MbtGattController extends BluetoothGattCallback {
             this.notifyMailboxEventReceived(characteristic);
             LogUtils.i(TAG, "mailbox message received with code " + characteristic.getValue()[0] +
                     " and payload " + Arrays.toString(characteristic.getValue()));
-            bluetoothController.completeFutureOperation();
+            bluetoothController.stopWaitingOperation();
         }
     }
 
@@ -279,7 +278,7 @@ final class MbtGattController extends BluetoothGattCallback {
         } else {
             LogUtils.e(TAG, "Received a [onDescriptorWrite] callback with Status: FAILURE.");
         }
-        bluetoothController.completeFutureOperation();
+        bluetoothController.stopWaitingOperation();
         bluetoothController.onNotificationStateChanged(status == BluetoothGatt.GATT_SUCCESS, descriptor.getCharacteristic(), descriptor.getValue() == BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
 
 
@@ -299,7 +298,7 @@ final class MbtGattController extends BluetoothGattCallback {
     public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
         super.onMtuChanged(gatt, mtu, status);
         LogUtils.i(TAG, "onMtuChanged with new value " + mtu);
-        bluetoothController.completeFutureOperation();
+        bluetoothController.stopWaitingOperation();
 
     }
 
