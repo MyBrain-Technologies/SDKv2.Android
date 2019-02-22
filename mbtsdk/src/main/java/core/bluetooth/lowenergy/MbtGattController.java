@@ -241,11 +241,11 @@ final class MbtGattController extends BluetoothGattCallback {
     public void onCharacteristicWrite(BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, int status) {
         super.onCharacteristicWrite(gatt, characteristic, status);
     LogUtils.d(TAG,"on characteristic write : "+(status == BluetoothGatt.GATT_SUCCESS ? "success ": "failure")+ " for characteristic "+characteristic.getUuid());
-        if (characteristic.getUuid().compareTo(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX) == 0) {
-            LogUtils.i(TAG, "mailbox message received with code " + characteristic.getValue()[0] +
-                    " and payload " + Arrays.toString(characteristic.getValue()));
-            this.notifyMailboxEventReceived(characteristic);
-        }
+//        if (characteristic.getUuid().compareTo(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX) == 0) {
+//            LogUtils.i(TAG, "mailbox message received with code " + characteristic.getValue()[0] +
+//                    " and payload " + Arrays.toString(characteristic.getValue()));
+//            this.notifyMailboxEventReceived(characteristic);
+//        }
         bluetoothController.completeFutureOperation();
     }
 
@@ -318,7 +318,6 @@ final class MbtGattController extends BluetoothGattCallback {
                 for (int i = 1; i < characteristic.getValue().length; i++){
                     buf.put(characteristic.getValue()[i]);
                 }
-                LogUtils.i(TAG, " byte buffering "+characteristic.getStringValue(1));
                 break;
 
             case MailboxEvents.MBX_START_OTA_TXF:

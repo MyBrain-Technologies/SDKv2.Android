@@ -13,7 +13,7 @@ final class MailboxEvents{
             static final byte MBX_LEAD_OFF_EVT = 4;            // Notifies app of a lead off modification
             static final byte MBX_OTA_MODE_EVT = 5;            // Notifies appli that we switched to OTA mode
             static final byte MBX_OTA_IDX_RESET_EVT = 6;       // Notifies appli that we request a packet Idx reset
-            static final byte MBX_OTA_STATUS_EVT = 7;   // Notifies appli with the status of the OTA transfert.
+            static final byte MBX_OTA_STATUS_EVT = 7;   // Notifies appli with the status of the OTA transfer.
             static final byte MBX_SYS_GET_STATUS = 8;   // allows to retrieve to system global status
             static final byte MBX_SYS_REBOOT_EVT = 9;   // trigger a reboot event at disconnection
             static final byte MBX_SET_SERIAL_NUMBER = 10; // Set the melomind serial nb

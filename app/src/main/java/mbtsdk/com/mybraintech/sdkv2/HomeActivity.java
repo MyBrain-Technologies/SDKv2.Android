@@ -70,7 +70,6 @@ public class HomeActivity extends AppCompatActivity{
 
         @Override
         public void onDeviceConnected() {
-            LogUtils.i(TAG, "home activity deinit");
             toast.cancel();
             deinitCurrentActivity(true);
         }

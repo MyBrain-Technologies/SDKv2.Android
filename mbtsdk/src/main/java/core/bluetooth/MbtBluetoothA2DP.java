@@ -150,7 +150,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                 final boolean result = (boolean) a2dpProxy.getClass()
                         .getMethod(CONNECT_METHOD, BluetoothDevice.class)
                         .invoke(a2dpProxy, deviceToConnect);
-                LogUtils.e(TAG, "invoke connection via A2DP! "+result);
+                LogUtils.d(TAG, "invoke connection via A2DP! "+result);
 
                 if (!result) { // according to doc : "false on immediate error, true otherwise"
                     notifyConnectionStateChanged(BtState.CONNECTION_FAILURE);
@@ -174,7 +174,6 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                 try{
                     futureConnection = new CompletableFuture<>();
                     status = futureConnection.get(timeout, TimeUnit.MILLISECONDS);
-                    LogUtils.i(TAG," after get timeout "+timeout);
                 }catch (CancellationException | InterruptedException | ExecutionException | TimeoutException e) {
                     if(e instanceof CancellationException)
                         futureConnection = null;
