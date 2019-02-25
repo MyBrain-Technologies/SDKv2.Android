@@ -29,6 +29,8 @@ import java.util.Objects;
 import java.util.Queue;
 
 
+import core.device.DCOffsets;
+import core.device.SaturationEvent;
 import core.device.model.MbtDevice;
 import core.eeg.storage.MbtEEGPacket;
 import engine.MbtClient;
@@ -38,6 +40,7 @@ import engine.StreamConfig;
 import engine.clientevents.BaseError;
 import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.DeviceInfoListener;
+import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.EegListener;
 import features.MbtFeatures;
 import utils.LogUtils;
@@ -78,6 +81,8 @@ DeviceActivity extends AppCompatActivity {
 
     private ConnectionStateListener<BaseError> connectionStateListener;
 
+    private DeviceStatusListener<BaseError> deviceStatusListener;
+
     private DeviceInfoListener deviceInfoListener;
 
     private EegListener<BaseError> eegListener;
@@ -90,6 +95,7 @@ DeviceActivity extends AppCompatActivity {
 
         initConnectionStateListener();
         initDeviceInfoListener();
+        initDeviceStatusListener();
         initEegListener();
 
         initToolBar();
@@ -132,6 +138,26 @@ DeviceActivity extends AppCompatActivity {
                         channel2Quality.setText(getString(R.string.channel_2_qc) + ( (mbtEEGPackets.getQualities() != null && mbtEEGPackets.getQualities().get(1) != null ) ? mbtEEGPackets.getQualities().get(1) : " -- "));
                     }
                 }
+            }
+        };
+    }
+
+    private void initDeviceStatusListener() {
+        deviceStatusListener = new DeviceStatusListener<BaseError>() {
+
+            @Override
+            public void onError(BaseError error, String additionnalInfo) {
+
+            }
+
+            @Override
+            public void onSaturationStateChanged(SaturationEvent saturation) {
+
+            }
+
+            @Override
+            public void onNewDCOffsetMeasured(DCOffsets dcOffsets) {
+
             }
         };
     }
@@ -215,7 +241,9 @@ DeviceActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if(!isStreaming) { //streaming is not in progress : starting streaming
-                    startStream(new StreamConfig.Builder(eegListener).setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD).useQualities(true).create());
+                    startStream(new StreamConfig.Builder(eegListener)
+                            .addSaturationAndOffsetListener(deviceStatusListener)
+                            .setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD).useQualities(true).create());
                 }else { //streaming is in progress : stopping streaming
                     stopStream(); // set false to isStreaming et null to the eegListener
                 }
