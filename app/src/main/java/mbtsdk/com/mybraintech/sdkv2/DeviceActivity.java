@@ -155,6 +155,7 @@ DeviceActivity extends AppCompatActivity {
         connectionStateListener = new ConnectionStateListener<BaseError>(){
             @Override
             public void onDeviceConnected() {
+                LogUtils.i(TAG," device connected");
                 isConnected = true;
             }
 

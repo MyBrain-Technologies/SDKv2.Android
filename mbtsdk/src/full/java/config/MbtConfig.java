@@ -45,7 +45,7 @@ public final class MbtConfig {
 
     private final static int BLUETOOTH_BONDING_TIMEOUT = 5000;
 
-    private final static int BLUETOOTH_A2DP_CONNECTION_TIMEOUT = 5000;
+    private final static int BLUETOOTH_A2DP_CONNECTION_TIMEOUT = 10000;
 
     private static String serverURL;
 

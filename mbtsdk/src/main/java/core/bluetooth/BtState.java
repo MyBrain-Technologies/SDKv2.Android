@@ -322,4 +322,8 @@ public enum BtState {
     public BtState getNextConnectionStep(){
         return (!this.isAFailureState() && this.isConnectionInProgress()) ? BtState.values()[this.ordinal()+1]: IDLE;
     }
+
+    public boolean isAudioState(){
+        return (this.equals(AUDIO_CONNECTED) || this.equals(AUDIO_DISCONNECTED));
+    }
 }

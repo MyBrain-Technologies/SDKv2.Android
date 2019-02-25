@@ -376,7 +376,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 @Override
                 public void run() {
                     if ((MbtFeatures.useLowEnergyProtocol()))
-
                         mbtBluetoothLE.startLowEnergyScan(true);
                     else
                         mbtBluetoothSPP.startScanDiscovery();
@@ -451,9 +450,12 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 isConnectionSuccessful = mbtBluetoothA2DP.connect(mContext, getCurrentScannedDevice());
                 break;
         }
-        LogUtils.i(TAG,"updateConnectionState "+(protocol.equals(BLUETOOTH_A2DP) ? mbtBluetoothA2DP.getCurrentState() : getCurrentState()));
         if(isConnectionSuccessful) {
-            updateConnectionState((protocol.equals(BLUETOOTH_A2DP) && isAudioBluetoothConnected()) || (!protocol.equals(BLUETOOTH_A2DP) && isDataBluetoothConnected()));
+            if(protocol.equals(BLUETOOTH_A2DP)) {
+                if (isAudioBluetoothConnected())
+                    stopWaitingOperation(false, false);
+            }else
+                updateConnectionState(isDataBluetoothConnected());
         }
     }
 
@@ -618,21 +620,24 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             public void onRequestComplete(MbtDevice device) { //Firmware version has been read during the previous step so we retrieve its value, as it has been stored in the Device Manager
                 boolean isBondingSupported = new FirmwareUtils(device.getFirmwareVersion()).isFwValidForFeature(FirmwareUtils.FWFeature.BLE_BONDING);
                 if(isBondingSupported) { //if firmware version bonding is higher than 1.6.7, the bonding is launched
-                    LogUtils.i(TAG, "start bonding");
-                    try {
-                        AsyncUtils.executeAsync(new Runnable() {
-                            @Override
-                            public void run() {
-                                mbtBluetoothLE.bond(device);
-                            }
-                        });
-                        waitOperationResult(MbtConfig.getBluetoothBondingTimeout(), false);
-                    } catch (CancellationException | InterruptedException | ExecutionException | TimeoutException e) {
-                        LogUtils.i(TAG, "Exception raised during bonding : \n " + e.toString());
-                        if(e instanceof CancellationException )
-                            cancelWaitingOperation(false);
-                    } finally {
-                        stopWaitingOperation(true, false);
+                    if(getCurrentScannedDevice().getBondState() == BluetoothDevice.BOND_BONDED)
+                        updateConnectionState(BtState.BONDED); //current state is set to BONDED
+                    else {
+                        try {
+                            AsyncUtils.executeAsync(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mbtBluetoothLE.bond(device);
+                                }
+                            });
+                            waitOperationResult(MbtConfig.getBluetoothBondingTimeout(), false);
+                        } catch (CancellationException | InterruptedException | ExecutionException | TimeoutException e) {
+                            LogUtils.i(TAG, "Exception raised during bonding : \n " + e.toString());
+                            if(e instanceof CancellationException )
+                                cancelWaitingOperation(false);
+                        } finally {
+                            stopWaitingOperation(true, false);
+                        }
                     }
                 }else  //if firmware version bonding is older than 1.6.7, the connection process is considered completed
                     updateConnectionState(BtState.CONNECTED_AND_READY);
@@ -671,7 +676,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     }
 
     private void startConnectionForAudioStreaming(){
-        LogUtils.i(TAG, "start connection audio streaming");
+        LogUtils.i(TAG, "start connection audio streaming if requested");
         if(MbtConfig.connectAudioIfDeviceCompatible() && !isAudioBluetoothConnected()) {
             isRequestCompleted = false;
             requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
@@ -705,7 +710,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 mbtBluetoothA2DP.notifyConnectionStateChanged(BtState.CONNECTION_FAILURE); //at this point : current state should be AUDIO_CONNECTED if audio connection succeeded
         }
         requestBeingProcessed = false;
-        LogUtils.i(TAG, "connection for audio streaming done");
+        LogUtils.i(TAG, "connection completed");
     }
 
     /**
@@ -916,7 +921,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     public void notifyConnectionStateChanged(@NonNull BtState newState) {
         requestBeingProcessed = false;
         if (newState.equals(BtState.DISCONNECTED)) {
-            if(futureSwitchOperation != null && !futureSwitchOperation.isDone() && !futureSwitchOperation.isCancelled())
+            if((futureSwitchOperation != null && !futureSwitchOperation.isDone() && !futureSwitchOperation.isCancelled()) || (lockSwitchOperation != null && lockSwitchOperation.isWaiting()))
                 stopWaitingOperation(false, true); //a new a2dp connection was detected while an other headset was connected : here the last device has been well disconnected so we can connect BLE from A2DP
             else
                 cancelPendingConnection(false); //a disconnection occurred
@@ -996,7 +1001,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * The updateConnectionState(boolean) method with no parameter should be call if nothing went wrong and user wants to continue the connection process
      */
     private void updateConnectionState(BtState state){
-        if(state != null && (!isConnectionInterrupted || state.equals(BtState.CONNECTION_INTERRUPTED))){
+        if(state != null && !state.isAudioState() && (!isConnectionInterrupted || state.equals(BtState.CONNECTION_INTERRUPTED))){
             if(MbtConfig.isCurrentDeviceAMelomind())
                 mbtBluetoothLE.notifyConnectionStateChanged(state);
             else
@@ -1011,6 +1016,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     public void updateConnectionState(boolean isFutureCompleted){
         if(!isConnectionInterrupted)
             updateConnectionState(getCurrentState().getNextConnectionStep());
+
         if(isFutureCompleted)
             stopWaitingOperation(false, false);
     }
@@ -1080,37 +1086,39 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 mbtBluetoothLE.disconnect();
 
             deviceNameRequested = newDeviceBleName;
-
+            LogUtils.e(TAG, "connect is not IDLE " + getCurrentState());
             if(!getCurrentState().equals(BtState.IDLE)) {
                 try {
-                    waitOperationResult(5000, true);
+                    waitOperationResult(8000, true);
                 }catch (CancellationException | InterruptedException | ExecutionException | TimeoutException e) {
                     LogUtils.i(TAG, "Exception raised during disconnection "+e);
                 }
-                EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent(false,deviceNameRequested)); //current state should be IDLE
+                EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent(false, deviceNameRequested)); //current state should be IDLE
             }
         }
     }
 
-    private void waitOperationResult(int timeout, boolean isConnectingBleFromA2dp) throws InterruptedException, ExecutionException, TimeoutException {
+    private Boolean waitOperationResult(int timeout, boolean isConnectingBleFromA2dp) throws InterruptedException, ExecutionException, TimeoutException {
+        Boolean operationSucceeded = false;
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            if(isConnectingBleFromA2dp) {
+            if(!isConnectingBleFromA2dp) {
                 futureOperation = new CompletableFuture<>();
-                futureOperation.get(timeout, TimeUnit.MILLISECONDS);
+                operationSucceeded = futureOperation.get(timeout, TimeUnit.MILLISECONDS);
             }else {
                 futureSwitchOperation = new CompletableFuture<>();
-                futureSwitchOperation.get(timeout, TimeUnit.MILLISECONDS);
+                operationSucceeded = futureSwitchOperation.get(timeout, TimeUnit.MILLISECONDS);
             }
         }else {
-            if(isConnectingBleFromA2dp){
+            if(!isConnectingBleFromA2dp){
                 lockOperation = new MbtLock<>();
-                lockOperation.waitAndGetResult(timeout);
+                operationSucceeded = lockOperation.waitAndGetResult(timeout);
             }else {
                 lockSwitchOperation = new MbtLock<>();
-                lockSwitchOperation.waitAndGetResult(timeout);
+                operationSucceeded = lockSwitchOperation.waitAndGetResult(timeout);
             }
 
         }
+        return operationSucceeded;
     }
 
     private void cancelWaitingOperation(boolean isConnectingBleFromA2dp){
@@ -1142,11 +1150,11 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                           ((CompletableFuture) futureSwitchOperation).complete(true);
             }
         } else {
-            if(lockOperation != null && !lockOperation.isWaiting())
+            if(!isConnectingBleFromA2dp && lockOperation != null && lockOperation.isWaiting()) {
                 lockOperation.setResultAndNotify(isCancel ? null : true);
-            else if(isConnectingBleFromA2dp && lockSwitchOperation != null && lockSwitchOperation.isWaiting())
+            } else if(isConnectingBleFromA2dp && lockSwitchOperation != null && lockSwitchOperation.isWaiting()) {
                 lockSwitchOperation.setResultAndNotify(isCancel ? null : true);
-
+            }
         }
     }
 }
