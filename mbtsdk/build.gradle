@@ -3,10 +3,10 @@ apply plugin: 'maven-publish'
 
 
 android {
-    compileSdkVersion 27
+    compileSdkVersion 28
     defaultConfig {
         minSdkVersion 22
-        targetSdkVersion 27
+        targetSdkVersion 28
         versionCode 3
         versionName '2.0.2'
         flavorDimensions "default"
@@ -70,7 +70,7 @@ configurations {
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'org.mod4j.org.apache.commons:lang:2.1.0'
-    implementation 'com.android.support:appcompat-v7:27.1.1'
+    implementation 'com.android.support:appcompat-v7:28.0.0'
     implementation 'org.greenrobot:eventbus:3.1.1'
     implementation 'com.google.code.gson:gson:2.8.5'
 

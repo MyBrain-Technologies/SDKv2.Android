@@ -38,7 +38,6 @@ import java.util.concurrent.TimeoutException;
 
 import config.AmpGainConfig;
 import config.FilterConfig;
-import config.MbtConfig;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.BtState;
 import core.bluetooth.IStreamable;
@@ -49,7 +48,6 @@ import core.device.model.MbtDevice;
 import core.device.model.MelomindDevice;
 import core.device.model.MelomindsQRDataBase;
 import engine.clientevents.BaseError;
-import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.ConnectionStateReceiver;
 import features.MbtFeatures;
 import utils.BroadcastUtils;
