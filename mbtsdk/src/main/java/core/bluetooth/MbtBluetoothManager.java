@@ -263,7 +263,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private void switchToNextConnectionStep(){
         requestBeingProcessed = false;
         if(!getCurrentState().isAFailureState() && !isConnectionInterrupted && !getCurrentState().equals(BtState.IDLE))  //if nothing went wrong during the current step of the connection process, we continue the process
-            EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent(false, deviceNameRequested));
+            onNewBluetoothRequest(new StartOrContinueConnectionRequestEvent(false, deviceNameRequested));
     }
 
     /**

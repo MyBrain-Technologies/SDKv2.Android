@@ -1,13 +1,11 @@
 package mbtsdk.com.mybraintech.sdkv2;
 
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -29,6 +27,7 @@ import java.util.Objects;
 import java.util.Queue;
 
 
+import core.bluetooth.BtState;
 import core.device.model.MbtDevice;
 import core.eeg.storage.MbtEEGPacket;
 import engine.MbtClient;
@@ -36,8 +35,8 @@ import engine.MbtClient;
 import engine.SimpleRequestCallback;
 import engine.StreamConfig;
 import engine.clientevents.BaseError;
-import engine.clientevents.ConnectionStateListener;
-import engine.clientevents.DeviceInfoListener;
+import engine.clientevents.BluetoothStateListener;
+import engine.clientevents.DeviceBatteryListener;
 import engine.clientevents.EegListener;
 import features.MbtFeatures;
 import utils.LogUtils;
@@ -76,9 +75,9 @@ DeviceActivity extends AppCompatActivity {
     private boolean isConnected = false;
     private boolean isStreaming = false;
 
-    private ConnectionStateListener<BaseError> connectionStateListener;
+    private BluetoothStateListener bluetoothStateListener;
 
-    private DeviceInfoListener deviceInfoListener;
+    private DeviceBatteryListener deviceInfoListener;
 
     private EegListener<BaseError> eegListener;
 
@@ -100,7 +99,7 @@ DeviceActivity extends AppCompatActivity {
         initStartStopStreamingButton();
         initEegGraph();
 
-        client.setConnectionStateListener(connectionStateListener);
+        client.setConnectionStateListener(bluetoothStateListener);
 
         client.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
             @Override
@@ -137,7 +136,7 @@ DeviceActivity extends AppCompatActivity {
     }
 
     private void initDeviceInfoListener() {
-        deviceInfoListener = new DeviceInfoListener() {
+        deviceInfoListener = new DeviceBatteryListener() {
             @Override
             public void onBatteryChanged(String newLevel) {
                 lastReadBatteryLevel = newLevel;
@@ -152,7 +151,12 @@ DeviceActivity extends AppCompatActivity {
     }
 
     private void initConnectionStateListener() {
-        connectionStateListener = new ConnectionStateListener<BaseError>(){
+        bluetoothStateListener = new BluetoothStateListener(){
+            @Override
+            public void onNewState(BtState newState) {
+
+            }
+
             @Override
             public void onDeviceConnected() {
                 isConnected = true;
@@ -160,7 +164,6 @@ DeviceActivity extends AppCompatActivity {
 
             @Override
             public void onDeviceDisconnected() {
-                LogUtils.i(TAG," device disconnected");
                 isConnected = false;
                 returnOnPreviousActivity();
             }
@@ -405,7 +408,7 @@ DeviceActivity extends AppCompatActivity {
         LogUtils.i(TAG, " return on previous activity");
         notifyUser(getString(R.string.disconnected_headset));
         eegListener = null;
-        connectionStateListener = null;
+        bluetoothStateListener = null;
         finish();
         Intent intent = new Intent(DeviceActivity.this,HomeActivity.class);
         intent.putExtra(HomeActivity.PREVIOUS_ACTIVITY, DeviceActivity.TAG);
@@ -416,7 +419,7 @@ DeviceActivity extends AppCompatActivity {
     public void onBackPressed() {
         client.disconnectBluetooth();
         eegListener = null;
-        connectionStateListener = null;
+        bluetoothStateListener = null;
         client.setConnectionStateListener(null);
         returnOnPreviousActivity();
     }
