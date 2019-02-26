@@ -29,6 +29,7 @@ import java.util.Objects;
 import java.util.Queue;
 
 
+import config.DeviceConfig;
 import core.device.DCOffsets;
 import core.device.SaturationEvent;
 import core.device.model.MbtDevice;
@@ -152,12 +153,12 @@ DeviceActivity extends AppCompatActivity {
 
             @Override
             public void onSaturationStateChanged(SaturationEvent saturation) {
-
+                notifyUser("Saturation: "+saturation.getSaturationCode());
             }
 
             @Override
             public void onNewDCOffsetMeasured(DCOffsets dcOffsets) {
-
+                notifyUser("Offset: "+ Arrays.toString(dcOffsets.getOffset()));
             }
         };
     }
@@ -243,7 +244,16 @@ DeviceActivity extends AppCompatActivity {
                 if(!isStreaming) { //streaming is not in progress : starting streaming
                     startStream(new StreamConfig.Builder(eegListener)
                             .addSaturationAndOffsetListener(deviceStatusListener)
-                            .setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD).useQualities(true).create());
+                            .setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)
+                            .useQualities(true)
+                            .configureHeadset(new DeviceConfig.Builder()
+                                    .useP300(false)
+                                    //.mtu(47)
+                                    //.bandpassFilter()
+                                    //.gain()
+                                    //.notchFilter()
+                                    .create())
+                            .create());
                 }else { //streaming is in progress : stopping streaming
                     stopStream(); // set false to isStreaming et null to the eegListener
                 }

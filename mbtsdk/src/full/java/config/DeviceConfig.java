@@ -14,7 +14,7 @@ public class DeviceConfig {
     private boolean useP300;
 
 
-    DeviceConfig(FilterConfig notchFilter, FilterConfig bandpassFilter, AmpGainConfig gainValue, int mtuValue, boolean useP300) {
+    private DeviceConfig(FilterConfig notchFilter, FilterConfig bandpassFilter, AmpGainConfig gainValue, int mtuValue, boolean useP300) {
         this.notchFilter = notchFilter;
         this.bandpassFilter = bandpassFilter;
         this.gainValue = gainValue;
@@ -96,4 +96,14 @@ public class DeviceConfig {
         }
     }
 
+    @Override
+    public String toString() {
+        return "DeviceConfig{" +
+                "notchFilter=" + notchFilter +
+                ", bandpassFilter=" + bandpassFilter +
+                ", gainValue=" + gainValue +
+                ", mtuValue=" + mtuValue +
+                ", useP300=" + useP300 +
+                '}';
+    }
 }

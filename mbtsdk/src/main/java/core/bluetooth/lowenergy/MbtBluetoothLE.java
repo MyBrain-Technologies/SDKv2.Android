@@ -658,7 +658,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 
         Boolean isSuccess = false;
         try {
-            futureOperation = new CompletableFuture<>();
+            futureOperation = new CompletableFuture<>(); //todo after pull request
              isSuccess = futureOperation.get(10000,TimeUnit.MILLISECONDS);
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             LogUtils.i(TAG,"MTU change failed");

@@ -4,6 +4,7 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import config.DeviceConfig;
 import core.eeg.storage.MbtEEGPacket;
 import engine.clientevents.BaseError;
 import engine.clientevents.DeviceStatusListener;
@@ -32,29 +33,35 @@ public final class StreamConfig {
 
     private final boolean computeQualities;
 
-    private StreamConfig(boolean computeQualities, EegListener<BaseError> eegListener, int notificationPeriod, DeviceStatusListener deviceStatusListener){
+    private DeviceConfig deviceConfig;
+
+    private StreamConfig(boolean computeQualities, EegListener<BaseError> eegListener, int notificationPeriod, DeviceStatusListener deviceStatusListener, DeviceConfig deviceConfig){
         this.computeQualities = computeQualities;
         this.eegListener = eegListener;
         this.notificationPeriod = notificationPeriod;
         this.deviceStatusListener = deviceStatusListener;
+        this.deviceConfig = deviceConfig;
     }
 
-    public DeviceStatusListener getDeviceStatusListener() {
+    DeviceStatusListener getDeviceStatusListener() {
         return deviceStatusListener;
     }
 
-    public EegListener getEegListener() {
+    EegListener getEegListener() {
         return eegListener;
     }
 
-    public int getNotificationPeriod() {
+    int getNotificationPeriod() {
         return notificationPeriod;
     }
 
-    public boolean shouldComputeQualities() {
+    boolean shouldComputeQualities() {
         return computeQualities;
     }
 
+    public DeviceConfig getDeviceConfig() {
+        return deviceConfig;
+    }
 
     /**
      * Builder class to ease construction of the {@link StreamConfig} instance.
@@ -70,6 +77,8 @@ public final class StreamConfig {
         private final EegListener<BaseError> eegListener;
 
         private boolean computeQualities = false;
+
+        private DeviceConfig deviceConfig = null;
 
 
         /**
@@ -98,6 +107,11 @@ public final class StreamConfig {
          */
         public Builder useQualities(boolean useQualities){
             this.computeQualities = useQualities;
+            return this;
+        }
+
+        public Builder configureHeadset(DeviceConfig deviceConfig){
+            this.deviceConfig = deviceConfig;
             return this;
         }
 
@@ -140,7 +154,7 @@ public final class StreamConfig {
 
         @Nullable
         public StreamConfig create(){
-            return new StreamConfig(this.computeQualities, this.eegListener, this.notificationPeriod, this.deviceStatusListener);
+            return new StreamConfig(this.computeQualities, this.eegListener, this.notificationPeriod, this.deviceStatusListener, this.deviceConfig);
         }
     }
 

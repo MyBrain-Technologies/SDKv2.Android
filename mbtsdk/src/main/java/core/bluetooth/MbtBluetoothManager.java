@@ -191,7 +191,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
             } else if (request instanceof StreamRequestEvent) {
                 if (((StreamRequestEvent) request).isStart())
-                    startStreamOperation(((StreamRequestEvent) request).shouldMonitorDeviceStatus());
+                    startStreamOperation(((StreamRequestEvent) request).shouldMonitorDeviceStatus(), ((StreamRequestEvent) request).getDeviceConfig());
                 else
                     stopStreamOperation();
 
@@ -737,6 +737,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * @param config the {@link DeviceConfig} instance to get new parameters from.
      */
     private void configureHeadset(@NonNull DeviceConfig config){
+        LogUtils.i(TAG, "configure headset "+config.toString());
         boolean stepSuccess = true;
         if(config != null){
             //Checking whether or not there are params to send
@@ -818,7 +819,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * Initiates the acquisition of EEG data. This method chooses between the correct BtProtocol.
      * If there is already a streaming session in progress, nothing happens and the method returns silently.
      */
-    private void startStreamOperation(boolean enableDeviceStatusMonitoring){
+    private void startStreamOperation(boolean enableDeviceStatusMonitoring, DeviceConfig deviceConfig){
         if(!mbtBluetoothLE.isConnected()){
             notifyStreamStateChanged(IStreamable.StreamState.DISCONNECTED);
             requestBeingProcessed = false;
@@ -831,7 +832,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         }
 
         //TODO remove configureHeadset method from here later on.
-        configureHeadset(new DeviceConfig.Builder().useP300(false).create());
+        configureHeadset((deviceConfig != null) ?
+                deviceConfig : new DeviceConfig.Builder().useP300(false).create());
 
         if(enableDeviceStatusMonitoring)
             mbtBluetoothLE.activateDeviceStatusMonitoring();
