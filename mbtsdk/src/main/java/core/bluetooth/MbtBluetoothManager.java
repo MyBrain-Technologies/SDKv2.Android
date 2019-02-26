@@ -689,7 +689,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                                     if(isDataBluetoothConnected() && connectionFromBleAvailable)  //A2DP cannot be connected from BLE if BLE connection state is not CONNECTED_AND_READY
                                         mbtBluetoothLE.connectA2DPFromBLE();
                                     else {// if connectA2DPFromBLE failed or is not supported by the headset firmware version
-                                        if(Build.VERSION.SDK_INT <= Build.VERSION_CODES.O_MR1)
+                                        if(Build.VERSION.SDK_INT <= Build.VERSION_CODES.P)
                                             connect(BLUETOOTH_A2DP);
                                         else
                                             notifyConnectionStateChanged(BtState.AUDIO_CONNECTION_UNSUPPORTED);
