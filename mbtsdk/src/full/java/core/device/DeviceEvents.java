@@ -44,24 +44,6 @@ public interface DeviceEvents {
         }
     }
 
-    public class GetDeviceTypeEvent {
-    }
-
-    public class PostDeviceTypeEvent {
-        @Nullable
-        private final ScannableDevices deviceType;
-
-        public PostDeviceTypeEvent(@Nullable ScannableDevices deviceType){
-            this.deviceType = deviceType;
-        }
-
-        @Nullable
-        public ScannableDevices getDevicetype() {
-            return deviceType;
-        }
-    }
-
-
     public class NewBluetoothDeviceConnectedEvent {
         @Nullable
         private final BluetoothDevice device;
