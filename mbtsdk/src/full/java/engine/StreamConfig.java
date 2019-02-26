@@ -29,22 +29,15 @@ public final class StreamConfig {
 
     private final EegListener<BaseError> eegListener;
 
-    private final DeviceStatusListener deviceStatusListener;
-
     private final boolean computeQualities;
 
     private DeviceConfig deviceConfig;
 
-    private StreamConfig(boolean computeQualities, EegListener<BaseError> eegListener, int notificationPeriod, DeviceStatusListener deviceStatusListener, DeviceConfig deviceConfig){
+    private StreamConfig(boolean computeQualities, EegListener<BaseError> eegListener, int notificationPeriod, DeviceConfig deviceConfig){
         this.computeQualities = computeQualities;
         this.eegListener = eegListener;
         this.notificationPeriod = notificationPeriod;
-        this.deviceStatusListener = deviceStatusListener;
         this.deviceConfig = deviceConfig;
-    }
-
-    DeviceStatusListener getDeviceStatusListener() {
-        return deviceStatusListener;
     }
 
     EegListener getEegListener() {
@@ -59,7 +52,7 @@ public final class StreamConfig {
         return computeQualities;
     }
 
-    public DeviceConfig getDeviceConfig() {
+    DeviceConfig getDeviceConfig() {
         return deviceConfig;
     }
 
@@ -71,8 +64,6 @@ public final class StreamConfig {
         //long streamDuration = -1L;
         private int notificationPeriod = MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD;
 
-        @Nullable
-        private DeviceStatusListener deviceStatusListener = null;
         @NonNull
         private final EegListener<BaseError> eegListener;
 
@@ -83,7 +74,6 @@ public final class StreamConfig {
 
         /**
          * The eeg Listener is mandatory.
-         * @param eegListener
          */
         public Builder(@NonNull EegListener<BaseError> eegListener){
             this.eegListener = eegListener;
@@ -137,24 +127,9 @@ public final class StreamConfig {
             return this;
         }
 
-        /**
-         * Use this method if you want to monitor headset's electrodes saturation and eeg offset.
-         * Set it to null if unnecesary.
-         *
-         * <p>It is by default set to NULL</p>
-         *
-         * @param deviceStatusListener the device status listener
-         * @return the device instance
-         */
-        @NonNull
-        public Builder addSaturationAndOffsetListener(@Nullable DeviceStatusListener deviceStatusListener){
-            this.deviceStatusListener = deviceStatusListener;
-            return this;
-        }
-
         @Nullable
         public StreamConfig create(){
-            return new StreamConfig(this.computeQualities, this.eegListener, this.notificationPeriod, this.deviceStatusListener, this.deviceConfig);
+            return new StreamConfig(this.computeQualities, this.eegListener, this.notificationPeriod, this.deviceConfig);
         }
     }
 

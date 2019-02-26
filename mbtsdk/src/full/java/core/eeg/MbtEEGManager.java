@@ -2,7 +2,6 @@ package core.eeg;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
-import android.util.Log;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.greenrobot.eventbus.Subscribe;
@@ -17,6 +16,7 @@ import core.MbtManager;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.IStreamable;
 import core.bluetooth.requests.StreamRequestEvent;
+import core.device.model.MbtDevice;
 import core.eeg.acquisition.MbtDataAcquisition;
 import core.eeg.signalprocessing.ContextSP;
 import core.eeg.signalprocessing.MBTCalibrationParameters;
@@ -30,6 +30,7 @@ import core.eeg.storage.RawEEGSample;
 import eventbus.EventBusManager;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.BluetoothEEGEvent;
+import eventbus.events.ConfigEEGEvent;
 import features.MbtFeatures;
 import mbtsdk.com.mybraintech.mbtsdk.BuildConfig;
 import utils.AsyncUtils;
@@ -53,6 +54,7 @@ import utils.MatrixUtils;
 public final class MbtEEGManager extends BaseModuleManager {
 
     private static final String TAG = MbtEEGManager.class.getName();
+    private static final int UNCHANGED_VALUE = -1;
 
     private MbtDataAcquisition dataAcquisition;
     private MbtDataBuffering dataBuffering;
@@ -95,11 +97,16 @@ public final class MbtEEGManager extends BaseModuleManager {
      * Reconfigures the temporary buffers that are used to store the raw EEG data until conversion to user-readable EEG data.
      * Reset the buffers arrays, status list, the number of status bytes and the packet Size
      */
-    private void reinitBuffers() {
-        dataBuffering.reinitBuffers();
+    private void resetBuffers(byte samplePerNotif, final int statusByteNb) {
+        if(statusByteNb != UNCHANGED_VALUE)
+            MbtFeatures.setNbStatusBytes(statusByteNb);
+        if(samplePerNotif != UNCHANGED_VALUE) {
+            MbtFeatures.setPacketSize(samplePerNotif);
+            MbtFeatures.setSamplePerNotif(samplePerNotif);
+        }
+        dataBuffering.resetBuffers();
         dataAcquisition.resetIndex();
     }
-
 
     /**
      * Convert the raw EEG data array into a readable EEG data matrix of float values
@@ -265,7 +272,7 @@ public final class MbtEEGManager extends BaseModuleManager {
     @Subscribe(threadMode = ThreadMode.POSTING)
     public void onStreamStateChanged(IStreamable.StreamState newState) {
         if (newState == IStreamable.StreamState.STOPPED)
-            reinitBuffers();
+            resetBuffers((byte) UNCHANGED_VALUE, UNCHANGED_VALUE);
     }
 
     @Subscribe
@@ -279,6 +286,11 @@ public final class MbtEEGManager extends BaseModuleManager {
 
     }
 
+    @Subscribe
+    public void onConfigurationChanged(ConfigEEGEvent configEEGEvent){
+        MbtDevice.InternalConfig config = new MbtDevice.InternalConfig(configEEGEvent.getConfig());
+        resetBuffers(config.getNbPackets(), config.getStatusBytes());
+    }
 
 //    /**
 //     * Add the new {@link EegRequests} to the handler thread that will execute tasks one after another

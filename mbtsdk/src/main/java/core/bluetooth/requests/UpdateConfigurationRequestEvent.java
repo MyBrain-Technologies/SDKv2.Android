@@ -7,12 +7,18 @@ import config.DeviceConfig;
  */
 public class UpdateConfigurationRequestEvent extends BluetoothRequests{
     private final DeviceConfig config;
+    private boolean isHeadsetConfiguredByBluetoothManager;
 
-    public UpdateConfigurationRequestEvent(DeviceConfig config){
+    public UpdateConfigurationRequestEvent(DeviceConfig config, boolean isHeadsetConfigured) {
         this.config = config;
+        this.isHeadsetConfiguredByBluetoothManager = isHeadsetConfigured;
     }
 
     public DeviceConfig getConfig() {
         return config;
+    }
+
+    public boolean isHeadsetConfiguredByBluetoothManager() {
+        return isHeadsetConfiguredByBluetoothManager;
     }
 }

@@ -196,7 +196,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                     stopStreamOperation();
 
             } else if (request instanceof UpdateConfigurationRequestEvent) {
-                configureHeadset(((UpdateConfigurationRequestEvent) request).getConfig());
+                if(!((UpdateConfigurationRequestEvent)request).isHeadsetConfiguredByBluetoothManager())
+                    configureHeadset(((UpdateConfigurationRequestEvent) request).getConfig());
             }
         }
 
@@ -441,13 +442,13 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         this.isConnectionInterrupted = false; // resetting the flag when starting a new connection
         switch (protocol){
             case BLUETOOTH_LE:
-                isConnectionSuccessful = mbtBluetoothLE.connect(mContext, getCurrentScannedDevice());
+                isConnectionSuccessful = mbtBluetoothLE.connect(mContext, getCurrentDevice());
                 break;
             case BLUETOOTH_SPP:
-                isConnectionSuccessful = mbtBluetoothSPP.connect(mContext, getCurrentScannedDevice());
+                isConnectionSuccessful = mbtBluetoothSPP.connect(mContext, getCurrentDevice());
                 break;
             case BLUETOOTH_A2DP:
-                isConnectionSuccessful = mbtBluetoothA2DP.connect(mContext, getCurrentScannedDevice());
+                isConnectionSuccessful = mbtBluetoothA2DP.connect(mContext, getCurrentDevice());
                 break;
         }
         LogUtils.i(TAG,"updateConnectionState "+(protocol.equals(BLUETOOTH_A2DP) ? mbtBluetoothA2DP.getCurrentState() : getCurrentState()));
@@ -641,7 +642,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             }
         });
         if(getCurrentState().equals(BtState.BONDING)) { //at this point : current state should be BONDED if bonding succeeded
-            if (getCurrentScannedDevice().getBondState() == BluetoothDevice.BOND_BONDED)
+            if (getCurrentDevice().getBondState() == BluetoothDevice.BOND_BONDED)
                 updateConnectionState(false); //current state is set to BONDED
             else
                 updateConnectionState(BtState.BONDING_FAILURE);
@@ -805,14 +806,14 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         }
 
         stepSuccess = mbtBluetoothLE.requestDeviceConfig();
+        //todo after pull request returnedConfig = waitresultoperation(5000)
+        //todo notify EEG manager EventBusManager.postEvent(new UpdateConfigurationRequestEvent(config, true));
+        // todo notify Device Manager EventBusManager.postEvent(new ConfigEEGEvent(returnedConfig));
 
         if(!stepSuccess){
-            LogUtils.e(TAG, "step has timeout. Aborting task...");
+            LogUtils.e(TAG, "step has timeout or failed. Aborting task...");
             return;
         }
-
-        //reconfigureBuffers(SAMPRATE, NB_CHANNELS, melomindDevice.getInternalConfig().getNbPackets(), melomindDevice.getInternalConfig().getStatusBytes());
-        EventBusManager.postEvent(Void.TYPE/*TODO*/);
     }
 
     /**
@@ -832,8 +833,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         }
 
         //TODO remove configureHeadset method from here later on.
-        configureHeadset((deviceConfig != null) ?
-                deviceConfig : new DeviceConfig.Builder().useP300(false).create());
+        configureHeadset(deviceConfig);
 
         if(enableDeviceStatusMonitoring)
             mbtBluetoothLE.activateDeviceStatusMonitoring();
@@ -940,7 +940,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 }
                 break;
             case DEVICE_FOUND:
-                EventBusManager.postEvent(new DeviceEvents.NewBluetoothDeviceEvent(getCurrentScannedDevice()));
+                EventBusManager.postEvent(new DeviceEvents.NewBluetoothDeviceEvent(getCurrentDevice()));
                 break;
             case SCAN_TIMEOUT:
             case SCAN_FAILURE:
@@ -1072,8 +1072,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         return deviceNameRequested;
     }
 
-    private BluetoothDevice getCurrentScannedDevice() {
-        return (MbtFeatures.useLowEnergyProtocol()) ? mbtBluetoothLE.scannedDevice : mbtBluetoothSPP.scannedDevice;
+    private BluetoothDevice getCurrentDevice() {
+        return (MbtFeatures.useLowEnergyProtocol()) ? mbtBluetoothLE.currentDevice : mbtBluetoothSPP.currentDevice;
     }
 
     void disconnectA2DPFromBLE() {

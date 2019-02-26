@@ -1,13 +1,11 @@
 package mbtsdk.com.mybraintech.sdkv2;
 
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -243,7 +241,6 @@ DeviceActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if(!isStreaming) { //streaming is not in progress : starting streaming
                     startStream(new StreamConfig.Builder(eegListener)
-                            .addSaturationAndOffsetListener(deviceStatusListener)
                             .setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)
                             .useQualities(true)
                             .configureHeadset(new DeviceConfig.Builder()
@@ -252,6 +249,7 @@ DeviceActivity extends AppCompatActivity {
                                     //.bandpassFilter()
                                     //.gain()
                                     //.notchFilter()
+                                    .enableSaturationAndDcOffset(deviceStatusListener)
                                     .create())
                             .create());
                 }else { //streaming is in progress : stopping streaming

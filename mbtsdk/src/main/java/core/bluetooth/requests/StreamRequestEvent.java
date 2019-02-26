@@ -15,6 +15,7 @@ public class StreamRequestEvent extends BluetoothRequests {
         this.isStart = isStartRequest;
         this.monitorDeviceStatus = monitorDeviceStatus;
         this.computeQualities = computeQualities;
+        this.deviceConfig = new DeviceConfig.Builder().useP300(false).create();
     }
     public StreamRequestEvent(boolean isStartRequest, boolean computeQualities, boolean monitorDeviceStatus, DeviceConfig deviceConfig){
         this.isStart = isStartRequest;
@@ -26,7 +27,6 @@ public class StreamRequestEvent extends BluetoothRequests {
     public boolean isStart() {
         return isStart;
     }
-
 
     public boolean shouldMonitorDeviceStatus() {
         return monitorDeviceStatus;

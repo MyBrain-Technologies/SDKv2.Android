@@ -38,7 +38,6 @@ import java.util.concurrent.TimeoutException;
 
 import config.AmpGainConfig;
 import config.FilterConfig;
-import config.MbtConfig;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.BtState;
 import core.bluetooth.IStreamable;
@@ -49,7 +48,6 @@ import core.device.model.MbtDevice;
 import core.device.model.MelomindDevice;
 import core.device.model.MelomindsQRDataBase;
 import engine.clientevents.BaseError;
-import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.ConnectionStateReceiver;
 import features.MbtFeatures;
 import utils.BroadcastUtils;
@@ -305,7 +303,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         }else
             this.bluetoothLeScanner = super.bluetoothAdapter.getBluetoothLeScanner();
 
-        scannedDevice = null;
+        currentDevice = null;
 
         if (filterOnDeviceService) {
             LogUtils.i(TAG, "ENABLED SERVICE FILTER");
@@ -341,7 +339,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         if(this.bluetoothLeScanner != null)
             this.bluetoothLeScanner.stopScan(this.leScanCallback);
         if(!getCurrentState().equals(BtState.DEVICE_FOUND) && !getCurrentState().equals(BtState.CONNECTING))
-            scannedDevice = null;
+            currentDevice = null;
     }
 
 
@@ -355,7 +353,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             super.onScanResult(callbackType, result);
             final BluetoothDevice device = result.getDevice();
             LogUtils.i(TAG, String.format("Stopping Low Energy Scan -> device detected " + "with name '%s' and MAC address '%s' ", device.getName(), device.getAddress()));
-            scannedDevice = device;
+            currentDevice = device;
             updateConnectionState(true); //current state is set to DEVICE_FOUND and future is completed
         }
 
@@ -796,7 +794,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             readBattery();
         else {
             super.notifyBatteryReceived(value);
-            if (getCurrentState().equals(BtState.BONDING) && scannedDevice.getBondState() == BluetoothDevice.BOND_BONDED)
+            if (getCurrentState().equals(BtState.BONDING))
                 updateConnectionState(true); //current state is set to BONDED
         }
     }

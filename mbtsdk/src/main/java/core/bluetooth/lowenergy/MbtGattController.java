@@ -11,7 +11,6 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 
 
-import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -67,11 +66,11 @@ final class MbtGattController extends BluetoothGattCallback {
     @Nullable
     private BluetoothGattCharacteristic modelNumber = null;
 
-    private final MbtBluetoothLE bluetoothController;
+    private final MbtBluetoothLE mbtBluetoothLE;
 
-    MbtGattController(Context context, MbtBluetoothLE bluetoothController) {
+    MbtGattController(Context context, MbtBluetoothLE mbtBluetoothLE) {
         super();
-        this.bluetoothController = bluetoothController;
+        this.mbtBluetoothLE = mbtBluetoothLE;
     }
 
     @Override
@@ -91,32 +90,32 @@ final class MbtGattController extends BluetoothGattCallback {
     @Override
     public void onConnectionStateChange(@NonNull BluetoothGatt gatt, int status, int newState) {
         super.onConnectionStateChange(gatt, status, newState);
-        String msg = "Current state was "+bluetoothController.getCurrentState()+" but Connection state change : " + (newState == 2 ? "connected " : " code is "+newState);
+        String msg = "Current state was "+ mbtBluetoothLE.getCurrentState()+" but Connection state change : " + (newState == 2 ? "connected " : " code is "+newState);
         switch (newState) {
             case BluetoothGatt.STATE_CONNECTING:
-                if (bluetoothController.getCurrentState().equals(BtState.DEVICE_FOUND))
-                    this.bluetoothController.updateConnectionState(false);//current state is set to CONNECTING
+                if (mbtBluetoothLE.getCurrentState().equals(BtState.DEVICE_FOUND))
+                    this.mbtBluetoothLE.updateConnectionState(false);//current state is set to CONNECTING
                 break;
             case BluetoothGatt.STATE_CONNECTED:
                 LogUtils.i(TAG,"gattcontroller notified that headset is connected ");
-                if (bluetoothController.getCurrentState().equals(BtState.CONNECTING) || bluetoothController.getCurrentState().equals(BtState.SCAN_STARTED))
-                    this.bluetoothController.updateConnectionState(true);//current state is set to CONNECTION_SUCCESS and future is completed
-                else if(bluetoothController.getCurrentState().equals(BtState.IDLE))
-                    this.bluetoothController.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
+                if (mbtBluetoothLE.getCurrentState().equals(BtState.CONNECTING) || mbtBluetoothLE.getCurrentState().equals(BtState.SCAN_STARTED))
+                    this.mbtBluetoothLE.updateConnectionState(true);//current state is set to CONNECTION_SUCCESS and future is completed
+                else if(mbtBluetoothLE.getCurrentState().equals(BtState.IDLE))
+                    this.mbtBluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
                     break;
 
             case BluetoothGatt.STATE_DISCONNECTING:
-                this.bluetoothController.notifyConnectionStateChanged(BtState.DISCONNECTING);
+                this.mbtBluetoothLE.notifyConnectionStateChanged(BtState.DISCONNECTING);
                 break;
             case BluetoothGatt.STATE_DISCONNECTED:
                 //if(isDownloadingFirmware) //todo OAD
                 //    refreshDeviceCache(gatt);// in this case the connection went well for a while, but just got lost
                 gatt.close();
                 LogUtils.i(TAG,"gattcontroller notified that headset is disconnected ");
-                this.bluetoothController.notifyConnectionStateChanged(BtState.DISCONNECTED);
+                this.mbtBluetoothLE.notifyConnectionStateChanged(BtState.DISCONNECTED);
                 break;
             default:
-                this.bluetoothController.notifyConnectionStateChanged(BtState.INTERNAL_FAILURE);
+                this.mbtBluetoothLE.notifyConnectionStateChanged(BtState.INTERNAL_FAILURE);
                 gatt.close();
                 msg += "Unknown value " + newState;
         }
@@ -138,8 +137,8 @@ final class MbtGattController extends BluetoothGattCallback {
         // Checking if services were indeed discovered or not : getServices should be not null and contains values at this point
         if (gatt.getServices() == null || gatt.getServices().isEmpty() || status != BluetoothGatt.GATT_SUCCESS) {
             gatt.disconnect();
-            if (bluetoothController.getCurrentState().equals(BtState.DISCOVERING_SERVICES))
-                this.bluetoothController.notifyConnectionStateChanged(BtState.DISCOVERING_FAILURE);
+            if (mbtBluetoothLE.getCurrentState().equals(BtState.DISCOVERING_SERVICES))
+                this.mbtBluetoothLE.notifyConnectionStateChanged(BtState.DISCOVERING_FAILURE);
             return;
         }
 
@@ -176,9 +175,9 @@ final class MbtGattController extends BluetoothGattCallback {
                 || this.fwVersion == null || this.hwVersion == null || this.serialNumber == null || this.oadPacketsCharac == null || this.mailBox == null || this.headsetStatus == null) {
             LogUtils.e(TAG, "error, not all characteristics have been found");
             gatt.disconnect();
-            this.bluetoothController.notifyConnectionStateChanged(BtState.DISCOVERING_FAILURE);
-        } else if (bluetoothController.getCurrentState().equals(BtState.DISCOVERING_SERVICES))
-            bluetoothController.updateConnectionState(true); //current state is set to DISCOVERING_SUCCESS and future is completed
+            this.mbtBluetoothLE.notifyConnectionStateChanged(BtState.DISCOVERING_FAILURE);
+        } else if (mbtBluetoothLE.getCurrentState().equals(BtState.DISCOVERING_SERVICES))
+            mbtBluetoothLE.updateConnectionState(true); //current state is set to DISCOVERING_SUCCESS and future is completed
     }
 
     /**
@@ -195,22 +194,22 @@ final class MbtGattController extends BluetoothGattCallback {
             LogUtils.i(TAG, "onCharacteristicRead : " + new String(characteristic.getValue()));
 
         if (characteristic.getUuid().compareTo(CHARAC_INFO_FIRMWARE_VERSION) == 0)
-            bluetoothController.notifyDeviceInfoReceived(DeviceInfo.FW_VERSION, new String(characteristic.getValue()));
+            mbtBluetoothLE.notifyDeviceInfoReceived(DeviceInfo.FW_VERSION, new String(characteristic.getValue()));
 
         if (characteristic.getUuid().compareTo(CHARAC_INFO_HARDWARE_VERSION) == 0)
-            bluetoothController.notifyDeviceInfoReceived(DeviceInfo.HW_VERSION, new String(characteristic.getValue()));
+            mbtBluetoothLE.notifyDeviceInfoReceived(DeviceInfo.HW_VERSION, new String(characteristic.getValue()));
 
         if (characteristic.getUuid().compareTo(CHARAC_INFO_SERIAL_NUMBER) == 0)
-            bluetoothController.notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER, new String(characteristic.getValue()));
+            mbtBluetoothLE.notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER, new String(characteristic.getValue()));
 
         if (characteristic.getUuid().compareTo(CHARAC_INFO_MODEL_NUMBER) == 0)
-            bluetoothController.notifyDeviceInfoReceived(DeviceInfo.MODEL_NUMBER, new String(characteristic.getValue()));
+            mbtBluetoothLE.notifyDeviceInfoReceived(DeviceInfo.MODEL_NUMBER, new String(characteristic.getValue()));
 
         if (characteristic.getUuid().compareTo(CHARAC_MEASUREMENT_BATTERY_LEVEL) == 0) {
             LogUtils.i(TAG, "battery level status : " + status);
             int GATT_AUTHENTICATION_FAIL = 0x89;
             if(status == GATT_AUTHENTICATION_FAIL)
-                bluetoothController.notifyBatteryReceived(0, false);
+                mbtBluetoothLE.notifyBatteryReceived(0, false);
 
             if (characteristic.getValue() != null) {
                 if (characteristic.getValue().length < 4) {
@@ -232,7 +231,7 @@ final class MbtGattController extends BluetoothGattCallback {
                 }
                 LogUtils.i(TAG, "Received a [onCharacteristicRead] callback for battery level request. " +
                         "Value -> " + level);
-                bluetoothController.notifyBatteryReceived(level, status == BluetoothGatt.GATT_SUCCESS);
+                mbtBluetoothLE.notifyBatteryReceived(level, status == BluetoothGatt.GATT_SUCCESS);
             }
         }
     }
@@ -246,7 +245,7 @@ final class MbtGattController extends BluetoothGattCallback {
 //                    " and payload " + Arrays.toString(characteristic.getValue()));
 //            this.notifyMailboxEventReceived(characteristic);
 //        }
-        bluetoothController.completeFutureOperation();
+        mbtBluetoothLE.completeFutureOperation();
     }
 
     @Override
@@ -254,14 +253,14 @@ final class MbtGattController extends BluetoothGattCallback {
         super.onCharacteristicChanged(gatt, characteristic);
 
         if (characteristic.getUuid().compareTo(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG) == 0) {
-            this.bluetoothController.notifyNewDataAcquired(characteristic.getValue());
+            this.mbtBluetoothLE.notifyNewDataAcquired(characteristic.getValue());
         } else if (characteristic.getUuid().compareTo(MelomindCharacteristics.CHARAC_HEADSET_STATUS) == 0) {
-            this.bluetoothController.notifyNewHeadsetStatus(characteristic.getValue());
+            this.mbtBluetoothLE.notifyNewHeadsetStatus(characteristic.getValue());
         } else if (characteristic.getUuid().compareTo(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX) == 0) {
             this.notifyMailboxEventReceived(characteristic);
             LogUtils.i(TAG, "mailbox message received with code " + characteristic.getValue()[0] +
                     " and payload " + Arrays.toString(characteristic.getValue()));
-            bluetoothController.completeFutureOperation();
+            mbtBluetoothLE.completeFutureOperation();
         }
     }
 
@@ -279,8 +278,8 @@ final class MbtGattController extends BluetoothGattCallback {
         } else {
             LogUtils.e(TAG, "Received a [onDescriptorWrite] callback with Status: FAILURE.");
         }
-        bluetoothController.completeFutureOperation();
-        bluetoothController.onNotificationStateChanged(status == BluetoothGatt.GATT_SUCCESS, descriptor.getCharacteristic(), descriptor.getValue() == BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+        mbtBluetoothLE.completeFutureOperation();
+        mbtBluetoothLE.onNotificationStateChanged(status == BluetoothGatt.GATT_SUCCESS, descriptor.getCharacteristic(), descriptor.getValue() == BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
 
 
     }
@@ -299,7 +298,7 @@ final class MbtGattController extends BluetoothGattCallback {
     public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
         super.onMtuChanged(gatt, mtu, status);
         LogUtils.i(TAG, "onMtuChanged with new value " + mtu);
-        bluetoothController.completeFutureOperation();
+        mbtBluetoothLE.completeFutureOperation();
 
     }
 
@@ -399,12 +398,12 @@ final class MbtGattController extends BluetoothGattCallback {
 
             case MailboxEvents.MBX_CONNECT_IN_A2DP:
                 LogUtils.i(TAG, "received mailbox response for A2DP connection " + (int) (characteristic.getValue()[1]));
-                bluetoothController.notifyMailboxEventReceived(BtState.AUDIO_CONNECTED);
+                mbtBluetoothLE.notifyMailboxEventReceived(BtState.AUDIO_CONNECTED);
                 break;
 
             case MailboxEvents.MBX_DISCONNECT_IN_A2DP:
                 LogUtils.i(TAG, "received mailbox response for A2DP disconnection" + (int) (characteristic.getValue()[1]));
-                bluetoothController.notifyMailboxEventReceived(BtState.AUDIO_DISCONNECTED);
+                mbtBluetoothLE.notifyMailboxEventReceived(BtState.AUDIO_DISCONNECTED);
                 break;
 
             case (byte) 0xFF:

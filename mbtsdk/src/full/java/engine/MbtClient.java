@@ -8,6 +8,7 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 
 
+import config.DeviceConfig;
 import config.MbtConfig;
 import core.MbtManager;
 import core.device.model.DeviceInfo;
@@ -148,10 +149,13 @@ public final class MbtClient {
         else
             MbtConfig.setEegBufferLengthClientNotif((int)((streamConfig.getNotificationPeriod()* MbtFeatures.DEFAULT_SAMPLE_RATE)/1000));
 
-        mbtManager.startStream(streamConfig.shouldComputeQualities(), streamConfig.getEegListener(), streamConfig.getDeviceStatusListener(), streamConfig.getDeviceConfig());
+        mbtManager.startStream(streamConfig.shouldComputeQualities(), streamConfig.getEegListener(), streamConfig.getDeviceConfig());
     }
 
 
+    public void configureHeadset(DeviceConfig deviceConfig){
+        mbtManager.configureHeadset(deviceConfig);
+    }
     /**
      * Stops the currently running eeg stream. This stops bluetooth acquisition and
      * reinit all internal buffering system.

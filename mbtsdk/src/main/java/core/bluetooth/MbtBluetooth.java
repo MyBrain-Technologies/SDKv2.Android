@@ -42,7 +42,7 @@ public abstract class MbtBluetooth implements IScannable, IConnectable{
 
     protected final Context context;
 
-    protected BluetoothDevice scannedDevice;
+    protected BluetoothDevice currentDevice;
 
     protected MbtBluetoothManager mbtBluetoothManager;
 
