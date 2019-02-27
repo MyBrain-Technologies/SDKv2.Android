@@ -47,6 +47,7 @@ import engine.clientevents.BaseError;
 import engine.clientevents.ConnectionStateReceiver;
 import eventbus.EventBusManager;
 import eventbus.events.BluetoothEEGEvent;
+import eventbus.events.ConfigEEGEvent;
 import eventbus.events.ConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
 import features.MbtFeatures;
@@ -143,6 +144,10 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         BroadcastUtils.registerReceiverIntents(context, receiver, BluetoothAdapter.ACTION_STATE_CHANGED);
     }
 
+    public void notifyDeviceConfigReceived(Byte[] returnedConfig) {
+        EventBusManager.postEvent(new ConfigEEGEvent(returnedConfig)); //notify the DeviceManager and the EEGManager
+    }
+
 
     /**
      * This class is a specific thread that will handle all bluetooth operations. Bluetooth operations
@@ -194,7 +199,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
             } else if (request instanceof StreamRequestEvent) {
                 if (((StreamRequestEvent) request).isStart())
-                    startStreamOperation(((StreamRequestEvent) request).shouldMonitorDeviceStatus());
+                    startStreamOperation(((StreamRequestEvent) request).shouldMonitorDeviceStatus(), ((StreamRequestEvent) request).getDeviceConfig());
                 else
                     stopStreamOperation();
 
@@ -444,13 +449,13 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         this.isConnectionInterrupted = false; // resetting the flag when starting a new connection
         switch (protocol){
             case BLUETOOTH_LE:
-                isConnectionSuccessful = mbtBluetoothLE.connect(mContext, getCurrentScannedDevice());
+                isConnectionSuccessful = mbtBluetoothLE.connect(mContext, getCurrentDevice());
                 break;
             case BLUETOOTH_SPP:
-                isConnectionSuccessful = mbtBluetoothSPP.connect(mContext, getCurrentScannedDevice());
+                isConnectionSuccessful = mbtBluetoothSPP.connect(mContext, getCurrentDevice());
                 break;
             case BLUETOOTH_A2DP:
-                isConnectionSuccessful = mbtBluetoothA2DP.connect(mContext, getCurrentScannedDevice());
+                isConnectionSuccessful = mbtBluetoothA2DP.connect(mContext, getCurrentDevice());
                 break;
         }
         LogUtils.i(TAG,"updateConnectionState "+(protocol.equals(BLUETOOTH_A2DP) ? mbtBluetoothA2DP.getCurrentState() : getCurrentState()));
@@ -644,7 +649,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             }
         });
         if(getCurrentState().equals(BtState.BONDING)) { //at this point : current state should be BONDED if bonding succeeded
-            if (getCurrentScannedDevice().getBondState() == BluetoothDevice.BOND_BONDED)
+            if (getCurrentDevice().getBondState() == BluetoothDevice.BOND_BONDED)
                 updateConnectionState(false); //current state is set to BONDED
             else
                 updateConnectionState(BtState.BONDING_FAILURE);
@@ -740,88 +745,16 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * @param config the {@link DeviceConfig} instance to get new parameters from.
      */
     private void configureHeadset(@NonNull DeviceConfig config){
-        boolean stepSuccess = true;
-        if(config != null){
-            //Checking whether or not there are params to send
-            if (config.getMtuValue() != -1) {
-                stepSuccess = mbtBluetoothLE.changeMTU(config.getMtuValue());
-            }
-
-            if(!stepSuccess){
-                LogUtils.e(TAG, "step has timeout. Aborting task...");
-                return;
-            }
-
-            try {
-                Thread.sleep(50);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            if (config.getNotchFilter() != null) {
-                stepSuccess = mbtBluetoothLE.changeFilterConfiguration(config.getNotchFilter());
-
-                //TODO implement bandpass filter change
-//            if(config.getBandpassFilter() != null){
-//                boolean b = changeFilterConfiguration(config.getBandpassFilter());
-//                if(!b)
-//                    LogUtils.e(TAG, "Error changing bandpass filter configuration");
-//            }
-            }
-
-            if(!stepSuccess){
-                LogUtils.e(TAG, "step has timeout. Aborting task...");
-                return;
-            }
-
-            try {
-                Thread.sleep(50);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            if (config.getGainValue() != null) {
-                stepSuccess = mbtBluetoothLE.changeAmpGainConfiguration(config.getGainValue());
-
-            }
-
-            if(!stepSuccess){
-                LogUtils.e(TAG, "step has timeout. Aborting task...");
-                return;
-            }
-
-            try {
-                Thread.sleep(50);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            stepSuccess = mbtBluetoothLE.switchP300Mode(config.isUseP300());
-            if(!stepSuccess){
-                LogUtils.e(TAG, "step has timeout. Aborting task...");
-                return;
-            }
-        }
-
-        try {
-            Thread.sleep(200);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        stepSuccess = mbtBluetoothLE.requestDeviceConfig();
-
-        if(!stepSuccess){
-            LogUtils.e(TAG, "step has timeout. Aborting task...");
-            return;
-        }
-
-        //reconfigureBuffers(SAMPRATE, NB_CHANNELS, melomindDevice.getInternalConfig().getNbPackets(), melomindDevice.getInternalConfig().getStatusBytes());
-        EventBusManager.postEvent(Void.TYPE/*TODO*/);
+        LogUtils.i(TAG, "configure headset "+config.toString());
+        //if() todo after pull request if( .useLowEnergyProtocol)
+        mbtBluetoothLE.configureHeadset(config);
     }
 
     /**
      * Initiates the acquisition of EEG data. This method chooses between the correct BtProtocol.
      * If there is already a streaming session in progress, nothing happens and the method returns silently.
      */
-    private void startStreamOperation(boolean enableDeviceStatusMonitoring){
+    private void startStreamOperation(boolean enableDeviceStatusMonitoring, DeviceConfig deviceConfig){
         if(!mbtBluetoothLE.isConnected()){
             notifyStreamStateChanged(IStreamable.StreamState.DISCONNECTED);
             requestBeingProcessed = false;
@@ -834,7 +767,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         }
 
         //TODO remove configureHeadset method from here later on.
-        configureHeadset(new DeviceConfig.Builder().useP300(false).create());
+        configureHeadset(deviceConfig);
 
         if(enableDeviceStatusMonitoring)
             mbtBluetoothLE.activateDeviceStatusMonitoring();
@@ -942,6 +875,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 break;
             case DEVICE_FOUND:
                 EventBusManager.postEvent(new DeviceEvents.NewBluetoothDeviceEvent(getCurrentScannedDevice(), deviceTypeRequested));
+
                 break;
             case SCAN_TIMEOUT:
             case SCAN_FAILURE:
@@ -1073,8 +1007,9 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         return deviceNameRequested;
     }
 
-    private BluetoothDevice getCurrentScannedDevice() {
-        return (deviceTypeRequested.useLowEnergyProtocol()) ? mbtBluetoothLE.scannedDevice : mbtBluetoothSPP.scannedDevice;
+    private BluetoothDevice getCurrentDevice() {
+        return (MbtFeatures.useLowEnergyProtocol()) ? mbtBluetoothLE.currentDevice : mbtBluetoothSPP.currentDevice;
+
     }
 
     void disconnectA2DPFromBLE() {

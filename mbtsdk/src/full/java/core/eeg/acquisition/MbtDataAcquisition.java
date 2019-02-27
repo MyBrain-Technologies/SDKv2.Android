@@ -15,7 +15,6 @@ import features.ScannableDevices;
 import utils.LogUtils;
 
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
-import static features.MbtFeatures.DEFAULT_BLE_NB_STATUS_BYTES;
 import static features.MbtFeatures.getEEGByteSize;
 import static features.MbtFeatures.getNbChannels;
 import static features.MbtFeatures.getNbStatusBytes;

@@ -61,6 +61,7 @@ public final class MbtFeatures{
     public final static int DEFAULT_BLE_NB_STATUS_BYTES = 0;
     public final static int DEFAULT_SPP_NB_STATUS_BYTES = 3;
     private static int nbStatusBytes = -1;
+    private static int samplePerNotif = DEFAULT_SAMPLE_PER_NOTIF;
 
     public static final int DEFAULT_MAX_PENDING_RAW_DATA_BUFFER_SIZE = 40;
 
@@ -137,6 +138,11 @@ public final class MbtFeatures{
     }
 
 
+    public static void setPacketSize(int samplePerNotif) {
+        MbtFeatures.packetSize = samplePerNotif * (MbtConfig.getScannableDevices().equals(MELOMIND) ?
+                DEFAULT_BLE_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES : DEFAULT_SPP_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES);
+    }
+
     /**
      * Gets the raw data buffer size
      * @return the raw data buffer size
@@ -169,6 +175,16 @@ public final class MbtFeatures{
         if(nbStatusBytes == -1)
             nbStatusBytes = (protocol.equals(BLUETOOTH_LE))? DEFAULT_BLE_NB_STATUS_BYTES : DEFAULT_SPP_NB_STATUS_BYTES;
         return nbStatusBytes;
+    }
+
+    public static void setSamplePerNotif(int samplePerNotif) {
+        MbtFeatures.samplePerNotif = samplePerNotif;
+    }
+
+
+
+    public static void setNbStatusBytes(int nbStatusBytes) {
+        MbtFeatures.nbStatusBytes = nbStatusBytes;
     }
 
     /**

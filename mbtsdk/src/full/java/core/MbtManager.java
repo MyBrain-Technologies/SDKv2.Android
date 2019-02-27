@@ -10,6 +10,7 @@ import org.greenrobot.eventbus.ThreadMode;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
+import config.DeviceConfig;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.IStreamable;
 import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
@@ -17,6 +18,7 @@ import core.bluetooth.requests.DisconnectRequestEvent;
 import core.bluetooth.MbtBluetoothManager;
 import core.bluetooth.requests.ReadRequestEvent;
 import core.bluetooth.requests.StreamRequestEvent;
+import core.bluetooth.requests.UpdateConfigurationRequestEvent;
 import core.device.DCOffsets;
 import core.device.DeviceEvents;
 import core.device.MbtDeviceManager;
@@ -131,19 +133,19 @@ public class MbtManager{
         EventBusManager.postEvent(new ReadRequestEvent(deviceInfo));
     }
 
-
+    
 
     /**
      * Posts an event to initiate a stream session.
      * @param useQualities whether or not quality check algorithms have to be called (Currently false)
      * @param eegListener the eeg listener
-     * @param deviceStatusListener to notify the user about device status real time modifications.
      */
-    public void startStream(boolean useQualities, @NonNull EegListener<BaseError> eegListener, @Nullable DeviceStatusListener deviceStatusListener){
+    public void startStream(boolean useQualities, @NonNull EegListener<BaseError> eegListener, DeviceConfig deviceConfig){
         this.eegListener = eegListener;
-        this.deviceStatusListener = deviceStatusListener;
+        if(deviceConfig != null)
+            this.deviceStatusListener = deviceConfig.getDeviceStatusListener();
 
-        EventBusManager.postEvent(new StreamRequestEvent(true, useQualities,deviceStatusListener != null));
+        EventBusManager.postEvent(new StreamRequestEvent(true, useQualities,deviceStatusListener != null, deviceConfig));
     }
 
     /**
@@ -151,6 +153,10 @@ public class MbtManager{
      */
     public void stopStream(){
         EventBusManager.postEvent(new StreamRequestEvent(false, false, false));
+    }
+
+    public void configureHeadset(DeviceConfig deviceConfig){
+        EventBusManager.postEvent(new UpdateConfigurationRequestEvent(deviceConfig));
     }
 
     /**

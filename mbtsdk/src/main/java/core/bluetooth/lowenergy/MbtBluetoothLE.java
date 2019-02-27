@@ -24,6 +24,8 @@ import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 
+import org.apache.commons.lang.ArrayUtils;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
@@ -37,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import config.AmpGainConfig;
+import config.DeviceConfig;
 import config.FilterConfig;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.BtState;
@@ -47,6 +50,7 @@ import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindDevice;
 import core.device.model.MelomindsQRDataBase;
+import core.eeg.acquisition.MbtDataConversion;
 import engine.clientevents.BaseError;
 import engine.clientevents.ConnectionStateReceiver;
 import features.MbtFeatures;
@@ -74,6 +78,8 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 
     @RequiresApi(Build.VERSION_CODES.N)
     private CompletableFuture<Boolean> futureOperation = new CompletableFuture();
+    //todo after pull request private MbtAsyncWaitOperation asyncConfiguration = new MbtAsyncWaitOperation();
+
     /**
      * An internal event used to notify MbtBluetoothLE that A2DP has disconnected.
      */
@@ -303,7 +309,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         }else
             this.bluetoothLeScanner = super.bluetoothAdapter.getBluetoothLeScanner();
 
-        scannedDevice = null;
+        currentDevice = null;
 
         if (filterOnDeviceService) {
             LogUtils.i(TAG, "ENABLED SERVICE FILTER");
@@ -339,7 +345,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         if(this.bluetoothLeScanner != null)
             this.bluetoothLeScanner.stopScan(this.leScanCallback);
         if(!getCurrentState().equals(BtState.DEVICE_FOUND) && !getCurrentState().equals(BtState.CONNECTING))
-            scannedDevice = null;
+            currentDevice = null;
     }
 
 
@@ -353,7 +359,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             super.onScanResult(callbackType, result);
             final BluetoothDevice device = result.getDevice();
             LogUtils.i(TAG, String.format("Stopping Low Energy Scan -> device detected " + "with name '%s' and MAC address '%s' ", device.getName(), device.getAddress()));
-            scannedDevice = device;
+            currentDevice = device;
             updateConnectionState(true); //current state is set to DEVICE_FOUND and future is completed
         }
 
@@ -614,8 +620,21 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         }
     }
 
-    void notifyMailboxEventReceived(BtState state){
-        mbtBluetoothManager.notifyConnectionStateChanged(state);
+    void notifyDeviceConfigReceived(byte[] returnedResult, @NonNull String configType) {
+        LogUtils.i(TAG, "received config from device "+configType+" | value:"+Arrays.toString(returnedResult));
+        if(configType.equals(DeviceConfig.EEG_CONFIG))
+            mbtBluetoothManager.notifyDeviceConfigReceived(ArrayUtils.toObject(returnedResult));
+
+
+        //todo after pull request if(configType != null)
+        //todo after pull request asyncConfiguration.stopwaitingOperation();
+
+    }
+
+    void notifyMailboxEventReceived(byte mailboxEvents){
+        LogUtils.i(TAG, "received mailbox response for A2DP "+ (mailboxEvents == MailboxEvents.MBX_CONNECT_IN_A2DP ? "connection":"disconnection"));
+        if(mailboxEvents == MailboxEvents.MBX_CONNECT_IN_A2DP || mailboxEvents == MailboxEvents.MBX_DISCONNECT_IN_A2DP)
+            mbtBluetoothManager.notifyConnectionStateChanged(mailboxEvents == MailboxEvents.MBX_CONNECT_IN_A2DP ? BtState.AUDIO_CONNECTED : BtState.AUDIO_DISCONNECTED);
     }
 
     void updateConnectionState(boolean isFutureCompleted){
@@ -625,6 +644,86 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     void completeFutureOperation(){
         if(futureOperation != null && !futureOperation.isDone() && !futureOperation.isCancelled())
             futureOperation.complete(true);
+    }
+
+    /**
+     * Send a configuration request to the device if the given configType parameter is :
+     * {@link DeviceConfig#MTU_CONFIG}
+     * or {@link DeviceConfig#AMP_GAIN_CONFIG}
+     * or {@link DeviceConfig#NOTCH_FILTER_CONFIG}
+     * or {@link DeviceConfig#OFFSET_CONFIG}
+     * or {@link DeviceConfig#P300_CONFIG}
+     * or {@link DeviceConfig#MTU_CONFIG}
+     * Send a reading request to the device to get the current device configuration if the given config parameter is
+     * {@link DeviceConfig#EEG_CONFIG}
+     * @param config contains the values that the device has to changed when it receives the request
+     * @return
+     */
+    private boolean waitResultOfDeviceConfiguration(String configType, DeviceConfig config){
+        boolean requestSent = false;
+        try {
+            Thread.sleep(50);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        switch (configType){
+            case DeviceConfig.MTU_CONFIG:
+                requestSent = changeMTU(config.getMtuValue());
+                break;
+            case DeviceConfig.NOTCH_FILTER_CONFIG:
+                requestSent = changeFilterConfiguration(config.getNotchFilter());
+                break;
+                case DeviceConfig.AMP_GAIN_CONFIG:
+                requestSent = changeAmpGainConfiguration(config.getGainValue());
+                break;
+            case DeviceConfig.P300_CONFIG:
+                requestSent = switchP300Mode(config.isUseP300());
+                break;
+            case DeviceConfig.OFFSET_CONFIG:
+                requestSent = enableOrDisableDcOffset(config.isDcOffsetEnabled());
+                break;
+            case DeviceConfig.EEG_CONFIG:
+                requestSent = requestDeviceConfig();
+                break;
+        }
+
+        //todo after pull request if(requestSent) asyncConfiguration.wait here
+        //LogUtils.e(TAG, configType+" request has timeout. Aborting task...");
+        return requestSent;
+    }
+
+    /**
+     * This method manages a set of calls to perform in order to reconfigure some of the headset's
+     * parameters. All parameters are held in a {@link DeviceConfig instance}
+     * Each new parameter is updated one after the other. All method inside are blocking.
+     * @param config the {@link DeviceConfig} instance to get new parameters from.
+     */
+    public void configureHeadset(DeviceConfig config){
+        LogUtils.i(TAG, "configure headset "+config.toString());
+        if(config != null){
+            if (config.getMtuValue() != -1) //Checking whether or not there are params to send
+                if(!waitResultOfDeviceConfiguration(DeviceConfig.MTU_CONFIG, config))
+                    return;
+
+            if (config.getNotchFilter() != null)
+                if(!waitResultOfDeviceConfiguration(DeviceConfig.NOTCH_FILTER_CONFIG, config))
+                    return;
+
+                //TODO implement bandpass filter change
+
+            if (config.getGainValue() != null)
+                if(!waitResultOfDeviceConfiguration(DeviceConfig.AMP_GAIN_CONFIG, config))
+                    return;
+
+            if(!waitResultOfDeviceConfiguration(DeviceConfig.P300_CONFIG, config))
+                return;
+
+            if(!waitResultOfDeviceConfiguration(DeviceConfig.OFFSET_CONFIG, config))
+                return;
+        }
+
+        waitResultOfDeviceConfiguration(DeviceConfig.EEG_CONFIG, null);
     }
 
     /**
@@ -640,7 +739,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      *
      * @return false if request dod not start as planned, true otherwise.
      */
-    public boolean changeMTU(@IntRange(from = 23, to = 121)final int newMTU) {
+    private boolean changeMTU(@IntRange(from = 23, to = 121)final int newMTU) {
         LogUtils.i(TAG, "changing mtu to " + newMTU);
         if(!isConnected()){
             return false;
@@ -651,17 +750,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         if(this.gatt == null)
             return false;
 
-        if(!this.gatt.requestMtu(newMTU))
-            return false;
-
-        Boolean isSuccess = false;
-        try {
-            futureOperation = new CompletableFuture<>();
-             isSuccess = futureOperation.get(10000,TimeUnit.MILLISECONDS);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            LogUtils.i(TAG,"MTU change failed");
-        }
-        return isSuccess;
+        return this.gatt.requestMtu(newMTU);
     }
 
     /**
@@ -670,7 +759,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * charateristic are enabled.
      * @param newConfig the new config.
      */
-    public boolean changeFilterConfiguration(@NonNull FilterConfig newConfig){
+    private boolean changeFilterConfiguration(@NonNull FilterConfig newConfig){
         if(!isNotificationEnabledOnCharacteristic(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX)){
             enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX));
         }
@@ -688,10 +777,10 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * charateristic are enabled.
      * @param newConfig the new config.
      */
-    public boolean changeAmpGainConfiguration(@NonNull AmpGainConfig newConfig){
-        if(!isNotificationEnabledOnCharacteristic(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX)){
+    private boolean changeAmpGainConfiguration(@NonNull AmpGainConfig newConfig){
+        if(!isNotificationEnabledOnCharacteristic(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX))
             enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX));
-        }
+
         ByteBuffer nameToBytes = ByteBuffer.allocate(2); // +1 for mailbox code
         nameToBytes.put(MailboxEvents.MBX_SET_AMP_GAIN);
         nameToBytes.put((byte)newConfig.getNumVal());
@@ -705,7 +794,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * charateristic are enabled.
      * @param useP300 is true to enable, false to disable.
      */
-    public boolean switchP300Mode(boolean useP300){
+    private boolean switchP300Mode(boolean useP300){
         LogUtils.i(TAG, "switch p300: new mode is " + (useP300 ? "enabled" : "disabled"));
 
         if(!isNotificationEnabledOnCharacteristic(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX)){
@@ -718,12 +807,31 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         return startWriteOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX, nameToBytes.array());
     }
 
+
+    /**
+     * Initiates a write operation in order to enable or disable the DC Offset notifications
+     * It first requires that notifications are enabled to the {@link MelomindCharacteristics#CHARAC_MEASUREMENT_MAILBOX}
+     * @param enableOffset is true to enable, false to disable.
+     */
+    private boolean enableOrDisableDcOffset(boolean enableOffset){
+        LogUtils.i(TAG, "DC Offset is " + (enableOffset ? "enabled" : "disabled"));
+
+        if(!isNotificationEnabledOnCharacteristic(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX)){
+            enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX));
+        }
+
+        ByteBuffer buffer = ByteBuffer.allocate(2);
+        buffer.put(MailboxEvents.MBX_DC_OFFSET_ENABLE);
+        buffer.put((byte)(enableOffset ? 0x01 : 0x00));
+        return startWriteOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX, buffer.array());
+    }
+
     /**
      * Initiates a write operation in order to enable or disable the p300 mode in the melomind firmware.
      * It first requires that notifications are enabled to the {@link MelomindCharacteristics#CHARAC_MEASUREMENT_MAILBOX}
      * charateristic are enabled.
      */
-    public boolean requestDeviceConfig(){
+    private boolean requestDeviceConfig(){
         byte[] code = {MailboxEvents.MBX_GET_EEG_CONFIG};
         return startWriteOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX, code);
     }
@@ -794,7 +902,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             readBattery();
         else {
             super.notifyBatteryReceived(value);
-            if (getCurrentState().equals(BtState.BONDING) && scannedDevice.getBondState() == BluetoothDevice.BOND_BONDED)
+            if (getCurrentState().equals(BtState.BONDING))
                 updateConnectionState(true); //current state is set to BONDED
         }
     }

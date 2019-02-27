@@ -7,7 +7,7 @@ import android.util.Log;
 
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
-
+import java.util.Arrays;
 import core.BaseModuleManager;
 import core.MbtManager;
 import core.device.model.MbtDevice;
@@ -16,6 +16,7 @@ import core.device.model.VProDevice;
 import core.eeg.acquisition.MbtDataConversion;
 import core.oad.OADFileManager;
 import eventbus.EventBusManager;
+import eventbus.events.ConfigEEGEvent;
 import eventbus.events.DeviceInfoEvent;
 import features.ScannableDevices;
 import utils.LogUtils;
@@ -81,6 +82,12 @@ public class MbtDeviceManager extends BaseModuleManager{
     public void onNewDeviceConnected(DeviceEvents.NewBluetoothDeviceConnectedEvent deviceEvent){
         LogUtils.d(TAG, "new device "+ (deviceEvent.getDevice() != null ? "connected" : "disconnected"));
 
+    }
+
+    @Subscribe
+    public void onNewDeviceConfiguration(ConfigEEGEvent configEEGEvent){
+        LogUtils.d(TAG, "new config "+ (Arrays.toString(configEEGEvent.getConfig())));
+        this.mCurrentConnectedDevice.setInternalConfig(new MbtDevice.InternalConfig(configEEGEvent.getConfig()));
     }
 
     /**

@@ -26,7 +26,9 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.Queue;
 
-
+import config.DeviceConfig;
+import core.device.DCOffsets;
+import core.device.SaturationEvent;
 import core.bluetooth.BtState;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindDevice;
@@ -36,6 +38,8 @@ import engine.MbtClient;
 import engine.SimpleRequestCallback;
 import engine.StreamConfig;
 import engine.clientevents.BaseError;
+import engine.clientevents.ConnectionStateListener;
+import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.BluetoothStateListener;
 import engine.clientevents.DeviceBatteryListener;
 import engine.clientevents.EegListener;
@@ -80,8 +84,7 @@ DeviceActivity extends AppCompatActivity {
     private ScannableDevices currentDeviceType;
 
     private ConnectionStateListener<BaseError> connectionStateListener;
-
-
+    private DeviceStatusListener<BaseError> deviceStatusListener;
     private DeviceBatteryListener deviceInfoListener;
 
     private EegListener<BaseError> eegListener;
@@ -94,6 +97,7 @@ DeviceActivity extends AppCompatActivity {
 
         initConnectionStateListener();
         initDeviceInfoListener();
+        initDeviceStatusListener();
         initEegListener();
 
         initToolBar();
@@ -137,6 +141,26 @@ DeviceActivity extends AppCompatActivity {
                         channel2Quality.setText(getString(R.string.channel_2_qc) + ( (mbtEEGPackets.getQualities() != null && mbtEEGPackets.getQualities().get(1) != null ) ? mbtEEGPackets.getQualities().get(1) : " -- "));
                     }
                 }
+            }
+        };
+    }
+
+    private void initDeviceStatusListener() {
+        deviceStatusListener = new DeviceStatusListener<BaseError>() {
+
+            @Override
+            public void onError(BaseError error, String additionnalInfo) {
+
+            }
+
+            @Override
+            public void onSaturationStateChanged(SaturationEvent saturation) {
+                notifyUser("Saturation: "+saturation.getSaturationCode());
+            }
+
+            @Override
+            public void onNewDCOffsetMeasured(DCOffsets dcOffsets) {
+                notifyUser("Offset: "+ Arrays.toString(dcOffsets.getOffset()));
             }
         };
     }
@@ -224,7 +248,23 @@ DeviceActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if(!isStreaming) { //streaming is not in progress : starting streaming
-                    startStream(new StreamConfig.Builder(eegListener).setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD).useQualities(true).create());
+//                    client.configureHeadset(new DeviceConfig.Builder()
+//                            .useP300(false)
+//                            .enableDcOffset(false)
+//                            .create());
+                    startStream(new StreamConfig.Builder(eegListener)
+                            .setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)
+                            .useQualities(true)
+                            .configureHeadset(new DeviceConfig.Builder()
+                                    .useP300(false)
+                                    //.mtu(47)
+                                    //.bandpassFilter()
+                                    //.gain()
+                                    //.notchFilter()
+                                    .listenToDeviceStatus(deviceStatusListener)
+                                    .enableDcOffset(false)
+                                    .create())
+                            .create());
                 }else { //streaming is in progress : stopping streaming
                     stopStream(); // set false to isStreaming et null to the eegListener
                 }
