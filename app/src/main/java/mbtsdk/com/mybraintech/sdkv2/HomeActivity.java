@@ -16,11 +16,12 @@ import android.widget.Switch;
 import android.widget.Toast;
 
 import java.util.ArrayList;
-import java.util.Objects;
 
+import core.bluetooth.BtState;
 import engine.ConnectionConfig;
 import engine.MbtClient;
 import engine.clientevents.BaseError;
+import engine.clientevents.BluetoothStateListener;
 import engine.clientevents.ConnectionStateListener;
 import features.MbtFeatures;
 
@@ -57,8 +58,38 @@ public class HomeActivity extends AppCompatActivity{
     private boolean isCancelled = false;
 
     private Toast toast;
+//
+//    private BluetoothStateListener bluetoothStateListener = new BluetoothStateListener() {
+//
+//        @Override
+//        public void onError(BaseError error, String additionnalInfo) {
+//            Log.e(TAG, "onError received "+error.getMessage()+ (additionnalInfo != null ? additionnalInfo : ""));
+//            updateScanning(false);
+//            toast = Toast.makeText(HomeActivity.this, error.getMessage(), Toast.LENGTH_LONG);
+//            toast.show();
+//        }
+//
+//        @Override
+//        public void onDeviceConnected() {
+//            toast.cancel();
+//            deinitCurrentActivity(true);
+//        }
+//
+//        @Override
+//        public void onDeviceDisconnected() {
+//            if(!toast.getView().isShown())
+//                notifyUser(getString(R.string.no_connected_headset));
+//            if(isCancelled)
+//                updateScanning(false);
+//        }
+//
+//        @Override
+//        public void onNewState(BtState newState) {
+//
+//        }
+//    };
 
-    private ConnectionStateListener<BaseError> connectionStateListener = new ConnectionStateListener<BaseError>() {
+    private ConnectionStateListener<BaseError> bluetoothStateListener = new ConnectionStateListener<BaseError>() {
         @Override
         public void onError(BaseError error, String additionnalInfo) {
             Log.e(TAG, "onError received "+error.getMessage()+ (additionnalInfo != null ? additionnalInfo : ""));
@@ -93,7 +124,7 @@ public class HomeActivity extends AppCompatActivity{
 
         if(getIntent().hasExtra(HomeActivity.PREVIOUS_ACTIVITY)){
             if(getIntent().getStringExtra(HomeActivity.PREVIOUS_ACTIVITY)!=null)
-                client.setConnectionStateListener(connectionStateListener);
+                client.setConnectionStateListener(bluetoothStateListener);
         }
 
         initDeviceNameField();
@@ -146,7 +177,7 @@ public class HomeActivity extends AppCompatActivity{
 
 
     private void startScan() {
-            client.connectBluetooth(new ConnectionConfig.Builder(connectionStateListener)
+            client.connectBluetooth(new ConnectionConfig.Builder(bluetoothStateListener)
                     .deviceName(
                             ((deviceName != null) && (deviceName.equals(MELOMIND_DEVICE_NAME_PREFIX) || deviceName.equals(VPRO_DEVICE_NAME_PREFIX)) ) ? //if no no name has been entered by the user, the default device name is the headset prefix
                             null : deviceName ) //null is given in parameters if no name has been entered by the user
@@ -211,7 +242,7 @@ public class HomeActivity extends AppCompatActivity{
 
     @Override
     public void onBackPressed() {
-        connectionStateListener = null;
+        bluetoothStateListener = null;
     }
 
     private void initToolBar(){
@@ -223,7 +254,7 @@ public class HomeActivity extends AppCompatActivity{
     }
 
     private void deinitCurrentActivity(boolean isConnected){
-        connectionStateListener = null;
+        bluetoothStateListener = null;
         final Intent intent = new Intent(HomeActivity.this, DeviceActivity.class);
         intent.putExtra(DEVICE_NAME, deviceName);
         intent.putExtra(BLUETOOTH_STATE, isConnected);

@@ -1,14 +1,11 @@
 package com.mybraintech.app_things;
 
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -106,7 +103,7 @@ DeviceActivity extends AppCompatActivity {
     };
 
 
-    private DeviceInfoListener deviceInfoListener = new DeviceInfoListener() {
+    private DeviceBatteryListener deviceInfoListener = new DeviceBatteryListener() {
         @Override
         public void onBatteryChanged(String newLevel) {
             lastReadBatteryLevel = newLevel;
