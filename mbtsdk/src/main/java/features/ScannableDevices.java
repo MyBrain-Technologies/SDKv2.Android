@@ -2,6 +2,8 @@ package features;
 
 import android.support.annotation.Keep;
 
+import core.bluetooth.BtProtocol;
+
 /**
  * This enum contains all MBT devices that can be scanned by this SDK.
  * It contains 3 different types of device:
@@ -9,7 +11,6 @@ import android.support.annotation.Keep;
  * bluetooth low energy (BLE)</p>
  * <p>- {@link #VPRO} means that a vpro device will be connected and that the bluetooth support will be classic SPP bluetooth</p>
  *
- * <p>By default, {@link #ALL} is selected. It means you can connect to any of these devices. The scanner will be classic, and the bluetooth protocol will automatically depends on
  * the first discovered headset.</p>
  */
 @Keep
@@ -17,15 +18,25 @@ public enum ScannableDevices{
     /**
      *
      */
-    MELOMIND,
+    MELOMIND(BtProtocol.BLUETOOTH_LE),
 
     /**
      *
      */
-    VPRO,
+    VPRO(BtProtocol.BLUETOOTH_SPP);
 
-    /**
-     *
-     */
-    ALL
+
+    private BtProtocol protocol;
+
+    ScannableDevices(BtProtocol protocol) {
+        this.protocol = protocol;
+    }
+
+    public BtProtocol getProtocol() {
+        return protocol;
+    }
+
+    public boolean useLowEnergyProtocol(){
+        return this.protocol.equals(BtProtocol.BLUETOOTH_LE);
+    }
 }

@@ -31,6 +31,7 @@ import eventbus.EventBusManager;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.BluetoothEEGEvent;
 import features.MbtFeatures;
+import features.ScannableDevices;
 import mbtsdk.com.mybraintech.mbtsdk.BuildConfig;
 import utils.AsyncUtils;
 import utils.LogUtils;
@@ -256,6 +257,7 @@ public final class MbtEEGManager extends BaseModuleManager {
     @Subscribe(threadMode = ThreadMode.BACKGROUND)
     public void onEvent(BluetoothEEGEvent event) { //warning : this method is used
         dataAcquisition.handleDataAcquired(event.getData());
+        protocol = event.getDeviceType().getProtocol();
     }
 
     /**
