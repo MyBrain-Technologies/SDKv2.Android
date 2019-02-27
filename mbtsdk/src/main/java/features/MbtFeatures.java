@@ -3,16 +3,12 @@ package features;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 
-import java.net.PortUnreachableException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import config.MbtConfig;
 import core.bluetooth.BtProtocol;
-import utils.FirmwareUtils;
 
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
-import static core.bluetooth.BtProtocol.BLUETOOTH_SPP;
 import static features.ScannableDevices.MELOMIND;
 
 
@@ -94,40 +90,29 @@ public final class MbtFeatures{
     public final static ArrayList<MbtAcquisitionLocations> MELOMIND_GROUNDS = new ArrayList<>(Arrays.asList(MbtAcquisitionLocations.M2));
     public final static ArrayList<MbtAcquisitionLocations> VPRO_GROUNDS = new ArrayList<>();//init values with server data
 
-    public final static String INTENT_CONNECTION_STATE_CHANGED = "connectionStateChanged";
-
     public static final int DEFAULT_NUMBER_OF_DATA_TO_DISPLAY = 500;
-    public static int getNbChannels(){
-        return (MbtConfig.getScannableDevices().equals(MELOMIND) ? MELOMIND_NB_CHANNELS : VPRO_NB_CHANNELS);
+    public static int getNbChannels(ScannableDevices device){
+        return (device.equals(MELOMIND) ? MELOMIND_NB_CHANNELS : VPRO_NB_CHANNELS);
     }
 
     @NonNull
-    public static String getDeviceName(){
-        return (MbtConfig.getScannableDevices().equals(MELOMIND) ? MELOMIND_DEVICE_NAME : VPRO_DEVICE_NAME);
+    public static String getDeviceName(ScannableDevices device){
+        return (device.equals(MELOMIND) ? MELOMIND_DEVICE_NAME : VPRO_DEVICE_NAME);
     }
 
     @NonNull
-    public static BtProtocol getBluetoothProtocol(){
-        return (MbtConfig.getScannableDevices().equals(MELOMIND) ? BLUETOOTH_LE : BLUETOOTH_SPP);
-    }
-
-    public static boolean useLowEnergyProtocol(){
-        return getBluetoothProtocol().equals(BLUETOOTH_LE);
+    public static ArrayList<MbtAcquisitionLocations> getLocations(ScannableDevices device){
+        return (device.equals(BLUETOOTH_LE) ? MELOMIND_LOCATIONS : VPRO_LOCATIONS);
     }
 
     @NonNull
-    public static ArrayList<MbtAcquisitionLocations> getLocations(){
-        return (MbtConfig.getScannableDevices().equals(MELOMIND) ? MELOMIND_LOCATIONS : VPRO_LOCATIONS);
+    public static ArrayList<MbtAcquisitionLocations> getReferences(ScannableDevices device){
+        return (device.equals(BLUETOOTH_LE) ? MELOMIND_REFERENCES : VPRO_REFERENCES);
     }
 
     @NonNull
-    public static ArrayList<MbtAcquisitionLocations> getReferences(){
-        return (MbtConfig.getScannableDevices().equals(MELOMIND) ? MELOMIND_REFERENCES : VPRO_REFERENCES);
-    }
-
-    @NonNull
-    public static ArrayList<MbtAcquisitionLocations> getGrounds(){
-        return (MbtConfig.getScannableDevices().equals(MELOMIND) ? MELOMIND_GROUNDS : VPRO_GROUNDS);
+    public static ArrayList<MbtAcquisitionLocations> getGrounds(ScannableDevices device){
+        return (device.equals(MELOMIND) ? MELOMIND_GROUNDS : VPRO_GROUNDS);
     }
 
     public static int getSampleRate() {
@@ -138,17 +123,17 @@ public final class MbtFeatures{
      * Gets the number of bytes for a EEG raw data in case the Bluetooth protocol used is Bluetooth Low Energy
      * @return the number of bytes for a EEG raw data in case the Bluetooth protocol used is Bluetooth Low Energy
      */
-    public static int getEEGByteSize() {
-        return (MbtConfig.getScannableDevices().equals(MELOMIND) ? DEFAULT_BLE_NB_BYTES : DEFAULT_SPP_NB_BYTES);
+    public static int getEEGByteSize(BtProtocol protocol) {
+        return (protocol.equals(BLUETOOTH_LE) ? DEFAULT_BLE_NB_BYTES : DEFAULT_SPP_NB_BYTES);
     }
 
     /**
      * Gets the raw data packet size
      * @return the raw data packet size
      */
-    public static int getRawDataPacketSize() {
+    public static int getRawDataPacketSize(BtProtocol protocol) {
         if(packetSize == -1)
-            packetSize = (MbtConfig.getScannableDevices().equals(MELOMIND))? DEFAULT_BLE_RAW_DATA_PACKET_SIZE : DEFAULT_SPP_RAW_DATA_PACKET_SIZE;
+            packetSize = (protocol.equals(BLUETOOTH_LE))? DEFAULT_BLE_RAW_DATA_PACKET_SIZE : DEFAULT_SPP_RAW_DATA_PACKET_SIZE;
         return packetSize;
     }
 
@@ -162,33 +147,33 @@ public final class MbtFeatures{
      * Gets the raw data buffer size
      * @return the raw data buffer size
      */
-    public static int getRawDataBufferSize() {
-        return (MbtConfig.getScannableDevices().equals(MELOMIND))? DEFAULT_BLE_RAW_DATA_BUFFER_SIZE : DEFAULT_SPP_RAW_DATA_BUFFER_SIZE;
+    public static int getRawDataBufferSize(BtProtocol protocol) {
+        return (protocol.equals(BLUETOOTH_LE))? DEFAULT_BLE_RAW_DATA_BUFFER_SIZE : DEFAULT_SPP_RAW_DATA_BUFFER_SIZE;
     }
 
     /**
      * Gets the raw data index size
      * @return the raw data index size
      */
-    public static int getRawDataIndexSize() {
-        return (MbtConfig.getScannableDevices().equals(MELOMIND))? DEFAULT_BLE_RAW_DATA_INDEX_SIZE : DEFAULT_SPP_RAW_DATA_INDEX_SIZE;
+    public static int getRawDataIndexSize(BtProtocol protocol) {
+        return (protocol.equals(BLUETOOTH_LE))? DEFAULT_BLE_RAW_DATA_INDEX_SIZE : DEFAULT_SPP_RAW_DATA_INDEX_SIZE;
     }
 
     /**
      * Gets the number of bytes of a EEG raw data per whole channels samples
      * @return the number of bytes of a EEG raw data per whole channels samples
      */
-    public static int getRawDataBytesPerWholeChannelsSamples() {
-        return (MbtConfig.getScannableDevices().equals(MELOMIND))? DEFAULT_BLE_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES : DEFAULT_SPP_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES;
+    public static int getRawDataBytesPerWholeChannelsSamples(BtProtocol protocol) {
+        return (protocol.equals(BLUETOOTH_LE))? DEFAULT_BLE_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES : DEFAULT_SPP_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES;
     }
 
     /**
      * Gets the number of bytes corresponding to one status data
      * @return the number of bytes corresponding to one status data
      */
-    public static int getNbStatusBytes() {
+    public static int getNbStatusBytes(BtProtocol protocol) {
         if(nbStatusBytes == -1)
-            nbStatusBytes = (MbtConfig.getScannableDevices().equals(MELOMIND))? DEFAULT_BLE_NB_STATUS_BYTES : DEFAULT_SPP_NB_STATUS_BYTES;
+            nbStatusBytes = (protocol.equals(BLUETOOTH_LE))? DEFAULT_BLE_NB_STATUS_BYTES : DEFAULT_SPP_NB_STATUS_BYTES;
         return nbStatusBytes;
     }
 

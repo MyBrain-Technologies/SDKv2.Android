@@ -10,8 +10,8 @@ import org.greenrobot.eventbus.ThreadMode;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
-
 import config.DeviceConfig;
+import core.bluetooth.BtProtocol;
 import core.bluetooth.IStreamable;
 import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
 import core.bluetooth.requests.DisconnectRequestEvent;
@@ -31,8 +31,8 @@ import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
 import engine.clientevents.BluetoothError;
 import engine.clientevents.ConnectionStateListener;
-import engine.clientevents.ConnectionStateReceiver;
-import engine.clientevents.DeviceInfoListener;
+import engine.clientevents.BluetoothStateListener;
+import engine.clientevents.DeviceBatteryListener;
 import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.EegError;
 import engine.clientevents.EegListener;
@@ -42,6 +42,7 @@ import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.ConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
 import features.MbtFeatures;
+import features.ScannableDevices;
 import utils.LogUtils;
 
 import static mbtsdk.com.mybraintech.mbtsdk.BuildConfig.BLUETOOTH_ENABLED;
@@ -72,7 +73,7 @@ public class MbtManager{
      */
     private ConnectionStateListener<BaseError> connectionStateListener;
     private EegListener<BaseError> eegListener;
-    private DeviceInfoListener<BaseError> deviceInfoListener;
+    private DeviceBatteryListener<BaseError> deviceInfoListener;
     @Nullable
     private DeviceStatusListener deviceStatusListener;
 
@@ -87,11 +88,11 @@ public class MbtManager{
         EventBusManager.registerOrUnregister(true, this);
 
         if(DEVICE_ENABLED)
-            registerManager(new MbtDeviceManager(mContext, this, MbtFeatures.getBluetoothProtocol()));
+            registerManager(new MbtDeviceManager(mContext, MbtManager.this));
         if(BLUETOOTH_ENABLED)
-            registerManager(new MbtBluetoothManager(mContext, this));
+            registerManager(new MbtBluetoothManager(mContext, MbtManager.this));
         if(EEG_ENABLED)
-            registerManager(new MbtEEGManager(mContext, this, MbtFeatures.getBluetoothProtocol()));
+            registerManager(new MbtEEGManager(mContext, MbtManager.this, BtProtocol.BLUETOOTH_LE)); //todo change protocol must not be initialized here : when connectBluetooth is called
     }
 
     /**
@@ -106,12 +107,14 @@ public class MbtManager{
      * Perform a new Bluetooth connection.
      * @param connectionStateListener a set of callback that will notify the user about connection progress.
      */
-    public void connectBluetooth(@NonNull ConnectionStateListener<BaseError> connectionStateListener, String deviceNameRequested){
+    public void connectBluetooth(@NonNull ConnectionStateListener<BaseError> connectionStateListener, String deviceNameRequested, ScannableDevices deviceTypeRequested){
         this.connectionStateListener = connectionStateListener;
         if(deviceNameRequested != null && (!deviceNameRequested.startsWith(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX) && !deviceNameRequested.startsWith(MbtFeatures.VPRO_DEVICE_NAME_PREFIX)))
             this.connectionStateListener.onError(HeadsetDeviceError.ERROR_PREFIX_NAME,null);
-        else
-            EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent(true, deviceNameRequested));
+        else {
+            EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent(true, deviceNameRequested, deviceTypeRequested));
+            //EventBusManager.postEvent(new DeviceEvents.PostDeviceTypeEvent(deviceTypeRequested)); //notify device manager
+        }
     }
 
     /**
@@ -125,7 +128,7 @@ public class MbtManager{
      * Perform a bluetooth read operation.
      * @param deviceInfo the type of info to read
      */
-    public void readBluetooth(@NonNull DeviceInfo deviceInfo, @NonNull DeviceInfoListener listener){
+    public void readBluetooth(@NonNull DeviceInfo deviceInfo, @NonNull DeviceBatteryListener listener){
         this.deviceInfoListener = listener;
         EventBusManager.postEvent(new ReadRequestEvent(deviceInfo));
     }
@@ -191,6 +194,8 @@ public class MbtManager{
         if (connectionStateListener == null)
             return;
         //LogUtils.i(TAG, "New state received : " + connectionStateEvent.getNewState());
+        if(connectionStateListener instanceof BluetoothStateListener)
+            ((BluetoothStateListener) connectionStateListener).onNewState(connectionStateEvent.getNewState());
 
         switch (connectionStateEvent.getNewState()) {
             case CONNECTED_AND_READY:
@@ -267,7 +272,7 @@ public class MbtManager{
 
     /**
      * Sets an extended {@link BroadcastReceiver} to the connectionStateListener value
-     * @param connectionStateListener the new {@link ConnectionStateReceiver}. Set it to null if you want to reset the listener
+     * @param connectionStateListener the new {@link BluetoothStateListener}. Set it to null if you want to reset the listener
      */
     public void setConnectionStateListener(ConnectionStateListener<BaseError> connectionStateListener) {
         this.connectionStateListener = connectionStateListener;

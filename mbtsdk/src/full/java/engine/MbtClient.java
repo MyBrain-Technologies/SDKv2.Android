@@ -15,10 +15,10 @@ import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
 import core.eeg.storage.MbtEEGPacket;
 import engine.clientevents.BaseError;
+import engine.clientevents.BluetoothStateListener;
 import engine.clientevents.ConfigError;
 import engine.clientevents.ConnectionStateListener;
-import engine.clientevents.ConnectionStateReceiver;
-import engine.clientevents.DeviceInfoListener;
+import engine.clientevents.DeviceBatteryListener;
 import engine.clientevents.EegListener;
 import engine.clientevents.HeadsetDeviceError;
 import features.MbtFeatures;
@@ -84,13 +84,12 @@ public final class MbtClient {
      * Call this method to establish a bluetooth connection with a remote device.
      * It is possible to connect either a Melomind or a VPro device through this method. You need to specify
      * the device type in the {@link ConnectionConfig} input instance with the {@link ScannableDevices} type.
-     * <p>If the parameters are invalid, the method returns immediately and {@link ConnectionStateReceiver#onError(engine.clientevents.BaseError, String)} method is called</p>
+     * <p>If the parameters are invalid, the method returns immediately and {@link BluetoothStateListener#onError(engine.clientevents.BaseError, String)} method is called</p>
      *
      * @param config the {@link ConnectionConfig} instance that holds all the configuration parameters inside.
      */
     @SuppressWarnings("unchecked")
     public void connectBluetooth(@NonNull ConnectionConfig config){
-        MbtConfig.setScannableDevices(config.getDeviceType());
         MbtConfig.setBluetoothScanTimeout(config.getMaxScanDuration());
         MbtConfig.setConnectAudioIfDeviceCompatible(config.useAudio());
 
@@ -104,7 +103,7 @@ public final class MbtClient {
             return;
         }
 
-        this.mbtManager.connectBluetooth(config.getConnectionStateListener(), config.getDeviceName());
+        this.mbtManager.connectBluetooth(config.getConnectionStateListener(), config.getDeviceName(), config.getDeviceType());
     }
 
     /**
@@ -125,7 +124,7 @@ public final class MbtClient {
      * <p>15%</p>
      * <p>0%</p>
      */
-    public void readBattery(DeviceInfoListener listener) {
+    public void readBattery(DeviceBatteryListener listener) {
         mbtManager.readBluetooth(DeviceInfo.BATTERY, listener);
     }
 
@@ -168,7 +167,6 @@ public final class MbtClient {
     /**
      * Stops a pending connection process. If successful,
      * the new state {@link core.bluetooth.BtState#CONNECTION_INTERRUPTED} is sent to the user in the
-     * {@link ConnectionStateReceiver#onReceive(Context, Intent)} callback.
      *
      * <p>If the device is already connected, it simply disconnects the device.</p>
      */

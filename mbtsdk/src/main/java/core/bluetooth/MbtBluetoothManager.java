@@ -51,6 +51,7 @@ import eventbus.events.ConfigEEGEvent;
 import eventbus.events.ConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
 import features.MbtFeatures;
+import features.ScannableDevices;
 import utils.AsyncUtils;
 import utils.BroadcastUtils;
 import utils.FirmwareUtils;
@@ -94,6 +95,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private CompletableFuture<Boolean> futureSwitchOperation;
 
     private String deviceNameRequested;
+    private ScannableDevices deviceTypeRequested;
 
     //private MbtDeviceAcquisition deviceAcquisition;
 
@@ -180,6 +182,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             if (request instanceof StartOrContinueConnectionRequestEvent) {
 
                 deviceNameRequested = ((StartOrContinueConnectionRequestEvent) request).getNameOfDeviceRequested();
+                deviceTypeRequested = ((StartOrContinueConnectionRequestEvent) request).getTypeOfDeviceRequested();
                 startOrContinueConnectionOperation(((StartOrContinueConnectionRequestEvent) request).isClientUserRequest());
 
             } else if (request instanceof ReadRequestEvent) {
@@ -191,7 +194,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 else {
                     if(isAudioBluetoothConnected())
                         disconnect(BtProtocol.BLUETOOTH_A2DP);
-                    disconnect(MbtConfig.isCurrentDeviceAMelomind() ? BtProtocol.BLUETOOTH_LE : BtProtocol.BLUETOOTH_SPP);
+                    disconnect(deviceTypeRequested.getProtocol());
                 }
 
             } else if (request instanceof StreamRequestEvent) {
@@ -268,7 +271,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private void switchToNextConnectionStep(){
         requestBeingProcessed = false;
         if(!getCurrentState().isAFailureState() && !isConnectionInterrupted && !getCurrentState().equals(BtState.IDLE))  //if nothing went wrong during the current step of the connection process, we continue the process
-            EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent(false, deviceNameRequested));
+            onNewBluetoothRequest(new StartOrContinueConnectionRequestEvent(false, deviceNameRequested));
+
     }
 
     /**
@@ -373,12 +377,10 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         LogUtils.i(TAG, "start scan");
         BtState newState = BtState.SCAN_FAILURE;
         try {
-            //futureOperation = CompletableFuture.runAsync(new Runnable() {
             AsyncUtils.executeAsync(new Runnable() {
                 @Override
                 public void run() {
-                    if ((MbtFeatures.useLowEnergyProtocol()))
-
+                    if (deviceTypeRequested.useLowEnergyProtocol())
                         mbtBluetoothLE.startLowEnergyScan(true);
                     else
                         mbtBluetoothSPP.startScanDiscovery();
@@ -406,12 +408,12 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private void stopScan(){
         LogUtils.i(TAG, "stopping current scan");
         stopFutureOperation(true);
-        if (MbtFeatures.useLowEnergyProtocol() && ContextCompat.checkSelfPermission(mContext,
+        if (deviceTypeRequested.useLowEnergyProtocol() && ContextCompat.checkSelfPermission(mContext,
                 Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(mContext,
                 Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
             mbtBluetoothLE.stopLowEnergyScan();
         else
-            mbtBluetoothLE.stopScanDiscovery();
+            mbtBluetoothSPP.stopScanDiscovery();
     }
 
     /**
@@ -424,7 +426,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             AsyncUtils.executeAsync(new Runnable() {
                 @Override
                 public void run() {
-                    connect(MbtFeatures.useLowEnergyProtocol() ? BLUETOOTH_LE : BLUETOOTH_SPP);
+
+                    connect(deviceTypeRequested.useLowEnergyProtocol() ? BLUETOOTH_LE : BLUETOOTH_SPP);
                 }
             });
             futureOperation = new CompletableFuture<>();
@@ -819,7 +822,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         requestBeingProcessed = false;
         if(isAudioBluetoothConnected())
             disconnect(BLUETOOTH_A2DP);
-        disconnect(MbtConfig.isCurrentDeviceAMelomind() ? BtProtocol.BLUETOOTH_LE : BtProtocol.BLUETOOTH_SPP);
+        disconnect(deviceTypeRequested.useLowEnergyProtocol() ? BtProtocol.BLUETOOTH_LE : BtProtocol.BLUETOOTH_SPP);
 
         if(isClientUserAbortion){
             isConnectionInterrupted = true;
@@ -834,7 +837,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * @param data the raw EEG data array acquired by the headset and transmitted by Bluetooth to the application
      */
     public void handleDataAcquired(@NonNull final byte[] data){
-        EventBusManager.postEvent(new BluetoothEEGEvent(data)); //MbtEEGManager will convert data from raw packets to eeg values
+        EventBusManager.postEvent(new BluetoothEEGEvent(data, deviceTypeRequested)); //MbtEEGManager will convert data from raw packets to eeg values
     }
 
     /**
@@ -871,7 +874,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 }
                 break;
             case DEVICE_FOUND:
-                EventBusManager.postEvent(new DeviceEvents.NewBluetoothDeviceEvent(getCurrentDevice()));
+                EventBusManager.postEvent(new DeviceEvents.NewBluetoothDeviceEvent(getCurrentScannedDevice(), deviceTypeRequested));
+
                 break;
             case SCAN_TIMEOUT:
             case SCAN_FAILURE:
@@ -933,7 +937,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      */
     private void updateConnectionState(BtState state){
         if(state != null && (!isConnectionInterrupted || state.equals(BtState.CONNECTION_INTERRUPTED))){
-            if(MbtConfig.isCurrentDeviceAMelomind())
+            if(deviceTypeRequested.useLowEnergyProtocol())
                 mbtBluetoothLE.notifyConnectionStateChanged(state);
             else
                 mbtBluetoothSPP.notifyConnectionStateChanged(state);
@@ -973,7 +977,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * @return <code>true</code> if connected, <code>false</code> otherwise
      */
     private boolean isDataBluetoothConnected() {
-        return  MbtFeatures.useLowEnergyProtocol() ? mbtBluetoothLE.isConnected() : mbtBluetoothSPP.isConnected();
+        return  deviceTypeRequested.useLowEnergyProtocol() ? mbtBluetoothLE.isConnected() : mbtBluetoothSPP.isConnected();
     }
 
     /**
@@ -996,7 +1000,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * Gets current state according to bluetooth protocol value
      */
     private BtState getCurrentState(){
-        return MbtFeatures.useLowEnergyProtocol() ? mbtBluetoothLE.getCurrentState() : mbtBluetoothSPP.getCurrentState();
+        return deviceTypeRequested.useLowEnergyProtocol() ? mbtBluetoothLE.getCurrentState() : mbtBluetoothSPP.getCurrentState();
     }
 
     public String getDeviceNameRequested() {
@@ -1005,6 +1009,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
     private BluetoothDevice getCurrentDevice() {
         return (MbtFeatures.useLowEnergyProtocol()) ? mbtBluetoothLE.currentDevice : mbtBluetoothSPP.currentDevice;
+
     }
 
     void disconnectA2DPFromBLE() {
@@ -1033,7 +1038,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 }catch (CancellationException | InterruptedException | ExecutionException | TimeoutException e) {
                     LogUtils.i(TAG, "Exception raised during disconnection "+e);
                 }
-                EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent(false,deviceNameRequested)); //current state should be IDLE
+                EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent(false, deviceNameRequested, deviceTypeRequested)); //current state should be IDLE
             }
         }
     }

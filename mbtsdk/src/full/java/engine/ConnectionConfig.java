@@ -72,7 +72,7 @@ public final class ConnectionConfig {
         private String deviceName = null;
         private int maxScanDuration = MbtFeatures.DEFAULT_MAX_SCAN_DURATION_IN_MILLIS;
         private boolean connectAudio = false;
-        private ScannableDevices deviceType = ScannableDevices.ALL;
+        private ScannableDevices deviceType = ScannableDevices.MELOMIND;
         @NonNull
         private final ConnectionStateListener<BaseError> connectionStateListener;
 
