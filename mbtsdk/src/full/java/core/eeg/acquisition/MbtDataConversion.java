@@ -5,6 +5,7 @@ import android.util.Log;
 
 import java.util.ArrayList;
 
+import config.AmpGainConfig;
 import core.bluetooth.BtProtocol;
 import core.eeg.storage.RawEEGSample;
 import features.MbtFeatures;
@@ -94,5 +95,11 @@ public class MbtDataConversion {
         }
 
         return digit * VOLTAGE_BLE;
+    }
+
+    public static void setGain(byte gain){
+        int gainValue = AmpGainConfig.getGainFromByteValue(gain);
+        if (gainValue != 0)
+            EEG_AMP_GAIN = gain;
     }
 }

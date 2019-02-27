@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import config.AmpGainConfig;
 import core.BaseModuleManager;
 import core.MbtManager;
 import core.bluetooth.BtProtocol;
@@ -97,15 +98,17 @@ public final class MbtEEGManager extends BaseModuleManager {
      * Reconfigures the temporary buffers that are used to store the raw EEG data until conversion to user-readable EEG data.
      * Reset the buffers arrays, status list, the number of status bytes and the packet Size
      */
-    private void resetBuffers(byte samplePerNotif, final int statusByteNb) {
+    private void resetBuffers(byte samplePerNotif, final int statusByteNb, byte gain) {
         if(statusByteNb != UNCHANGED_VALUE)
             MbtFeatures.setNbStatusBytes(statusByteNb);
+
         if(samplePerNotif != UNCHANGED_VALUE) {
             MbtFeatures.setPacketSize(samplePerNotif);
             MbtFeatures.setSamplePerNotif(samplePerNotif);
         }
         dataBuffering.resetBuffers();
         dataAcquisition.resetIndex();
+        MbtDataConversion.setGain(gain);
     }
 
     /**
@@ -272,7 +275,7 @@ public final class MbtEEGManager extends BaseModuleManager {
     @Subscribe(threadMode = ThreadMode.POSTING)
     public void onStreamStateChanged(IStreamable.StreamState newState) {
         if (newState == IStreamable.StreamState.STOPPED)
-            resetBuffers((byte) UNCHANGED_VALUE, UNCHANGED_VALUE);
+            resetBuffers((byte) UNCHANGED_VALUE, UNCHANGED_VALUE, (byte) 0);
     }
 
     @Subscribe
@@ -288,8 +291,8 @@ public final class MbtEEGManager extends BaseModuleManager {
 
     @Subscribe
     public void onConfigurationChanged(ConfigEEGEvent configEEGEvent){
-        MbtDevice.InternalConfig config = new MbtDevice.InternalConfig(configEEGEvent.getConfig());
-        resetBuffers(config.getNbPackets(), config.getStatusBytes());
+        MbtDevice.InternalConfig internalConfig = new MbtDevice.InternalConfig(configEEGEvent.getConfig());
+        resetBuffers(internalConfig.getNbPackets(), internalConfig.getStatusBytes(), internalConfig.getGainValue());
     }
 
 //    /**

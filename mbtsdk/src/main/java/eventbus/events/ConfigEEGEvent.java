@@ -23,4 +23,5 @@ public class ConfigEEGEvent {
     public Byte[] getConfig() {
         return config;
     }
+
 }

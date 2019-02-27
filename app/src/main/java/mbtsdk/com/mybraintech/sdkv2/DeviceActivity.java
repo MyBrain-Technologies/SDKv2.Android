@@ -240,6 +240,10 @@ DeviceActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if(!isStreaming) { //streaming is not in progress : starting streaming
+//                    client.configureHeadset(new DeviceConfig.Builder()
+//                            .useP300(false)
+//                            .enableDcOffset(false)
+//                            .create());
                     startStream(new StreamConfig.Builder(eegListener)
                             .setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)
                             .useQualities(true)
@@ -249,7 +253,8 @@ DeviceActivity extends AppCompatActivity {
                                     //.bandpassFilter()
                                     //.gain()
                                     //.notchFilter()
-                                    .enableSaturationAndDcOffset(deviceStatusListener)
+                                    .listenToDeviceStatus(deviceStatusListener)
+                                    .enableDcOffset(false)
                                     .create())
                             .create());
                 }else { //streaming is in progress : stopping streaming

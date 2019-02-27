@@ -15,6 +15,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import config.AmpGainConfig;
+import config.DeviceConfig;
 import core.bluetooth.BtState;
 import core.device.MbtDeviceManager;
 import core.device.model.DeviceInfo;
@@ -243,7 +244,7 @@ final class MbtGattController extends BluetoothGattCallback {
 //        if (characteristic.getUuid().compareTo(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX) == 0) {
 //            LogUtils.i(TAG, "mailbox message received with code " + characteristic.getValue()[0] +
 //                    " and payload " + Arrays.toString(characteristic.getValue()));
-//            this.notifyMailboxEventReceived(characteristic);
+//            this.notifyDeviceConfigReceived(characteristic);
 //        }
         mbtBluetoothLE.completeFutureOperation();
     }
@@ -297,20 +298,20 @@ final class MbtGattController extends BluetoothGattCallback {
     @Override
     public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
         super.onMtuChanged(gatt, mtu, status);
-        LogUtils.i(TAG, "onMtuChanged with new value " + mtu);
-        mbtBluetoothLE.completeFutureOperation();
-
+        mbtBluetoothLE.notifyDeviceConfigReceived(new byte[]{(byte)mtu}, DeviceConfig.MTU_CONFIG);
     }
 
     private void notifyMailboxEventReceived(BluetoothGattCharacteristic characteristic) {
         switch (characteristic.getValue()[0]) {
             case MailboxEvents.MBX_SET_ADS_CONFIG:
-                break;
-
             case MailboxEvents.MBX_SET_AUDIO_CONFIG:
+            case MailboxEvents.MBX_START_OTA_TXF:
+            case MailboxEvents.MBX_LEAD_OFF_EVT:
+            case MailboxEvents.MBX_OTA_MODE_EVT:
+            case MailboxEvents.MBX_OTA_IDX_RESET_EVT:
+            case MailboxEvents.MBX_OTA_STATUS_EVT:
                 break;
 
-            //case MailboxEvents.MBX_SET_PRODUCT_NAME:
             case MailboxEvents.MBX_SET_SERIAL_NUMBER: //this case occurs when the QR code is sent to the Headset through a writing operation
                 LogUtils.i(TAG, "Received response from headset to the External name update "+characteristic.getStringValue(1));
                 ByteBuffer buf = ByteBuffer.allocate(characteristic.getValue().length-1);
@@ -319,91 +320,34 @@ final class MbtGattController extends BluetoothGattCallback {
                 }
                 break;
 
-            case MailboxEvents.MBX_START_OTA_TXF:
-                break;
-
-            case MailboxEvents.MBX_LEAD_OFF_EVT:
-                break;
-
-            case MailboxEvents.MBX_OTA_MODE_EVT:
-//                if(characteristic.getValue().length >= 2){
-//                    if(this.oadcheckFwPlusLengthLock.isWaiting()){
-//                        this.oadcheckFwPlusLengthLock.setResultAndNotify((int)characteristic.getValue()[1]);
-//                    }
-//                }
-                break;
-
-            case MailboxEvents.MBX_OTA_IDX_RESET_EVT:
-                //In case fw missed a block, here is the code which get the block index requested by firmware. iBlocks is set back to the requested value.
-//                if(characteristic.getValue().length >= 3){
-//                    if(oadFileManager != null){
-//
-//                        byte[] idx = {characteristic.getValue()[1], characteristic.getValue()[2]};
-//
-//                               /* ByteBuffer b = ByteBuffer.allocate(2);
-//                                b.put(characteristic.getValue()[1]);
-//                                b.put(characteristic.getValue()[2]);*/
-//                        short s = ByteBuffer.wrap(idx).order(ByteOrder.LITTLE_ENDIAN).getShort();
-//                        oadFileManager.getmProgInfo().iBlocks = s;
-//                        Log.i(TAG, "Fw missed block nb " + s + "restarting back from block " + s);
-//                        if(s==0) //Force restart as it could be blocked
-//                            sendOADBlock(0);
-//                    }
-//                }
-                break;
-
-            case MailboxEvents.MBX_OTA_STATUS_EVT:
-//                if(value.length >= 2){
-//                    if(this.oadCRCComputation.isWaiting()){
-//                        byte b = characteristic.getValue()[1];
-//                        this.oadCRCComputation.setResultAndNotify((b > 0));
-//                    }
-//                }
-                break;
-
             case MailboxEvents.MBX_SYS_GET_STATUS:
                 LogUtils.i(TAG, "sys status" + Arrays.toString(characteristic.getValue()));
-//                if(characteristic.getValue().length >= 5){
-//                }
+                mbtBluetoothLE.notifyMailboxEventReceived(characteristic.getValue()[0]);
                 break;
 
             case MailboxEvents.MBX_SET_NOTCH_FILT:
-                LogUtils.i(TAG, "received notification - Notch filter: " + new String(characteristic.getValue()));
+                mbtBluetoothLE.notifyDeviceConfigReceived(characteristic.getValue(), DeviceConfig.NOTCH_FILTER_CONFIG);
                 break;
 
             case MailboxEvents.MBX_SET_AMP_GAIN:
-                LogUtils.i(TAG, "received notification - amp gain : " + Arrays.toString(characteristic.getValue()));
-                //if(this.ampGainNotificationLock.isWaiting())
-                // this.ampGainNotificationLock.setResultAndNotify(characteristic.getStringValue(1));
+                mbtBluetoothLE.notifyDeviceConfigReceived(characteristic.getValue(), DeviceConfig.AMP_GAIN_CONFIG);
                 break;
 
             case MailboxEvents.MBX_GET_EEG_CONFIG:
-                LogUtils.i(TAG, "received notification - eeg config: " + Arrays.toString(characteristic.getValue()));
-                int gainValue = AmpGainConfig.getGainFromByteValue(characteristic.getValue()[3]);//read the 3rd byte that contain the Gain value TODO: add defines for this offset !
-                if (gainValue != 0) {
-                    MbtDataConversion.EEG_AMP_GAIN = gainValue;
-                } else {//else do not change the eegAmpGain value.
-                    Log.i(TAG, "Gain code received in eeg config notification is unreadable, value: " + gainValue);
-                }
-
+                mbtBluetoothLE.notifyDeviceConfigReceived(characteristic.getValue(), DeviceConfig.EEG_CONFIG);
                 break;
 
             case MailboxEvents.MBX_P300_ENABLE:
-                LogUtils.i(TAG, "received answer from p300 activation");
-                // p300activationLock.setResultAndNotify((int)(characteristic.getValue()[1]));
+                mbtBluetoothLE.notifyDeviceConfigReceived(characteristic.getValue(), DeviceConfig.P300_CONFIG);
                 break;
 
             case MailboxEvents.MBX_DC_OFFSET_ENABLE:
+                mbtBluetoothLE.notifyDeviceConfigReceived(characteristic.getValue(), DeviceConfig.OFFSET_CONFIG);
                 break;
 
             case MailboxEvents.MBX_CONNECT_IN_A2DP:
-                LogUtils.i(TAG, "received mailbox response for A2DP connection " + (int) (characteristic.getValue()[1]));
-                mbtBluetoothLE.notifyMailboxEventReceived(BtState.AUDIO_CONNECTED);
-                break;
-
             case MailboxEvents.MBX_DISCONNECT_IN_A2DP:
-                LogUtils.i(TAG, "received mailbox response for A2DP disconnection" + (int) (characteristic.getValue()[1]));
-                mbtBluetoothLE.notifyMailboxEventReceived(BtState.AUDIO_DISCONNECTED);
+                mbtBluetoothLE.notifyMailboxEventReceived(characteristic.getValue()[0]);
                 break;
 
             case (byte) 0xFF:

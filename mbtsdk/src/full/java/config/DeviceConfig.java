@@ -14,15 +14,24 @@ public class DeviceConfig {
     private AmpGainConfig gainValue;
     private int mtuValue;
     private boolean useP300;
+    private boolean enableDcOffset;
+
+    public final static String MTU_CONFIG = "MTU";
+    public final static String AMP_GAIN_CONFIG = "GAIN";
+    public final static String NOTCH_FILTER_CONFIG = "NOTCH";
+    public final static String P300_CONFIG = "P300";
+    public final static String OFFSET_CONFIG = "OFFSET";
+    public final static String EEG_CONFIG = "EEG";
 
     private DeviceStatusListener deviceStatusListener;
 
-    private DeviceConfig(FilterConfig notchFilter, FilterConfig bandpassFilter, AmpGainConfig gainValue, int mtuValue, boolean useP300, DeviceStatusListener deviceStatusListener) {
+    private DeviceConfig(FilterConfig notchFilter, FilterConfig bandpassFilter, AmpGainConfig gainValue, int mtuValue, boolean useP300, boolean enableDcOffset, DeviceStatusListener deviceStatusListener) {
         this.notchFilter = notchFilter;
         this.bandpassFilter = bandpassFilter;
         this.gainValue = gainValue;
         this.mtuValue = mtuValue;
         this.useP300 = useP300;
+        this.enableDcOffset = enableDcOffset;
         this.deviceStatusListener = deviceStatusListener;
     }
 
@@ -51,6 +60,11 @@ public class DeviceConfig {
         return useP300;
     }
 
+    @Keep
+    public boolean isDcOffsetEnabled() {
+        return enableDcOffset;
+    }
+
     public DeviceStatusListener getDeviceStatusListener() {
         return deviceStatusListener;
     }
@@ -65,6 +79,7 @@ public class DeviceConfig {
         AmpGainConfig gainValue = null;
         int mtuValue = -1;
         boolean useP300;
+        boolean enableDcOffset;
         @Nullable
         DeviceStatusListener deviceStatusListener = null;
 
@@ -100,6 +115,12 @@ public class DeviceConfig {
             return this;
         }
 
+        @NonNull
+        public Builder enableDcOffset(boolean enableDcOffset){
+            this.enableDcOffset = enableDcOffset;
+            return this;
+        }
+
         /**
          * Use this method if you want to monitor headset's electrodes saturation and eeg offset.
          * Set it to null if unnecesary.
@@ -110,7 +131,7 @@ public class DeviceConfig {
          * @return the device instance
          */
         @NonNull
-        public Builder enableSaturationAndDcOffset(DeviceStatusListener deviceStatusListener){
+        public Builder listenToDeviceStatus(DeviceStatusListener deviceStatusListener){
             this.deviceStatusListener = deviceStatusListener;
             return this;
         }
@@ -118,7 +139,7 @@ public class DeviceConfig {
 
         @Nullable
         public DeviceConfig create() {
-            return new DeviceConfig(notchFilter, bandpassFilter, gainValue, mtuValue, useP300, deviceStatusListener);
+            return new DeviceConfig(notchFilter, bandpassFilter, gainValue, mtuValue, useP300, enableDcOffset, deviceStatusListener);
         }
     }
 
@@ -130,6 +151,7 @@ public class DeviceConfig {
                 ", gainValue=" + gainValue +
                 ", mtuValue=" + mtuValue +
                 ", useP300=" + useP300 +
+                ", enableDcOffset=" + enableDcOffset +
                 '}';
     }
 }

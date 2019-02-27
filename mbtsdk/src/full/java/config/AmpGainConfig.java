@@ -24,18 +24,19 @@ public enum AmpGainConfig {
 
     public static int getGainFromByteValue(byte numVal){
         int gain = 0;
-        if (numVal == AmpGainConfig.AMP_GAIN_X12_DEFAULT.numVal) {
+
+        if (numVal == AmpGainConfig.AMP_GAIN_X12_DEFAULT.numVal)
             gain = AmpGainConfig.AMP_GAIN_X12_DEFAULT.gain;
 
-        } else if (numVal == AmpGainConfig.AMP_GAIN_X8_MEDIUM.numVal) {
+        else if (numVal == AmpGainConfig.AMP_GAIN_X8_MEDIUM.numVal)
             gain = AmpGainConfig.AMP_GAIN_X8_MEDIUM.gain;
 
-        } else if (numVal == AmpGainConfig.AMP_GAIN_X6_LOW.numVal) {
+        else if (numVal == AmpGainConfig.AMP_GAIN_X6_LOW.numVal)
             gain = AmpGainConfig.AMP_GAIN_X6_LOW.gain;
 
-        } else if (numVal == AmpGainConfig.AMP_GAIN_X4_VLOW.numVal) {
+        else if (numVal == AmpGainConfig.AMP_GAIN_X4_VLOW.numVal)
             gain = AmpGainConfig.AMP_GAIN_X4_VLOW.gain;
-        }
+
         return gain;
     }
 }

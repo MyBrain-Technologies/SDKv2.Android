@@ -47,6 +47,7 @@ import engine.clientevents.BaseError;
 import engine.clientevents.ConnectionStateReceiver;
 import eventbus.EventBusManager;
 import eventbus.events.BluetoothEEGEvent;
+import eventbus.events.ConfigEEGEvent;
 import eventbus.events.ConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
 import features.MbtFeatures;
@@ -141,6 +142,10 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         BroadcastUtils.registerReceiverIntents(context, receiver, BluetoothAdapter.ACTION_STATE_CHANGED);
     }
 
+    public void notifyDeviceConfigReceived(Byte[] returnedConfig) {
+        EventBusManager.postEvent(new ConfigEEGEvent(returnedConfig)); //notify the DeviceManager and the EEGManager
+    }
+
 
     /**
      * This class is a specific thread that will handle all bluetooth operations. Bluetooth operations
@@ -196,8 +201,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                     stopStreamOperation();
 
             } else if (request instanceof UpdateConfigurationRequestEvent) {
-                if(!((UpdateConfigurationRequestEvent)request).isHeadsetConfiguredByBluetoothManager())
-                    configureHeadset(((UpdateConfigurationRequestEvent) request).getConfig());
+                configureHeadset(((UpdateConfigurationRequestEvent) request).getConfig());
             }
         }
 
@@ -739,81 +743,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      */
     private void configureHeadset(@NonNull DeviceConfig config){
         LogUtils.i(TAG, "configure headset "+config.toString());
-        boolean stepSuccess = true;
-        if(config != null){
-            //Checking whether or not there are params to send
-            if (config.getMtuValue() != -1) {
-                stepSuccess = mbtBluetoothLE.changeMTU(config.getMtuValue());
-            }
-
-            if(!stepSuccess){
-                LogUtils.e(TAG, "step has timeout. Aborting task...");
-                return;
-            }
-
-            try {
-                Thread.sleep(50);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            if (config.getNotchFilter() != null) {
-                stepSuccess = mbtBluetoothLE.changeFilterConfiguration(config.getNotchFilter());
-
-                //TODO implement bandpass filter change
-//            if(config.getBandpassFilter() != null){
-//                boolean b = changeFilterConfiguration(config.getBandpassFilter());
-//                if(!b)
-//                    LogUtils.e(TAG, "Error changing bandpass filter configuration");
-//            }
-            }
-
-            if(!stepSuccess){
-                LogUtils.e(TAG, "step has timeout. Aborting task...");
-                return;
-            }
-
-            try {
-                Thread.sleep(50);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            if (config.getGainValue() != null) {
-                stepSuccess = mbtBluetoothLE.changeAmpGainConfiguration(config.getGainValue());
-
-            }
-
-            if(!stepSuccess){
-                LogUtils.e(TAG, "step has timeout. Aborting task...");
-                return;
-            }
-
-            try {
-                Thread.sleep(50);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            stepSuccess = mbtBluetoothLE.switchP300Mode(config.isUseP300());
-            if(!stepSuccess){
-                LogUtils.e(TAG, "step has timeout. Aborting task...");
-                return;
-            }
-        }
-
-        try {
-            Thread.sleep(200);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        stepSuccess = mbtBluetoothLE.requestDeviceConfig();
-        //todo after pull request returnedConfig = waitresultoperation(5000)
-        //todo notify EEG manager EventBusManager.postEvent(new UpdateConfigurationRequestEvent(config, true));
-        // todo notify Device Manager EventBusManager.postEvent(new ConfigEEGEvent(returnedConfig));
-
-        if(!stepSuccess){
-            LogUtils.e(TAG, "step has timeout or failed. Aborting task...");
-            return;
-        }
+        //if() todo after pull request if( .useLowEnergyProtocol)
+        mbtBluetoothLE.configureHeadset(config);
     }
 
     /**

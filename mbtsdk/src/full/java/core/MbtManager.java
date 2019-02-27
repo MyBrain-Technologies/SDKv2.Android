@@ -153,7 +153,7 @@ public class MbtManager{
     }
 
     public void configureHeadset(DeviceConfig deviceConfig){
-        EventBusManager.postEvent(new UpdateConfigurationRequestEvent(deviceConfig, false));
+        EventBusManager.postEvent(new UpdateConfigurationRequestEvent(deviceConfig));
     }
 
     /**
