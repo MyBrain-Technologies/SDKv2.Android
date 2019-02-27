@@ -28,7 +28,7 @@ public enum MbtDeviceType {
 
     private BtProtocol protocol;
 
-    ScannableDevices(BtProtocol protocol) {
+    MbtDeviceType(BtProtocol protocol) {
         this.protocol = protocol;
     }
 

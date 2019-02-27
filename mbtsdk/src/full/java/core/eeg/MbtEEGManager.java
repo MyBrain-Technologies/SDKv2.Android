@@ -33,7 +33,7 @@ import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.BluetoothEEGEvent;
 import eventbus.events.ConfigEEGEvent;
 import features.MbtFeatures;
-import features.ScannableDevices;
+import features.MbtDeviceType;
 import mbtsdk.com.mybraintech.mbtsdk.BuildConfig;
 import utils.AsyncUtils;
 import utils.LogUtils;
@@ -104,7 +104,7 @@ public final class MbtEEGManager extends BaseModuleManager {
             MbtFeatures.setNbStatusBytes(statusByteNb);
 
         if(samplePerNotif != UNCHANGED_VALUE) {
-            MbtFeatures.setPacketSize(samplePerNotif);
+            MbtFeatures.setPacketSize(protocol, samplePerNotif);
             MbtFeatures.setSamplePerNotif(samplePerNotif);
         }
         dataBuffering.resetBuffers();
@@ -293,6 +293,7 @@ public final class MbtEEGManager extends BaseModuleManager {
 
     @Subscribe
     public void onConfigurationChanged(ConfigEEGEvent configEEGEvent){
+        LogUtils.d(TAG, "new config "+ (Arrays.toString(configEEGEvent.getConfig())));
         MbtDevice.InternalConfig internalConfig = new MbtDevice.InternalConfig(configEEGEvent.getConfig());
         resetBuffers(internalConfig.getNbPackets(), internalConfig.getStatusBytes(), internalConfig.getGainValue());
     }

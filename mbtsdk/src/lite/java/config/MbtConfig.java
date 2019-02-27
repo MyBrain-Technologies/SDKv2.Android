@@ -4,12 +4,11 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 
 import features.MbtFeatures;
-import features.ScannableDevices;
 
 @Keep
 public final class MbtConfig {
 
-    public static ScannableDevices scannableDevices = ScannableDevices.MELOMIND;
+    public static MbtDeviceType deviceType = MbtDeviceType.MELOMIND;
 
     private static int eegPacketLength = 250;
 
@@ -95,8 +94,8 @@ public final class MbtConfig {
         return samplePerNotification;
     }
 
-    public static ScannableDevices getScannableDevices() {
-        return scannableDevices;
+    public static MbtDeviceType getDeviceType() {
+        return deviceType;
     }
 
 
@@ -230,8 +229,8 @@ public final class MbtConfig {
         serverURL = builder.serverURL;
     }
 
-    public static void setScannableDevices(ScannableDevices scannableDevices) {
-        MbtConfig.scannableDevices = scannableDevices;
+    public static void setMbtDeviceType(MbtDeviceType deviceType) {
+        MbtConfig.deviceType = deviceType;
     }
 
     public static void setSamplePerNotification(int samplePerNotification) {

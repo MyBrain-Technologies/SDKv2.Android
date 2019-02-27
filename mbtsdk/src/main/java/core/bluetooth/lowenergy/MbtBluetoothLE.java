@@ -38,6 +38,7 @@ import java.util.concurrent.TimeoutException;
 import config.AmpGainConfig;
 import config.DeviceConfig;
 import config.FilterConfig;
+import config.MbtConfig;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.BtState;
 import core.bluetooth.IStreamable;
@@ -75,7 +76,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 
     private MbtAsyncWaitOperation asyncOperation = new MbtAsyncWaitOperation();
 
-    //todo after pull request private MbtAsyncWaitOperation asyncConfiguration = new MbtAsyncWaitOperation();
+    private MbtAsyncWaitOperation asyncConfiguration = new MbtAsyncWaitOperation();
 
     /**
      * An internal event used to notify MbtBluetoothLE that A2DP has disconnected.
@@ -625,9 +626,8 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         if(configType.equals(DeviceConfig.EEG_CONFIG))
             mbtBluetoothManager.notifyDeviceConfigReceived(ArrayUtils.toObject(returnedResult));
 
-
-        //todo after pull request if(configType != null)
-        //todo after pull request asyncConfiguration.stopwaitingOperation();
+        if(configType != null)
+            asyncConfiguration.stopWaitingOperation(false);
 
     }
 
@@ -683,8 +683,13 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
                 break;
         }
 
-        //todo after pull request if(requestSent) asyncConfiguration.wait here
-        //LogUtils.e(TAG, configType+" request has timeout. Aborting task...");
+        if(requestSent) {
+            try {
+                asyncConfiguration.waitOperationResult(5000);
+            } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                LogUtils.w(TAG, configType+" failed : "+e);
+            }
+        }
         return requestSent;
     }
 
@@ -886,11 +891,8 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      */
     public void bond(MbtDevice device) {
         LogUtils.i(TAG, "start bonding");
-        if(device.getBluetoothDevice().getType() == BluetoothDevice.DEVICE_TYPE_LE) { //LOW ENERGY BONDING ONLY
-            updateConnectionState(false); //current state is set to BONDING
-            mbtBluetoothManager.startReadOperation(DeviceInfo.BATTERY); //trigger bonding indirectly
-        }else
-            Log.e(TAG," Bonding type is not Low Energy : code returned is "+device.getBluetoothDevice().getType());
+        updateConnectionState(false); //current state is set to BONDING
+        mbtBluetoothManager.startReadOperation(DeviceInfo.BATTERY); //trigger bonding indirectly
     }
 
     public void notifyDeviceInfoReceived(@NonNull DeviceInfo deviceInfo, @NonNull String deviceValue){ // This method will be called when a DeviceInfoReceived is posted (fw or hw or serial number) by MbtBluetoothLE or MbtBluetoothSPP
@@ -899,6 +901,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             updateConnectionState(true); //current state is set to READING_FIRMWARE_VERSION_SUCCESS or READING_HARDWARE_VERSION_SUCCESS or READING_SERIAL_NUMBER_SUCCESS or READING_SUCCESS if reading device info and future is completed
         }
     }
+
     protected void notifyBatteryReceived(int value) {
         if(value == -1){
             if (getCurrentState().equals(BtState.BONDING))

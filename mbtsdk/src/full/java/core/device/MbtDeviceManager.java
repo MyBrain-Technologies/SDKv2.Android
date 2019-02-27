@@ -8,7 +8,6 @@ import android.util.Log;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
-import config.MbtConfig;
 import java.util.Arrays;
 import core.BaseModuleManager;
 import core.MbtManager;
@@ -24,18 +23,18 @@ import eventbus.events.DeviceInfoEvent;
 import features.MbtDeviceType;
 import utils.LogUtils;
 
+import static features.MbtDeviceType.MELOMIND;
+
 
 public class MbtDeviceManager extends BaseModuleManager{
 
     private static final String TAG = MbtDeviceManager.class.getSimpleName();
-    private BtProtocol protocol;
 
     private MbtDevice mCurrentConnectedDevice;
 
-    public MbtDeviceManager(Context context, MbtManager mbtManagerController, BtProtocol protocol){
+    public MbtDeviceManager(Context context, MbtManager mbtManagerController){
         super(context, mbtManagerController);
         this.mContext = context;
-        this.protocol = protocol;
     }
 
 
@@ -74,9 +73,9 @@ public class MbtDeviceManager extends BaseModuleManager{
     @Subscribe
     public void onNewDeviceConnected(DeviceEvents.NewBluetoothDeviceEvent deviceEvent) {
         LogUtils.d(TAG, "new device "+ (deviceEvent.getDevice() != null ? "scanned" : " null"));
-        if (MbtConfig.getScannableDevices() == MbtDeviceType.MELOMIND)
+        if (deviceEvent.getDeviceType().equals(MELOMIND))
             setmCurrentConnectedDevice(deviceEvent.getDevice() != null ? new MelomindDevice(deviceEvent.getDevice()) : null);
-        else if (MbtConfig.getScannableDevices() == MbtDeviceType.VPRO)
+        else if (deviceEvent.getDeviceType().equals(MbtDeviceType.VPRO))
             setmCurrentConnectedDevice(deviceEvent.getDevice() != null ? new VProDevice(deviceEvent.getDevice()) : null);
     }
 
@@ -126,7 +125,6 @@ public class MbtDeviceManager extends BaseModuleManager{
 
     @Subscribe
     public void onGetDevice(DeviceEvents.GetDeviceEvent event){
-        Log.i(TAG," return current device to the BUS ");
         EventBusManager.postEvent(new DeviceEvents.PostDeviceEvent(mCurrentConnectedDevice));
     }
 

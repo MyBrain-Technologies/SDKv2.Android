@@ -8,8 +8,8 @@ import java.util.ArrayList;
 import config.AmpGainConfig;
 import core.bluetooth.BtProtocol;
 import core.eeg.storage.RawEEGSample;
+import features.MbtDeviceType;
 import features.MbtFeatures;
-import features.ScannableDevices;
 
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
 
@@ -60,7 +60,7 @@ public class MbtDataConversion {
 
             if(singleRawEEGdata.getBytesEEG() == null){
 
-                for (int nbChannel = 0; nbChannel < MbtFeatures.getNbChannels(protocol.equals(BLUETOOTH_LE) ? ScannableDevices.MELOMIND : ScannableDevices.VPRO) ; nbChannel++){
+                for (int nbChannel = 0; nbChannel < MbtFeatures.getNbChannels(protocol.equals(BLUETOOTH_LE) ? MbtDeviceType.MELOMIND : MbtDeviceType.VPRO) ; nbChannel++){
                     consolidatedEEGSample.add(Float.NaN); //... fill the EEG data matrix with a NaN value for
                 }
             }else{

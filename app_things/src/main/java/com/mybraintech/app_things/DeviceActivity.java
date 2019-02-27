@@ -37,10 +37,10 @@ import engine.SimpleRequestCallback;
 import engine.StreamConfig;
 import engine.clientevents.BaseError;
 import engine.clientevents.ConnectionStateListener;
-import engine.clientevents.DeviceInfoListener;
+import engine.clientevents.DeviceBatteryListener;
 import engine.clientevents.EegListener;
+import features.MbtDeviceType;
 import features.MbtFeatures;
-import features.ScannableDevices;
 import mbtsdk.com.mybraintech.sdkv2.R;
 import utils.LogUtils;
 
@@ -80,7 +80,7 @@ DeviceActivity extends AppCompatActivity {
     private boolean isConnected = false;
     private boolean isStreaming = false;
 
-    private ScannableDevices currentDeviceType;
+    private MbtDeviceType currentDeviceType;
 
 
     private ConnectionStateListener connectionStateListener = new ConnectionStateListener(){
@@ -165,7 +165,7 @@ DeviceActivity extends AppCompatActivity {
             @Override
             public void onRequestComplete(MbtDevice object) {
                 deviceNameTextView.setText(object.getProductName());
-                currentDeviceType = (object instanceof MelomindDevice ? ScannableDevices.MELOMIND : ScannableDevices.VPRO);
+                currentDeviceType = (object instanceof MelomindDevice ? MbtDeviceType.MELOMIND : MbtDeviceType.VPRO);
 
             }
         });

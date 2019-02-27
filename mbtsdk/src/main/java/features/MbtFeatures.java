@@ -92,27 +92,27 @@ public final class MbtFeatures{
     public final static ArrayList<MbtAcquisitionLocations> VPRO_GROUNDS = new ArrayList<>();//init values with server data
 
     public static final int DEFAULT_NUMBER_OF_DATA_TO_DISPLAY = 500;
-    public static int getNbChannels(ScannableDevices device){
+    public static int getNbChannels(MbtDeviceType device){
         return (device.equals(MELOMIND) ? MELOMIND_NB_CHANNELS : VPRO_NB_CHANNELS);
     }
 
     @NonNull
-    public static String getDeviceName(ScannableDevices device){
+    public static String getDeviceName(MbtDeviceType device){
         return (device.equals(MELOMIND) ? MELOMIND_DEVICE_NAME : VPRO_DEVICE_NAME);
     }
 
     @NonNull
-    public static ArrayList<MbtAcquisitionLocations> getLocations(ScannableDevices device){
+    public static ArrayList<MbtAcquisitionLocations> getLocations(MbtDeviceType device){
         return (device.equals(BLUETOOTH_LE) ? MELOMIND_LOCATIONS : VPRO_LOCATIONS);
     }
 
     @NonNull
-    public static ArrayList<MbtAcquisitionLocations> getReferences(ScannableDevices device){
+    public static ArrayList<MbtAcquisitionLocations> getReferences(MbtDeviceType device){
         return (device.equals(BLUETOOTH_LE) ? MELOMIND_REFERENCES : VPRO_REFERENCES);
     }
 
     @NonNull
-    public static ArrayList<MbtAcquisitionLocations> getGrounds(ScannableDevices device){
+    public static ArrayList<MbtAcquisitionLocations> getGrounds(MbtDeviceType device){
         return (device.equals(MELOMIND) ? MELOMIND_GROUNDS : VPRO_GROUNDS);
     }
 
@@ -139,8 +139,8 @@ public final class MbtFeatures{
     }
 
 
-    public static void setPacketSize(int samplePerNotif) {
-        MbtFeatures.packetSize = samplePerNotif * (MbtConfig.getScannableDevices().equals(MELOMIND) ?
+    public static void setPacketSize(BtProtocol protocol, int samplePerNotif) {
+        MbtFeatures.packetSize = samplePerNotif * (protocol.equals(BLUETOOTH_LE) ?
                 DEFAULT_BLE_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES : DEFAULT_SPP_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES);
     }
 

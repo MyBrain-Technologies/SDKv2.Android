@@ -20,7 +20,6 @@ import engine.clientevents.DeviceInfoListener;
 import engine.clientevents.EegListener;
 import engine.clientevents.HeadsetDeviceError;
 import features.MbtFeatures;
-import features.ScannableDevices;
 
 /**
  * Created by Etienne on 08/02/2018.
@@ -79,21 +78,21 @@ public final class MbtClient {
         this.mbtManager = builder.mbtManager;
     }
 
-    public void scanDevicesForType(ScannableDevices deviceType, long duration, ScanCallback scanCallback){
+    public void scanDevicesForType(MbtDeviceType deviceType, long duration, ScanCallback scanCallback){
         //TODO
     }
 
     /**
      * Call this method to establish a bluetooth connection with a remote device.
      * It is possible to connect either a Melomind or a VPro device through this method. You need to specify
-     * the device type in the {@link ConnectionConfig} input instance with the {@link ScannableDevices} type.
+     * the device type in the {@link ConnectionConfig} input instance with the {@link MbtDeviceType} type.
      * <p>If the parameters are invalid, the method returns immediately and {@link ConnectionStateReceiver#onError(engine.clientevents.BaseError, String)} method is called</p>
      *
      * @param config the {@link ConnectionConfig} instance that holds all the configuration parameters inside.
      */
     @SuppressWarnings("unchecked")
     public void connectBluetooth(@NonNull ConnectionConfig config){
-        MbtConfig.scannableDevices = config.getDeviceType();
+        MbtConfig.deviceType = config.getDeviceType();
 
         //MbtConfig.bluetoothConnectionTimeout = config.getConnectionTimeout();
         if(config.getMaxScanDuration() < MbtFeatures.MIN_SCAN_DURATION){
@@ -101,7 +100,7 @@ public final class MbtClient {
             return;
         }
 
-        if(config.getDeviceType() == ScannableDevices.VPRO){
+        if(config.getDeviceType() == MbtDeviceType.VPRO){
             config.getConnectionStateReceiver().onError(HeadsetDeviceError.ERROR_VPRO_INCOMPATIBLE,null);
             return;
         }

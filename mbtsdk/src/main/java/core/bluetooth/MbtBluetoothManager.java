@@ -47,6 +47,7 @@ import eventbus.events.BluetoothEEGEvent;
 import eventbus.events.ConfigEEGEvent;
 import eventbus.events.ConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
+import features.MbtDeviceType;
 import features.MbtFeatures;
 import utils.AsyncUtils;
 import utils.BroadcastUtils;
@@ -91,7 +92,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private MbtAsyncWaitOperation asyncSwitchOperation = new MbtAsyncWaitOperation();
 
     private String deviceNameRequested;
-    private ScannableDevices deviceTypeRequested;
+    private MbtDeviceType deviceTypeRequested;
 
     //private MbtDeviceAcquisition deviceAcquisition;
 
@@ -267,7 +268,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private void switchToNextConnectionStep(){
         requestBeingProcessed = false;
         if(!getCurrentState().isAFailureState() && !isConnectionInterrupted && !getCurrentState().equals(BtState.IDLE))  //if nothing went wrong during the current step of the connection process, we continue the process
-            onNewBluetoothRequest(new StartOrContinueConnectionRequestEvent(false, deviceNameRequested));
+            onNewBluetoothRequest(new StartOrContinueConnectionRequestEvent(false, deviceNameRequested, deviceTypeRequested));
 
     }
 
@@ -742,9 +743,10 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * @param config the {@link DeviceConfig} instance to get new parameters from.
      */
     private void configureHeadset(@NonNull DeviceConfig config){
-        LogUtils.i(TAG, "configure headset "+config.toString());
-        //if() todo after pull request if( .useLowEnergyProtocol)
-        mbtBluetoothLE.configureHeadset(config);
+        if(deviceTypeRequested.useLowEnergyProtocol())
+            mbtBluetoothLE.configureHeadset(config);
+        else
+            mbtBluetoothSPP.configureHeadset(config);
     }
 
     /**
@@ -825,7 +827,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             isConnectionInterrupted = true;
             updateConnectionState(BtState.CONNECTION_INTERRUPTED);
         }
-        LogUtils.i(TAG, "cancelling pending connection stop future");
         asyncOperation.stopWaitingOperation(true);
     }
 
@@ -871,7 +872,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 }
                 break;
             case DEVICE_FOUND:
-                EventBusManager.postEvent(new DeviceEvents.NewBluetoothDeviceEvent(getCurrentScannedDevice(), deviceTypeRequested));
+                EventBusManager.postEvent(new DeviceEvents.NewBluetoothDeviceEvent(getCurrentDevice(), deviceTypeRequested));
 
                 break;
             case SCAN_TIMEOUT:
@@ -997,7 +998,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     }
 
     private BluetoothDevice getCurrentDevice() {
-        return (MbtFeatures.useLowEnergyProtocol()) ? mbtBluetoothLE.currentDevice : mbtBluetoothSPP.currentDevice;
+        return (deviceTypeRequested.useLowEnergyProtocol()) ? mbtBluetoothLE.currentDevice : mbtBluetoothSPP.currentDevice;
 
     }
 
@@ -1019,7 +1020,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 mbtBluetoothLE.disconnect();
 
             deviceNameRequested = newDeviceBleName;
-            LogUtils.e(TAG, "connect is not IDLE " + getCurrentState());
+            LogUtils.e(TAG, "connect if not IDLE " + getCurrentState());
             if(!getCurrentState().equals(BtState.IDLE)) {
                 try {
                     asyncSwitchOperation.waitOperationResult(8000);

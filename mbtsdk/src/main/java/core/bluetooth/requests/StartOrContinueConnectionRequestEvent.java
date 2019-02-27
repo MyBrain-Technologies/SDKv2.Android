@@ -1,6 +1,7 @@
 package core.bluetooth.requests;
 
-import features.ScannableDevices;
+
+import features.MbtDeviceType;
 
 /**
  * An event class when a connection request is being sent
@@ -9,9 +10,9 @@ public class StartOrContinueConnectionRequestEvent extends BluetoothRequests {
 
     private boolean isClientUserRequest;
     private String nameOfDeviceRequested;
-    private ScannableDevices typeOfDeviceRequested;
+    private MbtDeviceType typeOfDeviceRequested;
 
-    public StartOrContinueConnectionRequestEvent(boolean isClientUserRequest, String nameOfDeviceRequested,ScannableDevices typeOfDeviceRequested){
+    public StartOrContinueConnectionRequestEvent(boolean isClientUserRequest, String nameOfDeviceRequested, MbtDeviceType typeOfDeviceRequested){
             this.isClientUserRequest = isClientUserRequest;
             this.nameOfDeviceRequested = nameOfDeviceRequested;
             this.typeOfDeviceRequested = typeOfDeviceRequested;
@@ -25,7 +26,7 @@ public class StartOrContinueConnectionRequestEvent extends BluetoothRequests {
         return nameOfDeviceRequested;
     }
 
-    public ScannableDevices getTypeOfDeviceRequested() {
+    public MbtDeviceType getTypeOfDeviceRequested() {
         return typeOfDeviceRequested;
     }
 }

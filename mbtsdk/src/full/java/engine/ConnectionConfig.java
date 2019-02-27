@@ -72,7 +72,7 @@ public final class ConnectionConfig {
         private String deviceName = null;
         private int maxScanDuration = MbtFeatures.DEFAULT_MAX_SCAN_DURATION_IN_MILLIS;
         private boolean connectAudio = false;
-        private MbtDeviceType deviceType = MbtDeviceType.ALL;
+        private MbtDeviceType deviceType = MbtDeviceType.MELOMIND;
         @NonNull
         private final ConnectionStateListener<BaseError> connectionStateListener;
 

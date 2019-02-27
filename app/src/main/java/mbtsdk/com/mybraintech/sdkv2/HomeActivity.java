@@ -21,6 +21,7 @@ import core.bluetooth.BtState;
 import engine.ConnectionConfig;
 import engine.MbtClient;
 import engine.clientevents.BaseError;
+
 import engine.clientevents.BluetoothStateListener;
 import engine.clientevents.ConnectionStateListener;
 import features.MbtFeatures;
@@ -58,38 +59,13 @@ public class HomeActivity extends AppCompatActivity{
     private boolean isCancelled = false;
 
     private Toast toast;
-//
-//    private BluetoothStateListener bluetoothStateListener = new BluetoothStateListener() {
-//
-//        @Override
-//        public void onError(BaseError error, String additionnalInfo) {
-//            Log.e(TAG, "onError received "+error.getMessage()+ (additionnalInfo != null ? additionnalInfo : ""));
-//            updateScanning(false);
-//            toast = Toast.makeText(HomeActivity.this, error.getMessage(), Toast.LENGTH_LONG);
-//            toast.show();
-//        }
-//
-//        @Override
-//        public void onDeviceConnected() {
-//            toast.cancel();
-//            deinitCurrentActivity(true);
-//        }
-//
-//        @Override
-//        public void onDeviceDisconnected() {
-//            if(!toast.getView().isShown())
-//                notifyUser(getString(R.string.no_connected_headset));
-//            if(isCancelled)
-//                updateScanning(false);
-//        }
-//
-//        @Override
-//        public void onNewState(BtState newState) {
-//
-//        }
-//    };
 
-    private ConnectionStateListener<BaseError> bluetoothStateListener = new ConnectionStateListener<BaseError>() {
+    private BluetoothStateListener bluetoothStateListener = new BluetoothStateListener() {
+        @Override
+        public void onNewState(BtState newState) {
+
+        }
+
         @Override
         public void onError(BaseError error, String additionnalInfo) {
             Log.e(TAG, "onError received "+error.getMessage()+ (additionnalInfo != null ? additionnalInfo : ""));

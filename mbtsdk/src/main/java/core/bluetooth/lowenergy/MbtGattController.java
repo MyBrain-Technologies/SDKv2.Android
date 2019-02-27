@@ -230,7 +230,7 @@ final class MbtGattController extends BluetoothGattCallback {
                 LogUtils.i(TAG, "Received a [onCharacteristicRead] callback for battery level request. " +
                         "Value -> " + level);
             }
-            bluetoothController.notifyBatteryReceived(level);
+            mbtBluetoothLE.notifyBatteryReceived(level);
         }
     }
 
@@ -243,7 +243,7 @@ final class MbtGattController extends BluetoothGattCallback {
 //                    " and payload " + Arrays.toString(characteristic.getValue()));
 //            this.notifyDeviceConfigReceived(characteristic);
 //        }
-        bluetoothController.stopWaitingOperation();
+        mbtBluetoothLE.stopWaitingOperation();
     }
 
     @Override
@@ -256,9 +256,7 @@ final class MbtGattController extends BluetoothGattCallback {
             this.mbtBluetoothLE.notifyNewHeadsetStatus(characteristic.getValue());
         } else if (characteristic.getUuid().compareTo(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX) == 0) {
             this.notifyMailboxEventReceived(characteristic);
-            LogUtils.i(TAG, "mailbox message received with code " + characteristic.getValue()[0] +
-                    " and payload " + Arrays.toString(characteristic.getValue()));
-            bluetoothController.stopWaitingOperation();
+            mbtBluetoothLE.stopWaitingOperation();
         }
     }
 
@@ -273,7 +271,7 @@ final class MbtGattController extends BluetoothGattCallback {
         // Check for EEG Notification status
         LogUtils.i(TAG, "Received a [onDescriptorWrite] callback with status "+((status == BluetoothGatt.GATT_SUCCESS) ? "SUCCESS" : "FAILURE"));
 
-        bluetoothController.stopWaitingOperation();
+        mbtBluetoothLE.stopWaitingOperation();
         mbtBluetoothLE.onNotificationStateChanged(status == BluetoothGatt.GATT_SUCCESS, descriptor.getCharacteristic(), descriptor.getValue() == BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
 
 
@@ -296,6 +294,8 @@ final class MbtGattController extends BluetoothGattCallback {
     }
 
     private void notifyMailboxEventReceived(BluetoothGattCharacteristic characteristic) {
+        LogUtils.i(TAG, "mailbox message received with code " + characteristic.getValue()[0] +
+                " and payload " + Arrays.toString(characteristic.getValue()));
         switch (characteristic.getValue()[0]) {
             case MailboxEvents.MBX_SET_ADS_CONFIG:
             case MailboxEvents.MBX_SET_AUDIO_CONFIG:

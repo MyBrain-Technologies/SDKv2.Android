@@ -43,8 +43,8 @@ import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.BluetoothStateListener;
 import engine.clientevents.DeviceBatteryListener;
 import engine.clientevents.EegListener;
+import features.MbtDeviceType;
 import features.MbtFeatures;
-import features.ScannableDevices;
 import utils.LogUtils;
 
 import static utils.MatrixUtils.invertFloatMatrix;
@@ -81,9 +81,9 @@ DeviceActivity extends AppCompatActivity {
     private boolean isConnected = false;
     private boolean isStreaming = false;
 
-    private ScannableDevices currentDeviceType;
+    private MbtDeviceType currentDeviceType;
 
-    private ConnectionStateListener<BaseError> connectionStateListener;
+    private BluetoothStateListener bluetoothStateListener;
     private DeviceStatusListener<BaseError> deviceStatusListener;
     private DeviceBatteryListener deviceInfoListener;
 
@@ -114,7 +114,7 @@ DeviceActivity extends AppCompatActivity {
             @Override
             public void onRequestComplete(MbtDevice object) {
                 deviceNameTextView.setText(object.getProductName()+" | "+object.getExternalName());
-                currentDeviceType = (object instanceof MelomindDevice ? ScannableDevices.MELOMIND : ScannableDevices.VPRO);
+                currentDeviceType = (object instanceof MelomindDevice ? MbtDeviceType.MELOMIND : MbtDeviceType.VPRO);
             }
         });
 

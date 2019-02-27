@@ -46,7 +46,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
 
     private MbtAsyncWaitOperation asyncInit = new MbtAsyncWaitOperation();
     private MbtAsyncWaitOperation asyncConnection = new MbtAsyncWaitOperation();
-    private MbtAsyncWaitOperation asyncDisconnection= new MbtAsyncWaitOperation();
+    private MbtAsyncWaitOperation asyncDisconnection = new MbtAsyncWaitOperation();
 
     public MbtBluetoothA2DP(@NonNull Context context, MbtBluetoothManager mbtBluetoothManager) {
         super(context, mbtBluetoothManager);
@@ -388,8 +388,9 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
         setCurrentState(newState);
         if(newState.equals(BtState.AUDIO_DISCONNECTED) && asyncDisconnection.isWaiting())
             asyncDisconnection.stopWaitingOperation(false);
-        else if (newState.equals(BtState.AUDIO_CONNECTED) && asyncConnection.isWaiting()) {
-            asyncConnection.stopWaitingOperation(false);
+        else if (newState.equals(BtState.AUDIO_CONNECTED)) {
+            if(asyncConnection.isWaiting())
+                asyncConnection.stopWaitingOperation(false);
             if(notifyManager) //if audio is connected (and BLE is not) when the user request connection to a headset
                 mbtBluetoothManager.notifyConnectionStateChanged(BtState.AUDIO_CONNECTED);
         }

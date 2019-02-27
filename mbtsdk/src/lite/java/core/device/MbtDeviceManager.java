@@ -18,7 +18,6 @@ import core.device.model.VProDevice;
 import core.eeg.acquisition.MbtDataConversion;
 import eventbus.EventBusManager;
 import eventbus.events.DeviceInfoEvent;
-import features.ScannableDevices;
 import utils.LogUtils;
 
 
@@ -71,9 +70,9 @@ public class MbtDeviceManager extends BaseModuleManager{
     @Subscribe
     public void onNewDeviceConnected(DeviceEvents.NewBluetoothDeviceEvent device){
         LogUtils.d(TAG, "new device connected");
-        if(MbtConfig.getScannableDevices() == ScannableDevices.MELOMIND)
+        if(MbtConfig.getDeviceType() == MbtDeviceType.MELOMIND)
             setmCurrentDevice(device.getDevice() != null ? new MelomindDevice(device.getDevice()) : null);
-        else if(MbtConfig.getScannableDevices() == ScannableDevices.VPRO)
+        else if(MbtConfig.getDeviceType() == MbtDeviceType.VPRO)
             setmCurrentDevice(device.getDevice() != null ? new VProDevice(device.getDevice()) : null);
     }
 

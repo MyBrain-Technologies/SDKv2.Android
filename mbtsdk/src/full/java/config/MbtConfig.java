@@ -9,7 +9,7 @@ import features.MbtFeatures;
 @Keep
 public final class MbtConfig {
 
-    private static MbtDeviceType scannableDevices = MbtDeviceType.MELOMIND;
+    private static MbtDeviceType deviceType = MbtDeviceType.MELOMIND;
     private static int eegPacketLength = 250;
 
     public static int sampleRate = 250;
@@ -102,8 +102,8 @@ public final class MbtConfig {
         return samplePerNotification;
     }
 
-    public static MbtDeviceType getScannableDevices() {
-        return scannableDevices;
+    public static MbtDeviceType getDeviceType() {
+        return deviceType;
     }
 
 
@@ -161,8 +161,6 @@ public final class MbtConfig {
         private String serverURL;
 
         private boolean connectAudioIfDeviceCompatible;
-
-        private String deviceName;
 
         @NonNull
         public MbtConfigBuilder setEegPacketLength(final int eegPacketLength) {
@@ -239,12 +237,6 @@ public final class MbtConfig {
         }
 
         @NonNull
-        public MbtConfigBuilder setDeviceName(final String deviceName) {
-            this.deviceName = deviceName;
-            return this;
-        }
-
-        @NonNull
         public MbtConfig create() {
             return new MbtConfig(this);
         }
@@ -265,16 +257,16 @@ public final class MbtConfig {
         connectAudioIfDeviceCompatible = builder.connectAudioIfDeviceCompatible;
     }
 
-    public static void setScannableDevices(MbtDeviceType scannableDevices) {
-        MbtConfig.scannableDevices = scannableDevices;
+    public static void setDeviceType(MbtDeviceType deviceType) {
+        MbtConfig.deviceType = deviceType;
     }
 
     public static boolean isCurrentDeviceAMelomind() {
-        return scannableDevices.equals(MbtDeviceType.MELOMIND);
+        return deviceType.equals(MbtDeviceType.MELOMIND);
     }
 
     public static boolean isCurrentDeviceAVpro() {
-        return scannableDevices.equals(MbtDeviceType.VPRO);
+        return deviceType.equals(MbtDeviceType.VPRO);
     }
 
     public static void setSamplePerNotification(int samplePerNotification) {

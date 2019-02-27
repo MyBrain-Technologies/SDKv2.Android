@@ -4,10 +4,8 @@ import android.bluetooth.BluetoothDevice;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import core.bluetooth.BtProtocol;
-import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
-import features.ScannableDevices;
+import features.MbtDeviceType;
 
 /**
  * This interface contains all required object classes to communicate with the DEVICE module using
@@ -62,9 +60,9 @@ public interface DeviceEvents {
         @Nullable
         private final BluetoothDevice device;
 
-        private final ScannableDevices deviceType;
+        private final MbtDeviceType deviceType;
 
-        public NewBluetoothDeviceEvent(@Nullable BluetoothDevice device, ScannableDevices deviceType){
+        public NewBluetoothDeviceEvent(@Nullable BluetoothDevice device, MbtDeviceType deviceType){
             this.device = device;
             this.deviceType = deviceType;
         }
@@ -74,7 +72,7 @@ public interface DeviceEvents {
             return device;
         }
 
-        public ScannableDevices getDeviceType() {
+        public MbtDeviceType getDeviceType() {
             return deviceType;
         }
     }

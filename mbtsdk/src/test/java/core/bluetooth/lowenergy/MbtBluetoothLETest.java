@@ -403,7 +403,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void notifyStreamStateChanged_Vpro() {
-        MbtConfig.setScannableDevices(MbtDeviceType.VPRO);
+        MbtConfig.setDeviceType(MbtDeviceType.VPRO);
         MbtBluetoothSPP bluetoothSPP = new MbtBluetoothSPP(context, bluetoothManager);
         bluetoothSPP.notifyStreamStateChanged(IStreamable.StreamState.STARTED);
         assertFalse(bluetoothLE.isStreaming());
@@ -457,7 +457,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void isStreaming_Vpro() {
-        MbtConfig.setScannableDevices(MbtDeviceType.VPRO);
+        MbtConfig.setDeviceType(MbtDeviceType.VPRO);
         MbtBluetoothSPP bluetoothSPP = new MbtBluetoothSPP(context, bluetoothManager);
         bluetoothSPP.notifyStreamStateChanged(IStreamable.StreamState.STARTED);
         assertFalse(bluetoothLE.isConnected());
@@ -538,7 +538,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void startLowEnergyScan_Vpro() {
-        MbtConfig.setScannableDevices(MbtDeviceType.VPRO);
+        MbtConfig.setDeviceType(MbtDeviceType.VPRO);
         assertNull(bluetoothLE.startLowEnergyScan(true));
         assertEquals(bluetoothLE.getCurrentState(), BtState.SCAN_FAILURE);
     }
@@ -598,7 +598,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void stopLowEnergyScan_Vpro() {
-        MbtConfig.setScannableDevices(MbtDeviceType.VPRO);
+        MbtConfig.setDeviceType(MbtDeviceType.VPRO);
         bluetoothLE.stopLowEnergyScan();
         assertEquals(bluetoothLE.getCurrentState(), BtState.SCAN_FAILURE);
     }

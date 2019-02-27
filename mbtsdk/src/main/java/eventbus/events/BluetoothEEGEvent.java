@@ -2,7 +2,8 @@ package eventbus.events;
 
 import android.support.annotation.NonNull;
 
-import features.ScannableDevices;
+import features.MbtDeviceType;
+
 
 /**
  * Event posted when a new raw EEG data acquired is transmitted through Bluetooth
@@ -13,9 +14,9 @@ import features.ScannableDevices;
 public class BluetoothEEGEvent {
 
     private byte[] data;
-    private ScannableDevices deviceType;
+    private MbtDeviceType deviceType;
 
-    public BluetoothEEGEvent(@NonNull byte[] data, ScannableDevices deviceType) {
+    public BluetoothEEGEvent(@NonNull byte[] data, MbtDeviceType deviceType) {
         this.data = data;
         this.deviceType = deviceType;
     }
@@ -28,7 +29,7 @@ public class BluetoothEEGEvent {
         return data;
     }
 
-    public ScannableDevices getDeviceType() {
+    public MbtDeviceType getDeviceType() {
         return deviceType;
     }
 }
