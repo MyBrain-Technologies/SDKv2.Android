@@ -223,6 +223,12 @@ public enum BtState {
     CONNECTION_FAILURE(BluetoothError.ERROR_CONNECT_FAILED),
 
     /**
+     * Failed to establish Audio bluetooth connection with an unpaired device whose Android version is higher than API 28 (Android 9)
+     * Read User Guide to pair the device and establish Audio Bluetooth connection
+     */
+    AUDIO_CONNECTION_UNSUPPORTED(BluetoothError.ERROR_SETTINGS_INTERFACE_ACTION),
+
+    /**
      * Failed to retrieve the services and characteristics of the connected headset.
      * The connection process that was running is automatically cancelled (stopped) if this state occurs.
      * This failure trigger a disconnection.
