@@ -71,7 +71,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     private final static String REMOVE_BOND_METHOD = "removeBond";
     private final static String REFRESH_METHOD = "refresh";
 
-    private MbtAsyncWaitOperation asyncOperation;
+    private MbtAsyncWaitOperation asyncOperation = new MbtAsyncWaitOperation();
 
     /**
      * An internal event used to notify MbtBluetoothLE that A2DP has disconnected.

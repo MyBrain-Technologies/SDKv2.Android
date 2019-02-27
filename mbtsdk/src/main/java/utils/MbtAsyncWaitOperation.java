@@ -13,6 +13,13 @@ public final class MbtAsyncWaitOperation {
     private MbtLock<Boolean> lockOperation;
     private Future<Boolean> futureOperation;
 
+    public MbtAsyncWaitOperation() {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+            futureOperation = new CompletableFuture<>();
+            else
+                this.lockOperation = new MbtLock<>();
+    }
+
     /**
      * Wait and block the current thread until the {@link MbtAsyncWaitOperation#stopWaitingOperation(boolean)} method is called
      * @param timeout maximum amount of time to wait for {@link MbtAsyncWaitOperation#stopWaitingOperation(boolean)} method call

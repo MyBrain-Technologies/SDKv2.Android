@@ -44,9 +44,9 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
 
     private BluetoothDevice connectedDevice;
 
-    private MbtAsyncWaitOperation asyncInit;
-    private MbtAsyncWaitOperation asyncConnection;
-    private MbtAsyncWaitOperation asyncDisconnection;
+    private MbtAsyncWaitOperation asyncInit = new MbtAsyncWaitOperation();
+    private MbtAsyncWaitOperation asyncConnection = new MbtAsyncWaitOperation();
+    private MbtAsyncWaitOperation asyncDisconnection= new MbtAsyncWaitOperation();
 
     public MbtBluetoothA2DP(@NonNull Context context, MbtBluetoothManager mbtBluetoothManager) {
         super(context, mbtBluetoothManager);

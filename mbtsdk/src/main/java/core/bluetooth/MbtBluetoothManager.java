@@ -86,8 +86,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private boolean isConnectionInterrupted = false;
     private boolean isRequestCompleted = false;
 
-    private MbtAsyncWaitOperation asyncOperation;
-    private MbtAsyncWaitOperation asyncSwitchOperation;
+    private MbtAsyncWaitOperation asyncOperation = new MbtAsyncWaitOperation();
+    private MbtAsyncWaitOperation asyncSwitchOperation = new MbtAsyncWaitOperation();
 
     private String deviceNameRequested;
 
