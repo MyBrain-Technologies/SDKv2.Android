@@ -3,12 +3,13 @@ package config;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 
+import features.MbtDeviceType;
 import features.MbtFeatures;
-import features.ScannableDevices;
 
 @Keep
 public final class MbtConfig {
 
+    private static MbtDeviceType scannableDevices = MbtDeviceType.MELOMIND;
     private static int eegPacketLength = 250;
 
     public static int sampleRate = 250;
@@ -43,7 +44,7 @@ public final class MbtConfig {
 
     private final static int BLUETOOTH_BONDING_TIMEOUT = 5000;
 
-    private final static int BLUETOOTH_A2DP_CONNECTION_TIMEOUT = 5000;
+    private final static int BLUETOOTH_A2DP_CONNECTION_TIMEOUT = 10000;
 
     private static String serverURL;
 
@@ -100,6 +101,11 @@ public final class MbtConfig {
     public static int getSamplePerNotification() {
         return samplePerNotification;
     }
+
+    public static MbtDeviceType getScannableDevices() {
+        return scannableDevices;
+    }
+
 
 
     public static boolean connectAudioIfDeviceCompatible() {
@@ -257,6 +263,18 @@ public final class MbtConfig {
         bluetoothScanTimeout = builder.bluetoothScanTimeout;
         serverURL = builder.serverURL;
         connectAudioIfDeviceCompatible = builder.connectAudioIfDeviceCompatible;
+    }
+
+    public static void setScannableDevices(MbtDeviceType scannableDevices) {
+        MbtConfig.scannableDevices = scannableDevices;
+    }
+
+    public static boolean isCurrentDeviceAMelomind() {
+        return scannableDevices.equals(MbtDeviceType.MELOMIND);
+    }
+
+    public static boolean isCurrentDeviceAVpro() {
+        return scannableDevices.equals(MbtDeviceType.VPRO);
     }
 
     public static void setSamplePerNotification(int samplePerNotification) {

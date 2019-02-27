@@ -14,7 +14,7 @@ import core.bluetooth.BtProtocol;
  * the first discovered headset.</p>
  */
 @Keep
-public enum ScannableDevices{
+public enum MbtDeviceType {
     /**
      *
      */

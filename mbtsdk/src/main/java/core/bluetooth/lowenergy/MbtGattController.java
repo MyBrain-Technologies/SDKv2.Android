@@ -208,10 +208,7 @@ final class MbtGattController extends BluetoothGattCallback {
 
         if (characteristic.getUuid().compareTo(CHARAC_MEASUREMENT_BATTERY_LEVEL) == 0) {
             LogUtils.i(TAG, "battery level status : " + status);
-            int GATT_AUTHENTICATION_FAIL = 0x89;
-            if(status == GATT_AUTHENTICATION_FAIL)
-                mbtBluetoothLE.notifyBatteryReceived(0, false);
-
+            short level = -1;
             if (characteristic.getValue() != null) {
                 if (characteristic.getValue().length < 4) {
                     final StringBuffer sb = new StringBuffer();
@@ -224,7 +221,7 @@ final class MbtGattController extends BluetoothGattCallback {
                     return;
                 }
 
-                final short level = MbtDeviceManager.getBatteryPercentageFromByteValue(characteristic.getValue()[0]);
+                level = MbtDeviceManager.getBatteryPercentageFromByteValue(characteristic.getValue()[0]);
                 if (level == -1) {
                     LogUtils.e(TAG, "Error: received a [onCharacteristicRead] callback for battery level request " +
                             "but the returned value could not be decoded ! " +
@@ -232,8 +229,8 @@ final class MbtGattController extends BluetoothGattCallback {
                 }
                 LogUtils.i(TAG, "Received a [onCharacteristicRead] callback for battery level request. " +
                         "Value -> " + level);
-                mbtBluetoothLE.notifyBatteryReceived(level, status == BluetoothGatt.GATT_SUCCESS);
             }
+            bluetoothController.notifyBatteryReceived(level);
         }
     }
 
@@ -246,7 +243,7 @@ final class MbtGattController extends BluetoothGattCallback {
 //                    " and payload " + Arrays.toString(characteristic.getValue()));
 //            this.notifyDeviceConfigReceived(characteristic);
 //        }
-        mbtBluetoothLE.completeFutureOperation();
+        bluetoothController.stopWaitingOperation();
     }
 
     @Override
@@ -261,7 +258,7 @@ final class MbtGattController extends BluetoothGattCallback {
             this.notifyMailboxEventReceived(characteristic);
             LogUtils.i(TAG, "mailbox message received with code " + characteristic.getValue()[0] +
                     " and payload " + Arrays.toString(characteristic.getValue()));
-            mbtBluetoothLE.completeFutureOperation();
+            bluetoothController.stopWaitingOperation();
         }
     }
 
@@ -274,12 +271,9 @@ final class MbtGattController extends BluetoothGattCallback {
     public void onDescriptorWrite(BluetoothGatt gatt, @NonNull BluetoothGattDescriptor descriptor, int status) {
         super.onDescriptorWrite(gatt, descriptor, status);
         // Check for EEG Notification status
-        if (status == BluetoothGatt.GATT_SUCCESS) {
-            LogUtils.i(TAG, "Received a [onDescriptorWrite] callback with status SUCCESS");
-        } else {
-            LogUtils.e(TAG, "Received a [onDescriptorWrite] callback with Status: FAILURE.");
-        }
-        mbtBluetoothLE.completeFutureOperation();
+        LogUtils.i(TAG, "Received a [onDescriptorWrite] callback with status "+((status == BluetoothGatt.GATT_SUCCESS) ? "SUCCESS" : "FAILURE"));
+
+        bluetoothController.stopWaitingOperation();
         mbtBluetoothLE.onNotificationStateChanged(status == BluetoothGatt.GATT_SUCCESS, descriptor.getCharacteristic(), descriptor.getValue() == BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
 
 

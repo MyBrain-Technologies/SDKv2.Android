@@ -9,7 +9,8 @@ import java.util.Arrays;
 import core.bluetooth.BtProtocol;
 
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
-import static features.ScannableDevices.MELOMIND;
+import static core.bluetooth.BtProtocol.BLUETOOTH_SPP;
+import static features.MbtDeviceType.MELOMIND;
 
 
 /**

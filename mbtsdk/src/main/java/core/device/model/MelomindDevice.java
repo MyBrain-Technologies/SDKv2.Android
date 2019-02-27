@@ -9,10 +9,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import config.MbtConfig;
 import features.MbtAcquisitionLocations;
 import features.MbtFeatures;
-import features.ScannableDevices;
 
 /**
  * Created by manon on 10/10/16.

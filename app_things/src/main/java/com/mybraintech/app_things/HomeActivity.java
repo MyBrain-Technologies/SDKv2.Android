@@ -26,8 +26,8 @@ import mbtsdk.com.mybraintech.sdkv2.R;
 
 import static features.MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX;
 import static features.MbtFeatures.VPRO_DEVICE_NAME_PREFIX;
-import static features.ScannableDevices.MELOMIND;
-import static features.ScannableDevices.VPRO;
+import static features.MbtDeviceType.MELOMIND;
+import static features.MbtDeviceType.VPRO;
 
 public class HomeActivity extends AppCompatActivity{
 

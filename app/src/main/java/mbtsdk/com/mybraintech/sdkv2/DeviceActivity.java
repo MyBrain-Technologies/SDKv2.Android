@@ -189,6 +189,7 @@ DeviceActivity extends AppCompatActivity {
 
             @Override
             public void onDeviceConnected() {
+                LogUtils.i(TAG," device connected");
                 isConnected = true;
             }
 

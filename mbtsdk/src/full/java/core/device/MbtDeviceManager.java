@@ -7,9 +7,12 @@ import android.util.Log;
 
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
+
+import config.MbtConfig;
 import java.util.Arrays;
 import core.BaseModuleManager;
 import core.MbtManager;
+import core.bluetooth.BtProtocol;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindDevice;
 import core.device.model.VProDevice;
@@ -18,21 +21,21 @@ import core.oad.OADFileManager;
 import eventbus.EventBusManager;
 import eventbus.events.ConfigEEGEvent;
 import eventbus.events.DeviceInfoEvent;
-import features.ScannableDevices;
+import features.MbtDeviceType;
 import utils.LogUtils;
 
 
 public class MbtDeviceManager extends BaseModuleManager{
 
     private static final String TAG = MbtDeviceManager.class.getSimpleName();
-
-    private ScannableDevices deviceType;
+    private BtProtocol protocol;
 
     private MbtDevice mCurrentConnectedDevice;
 
-    public MbtDeviceManager(Context context, MbtManager mbtManagerController){
+    public MbtDeviceManager(Context context, MbtManager mbtManagerController, BtProtocol protocol){
         super(context, mbtManagerController);
         this.mContext = context;
+        this.protocol = protocol;
     }
 
 
@@ -70,11 +73,10 @@ public class MbtDeviceManager extends BaseModuleManager{
 
     @Subscribe
     public void onNewDeviceConnected(DeviceEvents.NewBluetoothDeviceEvent deviceEvent) {
-        deviceType = deviceEvent.getDeviceType();
         LogUtils.d(TAG, "new device "+ (deviceEvent.getDevice() != null ? "scanned" : " null"));
-        if (deviceType == ScannableDevices.MELOMIND)
+        if (MbtConfig.getScannableDevices() == MbtDeviceType.MELOMIND)
             setmCurrentConnectedDevice(deviceEvent.getDevice() != null ? new MelomindDevice(deviceEvent.getDevice()) : null);
-        else if (deviceType == ScannableDevices.VPRO)
+        else if (MbtConfig.getScannableDevices() == MbtDeviceType.VPRO)
             setmCurrentConnectedDevice(deviceEvent.getDevice() != null ? new VProDevice(deviceEvent.getDevice()) : null);
     }
 

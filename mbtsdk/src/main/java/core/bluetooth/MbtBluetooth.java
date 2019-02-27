@@ -81,12 +81,11 @@ public abstract class MbtBluetooth implements IConnectable{
             currentState = newState;
             LogUtils.i(TAG," current state is now  =  "+currentState);
             mbtBluetoothManager.notifyConnectionStateChanged(newState);
-            if(currentState.isResettableState(previousState)){ //if a disconnection occurred
+
+            if(currentState.isResettableState(previousState)) //if a disconnection occurred
                 resetCurrentState();//reset the current connection state to IDLE
-            }
-            if(currentState.isDisconnectableState()){ //if a failure occurred
+            if(currentState.isDisconnectableState() && !previousState.isAudioState()) //if a failure occurred
                 disconnect(); //disconnect if a headset is connected
-            }
         }
     }
 

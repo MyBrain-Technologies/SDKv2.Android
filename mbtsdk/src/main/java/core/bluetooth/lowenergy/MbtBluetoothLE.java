@@ -20,7 +20,6 @@ import android.os.Handler;
 import android.os.ParcelUuid;
 import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
-import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 
@@ -33,9 +32,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import config.AmpGainConfig;
@@ -50,12 +47,12 @@ import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindDevice;
 import core.device.model.MelomindsQRDataBase;
-import core.eeg.acquisition.MbtDataConversion;
 import engine.clientevents.BaseError;
 import engine.clientevents.ConnectionStateReceiver;
 import features.MbtFeatures;
 import utils.BroadcastUtils;
 import utils.LogUtils;
+import utils.MbtAsyncWaitOperation;
 
 /**
  *
@@ -76,8 +73,8 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     private final static String REMOVE_BOND_METHOD = "removeBond";
     private final static String REFRESH_METHOD = "refresh";
 
-    @RequiresApi(Build.VERSION_CODES.N)
-    private CompletableFuture<Boolean> futureOperation = new CompletableFuture();
+    private MbtAsyncWaitOperation asyncOperation = new MbtAsyncWaitOperation();
+
     //todo after pull request private MbtAsyncWaitOperation asyncConfiguration = new MbtAsyncWaitOperation();
 
     /**
@@ -282,8 +279,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
                 "enable notification... now waiting for confirmation from headset.");
 
         try {
-            futureOperation = new CompletableFuture<>();
-            futureOperation.get(10000,TimeUnit.MILLISECONDS);
+            asyncOperation.waitOperationResult(MbtConfig.getBluetoothA2DpConnectionTimeout());
             return true;
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             LogUtils.d(TAG,"Enabling notification failed : "+e);
@@ -356,11 +352,13 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     private ScanCallback leScanCallback = new ScanCallback() {
 
         public void onScanResult(int callbackType, @NonNull ScanResult result) { //Callback when a BLE advertisement has been found.
-            super.onScanResult(callbackType, result);
-            final BluetoothDevice device = result.getDevice();
-            LogUtils.i(TAG, String.format("Stopping Low Energy Scan -> device detected " + "with name '%s' and MAC address '%s' ", device.getName(), device.getAddress()));
-            currentDevice = device;
-            updateConnectionState(true); //current state is set to DEVICE_FOUND and future is completed
+            if(getCurrentState().equals(BtState.SCAN_STARTED)){
+                super.onScanResult(callbackType, result);
+                final BluetoothDevice device = result.getDevice();
+                LogUtils.i(TAG, String.format("Stopping Low Energy Scan -> device detected " + "with name '%s' and MAC address '%s' ", device.getName(), device.getAddress()));
+                currentDevice = device;
+                updateConnectionState(true); //current state is set to DEVICE_FOUND and future is completed
+            }
         }
 
         public final void onScanFailed(final int errorCode) { //Callback when scan could not be started.
@@ -504,8 +502,10 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      */
    synchronized boolean startWriteOperation(@NonNull UUID characteristic, byte[] payload){
        LogUtils.i(TAG, "start write operation");
-        if(!checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT, characteristic))
+        if(!checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT, characteristic)) {
+            LogUtils.e(TAG, "Error: failed to check service and characteristic validity" + characteristic.toString());
             return false;
+        }
 
         //Send buffer
         this.gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(characteristic).setValue(payload);
@@ -637,13 +637,8 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             mbtBluetoothManager.notifyConnectionStateChanged(mailboxEvents == MailboxEvents.MBX_CONNECT_IN_A2DP ? BtState.AUDIO_CONNECTED : BtState.AUDIO_DISCONNECTED);
     }
 
-    void updateConnectionState(boolean isFutureCompleted){
-        mbtBluetoothManager.updateConnectionState(isFutureCompleted); //do nothing if the current state is CONNECTED_AND_READY
-    }
-
-    void completeFutureOperation(){
-        if(futureOperation != null && !futureOperation.isDone() && !futureOperation.isCancelled())
-            futureOperation.complete(true);
+    void updateConnectionState(boolean isCompleted){
+        mbtBluetoothManager.updateConnectionState(isCompleted); //do nothing if the current state is CONNECTED_AND_READY
     }
 
     /**
@@ -882,9 +877,16 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         }
     }
 
+    /**
+     * Starts a read operation of the Battery charge level to trigger an automatic bonding.
+     * If the headset is already bonded, it will return the value of the battery level.
+     * If the headset is not already bonded, it will bond and return an authentication failed status code (0x89 GATT_AUTH_FAIL)
+     * in the {@link MbtGattController#onCharacteristicRead(BluetoothGatt, BluetoothGattCharacteristic, int)}onCharacteristicRead callback
+     * @param device current connected device
+     */
     public void bond(MbtDevice device) {
         LogUtils.i(TAG, "start bonding");
-        if(device.getBluetoothDevice().getType() == BluetoothDevice.DEVICE_TYPE_LE || device.getBluetoothDevice().getType() == BluetoothDevice.DEVICE_TYPE_DUAL) { //LOW ENERGY BONDING ONLY
+        if(device.getBluetoothDevice().getType() == BluetoothDevice.DEVICE_TYPE_LE) { //LOW ENERGY BONDING ONLY
             updateConnectionState(false); //current state is set to BONDING
             mbtBluetoothManager.startReadOperation(DeviceInfo.BATTERY); //trigger bonding indirectly
         }else
@@ -897,14 +899,12 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             updateConnectionState(true); //current state is set to READING_FIRMWARE_VERSION_SUCCESS or READING_HARDWARE_VERSION_SUCCESS or READING_SERIAL_NUMBER_SUCCESS or READING_SUCCESS if reading device info and future is completed
         }
     }
-    void notifyBatteryReceived(int value, boolean isSuccess) {
-        if (!isSuccess) //authentication failed : bonding has been done but the sdk need to relaunch a read battery operation
-            readBattery();
-        else {
-            super.notifyBatteryReceived(value);
+    protected void notifyBatteryReceived(int value) {
+        if(value == -1){
             if (getCurrentState().equals(BtState.BONDING))
                 updateConnectionState(true); //current state is set to BONDED
-        }
+        }else
+            super.notifyBatteryReceived(value);
     }
 
     private boolean refreshDeviceCache(BluetoothGatt gatt) {
@@ -916,5 +916,9 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             Log.e(TAG, "An exception occured while refreshing device");
         }
         return false;
+    }
+
+    void stopWaitingOperation() {
+        asyncOperation.stopWaitingOperation(false);
     }
 }
