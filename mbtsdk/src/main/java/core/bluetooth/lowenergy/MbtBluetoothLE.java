@@ -20,7 +20,6 @@ import android.os.Handler;
 import android.os.ParcelUuid;
 import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
-import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 
@@ -31,14 +30,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import config.AmpGainConfig;
 import config.FilterConfig;
+import config.MbtConfig;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.BtState;
 import core.bluetooth.IStreamable;
@@ -53,7 +50,7 @@ import engine.clientevents.ConnectionStateReceiver;
 import features.MbtFeatures;
 import utils.BroadcastUtils;
 import utils.LogUtils;
-import utils.MbtLock;
+import utils.MbtAsyncWaitOperation;
 
 /**
  *
@@ -74,9 +71,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     private final static String REMOVE_BOND_METHOD = "removeBond";
     private final static String REFRESH_METHOD = "refresh";
 
-    @RequiresApi(Build.VERSION_CODES.N)
-    private Future<Boolean> futureOperation;
-    private MbtLock<Boolean> lockOperation;
+    private MbtAsyncWaitOperation asyncOperation;
 
     /**
      * An internal event used to notify MbtBluetoothLE that A2DP has disconnected.
@@ -280,7 +275,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
                 "enable notification... now waiting for confirmation from headset.");
 
         try {
-            waitOperationResult(10000);
+            asyncOperation.waitOperationResult(MbtConfig.getBluetoothA2DpConnectionTimeout());
             return true;
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             LogUtils.d(TAG,"Enabling notification failed : "+e);
@@ -353,7 +348,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     private ScanCallback leScanCallback = new ScanCallback() {
 
         public void onScanResult(int callbackType, @NonNull ScanResult result) { //Callback when a BLE advertisement has been found.
-            if(!getCurrentState().equals(BtState.DEVICE_FOUND)){
+            if(getCurrentState().equals(BtState.SCAN_STARTED)){
                 super.onScanResult(callbackType, result);
                 final BluetoothDevice device = result.getDevice();
                 LogUtils.i(TAG, String.format("Stopping Low Energy Scan -> device detected " + "with name '%s' and MAC address '%s' ", device.getName(), device.getAddress()));
@@ -625,8 +620,8 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         mbtBluetoothManager.notifyConnectionStateChanged(state);
     }
 
-    void updateConnectionState(boolean isFutureCompleted){
-        mbtBluetoothManager.updateConnectionState(isFutureCompleted); //do nothing if the current state is CONNECTED_AND_READY
+    void updateConnectionState(boolean isCompleted){
+        mbtBluetoothManager.updateConnectionState(isCompleted); //do nothing if the current state is CONNECTED_AND_READY
     }
 
     /**
@@ -658,7 +653,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 
         Boolean isSuccess = false;
         try {
-             isSuccess = waitOperationResult(10000);
+             isSuccess = asyncOperation.waitOperationResult(MbtConfig.getBluetoothA2DpConnectionTimeout());
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             LogUtils.i(TAG,"MTU change failed");
         }
@@ -775,6 +770,13 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         }
     }
 
+    /**
+     * Starts a read operation of the Battery charge level to trigger an automatic bonding.
+     * If the headset is already bonded, it will return the value of the battery level.
+     * If the headset is not already bonded, it will bond and return an authentication failed status code (0x89 GATT_AUTH_FAIL)
+     * in the {@link MbtGattController#onCharacteristicRead(BluetoothGatt, BluetoothGattCharacteristic, int)}onCharacteristicRead callback
+     * @param device current connected device
+     */
     public void bond(MbtDevice device) {
         LogUtils.i(TAG, "start bonding");
         if(device.getBluetoothDevice().getType() == BluetoothDevice.DEVICE_TYPE_LE) { //LOW ENERGY BONDING ONLY
@@ -791,9 +793,10 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         }
     }
     protected void notifyBatteryReceived(int value) {
-        if (getCurrentState().equals(BtState.BONDING) && scannedDevice.getBondState() == BluetoothDevice.BOND_BONDED)
-            updateConnectionState(true); //current state is set to BONDED
-        if(value != -1)
+        if(value == -1){
+            if (getCurrentState().equals(BtState.BONDING))
+                updateConnectionState(true); //current state is set to BONDED
+        }else
             super.notifyBatteryReceived(value);
     }
 
@@ -808,30 +811,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         return false;
     }
 
-    private Boolean waitOperationResult(int timeout) throws InterruptedException, ExecutionException, TimeoutException {
-        Boolean result;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            futureOperation = new CompletableFuture<>();
-            LogUtils.i(TAG,"future operation wait");
-            result = futureOperation.get(timeout, TimeUnit.MILLISECONDS);
-        } else {
-            lockOperation = new MbtLock<>();
-            LogUtils.i(TAG,"lock operation wait");
-            result = lockOperation.waitAndGetResult(timeout);
-        }
-        return result;
-    }
-
-    void stopWaitingOperation(){
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            if (futureOperation != null && !futureOperation.isDone() && !futureOperation.isCancelled()){
-                LogUtils.i(TAG, "future operation set");
-                ((CompletableFuture) futureOperation).complete(true);
-            }
-        }else
-            if(lockOperation != null && lockOperation.isWaiting()) {
-                LogUtils.i(TAG, "lock operation set");
-                lockOperation.setResultAndNotify(true);
-            }
+    void stopWaitingOperation() {
+        asyncOperation.stopWaitingOperation(false);
     }
 }

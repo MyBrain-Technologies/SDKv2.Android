@@ -16,19 +16,17 @@ import android.widget.Switch;
 import android.widget.Toast;
 
 import java.util.ArrayList;
-import java.util.Objects;
 
 import engine.ConnectionConfig;
 import engine.MbtClient;
 import engine.clientevents.BaseError;
 import engine.clientevents.ConnectionStateListener;
 import features.MbtFeatures;
-import utils.LogUtils;
 
 import static features.MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX;
 import static features.MbtFeatures.VPRO_DEVICE_NAME_PREFIX;
-import static features.ScannableDevices.MELOMIND;
-import static features.ScannableDevices.VPRO;
+import static features.MbtDeviceType.MELOMIND;
+import static features.MbtDeviceType.VPRO;
 
 public class HomeActivity extends AppCompatActivity{
 

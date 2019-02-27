@@ -13,7 +13,7 @@ import android.support.annotation.Keep;
  * the first discovered headset.</p>
  */
 @Keep
-public enum ScannableDevices{
+public enum MbtDeviceType {
     /**
      *
      */

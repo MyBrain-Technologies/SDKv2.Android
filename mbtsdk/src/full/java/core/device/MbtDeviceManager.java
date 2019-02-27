@@ -1,6 +1,5 @@
 package core.device;
 
-import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.util.Log;
@@ -20,7 +19,7 @@ import core.eeg.acquisition.MbtDataConversion;
 import core.oad.OADFileManager;
 import eventbus.EventBusManager;
 import eventbus.events.DeviceInfoEvent;
-import features.ScannableDevices;
+import features.MbtDeviceType;
 import utils.LogUtils;
 
 
@@ -73,9 +72,9 @@ public class MbtDeviceManager extends BaseModuleManager{
     @Subscribe
     public void onNewDeviceConnected(DeviceEvents.NewBluetoothDeviceEvent deviceEvent) {
         LogUtils.d(TAG, "new device "+ (deviceEvent.getDevice() != null ? "scanned" : " null"));
-        if (MbtConfig.getScannableDevices() == ScannableDevices.MELOMIND)
+        if (MbtConfig.getScannableDevices() == MbtDeviceType.MELOMIND)
             setmCurrentConnectedDevice(deviceEvent.getDevice() != null ? new MelomindDevice(deviceEvent.getDevice()) : null);
-        else if (MbtConfig.getScannableDevices() == ScannableDevices.VPRO)
+        else if (MbtConfig.getScannableDevices() == MbtDeviceType.VPRO)
             setmCurrentConnectedDevice(deviceEvent.getDevice() != null ? new VProDevice(deviceEvent.getDevice()) : null);
     }
 

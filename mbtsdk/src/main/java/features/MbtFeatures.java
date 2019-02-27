@@ -3,17 +3,15 @@ package features;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 
-import java.net.PortUnreachableException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 import config.MbtConfig;
 import core.bluetooth.BtProtocol;
-import utils.FirmwareUtils;
 
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
 import static core.bluetooth.BtProtocol.BLUETOOTH_SPP;
-import static features.ScannableDevices.MELOMIND;
+import static features.MbtDeviceType.MELOMIND;
 
 
 /**

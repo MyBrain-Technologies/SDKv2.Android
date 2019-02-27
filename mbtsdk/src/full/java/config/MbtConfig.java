@@ -3,13 +3,13 @@ package config;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 
+import features.MbtDeviceType;
 import features.MbtFeatures;
-import features.ScannableDevices;
 
 @Keep
 public final class MbtConfig {
 
-    private static ScannableDevices scannableDevices = ScannableDevices.MELOMIND;
+    private static MbtDeviceType scannableDevices = MbtDeviceType.MELOMIND;
 
     private static int eegPacketLength = 250;
 
@@ -103,7 +103,7 @@ public final class MbtConfig {
         return samplePerNotification;
     }
 
-    public static ScannableDevices getScannableDevices() {
+    public static MbtDeviceType getScannableDevices() {
         return scannableDevices;
     }
 
@@ -266,16 +266,16 @@ public final class MbtConfig {
         connectAudioIfDeviceCompatible = builder.connectAudioIfDeviceCompatible;
     }
 
-    public static void setScannableDevices(ScannableDevices scannableDevices) {
+    public static void setScannableDevices(MbtDeviceType scannableDevices) {
         MbtConfig.scannableDevices = scannableDevices;
     }
 
     public static boolean isCurrentDeviceAMelomind() {
-        return scannableDevices.equals(ScannableDevices.MELOMIND);
+        return scannableDevices.equals(MbtDeviceType.MELOMIND);
     }
 
     public static boolean isCurrentDeviceAVpro() {
-        return scannableDevices.equals(ScannableDevices.VPRO);
+        return scannableDevices.equals(MbtDeviceType.VPRO);
     }
 
     public static void setSamplePerNotification(int samplePerNotification) {
