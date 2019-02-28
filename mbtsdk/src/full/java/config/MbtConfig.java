@@ -40,7 +40,7 @@ public final class MbtConfig {
 
     private final static int BLUETOOTH_READING_TIMEOUT = 5000;
 
-    private final static int BLUETOOTH_DISCOVER_TIMEOUT = 5000;
+    private final static int BLUETOOTH_DISCOVER_TIMEOUT = 6000;
 
     private final static int BLUETOOTH_BONDING_TIMEOUT = 5000;
 

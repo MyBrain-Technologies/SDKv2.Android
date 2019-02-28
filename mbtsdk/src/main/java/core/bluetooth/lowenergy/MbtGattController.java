@@ -140,6 +140,7 @@ final class MbtGattController extends BluetoothGattCallback {
             gatt.disconnect();
             if (mbtBluetoothLE.getCurrentState().equals(BtState.DISCOVERING_SERVICES))
                 this.mbtBluetoothLE.notifyConnectionStateChanged(BtState.DISCOVERING_FAILURE);
+
             return;
         }
 

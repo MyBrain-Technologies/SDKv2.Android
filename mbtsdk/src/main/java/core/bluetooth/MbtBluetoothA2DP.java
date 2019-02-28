@@ -1,13 +1,11 @@
 package core.bluetooth;
 
-import android.annotation.TargetApi;
 import android.bluetooth.BluetoothA2dp;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.media.AudioManager;
-import android.os.Build;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
@@ -33,7 +31,6 @@ import utils.MbtAsyncWaitOperation;
  * Created by Etienne on 08/02/2018.
  */
 
-@TargetApi(Build.VERSION_CODES.N)
 public final class MbtBluetoothA2DP extends MbtBluetooth{
     private final static String TAG = MbtBluetoothA2DP.class.getSimpleName();
 
@@ -326,7 +323,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
         public final void onServiceDisconnected(final int profile) {
             LogUtils.i(TAG, "onServiceDisconnected ");
             if(profile == BluetoothProfile.A2DP){
-                Log.e(TAG, "device is disconnected from service");
+                Log.w(TAG, "device is disconnected from service");
                 a2DPMonitor.stop();
             }
         }
@@ -363,12 +360,14 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
             public void run() {
                 if(!connectedA2DpDevices.equals(getA2DPConnectedDevices())){ //It means that something has changed. Now we need to find out what changed (getAD2PConnectedDevices returns the connected devices for this specific profile.)
                     if(connectedA2DpDevices.size() < getA2DPConnectedDevices().size()){ //Here, we have a new A2DP connection then we notify bluetooth manager
-                        connectedDevice = getA2DPConnectedDevices().get(getA2DPConnectedDevices().size()-1); //As one a2dp output is possible at a time on android, it is possible to consider that last item in list is the current one
-                        if(hasA2DPDeviceConnected() && connectedDevice.getName()!= null && isAudioDeviceNameValid(connectedDevice.getName())) {//if a Bluetooth A2DP audio peripheral is connected to a device whose name is not null.
-                            LogUtils.d(TAG, "Detected connected device "+connectedDevice.getName() +" address is "+connectedDevice.getAddress());
-                            notifyConnectionStateChanged(BtState.AUDIO_CONNECTED, true);
-                            asyncInit.stopWaitingOperation(false);
-                        }
+                        final BluetoothDevice previousConnectedDevice = connectedDevice;
+                            connectedDevice = getA2DPConnectedDevices().get(getA2DPConnectedDevices().size()-1); //As one a2dp output is possible at a time on android, it is possible to consider that last item in list is the current one
+                            if(hasA2DPDeviceConnected() && connectedDevice!= null && connectedDevice.getName()!= null && isAudioDeviceNameValid(connectedDevice.getName())) {//if a Bluetooth A2DP audio peripheral is connected to a device whose name is not null.
+                                LogUtils.d(TAG, "Detected connected device "+connectedDevice.getName() +" address is "+connectedDevice.getAddress());
+                                if(previousConnectedDevice == null || (previousConnectedDevice != null && connectedDevice!= null && currentDevice == previousConnectedDevice    ))
+                                    notifyConnectionStateChanged(BtState.AUDIO_CONNECTED, true);
+                                asyncInit.stopWaitingOperation(false);
+                            }
 
                     }else //Here, either the A2DP connection has dropped or a new A2DP device is connecting.
                         notifyConnectionStateChanged(BtState.AUDIO_DISCONNECTED);
@@ -394,6 +393,10 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
             if(notifyManager) //if audio is connected (and BLE is not) when the user request connection to a headset
                 mbtBluetoothManager.notifyConnectionStateChanged(BtState.AUDIO_CONNECTED);
         }
+    }
+
+    public boolean isPairedDevice(BluetoothDevice device){
+        return (bluetoothAdapter.getBondedDevices().contains(device));
     }
 }
 

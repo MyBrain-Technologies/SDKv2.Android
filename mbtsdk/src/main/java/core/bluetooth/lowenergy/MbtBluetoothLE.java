@@ -2,7 +2,6 @@ package core.bluetooth.lowenergy;
 
 
 import android.Manifest;
-import android.annotation.TargetApi;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
@@ -66,7 +65,6 @@ import utils.MbtAsyncWaitOperation;
  *
  */
 
-@TargetApi(Build.VERSION_CODES.N)
 public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     private static final String TAG = MbtBluetoothLE.class.getSimpleName();
 
@@ -397,7 +395,6 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @param device the bluetooth device to connect to.
      * @return true if operation has correctly started, false otherwise.
      */
-    @TargetApi(Build.VERSION_CODES.KITKAT)
     @Override
     public boolean connect(Context context, BluetoothDevice device) {
         if(device == null || context == null)
@@ -856,13 +853,15 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     public void connectA2DPFromBLE() {
         LogUtils.i(TAG, "connect a2dp from ble");
         byte[] buffer = {MailboxEvents.MBX_CONNECT_IN_A2DP, (byte)0x25, (byte)0xA2}; //Send buffer
-        startWriteOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX, buffer);
+        if(!startWriteOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX, buffer))
+            LogUtils.w(TAG, "Failed to send connect A2dp request");
     }
 
     public void disconnectA2DPFromBLE() {
         LogUtils.i(TAG, "disconnected A2DP from BLE");
         byte[] buffer = {MailboxEvents.MBX_DISCONNECT_IN_A2DP, (byte)0x85, (byte)0x11};
-        startWriteOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX, buffer);
+        if(!startWriteOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX, buffer))
+            LogUtils.w(TAG, "Failed to send disconnect A2dp request");
     }
 
     /**
@@ -878,7 +877,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         updateConnectionState(false); //current state is set to DISCOVERING_SERVICES
         if(!gatt.discoverServices()){
             notifyConnectionStateChanged(BtState.DISCOVERING_FAILURE);
-        LogUtils.i(TAG, " discover services failed");
+            LogUtils.i(TAG, " discover services failed");
         }
     }
 
@@ -887,9 +886,8 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * If the headset is already bonded, it will return the value of the battery level.
      * If the headset is not already bonded, it will bond and return an authentication failed status code (0x89 GATT_AUTH_FAIL)
      * in the {@link MbtGattController#onCharacteristicRead(BluetoothGatt, BluetoothGattCharacteristic, int)}onCharacteristicRead callback
-     * @param device current connected device
      */
-    public void bond(MbtDevice device) {
+    public void bond() {
         LogUtils.i(TAG, "start bonding");
         updateConnectionState(false); //current state is set to BONDING
         mbtBluetoothManager.startReadOperation(DeviceInfo.BATTERY); //trigger bonding indirectly
@@ -903,10 +901,9 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     }
 
     protected void notifyBatteryReceived(int value) {
-        if(value == -1){
-            if (getCurrentState().equals(BtState.BONDING))
-                updateConnectionState(true); //current state is set to BONDED
-        }else
+        if (getCurrentState().equals(BtState.BONDING))
+            updateConnectionState(true); //current state is set to BONDED
+        if(value != -1)
             super.notifyBatteryReceived(value);
     }
 

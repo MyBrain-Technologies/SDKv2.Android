@@ -13,6 +13,8 @@ public final class MbtAsyncWaitOperation {
     private MbtLock<Boolean> lockOperation;
     private Future<Boolean> futureOperation;
 
+    private static String TAG = MbtAsyncWaitOperation.class.getName();
+
     public MbtAsyncWaitOperation() {
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
             futureOperation = new CompletableFuture<>();
@@ -30,6 +32,7 @@ public final class MbtAsyncWaitOperation {
      * @throws TimeoutException
      */
     public Boolean waitOperationResult(int timeout) throws InterruptedException, ExecutionException, TimeoutException {
+        LogUtils.i(TAG, "wait operation");
         Boolean operationSucceeded;
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             futureOperation = new CompletableFuture<>();
@@ -57,6 +60,8 @@ public final class MbtAsyncWaitOperation {
      * isCancel must be set to false to complete the waiting process (if the result has been retrieved).
      */
     public void stopWaitingOperation(boolean isCancel) {
+        LogUtils.i(TAG, "stop waiting operation");
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             if (futureOperation != null && !futureOperation.isDone() && !futureOperation.isCancelled()){
                 if (isCancel)

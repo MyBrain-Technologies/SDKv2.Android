@@ -3,6 +3,7 @@ package core.bluetooth;
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -490,8 +491,9 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 asyncOperation.stopWaitingOperation(true);
             }
 
-            if(!getCurrentState().equals(BtState.DISCOVERING_SUCCESS))////at this point : current state should be DISCOVERING_SUCCESS if discovery succeeded
+            if(!getCurrentState().equals(BtState.DISCOVERING_SUCCESS)) {////at this point : current state should be DISCOVERING_SUCCESS if discovery succeeded
                 updateConnectionState(BtState.DISCOVERING_FAILURE);
+            }
             switchToNextConnectionStep();
         }
     }
@@ -627,7 +629,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                         AsyncUtils.executeAsync(new Runnable() {
                             @Override
                             public void run() {
-                                mbtBluetoothLE.bond(device);
+                                mbtBluetoothLE.bond();
                             }
                         });
                         asyncOperation.waitOperationResult(MbtConfig.getBluetoothBondingTimeout());
@@ -689,10 +691,10 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                             AsyncUtils.executeAsync(new Runnable() {
                                 @Override
                                 public void run() {
-                                    if(isDataBluetoothConnected() && connectionFromBleAvailable)  //A2DP cannot be connected from BLE if BLE connection state is not CONNECTED_AND_READY
+                                    if(isDataBluetoothConnected() && connectionFromBleAvailable)   //A2DP cannot be connected from BLE if BLE connection state is not CONNECTED_AND_READY
                                         mbtBluetoothLE.connectA2DPFromBLE();
                                     else {// if connectA2DPFromBLE failed or is not supported by the headset firmware version
-                                        if(Build.VERSION.SDK_INT <= Build.VERSION_CODES.P)
+                                        if(Build.VERSION.SDK_INT < Build.VERSION_CODES.P || mbtBluetoothA2DP.isPairedDevice(getCurrentDevice()))
                                             connect(BLUETOOTH_A2DP);
                                         else
                                             notifyConnectionStateChanged(BtState.AUDIO_CONNECTION_UNSUPPORTED);
@@ -819,7 +821,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private void cancelPendingConnection(boolean isClientUserAbortion) {
         LogUtils.i(TAG, "cancelling pending connection");
         requestBeingProcessed = false;
-        if(isAudioBluetoothConnected())
+        if(isAudioBluetoothConnected() && !asyncSwitchOperation.isWaiting())
             disconnect(BLUETOOTH_A2DP);
         disconnect(deviceTypeRequested.useLowEnergyProtocol() ? BtProtocol.BLUETOOTH_LE : BtProtocol.BLUETOOTH_SPP);
 
@@ -867,8 +869,9 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 asyncOperation.stopWaitingOperation(false);
                 if(mbtBluetoothA2DP.getConnectedDevice() != null){
                     String bleDeviceName = mbtBluetoothLE.getBleDeviceNameFromA2dp(mbtBluetoothA2DP.getConnectedDevice().getName(), mContext);
-                    if((!isDataBluetoothConnected() || !mbtBluetoothLE.isCurrentDeviceNameEqual(bleDeviceName)) && MbtConfig.connectAudioIfDeviceCompatible())
-                        connectBLEFromA2DP(mbtBluetoothA2DP.getConnectedDevice().getName());
+                    if(((!isDataBluetoothConnected() || !mbtBluetoothLE.isCurrentDeviceNameEqual(bleDeviceName))) && MbtConfig.connectAudioIfDeviceCompatible()) {
+                        connectBLEFromA2DP(bleDeviceName);
+                    }
                 }
                 break;
             case DEVICE_FOUND:
@@ -1011,17 +1014,18 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     /**
      * Starts a Low Energy connection process if a Melomind is connected for Audio Streaming in A2DP.
      */
-    private void connectBLEFromA2DP(@NonNull String deviceName) {
+    private void connectBLEFromA2DP(@NonNull String newDeviceBleName) {
         LogUtils.i(TAG, "connect BLE from a2dp ");
         if(mbtBluetoothA2DP.isConnected()){
-            String newDeviceBleName = mbtBluetoothLE.getBleDeviceNameFromA2dp(deviceName, mContext); //BLE name = melo_ with the QRcode digits
             LogUtils.i(TAG, "associated BLE name is " + newDeviceBleName);
+            LogUtils.i(TAG, "is current device name equal ? " + mbtBluetoothLE.isCurrentDeviceNameEqual(newDeviceBleName));
+            BtState currentStateBeforeDisconnection = getCurrentState();
             if(mbtBluetoothLE.isConnected() && !mbtBluetoothLE.isCurrentDeviceNameEqual(newDeviceBleName)) //Disconnecting another melomind if already one connected in BLE
                 mbtBluetoothLE.disconnect();
 
             deviceNameRequested = newDeviceBleName;
-            LogUtils.e(TAG, "connect if not IDLE " + getCurrentState());
-            if(!getCurrentState().equals(BtState.IDLE)) {
+            LogUtils.i(TAG, "get current device " + mbtBluetoothA2DP.getConnectedDevice().getName());
+            if(!currentStateBeforeDisconnection.equals(BtState.IDLE)) {
                 try {
                     asyncSwitchOperation.waitOperationResult(8000);
                 }catch (CancellationException | InterruptedException | ExecutionException | TimeoutException e) {
