@@ -19,8 +19,7 @@ import core.bluetooth.BtProtocol;
 import core.eeg.MbtEEGManager;
 import core.eeg.storage.RawEEGSample;
 import features.MbtFeatures;
-import features.ScannableDevices;
-import utils.AsyncUtils;
+import features.MbtDeviceType;
 import utils.MatrixUtils;
 
 import static org.junit.Assert.assertNotNull;
@@ -71,8 +70,8 @@ public class MbtDataAcquisitionTest {
     /*@Test
     public void handleDataTestNonNullStatusSPP() {
         BtProtocol protocol = BtProtocol.BLUETOOTH_SPP;
-        MbtConfig.setScannableDevices(ScannableDevices.VPRO);
-        assertTrue(" vpro ? "+getScannableDevices(),getScannableDevices() == ScannableDevices.VPRO);
+        MbtConfig.setDeviceType(MbtDeviceType.VPRO);
+        assertTrue(" vpro ? "+getDeviceType(),getDeviceType() == MbtDeviceType.VPRO);
         assertTrue(" nb status bytes"+MbtFeatures.getNbStatusBytes(),MbtFeatures.getNbStatusBytes() == DEFAULT_SPP_NB_STATUS_BYTES);
 
         this.dataAcquisition = new MbtDataAcquisition(new MbtEEGManager(context, new MbtManager(context),protocol),protocol);
@@ -234,7 +233,7 @@ public class MbtDataAcquisitionTest {
         int nbChannels = 2;
         int nbBytes= 2;
         int nbBytesIndex = 2;
-        MbtConfig.setScannableDevices(ScannableDevices.MELOMIND);
+        MbtConfig.setDeviceType(MbtDeviceType.MELOMIND);
         assertTrue(MbtFeatures.getNbChannels()==MbtFeatures.MELOMIND_NB_CHANNELS);
         assertTrue(MbtFeatures.getBluetoothProtocol().equals(BtProtocol.BLUETOOTH_LE));
 
@@ -272,7 +271,7 @@ public class MbtDataAcquisitionTest {
         int nbBytesIndex = 2;
         int nbBytes = 2;
         int sizeArray = 18;
-        MbtConfig.setScannableDevices(ScannableDevices.MELOMIND);
+        MbtConfig.setDeviceType(MbtDeviceType.MELOMIND);
         assertTrue(MbtFeatures.getNbChannels()==MbtFeatures.MELOMIND_NB_CHANNELS);
         assertTrue(MbtFeatures.getBluetoothProtocol().equals(BtProtocol.BLUETOOTH_LE));
 
@@ -309,7 +308,7 @@ public class MbtDataAcquisitionTest {
         int nbBytesIndex = 2;
         int nbBytes = 2;
         int sizeArray = 250;
-        MbtConfig.setScannableDevices(ScannableDevices.MELOMIND);
+        MbtConfig.setDeviceType(MbtDeviceType.MELOMIND);
         assertTrue(MbtFeatures.getNbChannels()==MbtFeatures.MELOMIND_NB_CHANNELS);
         assertTrue(MbtFeatures.getBluetoothProtocol().equals(BtProtocol.BLUETOOTH_LE));
 

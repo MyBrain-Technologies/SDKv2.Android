@@ -4,10 +4,10 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import engine.clientevents.ConnectionException;
+import engine.clientevents.BaseError;
 import engine.clientevents.ConnectionStateListener;
+import features.MbtDeviceType;
 import features.MbtFeatures;
-import features.ScannableDevices;
 
 /**
  * This class aims at configuring the bluetooth connection to a myBrain device. It contains user configurable
@@ -22,20 +22,17 @@ public final class ConnectionConfig {
 
     private final int maxScanDuration;
 
-    private final int connectionTimeout;
-
     private final boolean connectAudio;
 
-    private final ScannableDevices deviceType;
+    private final MbtDeviceType deviceType;
 
-    private final ConnectionStateListener<ConnectionException> connectionStateListener;
+    private final ConnectionStateListener<BaseError> connectionStateListener;
 
-    private ConnectionConfig(String deviceName, int maxScanDuration, int connectionTimeout, boolean connectAudio, ScannableDevices deviceType, ConnectionStateListener<ConnectionException> connectionStateListener){
+    private ConnectionConfig(String deviceName, int maxScanDuration, boolean connectAudio, MbtDeviceType deviceType, ConnectionStateListener<BaseError> connectionStateListener){
         this.deviceName = deviceName;
         this.maxScanDuration = maxScanDuration;
-        this.connectionTimeout = connectionTimeout;
         this.deviceType = deviceType;
-        this.connectAudio = (deviceType == ScannableDevices.MELOMIND && connectAudio);
+        this.connectAudio = (deviceType == MbtDeviceType.MELOMIND && connectAudio);
         this.connectionStateListener = connectionStateListener;
     }
 
@@ -47,23 +44,22 @@ public final class ConnectionConfig {
     }
 
 
-    public int getMaxScanDuration() {
+    int getMaxScanDuration() {
         return maxScanDuration;
     }
 
-    public int getConnectionTimeout() {
-        return connectionTimeout;
-    }
-
-    public boolean isConnectAudio() {
+    /**
+     * By default, Bluetooth connection is only initiated for Data streaming but not for the Audio streaming
+     */
+    boolean useAudio() {
         return connectAudio;
     }
 
-    public ScannableDevices getDeviceType() {
+    MbtDeviceType getDeviceType() {
         return deviceType;
     }
 
-    public ConnectionStateListener getConnectionStateListener() {
+    ConnectionStateListener getConnectionStateListener() {
         return connectionStateListener;
     }
 
@@ -75,15 +71,14 @@ public final class ConnectionConfig {
         @Nullable
         private String deviceName = null;
         private int maxScanDuration = MbtFeatures.DEFAULT_MAX_SCAN_DURATION_IN_MILLIS;
-        private int connectionTimeout = MbtFeatures.DEFAULT_MAX_CONNECTION_DURATION_IN_MILLIS;
         private boolean connectAudio = false;
-        private ScannableDevices deviceType = ScannableDevices.ALL;
+        private MbtDeviceType deviceType = MbtDeviceType.MELOMIND;
         @NonNull
-        private final ConnectionStateListener<ConnectionException> connectionStateListener;
+        private final ConnectionStateListener<BaseError> connectionStateListener;
 
 
-        public Builder(@NonNull ConnectionStateListener<ConnectionException> stateListener){
-            this.connectionStateListener = stateListener;
+        public Builder(@NonNull ConnectionStateListener<BaseError> connectionStateListener){
+            this.connectionStateListener = connectionStateListener;
         }
 
         /**
@@ -131,30 +126,30 @@ public final class ConnectionConfig {
          * <p>Caution, the audio is handled by the Android system itself and is not meant to be connect via a third party application.
          * If set to {@link Boolean#TRUE}, the connection attempt may fail. It is still possible to connect to audio through the system settings of your android device.</p>
          *
-         * @param shouldConnectAudio true to connect automatically, false otherwise. If the device is not audio compatible, the flag is forced to false.
+         * @param useAudio true to connect automatically, false otherwise. If the device is not audio compatible, the flag is forced to false.
          * @return the builder instance
          */
         @NonNull
-        public Builder connectAudioIfDeviceCompatible(boolean shouldConnectAudio){
-            this.connectAudio = shouldConnectAudio;
+        public Builder connectAudioIfDeviceCompatible(boolean useAudio){
+            this.connectAudio = useAudio;
             return this;
         }
 
         /**
          * Use this method to define which king of device you want to connect to.
-         * @see ScannableDevices
+         * @see MbtDeviceType
          * @param deviceType
          * @return the builder instance
          */
         @NonNull
-        public Builder scanDeviceType(ScannableDevices deviceType){
+        public Builder scanDeviceType(MbtDeviceType deviceType){
             this.deviceType = deviceType;
             return this;
         }
 
         @NonNull
         public ConnectionConfig create(){
-            return new ConnectionConfig(this.deviceName, this.maxScanDuration, this.connectionTimeout, this.connectAudio, this.deviceType, this.connectionStateListener);
+            return new ConnectionConfig(this.deviceName, this.maxScanDuration, this.connectAudio, this.deviceType, this.connectionStateListener);
         }
 
 

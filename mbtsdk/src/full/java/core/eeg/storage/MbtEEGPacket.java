@@ -9,7 +9,7 @@ import java.util.ArrayList;
 @Keep
 public final class MbtEEGPacket {
     @NonNull
-    private ArrayList<ArrayList<Float>> channelsData = new ArrayList<>(); //TODO check if we need to set this synchronized
+    private ArrayList<ArrayList<Float>> channelsData = new ArrayList<>();
 
     private ArrayList<Float> statusData = new ArrayList<>();
     @NonNull

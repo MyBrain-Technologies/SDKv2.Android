@@ -1,0 +1,35 @@
+package eventbus.events;
+
+import android.support.annotation.NonNull;
+
+import features.MbtDeviceType;
+
+
+/**
+ * Event posted when a new raw EEG data acquired is transmitted through Bluetooth
+ * Event data contains the raw EEG data array
+ *
+ * @author Sophie Zecri on 29/05/2018
+ */
+public class BluetoothEEGEvent {
+
+    private byte[] data;
+    private MbtDeviceType deviceType;
+
+    public BluetoothEEGEvent(@NonNull byte[] data, MbtDeviceType deviceType) {
+        this.data = data;
+        this.deviceType = deviceType;
+    }
+
+    /**
+     * Gets the raw EEG data array acquired
+     * @return the raw EEG data array acquired
+     */
+    public byte[] getData() {
+        return data;
+    }
+
+    public MbtDeviceType getDeviceType() {
+        return deviceType;
+    }
+}

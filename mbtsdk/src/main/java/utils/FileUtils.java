@@ -21,7 +21,7 @@ import java.util.zip.ZipOutputStream;
  */
 @Keep
 public final class FileUtils {
-    private final static String TAG = "FileUtils";
+    private final static String TAG = FileUtils.class.getName();;
 
     /**
      * Copies an entire directory and all its sub-directories recursively to a specified destination

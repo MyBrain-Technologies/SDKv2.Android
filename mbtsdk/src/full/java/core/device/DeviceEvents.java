@@ -5,6 +5,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import core.device.model.MbtDevice;
+import features.MbtDeviceType;
 
 /**
  * This interface contains all required object classes to communicate with the DEVICE module using
@@ -31,26 +32,34 @@ public interface DeviceEvents {
         @Nullable
         private final MbtDevice device;
 
-        public PostDeviceEvent(@Nullable MbtDevice device){
+        PostDeviceEvent(@Nullable MbtDevice device){
             this.device = device;
         }
 
+        @Nullable
         public MbtDevice getDevice() {
             return device;
         }
     }
 
-
     public class NewBluetoothDeviceEvent {
         @Nullable
         private final BluetoothDevice device;
 
-        public NewBluetoothDeviceEvent(@Nullable BluetoothDevice device){
+        private final MbtDeviceType deviceType;
+
+        public NewBluetoothDeviceEvent(@Nullable BluetoothDevice device, MbtDeviceType deviceType){
             this.device = device;
+            this.deviceType = deviceType;
         }
 
+        @Nullable
         public BluetoothDevice getDevice() {
             return device;
+        }
+
+        public MbtDeviceType getDeviceType() {
+            return deviceType;
         }
     }
 
@@ -58,16 +67,16 @@ public interface DeviceEvents {
     /**
      *
      */
-    public class RawDeviceMeasure {
+    class RawDeviceMeasure {
         private byte[] rawMeasure;
-
 
         public RawDeviceMeasure(@NonNull byte[] rawMeasure){
             this.rawMeasure = rawMeasure;
         }
 
-        public byte[] getRawMeasure() {
+        byte[] getRawMeasure() {
             return rawMeasure;
         }
     }
+
 }

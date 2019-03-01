@@ -6,12 +6,11 @@ import android.support.annotation.NonNull;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import config.MbtConfig;
 import core.bluetooth.BtProtocol;
 
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
 import static core.bluetooth.BtProtocol.BLUETOOTH_SPP;
-import static features.ScannableDevices.MELOMIND;
+import static features.MbtDeviceType.MELOMIND;
 
 
 /**
@@ -44,15 +43,17 @@ public final class MbtFeatures{
 
     public final static long DEFAULT_BATTERY_READ_PERIOD = 20000;
 
-    public final static int DEFAULT_MAX_SCAN_DURATION_IN_MILLIS = 40000;
-    public final static int DEFAULT_MAX_CONNECTION_DURATION_IN_MILLIS = 40000;
+    public final static int DEFAULT_MAX_SCAN_DURATION_IN_MILLIS = 30000;
+    public final static int DEFAULT_MAX_CONNECTION_DURATION_IN_MILLIS = 30000;
 
     // MELOMIND & VPRO FEATURES
     public static final String MELOMIND_DEVICE_NAME_PREFIX = "melo_";
+    public static final String A2DP_DEVICE_NAME_PREFIX = "audio_";
+    public static final String A2DP_DEVICE_NAME_PREFIX_LEGACY = "melo_";
     public static final String VPRO_DEVICE_NAME_PREFIX = "VPro";
 
-    public static final String MELOMIND_DEVICE_NAME = "Melomind";
-    public static final String VPRO_DEVICE_NAME = "VPro";
+    public static final String MELOMIND_DEVICE_NAME = "melomind";
+    public static final String VPRO_DEVICE_NAME = "vpro";
     public static final String ALL_DEVICE_NAME = "All";
 
     public final static int MELOMIND_NB_CHANNELS = 2;
@@ -61,6 +62,7 @@ public final class MbtFeatures{
     public final static int DEFAULT_BLE_NB_STATUS_BYTES = 0;
     public final static int DEFAULT_SPP_NB_STATUS_BYTES = 3;
     private static int nbStatusBytes = -1;
+    private static int samplePerNotif = DEFAULT_SAMPLE_PER_NOTIF;
 
     public static final int DEFAULT_MAX_PENDING_RAW_DATA_BUFFER_SIZE = 40;
 
@@ -90,33 +92,28 @@ public final class MbtFeatures{
     public final static ArrayList<MbtAcquisitionLocations> VPRO_GROUNDS = new ArrayList<>();//init values with server data
 
     public static final int DEFAULT_NUMBER_OF_DATA_TO_DISPLAY = 500;
-    public static int getNbChannels(){
-        return (MbtConfig.getScannableDevices().equals(MELOMIND) ? MELOMIND_NB_CHANNELS : VPRO_NB_CHANNELS);
+    public static int getNbChannels(MbtDeviceType device){
+        return (device.equals(MELOMIND) ? MELOMIND_NB_CHANNELS : VPRO_NB_CHANNELS);
     }
 
     @NonNull
-    public static String getDeviceName(){
-        return (MbtConfig.getScannableDevices().equals(MELOMIND) ? MELOMIND_DEVICE_NAME : VPRO_DEVICE_NAME);
+    public static String getDeviceName(MbtDeviceType device){
+        return (device.equals(MELOMIND) ? MELOMIND_DEVICE_NAME : VPRO_DEVICE_NAME);
     }
 
     @NonNull
-    public static BtProtocol getBluetoothProtocol(){
-        return (MbtConfig.getScannableDevices().equals(MELOMIND) ? BLUETOOTH_LE : BLUETOOTH_SPP);
+    public static ArrayList<MbtAcquisitionLocations> getLocations(MbtDeviceType device){
+        return (device.equals(BLUETOOTH_LE) ? MELOMIND_LOCATIONS : VPRO_LOCATIONS);
     }
 
     @NonNull
-    public static ArrayList<MbtAcquisitionLocations> getLocations(){
-        return (MbtConfig.getScannableDevices().equals(MELOMIND) ? MELOMIND_LOCATIONS : VPRO_LOCATIONS);
+    public static ArrayList<MbtAcquisitionLocations> getReferences(MbtDeviceType device){
+        return (device.equals(BLUETOOTH_LE) ? MELOMIND_REFERENCES : VPRO_REFERENCES);
     }
 
     @NonNull
-    public static ArrayList<MbtAcquisitionLocations> getReferences(){
-        return (MbtConfig.getScannableDevices().equals(MELOMIND) ? MELOMIND_REFERENCES : VPRO_REFERENCES);
-    }
-
-    @NonNull
-    public static ArrayList<MbtAcquisitionLocations> getGrounds(){
-        return (MbtConfig.getScannableDevices().equals(MELOMIND) ? MELOMIND_GROUNDS : VPRO_GROUNDS);
+    public static ArrayList<MbtAcquisitionLocations> getGrounds(MbtDeviceType device){
+        return (device.equals(MELOMIND) ? MELOMIND_GROUNDS : VPRO_GROUNDS);
     }
 
     public static int getSampleRate() {
@@ -127,53 +124,68 @@ public final class MbtFeatures{
      * Gets the number of bytes for a EEG raw data in case the Bluetooth protocol used is Bluetooth Low Energy
      * @return the number of bytes for a EEG raw data in case the Bluetooth protocol used is Bluetooth Low Energy
      */
-    public static int getEEGByteSize() {
-        return (MbtConfig.getScannableDevices().equals(MELOMIND) ? DEFAULT_BLE_NB_BYTES : DEFAULT_SPP_NB_BYTES);
+    public static int getEEGByteSize(BtProtocol protocol) {
+        return (protocol.equals(BLUETOOTH_LE) ? DEFAULT_BLE_NB_BYTES : DEFAULT_SPP_NB_BYTES);
     }
 
     /**
      * Gets the raw data packet size
      * @return the raw data packet size
      */
-    public static int getRawDataPacketSize() {
+    public static int getRawDataPacketSize(BtProtocol protocol) {
         if(packetSize == -1)
-            packetSize = (MbtConfig.getScannableDevices().equals(MELOMIND))? DEFAULT_BLE_RAW_DATA_PACKET_SIZE : DEFAULT_SPP_RAW_DATA_PACKET_SIZE;
+            packetSize = (protocol.equals(BLUETOOTH_LE))? DEFAULT_BLE_RAW_DATA_PACKET_SIZE : DEFAULT_SPP_RAW_DATA_PACKET_SIZE;
         return packetSize;
     }
 
+
+    public static void setPacketSize(BtProtocol protocol, int samplePerNotif) {
+        MbtFeatures.packetSize = samplePerNotif * (protocol.equals(BLUETOOTH_LE) ?
+                DEFAULT_BLE_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES : DEFAULT_SPP_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES);
+    }
 
     /**
      * Gets the raw data buffer size
      * @return the raw data buffer size
      */
-    public static int getRawDataBufferSize() {
-        return (MbtConfig.getScannableDevices().equals(MELOMIND))? DEFAULT_BLE_RAW_DATA_BUFFER_SIZE : DEFAULT_SPP_RAW_DATA_BUFFER_SIZE;
+    public static int getRawDataBufferSize(BtProtocol protocol) {
+        return (protocol.equals(BLUETOOTH_LE))? DEFAULT_BLE_RAW_DATA_BUFFER_SIZE : DEFAULT_SPP_RAW_DATA_BUFFER_SIZE;
     }
 
     /**
      * Gets the raw data index size
      * @return the raw data index size
      */
-    public static int getRawDataIndexSize() {
-        return (MbtConfig.getScannableDevices().equals(MELOMIND))? DEFAULT_BLE_RAW_DATA_INDEX_SIZE : DEFAULT_SPP_RAW_DATA_INDEX_SIZE;
+    public static int getRawDataIndexSize(BtProtocol protocol) {
+        return (protocol.equals(BLUETOOTH_LE))? DEFAULT_BLE_RAW_DATA_INDEX_SIZE : DEFAULT_SPP_RAW_DATA_INDEX_SIZE;
     }
 
     /**
      * Gets the number of bytes of a EEG raw data per whole channels samples
      * @return the number of bytes of a EEG raw data per whole channels samples
      */
-    public static int getRawDataBytesPerWholeChannelsSamples() {
-        return (MbtConfig.getScannableDevices().equals(MELOMIND))? DEFAULT_BLE_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES : DEFAULT_SPP_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES;
+    public static int getRawDataBytesPerWholeChannelsSamples(BtProtocol protocol) {
+        return (protocol.equals(BLUETOOTH_LE))? DEFAULT_BLE_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES : DEFAULT_SPP_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES;
     }
 
     /**
      * Gets the number of bytes corresponding to one status data
      * @return the number of bytes corresponding to one status data
      */
-    public static int getNbStatusBytes() {
+    public static int getNbStatusBytes(BtProtocol protocol) {
         if(nbStatusBytes == -1)
-            nbStatusBytes = (MbtConfig.getScannableDevices().equals(MELOMIND))? DEFAULT_BLE_NB_STATUS_BYTES : DEFAULT_SPP_NB_STATUS_BYTES;
+            nbStatusBytes = (protocol.equals(BLUETOOTH_LE))? DEFAULT_BLE_NB_STATUS_BYTES : DEFAULT_SPP_NB_STATUS_BYTES;
         return nbStatusBytes;
+    }
+
+    public static void setSamplePerNotif(int samplePerNotif) {
+        MbtFeatures.samplePerNotif = samplePerNotif;
+    }
+
+
+
+    public static void setNbStatusBytes(int nbStatusBytes) {
+        MbtFeatures.nbStatusBytes = nbStatusBytes;
     }
 
     /**
@@ -199,4 +211,5 @@ public final class MbtFeatures{
     public static int getSamplePerNotification() {
         return DEFAULT_SAMPLE_PER_NOTIF;
     }
+
 }

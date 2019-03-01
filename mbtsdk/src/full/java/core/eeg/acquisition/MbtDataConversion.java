@@ -5,8 +5,10 @@ import android.util.Log;
 
 import java.util.ArrayList;
 
+import config.AmpGainConfig;
 import core.bluetooth.BtProtocol;
 import core.eeg.storage.RawEEGSample;
+import features.MbtDeviceType;
 import features.MbtFeatures;
 
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
@@ -20,7 +22,7 @@ import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
 public class MbtDataConversion {
     private static final String TAG = MbtDataConversion.class.getName();
 
-    private static int EEG_AMP_GAIN = 8;
+    public static int EEG_AMP_GAIN = 8;
     private static final short SHIFT_BLE = 8 + 4; //mandatory 8 to switch from 24 bits to 32 bits + variable part which fits fw config
     private static final short SHIFT_DC_OFFSET = 16;
     private static final int CHECK_SIGN_BLE = (int) (0x80 << SHIFT_BLE);
@@ -58,7 +60,7 @@ public class MbtDataConversion {
 
             if(singleRawEEGdata.getBytesEEG() == null){
 
-                for (int nbChannel = 0 ; nbChannel < MbtFeatures.getNbChannels() ; nbChannel++){
+                for (int nbChannel = 0; nbChannel < MbtFeatures.getNbChannels(protocol.equals(BLUETOOTH_LE) ? MbtDeviceType.MELOMIND : MbtDeviceType.VPRO) ; nbChannel++){
                     consolidatedEEGSample.add(Float.NaN); //... fill the EEG data matrix with a NaN value for
                 }
             }else{
@@ -94,5 +96,11 @@ public class MbtDataConversion {
         }
 
         return digit * VOLTAGE_BLE;
+    }
+
+    public static void setGain(byte gain){
+        int gainValue = AmpGainConfig.getGainFromByteValue(gain);
+        if (gainValue != 0)
+            EEG_AMP_GAIN = gain;
     }
 }

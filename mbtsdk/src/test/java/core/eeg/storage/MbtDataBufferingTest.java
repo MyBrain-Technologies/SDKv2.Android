@@ -2,15 +2,12 @@ package core.eeg.storage;
 
 import android.content.Context;
 
-import com.ibm.icu.text.ArabicShaping;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -161,7 +158,7 @@ public class MbtDataBufferingTest {
         assertFalse(buffering.getPendingRawData().isEmpty());
 
         long timestamp = System.currentTimeMillis();
-        buffering.reinitBuffers();
+        buffering.resetBuffers();
         assertTrue(buffering.getPendingRawData().isEmpty());
         assertTrue(buffering.getTestMbtEEGPacketsBuffer().isEmpty());
         assertTrue(buffering.getTestMbtEEGPacketsBuffer().getTimeStamp() == timestamp);

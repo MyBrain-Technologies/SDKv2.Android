@@ -6,7 +6,7 @@ import core.device.DCOffsets;
 import core.device.SaturationEvent;
 
 @Keep
-public interface DeviceStatusListener<U extends BaseException> extends BaseErrorEvent<U>{
+public interface DeviceStatusListener<U extends BaseError> extends BaseErrorEvent<U>{
         /**
          * Callback indicating that the headset has entered in a new saturation state
          * @param saturation the new measured state.
