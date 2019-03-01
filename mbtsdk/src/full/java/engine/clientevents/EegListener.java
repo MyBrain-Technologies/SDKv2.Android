@@ -4,7 +4,6 @@ package engine.clientevents;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 
-import java.util.ArrayList;
 
 import core.eeg.storage.MbtEEGPacket;
 
@@ -14,7 +13,7 @@ import core.eeg.storage.MbtEEGPacket;
  * @param <U>
  */
 @Keep
-public interface EegListener<U extends BaseException> extends BaseErrorEvent<U>{
+public interface EegListener<U extends BaseError> extends BaseErrorEvent<U>{
 
     /**
      * Callback triggered when the input eeg buffer is full, ie when raw buffer contains enough data to compute a new MBTEEGPacket.

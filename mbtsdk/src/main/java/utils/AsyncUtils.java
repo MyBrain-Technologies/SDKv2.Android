@@ -19,7 +19,7 @@ import java.util.concurrent.RejectedExecutionException;
 public final class AsyncUtils {
     private final static ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
             //Executors.newCachedThreadPool();
-    private final static String TAG = "AsyncUtils";
+    private final static String TAG = AsyncUtils.class.getName();;
 
     /**
      * Execute the given runnable in a threadpool internally managed by a <code>ExecutorService</code>

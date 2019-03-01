@@ -117,7 +117,7 @@ public class MbtDataBuffering {
      * Reconfigures the temporary buffers that are used to store the raw EEG data until conversion to user-readable EEG data.
      * Reset the buffers, status and packet size
      */
-    public void reinitBuffers(){
+    public void resetBuffers(){
 
         pendingRawData.clear(); //init the buffer that we will use for handle/convert EEG raw data //TODO see if mandatory to reinit this buffer
         mbtEEGPacketsBuffer = new MbtEEGPacket();

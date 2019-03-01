@@ -229,7 +229,7 @@ extends java.lang.Object</pre>
 </tr>
 <tr id="i15" class="rowColor">
 <td class="colFirst"><code>java.util.concurrent.Future&lt;android.bluetooth.BluetoothDevice&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../core/bluetooth/MbtBluetoothManager.html#scanSingle-java.lang.String-">scanSingle</a></span>(java.lang.String&nbsp;deviceName)</code>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../core/bluetooth/MbtBluetoothManager.html#scanSingle-java.lang.String-">scanSingle</a></span>(java.lang.String&nbsp;nameOfDeviceRequested)</code>
 <div class="block">Start scanning a single device by filtering on its name.</div>
 </td>
 </tr>
@@ -320,11 +320,11 @@ extends java.lang.Object</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>scanSingle</h4>
-<pre>public&nbsp;java.util.concurrent.Future&lt;android.bluetooth.BluetoothDevice&gt;&nbsp;scanSingle(java.lang.String&nbsp;deviceName)</pre>
+<pre>public&nbsp;java.util.concurrent.Future&lt;android.bluetooth.BluetoothDevice&gt;&nbsp;scanSingle(java.lang.String&nbsp;nameOfDeviceRequested)</pre>
 <div class="block">Start scanning a single device by filtering on its name. This method is asynchronous</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>deviceName</code> - The broadcasting name of the device to scan</dd>
+<dd><code>nameOfDeviceRequested</code> - The broadcasting name of the device to scan</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>a <code>Future</code> object holding the <code>BluetoothDevice</code> instance of the device to scan.</dd>
 </dl>
