@@ -4,7 +4,9 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import config.DeviceConfig;
 import core.eeg.storage.MbtEEGPacket;
+import engine.clientevents.BaseError;
 import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.EEGException;
 import engine.clientevents.EegListener;
@@ -25,35 +27,34 @@ public final class StreamConfig {
 
     //private final DeviceConfig deviceConfig; Will be used in future release
 
-    private final EegListener<EEGException> eegListener;
-
-    private final DeviceStatusListener deviceStatusListener;
+    private final EegListener<BaseError> eegListener;
 
     private final boolean computeQualities;
 
-    private StreamConfig(boolean computeQualities, EegListener<EEGException> eegListener, int notificationPeriod, DeviceStatusListener deviceStatusListener){
+    private DeviceConfig deviceConfig;
+
+    private StreamConfig(boolean computeQualities, EegListener<BaseError> eegListener, int notificationPeriod, DeviceConfig deviceConfig){
         this.computeQualities = computeQualities;
         this.eegListener = eegListener;
         this.notificationPeriod = notificationPeriod;
-        this.deviceStatusListener = deviceStatusListener;
+        this.deviceConfig = deviceConfig;
     }
 
-    public DeviceStatusListener getDeviceStatusListener() {
-        return deviceStatusListener;
-    }
-
-    public EegListener getEegListener() {
+    EegListener getEegListener() {
         return eegListener;
     }
 
-    public int getNotificationPeriod() {
+    int getNotificationPeriod() {
         return notificationPeriod;
     }
 
-    public boolean shouldComputeQualities() {
+    boolean shouldComputeQualities() {
         return computeQualities;
     }
 
+    DeviceConfig getDeviceConfig() {
+        return deviceConfig;
+    }
 
     /**
      * Builder class to ease construction of the {@link StreamConfig} instance.
@@ -63,19 +64,18 @@ public final class StreamConfig {
         //long streamDuration = -1L;
         private int notificationPeriod = MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD;
 
-        @Nullable
-        private DeviceStatusListener deviceStatusListener = null;
         @NonNull
-        private final EegListener<EEGException> eegListener;
+        private final EegListener<BaseError> eegListener;
 
         private boolean computeQualities = false;
+
+        private DeviceConfig deviceConfig = null;
 
 
         /**
          * The eeg Listener is mandatory.
-         * @param eegListener
          */
-        public Builder(@NonNull EegListener<EEGException> eegListener){
+        public Builder(@NonNull EegListener<BaseError> eegListener){
             this.eegListener = eegListener;
         }
 
@@ -97,6 +97,11 @@ public final class StreamConfig {
          */
         public Builder useQualities(boolean useQualities){
             this.computeQualities = useQualities;
+            return this;
+        }
+
+        public Builder configureHeadset(DeviceConfig deviceConfig){
+            this.deviceConfig = deviceConfig;
             return this;
         }
 
@@ -122,24 +127,9 @@ public final class StreamConfig {
             return this;
         }
 
-        /**
-         * Use this method if you want to monitor headset's electrodes saturation and eeg offset.
-         * Set it to null if unnecesary.
-         *
-         * <p>It is by default set to NULL</p>
-         *
-         * @param deviceStatusListener the device status listener
-         * @return the device instance
-         */
-        @NonNull
-        public Builder addSaturationAndOffsetListener(@Nullable DeviceStatusListener deviceStatusListener){
-            this.deviceStatusListener = deviceStatusListener;
-            return this;
-        }
-
         @Nullable
         public StreamConfig create(){
-            return new StreamConfig(this.computeQualities, this.eegListener, this.notificationPeriod, this.deviceStatusListener);
+            return new StreamConfig(this.computeQualities, this.eegListener, this.notificationPeriod, this.deviceConfig);
         }
     }
 

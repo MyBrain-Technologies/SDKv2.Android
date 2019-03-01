@@ -15,7 +15,6 @@ import core.eeg.acquisition.MbtDataConversion;
 import core.eeg.signalprocessing.ContextSP;
 import core.eeg.signalprocessing.MBTSignalQualityChecker;
 import features.MbtFeatures;
-import features.ScannableDevices;
 import mbtsdk.com.mybraintech.mbtsdk.BuildConfig;
 import utils.MatrixUtils;
 

@@ -1,12 +1,10 @@
 package com.mybraintech.app_things;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -14,75 +12,72 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.Switch;
 import android.widget.Toast;
 
 import java.util.ArrayList;
 
-import core.bluetooth.BtState;
 import engine.ConnectionConfig;
 import engine.MbtClient;
-import engine.clientevents.ConnectionException;
+import engine.clientevents.BaseError;
 import engine.clientevents.ConnectionStateListener;
 import features.MbtFeatures;
 import mbtsdk.com.mybraintech.sdkv2.R;
 
 import static features.MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX;
 import static features.MbtFeatures.VPRO_DEVICE_NAME_PREFIX;
-import static features.ScannableDevices.MELOMIND;
-import static features.ScannableDevices.VPRO;
+import static features.MbtDeviceType.MELOMIND;
+import static features.MbtDeviceType.VPRO;
 
 public class HomeActivity extends AppCompatActivity{
 
     private static String TAG = HomeActivity.class.getName();
-    private final static int SCAN_DURATION = 30000;
+    /**
+     * Duration to find a headset
+     */
+    private final static int SCAN_DURATION = 20000;
+
     public final static String DEVICE_NAME = "DEVICE_NAME";
-    public final static String BT_STATE = "BT_STATE";
+    public final static String BLUETOOTH_STATE = "BLUETOOTH_STATE";
 
     private MbtClient client;
 
     private EditText deviceNameField;
     private String deviceName;
 
+    private Switch connectAudioSwitch;
+    private boolean connectAudioIfDeviceCompatible = false;
+
     private Spinner devicePrefixSpinner;
     private String devicePrefix;
 
     private Button scanButton;
 
-    private boolean isScanning = false;
+    private boolean isCancelled = false;
 
     private Toast toast;
 
-    private ConnectionStateListener<ConnectionException> connectionStateListener = new ConnectionStateListener<ConnectionException>() {
+    private ConnectionStateListener connectionStateListener = new ConnectionStateListener() {
         @Override
-        public void onStateChanged(@NonNull BtState newState) {
-            Log.i(TAG, "Current state updated "+newState);
-
-            if (newState.equals(BtState.CONNECTING) ) {
-                    notifyUser("Connecting to ' " + deviceName +" '");
-                }if (newState.equals(BtState.CONNECTED) ) {
-                //notifyUser("Device ' " + deviceName + " ' connected but not ready. Please be patient");
-            }else if (newState.equals(BtState.CONNECTED_AND_READY) ){
-                deinitCurrentActivity(newState);
-            }else if (newState.equals(BtState.SCAN_TIMEOUT)||(newState.equals(BtState.CONNECT_FAILURE))){
-                notifyUser(getString(R.string.connect_failed) + " "+ deviceName);
-                updateScanning(false);
-                }else if (newState.equals(BtState.SCAN_STARTED)){
-                    notifyUser(getString(R.string.connect_in_progress));
-                    updateScanning(true);
-                }else if (newState.equals(BtState.DISCONNECTED)){
-                    notifyUser(getString(R.string.disconnected_headset));
-                    updateScanning(false);
-                }else if (newState.equals(BtState.INTERRUPTED))
-                    updateScanning(false);
-            //}
-
+        public void onError(BaseError error, String additionnalInfo) {
+            Log.e(TAG, "onError received "+error.getMessage()+ (additionnalInfo != null ? additionnalInfo : ""));
+            updateScanning(false);
+            toast = Toast.makeText(HomeActivity.this, error.getMessage(), Toast.LENGTH_LONG);
+            toast.show();
         }
 
         @Override
-        public void onError(ConnectionException exception) {
-            notifyUser(exception.toString());
-            updateScanning(false);
-            exception.printStackTrace();
+        public void onDeviceConnected() {
+            toast.cancel();
+            deinitCurrentActivity(true);
+        }
+
+        @Override
+        public void onDeviceDisconnected() {
+            if(!toast.getView().isShown())
+                notifyUser(getString(R.string.no_connected_headset));
+            if(isCancelled)
+                updateScanning(false);
         }
     };
 
@@ -91,12 +86,18 @@ public class HomeActivity extends AppCompatActivity{
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
         initToolBar();
-        toast= Toast.makeText(HomeActivity.this, "", Toast.LENGTH_SHORT);
+        toast = Toast.makeText(HomeActivity.this, "", Toast.LENGTH_LONG);
         client = MbtClient.getClientInstance();
+        isCancelled = false;
 
         initDeviceNameField();
+        initConnectAudioSwitch();
         initScanButton();
         initDevicePrefix();
+    }
+
+    private void initConnectAudioSwitch() {
+        connectAudioSwitch = findViewById(R.id.connectAudio);
     }
 
     private void initDevicePrefix() {
@@ -122,35 +123,32 @@ public class HomeActivity extends AppCompatActivity{
         scanButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                notifyUser(getString(R.string.scan_in_progress));
                 devicePrefix = String.valueOf(devicePrefixSpinner.getSelectedItem()); //get the prefix chosed by the user in the Spinner
                 deviceName = devicePrefix+deviceNameField.getText().toString(); //get the name entered by the user in the EditText
-                if(isScanning){ //Scan in progress : a second click means that the user is trying to cancel the scan
-                   cancelScan();
+                connectAudioIfDeviceCompatible = connectAudioSwitch.isChecked();
+                if(isCancelled){ //Scan in progress : a second click means that the user is trying to cancel the scan
+                    cancelScan();
                 }else{ // Scan is not in progress : starting a new scan in order to connect to a Mbt Device
                     startScan();
                 }
+                updateScanning(!isCancelled);
+
             }
         });
     }
 
 
     private void startScan() {
+        client.connectBluetooth(new ConnectionConfig.Builder(connectionStateListener)
+                .deviceName(
+                        ((deviceName != null) && (deviceName.equals(MELOMIND_DEVICE_NAME_PREFIX) || deviceName.equals(VPRO_DEVICE_NAME_PREFIX)) ) ? //if no no name has been entered by the user, the default device name is the headset prefix
+                                null : deviceName ) //null is given in parameters if no name has been entered by the user
+                .maxScanDuration(SCAN_DURATION)
+                .scanDeviceType(isMelomindDevice() ? MELOMIND : VPRO)
+                .connectAudioIfDeviceCompatible(connectAudioIfDeviceCompatible)
+                .create());
 
-        if(deviceName != null && (deviceName.equals(MELOMIND_DEVICE_NAME_PREFIX) || deviceName.equals(VPRO_DEVICE_NAME_PREFIX)) ){ //no name entered by the user
-            //findAvailableDevice();
-            client.connectBluetooth(new ConnectionConfig.Builder(connectionStateListener)
-                    .deviceName(null)
-                    .maxScanDuration(SCAN_DURATION)
-                    .scanDeviceType(isMelomindDevice() ? MELOMIND : VPRO)
-                    .create());
-        }else{ //the user entered a name
-                client.connectBluetooth(new ConnectionConfig.Builder(connectionStateListener)
-                        .deviceName(deviceName)
-                        .maxScanDuration(SCAN_DURATION)
-                        .scanDeviceType(isMelomindDevice() ? MELOMIND : VPRO)
-                        .create());
-
-        }
     }
 
     private void findAvailableDevice() {
@@ -170,14 +168,16 @@ public class HomeActivity extends AppCompatActivity{
      * Updates the scanning state boolean and the Scan button text
      * The Scan button text is changed into into "Cancel" if scanning is launched
      * or into "Find a device" if scanning is cancelled
-     * @param newIsScanning
+     * @param newIsCancelled
      */
-    private void updateScanning(boolean newIsScanning){
-        isScanning = newIsScanning;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            scanButton.setBackgroundColor((isScanning ? Color.LTGRAY : getColor(R.color.light_blue)));
-        }
-        scanButton.setText((isScanning ? R.string.cancel : R.string.scan));
+    private void updateScanning(boolean newIsCancelled){
+        isCancelled = newIsCancelled;
+        if(!isCancelled)
+            toast.cancel();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+            scanButton.setBackgroundColor((isCancelled ? Color.LTGRAY : getColor(R.color.light_blue)));
+
+        scanButton.setText((isCancelled ? R.string.cancel : R.string.scan));
     }
 
     /**
@@ -205,7 +205,7 @@ public class HomeActivity extends AppCompatActivity{
 
     @Override
     public void onBackPressed() {
-        this.connectionStateListener = null;
+        connectionStateListener = null;
     }
 
     private void initToolBar(){
@@ -216,11 +216,11 @@ public class HomeActivity extends AppCompatActivity{
         }
     }
 
-    private void deinitCurrentActivity(BtState newState){
+    private void deinitCurrentActivity(boolean isConnected){
         connectionStateListener = null;
         final Intent intent = new Intent(HomeActivity.this, DeviceActivity.class);
         intent.putExtra(DEVICE_NAME, deviceName);
-        intent.putExtra(BT_STATE, newState);
+        intent.putExtra(BLUETOOTH_STATE, isConnected);
         startActivity(intent);
         finish();
     }

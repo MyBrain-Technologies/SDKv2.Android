@@ -25,8 +25,8 @@
     <string name="connect_failed">Impossible to connect to </string>
     <string name="disconnect_failed">Impossible to disconnect from </string>
     <string name="wrong_device_name">Wrong name : must contains 10 digits </string>
+    <string name="no_connected_headset">No connected headset</string>
     <string name="disconnected_headset">The headset have been disconnected </string>
-
     <string name="title_graph_eeg">Your signal </string>
 
     <string name="channel_1_qc">Channel 1 Quality : </string>

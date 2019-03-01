@@ -2,7 +2,6 @@ package core.eeg;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
-import android.util.Log;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.greenrobot.eventbus.Subscribe;
@@ -12,11 +11,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import config.AmpGainConfig;
 import core.BaseModuleManager;
 import core.MbtManager;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.IStreamable;
 import core.bluetooth.requests.StreamRequestEvent;
+import core.device.model.MbtDevice;
 import core.eeg.acquisition.MbtDataAcquisition;
 import core.eeg.signalprocessing.ContextSP;
 import core.eeg.signalprocessing.MBTCalibrationParameters;
@@ -30,7 +31,9 @@ import core.eeg.storage.RawEEGSample;
 import eventbus.EventBusManager;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.BluetoothEEGEvent;
+import eventbus.events.ConfigEEGEvent;
 import features.MbtFeatures;
+import features.MbtDeviceType;
 import mbtsdk.com.mybraintech.mbtsdk.BuildConfig;
 import utils.AsyncUtils;
 import utils.LogUtils;
@@ -53,6 +56,7 @@ import utils.MatrixUtils;
 public final class MbtEEGManager extends BaseModuleManager {
 
     private static final String TAG = MbtEEGManager.class.getName();
+    private static final int UNCHANGED_VALUE = -1;
 
     private MbtDataAcquisition dataAcquisition;
     private MbtDataBuffering dataBuffering;
@@ -95,11 +99,18 @@ public final class MbtEEGManager extends BaseModuleManager {
      * Reconfigures the temporary buffers that are used to store the raw EEG data until conversion to user-readable EEG data.
      * Reset the buffers arrays, status list, the number of status bytes and the packet Size
      */
-    private void reinitBuffers() {
-        dataBuffering.reinitBuffers();
-        dataAcquisition.resetIndex();
-    }
+    private void resetBuffers(byte samplePerNotif, final int statusByteNb, byte gain) {
+        if(statusByteNb != UNCHANGED_VALUE)
+            MbtFeatures.setNbStatusBytes(statusByteNb);
 
+        if(samplePerNotif != UNCHANGED_VALUE) {
+            MbtFeatures.setPacketSize(protocol, samplePerNotif);
+            MbtFeatures.setSamplePerNotif(samplePerNotif);
+        }
+        dataBuffering.resetBuffers();
+        dataAcquisition.resetIndex();
+        MbtDataConversion.setGain(gain);
+    }
 
     /**
      * Convert the raw EEG data array into a readable EEG data matrix of float values
@@ -113,8 +124,6 @@ public final class MbtEEGManager extends BaseModuleManager {
             @Override
             public void run() {
                 consolidatedEEG = new ArrayList<>();
-                LogUtils.i(TAG, "computing and sending to application");
-
                 ArrayList<Float> toDecodeStatus = new ArrayList<>();
                 for (RawEEGSample rawEEGSample : toDecodeRawEEG) {
                     if (rawEEGSample.getStatus() != null) {
@@ -258,6 +267,7 @@ public final class MbtEEGManager extends BaseModuleManager {
     @Subscribe(threadMode = ThreadMode.BACKGROUND)
     public void onEvent(BluetoothEEGEvent event) { //warning : this method is used
         dataAcquisition.handleDataAcquired(event.getData());
+        protocol = event.getDeviceType().getProtocol();
     }
 
     /**
@@ -267,7 +277,7 @@ public final class MbtEEGManager extends BaseModuleManager {
     @Subscribe(threadMode = ThreadMode.POSTING)
     public void onStreamStateChanged(IStreamable.StreamState newState) {
         if (newState == IStreamable.StreamState.STOPPED)
-            reinitBuffers();
+            resetBuffers((byte) UNCHANGED_VALUE, UNCHANGED_VALUE, (byte) 0);
     }
 
     @Subscribe
@@ -281,6 +291,12 @@ public final class MbtEEGManager extends BaseModuleManager {
 
     }
 
+    @Subscribe
+    public void onConfigurationChanged(ConfigEEGEvent configEEGEvent){
+        LogUtils.d(TAG, "new config "+ (Arrays.toString(configEEGEvent.getConfig())));
+        MbtDevice.InternalConfig internalConfig = new MbtDevice.InternalConfig(configEEGEvent.getConfig());
+        resetBuffers(internalConfig.getNbPackets(), internalConfig.getStatusBytes(), internalConfig.getGainValue());
+    }
 
 //    /**
 //     * Add the new {@link EegRequests} to the handler thread that will execute tasks one after another

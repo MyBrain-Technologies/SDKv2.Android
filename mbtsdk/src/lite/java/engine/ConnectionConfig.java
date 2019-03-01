@@ -7,7 +7,6 @@ import android.support.annotation.Nullable;
 import engine.clientevents.ConnectionException;
 import engine.clientevents.ConnectionStateListener;
 import features.MbtFeatures;
-import features.ScannableDevices;
 
 /**
  * This class aims at configuring the bluetooth connection to a myBrain device. It contains user configurable
@@ -26,16 +25,16 @@ public final class ConnectionConfig {
 
     private final boolean connectAudio;
 
-    private final ScannableDevices deviceType;
+    private final MbtDeviceType deviceType;
 
     private final ConnectionStateListener<ConnectionException> connectionStateListener;
 
-    private ConnectionConfig(String deviceName, int maxScanDuration, int connectionTimeout, boolean connectAudio, ScannableDevices deviceType, ConnectionStateListener<ConnectionException> connectionStateListener){
+    private ConnectionConfig(String deviceName, int maxScanDuration, int connectionTimeout, boolean connectAudio, MbtDeviceType deviceType, ConnectionStateListener<ConnectionException> connectionStateListener){
         this.deviceName = deviceName;
         this.maxScanDuration = maxScanDuration;
         this.connectionTimeout = connectionTimeout;
         this.deviceType = deviceType;
-        this.connectAudio = (deviceType == ScannableDevices.MELOMIND && connectAudio);
+        this.connectAudio = (deviceType == MbtDeviceType.MELOMIND && connectAudio);
         this.connectionStateListener = connectionStateListener;
     }
 
@@ -59,7 +58,7 @@ public final class ConnectionConfig {
         return connectAudio;
     }
 
-    public ScannableDevices getDeviceType() {
+    public MbtDeviceType getDeviceType() {
         return deviceType;
     }
 
@@ -77,7 +76,7 @@ public final class ConnectionConfig {
         private int maxScanDuration = MbtFeatures.DEFAULT_MAX_SCAN_DURATION_IN_MILLIS;
         private int connectionTimeout = MbtFeatures.DEFAULT_MAX_CONNECTION_DURATION_IN_MILLIS;
         private boolean connectAudio = false;
-        private ScannableDevices deviceType = ScannableDevices.ALL;
+        private MbtDeviceType deviceType = MbtDeviceType.ALL;
         @NonNull
         private final ConnectionStateListener<ConnectionException> connectionStateListener;
 
@@ -142,12 +141,12 @@ public final class ConnectionConfig {
 
         /**
          * Use this method to define which king of device you want to connect to.
-         * @see ScannableDevices
+         * @see MbtDeviceType
          * @param deviceType
          * @return the builder instance
          */
         @NonNull
-        public Builder scanDeviceType(ScannableDevices deviceType){
+        public Builder scanDeviceType(MbtDeviceType deviceType){
             this.deviceType = deviceType;
             return this;
         }

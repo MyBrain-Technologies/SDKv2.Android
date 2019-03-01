@@ -213,7 +213,7 @@ public final class MbtManager{
                 connectionStateListener.onError(new ConnectionException(ConnectionException.LE_SCAN_FAILURE));
                 break;
 
-            case CONNECT_FAILURE:
+            case CONNECTION_FAILURE:
                 connectionStateListener.onError(new ConnectionException(ConnectionException.CONNECTION_FAILURE));
                 break;
 
