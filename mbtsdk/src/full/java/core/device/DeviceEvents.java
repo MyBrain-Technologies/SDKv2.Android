@@ -42,20 +42,6 @@ public interface DeviceEvents {
         }
     }
 
-    public class NewBluetoothDeviceConnectedEvent {
-        @Nullable
-        private final BluetoothDevice device;
-
-        public NewBluetoothDeviceConnectedEvent(@Nullable BluetoothDevice device){
-            this.device = device;
-        }
-
-        @Nullable
-        public BluetoothDevice getDevice() {
-            return device;
-        }
-    }
-
     public class NewBluetoothDeviceEvent {
         @Nullable
         private final BluetoothDevice device;

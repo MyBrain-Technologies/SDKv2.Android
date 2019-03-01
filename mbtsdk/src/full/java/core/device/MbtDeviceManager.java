@@ -8,10 +8,8 @@ import android.util.Log;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
-import java.util.Arrays;
 import core.BaseModuleManager;
 import core.MbtManager;
-import core.bluetooth.BtProtocol;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindDevice;
 import core.device.model.VProDevice;
@@ -72,7 +70,6 @@ public class MbtDeviceManager extends BaseModuleManager{
 
     @Subscribe
     public void onNewDeviceConnected(DeviceEvents.NewBluetoothDeviceEvent deviceEvent) {
-        LogUtils.d(TAG, "new device "+ (deviceEvent.getDevice() != null ? "scanned" : " null"));
         if (deviceEvent.getDeviceType().equals(MELOMIND))
             setmCurrentConnectedDevice(deviceEvent.getDevice() != null ? new MelomindDevice(deviceEvent.getDevice()) : null);
         else if (deviceEvent.getDeviceType().equals(MbtDeviceType.VPRO))
@@ -80,14 +77,7 @@ public class MbtDeviceManager extends BaseModuleManager{
     }
 
     @Subscribe
-    public void onNewDeviceConnected(DeviceEvents.NewBluetoothDeviceConnectedEvent deviceEvent){
-        LogUtils.d(TAG, "new device "+ (deviceEvent.getDevice() != null ? "connected" : "disconnected"));
-
-    }
-
-    @Subscribe
     public void onNewDeviceConfiguration(ConfigEEGEvent configEEGEvent){
-        LogUtils.d(TAG, "new config "+ (Arrays.toString(configEEGEvent.getConfig())));
         this.mCurrentConnectedDevice.setInternalConfig(new MbtDevice.InternalConfig(configEEGEvent.getConfig()));
     }
 
@@ -100,7 +90,6 @@ public class MbtDeviceManager extends BaseModuleManager{
             switch(event.getInfotype()){
                 case BATTERY:
                     LogUtils.d(TAG, "received " + event.getInfo() + " for battery level");
-
                     break;
                 case FW_VERSION:
                     if(event.getInfo() != null)

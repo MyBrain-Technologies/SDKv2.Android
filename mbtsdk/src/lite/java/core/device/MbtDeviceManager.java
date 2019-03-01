@@ -1,37 +1,38 @@
 package core.device;
 
-import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.util.Log;
 
 
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
-import config.MbtConfig;
 import core.BaseModuleManager;
 import core.MbtManager;
-import core.bluetooth.BtProtocol;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindDevice;
 import core.device.model.VProDevice;
 import core.eeg.acquisition.MbtDataConversion;
+import core.oad.OADFileManager;
 import eventbus.EventBusManager;
+import eventbus.events.ConfigEEGEvent;
 import eventbus.events.DeviceInfoEvent;
+import features.MbtDeviceType;
 import utils.LogUtils;
+
+import static features.MbtDeviceType.MELOMIND;
 
 
 public class MbtDeviceManager extends BaseModuleManager{
 
     private static final String TAG = MbtDeviceManager.class.getSimpleName();
-    private BtProtocol protocol;
 
-    private MbtDevice mCurrentDevice;
+    private MbtDevice mCurrentConnectedDevice;
 
-    public MbtDeviceManager(Context context, MbtManager mbtManagerController, BtProtocol protocol){
+    public MbtDeviceManager(Context context, MbtManager mbtManagerController){
         super(context, mbtManagerController);
         this.mContext = context;
-        this.protocol = protocol;
     }
 
 
@@ -59,52 +60,136 @@ public class MbtDeviceManager extends BaseModuleManager{
     }
 
 
-    public MbtDevice getmCurrentDevice() {
-        return mCurrentDevice;
+    private MbtDevice getmCurrentConnectedDevice() {
+        return mCurrentConnectedDevice;
     }
 
-    public void setmCurrentDevice(MbtDevice mCurrentDevice) {
-        this.mCurrentDevice = mCurrentDevice;
+    private void setmCurrentConnectedDevice(MbtDevice mCurrentConnectedDevice) {
+        this.mCurrentConnectedDevice = mCurrentConnectedDevice;
     }
 
     @Subscribe
-    public void onNewDeviceConnected(DeviceEvents.NewBluetoothDeviceEvent device){
-        LogUtils.d(TAG, "new device connected");
-        if(MbtConfig.getDeviceType() == MbtDeviceType.MELOMIND)
-            setmCurrentDevice(device.getDevice() != null ? new MelomindDevice(device.getDevice()) : null);
-        else if(MbtConfig.getDeviceType() == MbtDeviceType.VPRO)
-            setmCurrentDevice(device.getDevice() != null ? new VProDevice(device.getDevice()) : null);
+    public void onNewDeviceConnected(DeviceEvents.NewBluetoothDeviceEvent deviceEvent) {
+        if (deviceEvent.getDeviceType().equals(MELOMIND))
+            setmCurrentConnectedDevice(deviceEvent.getDevice() != null ? new MelomindDevice(deviceEvent.getDevice()) : null);
+        else if (deviceEvent.getDeviceType().equals(MbtDeviceType.VPRO))
+            setmCurrentConnectedDevice(deviceEvent.getDevice() != null ? new VProDevice(deviceEvent.getDevice()) : null);
+    }
+
+    @Subscribe
+    public void onNewDeviceConfiguration(ConfigEEGEvent configEEGEvent){
+        this.mCurrentConnectedDevice.setInternalConfig(new MbtDevice.InternalConfig(configEEGEvent.getConfig()));
     }
 
     /**
      * Called when a new device info event has been broadcast on the event bus.
-     * @param event
      */
     @Subscribe(threadMode = ThreadMode.POSTING)
     public void onDeviceInfoEvent(DeviceInfoEvent event){
-        switch(event.getInfotype()){
-            case BATTERY:
-                LogUtils.d(TAG, "received" + (String) event.getInfo() + " for battery level");
-                break;
-            case FW_VERSION:
-                if(event.getInfo() != null)
-                    mCurrentDevice.setFirmwareVersion((String) event.getInfo());
-                break;
-            case HW_VERSION:
-                if(event.getInfo() != null)
-                    mCurrentDevice.setHardwareVersion((String) event.getInfo());
-                break;
-            case SERIAL_NUMBER:
-                if(event.getInfo() != null)
-                    mCurrentDevice.setSerialNumber((String) event.getInfo());
-                break;
+        if(mCurrentConnectedDevice != null){
+            switch(event.getInfotype()){
+                case BATTERY:
+                    LogUtils.d(TAG, "received " + event.getInfo() + " for battery level");
+                    break;
+                case FW_VERSION:
+                    if(event.getInfo() != null)
+                        mCurrentConnectedDevice.setFirmwareVersion((String) event.getInfo());
+                    break;
+                case HW_VERSION:
+                    if(event.getInfo() != null)
+                        mCurrentConnectedDevice.setHardwareVersion((String) event.getInfo());
+                    break;
+                case SERIAL_NUMBER:
+                    if(event.getInfo() != null)
+                        mCurrentConnectedDevice.setDeviceId((String) event.getInfo());
+                    break;
+                case MODEL_NUMBER:
+                    if(event.getInfo() != null)
+                        mCurrentConnectedDevice.setExternalName((String) event.getInfo());
+                    break;
+            }
         }
     }
 
 
     @Subscribe
     public void onGetDevice(DeviceEvents.GetDeviceEvent event){
-        EventBusManager.postEvent(new DeviceEvents.PostDeviceEvent(mCurrentDevice));
+        EventBusManager.postEvent(new DeviceEvents.PostDeviceEvent(mCurrentConnectedDevice));
     }
 
+    private boolean isFirmwareVersionUpToDate(){
+        Log.i(TAG, "Current Firmware version is " + getmCurrentConnectedDevice().getFirmwareVersion());
+        //First, get fw version as number
+        String[] deviceFwVersion = getmCurrentConnectedDevice().getFirmwareVersion().split("\\.");
+
+        if(deviceFwVersion.length < 3 || getmCurrentConnectedDevice().getFirmwareVersion().equals(MbtDevice.DEFAULT_FW_VERSION)){
+            Log.e(TAG, "read firmware version is invalid: size < 3");
+            return true;
+        }
+
+        //Compare it to latest bin file either from server or locally
+        String[] binFwVersion = OADFileManager.getMostRecentFwVersion(mContext);
+        if(binFwVersion == null){
+            Log.e(TAG, "no binary found");
+            return true;
+        }
+        if(binFwVersion.length > 3){ //trimming initial array
+            String[] tmp = new String[3];
+            System.arraycopy(binFwVersion, 0, tmp, 0, tmp.length);
+            binFwVersion = tmp.clone();
+        }
+
+        for (String s : binFwVersion) {
+            if(s == null){
+                Log.e(TAG, "error when parsing fw version");
+                return true;
+            }
+        }
+
+        boolean isUpToDate = true;
+        for(int i = 0; i < deviceFwVersion.length; i++){
+
+            if(Integer.parseInt(deviceFwVersion[i]) > Integer.parseInt(binFwVersion[i])){ //device value is stricly superior to bin value so it's even more recent
+                break;
+            }else if(Integer.parseInt(deviceFwVersion[i])< Integer.parseInt(binFwVersion[i])){ //device value is inferior to bin. update is necessary
+                isUpToDate = false;
+                Log.i(TAG, "update is necessary");
+                break;
+            }
+        }
+
+        return isUpToDate;
+    }
+
+    public static short getBatteryPercentageFromByteValue(byte value){
+        final short level;
+        switch (value){
+            case (byte) 0:
+                level = 0;
+                break;
+            case (byte) 1:
+                level = 15;
+                break;
+            case (byte) 2:
+                level = 30;
+                break;
+            case (byte) 3:
+                level = 50;
+                break;
+            case (byte) 4:
+                level = 65;
+                break;
+            case (byte) 5:
+                level = 85;
+                break;
+            case (byte) 6:
+                level = 100;
+                break;
+            case (byte) 0xFF:
+            default:
+                level = -1;
+                break;
+        }
+        return level;
+    }
 }

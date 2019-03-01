@@ -7,16 +7,12 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.Handler;
 import android.support.annotation.NonNull;
 
 import android.support.annotation.Nullable;
-import android.text.TextUtils;
 import android.util.Log;
 
-import config.MbtConfig;
 import core.device.model.DeviceInfo;
-import core.device.model.MelomindDevice;
 import core.oad.OADEvent;
 
 import utils.LogUtils;
@@ -90,7 +86,6 @@ public abstract class MbtBluetooth implements IConnectable{
     }
 
     private void resetCurrentState(){
-        LogUtils.i(TAG," reset current state");
         notifyConnectionStateChanged(BtState.IDLE);
     }
 
@@ -166,9 +161,7 @@ public abstract class MbtBluetooth implements IConnectable{
 
     void setCurrentState(BtState currentState) {
         if(!this.currentState.equals(currentState)){
-            LogUtils.i(TAG,"set current state was = "+currentState);
             this.currentState = currentState;
-            LogUtils.i(TAG,"is now = "+currentState);
         }
     }
 }

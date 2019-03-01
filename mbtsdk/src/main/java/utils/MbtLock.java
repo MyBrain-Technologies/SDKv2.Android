@@ -26,7 +26,6 @@ public final class MbtLock<T> {
      * @param result    the result of the asynchronous operation that was waited
      */
     public synchronized final void setResultAndNotify(@Nullable final T result) {
-        Log.i(TAG, "set result and notify");
         this.result = result;
         if (this.isWaiting) {
             synchronized (this) {
@@ -42,7 +41,6 @@ public final class MbtLock<T> {
      */
     @Nullable
     public synchronized final T waitAndGetResult(final long timeout) {
-        Log.i(TAG, "wait and get result ");
         if (timeout < 0)
             throw new IllegalArgumentException("timeout cannot be negative");
         if (this.wasNotified) {// it might happen that the notify was performed even before the wait started!

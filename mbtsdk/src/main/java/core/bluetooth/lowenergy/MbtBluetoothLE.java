@@ -14,7 +14,6 @@ import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Handler;
 import android.os.ParcelUuid;
 import android.support.annotation.IntRange;
@@ -44,7 +43,6 @@ import core.bluetooth.IStreamable;
 import core.bluetooth.MbtBluetooth;
 import core.bluetooth.MbtBluetoothManager;
 import core.device.model.DeviceInfo;
-import core.device.model.MbtDevice;
 import core.device.model.MelomindDevice;
 import core.device.model.MelomindsQRDataBase;
 import engine.clientevents.BaseError;
@@ -100,9 +98,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
                 final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 LogUtils.d(TAG, "received intent " + action + " for device " + (device != null ? device.getName() : null));
                 if (action.equals(BluetoothDevice.ACTION_BOND_STATE_CHANGED)){
-                    LogUtils.i(TAG, "Bond state changed "+intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, 0));
                     if (intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, 0) == BluetoothDevice.BOND_BONDED) {
-                        LogUtils.i(TAG, "Bonded state received");
                         new Handler().postDelayed(new Runnable() {
                             @Override
                             public void run() {
@@ -307,7 +303,6 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         currentDevice = null;
 
         if (filterOnDeviceService) {
-            LogUtils.i(TAG, "ENABLED SERVICE FILTER");
             final ScanFilter.Builder filterService = new ScanFilter.Builder()
                     .setServiceUuid(new ParcelUuid(MelomindCharacteristics.SERVICE_MEASUREMENT));
 
@@ -324,7 +319,6 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 
         LogUtils.i(TAG, String.format("Starting Low Energy Scan with filtering on name '%s' and service UUID '%s'", mbtBluetoothManager.getDeviceNameRequested(), MelomindCharacteristics.SERVICE_MEASUREMENT));
         this.bluetoothLeScanner.startScan(mFilters, settings, this.leScanCallback);
-        LogUtils.i(TAG, "Scan started.");
         if(getCurrentState().equals(BtState.READY_FOR_BLUETOOTH_OPERATION))
             mbtBluetoothManager.updateConnectionState(false); //current state is set to SCAN_STARTED
         return true; //true : scan is started
@@ -336,7 +330,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * If a lock is currently waiting, the lock is disabled.
      */
     public void stopLowEnergyScan() {
-        LogUtils.i(TAG, "stop low energy scan");
+        LogUtils.i(TAG, "Stopping Low Energy scan");
         if(this.bluetoothLeScanner != null)
             this.bluetoothLeScanner.stopScan(this.leScanCallback);
         if(!getCurrentState().equals(BtState.DEVICE_FOUND) && !getCurrentState().equals(BtState.CONNECTING))
@@ -377,7 +371,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     /**
      * This method removes bonding of the device.
      */
-    void unpairDevice(BluetoothDevice device) {
+    public void unpairDevice(BluetoothDevice device) {
         try {
             Method m = device.getClass()
                     .getMethod(REMOVE_BOND_METHOD, (Class[]) null);
@@ -499,7 +493,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @return immediatly false on error, true otherwise
      */
    synchronized boolean startWriteOperation(@NonNull UUID characteristic, byte[] payload){
-       LogUtils.i(TAG, "start write operation");
+       LogUtils.d(TAG, "start write operation");
         if(!checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT, characteristic)) {
             LogUtils.e(TAG, "Error: failed to check service and characteristic validity" + characteristic.toString());
             return false;
@@ -549,7 +543,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * Initiates a read battery operation on this correct BtProtocol
      */
     public boolean readBattery() {
-        LogUtils.i(TAG, "read battery requested");
+        LogUtils.i(TAG, "read battery");
         return startReadOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_BATTERY_LEVEL);
     }
 
@@ -557,14 +551,14 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * Initiates a read firmware version operation on this correct BtProtocol
      */
     public boolean readFwVersion(){
-        LogUtils.i(TAG, "read firmware version requested");
+        LogUtils.i(TAG, "read firmware version");
         return startReadOperation(MelomindCharacteristics.CHARAC_INFO_FIRMWARE_VERSION);
     }
     /**
      * Initiates a read hardware version operation on this correct BtProtocol
      */
     public boolean readHwVersion(){
-        LogUtils.i(TAG, "read hardware version requested");
+        LogUtils.i(TAG, "read hardware version");
         return startReadOperation(MelomindCharacteristics.CHARAC_INFO_HARDWARE_VERSION);
     }
 
@@ -580,7 +574,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * Initiates a read model number operation on this correct BtProtocol
      */
     public boolean readModelNumber(){
-        LogUtils.i(TAG, "read product name requested");
+        LogUtils.i(TAG, "read product name");
         return startReadOperation(MelomindCharacteristics.CHARAC_INFO_MODEL_NUMBER);
     }
 
@@ -687,6 +681,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
                 LogUtils.w(TAG, configType+" failed : "+e);
             }
         }
+
         return requestSent;
     }
 
@@ -701,23 +696,23 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         if(config != null){
             if (config.getMtuValue() != -1) //Checking whether or not there are params to send
                 if(!waitResultOfDeviceConfiguration(DeviceConfig.MTU_CONFIG, config))
-                    return;
+                    return ;
 
             if (config.getNotchFilter() != null)
                 if(!waitResultOfDeviceConfiguration(DeviceConfig.NOTCH_FILTER_CONFIG, config))
-                    return;
+                    return ;
 
                 //TODO implement bandpass filter change
 
             if (config.getGainValue() != null)
                 if(!waitResultOfDeviceConfiguration(DeviceConfig.AMP_GAIN_CONFIG, config))
-                    return;
+                    return ;
 
             if(!waitResultOfDeviceConfiguration(DeviceConfig.P300_CONFIG, config))
-                return;
+                return ;
 
             if(!waitResultOfDeviceConfiguration(DeviceConfig.OFFSET_CONFIG, config))
-                return;
+                return ;
         }
 
         waitResultOfDeviceConfiguration(DeviceConfig.EEG_CONFIG, null);
@@ -836,7 +831,6 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     public void sendExternalName(String externalName) {
         if (externalName == null)
             return;
-        LogUtils.d(TAG, "about to send external name " + externalName);
         ByteBuffer nameToBytes = ByteBuffer.allocate(3 + externalName.getBytes().length); // +1 for mailbox code
         nameToBytes.put(MailboxEvents.MBX_SET_SERIAL_NUMBER);
         nameToBytes.put((byte) 0xAB);
@@ -889,7 +883,8 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      */
     public void bond() {
         LogUtils.i(TAG, "start bonding");
-        updateConnectionState(false); //current state is set to BONDING
+        if(getCurrentState().equals(BtState.READING_SUCCESS))
+            updateConnectionState(false); //current state is set to BONDING
         mbtBluetoothManager.startReadOperation(DeviceInfo.BATTERY); //trigger bonding indirectly
     }
 
