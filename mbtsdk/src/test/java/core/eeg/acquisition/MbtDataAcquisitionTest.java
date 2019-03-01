@@ -99,9 +99,9 @@ public class MbtDataAcquisitionTest {
      */
     @Test
     public void handleDataAcquiredTestInput(){
-        int nbChannels = MbtFeatures.getNbChannels();
-        int nbBytes = MbtFeatures.getEEGByteSize();
-        int nbIndexBytes = MbtFeatures.getRawDataIndexSize();
+        int nbChannels = MbtFeatures.getNbChannels(MbtDeviceType.MELOMIND);
+        int nbBytes = MbtFeatures.getEEGByteSize(BtProtocol.BLUETOOTH_LE);
+        int nbIndexBytes = MbtFeatures.getRawDataIndexSize(BtProtocol.BLUETOOTH_LE);
         dataAcquisition.setTestPreviousIndex(-1);
         dataAcquisition.setTestSingleRawEEGList(null);
         byte[] data = new byte[]{14, 83, 34, -62, 43, -113, 29, -50, 37, 41, 14, 66, 4, -102, -128, 0, -128, 0};
@@ -234,8 +234,7 @@ public class MbtDataAcquisitionTest {
         int nbBytes= 2;
         int nbBytesIndex = 2;
         MbtConfig.setDeviceType(MbtDeviceType.MELOMIND);
-        assertTrue(MbtFeatures.getNbChannels()==MbtFeatures.MELOMIND_NB_CHANNELS);
-        assertTrue(MbtFeatures.getBluetoothProtocol().equals(BtProtocol.BLUETOOTH_LE));
+        assertTrue(MbtFeatures.getNbChannels(MbtDeviceType.MELOMIND)==MbtFeatures.MELOMIND_NB_CHANNELS);
 
         byte[] rawData = new byte[]{14, 92, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1};
         int sizeArray = rawData.length;
@@ -272,8 +271,7 @@ public class MbtDataAcquisitionTest {
         int nbBytes = 2;
         int sizeArray = 18;
         MbtConfig.setDeviceType(MbtDeviceType.MELOMIND);
-        assertTrue(MbtFeatures.getNbChannels()==MbtFeatures.MELOMIND_NB_CHANNELS);
-        assertTrue(MbtFeatures.getBluetoothProtocol().equals(BtProtocol.BLUETOOTH_LE));
+        assertTrue(MbtFeatures.getNbChannels(MbtDeviceType.MELOMIND)==MbtFeatures.MELOMIND_NB_CHANNELS);
 
         byte[] data = new byte[sizeArray];
         new Random().nextBytes(data); //Generates random bytes and places them into a user-supplied byte array
@@ -309,8 +307,7 @@ public class MbtDataAcquisitionTest {
         int nbBytes = 2;
         int sizeArray = 250;
         MbtConfig.setDeviceType(MbtDeviceType.MELOMIND);
-        assertTrue(MbtFeatures.getNbChannels()==MbtFeatures.MELOMIND_NB_CHANNELS);
-        assertTrue(MbtFeatures.getBluetoothProtocol().equals(BtProtocol.BLUETOOTH_LE));
+        assertTrue(MbtFeatures.getNbChannels(MbtDeviceType.MELOMIND)==MbtFeatures.MELOMIND_NB_CHANNELS);
 
         byte[] data = new byte[sizeArray];
         new Random().nextBytes(data); //Generates random bytes and places them into a user-supplied byte array

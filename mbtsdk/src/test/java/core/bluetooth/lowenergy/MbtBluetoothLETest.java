@@ -532,38 +532,17 @@ public class MbtBluetoothLETest {
 
     }
 
-    /**
-     * Headset requested is Vpro : cannot start scanning in low energy
-     * Check that the stopLowEnergyScan method failed if the user is looking for a Vpro
-     */
-    @Test
-    public void startLowEnergyScan_Vpro() {
-        MbtConfig.setDeviceType(MbtDeviceType.VPRO);
-        assertNull(bluetoothLE.startLowEnergyScan(true));
-        assertEquals(bluetoothLE.getCurrentState(), BtState.SCAN_FAILURE);
-    }
 
     @Test
     public void startLowEnergyScan_FailedNullNameFilterOn() {
-        assertNull(bluetoothLE.startLowEnergyScan(true));
-        assertEquals(bluetoothLE.getCurrentState(), BtState.SCAN_FAILURE);
+        assertFalse(bluetoothLE.startLowEnergyScan(true));
+        assertNotEquals(bluetoothLE.getCurrentState(), BtState.SCAN_FAILURE);
     }
 
     @Test
     public void startLowEnergyScan_FailedNotNullNameFilterOn() {
-        assertNull(bluetoothLE.startLowEnergyScan(true));
-        assertEquals(bluetoothLE.getCurrentState(), BtState.SCAN_FAILURE);
-    }
-    @Test
-    public void startLowEnergyScan_FailedNullNameFilterOff() {
-        assertNull(bluetoothLE.startLowEnergyScan(false));
-        assertEquals(bluetoothLE.getCurrentState(), BtState.SCAN_FAILURE);
-    }
-
-    @Test
-    public void startLowEnergyScan_FailedNotNullNameFilterOff() {
-        assertNull(bluetoothLE.startLowEnergyScan(false));
-        assertEquals(bluetoothLE.getCurrentState(), BtState.SCAN_FAILURE);
+        assertFalse(bluetoothLE.startLowEnergyScan(true));
+        assertNotEquals(bluetoothLE.getCurrentState(), BtState.SCAN_FAILURE);
     }
 
     /**
@@ -591,17 +570,8 @@ public class MbtBluetoothLETest {
     public void stopLowEnergyScan_StartedStoppedFailed() {
         bluetoothLE.startLowEnergyScan(true);
         bluetoothLE.stopLowEnergyScan();
-        assertEquals(bluetoothLE.getCurrentState(), BtState.SCAN_FAILURE);
     }
-    /**
-     * Check that the stopLowEnergyScan method failed if the user is looking for a Vpro
-     */
-    @Test
-    public void stopLowEnergyScan_Vpro() {
-        MbtConfig.setDeviceType(MbtDeviceType.VPRO);
-        bluetoothLE.stopLowEnergyScan();
-        assertEquals(bluetoothLE.getCurrentState(), BtState.SCAN_FAILURE);
-    }
+
 
     @Test
     public void connect_failure() {
@@ -806,12 +776,10 @@ public class MbtBluetoothLETest {
     public void startReadOperation_GattNull() {
         bluetoothLE.gatt = null;
         assertFalse(bluetoothLE.startReadOperation(MelomindCharacteristics.CHARAC_INFO_FIRMWARE_VERSION));
-        assertEquals(bluetoothLE.getCurrentState(),BtState.READING_FAILURE);
     }
     @Test
     public void startReadOperation_GattCharacteristicNull() {
         assertFalse(bluetoothLE.startReadOperation(UNKNOWN));
-        assertEquals(bluetoothLE.getCurrentState(),BtState.READING_FAILURE);
     }
 
     @Test
@@ -824,7 +792,6 @@ public class MbtBluetoothLETest {
     public void startWriteOperation_GattCharacteristicNull() {
         byte[] code = {MailboxEvents.MBX_GET_EEG_CONFIG};
         assertFalse(bluetoothLE.startWriteOperation(UNKNOWN,code));
-        assertEquals(bluetoothLE.getCurrentState(),BtState.READING_FAILURE);
     }
 
     /**
@@ -855,7 +822,6 @@ public class MbtBluetoothLETest {
         when(gattService.getUuid()).thenReturn(MelomindCharacteristics.SERVICE_MEASUREMENT);
         bluetoothLE.gatt = gatt;
         assertFalse(bluetoothLE.checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_EEG));
-        assertEquals(bluetoothLE.getCurrentState(),BtState.READING_FAILURE);
     }
     /**
      * Checks that the Measurement service and an unknown characteristic that are going to be used to communicate with the remote device are invalid.
@@ -869,7 +835,6 @@ public class MbtBluetoothLETest {
         when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG)).thenReturn(null);
         bluetoothLE.gatt = gatt;
         assertFalse(bluetoothLE.checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_EEG));
-        assertEquals(bluetoothLE.getCurrentState(),BtState.READING_FAILURE);
     }
 
     /**
@@ -879,7 +844,6 @@ public class MbtBluetoothLETest {
     public void checkServiceAndCharacteristicValidity_NullGatt() {
         bluetoothLE.gatt = null;
         assertFalse(bluetoothLE.checkServiceAndCharacteristicValidity(SERVICE,CHARACTERISTIC_EEG));
-        assertEquals(bluetoothLE.getCurrentState(),BtState.READING_FAILURE);
     }
     /**
      * Checks that if the Measurement service and the EEG characteristic have been inverted, the given service and characteristic are considered invalid
@@ -890,7 +854,6 @@ public class MbtBluetoothLETest {
         when(gatt.getService(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG)).thenReturn(null);
         bluetoothLE.gatt = gatt;
         assertFalse(bluetoothLE.checkServiceAndCharacteristicValidity(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG, MelomindCharacteristics.SERVICE_MEASUREMENT));
-        assertEquals(bluetoothLE.getCurrentState(),BtState.READING_FAILURE);
     }
 
     /**
@@ -938,12 +901,10 @@ public class MbtBluetoothLETest {
     public void readBattery_GattNull() {
         bluetoothLE.gatt = null;
         assertFalse(bluetoothLE.readBattery());
-        assertEquals(bluetoothLE.getCurrentState(),BtState.READING_FAILURE);
     }
     @Test
     public void readBattery_GattCharacteristicNull() {
         assertFalse(bluetoothLE.readBattery());
-        assertEquals(bluetoothLE.getCurrentState(),BtState.READING_FAILURE);
     }
 
     @Test
@@ -956,12 +917,10 @@ public class MbtBluetoothLETest {
     public void readFwVersion_GattNull() {
         bluetoothLE.gatt = null;
         assertFalse(bluetoothLE.readFwVersion());
-        assertEquals(bluetoothLE.getCurrentState(),BtState.READING_FAILURE);
     }
     @Test
     public void readFwVersion_GattCharacteristicNull() {
         assertFalse(bluetoothLE.readFwVersion());
-        assertEquals(bluetoothLE.getCurrentState(),BtState.READING_FAILURE);
     }
 
     @Test
@@ -974,12 +933,10 @@ public class MbtBluetoothLETest {
     public void readHwVersion_GattNull() {
         bluetoothLE.gatt = null;
         assertFalse(bluetoothLE.readHwVersion());
-        assertEquals(bluetoothLE.getCurrentState(),BtState.READING_FAILURE);
     }
     @Test
     public void readHwVersion_GattCharacteristicNull() {
         assertFalse(bluetoothLE.readHwVersion());
-        assertEquals(bluetoothLE.getCurrentState(),BtState.READING_FAILURE);
     }
 
 
@@ -993,12 +950,10 @@ public class MbtBluetoothLETest {
     public void readSerialNumber_GattNull() {
         bluetoothLE.gatt = null;
         assertFalse(bluetoothLE.readSerialNumber());
-        assertEquals(bluetoothLE.getCurrentState(),BtState.READING_FAILURE);
     }
     @Test
     public void readSerialNumber_GattCharacteristicNull() {
         assertFalse(bluetoothLE.readSerialNumber());
-        assertEquals(bluetoothLE.getCurrentState(),BtState.READING_FAILURE);
     }
 
     @Test
@@ -1242,12 +1197,7 @@ public class MbtBluetoothLETest {
     @Test
     public void notifyConnectionStateChanged_notifyClientDisconnected() {
         bluetoothLE.notifyConnectionStateChanged(BtState.DISCONNECTED);
-        assertEquals(bluetoothLE.getCurrentState(),BtState.DISCONNECTED);
-    }
-    @Test
-    public void notifyConnectionStateChanged_doNotNotifyClientDisconnected() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DISCONNECTED);
-        assertEquals(bluetoothLE.getCurrentState(),BtState.DISCONNECTED);
+        assertEquals(bluetoothLE.getCurrentState(),BtState.IDLE);
     }
 
     @Test

@@ -24,7 +24,7 @@ public class BroadcastUtils {
 
     public static void unregisterReceiver(Context context, BroadcastReceiver broadcastReceiver) {
         try {
-            if (isReceiverRegistered) {
+            if (isReceiverRegistered && context != null) {
                 context.unregisterReceiver(broadcastReceiver);
                 isReceiverRegistered = false;
             }

@@ -821,7 +821,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         requestBeingProcessed = false;
         if(isAudioBluetoothConnected() && !asyncSwitchOperation.isWaiting())
             disconnect(BLUETOOTH_A2DP);
-        disconnect(deviceTypeRequested.useLowEnergyProtocol() ? BtProtocol.BLUETOOTH_LE : BtProtocol.BLUETOOTH_SPP);
+        disconnect(deviceTypeRequested != null ? (deviceTypeRequested.useLowEnergyProtocol() ? BtProtocol.BLUETOOTH_LE : BtProtocol.BLUETOOTH_SPP) : BtProtocol.BLUETOOTH_LE);
 
         if(isClientUserAbortion){
             isConnectionInterrupted = true;
@@ -968,7 +968,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * @return <code>true</code> if connected, <code>false</code> otherwise
      */
     private boolean isDataBluetoothConnected() {
-        return  deviceTypeRequested.useLowEnergyProtocol() ? mbtBluetoothLE.isConnected() : mbtBluetoothSPP.isConnected();
+        return  deviceTypeRequested != null ? deviceTypeRequested.useLowEnergyProtocol() ? mbtBluetoothLE.isConnected() : mbtBluetoothSPP.isConnected() : false;
     }
 
     /**
@@ -991,7 +991,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * Gets current state according to bluetooth protocol value
      */
     private BtState getCurrentState(){
-        return deviceTypeRequested.useLowEnergyProtocol() ? mbtBluetoothLE.getCurrentState() : mbtBluetoothSPP.getCurrentState();
+        return deviceTypeRequested != null ? (deviceTypeRequested.useLowEnergyProtocol() ? mbtBluetoothLE.getCurrentState() : mbtBluetoothSPP.getCurrentState()) : mbtBluetoothLE.getCurrentState();
     }
 
     public String getDeviceNameRequested() {
@@ -999,7 +999,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     }
 
     private BluetoothDevice getCurrentDevice() {
-        return (deviceTypeRequested.useLowEnergyProtocol()) ? mbtBluetoothLE.currentDevice : mbtBluetoothSPP.currentDevice;
+        return deviceTypeRequested != null ? (deviceTypeRequested.useLowEnergyProtocol()) ? mbtBluetoothLE.currentDevice : mbtBluetoothSPP.currentDevice : mbtBluetoothLE.currentDevice;
 
     }
 
