@@ -19,6 +19,7 @@ import config.DeviceConfig;
 import core.bluetooth.BtState;
 import core.device.MbtDeviceManager;
 import core.device.model.DeviceInfo;
+import core.device.model.MelomindDevice;
 import core.eeg.acquisition.MbtDataConversion;
 import utils.LogUtils;
 
@@ -216,7 +217,7 @@ final class MbtGattController extends BluetoothGattCallback {
                     return;
                 }
 
-                level = MbtDeviceManager.getBatteryPercentageFromByteValue(characteristic.getValue()[0]);
+                level = MelomindDevice.getBatteryPercentageFromByteValue(characteristic.getValue()[0]);
                 if (level == -1) {
                     LogUtils.e(TAG, "Error: received a [onCharacteristicRead] callback for battery level request " +
                             "but the returned value could not be decoded ! " +
