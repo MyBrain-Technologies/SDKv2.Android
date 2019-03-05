@@ -731,7 +731,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      *
      * @return false if request dod not start as planned, true otherwise.
      */
-    public boolean changeMTU(@IntRange(from = 23, to = 121) final int newMTU) {
+    boolean changeMTU(@IntRange(from = 23, to = 121) final int newMTU) {
         LogUtils.i(TAG, "changing mtu to " + newMTU);
         if(!isConnected()){
             return false;

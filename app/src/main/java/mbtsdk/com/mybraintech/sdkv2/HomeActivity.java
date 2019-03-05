@@ -18,12 +18,11 @@ import android.widget.Toast;
 import java.util.ArrayList;
 
 import core.bluetooth.BtState;
-import engine.ConnectionConfig;
+import config.ConnectionConfig;
 import engine.MbtClient;
 import engine.clientevents.BaseError;
 
 import engine.clientevents.BluetoothStateListener;
-import engine.clientevents.ConnectionStateListener;
 import features.MbtFeatures;
 
 import static features.MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX;

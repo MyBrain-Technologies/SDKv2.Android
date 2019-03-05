@@ -1,14 +1,11 @@
-package engine;
+package config;
 
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import config.DeviceConfig;
 import core.eeg.storage.MbtEEGPacket;
 import engine.clientevents.BaseError;
-import engine.clientevents.DeviceStatusListener;
-import engine.clientevents.EEGException;
 import engine.clientevents.EegListener;
 import features.MbtFeatures;
 
@@ -40,19 +37,19 @@ public final class StreamConfig {
         this.deviceConfig = deviceConfig;
     }
 
-    EegListener getEegListener() {
+    public EegListener getEegListener() {
         return eegListener;
     }
 
-    int getNotificationPeriod() {
+    public int getNotificationPeriod() {
         return notificationPeriod;
     }
 
-    boolean shouldComputeQualities() {
+    public boolean shouldComputeQualities() {
         return computeQualities;
     }
 
-    DeviceConfig getDeviceConfig() {
+    public DeviceConfig getDeviceConfig() {
         return deviceConfig;
     }
 
@@ -91,7 +88,7 @@ public final class StreamConfig {
          * one second of data.
          *
          * <p>The minimum notification period will be automatically set to 1000ms if qualities are enabled.</p>
-         * <p>If the input {@link #notificationPeriod} is set by the user to less than 1000ms, the {@link EEGException#INVALID_PARAMETERS} error will be thrown</p>
+         * <p>If the input {@link #notificationPeriod} is set by the user to less than 1000ms, the {@link engine.clientevents.ConfigError#ERROR_INVALID_PARAMS} error will be thrown</p>
          * @param useQualities a flag indicating whether or not the qualities shall be computed
          * @return the builder instance
          */
@@ -137,7 +134,7 @@ public final class StreamConfig {
      * Checks if the configuration parameters are correct
      * @return true is the configuration is correct, false otherwise
      */
-    boolean isConfigCorrect() {
+    public boolean isConfigCorrect() {
         if(this.notificationPeriod <  (this.computeQualities ? MbtFeatures.MIN_CLIENT_NOTIFICATION_PERIOD_WITH_QUALITIES_IN_MILLIS : MbtFeatures.MIN_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS))
             return false;
         else if(notificationPeriod >  (this.computeQualities ? MbtFeatures.MAX_CLIENT_NOTIFICATION_PERIOD_WITH_QUALITIES_IN_MILLIS : MbtFeatures.MAX_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS))

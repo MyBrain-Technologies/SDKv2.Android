@@ -1,5 +1,8 @@
 package core.device;
 
+import android.support.annotation.Keep;
+
+@Keep
 public class SaturationEvent {
 
     private int saturationCode;

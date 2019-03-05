@@ -36,9 +36,8 @@ import core.eeg.storage.MbtEEGPacket;
 import engine.MbtClient;
 
 import engine.SimpleRequestCallback;
-import engine.StreamConfig;
+import config.StreamConfig;
 import engine.clientevents.BaseError;
-import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.BluetoothStateListener;
 import engine.clientevents.DeviceBatteryListener;
@@ -129,7 +128,6 @@ DeviceActivity extends AppCompatActivity {
 
             @Override
             public void onNewPackets(@NonNull final MbtEEGPacket mbtEEGPackets) {
-                Log.i(TAG, Arrays.deepToString(mbtEEGPackets.getFeatures()));
                 if(invertFloatMatrix(mbtEEGPackets.getChannelsData()) != null)
                     mbtEEGPackets.setChannelsData(invertFloatMatrix(mbtEEGPackets.getChannelsData()));
 
