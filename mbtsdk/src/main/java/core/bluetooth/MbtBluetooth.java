@@ -29,7 +29,7 @@ import utils.MbtLock;
 
 public abstract class MbtBluetooth implements IConnectable{
 
-    private final static String TAG = MbtBluetooth.class.getName();;
+    private final static String TAG = MbtBluetooth.class.getName();
 
     private volatile BtState currentState = BtState.IDLE;
 

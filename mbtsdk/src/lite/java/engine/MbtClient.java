@@ -12,14 +12,17 @@ import config.MbtConfig;
 import core.MbtManager;
 import core.device.model.MbtDevice;
 import core.eeg.storage.MbtEEGPacket;
-import core.recordingsession.metadata.DeviceInfo;
+import core.device.model.DeviceInfo;
 import engine.clientevents.BaseError;
 import engine.clientevents.ConfigError;
+import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.ConnectionStateReceiver;
-import engine.clientevents.DeviceInfoListener;
+import engine.clientevents.DeviceBatteryListener;
 import engine.clientevents.EegListener;
 import engine.clientevents.HeadsetDeviceError;
 import features.MbtFeatures;
+import features.MbtDeviceType;
+
 
 /**
  * Created by Etienne on 08/02/2018.
@@ -92,22 +95,20 @@ public final class MbtClient {
      */
     @SuppressWarnings("unchecked")
     public void connectBluetooth(@NonNull ConnectionConfig config){
-        MbtConfig.deviceType = config.getDeviceType();
+        MbtConfig.setBluetoothScanTimeout(config.getMaxScanDuration());
+        MbtConfig.setConnectAudioIfDeviceCompatible(config.useAudio());
 
-        //MbtConfig.bluetoothConnectionTimeout = config.getConnectionTimeout();
         if(config.getMaxScanDuration() < MbtFeatures.MIN_SCAN_DURATION){
-            config.getConnectionStateReceiver().onError(ConfigError.ERROR_INVALID_PARAMS,ConfigError.SCANNING_MINIMUM_DURATION);
+            config.getConnectionStateListener().onError(ConfigError.ERROR_INVALID_PARAMS,ConfigError.SCANNING_MINIMUM_DURATION);
             return;
         }
 
         if(config.getDeviceType() == MbtDeviceType.VPRO){
-            config.getConnectionStateReceiver().onError(HeadsetDeviceError.ERROR_VPRO_INCOMPATIBLE,null);
+            config.getConnectionStateListener().onError(HeadsetDeviceError.ERROR_VPRO_INCOMPATIBLE,null);
             return;
         }
 
-        MbtConfig.bluetoothScanTimeout = config.getMaxScanDuration();
-
-        this.mbtManager.connectBluetooth(config.getDeviceName(), config.getConnectionStateReceiver());
+        this.mbtManager.connectBluetooth(config.getConnectionStateListener(), config.getDeviceName(), config.getDeviceType());
     }
 
     /**
@@ -129,19 +130,19 @@ public final class MbtClient {
      * <p>0%</p>
      * @param listener The callback that contains the onBatteryReceivedMethod
      */
-    public void readBattery(@NonNull final DeviceInfoListener listener) {
+    public void readBattery(@NonNull final DeviceBatteryListener listener) {
         mbtManager.readBluetooth(DeviceInfo.BATTERY, listener);
     }
 
-    public void readFwVersion(@NonNull DeviceInfoListener listener){
+    public void readFwVersion(@NonNull DeviceBatteryListener listener){
         mbtManager.readBluetooth(DeviceInfo.FW_VERSION, listener);
     }
 
-    public void readHwVersion(@NonNull DeviceInfoListener listener){
+    public void readHwVersion(@NonNull DeviceBatteryListener listener){
         mbtManager.readBluetooth(DeviceInfo.HW_VERSION, listener);
     }
 
-    public void readSerialNumber(@NonNull DeviceInfoListener listener){
+    public void readSerialNumber(@NonNull DeviceBatteryListener listener){
         mbtManager.readBluetooth(DeviceInfo.SERIAL_NUMBER, listener);
     }
 
@@ -168,9 +169,9 @@ public final class MbtClient {
             streamConfig.getEegListener().onError(ConfigError.ERROR_INVALID_PARAMS, streamConfig.shouldComputeQualities() ?
                     ConfigError.NOTIFICATION_PERIOD_RANGE_QUALITIES : ConfigError.NOTIFICATION_PERIOD_RANGE);
         else
-            MbtConfig.eegBufferLengthClientNotif = (int)((streamConfig.getNotificationPeriod()* MbtFeatures.DEFAULT_SAMPLE_RATE)/1000);
+            MbtConfig.setEegBufferLengthClientNotif((int)((streamConfig.getNotificationPeriod()* MbtFeatures.DEFAULT_SAMPLE_RATE)/1000));
 
-        mbtManager.startStream(streamConfig.shouldComputeQualities(), streamConfig.getEegListener(), streamConfig.getDeviceStatusListener());
+        mbtManager.startStream(streamConfig.shouldComputeQualities(), streamConfig.getEegListener(), streamConfig.getDeviceConfig());
     }
 
 
@@ -196,10 +197,10 @@ public final class MbtClient {
 
     /**
      * Sets the {@link BroadcastReceiver} to the connectionStateReceiver value
-     * @param connectionStateReceiver the new {@link BroadcastReceiver}. Set it to null if you want to reset the listener
+     * @param connectionStateListener the new {@link BroadcastReceiver}. Set it to null if you want to reset the listener
      */
-    public void setConnectionStateReceiver(ConnectionStateReceiver connectionStateReceiver){
-        this.mbtManager.setConnectionStateReceiver(connectionStateReceiver);
+    public void setConnectionStateListener(ConnectionStateListener<BaseError> connectionStateListener){
+        this.mbtManager.setConnectionStateListener(connectionStateListener);
     }
 
     /**

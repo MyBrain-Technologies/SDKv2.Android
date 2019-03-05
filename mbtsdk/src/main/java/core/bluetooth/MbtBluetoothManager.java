@@ -3,7 +3,6 @@ package core.bluetooth;
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothGatt;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -968,7 +967,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * @return <code>true</code> if connected, <code>false</code> otherwise
      */
     private boolean isDataBluetoothConnected() {
-        return  deviceTypeRequested != null ? deviceTypeRequested.useLowEnergyProtocol() ? mbtBluetoothLE.isConnected() : mbtBluetoothSPP.isConnected() : false;
+        return deviceTypeRequested != null && (deviceTypeRequested.useLowEnergyProtocol() ? mbtBluetoothLE.isConnected() : mbtBluetoothSPP.isConnected());
     }
 
     /**
