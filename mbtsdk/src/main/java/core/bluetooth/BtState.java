@@ -190,6 +190,11 @@ public enum BtState {
     ANOTHER_DEVICE_CONNECTED(BluetoothError.ERROR_ALREADY_CONNECTED_ANOTHER),
 
     /**
+     * A2DP connection cannot be established if a Jack cable already connects the headset to the mobile device
+     */
+    JACK_CABLE_CONNECTED(BluetoothError.ERROR_ALREADY_CONNECTED_JACK),
+
+    /**
      *  Failed to start scan as BLE scan with the same settings is already started by the app. This state is a android.bluetooth.le.ScanCallback state reported if the scan failed.
      */
     SCAN_FAILED_ALREADY_STARTED(BluetoothError.ERROR_ALREADY_SCANNING),

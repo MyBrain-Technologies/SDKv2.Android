@@ -111,6 +111,7 @@ final class MbtGattController extends BluetoothGattCallback {
             case BluetoothGatt.STATE_DISCONNECTED:
                 //if(isDownloadingFirmware) //todo OAD
                 //    refreshDeviceCache(gatt);// in this case the connection went well for a while, but just got lost
+                LogUtils.e(TAG, "Gatt returned disconnected state");
                 gatt.close();
                 this.mbtBluetoothLE.notifyConnectionStateChanged(BtState.DISCONNECTED);
                 break;
@@ -302,7 +303,7 @@ final class MbtGattController extends BluetoothGattCallback {
                 break;
 
             case MailboxEvents.MBX_SYS_GET_STATUS:
-                mbtBluetoothLE.notifyMailboxEventReceived(characteristic.getValue()[0]);
+                mbtBluetoothLE.notifyMailboxEventReceived(characteristic.getValue()[0], characteristic.getValue()[1]);
                 break;
 
             case MailboxEvents.MBX_SET_NOTCH_FILT:
@@ -327,7 +328,7 @@ final class MbtGattController extends BluetoothGattCallback {
 
             case MailboxEvents.MBX_CONNECT_IN_A2DP:
             case MailboxEvents.MBX_DISCONNECT_IN_A2DP:
-                mbtBluetoothLE.notifyMailboxEventReceived(characteristic.getValue()[0]);
+                mbtBluetoothLE.notifyMailboxEventReceived(characteristic.getValue()[0], characteristic.getValue()[1]);
                 break;
 
             case (byte) 0xFF:
