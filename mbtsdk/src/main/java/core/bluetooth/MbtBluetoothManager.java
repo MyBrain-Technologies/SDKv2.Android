@@ -714,6 +714,11 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             if(!mbtBluetoothA2DP.isConnected()) {
                 if (connectionRetryCounter < MAX_CONNECTION_RETRY) {
                     connectionRetryCounter++;
+                    try {
+                        Thread.sleep(50);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                     startConnectionForAudioStreaming();
                 } else {
                     connectionRetryCounter = 0;
