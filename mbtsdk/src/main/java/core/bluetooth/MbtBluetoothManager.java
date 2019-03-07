@@ -189,10 +189,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 if (((DisconnectRequestEvent) request).isInterrupted())
                     cancelPendingConnection(((DisconnectRequestEvent) request).isInterrupted());
                 else {
-                    if(isAudioBluetoothConnected())
-                        disconnect(BtProtocol.BLUETOOTH_A2DP);
-                    if(isDataBluetoothConnected())
-                        disconnect(deviceTypeRequested != null ? deviceTypeRequested.getProtocol() : BtProtocol.BLUETOOTH_LE); //todo vpro
+                    disconnectAllBluetooth(true);
                 }
 
             } else if (request instanceof StreamRequestEvent) {
@@ -711,6 +708,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             });
             if(!mbtBluetoothA2DP.isConnected())
                 mbtBluetoothA2DP.notifyConnectionStateChanged(BtState.CONNECTION_FAILURE); //at this point : current state should be AUDIO_CONNECTED if audio connection succeeded
+            else
+               notifyConnectionStateChanged(BtState.CONNECTED_AND_READY); //audio is connected so the client is notified that the device is fully connected
         }
         requestBeingProcessed = false;
         LogUtils.i(TAG, "connection completed");
@@ -811,6 +810,13 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         }
     }
 
+    void disconnectAllBluetooth(boolean disconnectAudioIfConnected){
+        LogUtils.i(TAG, "Disconnect all bluetooth");
+        if(isAudioBluetoothConnected() && disconnectAudioIfConnected)
+            disconnect(BLUETOOTH_A2DP);
+        disconnect(deviceTypeRequested != null ? (deviceTypeRequested.getProtocol()) : BtProtocol.BLUETOOTH_LE); //todo vpro
+    }
+
     /**
      * Stops current pending connection according to its current {@link BtState state}.
      * It can be either stop scan or connection process interruption
@@ -818,9 +824,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private void cancelPendingConnection(boolean isClientUserAbortion) {
         LogUtils.i(TAG, "cancelling pending connection");
         requestBeingProcessed = false;
-        if(isAudioBluetoothConnected() && !asyncSwitchOperation.isWaiting())
-            disconnect(BLUETOOTH_A2DP);
-        disconnect(deviceTypeRequested != null ? (deviceTypeRequested.useLowEnergyProtocol() ? BtProtocol.BLUETOOTH_LE : BtProtocol.BLUETOOTH_SPP) : BtProtocol.BLUETOOTH_LE);
+        disconnectAllBluetooth(!asyncSwitchOperation.isWaiting());
 
         if(isClientUserAbortion){
             isConnectionInterrupted = true;
@@ -885,9 +889,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 break;
         }
 
-        ConnectionStateEvent connectionStateEvent = (mbtBluetoothA2DP.getCurrentState().equals(BtState.CONNECTION_FAILURE) ?
-                new ConnectionStateEvent(newState, " Impossible to connect Bluetooth for audio streaming.") : new ConnectionStateEvent(newState));
-        EventBusManager.postEvent(connectionStateEvent); //This event is sent to MbtManager for user notifications
+        if(!newState.equals(BtState.CONNECTED_AND_READY) || isConnected())
+            EventBusManager.postEvent(new ConnectionStateEvent(newState)); //This event is sent to MbtManager for user notifications
     }
 
     /**
