@@ -107,7 +107,7 @@ import android.util.Log;
                 default:
                     break;
             }
-            Log.i(TAG, "feature test for " + feature.toString() + " is " + (b ? "valid" : "invalid"));
+            LogUtils.d(TAG, "feature test for " + feature.toString() + " is " + (b ? "valid" : "invalid"));
             return b;
         }
 
