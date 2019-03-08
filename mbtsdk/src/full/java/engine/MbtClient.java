@@ -3,13 +3,14 @@ package engine;
 import android.bluetooth.le.ScanCallback;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 
 
 import config.DeviceConfig;
 import config.MbtConfig;
+import config.StreamConfig;
+import config.ConnectionConfig;
 import core.MbtManager;
 import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
@@ -23,6 +24,7 @@ import engine.clientevents.EegListener;
 import engine.clientevents.HeadsetDeviceError;
 import features.MbtFeatures;
 import features.MbtDeviceType;
+
 
 /**
  * Created by Etienne on 08/02/2018.
@@ -44,26 +46,21 @@ public final class MbtClient {
      * Initializes the MbtClient instance
      * @param context the context of the single, global Application object of the current process.
      * @return the initialized MbtClient instance to the application
-     * @throws IllegalStateException if client has already been init.
      */
     public static MbtClient init(@NonNull Context context){
-        if(clientInstance != null)
-            throw new IllegalStateException("Client has already been init. You should call getClientInstance() instead");
-
-        clientInstance = new MbtClientBuilder()
-                .setContext(context)
-                .setMbtManager(new MbtManager(context))
-                .create();
+        if(clientInstance == null) {
+            clientInstance = new MbtClientBuilder()
+                    .setContext(context)
+                    .setMbtManager(new MbtManager(context))
+                    .create();
+        }
         return clientInstance;
     }
 
     /**
      * @return The current instance of the client. Init() must have been called first
-     * @throws NullPointerException if there is no instance created.
      */
     public static MbtClient getClientInstance(){
-        if(clientInstance == null)
-            throw new NullPointerException("Client instance has not been initialized. Please call init() method first.");
         return clientInstance;
     }
 
@@ -331,7 +328,7 @@ public final class MbtClient {
 
 
         @NonNull
-        public MbtClientBuilder setMbtManager(final MbtManager mbtManager){
+        MbtClientBuilder setMbtManager(final MbtManager mbtManager){
             this.mbtManager = mbtManager;
             return this;
         }
@@ -342,10 +339,5 @@ public final class MbtClient {
         }
     }
 
-    public class MbtClientExtra{
-
-       public static final String EXTRA_NEW_STATE = "newState";
-
-    }
 }
 

@@ -17,7 +17,7 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 
-import engine.ConnectionConfig;
+import config.ConnectionConfig;
 import engine.MbtClient;
 import engine.clientevents.BaseError;
 import engine.clientevents.ConnectionStateListener;

@@ -333,7 +333,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         LogUtils.i(TAG, "Stopping Low Energy scan");
         if(this.bluetoothLeScanner != null)
             this.bluetoothLeScanner.stopScan(this.leScanCallback);
-        if(!getCurrentState().equals(BtState.DEVICE_FOUND) && !getCurrentState().equals(BtState.CONNECTING))
+        if(!getCurrentState().equals(BtState.DEVICE_FOUND) && !getCurrentState().equals(BtState.DATA_BT_CONNECTING))
             currentDevice = null;
     }
 
@@ -447,13 +447,14 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 
     @Override
     public boolean isConnected() {
-        return getCurrentState() == BtState.CONNECTED_AND_READY;
+        return (getCurrentState() == BtState.CONNECTED_AND_READY || getCurrentState() == BtState.CONNECTED);
     }
 
     /**
      * Starts a read operation on a specific characteristic
      * @param characteristic the characteristic to read
-     * @return immediatly false on error, true true if read operation has started correctly
+     * @return immediatly false on error, true true if read operation has st
+     * arted correctly
      */
    boolean startReadOperation(@NonNull UUID characteristic){
        if(!isConnected() && !getCurrentState().equals(BtState.DISCOVERING_SUCCESS) && !getCurrentState().isReadingDeviceInfoState() && !getCurrentState().equals(BtState.BONDING)) {
@@ -605,7 +606,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     @Override
     public void notifyConnectionStateChanged(@NonNull BtState newState) {
         super.notifyConnectionStateChanged(newState);
-        if(newState.equals(BtState.DISCONNECTED)) {
+        if(newState.equals(BtState.DATA_BT_DISCONNECTED)) {
             if (isStreaming())
                 notifyStreamStateChanged(StreamState.DISCONNECTED);
             BroadcastUtils.unregisterReceiver(context, receiver);
@@ -622,10 +623,16 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 
     }
 
-    void notifyMailboxEventReceived(byte mailboxEvents){
-        LogUtils.i(TAG, "received mailbox response for A2DP "+ (mailboxEvents == MailboxEvents.MBX_CONNECT_IN_A2DP ? "connection":"disconnection"));
-        if(mailboxEvents == MailboxEvents.MBX_CONNECT_IN_A2DP || mailboxEvents == MailboxEvents.MBX_DISCONNECT_IN_A2DP)
-            mbtBluetoothManager.notifyConnectionStateChanged(mailboxEvents == MailboxEvents.MBX_CONNECT_IN_A2DP ? BtState.AUDIO_CONNECTED : BtState.AUDIO_DISCONNECTED);
+    void notifyMailboxEventReceived(byte mailboxEvents, byte mailboxResponse){
+        LogUtils.i(TAG, "received mailbox event for A2DP "+ (mailboxEvents == MailboxEvents.MBX_CONNECT_IN_A2DP ? "connection":"disconnection"));
+        LogUtils.i(TAG, "received mailbox response "+ mailboxResponse);
+        if(mailboxEvents == MailboxEvents.MBX_CONNECT_IN_A2DP){
+            if((mailboxResponse & MailboxEvents.CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED) == MailboxEvents.CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED)
+                mbtBluetoothManager.notifyConnectionStateChanged(BtState.JACK_CABLE_CONNECTED);
+            else if ((mailboxResponse & MailboxEvents.CMD_CODE_CONNECT_IN_A2DP_SUCCESS) == MailboxEvents.CMD_CODE_CONNECT_IN_A2DP_SUCCESS)
+                mbtBluetoothManager.notifyConnectionStateChanged(BtState.AUDIO_BT_CONNECTION_SUCCESS);
+        } else if(mailboxEvents == MailboxEvents.MBX_DISCONNECT_IN_A2DP)
+            mbtBluetoothManager.notifyConnectionStateChanged(BtState.AUDIO_BT_DISCONNECTED);
     }
 
     void updateConnectionState(boolean isCompleted){
@@ -692,8 +699,8 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @param config the {@link DeviceConfig} instance to get new parameters from.
      */
     public void configureHeadset(DeviceConfig config){
-        LogUtils.i(TAG, "configure headset "+config.toString());
         if(config != null){
+            LogUtils.i(TAG, "configure headset "+config.toString());
             if (config.getMtuValue() != -1) //Checking whether or not there are params to send
                 if(!waitResultOfDeviceConfiguration(DeviceConfig.MTU_CONFIG, config))
                     return ;
@@ -731,7 +738,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      *
      * @return false if request dod not start as planned, true otherwise.
      */
-    public boolean changeMTU(@IntRange(from = 23, to = 121) final int newMTU) {
+    boolean changeMTU(@IntRange(from = 23, to = 121) final int newMTU) {
         LogUtils.i(TAG, "changing mtu to " + newMTU);
         if(!isConnected()){
             return false;
@@ -846,6 +853,8 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 
     public void connectA2DPFromBLE() {
         LogUtils.i(TAG, "connect a2dp from ble");
+        if(!isNotificationEnabledOnCharacteristic(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX))
+            enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX));
         byte[] buffer = {MailboxEvents.MBX_CONNECT_IN_A2DP, (byte)0x25, (byte)0xA2}; //Send buffer
         if(!startWriteOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX, buffer))
             LogUtils.w(TAG, "Failed to send connect A2dp request");
@@ -853,6 +862,8 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 
     public void disconnectA2DPFromBLE() {
         LogUtils.i(TAG, "disconnected A2DP from BLE");
+        if(!isNotificationEnabledOnCharacteristic(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX))
+            enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX));
         byte[] buffer = {MailboxEvents.MBX_DISCONNECT_IN_A2DP, (byte)0x85, (byte)0x11};
         if(!startWriteOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX, buffer))
             LogUtils.w(TAG, "Failed to send disconnect A2dp request");

@@ -1,14 +1,11 @@
-package engine;
+package config;
 
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import config.DeviceConfig;
 import core.eeg.storage.MbtEEGPacket;
 import engine.clientevents.BaseError;
-import engine.clientevents.DeviceStatusListener;
-import engine.clientevents.EEGException;
 import engine.clientevents.EegListener;
 import features.MbtFeatures;
 
@@ -33,26 +30,26 @@ public final class StreamConfig {
 
     private DeviceConfig deviceConfig;
 
-    private StreamConfig(boolean computeQualities, EegListener<BaseError> eegListener, int notificationPeriod, DeviceConfig deviceConfig){
-        this.computeQualities = computeQualities;
+    private StreamConfig(EegListener<BaseError> eegListener, int notificationPeriod){
+        this.computeQualities = false;
         this.eegListener = eegListener;
         this.notificationPeriod = notificationPeriod;
-        this.deviceConfig = deviceConfig;
+        this.deviceConfig = null;
     }
 
-    EegListener getEegListener() {
+    public EegListener getEegListener() {
         return eegListener;
     }
 
-    int getNotificationPeriod() {
+    public int getNotificationPeriod() {
         return notificationPeriod;
     }
 
-    boolean shouldComputeQualities() {
+    public boolean shouldComputeQualities() {
         return computeQualities;
     }
 
-    DeviceConfig getDeviceConfig() {
+    public DeviceConfig getDeviceConfig() {
         return deviceConfig;
     }
 
@@ -67,10 +64,6 @@ public final class StreamConfig {
         @NonNull
         private final EegListener<BaseError> eegListener;
 
-        private boolean computeQualities = false;
-
-        private DeviceConfig deviceConfig = null;
-
 
         /**
          * The eeg Listener is mandatory.
@@ -83,27 +76,6 @@ public final class StreamConfig {
 //            this.streamDuration = streamDuration;
 //            return this;
 //        }
-
-        /**
-         * Says whether or not the qualities are automatically computed while streaming EEG.
-         * This requires some specific configuration: One complete period of EEG acquisition is mandatory, ie:
-         * at least {@link MbtFeatures#DEFAULT_SAMPLE_RATE} values are mandatory to compute qualities. It can be simply seen as
-         * one second of data.
-         *
-         * <p>The minimum notification period will be automatically set to 1000ms if qualities are enabled.</p>
-         * <p>If the input {@link #notificationPeriod} is set by the user to less than 1000ms, the {@link EEGException#INVALID_PARAMETERS} error will be thrown</p>
-         * @param useQualities a flag indicating whether or not the qualities shall be computed
-         * @return the builder instance
-         */
-        public Builder useQualities(boolean useQualities){
-            this.computeQualities = useQualities;
-            return this;
-        }
-
-        public Builder configureHeadset(DeviceConfig deviceConfig){
-            this.deviceConfig = deviceConfig;
-            return this;
-        }
 
         /**
          * Use this method to specify how much eeg you want to receive in the {@link EegListener#onNewPackets(MbtEEGPacket)} method.
@@ -129,7 +101,7 @@ public final class StreamConfig {
 
         @Nullable
         public StreamConfig create(){
-            return new StreamConfig(this.computeQualities, this.eegListener, this.notificationPeriod, this.deviceConfig);
+            return new StreamConfig(this.eegListener, this.notificationPeriod);
         }
     }
 
@@ -137,10 +109,10 @@ public final class StreamConfig {
      * Checks if the configuration parameters are correct
      * @return true is the configuration is correct, false otherwise
      */
-    boolean isConfigCorrect() {
-        if(this.notificationPeriod <  (this.computeQualities ? MbtFeatures.MIN_CLIENT_NOTIFICATION_PERIOD_WITH_QUALITIES_IN_MILLIS : MbtFeatures.MIN_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS))
+    public boolean isConfigCorrect() {
+        if(this.notificationPeriod <  MbtFeatures.MIN_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS)
             return false;
-        else if(notificationPeriod >  (this.computeQualities ? MbtFeatures.MAX_CLIENT_NOTIFICATION_PERIOD_WITH_QUALITIES_IN_MILLIS : MbtFeatures.MAX_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS))
+        else if(notificationPeriod >  MbtFeatures.MAX_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS)
             return false;
 
         return true;

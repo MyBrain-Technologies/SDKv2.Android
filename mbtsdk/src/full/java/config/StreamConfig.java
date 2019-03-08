@@ -1,12 +1,11 @@
-package engine;
+package config;
 
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import core.eeg.storage.MbtEEGPacket;
-import engine.clientevents.DeviceStatusListener;
-import engine.clientevents.EEGException;
+import engine.clientevents.BaseError;
 import engine.clientevents.EegListener;
 import features.MbtFeatures;
 
@@ -25,21 +24,17 @@ public final class StreamConfig {
 
     //private final DeviceConfig deviceConfig; Will be used in future release
 
-    private final EegListener<EEGException> eegListener;
-
-    private final DeviceStatusListener deviceStatusListener;
+    private final EegListener<BaseError> eegListener;
 
     private final boolean computeQualities;
 
-    private StreamConfig(boolean computeQualities, EegListener<EEGException> eegListener, int notificationPeriod, DeviceStatusListener deviceStatusListener){
+    private DeviceConfig deviceConfig;
+
+    private StreamConfig(boolean computeQualities, EegListener<BaseError> eegListener, int notificationPeriod, DeviceConfig deviceConfig){
         this.computeQualities = computeQualities;
         this.eegListener = eegListener;
         this.notificationPeriod = notificationPeriod;
-        this.deviceStatusListener = deviceStatusListener;
-    }
-
-    public DeviceStatusListener getDeviceStatusListener() {
-        return deviceStatusListener;
+        this.deviceConfig = deviceConfig;
     }
 
     public EegListener getEegListener() {
@@ -54,6 +49,9 @@ public final class StreamConfig {
         return computeQualities;
     }
 
+    public DeviceConfig getDeviceConfig() {
+        return deviceConfig;
+    }
 
     /**
      * Builder class to ease construction of the {@link StreamConfig} instance.
@@ -63,19 +61,18 @@ public final class StreamConfig {
         //long streamDuration = -1L;
         private int notificationPeriod = MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD;
 
-        @Nullable
-        private DeviceStatusListener deviceStatusListener = null;
         @NonNull
-        private final EegListener<EEGException> eegListener;
+        private final EegListener<BaseError> eegListener;
 
         private boolean computeQualities = false;
+
+        private DeviceConfig deviceConfig = null;
 
 
         /**
          * The eeg Listener is mandatory.
-         * @param eegListener
          */
-        public Builder(@NonNull EegListener<EEGException> eegListener){
+        public Builder(@NonNull EegListener<BaseError> eegListener){
             this.eegListener = eegListener;
         }
 
@@ -91,12 +88,17 @@ public final class StreamConfig {
          * one second of data.
          *
          * <p>The minimum notification period will be automatically set to 1000ms if qualities are enabled.</p>
-         * <p>If the input {@link #notificationPeriod} is set by the user to less than 1000ms, the {@link EEGException#INVALID_PARAMETERS} error will be thrown</p>
+         * <p>If the input {@link #notificationPeriod} is set by the user to less than 1000ms, the {@link engine.clientevents.ConfigError#ERROR_INVALID_PARAMS} error will be thrown</p>
          * @param useQualities a flag indicating whether or not the qualities shall be computed
          * @return the builder instance
          */
         public Builder useQualities(boolean useQualities){
             this.computeQualities = useQualities;
+            return this;
+        }
+
+        public Builder configureHeadset(DeviceConfig deviceConfig){
+            this.deviceConfig = deviceConfig;
             return this;
         }
 
@@ -122,24 +124,9 @@ public final class StreamConfig {
             return this;
         }
 
-        /**
-         * Use this method if you want to monitor headset's electrodes saturation and eeg offset.
-         * Set it to null if unnecesary.
-         *
-         * <p>It is by default set to NULL</p>
-         *
-         * @param deviceStatusListener the device status listener
-         * @return the device instance
-         */
-        @NonNull
-        public Builder addSaturationAndOffsetListener(@Nullable DeviceStatusListener deviceStatusListener){
-            this.deviceStatusListener = deviceStatusListener;
-            return this;
-        }
-
         @Nullable
         public StreamConfig create(){
-            return new StreamConfig(this.computeQualities, this.eegListener, this.notificationPeriod, this.deviceStatusListener);
+            return new StreamConfig(this.computeQualities, this.eegListener, this.notificationPeriod, this.deviceConfig);
         }
     }
 
@@ -147,7 +134,7 @@ public final class StreamConfig {
      * Checks if the configuration parameters are correct
      * @return true is the configuration is correct, false otherwise
      */
-    boolean isConfigCorrect() {
+    public boolean isConfigCorrect() {
         if(this.notificationPeriod <  (this.computeQualities ? MbtFeatures.MIN_CLIENT_NOTIFICATION_PERIOD_WITH_QUALITIES_IN_MILLIS : MbtFeatures.MIN_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS))
             return false;
         else if(notificationPeriod >  (this.computeQualities ? MbtFeatures.MAX_CLIENT_NOTIFICATION_PERIOD_WITH_QUALITIES_IN_MILLIS : MbtFeatures.MAX_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS))
