@@ -871,6 +871,10 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                     }
                 }
                 break;
+            case JACK_CABLE_CONNECTED:
+                if(asyncOperation.isWaiting())
+                    asyncOperation.stopWaitingOperation(false);
+                break;
             case DEVICE_FOUND:
                 EventBusManager.postEvent(new DeviceEvents.NewBluetoothDeviceEvent(getCurrentDevice(), deviceTypeRequested));
 
