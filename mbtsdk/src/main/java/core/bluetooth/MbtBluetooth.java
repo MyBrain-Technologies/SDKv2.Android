@@ -12,6 +12,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import core.bluetooth.lowenergy.MbtBluetoothLE;
 import core.device.model.DeviceInfo;
 import core.oad.OADEvent;
 
@@ -29,7 +30,7 @@ import utils.MbtLock;
 
 public abstract class MbtBluetooth implements IConnectable{
 
-    private final static String TAG = MbtBluetooth.class.getName();;
+    private final static String TAG = MbtBluetooth.class.getName();
 
     private volatile BtState currentState = BtState.IDLE;
 
@@ -78,10 +79,13 @@ public abstract class MbtBluetooth implements IConnectable{
             LogUtils.i(TAG," current state is now  =  "+currentState);
             mbtBluetoothManager.notifyConnectionStateChanged(newState);
 
-            if(currentState.isResettableState(previousState)) //if a disconnection occurred
+            if(currentState.isResettableState(previousState)) {  //if a disconnection occurred
                 resetCurrentState();//reset the current connection state to IDLE
-            if(currentState.isDisconnectableState() && !previousState.isAudioState()) //if a failure occurred
+                if(this instanceof MbtBluetoothA2DP)
+                    mbtBluetoothManager.disconnectAllBluetooth(false); //audio has failed to connect : we disconnect BLE
+            }if(currentState.isDisconnectableState())  //if a failure occurred
                 disconnect(); //disconnect if a headset is connected
+
         }
     }
 

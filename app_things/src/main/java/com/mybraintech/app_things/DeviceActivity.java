@@ -34,7 +34,7 @@ import core.eeg.storage.MbtEEGPacket;
 import engine.MbtClient;
 
 import engine.SimpleRequestCallback;
-import engine.StreamConfig;
+import config.StreamConfig;
 import engine.clientevents.BaseError;
 import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.DeviceBatteryListener;
@@ -127,7 +127,6 @@ DeviceActivity extends AppCompatActivity {
 
         @Override
         public void onNewPackets(@NonNull final MbtEEGPacket mbtEEGPackets) {
-            Log.i(TAG, Arrays.deepToString(mbtEEGPackets.getFeatures()));
             if(invertFloatMatrix(mbtEEGPackets.getChannelsData()) != null)
                 mbtEEGPackets.setChannelsData(invertFloatMatrix(mbtEEGPackets.getChannelsData()));
 
@@ -216,7 +215,7 @@ DeviceActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if(!isStreaming) { //streaming is not in progress : starting streaming
-                    startStream(new StreamConfig.Builder(eegListener).setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD).useQualities(true).create());
+                    startStream(new StreamConfig.Builder(eegListener).setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)/*.useQualities(true)*/.create());
                 }else { //streaming is in progress : stopping streaming
                     stopStream(); // set false to isStreaming et null to the eegListener
                 }

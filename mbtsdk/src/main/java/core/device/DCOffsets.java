@@ -1,12 +1,15 @@
 package core.device;
 
+
 import java.io.Serializable;
 import java.util.Arrays;
 
 /**
  * Created by SophieZ on 28/02/2018.
  */
+import android.support.annotation.Keep;
 
+@Keep
 public final class DCOffsets implements Serializable {
 
     private long timestamp;

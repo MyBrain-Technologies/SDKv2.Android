@@ -128,7 +128,7 @@ public class MbtManager{
      * Perform a bluetooth read operation.
      * @param deviceInfo the type of info to read
      */
-    public void readBluetooth(@NonNull DeviceInfo deviceInfo, @NonNull DeviceBatteryListener listener){
+    public void readBluetooth(@NonNull DeviceInfo deviceInfo, @NonNull DeviceBatteryListener<BaseError> listener){
         this.deviceInfoListener = listener;
         EventBusManager.postEvent(new ReadRequestEvent(deviceInfo));
     }
@@ -201,7 +201,7 @@ public class MbtManager{
             case CONNECTED_AND_READY:
                 connectionStateListener.onDeviceConnected();
                 break;
-            case DISCONNECTED:
+            case DATA_BT_DISCONNECTED:
                 connectionStateListener.onDeviceDisconnected();
                 break;
             default:

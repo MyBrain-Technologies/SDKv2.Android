@@ -1,4 +1,4 @@
-package engine;
+package config;
 
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
@@ -44,22 +44,22 @@ public final class ConnectionConfig {
     }
 
 
-    int getMaxScanDuration() {
+    public int getMaxScanDuration() {
         return maxScanDuration;
     }
 
     /**
      * By default, Bluetooth connection is only initiated for Data streaming but not for the Audio streaming
      */
-    boolean useAudio() {
+    public boolean useAudio() {
         return connectAudio;
     }
 
-    MbtDeviceType getDeviceType() {
+    public MbtDeviceType getDeviceType() {
         return deviceType;
     }
 
-    ConnectionStateListener getConnectionStateListener() {
+    public ConnectionStateListener getConnectionStateListener() {
         return connectionStateListener;
     }
 

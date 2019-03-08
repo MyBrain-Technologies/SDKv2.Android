@@ -25,10 +25,12 @@ import engine.clientevents.MobileDeviceError;
 @Keep
 public enum BtState {
 
-    /**
+
+
+        /**
      * Initial state that corresponds to a standby mode : it represents a state where the mobile device is not connected to any headset and is awaiting order from the user or the SDK.
      * For example, he is awaiting for the user to call the connect method.
-     * The IDLE state is automatically returned few minutes after the DISCONNECTED state is returned (= after disconnection or lost connection or failure during the connection process).
+     * The IDLE state is automatically returned few minutes after the DATA_BT_DISCONNECTED state is returned (= after disconnection or lost connection or failure during the connection process).
      */
     IDLE,
 
@@ -53,12 +55,12 @@ public enum BtState {
     /**
      * Currently attempting to connect to a Bluetooth remote endpoint
      */
-    CONNECTING,
+    DATA_BT_CONNECTING,
 
     /**
      * Successfully connected in BLE or SPP
      */
-    CONNECTION_SUCCESS,
+    DATA_BT_CONNECTION_SUCCESS,
 
     /**
      *  Retrieving the services and characteristics (list of data where a value is associated to a name) that the connected headset deliver.
@@ -117,14 +119,20 @@ public enum BtState {
     SENDIND_QR_CODE,
 
     /**
-     * Successfully connected and ready to use. This state is used when communication is finally possible,
+     * Successfully connected in BLE or SPP. This state is used when communication is finally possible,
      * For example, we consider that a Melomind headset is usable for streaming if services are discovered, device info have been read, headset is bonded and QR code has been sent if necesseray
+     */
+    CONNECTED,
+
+    /**
+     * Successfully connected in BLE/SPP and A2DP in user requested audio connection and ready to use. This state is used when communication and audio stream are finally possible,
+     * For example, we consider that a Melomind headset is usable for streaming if services are discovered, device info have been read, headset is bonded, QR code has been sent if necesseray, and A2DP is connected is the user requested it
      */
     CONNECTED_AND_READY,
 
-    AUDIO_CONNECTED,
+    AUDIO_BT_CONNECTION_SUCCESS,
 
-    AUDIO_DISCONNECTED,
+    AUDIO_BT_DISCONNECTED,
 
     /// FROM THIS STATE, THE CONNECTION PROCESS IS CONSIDERED COMPLETED : THE FOLLOWING STATES DEALS WITH OTHERS BLUETOOTH OPERATIONS
 
@@ -147,7 +155,7 @@ public enum BtState {
     /**
      * When connection was lost
      */
-    DISCONNECTED,
+    DATA_BT_DISCONNECTED,
 
 
     /// FROM THIS STATE, THE CONNECTION PROCESS IS CONSIDERED COMPLETED : THE FOLLOWING STATES ARE ERRORS THAT CAN OCCUR DURING A BLUETOOTH OPERATION
@@ -188,6 +196,11 @@ public enum BtState {
      * The connection process that was running is automatically cancelled (stopped) if this state occurs and the SDK will returned to a CONNECTED_AND_READY state.
      */
     ANOTHER_DEVICE_CONNECTED(BluetoothError.ERROR_ALREADY_CONNECTED_ANOTHER),
+
+    /**
+     * A2DP connection cannot be established if a Jack cable already connects the headset to the mobile device
+     */
+    JACK_CABLE_CONNECTED(BluetoothError.ERROR_ALREADY_CONNECTED_JACK),
 
     /**
      *  Failed to start scan as BLE scan with the same settings is already started by the app. This state is a android.bluetooth.le.ScanCallback state reported if the scan failed.
@@ -301,10 +314,10 @@ public enum BtState {
     }
 
     /**
-     * A reset to IDLE state need to be performed if headset is disconnect, or if the connection process failed before having reached the CONNECTION_SUCCESS state
+     * A reset to IDLE state need to be performed if headset is disconnect, or if the connection process failed before having reached the DATA_BT_CONNECTION_SUCCESS state
      */
     public boolean isResettableState(BtState previousState){
-        return (this.equals(DISCONNECTED) || (this.isDisconnectableState() && previousState.ordinal() < BtState.CONNECTION_SUCCESS.ordinal()));
+        return (this.equals(DATA_BT_DISCONNECTED) || (this.isDisconnectableState() && previousState.ordinal() < BtState.DATA_BT_CONNECTION_SUCCESS.ordinal()));
     }
 
     /**
@@ -330,6 +343,7 @@ public enum BtState {
     }
 
     public boolean isAudioState(){
-        return (this.equals(AUDIO_CONNECTED) || this.equals(AUDIO_DISCONNECTED));
+        return (this.equals(AUDIO_BT_CONNECTION_SUCCESS) || this.equals(AUDIO_BT_DISCONNECTED));
     }
+
 }

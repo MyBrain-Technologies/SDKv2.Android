@@ -36,9 +36,8 @@ import core.eeg.storage.MbtEEGPacket;
 import engine.MbtClient;
 
 import engine.SimpleRequestCallback;
-import engine.StreamConfig;
+import config.StreamConfig;
 import engine.clientevents.BaseError;
-import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.BluetoothStateListener;
 import engine.clientevents.DeviceBatteryListener;
@@ -113,8 +112,10 @@ DeviceActivity extends AppCompatActivity {
         client.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
             @Override
             public void onRequestComplete(MbtDevice object) {
-                deviceNameTextView.setText(object.getProductName()+" | "+object.getExternalName());
-                currentDeviceType = (object instanceof MelomindDevice ? MbtDeviceType.MELOMIND : MbtDeviceType.VPRO);
+                if(object != null) {
+                    deviceNameTextView.setText(object.getProductName() + " | " + object.getExternalName());
+                    currentDeviceType = (object instanceof MelomindDevice ? MbtDeviceType.MELOMIND : MbtDeviceType.VPRO);
+                }
             }
         });
 
@@ -124,12 +125,16 @@ DeviceActivity extends AppCompatActivity {
         eegListener = new EegListener<BaseError>() {
             @Override
             public void onError(BaseError error, String additionnalInfo) {
+                LogUtils.w(TAG, "error : "+error.getMessage());
                 Toast.makeText(DeviceActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                if(isStreaming) {
+                    stopStream();
+                    updateStreaming();
+                }
             }
 
             @Override
             public void onNewPackets(@NonNull final MbtEEGPacket mbtEEGPackets) {
-                Log.i(TAG, Arrays.deepToString(mbtEEGPackets.getFeatures()));
                 if(invertFloatMatrix(mbtEEGPackets.getChannelsData()) != null)
                     mbtEEGPackets.setChannelsData(invertFloatMatrix(mbtEEGPackets.getChannelsData()));
 
@@ -184,7 +189,6 @@ DeviceActivity extends AppCompatActivity {
         bluetoothStateListener = new BluetoothStateListener(){
             @Override
             public void onNewState(BtState newState) {
-
             }
 
             @Override
@@ -195,6 +199,7 @@ DeviceActivity extends AppCompatActivity {
 
             @Override
             public void onDeviceDisconnected() {
+                LogUtils.i(TAG," device disconnected");
                 isConnected = false;
                 returnOnPreviousActivity();
             }
@@ -255,16 +260,16 @@ DeviceActivity extends AppCompatActivity {
 //                            .create());
                     startStream(new StreamConfig.Builder(eegListener)
                             .setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)
-                            .useQualities(true)
-                            .configureHeadset(new DeviceConfig.Builder()
-                                    .useP300(false)
-                                    //.mtu(47)
-                                    //.bandpassFilter()
-                                    //.gain()
-                                    //.notchFilter()
-                                    .listenToDeviceStatus(deviceStatusListener)
-                                    .enableDcOffset(false)
-                                    .create())
+//                            .useQualities(true)
+//                            .configureHeadset(new DeviceConfig.Builder()
+//                                    .useP300(false)
+//                                    //.mtu(47)
+//                                    //.bandpassFilter()
+//                                    //.gain()
+//                                    //.notchFilter()
+//                                    .listenToDeviceStatus(deviceStatusListener)
+//                                    .enableDcOffset(false)
+//                                    .create())
                             .create());
                 }else { //streaming is in progress : stopping streaming
                     stopStream(); // set false to isStreaming et null to the eegListener
