@@ -333,7 +333,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         LogUtils.i(TAG, "Stopping Low Energy scan");
         if(this.bluetoothLeScanner != null)
             this.bluetoothLeScanner.stopScan(this.leScanCallback);
-        if(!getCurrentState().equals(BtState.DEVICE_FOUND) && !getCurrentState().equals(BtState.DATA_STREAM_BT_CONNECTING))
+        if(!getCurrentState().equals(BtState.DEVICE_FOUND) && !getCurrentState().equals(BtState.DATA_BT_CONNECTING))
             currentDevice = null;
     }
 
@@ -605,7 +605,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     @Override
     public void notifyConnectionStateChanged(@NonNull BtState newState) {
         super.notifyConnectionStateChanged(newState);
-        if(newState.equals(BtState.DATA_STREAM_BT_DISCONNECTED)) {
+        if(newState.equals(BtState.DATA_BT_DISCONNECTED)) {
             if (isStreaming())
                 notifyStreamStateChanged(StreamState.DISCONNECTED);
             BroadcastUtils.unregisterReceiver(context, receiver);
@@ -629,9 +629,9 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             if((mailboxResponse & MailboxEvents.CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED) == MailboxEvents.CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED)
                 mbtBluetoothManager.notifyConnectionStateChanged(BtState.JACK_CABLE_CONNECTED);
             else if ((mailboxResponse & MailboxEvents.CMD_CODE_CONNECT_IN_A2DP_SUCCESS) == MailboxEvents.CMD_CODE_CONNECT_IN_A2DP_SUCCESS)
-                mbtBluetoothManager.notifyConnectionStateChanged(BtState.AUDIO_STREAM_BT_CONNECTION_SUCCESS);
+                mbtBluetoothManager.notifyConnectionStateChanged(BtState.AUDIO_BT_CONNECTION_SUCCESS);
         } else if(mailboxEvents == MailboxEvents.MBX_DISCONNECT_IN_A2DP)
-            mbtBluetoothManager.notifyConnectionStateChanged(BtState.AUDIO_STREAM_BT_DISCONNECTED);
+            mbtBluetoothManager.notifyConnectionStateChanged(BtState.AUDIO_BT_DISCONNECTED);
     }
 
     void updateConnectionState(boolean isCompleted){

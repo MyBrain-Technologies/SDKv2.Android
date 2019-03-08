@@ -91,11 +91,11 @@ final class MbtGattController extends BluetoothGattCallback {
         switch (newState) {
             case BluetoothGatt.STATE_CONNECTING:
                 if (mbtBluetoothLE.getCurrentState().equals(BtState.DEVICE_FOUND))
-                    this.mbtBluetoothLE.updateConnectionState(false);//current state is set to DATA_STREAM_BT_CONNECTING
+                    this.mbtBluetoothLE.updateConnectionState(false);//current state is set to DATA_BT_CONNECTING
                 break;
             case BluetoothGatt.STATE_CONNECTED:
-                if (mbtBluetoothLE.getCurrentState().equals(BtState.DATA_STREAM_BT_CONNECTING) || mbtBluetoothLE.getCurrentState().equals(BtState.SCAN_STARTED))
-                    this.mbtBluetoothLE.updateConnectionState(true);//current state is set to DATA_STREAM_BT_CONNECTION_SUCCESS and future is completed
+                if (mbtBluetoothLE.getCurrentState().equals(BtState.DATA_BT_CONNECTING) || mbtBluetoothLE.getCurrentState().equals(BtState.SCAN_STARTED))
+                    this.mbtBluetoothLE.updateConnectionState(true);//current state is set to DATA_BT_CONNECTION_SUCCESS and future is completed
                 else if(mbtBluetoothLE.getCurrentState().equals(BtState.IDLE))
                     this.mbtBluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
                     break;
@@ -108,7 +108,7 @@ final class MbtGattController extends BluetoothGattCallback {
                 //    refreshDeviceCache(gatt);// in this case the connection went well for a while, but just got lost
                 LogUtils.e(TAG, "Gatt returned disconnected state");
                 gatt.close();
-                this.mbtBluetoothLE.notifyConnectionStateChanged(BtState.DATA_STREAM_BT_DISCONNECTED);
+                this.mbtBluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);
                 break;
             default:
                 this.mbtBluetoothLE.notifyConnectionStateChanged(BtState.INTERNAL_FAILURE);

@@ -30,7 +30,7 @@ public enum BtState {
         /**
      * Initial state that corresponds to a standby mode : it represents a state where the mobile device is not connected to any headset and is awaiting order from the user or the SDK.
      * For example, he is awaiting for the user to call the connect method.
-     * The IDLE state is automatically returned few minutes after the DATA_STREAM_BT_DISCONNECTED state is returned (= after disconnection or lost connection or failure during the connection process).
+     * The IDLE state is automatically returned few minutes after the DATA_BT_DISCONNECTED state is returned (= after disconnection or lost connection or failure during the connection process).
      */
     IDLE,
 
@@ -55,12 +55,12 @@ public enum BtState {
     /**
      * Currently attempting to connect to a Bluetooth remote endpoint
      */
-    DATA_STREAM_BT_CONNECTING,
+    DATA_BT_CONNECTING,
 
     /**
      * Successfully connected in BLE or SPP
      */
-    DATA_STREAM_BT_CONNECTION_SUCCESS,
+    DATA_BT_CONNECTION_SUCCESS,
 
     /**
      *  Retrieving the services and characteristics (list of data where a value is associated to a name) that the connected headset deliver.
@@ -124,9 +124,9 @@ public enum BtState {
      */
     CONNECTED_AND_READY,
 
-    AUDIO_STREAM_BT_CONNECTION_SUCCESS,
+    AUDIO_BT_CONNECTION_SUCCESS,
 
-    AUDIO_STREAM_BT_DISCONNECTED,
+    AUDIO_BT_DISCONNECTED,
 
     /// FROM THIS STATE, THE CONNECTION PROCESS IS CONSIDERED COMPLETED : THE FOLLOWING STATES DEALS WITH OTHERS BLUETOOTH OPERATIONS
 
@@ -149,7 +149,7 @@ public enum BtState {
     /**
      * When connection was lost
      */
-    DATA_STREAM_BT_DISCONNECTED,
+    DATA_BT_DISCONNECTED,
 
 
     /// FROM THIS STATE, THE CONNECTION PROCESS IS CONSIDERED COMPLETED : THE FOLLOWING STATES ARE ERRORS THAT CAN OCCUR DURING A BLUETOOTH OPERATION
@@ -308,10 +308,10 @@ public enum BtState {
     }
 
     /**
-     * A reset to IDLE state need to be performed if headset is disconnect, or if the connection process failed before having reached the DATA_STREAM_BT_CONNECTION_SUCCESS state
+     * A reset to IDLE state need to be performed if headset is disconnect, or if the connection process failed before having reached the DATA_BT_CONNECTION_SUCCESS state
      */
     public boolean isResettableState(BtState previousState){
-        return (this.equals(DATA_STREAM_BT_DISCONNECTED) || (this.isDisconnectableState() && previousState.ordinal() < BtState.DATA_STREAM_BT_CONNECTION_SUCCESS.ordinal()));
+        return (this.equals(DATA_BT_DISCONNECTED) || (this.isDisconnectableState() && previousState.ordinal() < BtState.DATA_BT_CONNECTION_SUCCESS.ordinal()));
     }
 
     /**
@@ -337,7 +337,7 @@ public enum BtState {
     }
 
     public boolean isAudioState(){
-        return (this.equals(AUDIO_STREAM_BT_CONNECTION_SUCCESS) || this.equals(AUDIO_STREAM_BT_DISCONNECTED));
+        return (this.equals(AUDIO_BT_CONNECTION_SUCCESS) || this.equals(AUDIO_BT_DISCONNECTED));
     }
 
 }
