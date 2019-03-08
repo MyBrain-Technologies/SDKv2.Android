@@ -223,17 +223,17 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             if(!isConnectionInterrupted){
                 switch (getCurrentState()){
                     case IDLE:
-                    case DISCONNECTED:
+                    case DATA_STREAM_BT_DISCONNECTED:
                         getReadyForBluetoothOperation();
                         break;
                     case READY_FOR_BLUETOOTH_OPERATION:
                         startScan();
                         break;
                     case DEVICE_FOUND:
-                    case CONNECTING:
+                    case DATA_STREAM_BT_CONNECTING:
                         startConnectionForDataStreaming();
                         break;
-                    case CONNECTION_SUCCESS:
+                    case DATA_STREAM_BT_CONNECTION_SUCCESS:
                         startDiscoveringServices();
                         break;
                     case DISCOVERING_SUCCESS:
@@ -433,7 +433,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         }finally {
             asyncOperation.stopWaitingOperation(true);
         }
-        if(!getCurrentState().equals(BtState.CONNECTION_SUCCESS) && !getCurrentState().equals(BtState.IDLE))
+        if(!getCurrentState().equals(BtState.DATA_STREAM_BT_CONNECTION_SUCCESS) && !getCurrentState().equals(BtState.IDLE))
             updateConnectionState(BtState.CONNECTION_FAILURE);
         switchToNextConnectionStep();
     }
@@ -472,7 +472,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      */
     private void startDiscoveringServices(){
         LogUtils.i(TAG,"start discovering services ");
-        if(getCurrentState().ordinal() >= BtState.CONNECTION_SUCCESS.ordinal()){ //if connection is in progress and BLE is at least connected, we can discover services
+        if(getCurrentState().ordinal() >= BtState.DATA_STREAM_BT_CONNECTION_SUCCESS.ordinal()){ //if connection is in progress and BLE is at least connected, we can discover services
             try {
                 AsyncUtils.executeAsync(new Runnable() {
                     @Override
@@ -710,7 +710,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 }
             });
             if(!mbtBluetoothA2DP.isConnected())
-                mbtBluetoothA2DP.notifyConnectionStateChanged(BtState.CONNECTION_FAILURE); //at this point : current state should be AUDIO_CONNECTED if audio connection succeeded
+                mbtBluetoothA2DP.notifyConnectionStateChanged(BtState.CONNECTION_FAILURE); //at this point : current state should be AUDIO_STREAM_BT_CONNECTION_SUCCESS if audio connection succeeded
         }
         requestBeingProcessed = false;
         LogUtils.i(TAG, "connection completed");
@@ -851,17 +851,17 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      */
     public void notifyConnectionStateChanged(@NonNull BtState newState) {
         requestBeingProcessed = false;
-        if (newState.equals(BtState.DISCONNECTED)) {
+        if (newState.equals(BtState.DATA_STREAM_BT_DISCONNECTED)) {
             if(asyncSwitchOperation.isWaiting())
                 asyncSwitchOperation.stopWaitingOperation(false); //a new a2dp connection was detected while an other headset was connected : here the last device has been well disconnected so we can connect BLE from A2DP
             else
                 cancelPendingConnection(false); //a disconnection occurred
         }
         switch (newState){ //This event is sent to device module if registered
-            case AUDIO_DISCONNECTED:
+            case AUDIO_STREAM_BT_DISCONNECTED:
                 mbtBluetoothA2DP.notifyConnectionStateChanged(newState, false);
                 break;
-            case AUDIO_CONNECTED:
+            case AUDIO_STREAM_BT_CONNECTION_SUCCESS:
                 mbtBluetoothA2DP.notifyConnectionStateChanged(newState,false);
                 asyncOperation.stopWaitingOperation(false);
                 if(mbtBluetoothA2DP.getConnectedDevice() != null){
@@ -882,7 +882,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             case SCAN_TIMEOUT:
             case SCAN_FAILURE:
             case SCAN_INTERRUPTED:
-            case DISCONNECTED:
+            case DATA_STREAM_BT_DISCONNECTED:
             case CONNECTION_FAILURE:
             case CONNECTION_INTERRUPTED:
                 EventBusManager.postEvent(new DeviceEvents.NewBluetoothDeviceEvent(null, deviceTypeRequested));

@@ -88,7 +88,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
             final BluetoothDevice deviceConnected = a2dpProxy.getConnectedDevices().get(0);
             if (deviceConnected.getAddress().equals(deviceToConnect.getAddress())) { // already connected to the Melomind !
                 LogUtils.d(TAG, "Already connected to the melomind.");
-                notifyConnectionStateChanged(BtState.AUDIO_CONNECTED);
+                notifyConnectionStateChanged(BtState.AUDIO_STREAM_BT_CONNECTION_SUCCESS);
                 return true;
             } else {
                 // The user device is currently connected to a headset that is not the melomind
@@ -107,7 +107,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                             if (!hasA2DPDeviceConnected()) { // the user device is no longer connected to the wrong headset
                                 cancel();
                                 asyncConnection.stopWaitingOperation(false);
-                                notifyConnectionStateChanged(BtState.AUDIO_DISCONNECTED);
+                                notifyConnectionStateChanged(BtState.AUDIO_STREAM_BT_DISCONNECTED);
                             }
                         }
                     }, 100, 500);
@@ -174,7 +174,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                 }
                 if (status != null && status) {
                     LogUtils.i(TAG, "Successfully connected via A2DP to " + deviceToConnect.getAddress());
-                    notifyConnectionStateChanged(BtState.AUDIO_CONNECTED);
+                    notifyConnectionStateChanged(BtState.AUDIO_STREAM_BT_CONNECTION_SUCCESS);
                     return true;
                 } else {
                     LogUtils.i(TAG, "Cannot connect to A2DP on device" + deviceToConnect.getAddress());
@@ -276,7 +276,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
 
     @Override
     public boolean isConnected() {
-        return getCurrentState().equals(BtState.AUDIO_CONNECTED);
+        return getCurrentState().equals(BtState.AUDIO_STREAM_BT_CONNECTION_SUCCESS);
     }
 
     BluetoothDevice getConnectedDevice() {
@@ -359,12 +359,12 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                             if(hasA2DPDeviceConnected() && connectedDevice!= null && connectedDevice.getName()!= null && isAudioDeviceNameValid(connectedDevice.getName())) {//if a Bluetooth A2DP audio peripheral is connected to a device whose name is not null.
                                 LogUtils.d(TAG, "Detected connected device "+connectedDevice.getName() +" address is "+connectedDevice.getAddress());
                                 if(previousConnectedDevice == null || (previousConnectedDevice != null && connectedDevice!= null && currentDevice != previousConnectedDevice))
-                                    notifyConnectionStateChanged(BtState.AUDIO_CONNECTED, true);
+                                    notifyConnectionStateChanged(BtState.AUDIO_STREAM_BT_CONNECTION_SUCCESS, true);
                                 asyncInit.stopWaitingOperation(false);
                             }
 
                     }else //Here, either the A2DP connection has dropped or a new A2DP device is connecting.
-                        notifyConnectionStateChanged(BtState.AUDIO_DISCONNECTED);
+                        notifyConnectionStateChanged(BtState.AUDIO_STREAM_BT_DISCONNECTED);
 
                     connectedA2DpDevices = getA2DPConnectedDevices(); //In any case, it is mandatory to updated our local connected A2DP list
                 }
@@ -379,13 +379,13 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
 
     public void notifyConnectionStateChanged(BtState newState, boolean notifyManager){
         setCurrentState(newState);
-        if(newState.equals(BtState.AUDIO_DISCONNECTED) && asyncDisconnection.isWaiting())
+        if(newState.equals(BtState.AUDIO_STREAM_BT_DISCONNECTED) && asyncDisconnection.isWaiting())
             asyncDisconnection.stopWaitingOperation(false);
-        else if (newState.equals(BtState.AUDIO_CONNECTED)) {
+        else if (newState.equals(BtState.AUDIO_STREAM_BT_CONNECTION_SUCCESS)) {
             if(asyncConnection.isWaiting())
                 asyncConnection.stopWaitingOperation(false);
             if(notifyManager) //if audio is connected (and BLE is not) when the user request connection to a headset
-                mbtBluetoothManager.notifyConnectionStateChanged(BtState.AUDIO_CONNECTED);
+                mbtBluetoothManager.notifyConnectionStateChanged(BtState.AUDIO_STREAM_BT_CONNECTION_SUCCESS);
         }
     }
 

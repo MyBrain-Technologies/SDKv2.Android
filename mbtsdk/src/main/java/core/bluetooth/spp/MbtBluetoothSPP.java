@@ -174,7 +174,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
             toConnect = device;
 
         try {
-            notifyConnectionStateChanged(BtState.CONNECTING);
+            notifyConnectionStateChanged(BtState.DATA_STREAM_BT_CONNECTING);
             this.btSocket = toConnect.createRfcommSocketToServiceRecord(SERVER_UUID);
             this.btSocket.connect();
             if (retrieveStreams()) {
@@ -247,7 +247,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
             this.reader = null;
             this.writer = null;
             LogUtils.e(TAG, "Failed to send data. IOException ->\n" + ioe.getMessage());
-            notifyConnectionStateChanged(BtState.DISCONNECTED);
+            notifyConnectionStateChanged(BtState.DATA_STREAM_BT_DISCONNECTED);
             Log.getStackTraceString(ioe);
             return false;
         }
@@ -295,7 +295,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
                 this.btSocket.close();
                 this.btSocket = null;
             }
-            notifyConnectionStateChanged(BtState.DISCONNECTED);
+            notifyConnectionStateChanged(BtState.DATA_STREAM_BT_DISCONNECTED);
         } catch (@NonNull final IOException e) {
             LogUtils.e(TAG, "Error while closing streams -> \n" + e.getMessage());
             notifyConnectionStateChanged(BtState.CONNECTION_INTERRUPTED);
@@ -450,7 +450,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
                 Log.getStackTraceString(e);
                 if (this.requestDisconnect) {
                     this.requestDisconnect = false; // consumed
-                    notifyConnectionStateChanged(BtState.DISCONNECTED);
+                    notifyConnectionStateChanged(BtState.DATA_STREAM_BT_DISCONNECTED);
                 } else
                     notifyConnectionStateChanged(BtState.CONNECTION_INTERRUPTED);
                 break;

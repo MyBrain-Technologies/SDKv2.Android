@@ -201,7 +201,7 @@ public class MbtManager{
             case CONNECTED_AND_READY:
                 connectionStateListener.onDeviceConnected();
                 break;
-            case DISCONNECTED:
+            case DATA_STREAM_BT_DISCONNECTED:
                 connectionStateListener.onDeviceDisconnected();
                 break;
             default:
