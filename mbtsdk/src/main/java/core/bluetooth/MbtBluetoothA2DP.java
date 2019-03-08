@@ -221,6 +221,8 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                 mbtBluetoothManager.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
                     @Override
                     public void onRequestComplete(MbtDevice device) {
+                        if(device == null)
+                            return;
                         if(new FirmwareUtils(device.getFirmwareVersion()).isFwValidForFeature(FirmwareUtils.FWFeature.A2DP_FROM_HEADSET)){
                             mbtBluetoothManager.disconnectA2DPFromBLE();
                             try {

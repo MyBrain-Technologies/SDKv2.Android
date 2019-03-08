@@ -680,6 +680,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
                 @Override
                 public void onRequestComplete(MbtDevice device) {
+                    if(device == null)
+                        return;
                     if(!isRequestCompleted){
                         isRequestCompleted = true;
                         boolean connectionFromBleAvailable = new FirmwareUtils(device.getFirmwareVersion()).isFwValidForFeature(FirmwareUtils.FWFeature.A2DP_FROM_HEADSET);
@@ -970,8 +972,9 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * This method should be called if no error occured.
      */
     public void updateConnectionState(boolean isCompleted){
+        BtState nextStep = getCurrentState().getNextConnectionStep();
         if(!isConnectionInterrupted)
-            updateConnectionState(getCurrentState().getNextConnectionStep());
+            updateConnectionState(nextStep != BtState.IDLE ? nextStep : null);
 
         if(isCompleted)
             asyncOperation.stopWaitingOperation(false);
