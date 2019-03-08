@@ -622,10 +622,16 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 
     }
 
-    void notifyMailboxEventReceived(byte mailboxEvents){
-        LogUtils.i(TAG, "received mailbox response for A2DP "+ (mailboxEvents == MailboxEvents.MBX_CONNECT_IN_A2DP ? "connection":"disconnection"));
-        if(mailboxEvents == MailboxEvents.MBX_CONNECT_IN_A2DP || mailboxEvents == MailboxEvents.MBX_DISCONNECT_IN_A2DP)
-            mbtBluetoothManager.notifyConnectionStateChanged(mailboxEvents == MailboxEvents.MBX_CONNECT_IN_A2DP ? BtState.AUDIO_CONNECTED : BtState.AUDIO_DISCONNECTED);
+    void notifyMailboxEventReceived(byte mailboxEvents, byte mailboxResponse){
+        LogUtils.i(TAG, "received mailbox event for A2DP "+ (mailboxEvents == MailboxEvents.MBX_CONNECT_IN_A2DP ? "connection":"disconnection"));
+        LogUtils.i(TAG, "received mailbox response "+ mailboxResponse);
+        if(mailboxEvents == MailboxEvents.MBX_CONNECT_IN_A2DP){
+            if((mailboxResponse & MailboxEvents.CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED) == MailboxEvents.CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED)
+                mbtBluetoothManager.notifyConnectionStateChanged(BtState.JACK_CABLE_CONNECTED);
+            else if ((mailboxResponse & MailboxEvents.CMD_CODE_CONNECT_IN_A2DP_SUCCESS) == MailboxEvents.CMD_CODE_CONNECT_IN_A2DP_SUCCESS)
+                mbtBluetoothManager.notifyConnectionStateChanged(BtState.AUDIO_CONNECTED);
+        } else if(mailboxEvents == MailboxEvents.MBX_DISCONNECT_IN_A2DP)
+            mbtBluetoothManager.notifyConnectionStateChanged(BtState.AUDIO_DISCONNECTED);
     }
 
     void updateConnectionState(boolean isCompleted){
@@ -846,6 +852,8 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 
     public void connectA2DPFromBLE() {
         LogUtils.i(TAG, "connect a2dp from ble");
+        if(!isNotificationEnabledOnCharacteristic(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX))
+            enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX));
         byte[] buffer = {MailboxEvents.MBX_CONNECT_IN_A2DP, (byte)0x25, (byte)0xA2}; //Send buffer
         if(!startWriteOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX, buffer))
             LogUtils.w(TAG, "Failed to send connect A2dp request");
@@ -853,6 +861,8 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 
     public void disconnectA2DPFromBLE() {
         LogUtils.i(TAG, "disconnected A2DP from BLE");
+        if(!isNotificationEnabledOnCharacteristic(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX))
+            enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX));
         byte[] buffer = {MailboxEvents.MBX_DISCONNECT_IN_A2DP, (byte)0x85, (byte)0x11};
         if(!startWriteOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX, buffer))
             LogUtils.w(TAG, "Failed to send disconnect A2dp request");
