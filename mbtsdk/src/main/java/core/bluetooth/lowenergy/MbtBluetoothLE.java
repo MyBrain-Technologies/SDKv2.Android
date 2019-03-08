@@ -699,8 +699,8 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @param config the {@link DeviceConfig} instance to get new parameters from.
      */
     public void configureHeadset(DeviceConfig config){
-        LogUtils.i(TAG, "configure headset "+config.toString());
         if(config != null){
+            LogUtils.i(TAG, "configure headset "+config.toString());
             if (config.getMtuValue() != -1) //Checking whether or not there are params to send
                 if(!waitResultOfDeviceConfiguration(DeviceConfig.MTU_CONFIG, config))
                     return ;

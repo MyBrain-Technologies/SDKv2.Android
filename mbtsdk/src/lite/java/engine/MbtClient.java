@@ -8,7 +8,9 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 
 
+import config.ConnectionConfig;
 import config.MbtConfig;
+import config.StreamConfig;
 import core.MbtManager;
 import core.device.model.MbtDevice;
 import core.eeg.storage.MbtEEGPacket;

@@ -96,7 +96,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
     //private MbtDeviceAcquisition deviceAcquisition;
 
-    private int backgroundReconnectionRetryCounter = 0;
+    private int connectionRetryCounter = 0;
+    private final int MAX_CONNECTION_RETRY = 2;
 
     private ConnectionStateReceiver receiver = new ConnectionStateReceiver() {
         @Override
@@ -335,6 +336,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * The started Bluetooth connection process is stopped if the prerequisites are not valid.
      */
     private void getReadyForBluetoothOperation(){
+        connectionRetryCounter = 0;
         //Request sent to the BUS in order to get device from the device manager : the BUS should return a null object if it's the first connection, or return a non null object if the user requests connection whereas a headset is already connected
         LogUtils.i(TAG, "Checking Bluetooth Prerequisites and initialize");
         requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
@@ -706,8 +708,22 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                     }
                 }
             });
-            if(!mbtBluetoothA2DP.isConnected())
-                mbtBluetoothA2DP.notifyConnectionStateChanged(BtState.CONNECTION_FAILURE); //at this point : current state should be AUDIO_BT_CONNECTION_SUCCESS if audio connection succeeded
+          
+            if(!mbtBluetoothA2DP.isConnected()) {
+                if (connectionRetryCounter < MAX_CONNECTION_RETRY) {
+                    connectionRetryCounter++;
+                    try {
+                        Thread.sleep(50);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    startConnectionForAudioStreaming();
+                } else {
+                    connectionRetryCounter = 0;
+                    mbtBluetoothA2DP.notifyConnectionStateChanged(BtState.CONNECTION_FAILURE); //at this point : current state should be AUDIO_CONNECTED if audio connection succeeded
+                }
+            }
+
         }
         if(isConnected())
             updateConnectionState(true); //BLE and audio (if SDK user requested it) are connected so the client is notified that the device is fully connected

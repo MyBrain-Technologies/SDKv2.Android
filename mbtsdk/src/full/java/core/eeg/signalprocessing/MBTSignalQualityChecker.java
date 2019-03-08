@@ -1,6 +1,7 @@
 package core.eeg.signalprocessing;
 
 
+import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
@@ -16,6 +17,7 @@ import utils.LogUtils;
  *
  * @author Vincent on 26/08/2015.
  */
+@Keep
 public final class MBTSignalQualityChecker {
 
     private static final String TAG = MBTSignalQualityChecker.class.getSimpleName();

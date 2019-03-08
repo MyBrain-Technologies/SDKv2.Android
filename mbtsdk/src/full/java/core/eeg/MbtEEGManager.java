@@ -286,7 +286,7 @@ public final class MbtEEGManager extends BaseModuleManager {
             hasQualities = true;
             initQualityChecker();
         }
-        else if(!event.isStart())
+        else if(!event.isStart() && event.shouldComputeQualities())
             deinitQualityChecker();
 
     }

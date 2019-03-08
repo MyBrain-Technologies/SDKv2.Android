@@ -253,16 +253,16 @@ DeviceActivity extends AppCompatActivity {
 //                            .create());
                     startStream(new StreamConfig.Builder(eegListener)
                             .setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)
-                            .useQualities(true)
-                            .configureHeadset(new DeviceConfig.Builder()
-                                    .useP300(false)
-                                    //.mtu(47)
-                                    //.bandpassFilter()
-                                    //.gain()
-                                    //.notchFilter()
-                                    .listenToDeviceStatus(deviceStatusListener)
-                                    .enableDcOffset(false)
-                                    .create())
+//                            .useQualities(true)
+//                            .configureHeadset(new DeviceConfig.Builder()
+//                                    .useP300(false)
+//                                    //.mtu(47)
+//                                    //.bandpassFilter()
+//                                    //.gain()
+//                                    //.notchFilter()
+//                                    .listenToDeviceStatus(deviceStatusListener)
+//                                    .enableDcOffset(false)
+//                                    .create())
                             .create());
                 }else { //streaming is in progress : stopping streaming
                     stopStream(); // set false to isStreaming et null to the eegListener
