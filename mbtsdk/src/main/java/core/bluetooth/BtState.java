@@ -117,8 +117,14 @@ public enum BtState {
     SENDIND_QR_CODE,
 
     /**
-     * Successfully connected and ready to use. This state is used when communication is finally possible,
+     * Successfully connected in BLE or SPP. This state is used when communication is finally possible,
      * For example, we consider that a Melomind headset is usable for streaming if services are discovered, device info have been read, headset is bonded and QR code has been sent if necesseray
+     */
+    CONNECTED,
+
+    /**
+     * Successfully connected in BLE/SPP and A2DP in user requested audio connection and ready to use. This state is used when communication and audio stream are finally possible,
+     * For example, we consider that a Melomind headset is usable for streaming if services are discovered, device info have been read, headset is bonded, QR code has been sent if necesseray, and A2DP is connected is the user requested it
      */
     CONNECTED_AND_READY,
 

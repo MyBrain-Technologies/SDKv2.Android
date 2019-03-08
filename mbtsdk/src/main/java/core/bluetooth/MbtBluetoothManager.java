@@ -251,7 +251,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                     case BONDED:
                         startSendingExternalName();
                         break;
-                    case CONNECTED_AND_READY:
+                    case CONNECTED:
                         startConnectionForAudioStreaming();
                         break;
                     default:
@@ -637,7 +637,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                     }
 
                 }else  //if firmware version bonding is older than 1.6.7, the connection process is considered completed
-                    updateConnectionState(BtState.CONNECTED_AND_READY);
+                    updateConnectionState(BtState.CONNECTED);
             }
         });
         if(getCurrentState().equals(BtState.BONDING)) { //at this point : current state should be BONDED if bonding succeeded
@@ -665,7 +665,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                        }
                    });
                 }
-                updateConnectionState(true);//current state is set to CONNECTED_AND_READY in any case (success or failure) the connection process is completed and the SDK consider that everything is ready for any operation (for example ready to acquire EEG data)
+                updateConnectionState(true);//current state is set to CONNECTED in any case (success or failure) the connection process is completed and the SDK consider that everything is ready for any operation (for example ready to acquire EEG data)
             }
         });
         switchToNextConnectionStep();
@@ -685,7 +685,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                             AsyncUtils.executeAsync(new Runnable() {
                                 @Override
                                 public void run() {
-                                    if(isDataBluetoothConnected() && connectionFromBleAvailable)   //A2DP cannot be connected from BLE if BLE connection state is not CONNECTED_AND_READY
+                                    if(isDataBluetoothConnected() && connectionFromBleAvailable)   //A2DP cannot be connected from BLE if BLE connection state is not CONNECTED_AND_READY or CONNECTED
                                         mbtBluetoothLE.connectA2DPFromBLE();
                                     else {// if connectA2DPFromBLE failed or is not supported by the headset firmware version
                                         if(Build.VERSION.SDK_INT < Build.VERSION_CODES.P || mbtBluetoothA2DP.isPairedDevice(getCurrentDevice()))
@@ -708,10 +708,11 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             });
             if(!mbtBluetoothA2DP.isConnected())
                 mbtBluetoothA2DP.notifyConnectionStateChanged(BtState.CONNECTION_FAILURE); //at this point : current state should be AUDIO_CONNECTED if audio connection succeeded
-            else
-               notifyConnectionStateChanged(BtState.CONNECTED_AND_READY); //audio is connected so the client is notified that the device is fully connected
         }
+        if(isConnected())
+            updateConnectionState(true); //BLE and audio (if SDK user requested it) are connected so the client is notified that the device is fully connected
         requestBeingProcessed = false;
+
         LogUtils.i(TAG, "connection completed");
     }
 
@@ -889,8 +890,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 break;
         }
 
-        if(!newState.equals(BtState.CONNECTED_AND_READY) || isConnected())
-            EventBusManager.postEvent(new ConnectionStateEvent(newState)); //This event is sent to MbtManager for user notifications
+        EventBusManager.postEvent(new ConnectionStateEvent(newState)); //This event is sent to MbtManager for user notifications
     }
 
     /**

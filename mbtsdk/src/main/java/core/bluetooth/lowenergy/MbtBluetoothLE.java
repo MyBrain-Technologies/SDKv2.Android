@@ -447,13 +447,14 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 
     @Override
     public boolean isConnected() {
-        return getCurrentState() == BtState.CONNECTED_AND_READY;
+        return (getCurrentState() == BtState.CONNECTED_AND_READY || getCurrentState() == BtState.CONNECTED);
     }
 
     /**
      * Starts a read operation on a specific characteristic
      * @param characteristic the characteristic to read
-     * @return immediatly false on error, true true if read operation has started correctly
+     * @return immediatly false on error, true true if read operation has st
+     * arted correctly
      */
    boolean startReadOperation(@NonNull UUID characteristic){
        if(!isConnected() && !getCurrentState().equals(BtState.DISCOVERING_SUCCESS) && !getCurrentState().isReadingDeviceInfoState() && !getCurrentState().equals(BtState.BONDING)) {
