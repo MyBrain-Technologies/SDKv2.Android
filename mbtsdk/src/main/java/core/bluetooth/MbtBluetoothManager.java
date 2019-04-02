@@ -923,6 +923,11 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      */
     void notifyDeviceInfoReceived(DeviceInfo deviceInfo, String deviceValue){
         requestBeingProcessed = false;
+        if(deviceInfo.equals(DeviceInfo.MODEL_NUMBER)
+                && deviceValue.startsWith(MelomindsQRDataBase.QR_PREFIX)
+                && deviceValue.length() == MelomindsQRDataBase.QR_LENGTH-1) //if QR code contains only 9 digits
+            deviceValue.concat(MelomindsQRDataBase.QR_SUFFIX);
+
         EventBusManager.postEvent(new DeviceInfoEvent<>(deviceInfo, deviceValue));
     }
 

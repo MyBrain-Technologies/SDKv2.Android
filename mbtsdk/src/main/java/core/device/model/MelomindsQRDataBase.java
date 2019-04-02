@@ -22,7 +22,8 @@ public class MelomindsQRDataBase extends ConcurrentHashMap<String, String> {
     private transient final static String TAG = MelomindsQRDataBase.class.getSimpleName();
 
     public transient static final String QR_PREFIX = "MM";
-    public transient static final int QR_LENGTH = 10;
+    public transient static final String QR_SUFFIX = ".";
+    public transient static final int QR_LENGTH = QR_PREFIX.length() + 8;
     private static final String QR_CODE_FILE = "qrcodes_serial.csv";
 
     public MelomindsQRDataBase(Context context, boolean setQRAsKey){
@@ -77,4 +78,5 @@ public class MelomindsQRDataBase extends ConcurrentHashMap<String, String> {
     public String get(Object key) {
         return super.get(key);
     }
+
 }
