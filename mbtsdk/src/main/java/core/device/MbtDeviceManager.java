@@ -65,6 +65,7 @@ public class MbtDeviceManager extends BaseModuleManager{
     }
 
     private void setmCurrentConnectedDevice(MbtDevice mCurrentConnectedDevice) {
+        Log.d(TAG,"new connected device stored "+mCurrentConnectedDevice);
         this.mCurrentConnectedDevice = mCurrentConnectedDevice;
     }
 

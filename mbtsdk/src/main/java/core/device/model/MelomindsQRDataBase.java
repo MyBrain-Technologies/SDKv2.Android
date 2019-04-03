@@ -1,5 +1,6 @@
 package core.device.model;
 
+import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
@@ -15,6 +16,8 @@ import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 
+import features.MbtFeatures;
+
 import static android.content.Context.MODE_PRIVATE;
 
 
@@ -23,7 +26,7 @@ public class MelomindsQRDataBase extends ConcurrentHashMap<String, String> {
 
     public transient static final String QR_PREFIX = "MM";
     public transient static final String QR_SUFFIX = ".";
-    public transient static final int QR_LENGTH = QR_PREFIX.length() + 8;
+    public transient static final int QR_LENGTH = MbtFeatures.DEVICE_QR_CODE_LENGTH;
     private static final String QR_CODE_FILE = "qrcodes_serial.csv";
 
     public MelomindsQRDataBase(Context context, boolean setQRAsKey){
@@ -76,7 +79,20 @@ public class MelomindsQRDataBase extends ConcurrentHashMap<String, String> {
 
     @Override
     public String get(Object key) {
-        return super.get(key);
+        String value = super.get(key);
+        if(key instanceof String){
+
+            if(((String)key).contains(MbtFeatures.A2DP_DEVICE_NAME_PREFIX))
+                key = ((String) key).replace(MbtFeatures.A2DP_DEVICE_NAME_PREFIX,"");
+
+            if(((String)key).contains(MbtFeatures.A2DP_DEVICE_NAME_PREFIX_LEGACY))
+                key = ((String) key).replace(MbtFeatures.A2DP_DEVICE_NAME_PREFIX_LEGACY,"");
+
+            if(value != null && ((String) key).contains(QR_PREFIX) && !value.contains(QR_PREFIX)) //add a melo_ prefix to the BLE name
+                value = MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX + value;
+        }
+        Log.d(TAG, "Key/value pair is ["+key+" ; "+value+"]");
+        return value;
     }
 
 }

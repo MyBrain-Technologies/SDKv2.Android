@@ -10,11 +10,13 @@ public class StartOrContinueConnectionRequestEvent extends BluetoothRequests {
 
     private boolean isClientUserRequest;
     private String nameOfDeviceRequested;
+    private String qrCodeOfDeviceRequested;
     private MbtDeviceType typeOfDeviceRequested;
 
-    public StartOrContinueConnectionRequestEvent(boolean isClientUserRequest, String nameOfDeviceRequested, MbtDeviceType typeOfDeviceRequested){
+    public StartOrContinueConnectionRequestEvent(boolean isClientUserRequest, String nameOfDeviceRequested, String qrCodeOfDeviceRequested, MbtDeviceType typeOfDeviceRequested){
             this.isClientUserRequest = isClientUserRequest;
             this.nameOfDeviceRequested = nameOfDeviceRequested;
+            this.qrCodeOfDeviceRequested = qrCodeOfDeviceRequested;
             this.typeOfDeviceRequested = typeOfDeviceRequested;
     }
 
@@ -28,5 +30,9 @@ public class StartOrContinueConnectionRequestEvent extends BluetoothRequests {
 
     public MbtDeviceType getTypeOfDeviceRequested() {
         return typeOfDeviceRequested;
+    }
+
+    public String getQrCodeOfDeviceRequested() {
+        return qrCodeOfDeviceRequested;
     }
 }
