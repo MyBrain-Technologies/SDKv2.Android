@@ -225,14 +225,12 @@ public class HomeActivity extends AppCompatActivity{
         isErrorRaised = false;
         client.connectBluetooth(new ConnectionConfig.Builder(bluetoothStateListener)
                     .deviceName(
-                            ((deviceName != null) && (deviceName.equals(MELOMIND_DEVICE_NAME_PREFIX) || deviceName.equals(VPRO_DEVICE_NAME_PREFIX) || deviceName.equals(QR_CODE_NAME_PREFIX)) ) ? //if no name has been entered by the user, the default device name is the headset prefix
+                            ((deviceName != null) && (deviceName.equals(MELOMIND_DEVICE_NAME_PREFIX) || deviceName.equals(VPRO_DEVICE_NAME_PREFIX))) ? //if no name has been entered by the user, the default device name is the headset prefix
                             null : deviceName ) //null is given in parameters if no name has been entered by the user
                     .deviceQrCode(
                             ((deviceQrCode != null) && (deviceQrCode.equals(QR_CODE_NAME_PREFIX)) ) ? //if no QR code has been entered by the user, the default device name is the headset prefix
                             null : deviceQrCode )
                     .maxScanDuration(SCAN_DURATION)
-                    .scanDeviceType(deviceType)
-                    .connectAudioIfDeviceCompatible(connectAudioIfDeviceCompatible)
                     .create());
 
     }

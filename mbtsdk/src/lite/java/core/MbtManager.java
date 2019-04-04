@@ -25,6 +25,7 @@ import core.device.MbtDeviceManager;
 import core.device.SaturationEvent;
 import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
+import core.device.model.MelomindsQRDataBase;
 import core.eeg.MbtEEGManager;
 import core.eeg.requests.QualityRequest;
 import engine.SimpleRequestCallback;
@@ -114,7 +115,7 @@ public class MbtManager{
             this.connectionStateListener.onError(HeadsetDeviceError.ERROR_PREFIX," "+ (deviceTypeRequested.equals(MbtDeviceType.MELOMIND) ? MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX : MbtFeatures.VPRO_DEVICE_NAME_PREFIX));
         }else if(deviceQrCodeRequested != null && (!deviceQrCodeRequested.startsWith(MbtFeatures.QR_CODE_NAME_PREFIX))){
             this.connectionStateListener.onError(HeadsetDeviceError.ERROR_PREFIX," "+MbtFeatures.QR_CODE_NAME_PREFIX);
-        }else if(deviceQrCodeRequested != null && deviceNameRequested != null && !deviceQrCodeRequested.equals(new MelomindsQRDataBase(mContext,  false).get(deviceNameRequested))){
+        }else if(deviceQrCodeRequested != null && deviceNameRequested != null && !deviceNameRequested.equals(new MelomindsQRDataBase(mContext,  true).get(deviceQrCodeRequested))){
             this.connectionStateListener.onError(HeadsetDeviceError.ERROR_MATCHING, mContext.getString(R.string.aborted_connection));
         }else{
             EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent(true, deviceNameRequested, deviceQrCodeRequested, deviceTypeRequested));

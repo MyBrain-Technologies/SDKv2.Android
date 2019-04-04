@@ -104,17 +104,6 @@ DeviceActivity extends AppCompatActivity {
         initEegGraph();
 
         client.setConnectionStateListener(bluetoothStateListener);
-
-//        client.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
-//            @Override
-//            public void onRequestComplete(MbtDevice object) {
-//                if(object != null) {
-//                    deviceNameTextView.setText(object.getProductName() + " | " + object.getExternalName());
-//                    deviceType = (object instanceof MelomindDevice ? MbtDeviceType.MELOMIND : MbtDeviceType.VPRO);
-//                }
-//            }
-//        });
-
     }
 
     private void initEegListener() {
@@ -263,7 +252,7 @@ DeviceActivity extends AppCompatActivity {
 //                            .create());
                     startStream(new StreamConfig.Builder(eegListener)
                             .setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)
-//                            .useQualities(true)
+                            .useQualities(true)
 //                            .configureHeadset(new DeviceConfig.Builder()
 //                                    .useP300(false)
 //                                    //.mtu(47)
