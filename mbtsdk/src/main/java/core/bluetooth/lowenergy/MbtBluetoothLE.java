@@ -836,6 +836,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     }
 
     public void sendExternalName(String externalName) {
+        LogUtils.d(TAG, "send external name "+externalName);
         if (externalName == null)
             return;
         ByteBuffer nameToBytes = ByteBuffer.allocate(3 + externalName.getBytes().length); // +1 for mailbox code
@@ -900,14 +901,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     }
 
     public void notifyDeviceInfoReceived(@NonNull DeviceInfo deviceInfo, @NonNull String deviceValue){ // This method will be called when a DeviceInfoReceived is posted (fw or hw or serial number) by MbtBluetoothLE or MbtBluetoothSPP
-        if(deviceInfo.equals(DeviceInfo.MODEL_NUMBER)
-                && deviceValue.startsWith(MelomindsQRDataBase.QR_PREFIX)
-                && deviceValue.length() == MelomindsQRDataBase.QR_LENGTH-1) { //if QR code contains only 9 digits
-            deviceValue = deviceValue.concat(MelomindsQRDataBase.QR_SUFFIX);
-        //todo sendexternalname ?
-        }
-
-        super.notifyDeviceInfoReceived(deviceInfo,deviceValue);
+                super.notifyDeviceInfoReceived(deviceInfo,deviceValue);
         if(getCurrentState().isReadingDeviceInfoState())
             updateConnectionState(true); //current state is set to READING_FIRMWARE_VERSION_SUCCESS or READING_HARDWARE_VERSION_SUCCESS or READING_SERIAL_NUMBER_SUCCESS or READING_SUCCESS if reading device info and future is completed
 

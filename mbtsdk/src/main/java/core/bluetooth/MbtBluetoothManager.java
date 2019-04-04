@@ -190,9 +190,9 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                         deviceQrCodeRequested = deviceQrCodeRequested.concat(MelomindsQRDataBase.QR_SUFFIX); //homogenization with the 10 digits QR code by adding a dot at the end
                 }else if(deviceNameRequested != null) //if a device name has been specified but no QR code
                     deviceQrCodeRequested = new MelomindsQRDataBase(mContext, false).get(deviceNameRequested);  //retrieve the QR code from BLE name using QR code database
-                Log.d(TAG," device name "+deviceNameRequested+ " | QR code "+deviceQrCodeRequested);
 
                 deviceTypeRequested = ((StartOrContinueConnectionRequestEvent) request).getTypeOfDeviceRequested();
+                Log.d(TAG," device name "+deviceNameRequested+ " | QR code "+deviceQrCodeRequested + " | type "+deviceTypeRequested);
                 startOrContinueConnectionOperation(((StartOrContinueConnectionRequestEvent) request).isClientUserRequest());
 
             } else if (request instanceof ReadRequestEvent) {
@@ -671,7 +671,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             public void onRequestComplete(MbtDevice device) {
                 LogUtils.d(TAG, "device "+device);
                 updateConnectionState(true);//current state is set to QR_CODE_SENDING
-                if (device.getDeviceId() != null && device.getExternalName() != null && device.getExternalName().equals(MbtFeatures.MELOMIND_DEVICE_NAME) //send the QR code found in the database if the headset do not know its own QR code
+                if (device.getDeviceId() != null && device.getExternalName() != null && (device.getExternalName().equals(MbtFeatures.MELOMIND_DEVICE_NAME) || device.getExternalName().length() == MbtFeatures.DEVICE_QR_CODE_LENGTH-1) //send the QR code found in the database if the headset do not know its own QR code
                         && new FirmwareUtils(device.getFirmwareVersion()).isFwValidForFeature(FirmwareUtils.FWFeature.REGISTER_EXTERNAL_NAME)) {
                    AsyncUtils.executeAsync(new Runnable() {
                        @Override
@@ -972,7 +972,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * The updateConnectionState(boolean) method with no parameter should be call if nothing went wrong and user wants to continue the connection process
      */
     private void updateConnectionState(BtState state){
-        if(state != null && !state.isAudioState() && (!isConnectionInterrupted || state.equals(BtState.CONNECTION_INTERRUPTED))){
+        if(state != null && !state.isAudioState() && deviceTypeRequested != null && (!isConnectionInterrupted || state.equals(BtState.CONNECTION_INTERRUPTED))){
             if(deviceTypeRequested.useLowEnergyProtocol())
                 mbtBluetoothLE.notifyConnectionStateChanged(state);
             else

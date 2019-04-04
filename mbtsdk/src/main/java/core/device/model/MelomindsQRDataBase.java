@@ -79,16 +79,20 @@ public class MelomindsQRDataBase extends ConcurrentHashMap<String, String> {
 
     @Override
     public String get(Object key) {
-        String value = super.get(key);
+        String value = null;
         if(key instanceof String){
 
-            if(((String)key).contains(MbtFeatures.A2DP_DEVICE_NAME_PREFIX))
+            if(((String)key).contains(MbtFeatures.A2DP_DEVICE_NAME_PREFIX)) //audio_ prefix is removed in the key
                 key = ((String) key).replace(MbtFeatures.A2DP_DEVICE_NAME_PREFIX,"");
 
-            if(((String)key).contains(MbtFeatures.A2DP_DEVICE_NAME_PREFIX_LEGACY))
+            if(((String)key).contains(MbtFeatures.A2DP_DEVICE_NAME_PREFIX_LEGACY)) //melo_ prefix is removed in the key
                 key = ((String) key).replace(MbtFeatures.A2DP_DEVICE_NAME_PREFIX_LEGACY,"");
 
-            if(value != null && ((String) key).contains(QR_PREFIX) && !value.contains(QR_PREFIX)) //add a melo_ prefix to the BLE name
+            if(((String)key).contains(QR_PREFIX) && ((String)key).length() == (MbtFeatures.DEVICE_QR_CODE_LENGTH-1)) // a dot is added if 1 digit is missing in the QR code as the key
+                key = ((String) key).concat(QR_SUFFIX);
+
+            value = super.get(key);
+            if(value != null && ((String) key).contains(QR_PREFIX) && !value.contains(QR_PREFIX)) //melo_ prefix is added in the value (for the BLE name)
                 value = MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX + value;
         }
         Log.d(TAG, "Key/value pair is ["+key+" ; "+value+"]");

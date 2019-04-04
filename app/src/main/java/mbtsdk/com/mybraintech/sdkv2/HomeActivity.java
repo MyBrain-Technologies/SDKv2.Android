@@ -75,6 +75,7 @@ public class HomeActivity extends AppCompatActivity{
     private Button scanButton;
 
     private boolean isCancelled = false;
+    private boolean isErrorRaised = false;
 
     private Toast toast;
 
@@ -85,23 +86,29 @@ public class HomeActivity extends AppCompatActivity{
             if(newState.equals(BtState.READING_SUCCESS)){ //SERIAL NUMBER VALUE HAS NOT BEEN READ BEFORE THIS STEP
                 client.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
                     @Override
-                    public void onRequestComplete(MbtDevice device) {
+                    public void onRequestComplete(final MbtDevice device) {
                         Log.d(TAG, "device received "+device);
                         if(device != null) {
-                            Log.d(TAG, ""+device.toString());
-                            deviceName = device.getProductName();
-                            deviceNameField.setText(deviceName.replace(MELOMIND_DEVICE_NAME_PREFIX,""));
-                            for(String prefix : prefixNameList){
-                                if(device.getDeviceId() != null && device.getProductName().startsWith(prefix))
-                                    deviceNamePrefixSpinner.setSelection(prefixNameArrayAdapter.getPosition(prefix));
-                            }
-                            deviceQrCode = device.getExternalName();
-                            deviceQrCodeField.setText(deviceQrCode.replace(QR_CODE_NAME_PREFIX,""));
-                            for(String prefix : prefixQrCodeList){
-                                if(device.getExternalName() != null && device.getExternalName().startsWith(prefix))
-                                    deviceQrCodePrefixSpinner.setSelection(prefixQrCodeArrayAdapter.getPosition(prefix));
-                            }
-                            deviceType = ( device instanceof MelomindDevice ? MELOMIND : VPRO);
+                            runOnUiThread(new Runnable() {
+                                  @Override
+                                  public void run() {
+                                      deviceName = device.getProductName();
+                                      String deviceNameToDisplay = deviceName.replace(MELOMIND_DEVICE_NAME_PREFIX,"");
+                                      deviceNameField.setText(deviceNameToDisplay);
+                                      for(String prefix : prefixNameList){
+                                          if(device.getDeviceId() != null && device.getProductName().startsWith(prefix))
+                                              deviceNamePrefixSpinner.setSelection(prefixNameArrayAdapter.getPosition(prefix));
+                                      }
+                                      deviceQrCode = device.getExternalName();
+                                      String deviceQrCodeToDisplay = deviceQrCode.replace(QR_CODE_NAME_PREFIX,"");
+                                      deviceQrCodeField.setText(deviceQrCodeToDisplay);
+                                      for(String prefix : prefixQrCodeList){
+                                          if(device.getExternalName() != null && device.getExternalName().startsWith(prefix))
+                                              deviceQrCodePrefixSpinner.setSelection(prefixQrCodeArrayAdapter.getPosition(prefix));
+                                      }
+                                      deviceType = ( device instanceof MelomindDevice ? MELOMIND : VPRO);
+                                  }
+                              });
                         }
                     }
                 });
@@ -111,8 +118,9 @@ public class HomeActivity extends AppCompatActivity{
         @Override
         public void onError(BaseError error, String additionnalInfo) {
             Log.e(TAG, "onError received "+error.getMessage()+ (additionnalInfo != null ? additionnalInfo : ""));
+            isErrorRaised = true;
             updateScanning(false);
-            toast = Toast.makeText(HomeActivity.this, error.getMessage(), Toast.LENGTH_LONG);
+            toast = Toast.makeText(HomeActivity.this, error.getMessage()+ (additionnalInfo != null ? additionnalInfo : ""), Toast.LENGTH_LONG);
             toast.show();
         }
 
@@ -201,21 +209,21 @@ public class HomeActivity extends AppCompatActivity{
 
                 deviceType = isMelomindDevice() ? MELOMIND : VPRO;
                 connectAudioIfDeviceCompatible = connectAudioSwitch.isChecked();
-                if(isCancelled){ //Scan in progress : a second click means that the user is trying to cancel the scan
-                   cancelScan();
-                }else{ // Scan is not in progress : starting a new scan in order to connect to a Mbt Device
-                    startScan();
-                }
-                updateScanning(!isCancelled);
 
+                if(isCancelled) //Scan in progress : a second click means that the user is trying to cancel the scan
+                   cancelScan();
+                else // Scan is not in progress : starting a new scan in order to connect to a Mbt Device
+                    startScan();
+                if(!isErrorRaised)
+                    updateScanning(!isCancelled);
             }
         });
     }
 
 
     private void startScan() {
-
-            client.connectBluetooth(new ConnectionConfig.Builder(bluetoothStateListener)
+        isErrorRaised = false;
+        client.connectBluetooth(new ConnectionConfig.Builder(bluetoothStateListener)
                     .deviceName(
                             ((deviceName != null) && (deviceName.equals(MELOMIND_DEVICE_NAME_PREFIX) || deviceName.equals(VPRO_DEVICE_NAME_PREFIX) || deviceName.equals(QR_CODE_NAME_PREFIX)) ) ? //if no name has been entered by the user, the default device name is the headset prefix
                             null : deviceName ) //null is given in parameters if no name has been entered by the user
