@@ -72,11 +72,6 @@ public final class StreamConfig {
             this.eegListener = eegListener;
         }
 
-//        public Builder setStreamDuration(long durationInMillis){
-//            this.streamDuration = streamDuration;
-//            return this;
-//        }
-
         /**
          * Use this method to specify how much eeg you want to receive in the {@link EegListener#onNewPackets(MbtEEGPacket)} method.
          *

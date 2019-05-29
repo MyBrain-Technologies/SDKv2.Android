@@ -145,8 +145,6 @@ public class HomeActivity extends AppCompatActivity{
                         ((deviceName != null) && (deviceName.equals(MELOMIND_DEVICE_NAME_PREFIX) || deviceName.equals(VPRO_DEVICE_NAME_PREFIX)) ) ? //if no no name has been entered by the user, the default device name is the headset prefix
                                 null : deviceName ) //null is given in parameters if no name has been entered by the user
                 .maxScanDuration(SCAN_DURATION)
-                .scanDeviceType(isMelomindDevice() ? MELOMIND : VPRO)
-                .connectAudioIfDeviceCompatible(connectAudioIfDeviceCompatible)
                 .create());
 
     }

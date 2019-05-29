@@ -21,7 +21,7 @@
         app:layout_constraintStart_toStartOf="@+id/guidelineStart" />
 
     <Spinner
-        android:id="@+id/devicePrefix"
+        android:id="@+id/deviceNamePrefix"
         android:layout_width="wrap_content"
         android:layout_height="0dp"
 
@@ -38,10 +38,34 @@
         android:hint="@string/device_name"
         android:inputType="number"
 
-        app:layout_constraintStart_toEndOf="@+id/devicePrefix"
+        app:layout_constraintStart_toEndOf="@+id/deviceQrCodePrefix"
         app:layout_constraintEnd_toEndOf="@+id/guidelineEnd"
         app:layout_constraintTop_toTopOf="@+id/guidelineTopName"
         app:layout_constraintBottom_toBottomOf="@+id/guidelineBottomName"
+        />
+
+    <Spinner
+        android:id="@+id/deviceQrCodePrefix"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+
+        app:layout_constraintStart_toStartOf="@+id/guidelineStart"
+        app:layout_constraintEnd_toEndOf="@+id/guidelineEndPrefix"
+        app:layout_constraintTop_toTopOf="@+id/guidelineTopQrCode"
+        app:layout_constraintBottom_toBottomOf="@+id/guidelineBottomQrCode"/>
+
+    <EditText
+        android:id="@+id/deviceQrCodeField"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:singleLine="true"
+        android:hint="@string/device_qrcode"
+        android:inputType="text"
+
+        app:layout_constraintStart_toEndOf="@+id/deviceQrCodePrefix"
+        app:layout_constraintEnd_toEndOf="@+id/guidelineEnd"
+        app:layout_constraintTop_toTopOf="@+id/guidelineTopQrCode"
+        app:layout_constraintBottom_toBottomOf="@+id/guidelineBottomQrCode"
         />
 
     <Switch
@@ -70,19 +94,19 @@
         app:layout_constraintTop_toTopOf="@+id/guidelineTopButton" />
 
     <!--<Button-->
-        <!--android:id="@+id/scanAllButton"-->
-        <!--style="@style/Base.Widget.AppCompat.Button.Small"-->
-        <!--android:layout_width="0dp"-->
-        <!--android:layout_height="0dp"-->
-        <!--android:elevation="10dp"-->
-        <!--android:text="@string/scanAll"-->
+    <!--android:id="@+id/scanAllButton"-->
+    <!--style="@style/Base.Widget.AppCompat.Button.Small"-->
+    <!--android:layout_width="0dp"-->
+    <!--android:layout_height="0dp"-->
+    <!--android:elevation="10dp"-->
+    <!--android:text="@string/scanAll"-->
 
-        <!--android:textColor="@color/light_blue"-->
-        <!--android:textSize="12sp"-->
-        <!--app:layout_constraintBottom_toTopOf="@+id/guidelineBottomButton"-->
-        <!--app:layout_constraintEnd_toEndOf="@+id/guidelineEnd"-->
-        <!--app:layout_constraintStart_toStartOf="@+id/guidelineStartCancelButton"-->
-        <!--app:layout_constraintTop_toTopOf="@+id/guidelineTopButton" />-->
+    <!--android:textColor="@color/light_blue"-->
+    <!--android:textSize="12sp"-->
+    <!--app:layout_constraintBottom_toTopOf="@+id/guidelineBottomButton"-->
+    <!--app:layout_constraintEnd_toEndOf="@+id/guidelineEnd"-->
+    <!--app:layout_constraintStart_toStartOf="@+id/guidelineStartCancelButton"-->
+    <!--app:layout_constraintTop_toTopOf="@+id/guidelineTopButton" />-->
 
 
     <!-- VERTICAL GUIDELINES-->
@@ -137,21 +161,35 @@
         android:layout_width="1dp"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        custom:layout_constraintGuide_percent="0.59" />
+        custom:layout_constraintGuide_percent="0.53" />
 
     <android.support.constraint.Guideline
         android:id="@+id/guidelineTopName"
         android:layout_width="1dp"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        custom:layout_constraintGuide_percent="0.62" />
+        custom:layout_constraintGuide_percent="0.53" />
 
     <android.support.constraint.Guideline
         android:id="@+id/guidelineBottomName"
         android:layout_width="1dp"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        custom:layout_constraintGuide_percent="0.74" />
+        custom:layout_constraintGuide_percent="0.63" />
+
+    <android.support.constraint.Guideline
+        android:id="@+id/guidelineTopQrCode"
+        android:layout_width="1dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        custom:layout_constraintGuide_percent="0.63" />
+
+    <android.support.constraint.Guideline
+        android:id="@+id/guidelineBottomQrCode"
+        android:layout_width="1dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        custom:layout_constraintGuide_percent="0.73"/>
 
     <android.support.constraint.Guideline
         android:id="@+id/guidelineTopButton"

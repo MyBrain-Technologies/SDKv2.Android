@@ -7,7 +7,6 @@ import android.support.annotation.Nullable;
 
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import config.DeviceConfig;
@@ -25,8 +24,8 @@ import core.device.MbtDeviceManager;
 import core.device.SaturationEvent;
 import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
+import core.device.model.MelomindsQRDataBase;
 import core.eeg.MbtEEGManager;
-import core.eeg.requests.QualityRequest;
 import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
 import engine.clientevents.BluetoothError;
@@ -43,6 +42,7 @@ import eventbus.events.ConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
 import features.MbtDeviceType;
 import features.MbtFeatures;
+import mbtsdk.com.mybraintech.mbtsdk.R;
 import utils.LogUtils;
 
 import static mbtsdk.com.mybraintech.mbtsdk.BuildConfig.BLUETOOTH_ENABLED;
@@ -77,10 +77,6 @@ public class MbtManager{
     @Nullable
     private DeviceStatusListener deviceStatusListener;
 
-    /**
-     *
-     * @param context
-     */
     public MbtManager(Context context) {
         this.mContext = context;
         this.registeredModuleManagers = new HashSet<>();
@@ -107,13 +103,16 @@ public class MbtManager{
      * Perform a new Bluetooth connection.
      * @param connectionStateListener a set of callback that will notify the user about connection progress.
      */
-    public void connectBluetooth(@NonNull ConnectionStateListener<BaseError> connectionStateListener, String deviceNameRequested, MbtDeviceType deviceTypeRequested){
+    public void connectBluetooth(@NonNull ConnectionStateListener<BaseError> connectionStateListener, String deviceNameRequested, String deviceQrCodeRequested, MbtDeviceType deviceTypeRequested){
         this.connectionStateListener = connectionStateListener;
-        if(deviceNameRequested != null && (!deviceNameRequested.startsWith(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX) && !deviceNameRequested.startsWith(MbtFeatures.VPRO_DEVICE_NAME_PREFIX)))
-            this.connectionStateListener.onError(HeadsetDeviceError.ERROR_PREFIX_NAME,null);
-        else {
-            EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent(true, deviceNameRequested, deviceTypeRequested));
-            //EventBusManager.postEvent(new DeviceEvents.PostDeviceTypeEvent(deviceTypeRequested)); //notify device manager
+        if(deviceNameRequested != null && (!deviceNameRequested.startsWith(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX) && !deviceNameRequested.startsWith(MbtFeatures.VPRO_DEVICE_NAME_PREFIX) )){
+            this.connectionStateListener.onError(HeadsetDeviceError.ERROR_PREFIX," "+ (deviceTypeRequested.equals(MbtDeviceType.MELOMIND) ? MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX : MbtFeatures.VPRO_DEVICE_NAME_PREFIX));
+        }else if(deviceQrCodeRequested != null && (!deviceQrCodeRequested.startsWith(MbtFeatures.QR_CODE_NAME_PREFIX))){
+            this.connectionStateListener.onError(HeadsetDeviceError.ERROR_PREFIX," "+MbtFeatures.QR_CODE_NAME_PREFIX);
+        }else if(deviceQrCodeRequested != null && deviceNameRequested != null && !deviceNameRequested.equals(new MelomindsQRDataBase(mContext,  true).get(deviceQrCodeRequested))){
+            this.connectionStateListener.onError(HeadsetDeviceError.ERROR_MATCHING, mContext.getString(R.string.aborted_connection));
+        }else{
+            EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent(true, deviceNameRequested, deviceQrCodeRequested, deviceTypeRequested));
         }
     }
 
@@ -132,8 +131,6 @@ public class MbtManager{
         this.deviceInfoListener = listener;
         EventBusManager.postEvent(new ReadRequestEvent(deviceInfo));
     }
-
-    
 
     /**
      * Posts an event to initiate a stream session.
@@ -157,16 +154,6 @@ public class MbtManager{
 
     public void configureHeadset(DeviceConfig deviceConfig){
         EventBusManager.postEvent(new UpdateConfigurationRequestEvent(deviceConfig));
-    }
-
-    /**
-     * Posts an event to compute the signal quality of the EEG signal
-     */
-    public void computeEEGSignalQuality(ArrayList<ArrayList<Float>> consolidatedEEG){
-        if(consolidatedEEG.get(0).size() > MbtFeatures.DEFAULT_NUMBER_OF_DATA_TO_DISPLAY)
-            EventBusManager.postEvent(new QualityRequest(consolidatedEEG,null));
-        else
-            throw new IllegalArgumentException("You must acquire at least 1 second of EEG data to compute its signal quality");
     }
 
     /**
@@ -230,7 +217,6 @@ public class MbtManager{
 
     /**
      *Called when a new saturation event has been broadcast on the event bus.
-     * @param saturationEvent
      */
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onNewSaturationState(SaturationEvent saturationEvent){
@@ -241,7 +227,6 @@ public class MbtManager{
 
     /**
      * Called when a new DCOffset measure event has been broadcast on the event bus.
-     * @param dcOffsets
      */
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onNewDCOffset(DCOffsets dcOffsets){
@@ -263,13 +248,6 @@ public class MbtManager{
             eegListener.onNewPackets(event.getEegPackets());
     }
 
-//    @Subscribe(threadMode = ThreadMode.MAIN)
-//    public void onEegProcessingEvent(QualityRequest qualityRequest){
-//        if(eegListener != null)
-//            eegListener.onNewQualities(qualityRequest.getQualities());
-//    }
-
-
     /**
      * Sets an extended {@link BroadcastReceiver} to the connectionStateListener value
      * @param connectionStateListener the new {@link BluetoothStateListener}. Set it to null if you want to reset the listener
@@ -277,7 +255,6 @@ public class MbtManager{
     public void setConnectionStateListener(ConnectionStateListener<BaseError> connectionStateListener) {
         this.connectionStateListener = connectionStateListener;
     }
-
 
     /**
      * Sets the {@link EegListener} to the connectionStateListener value

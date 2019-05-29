@@ -93,9 +93,10 @@ publishing {
             groupId 'mybraintech.com'
             artifactId 'sdk-full'
             version android.defaultConfig.versionName
-
-            artifact(fullSourcesJar)
-            artifact(fullJavadocJar)
+            afterEvaluate {
+                artifact(fullSourcesJar)
+                artifact(fullJavadocJar)
+            }
             artifact("$buildDir/outputs/aar/${libName}") //we can force send to nexus the version we want by changing the aar name
             pom.withXml {
                 def dependenciesNode = asNode().appendNode('dependencies')
@@ -120,8 +121,10 @@ publishing {
             artifactId 'sdk-lite'
             version android.defaultConfig.versionName
 
-            artifact(liteSourcesJar)
-            artifact(liteJavadocJar)
+            afterEvaluate {
+                artifact(liteSourcesJar)
+                artifact(liteJavadocJar)
+            }
             artifact("$buildDir/outputs/aar/${libName}") //we can force send to nexus the version we want by changing the aar name
             pom.withXml {
                 def dependenciesNode = asNode().appendNode('dependencies')

@@ -92,6 +92,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private MbtAsyncWaitOperation asyncSwitchOperation = new MbtAsyncWaitOperation();
 
     private String deviceNameRequested;
+    private String deviceQrCodeRequested;
     private MbtDeviceType deviceTypeRequested;
 
     //private MbtDeviceAcquisition deviceAcquisition;
@@ -179,7 +180,17 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             requestBeingProcessed = true;
             if (request instanceof StartOrContinueConnectionRequestEvent) {
 
+                deviceQrCodeRequested = ((StartOrContinueConnectionRequestEvent) request).getQrCodeOfDeviceRequested();
                 deviceNameRequested = ((StartOrContinueConnectionRequestEvent) request).getNameOfDeviceRequested();
+
+                if (deviceQrCodeRequested != null){
+                    if(deviceNameRequested == null) //if a QR code has been specified but no device name
+                        deviceNameRequested = new MelomindsQRDataBase(mContext, true).get(deviceQrCodeRequested); //retrieve the BLE name from the QR code database
+                    if(deviceQrCodeRequested.startsWith(MelomindsQRDataBase.QR_PREFIX) && deviceQrCodeRequested.length() == MelomindsQRDataBase.QR_LENGTH-1)  //if QR code contains only 9 digits
+                        deviceQrCodeRequested = deviceQrCodeRequested.concat(MelomindsQRDataBase.QR_SUFFIX); //homogenization with the 10 digits QR code by adding a dot at the end
+                }else if(deviceNameRequested != null) //if a device name has been specified but no QR code
+                    deviceQrCodeRequested = new MelomindsQRDataBase(mContext, false).get(deviceNameRequested);  //retrieve the QR code from BLE name using QR code database
+
                 deviceTypeRequested = ((StartOrContinueConnectionRequestEvent) request).getTypeOfDeviceRequested();
                 startOrContinueConnectionOperation(((StartOrContinueConnectionRequestEvent) request).isClientUserRequest());
 
@@ -267,7 +278,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private void switchToNextConnectionStep(){
         requestBeingProcessed = false;
         if(!getCurrentState().isAFailureState() && !isConnectionInterrupted && !getCurrentState().equals(BtState.IDLE))  //if nothing went wrong during the current step of the connection process, we continue the process
-            onNewBluetoothRequest(new StartOrContinueConnectionRequestEvent(false, deviceNameRequested, deviceTypeRequested));
+            onNewBluetoothRequest(new StartOrContinueConnectionRequestEvent(false, deviceNameRequested, deviceQrCodeRequested, deviceTypeRequested));
 
     }
 
@@ -653,17 +664,17 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     }
 
     private void startSendingExternalName() {
+        LogUtils.i(TAG, "start sending QR code if supported");
         requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
             @Override
             public void onRequestComplete(MbtDevice device) {
                 updateConnectionState(true);//current state is set to QR_CODE_SENDING
-                if (device.getDeviceId() != null && device.getExternalName() != null && device.getExternalName().equals(MbtFeatures.MELOMIND_DEVICE_NAME) //send the QR code found in the database if the headset do not know its own QR code
+                if (device.getDeviceId() != null && device.getExternalName() != null && (device.getExternalName().equals(MbtFeatures.MELOMIND_DEVICE_NAME) || device.getExternalName().length() == MbtFeatures.DEVICE_QR_CODE_LENGTH-1) //send the QR code found in the database if the headset do not know its own QR code
                         && new FirmwareUtils(device.getFirmwareVersion()).isFwValidForFeature(FirmwareUtils.FWFeature.REGISTER_EXTERNAL_NAME)) {
-                    LogUtils.i(TAG, "start sending QR code if supported");
                    AsyncUtils.executeAsync(new Runnable() {
                        @Override
                        public void run() {
-                           mbtBluetoothLE.sendExternalName(new MelomindsQRDataBase(mContext, false).get(device.getDeviceId().replace(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX, "")));
+                           mbtBluetoothLE.sendExternalName(new MelomindsQRDataBase(mContext, false).get(device.getDeviceId()));
                        }
                    });
                 }
@@ -959,7 +970,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * The updateConnectionState(boolean) method with no parameter should be call if nothing went wrong and user wants to continue the connection process
      */
     private void updateConnectionState(BtState state){
-        if(state != null && !state.isAudioState() && (!isConnectionInterrupted || state.equals(BtState.CONNECTION_INTERRUPTED))){
+        if(state != null && !state.isAudioState() && deviceTypeRequested != null && (!isConnectionInterrupted || state.equals(BtState.CONNECTION_INTERRUPTED))){
             if(deviceTypeRequested.useLowEnergyProtocol())
                 mbtBluetoothLE.notifyConnectionStateChanged(state);
             else
@@ -1051,7 +1062,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 }catch (CancellationException | InterruptedException | ExecutionException | TimeoutException e) {
                     LogUtils.w(TAG, "Exception raised during disconnection "+e);
                 }
-                EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent(false, deviceNameRequested, deviceTypeRequested)); //current state should be IDLE
+                EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent(false, deviceNameRequested, deviceQrCodeRequested, deviceTypeRequested)); //current state should be IDLE
             }
         }
     }
