@@ -254,14 +254,21 @@ DeviceActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if(!isStreaming) { //streaming is not in progress : starting streaming
-//                    client.configureHeadset(new DeviceConfig.Builder()
+//                    configureHeadset(new DeviceConfig.Builder()
+//                            .a2dpName("a2dpName")
+//                            .connectA2DP(false)
+//                            .disconnectA2DP(false)
+//                            .productName("productName")
+//                            .serialNumber("serialNumber")
+//                            .systemStatus(true)
 //                            .useP300(false)
 //                            .enableDcOffset(false)
 //                            .create());
+
                     startStream(new StreamConfig.Builder(eegListener)
                             .setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)
 //                            .useQualities(true)
-//                            .configureHeadset(new DeviceConfig.Builder()
+                            .configureHeadset(new DeviceConfig.Builder()
 //                                    .useP300(false)
 //                                    //.mtu(47)
 //                                    //.bandpassFilter()
@@ -270,7 +277,15 @@ DeviceActivity extends AppCompatActivity {
 //                                    .listenToDeviceStatus(deviceStatusListener)
 //                                    .enableDcOffset(false)
 //                                    .create())
+                                        .a2dpName("10001229")
+                                        .connectA2DP(false)
+                                        .disconnectA2DP(false)
+                                        .productName("productName")
+                                        .serialNumber("1010100976")
+                                        .systemStatus(true)
+                                        .create())
                             .create());
+
                 }else { //streaming is in progress : stopping streaming
                     stopStream(); // set false to isStreaming et null to the eegListener
                 }
@@ -449,6 +464,10 @@ DeviceActivity extends AppCompatActivity {
     private void startStream(StreamConfig streamConfig){
         isStreaming = true;
         client.startStream(streamConfig);
+    }
+
+    private void configureHeadset(DeviceConfig deviceConfig){
+        client.configureHeadset(deviceConfig);
     }
 
     private void stopStream(){

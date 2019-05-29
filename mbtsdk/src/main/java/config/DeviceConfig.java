@@ -13,8 +13,14 @@ public class DeviceConfig {
     private FilterConfig bandpassFilter;
     private AmpGainConfig gainValue;
     private int mtuValue;
-    private boolean useP300;
-    private boolean enableDcOffset;
+    private Boolean useP300;
+    private Boolean enableDcOffset;
+    private String serialNumber;
+    private String a2dpName;
+    private String productName;
+    private Boolean connectA2DP;
+    private Boolean disconnectA2DP;
+    private Boolean systemStatus;
 
     public final static String MTU_CONFIG = "MTU";
     public final static String AMP_GAIN_CONFIG = "GAIN";
@@ -22,10 +28,16 @@ public class DeviceConfig {
     public final static String P300_CONFIG = "P300";
     public final static String OFFSET_CONFIG = "OFFSET";
     public final static String EEG_CONFIG = "EEG";
+    public final static String SERIAL_NUMBER_CONFIG = "SERIAL_NUMBER";
+    public final static String A2DP_NAME_CONFIG = "A2DP_NAME";
+    public final static String PRODUCT_NAME_CONFIG = "PRODUCT_NAME";
+    public final static String SYSTEM_STATUS_CONFIG = "SYSTEM_STATUS";
+    public final static String CONNECT_A2DP_CONFIG = "CONNECT_A2DP";
+    public final static String DISCONNECT_A2DP_CONFIG = "DISCONNECT_A2DP";
 
     private DeviceStatusListener deviceStatusListener;
 
-    private DeviceConfig(FilterConfig notchFilter, FilterConfig bandpassFilter, AmpGainConfig gainValue, int mtuValue, boolean useP300, boolean enableDcOffset, DeviceStatusListener deviceStatusListener) {
+    private DeviceConfig(FilterConfig notchFilter, FilterConfig bandpassFilter, AmpGainConfig gainValue, int mtuValue, Boolean useP300, Boolean enableDcOffset, DeviceStatusListener deviceStatusListener, String serialNumber, String productName, String a2dpName, Boolean connectA2D, Boolean disconnectA2DP, Boolean systemStatus) {
         this.notchFilter = notchFilter;
         this.bandpassFilter = bandpassFilter;
         this.gainValue = gainValue;
@@ -33,6 +45,12 @@ public class DeviceConfig {
         this.useP300 = useP300;
         this.enableDcOffset = enableDcOffset;
         this.deviceStatusListener = deviceStatusListener;
+        this.serialNumber = serialNumber;
+        this.productName = productName;
+        this.a2dpName = a2dpName;
+        this.connectA2DP = connectA2D;
+        this.disconnectA2DP = disconnectA2DP;
+        this.systemStatus = systemStatus;
     }
 
     @Keep
@@ -56,12 +74,12 @@ public class DeviceConfig {
     }
 
     @Keep
-    public boolean isUseP300() {
+    public Boolean isUseP300() {
         return useP300;
     }
 
     @Keep
-    public boolean isDcOffsetEnabled() {
+    public Boolean isDcOffsetEnabled() {
         return enableDcOffset;
     }
 
@@ -69,8 +87,33 @@ public class DeviceConfig {
         return deviceStatusListener;
     }
 
+    public String getSerialNumber() {
+        return serialNumber;
+    }
+
+    public String getProductName() {
+        return productName;
+    }
+
+    public String getA2dpName() {
+        return a2dpName;
+    }
+
+    public Boolean connectA2DP() {
+        return connectA2DP;
+    }
+
+    public Boolean disconnectA2DP() {
+        return disconnectA2DP;
+    }
+
+    public Boolean getSystemStatus() {
+        return systemStatus;
+    }
+
     @Keep
     public static class Builder{
+
         @Nullable
         FilterConfig notchFilter = null;
         @Nullable
@@ -78,8 +121,21 @@ public class DeviceConfig {
         @Nullable
         AmpGainConfig gainValue = null;
         int mtuValue = -1;
-        boolean useP300;
-        boolean enableDcOffset;
+
+        Boolean useP300 = null;
+        Boolean enableDcOffset = null;
+
+        @Nullable
+        String serialNumber = null;
+        @Nullable
+        String productName = null;
+        @Nullable
+        String a2dpName = null;
+
+        Boolean connectA2DP = null;
+        Boolean disconnectA2DP = null;
+        Boolean systemStatus = null;
+
         @Nullable
         DeviceStatusListener deviceStatusListener = null;
 
@@ -88,6 +144,35 @@ public class DeviceConfig {
         @NonNull
         public Builder notchFilter(FilterConfig value){
             this.notchFilter = value;
+            return this;
+        }
+
+        @NonNull
+        public Builder a2dpName(String a2dpName){
+            this.a2dpName = a2dpName;
+            return this;
+        }
+
+        @NonNull
+        public Builder productName(String productName){
+            this.productName = productName;
+            return this;
+        }
+
+        @NonNull
+        public Builder connectA2DP(boolean connectA2DP){
+            this.connectA2DP = connectA2DP;
+            return this;
+        }
+
+        @NonNull
+        public Builder disconnectA2DP(boolean disconnectA2DP){
+            this.disconnectA2DP = disconnectA2DP;
+            return this;
+        }
+        @NonNull
+        public Builder systemStatus(boolean systemStatus){
+            this.systemStatus = systemStatus;
             return this;
         }
 
@@ -110,14 +195,20 @@ public class DeviceConfig {
         }
 
         @NonNull
-        public Builder useP300(boolean useP300){
+        public Builder useP300(Boolean useP300){
             this.useP300 = useP300;
             return this;
         }
 
         @NonNull
-        public Builder enableDcOffset(boolean enableDcOffset){
+        public Builder enableDcOffset(Boolean enableDcOffset){
             this.enableDcOffset = enableDcOffset;
+            return this;
+        }
+
+        @NonNull
+        public Builder serialNumber(String serialNumber){
+            this.serialNumber = serialNumber;
             return this;
         }
 
@@ -139,7 +230,7 @@ public class DeviceConfig {
 
         @Nullable
         public DeviceConfig create() {
-            return new DeviceConfig(notchFilter, bandpassFilter, gainValue, mtuValue, useP300, enableDcOffset, deviceStatusListener);
+            return new DeviceConfig(notchFilter, bandpassFilter, gainValue, mtuValue, useP300, enableDcOffset, deviceStatusListener, serialNumber, productName, a2dpName, connectA2DP, disconnectA2DP, systemStatus);
         }
     }
 

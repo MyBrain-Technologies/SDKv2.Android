@@ -295,6 +295,11 @@ final class MbtGattController extends BluetoothGattCallback {
                 for (int i = 1; i < characteristic.getValue().length; i++){
                     buf.put(characteristic.getValue()[i]);
                 }
+                mbtBluetoothLE.notifyDeviceConfigReceived(characteristic.getValue(), DeviceConfig.SERIAL_NUMBER_CONFIG);
+                break;
+
+            case MailboxEvents.MBX_SET_PRODUCT_NAME:
+                mbtBluetoothLE.notifyDeviceConfigReceived(characteristic.getValue(), DeviceConfig.PRODUCT_NAME_CONFIG);
                 break;
 
             case MailboxEvents.MBX_SYS_GET_STATUS:
@@ -322,9 +327,15 @@ final class MbtGattController extends BluetoothGattCallback {
                 break;
 
             case MailboxEvents.MBX_CONNECT_IN_A2DP:
+                mbtBluetoothLE.notifyMailboxEventReceived(characteristic.getValue()[0], characteristic.getValue()[1]);
+                mbtBluetoothLE.notifyDeviceConfigReceived(characteristic.getValue(), DeviceConfig.CONNECT_A2DP_CONFIG);
+                break;
+
             case MailboxEvents.MBX_DISCONNECT_IN_A2DP:
                 mbtBluetoothLE.notifyMailboxEventReceived(characteristic.getValue()[0], characteristic.getValue()[1]);
+                mbtBluetoothLE.notifyDeviceConfigReceived(characteristic.getValue(), DeviceConfig.DISCONNECT_A2DP_CONFIG);
                 break;
+
 
             case (byte) 0xFF:
             default:

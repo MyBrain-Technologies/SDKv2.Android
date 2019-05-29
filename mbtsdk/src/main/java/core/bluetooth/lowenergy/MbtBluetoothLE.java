@@ -679,6 +679,24 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             case DeviceConfig.EEG_CONFIG:
                 requestSent = requestDeviceConfig();
                 break;
+            case DeviceConfig.SERIAL_NUMBER_CONFIG:
+                requestSent = sendSerialNumber(config.getSerialNumber());
+                break;
+            case DeviceConfig.A2DP_NAME_CONFIG:
+                requestSent = sendExternalName(config.getA2dpName());
+                break;
+            case DeviceConfig.PRODUCT_NAME_CONFIG:
+                requestSent = sendProductName(config.getProductName());
+                break;
+            case DeviceConfig.CONNECT_A2DP_CONFIG:
+                requestSent = connectA2DPFromBLE();
+                break;
+            case DeviceConfig.DISCONNECT_A2DP_CONFIG:
+                requestSent = connectA2DPFromBLE();
+                break;
+            case DeviceConfig.SYSTEM_STATUS_CONFIG:
+                requestSent = requestSystemStatus();
+                break;
         }
 
         if(requestSent) {
@@ -715,11 +733,37 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
                 if(!waitResultOfDeviceConfiguration(DeviceConfig.AMP_GAIN_CONFIG, config))
                     return ;
 
-            if(!waitResultOfDeviceConfiguration(DeviceConfig.P300_CONFIG, config))
-                return ;
+            if(config.isUseP300() != null)
+                if(!waitResultOfDeviceConfiguration(DeviceConfig.P300_CONFIG, config))
+                    return ;
 
-            if(!waitResultOfDeviceConfiguration(DeviceConfig.OFFSET_CONFIG, config))
-                return ;
+            if(config.isDcOffsetEnabled() != null)
+                if(!waitResultOfDeviceConfiguration(DeviceConfig.OFFSET_CONFIG, config))
+                    return ;
+
+            if (config.getSerialNumber() != null)
+                if(!waitResultOfDeviceConfiguration(DeviceConfig.SERIAL_NUMBER_CONFIG, config))
+                    return ;
+
+            if (config.getProductName() != null)
+                if(!waitResultOfDeviceConfiguration(DeviceConfig.PRODUCT_NAME_CONFIG, config))
+                    return ;
+
+            if (config.getA2dpName() != null)
+                if(!waitResultOfDeviceConfiguration(DeviceConfig.A2DP_NAME_CONFIG, config))
+                    return ;
+
+            if (config.connectA2DP() != null)
+                if(!waitResultOfDeviceConfiguration(DeviceConfig.CONNECT_A2DP_CONFIG, config))
+                    return ;
+
+            if (config.disconnectA2DP() != null)
+                if(!waitResultOfDeviceConfiguration(DeviceConfig.DISCONNECT_A2DP_CONFIG, config))
+                    return ;
+
+            if (config.getSystemStatus() != null)
+                if(!waitResultOfDeviceConfiguration(DeviceConfig.SYSTEM_STATUS_CONFIG, config))
+                    return ;
         }
 
         waitResultOfDeviceConfiguration(DeviceConfig.EEG_CONFIG, null);
@@ -739,7 +783,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @return false if request dod not start as planned, true otherwise.
      */
     boolean changeMTU(@IntRange(from = 23, to = 121) final int newMTU) {
-        LogUtils.i(TAG, "changing mtu to " + newMTU);
+        LogUtils.i(TAG, "change mtu " + newMTU);
         if(!isConnected()){
             return false;
         }
@@ -759,6 +803,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @param newConfig the new config.
      */
     private boolean changeFilterConfiguration(@NonNull FilterConfig newConfig){
+        Log.d(TAG, "send notch "+newConfig);
         if(!isNotificationEnabledOnCharacteristic(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX)){
             enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX));
         }
@@ -777,6 +822,8 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @param newConfig the new config.
      */
     private boolean changeAmpGainConfiguration(@NonNull AmpGainConfig newConfig){
+        Log.d(TAG, "send gain "+newConfig);
+
         if(!isNotificationEnabledOnCharacteristic(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX))
             enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX));
 
@@ -826,18 +873,38 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     }
 
     /**
-     * Initiates a write operation in order to enable or disable the p300 mode in the melomind firmware.
-     * It first requires that notifications are enabled to the {@link MelomindCharacteristics#CHARAC_MEASUREMENT_MAILBOX}
+     * Initiates a write operation in order to get the EEG config stored by the headset
      * charateristic are enabled.
      */
     private boolean requestDeviceConfig(){
+        Log.d(TAG, "request device config ");
+
+        if(!isNotificationEnabledOnCharacteristic(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX)){
+            enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX));
+        }
         byte[] code = {MailboxEvents.MBX_GET_EEG_CONFIG};
         return startWriteOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX, code);
     }
+    /**
+     * Initiates a write operation in order to get the system status
+     * charateristic are enabled.
+     */
+    private boolean requestSystemStatus(){
+        Log.d(TAG, "request system status ");
+        if(!isNotificationEnabledOnCharacteristic(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX)){
+            enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX));
+        }
+        byte[] code = {MailboxEvents.MBX_SYS_GET_STATUS};
+        return startWriteOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX, code);
+    }
 
-    public void sendExternalName(String externalName) {
+    public boolean sendExternalName(String externalName) {
+        Log.d(TAG, "send external name "+externalName);
         if (externalName == null)
-            return;
+            return false;
+        if(!isNotificationEnabledOnCharacteristic(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX)){
+            enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX));
+        }
         ByteBuffer nameToBytes = ByteBuffer.allocate(3 + externalName.getBytes().length); // +1 for mailbox code
         nameToBytes.put(MailboxEvents.MBX_SET_SERIAL_NUMBER);
         nameToBytes.put((byte) 0xAB);
@@ -845,28 +912,79 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         nameToBytes.put(externalName.getBytes());
 
         byte[] buffer = nameToBytes.array();
-        if(!startWriteOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX, buffer))
+        if (!startWriteOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX, buffer)){
             LogUtils.i(TAG, "Failed to send external name update");
-        else
+            return false;
+        }else
             LogUtils.d(TAG, "Sent external name ");
+        return true;
     }
 
-    public void connectA2DPFromBLE() {
+    private boolean sendProductName(String productName) {
+        Log.d(TAG, "send product name "+productName);
+        if (productName == null)
+            return false;
+        if(!isNotificationEnabledOnCharacteristic(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX)){
+            enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX));
+        }
+        ByteBuffer nameToBytes = ByteBuffer.allocate(1 + productName.getBytes().length); // +1 for mailbox code
+        nameToBytes.put(MailboxEvents.MBX_SET_PRODUCT_NAME);
+        nameToBytes.put(productName.getBytes());
+
+        byte[] buffer = nameToBytes.array();
+        if (!startWriteOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX, buffer)){
+            LogUtils.i(TAG, "Failed to send product name update");
+            return false;
+        }else
+            LogUtils.d(TAG, "Sent product name ");
+        return true;
+    }
+
+    private boolean sendSerialNumber(String serialNumber) {
+        Log.d(TAG, "send serial number "+serialNumber);
+        if (serialNumber == null)
+            return false;
+        if(!isNotificationEnabledOnCharacteristic(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX)){
+            enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX));
+        }
+
+        ByteBuffer nameToBytes = ByteBuffer.allocate(3 + serialNumber.getBytes().length); // +1 for mailbox code
+        nameToBytes.put(MailboxEvents.MBX_SET_SERIAL_NUMBER);
+        nameToBytes.put((byte) 0x53);
+        nameToBytes.put((byte) 0x4D);
+        nameToBytes.put(serialNumber.getBytes());
+
+        byte[] buffer = nameToBytes.array();
+        if (!startWriteOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX, buffer)){
+            LogUtils.i(TAG, "Failed to send serial number update");
+            return false;
+        }else
+            LogUtils.d(TAG, "Sent serial number ");
+        return true;
+    }
+
+    public boolean connectA2DPFromBLE() {
         LogUtils.i(TAG, "connect a2dp from ble");
         if(!isNotificationEnabledOnCharacteristic(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX))
             enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX));
         byte[] buffer = {MailboxEvents.MBX_CONNECT_IN_A2DP, (byte)0x25, (byte)0xA2}; //Send buffer
-        if(!startWriteOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX, buffer))
+        if(!startWriteOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX, buffer)) {
             LogUtils.w(TAG, "Failed to send connect A2dp request");
+            return false;
+        }
+        return true;
     }
 
-    public void disconnectA2DPFromBLE() {
+    public boolean disconnectA2DPFromBLE() {
         LogUtils.i(TAG, "disconnected A2DP from BLE");
         if(!isNotificationEnabledOnCharacteristic(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX))
             enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX));
         byte[] buffer = {MailboxEvents.MBX_DISCONNECT_IN_A2DP, (byte)0x85, (byte)0x11};
-        if(!startWriteOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX, buffer))
+        if(!startWriteOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX, buffer)){
             LogUtils.w(TAG, "Failed to send disconnect A2dp request");
+            return false;
+        }
+        return true;
     }
 
     /**
