@@ -7,7 +7,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -24,9 +23,7 @@ import java.util.ArrayList;
 
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.Queue;
 
-import config.DeviceConfig;
 import core.device.DCOffsets;
 import core.device.SaturationEvent;
 import core.bluetooth.BtState;

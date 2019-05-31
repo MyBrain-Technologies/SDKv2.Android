@@ -4,12 +4,18 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
+
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import config.DeviceConfig;
+
+import config.DeviceCommandConfig;
+import config.EegStreamConfig;
+import config.StreamConfig;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.IStreamable;
 import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
@@ -134,15 +140,18 @@ public class MbtManager{
 
     /**
      * Posts an event to initiate a stream session.
-     * @param useQualities whether or not quality check algorithms have to be called (Currently false)
-     * @param eegListener the eeg listener
      */
-    public void startStream(boolean useQualities, @NonNull EegListener<BaseError> eegListener, DeviceConfig deviceConfig){
-        this.eegListener = eegListener;
-        if(deviceConfig != null)
-            this.deviceStatusListener = deviceConfig.getDeviceStatusListener();
+    public void startStream(StreamConfig streamConfig){
+        this.eegListener = streamConfig.getEegListener();
+        EegStreamConfig eegStreamConfig = streamConfig.getEegStreamConfig();
+        if(eegStreamConfig != null)
+            this.deviceStatusListener = eegStreamConfig.getDeviceStatusListener();
 
-        EventBusManager.postEvent(new StreamRequestEvent(true, useQualities,deviceStatusListener != null, deviceConfig));
+        EventBusManager.postEvent(
+                new StreamRequestEvent(true,
+                        streamConfig.shouldComputeQualities(),
+                        (deviceStatusListener != null),
+                        eegStreamConfig));
     }
 
     /**
@@ -152,8 +161,19 @@ public class MbtManager{
         EventBusManager.postEvent(new StreamRequestEvent(false, false, false));
     }
 
-    public void configureHeadset(DeviceConfig deviceConfig){
-        EventBusManager.postEvent(new UpdateConfigurationRequestEvent(deviceConfig));
+    public void configureHeadset(EegStreamConfig eegStreamConfig){
+        EventBusManager.postEvent(new UpdateConfigurationRequestEvent(eegStreamConfig));
+    }
+
+    public void sendDeviceCommand(@NonNull DeviceCommandConfig deviceCommandConfig, SimpleRequestCallback<byte[]> callback){
+        EventBusManager.postEventWithCallback(new DeviceEvents.SendDeviceCommandEvent(deviceCommandConfig), new EventBusManager.CallbackVoid<DeviceEvents.RawDeviceResponseEvent>(){
+            @Override
+            @Subscribe
+            public void onEventCallback(DeviceEvents.RawDeviceResponseEvent headsetRawResponse) {
+                Log.d(TAG, "Callback returned "+ Arrays.toString(headsetRawResponse.getRawResponse()));
+                callback.onRequestComplete(headsetRawResponse.getRawResponse());
+            }
+        });
     }
 
     /**

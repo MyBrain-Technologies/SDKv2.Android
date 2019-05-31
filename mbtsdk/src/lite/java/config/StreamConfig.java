@@ -22,19 +22,17 @@ public final class StreamConfig {
 
     private final int notificationPeriod;
 
-    //private final DeviceConfig deviceConfig; Will be used in future release
-
     private final EegListener<BaseError> eegListener;
 
     private final boolean computeQualities;
 
-    private DeviceConfig deviceConfig;
+    private EegStreamConfig eegStreamConfig;
 
     private StreamConfig(EegListener<BaseError> eegListener, int notificationPeriod){
         this.computeQualities = false;
         this.eegListener = eegListener;
         this.notificationPeriod = notificationPeriod;
-        this.deviceConfig = null;
+        this.eegStreamConfig = new EegStreamConfig.Builder().create();
     }
 
     public EegListener getEegListener() {
@@ -49,8 +47,8 @@ public final class StreamConfig {
         return computeQualities;
     }
 
-    public DeviceConfig getDeviceConfig() {
-        return deviceConfig;
+    public EegStreamConfig getEegStreamConfig() {
+        return eegStreamConfig;
     }
 
     /**
@@ -58,12 +56,11 @@ public final class StreamConfig {
      */
     @Keep
     public static class Builder{
-        //long streamDuration = -1L;
+
         private int notificationPeriod = MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD;
 
         @NonNull
         private final EegListener<BaseError> eegListener;
-
 
         /**
          * The eeg Listener is mandatory.

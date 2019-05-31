@@ -14,6 +14,7 @@ import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
@@ -24,7 +25,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 import config.MbtConfig;
-import config.DeviceConfig;
+import config.EegStreamConfig;
 import core.BaseModuleManager;
 import core.MbtManager;
 import core.bluetooth.lowenergy.MbtBluetoothLE;
@@ -143,10 +144,18 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         BroadcastUtils.registerReceiverIntents(context, receiver, BluetoothAdapter.ACTION_STATE_CHANGED);
     }
 
-    public void notifyDeviceConfigReceived(Byte[] returnedConfig) {
-        EventBusManager.postEvent(new ConfigEEGEvent(returnedConfig)); //notify the DeviceManager and the EEGManager
+    /**
+     * Notify the DeviceManager and the EEGManager that the headset returned its stored configuration
+     */
+    private void notifyDeviceConfigReceived(Byte[] returnedConfig) {
+        EventBusManager.postEvent(new ConfigEEGEvent(returnedConfig));
     }
 
+    public void notifyDeviceResponseReceived(byte[] rawResponse, String configType) {
+        if(configType.equals(EegStreamConfig.EEG_CONFIG))
+            notifyDeviceConfigReceived(ArrayUtils.toObject(rawResponse));
+        EventBusManager.postEvent(new DeviceEvents.RawDeviceResponseEvent(rawResponse));
+    }
 
     /**
      * This class is a specific thread that will handle all bluetooth operations. Bluetooth operations
@@ -206,7 +215,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
             } else if (request instanceof StreamRequestEvent) {
                 if (((StreamRequestEvent) request).isStart())
-                    startStreamOperation(((StreamRequestEvent) request).shouldMonitorDeviceStatus(), ((StreamRequestEvent) request).getDeviceConfig());
+                    startStreamOperation(((StreamRequestEvent) request).shouldMonitorDeviceStatus(), ((StreamRequestEvent) request).getEegStreamConfig());
                 else
                     stopStreamOperation();
 
@@ -766,22 +775,32 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
     /**
      * This method manages a set of calls to perform in order to reconfigure some of the headset's
-     * parameters. All parameters are held in a {@link DeviceConfig instance}
+     * parameters. All parameters are held in a {@link EegStreamConfig instance}
      * Each new parameter is updated one after the other. All method inside are blocking.
-     * @param config the {@link DeviceConfig} instance to get new parameters from.
+     * @param config the {@link EegStreamConfig} instance to get new parameters from.
      */
-    private void configureHeadset(@NonNull DeviceConfig config){
+    private void configureHeadset(@NonNull EegStreamConfig config){
         if(deviceTypeRequested.useLowEnergyProtocol())
-            mbtBluetoothLE.configureHeadset(config);
+            mbtBluetoothLE.sendDeviceCommand(config);
         else
-            mbtBluetoothSPP.configureHeadset(config);
+            mbtBluetoothSPP.sendDeviceCommand(config);
+    }
+
+
+    /**
+     * This method triggers a mailbox request to send a command to the headset
+     */
+    @Subscribe
+    public void onSendDeviceCommand(DeviceEvents.SendDeviceCommandEvent event){
+        Log.d(TAG, "on Send device command "+event.toString());
+        mbtBluetoothLE.sendDeviceCommand(event.getConfig());
     }
 
     /**
      * Initiates the acquisition of EEG data. This method chooses between the correct BtProtocol.
      * If there is already a streaming session in progress, nothing happens and the method returns silently.
      */
-    private void startStreamOperation(boolean enableDeviceStatusMonitoring, DeviceConfig deviceConfig){
+    private void startStreamOperation(boolean enableDeviceStatusMonitoring, EegStreamConfig eegStreamConfig){
         if(!mbtBluetoothLE.isConnected()){
             notifyStreamStateChanged(IStreamable.StreamState.DISCONNECTED);
             requestBeingProcessed = false;
@@ -793,8 +812,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             return;
         }
 
-        //TODO remove configureHeadset method from here later on.
-        configureHeadset(deviceConfig);
+        //TODO remove sendDeviceCommand method from here later on.
+        configureHeadset(eegStreamConfig);
 
         if(enableDeviceStatusMonitoring)
             mbtBluetoothLE.activateDeviceStatusMonitoring();

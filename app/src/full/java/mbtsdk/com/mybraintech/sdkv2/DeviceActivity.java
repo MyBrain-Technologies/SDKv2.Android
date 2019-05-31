@@ -7,6 +7,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -23,7 +24,6 @@ import java.util.ArrayList;
 
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.Queue;
 
 import core.device.DCOffsets;
 import core.device.SaturationEvent;
@@ -32,6 +32,7 @@ import core.eeg.storage.MbtEEGPacket;
 import engine.MbtClient;
 
 import config.StreamConfig;
+import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
 import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.BluetoothStateListener;
@@ -246,22 +247,10 @@ DeviceActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (!isStreaming) { //streaming is not in progress : starting streaming
-//                    client.configureHeadset(new DeviceConfig.Builder()
-//                            .useP300(false)
-//                            .enableDcOffset(false)
-//                            .create());
+
                     startStream(new StreamConfig.Builder(eegListener)
                             .setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)
                             .useQualities(true)
-//                            .configureHeadset(new DeviceConfig.Builder()
-//                                    .useP300(false)
-//                                    //.mtu(47)
-//                                    //.bandpassFilter()
-//                                    //.gain()
-//                                    //.notchFilter()
-//                                    .listenToDeviceStatus(deviceStatusListener)
-//                                    .enableDcOffset(false)
-//                                    .create())
                             .create());
                 } else { //streaming is in progress : stopping streaming
                     stopStream(); // set false to isStreaming et null to the eegListener
@@ -385,6 +374,15 @@ DeviceActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getColor(R.color.light_blue)));
         }
+    }
+
+    private void updateSerialNumber(String serialNumber) {
+        client.updateSerialNumber(serialNumber, new SimpleRequestCallback<byte[]>() {
+            @Override
+            public void onRequestComplete(byte[] response) {
+                Log.d(TAG," Request complete. Returned response : "+Arrays.toString(response));
+            }
+        });
     }
 
     private void startStream(StreamConfig streamConfig) {

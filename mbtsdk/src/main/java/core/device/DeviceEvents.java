@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothDevice;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import config.DeviceCommandConfig;
 import core.device.model.MbtDevice;
 import features.MbtDeviceType;
 
@@ -65,7 +66,7 @@ public interface DeviceEvents {
 
 
     /**
-     *
+     * Event that handle DC offset and Saturation raw measures
      */
     class RawDeviceMeasure {
         private byte[] rawMeasure;
@@ -78,5 +79,37 @@ public interface DeviceEvents {
             return rawMeasure;
         }
     }
+
+    /**
+     * Event that returns the headset's response after the SDK has sent a command to it using Mailbox or other characteristic writing methods
+     */
+    class RawDeviceResponseEvent {
+        private byte[] rawResponse;
+
+        public RawDeviceResponseEvent(@NonNull byte[] rawResponse){
+            this.rawResponse = rawResponse;
+        }
+
+        public byte[] getRawResponse() {
+            return rawResponse;
+        }
+    }
+
+    /**
+     * Send command to the connected headset using Mailbox or other characteristic writing methods
+     */
+    class SendDeviceCommandEvent {
+
+        private DeviceCommandConfig config;
+
+        public SendDeviceCommandEvent(@NonNull DeviceCommandConfig config) {
+            this.config = config;
+        }
+
+        public DeviceCommandConfig getConfig() {
+            return config;
+        }
+    }
+
 
 }

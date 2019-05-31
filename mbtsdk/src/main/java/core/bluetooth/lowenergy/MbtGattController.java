@@ -8,11 +8,13 @@ import android.bluetooth.BluetoothGattService;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 
 import java.nio.ByteBuffer;
 
-import config.DeviceConfig;
+import config.MailboxConfig;
+import config.EegStreamConfig;
 import core.bluetooth.BtState;
 import core.device.model.DeviceInfo;
 import core.device.model.MelomindDevice;
@@ -276,10 +278,12 @@ final class MbtGattController extends BluetoothGattCallback {
     @Override
     public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
         super.onMtuChanged(gatt, mtu, status);
-        mbtBluetoothLE.notifyDeviceConfigReceived(new byte[]{(byte)mtu}, DeviceConfig.MTU_CONFIG);
+        mbtBluetoothLE.notifyCommandResponseReceived(new byte[]{(byte)mtu}, EegStreamConfig.MTU_CONFIG);
     }
 
     private void notifyMailboxEventReceived(BluetoothGattCharacteristic characteristic) {
+        Log.d(TAG, "Notify mailbox event received");
+
         switch (characteristic.getValue()[0]) {
             case MailboxEvents.MBX_SET_ADS_CONFIG:
             case MailboxEvents.MBX_SET_AUDIO_CONFIG:
@@ -295,47 +299,46 @@ final class MbtGattController extends BluetoothGattCallback {
                 for (int i = 1; i < characteristic.getValue().length; i++){
                     buf.put(characteristic.getValue()[i]);
                 }
-                mbtBluetoothLE.notifyDeviceConfigReceived(characteristic.getValue(), DeviceConfig.SERIAL_NUMBER_CONFIG);
+                mbtBluetoothLE.notifyCommandResponseReceived(characteristic.getValue(), MailboxConfig.SERIAL_NUMBER_CONFIG);
                 break;
 
             case MailboxEvents.MBX_SET_PRODUCT_NAME:
-                mbtBluetoothLE.notifyDeviceConfigReceived(characteristic.getValue(), DeviceConfig.PRODUCT_NAME_CONFIG);
+                mbtBluetoothLE.notifyCommandResponseReceived(characteristic.getValue(), MailboxConfig.PRODUCT_NAME_CONFIG);
                 break;
 
             case MailboxEvents.MBX_SYS_GET_STATUS:
-                mbtBluetoothLE.notifyMailboxEventReceived(characteristic.getValue()[0], characteristic.getValue()[1]);
-                break;
-
-            case MailboxEvents.MBX_SET_NOTCH_FILT:
-                mbtBluetoothLE.notifyDeviceConfigReceived(characteristic.getValue(), DeviceConfig.NOTCH_FILTER_CONFIG);
-                break;
-
-            case MailboxEvents.MBX_SET_AMP_GAIN:
-                mbtBluetoothLE.notifyDeviceConfigReceived(characteristic.getValue(), DeviceConfig.AMP_GAIN_CONFIG);
-                break;
-
-            case MailboxEvents.MBX_GET_EEG_CONFIG:
-                mbtBluetoothLE.notifyDeviceConfigReceived(characteristic.getValue(), DeviceConfig.EEG_CONFIG);
-                break;
-
-            case MailboxEvents.MBX_P300_ENABLE:
-                mbtBluetoothLE.notifyDeviceConfigReceived(characteristic.getValue(), DeviceConfig.P300_CONFIG);
-                break;
-
-            case MailboxEvents.MBX_DC_OFFSET_ENABLE:
-                mbtBluetoothLE.notifyDeviceConfigReceived(characteristic.getValue(), DeviceConfig.OFFSET_CONFIG);
+                mbtBluetoothLE.notifyCommandResponseReceived(characteristic.getValue(), MailboxConfig.SYSTEM_STATUS_CONFIG);
                 break;
 
             case MailboxEvents.MBX_CONNECT_IN_A2DP:
-                mbtBluetoothLE.notifyMailboxEventReceived(characteristic.getValue()[0], characteristic.getValue()[1]);
-                mbtBluetoothLE.notifyDeviceConfigReceived(characteristic.getValue(), DeviceConfig.CONNECT_A2DP_CONFIG);
+                mbtBluetoothLE.notifyConnectionResponseReceived(characteristic.getValue()[0], characteristic.getValue()[1]);
+                mbtBluetoothLE.notifyCommandResponseReceived(characteristic.getValue(), MailboxConfig.CONNECT_A2DP_CONFIG);
                 break;
 
             case MailboxEvents.MBX_DISCONNECT_IN_A2DP:
-                mbtBluetoothLE.notifyMailboxEventReceived(characteristic.getValue()[0], characteristic.getValue()[1]);
-                mbtBluetoothLE.notifyDeviceConfigReceived(characteristic.getValue(), DeviceConfig.DISCONNECT_A2DP_CONFIG);
+                mbtBluetoothLE.notifyConnectionResponseReceived(characteristic.getValue()[0], characteristic.getValue()[1]);
+                mbtBluetoothLE.notifyCommandResponseReceived(characteristic.getValue(), MailboxConfig.DISCONNECT_A2DP_CONFIG);
                 break;
 
+            case MailboxEvents.MBX_SET_NOTCH_FILT:
+                mbtBluetoothLE.notifyCommandResponseReceived(characteristic.getValue(), EegStreamConfig.NOTCH_FILTER_CONFIG);
+                break;
+
+            case MailboxEvents.MBX_SET_AMP_GAIN:
+                mbtBluetoothLE.notifyCommandResponseReceived(characteristic.getValue(), EegStreamConfig.AMP_GAIN_CONFIG);
+                break;
+
+            case MailboxEvents.MBX_GET_EEG_CONFIG:
+                mbtBluetoothLE.notifyCommandResponseReceived(characteristic.getValue(), EegStreamConfig.EEG_CONFIG);
+                break;
+
+            case MailboxEvents.MBX_P300_ENABLE:
+                mbtBluetoothLE.notifyCommandResponseReceived(characteristic.getValue(), EegStreamConfig.P300_CONFIG);
+                break;
+
+            case MailboxEvents.MBX_DC_OFFSET_ENABLE:
+                mbtBluetoothLE.notifyCommandResponseReceived(characteristic.getValue(), EegStreamConfig.OFFSET_CONFIG);
+                break;
 
             case (byte) 0xFF:
             default:

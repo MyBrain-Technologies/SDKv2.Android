@@ -1,13 +1,14 @@
 package engine;
 
-import android.bluetooth.le.ScanCallback;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 
-import config.DeviceConfig;
+import config.EegStreamConfig;
+import config.MailboxConfig;
 import config.MbtConfig;
 import config.StreamConfig;
 import config.ConnectionConfig;
@@ -149,7 +150,7 @@ public final class MbtClient {
         else
             MbtConfig.setEegBufferLengthClientNotif((streamConfig.getNotificationPeriod()* MbtFeatures.DEFAULT_SAMPLE_RATE)/1000);
 
-        mbtManager.startStream(streamConfig.shouldComputeQualities(), streamConfig.getEegListener(), streamConfig.getDeviceConfig());
+        mbtManager.startStream(streamConfig);
     }
 
     /**
@@ -161,11 +162,73 @@ public final class MbtClient {
     }
 
     /**
-     *
-     * @param deviceConfig
+     * Configures the connected headset filters, gain, MTU and enable or disable P300, Saturation and DC offset
+     * @param eegStreamConfig is the object that hold all the EEG streaming configuration
      */
-    public void configureHeadset(DeviceConfig deviceConfig){
-        mbtManager.configureHeadset(deviceConfig);
+    public void configureHeadset(EegStreamConfig eegStreamConfig){
+        mbtManager.configureHeadset(eegStreamConfig);
+    }
+
+    /**
+     * Sends a command to the connected headset to change its current serial number
+     * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
+     * This response contains the command status and informations bundled in a byte array
+     * @param serialNumber is the new value to set to the serial number
+     * @param requestCallback returns the headset raw response if the command has been well sent
+     */
+    public void updateSerialNumber(String serialNumber, @Nullable SimpleRequestCallback<byte[]> requestCallback){
+        mbtManager.sendDeviceCommand(new MailboxConfig.Builder().setSerialNumber(serialNumber).create(), requestCallback);
+    }
+
+    /**
+     * Sends a command to the connected headset to change its current product name
+     * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
+     * This response contains the command status and informations bundled in a byte array
+     * @param productName is the new value to set to the product name
+     * @param requestCallback returns the headset raw response if the command has been well sent
+     */
+    public void updateProductName(String productName, @Nullable SimpleRequestCallback<byte[]> requestCallback){
+        mbtManager.sendDeviceCommand(new MailboxConfig.Builder().setProductName(productName).create(), requestCallback);
+    }
+
+    /**
+     * Sends a command to the connected headset to change its current external name
+     * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
+     * This response contains the command status and informations bundled in a byte array
+     * @param externalName is the new value to set to the external name
+     * @param requestCallback returns the headset raw response if the command has been well sent
+     */
+    public void updateExternalName(String externalName, @Nullable SimpleRequestCallback<byte[]> requestCallback){
+        mbtManager.sendDeviceCommand(new MailboxConfig.Builder().setExternalName(externalName).create(), requestCallback);
+    }
+
+    /**
+     * Sends a command to the connected headset to establish an audio Bluetooth A2DP connection
+     * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
+     * This response contains the command status and informations bundled in a byte array
+     * @param requestCallback returns the headset raw response if the command has been well sent
+     */
+    public void connectA2DP(@Nullable SimpleRequestCallback<byte[]> requestCallback){
+        mbtManager.sendDeviceCommand(new MailboxConfig.Builder().connectA2DP().create(), requestCallback);
+    }
+
+    /**
+     * Sends a command to the connected headset to establish an audio Bluetooth A2DP disconnection
+     * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
+     * This response contains the command status and informations bundled in a byte array
+     * @param requestCallback returns the headset raw response if the command has been well sent
+     */
+    public void disconnectA2DP(@Nullable SimpleRequestCallback<byte[]> requestCallback){
+        mbtManager.sendDeviceCommand(new MailboxConfig.Builder().disconnectA2DP().create(), requestCallback);
+    }
+
+    /**
+     * Sends a command to the connected headset to get its system status
+     * The system status is returned as a byte array in the onRequestComplete callback of the requestCallback
+     * @param requestCallback returns the headset raw response if the command has been well sent
+     */
+    public void getDeviceSystemStatus(@Nullable SimpleRequestCallback<byte[]> requestCallback){
+        mbtManager.sendDeviceCommand(new MailboxConfig.Builder().getSystemStatus().create(), requestCallback);
     }
 
     /**

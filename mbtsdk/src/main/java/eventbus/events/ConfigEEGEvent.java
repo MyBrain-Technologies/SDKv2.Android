@@ -3,8 +3,7 @@ package eventbus.events;
 import android.support.annotation.NonNull;
 
 /**
- * Event posted when a new raw EEG data acquired is transmitted through Bluetooth
- * Event data contains the raw EEG data array
+ * Event posted when a new raw data is transmitted by the headset to the SDK through Bluetooth
  *
  * @author Sophie Zecri on 29/05/2018
  */

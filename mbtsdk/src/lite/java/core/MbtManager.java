@@ -9,7 +9,8 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 import java.util.HashSet;
 import java.util.Set;
-import config.DeviceConfig;
+import config.EegStreamConfig;
+import config.StreamConfig;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.IStreamable;
 import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
@@ -133,15 +134,18 @@ public class MbtManager{
 
     /**
      * Posts an event to initiate a stream session.
-     * @param useQualities whether or not quality check algorithms have to be called (Currently false)
-     * @param eegListener the eeg listener
      */
-    public void startStream(boolean useQualities, @NonNull EegListener<BaseError> eegListener, DeviceConfig deviceConfig){
-        this.eegListener = eegListener;
-        if(deviceConfig != null)
-            this.deviceStatusListener = deviceConfig.getDeviceStatusListener();
+    public void startStream(@NonNull StreamConfig streamConfig){
+        this.eegListener = streamConfig.getEegListener();
+        EegStreamConfig eegStreamConfig = streamConfig.getEegStreamConfig();
+        if(eegStreamConfig != null)
+            this.deviceStatusListener = eegStreamConfig.getDeviceStatusListener();
 
-        EventBusManager.postEvent(new StreamRequestEvent(true, useQualities,deviceStatusListener != null, deviceConfig));
+        EventBusManager.postEvent(
+                new StreamRequestEvent(true,
+                        streamConfig.shouldComputeQualities(),
+                        (deviceStatusListener != null),
+                        eegStreamConfig));
     }
 
     /**
