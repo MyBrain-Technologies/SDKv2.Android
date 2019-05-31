@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import core.bluetooth.BtProtocol;
+import core.device.model.MelomindsQRDataBase;
 
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
 import static core.bluetooth.BtProtocol.BLUETOOTH_SPP;
@@ -50,7 +51,11 @@ public final class MbtFeatures{
     public static final String MELOMIND_DEVICE_NAME_PREFIX = "melo_";
     public static final String A2DP_DEVICE_NAME_PREFIX = "audio_";
     public static final String A2DP_DEVICE_NAME_PREFIX_LEGACY = "melo_";
+    public static final String QR_CODE_NAME_PREFIX = MelomindsQRDataBase.QR_PREFIX;
     public static final String VPRO_DEVICE_NAME_PREFIX = "VPro";
+
+    public final static int DEVICE_NAME_LENGTH = MbtFeatures.A2DP_DEVICE_NAME_PREFIX_LEGACY.length() + 10;
+    public final static int DEVICE_QR_CODE_LENGTH = MbtFeatures.QR_CODE_NAME_PREFIX.length() + 8;
 
     public static final String MELOMIND_DEVICE_NAME = "melomind";
     public static final String VPRO_DEVICE_NAME = "vpro";

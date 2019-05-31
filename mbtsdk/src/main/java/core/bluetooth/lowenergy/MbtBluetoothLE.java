@@ -442,7 +442,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     public String getBleDeviceNameFromA2dp(String deviceName, Context mContext){
        return MelomindDevice.isDeviceNameValidForMelomind(deviceName) ?
                 deviceName.replace(MbtFeatures.A2DP_DEVICE_NAME_PREFIX, MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX) : //audio_ prefix is replaced by a melo_ prefix
-                MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX + new MelomindsQRDataBase(mContext,  true).get(deviceName);
+                new MelomindsQRDataBase(mContext,  true).get(deviceName);
     }
 
     @Override
@@ -836,6 +836,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     }
 
     public void sendExternalName(String externalName) {
+        LogUtils.d(TAG, "send external name "+externalName);
         if (externalName == null)
             return;
         ByteBuffer nameToBytes = ByteBuffer.allocate(3 + externalName.getBytes().length); // +1 for mailbox code
@@ -900,10 +901,10 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     }
 
     public void notifyDeviceInfoReceived(@NonNull DeviceInfo deviceInfo, @NonNull String deviceValue){ // This method will be called when a DeviceInfoReceived is posted (fw or hw or serial number) by MbtBluetoothLE or MbtBluetoothSPP
-        super.notifyDeviceInfoReceived(deviceInfo,deviceValue);
-        if(getCurrentState().isReadingDeviceInfoState()){
+                super.notifyDeviceInfoReceived(deviceInfo,deviceValue);
+        if(getCurrentState().isReadingDeviceInfoState())
             updateConnectionState(true); //current state is set to READING_FIRMWARE_VERSION_SUCCESS or READING_HARDWARE_VERSION_SUCCESS or READING_SERIAL_NUMBER_SUCCESS or READING_SUCCESS if reading device info and future is completed
-        }
+
     }
 
     protected void notifyBatteryReceived(int value) {

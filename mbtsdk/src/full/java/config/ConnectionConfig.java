@@ -20,6 +20,8 @@ public final class ConnectionConfig {
 
     private final String deviceName;
 
+    private final String deviceQrCode;
+
     private final int maxScanDuration;
 
     private final boolean connectAudio;
@@ -28,8 +30,9 @@ public final class ConnectionConfig {
 
     private final ConnectionStateListener<BaseError> connectionStateListener;
 
-    private ConnectionConfig(String deviceName, int maxScanDuration, boolean connectAudio, MbtDeviceType deviceType, ConnectionStateListener<BaseError> connectionStateListener){
+    private ConnectionConfig(String deviceName, String deviceQrCode, int maxScanDuration, boolean connectAudio, MbtDeviceType deviceType, ConnectionStateListener<BaseError> connectionStateListener){
         this.deviceName = deviceName;
+        this.deviceQrCode = deviceQrCode;
         this.maxScanDuration = maxScanDuration;
         this.deviceType = deviceType;
         this.connectAudio = (deviceType == MbtDeviceType.MELOMIND && connectAudio);
@@ -43,6 +46,9 @@ public final class ConnectionConfig {
         return deviceName;
     }
 
+    public String getDeviceQrCode() {
+        return deviceQrCode;
+    }
 
     public int getMaxScanDuration() {
         return maxScanDuration;
@@ -70,6 +76,7 @@ public final class ConnectionConfig {
     public static class Builder{
         @Nullable
         private String deviceName = null;
+        private String deviceQrCode = null;
         private int maxScanDuration = MbtFeatures.DEFAULT_MAX_SCAN_DURATION_IN_MILLIS;
         private boolean connectAudio = false;
         private MbtDeviceType deviceType = MbtDeviceType.MELOMIND;
@@ -90,6 +97,18 @@ public final class ConnectionConfig {
         @NonNull
         public Builder deviceName(@Nullable String deviceName){
             this.deviceName = deviceName;
+            return this;
+        }
+        /**
+         * Use this method to specify the QR Code number of the device you are trying to connect to.
+         * The QR code must contain 9 or 10 digits and start with the {@link core.device.model.MelomindsQRDataBase#QR_PREFIX} prefix
+         * Pass NULL if unknown or if you don't want to specify any.
+         * @param deviceQrCode the device QR code number. Can be NULL
+         * @return the builder instance
+         */
+        @NonNull
+        public Builder deviceQrCode(@Nullable String deviceQrCode){
+            this.deviceQrCode = deviceQrCode;
             return this;
         }
 
@@ -149,7 +168,7 @@ public final class ConnectionConfig {
 
         @NonNull
         public ConnectionConfig create(){
-            return new ConnectionConfig(this.deviceName, this.maxScanDuration, this.connectAudio, this.deviceType, this.connectionStateListener);
+            return new ConnectionConfig(this.deviceName, this.deviceQrCode, this.maxScanDuration, this.connectAudio, this.deviceType, this.connectionStateListener);
         }
 
 
