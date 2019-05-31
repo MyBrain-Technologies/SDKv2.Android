@@ -7,7 +7,6 @@ import android.support.annotation.Nullable;
 
 import java.util.List;
 
-import config.DeviceConfig;
 import features.MbtAcquisitionLocations;
 import features.MbtFeatures;
 
