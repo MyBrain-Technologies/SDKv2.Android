@@ -232,6 +232,16 @@ public final class MbtClient {
     }
 
     /**
+     * Sends a command to reboot the connected headset
+     * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
+     * This response contains the command status and informations bundled in a byte array
+     * @param requestCallback returns the headset raw response if the command has been well sent
+     */
+    public void rebootDevice(@Nullable SimpleRequestCallback<byte[]> requestCallback){
+        mbtManager.sendDeviceCommand(new MailboxConfig.Builder().rebootDevice().create(), requestCallback);
+    }
+
+    /**
      * Stops a pending connection process. If successful,
      * the new state {@link core.bluetooth.BtState#CONNECTION_INTERRUPTED} is sent to the user in the
      *

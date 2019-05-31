@@ -16,6 +16,7 @@ public class MailboxConfig extends DeviceCommandConfig {
     public final static String SYSTEM_STATUS_CONFIG = "SYSTEM_STATUS_CONFIG";
     public final static String CONNECT_AUDIO_CONFIG = "CONNECT_AUDIO_CONFIG";
     public final static String DISCONNECT_AUDIO_CONFIG = "DISCONNECT_AUDIO_CONFIG";
+    public final static String REBOOT_DEVICE_CONFIG = "REBOOT_DEVICE_CONFIG";
 
     private String serialNumber;
     private String externalName;
@@ -23,8 +24,9 @@ public class MailboxConfig extends DeviceCommandConfig {
     private boolean connectAudio;
     private boolean disconnectAudio;
     private boolean systemStatus;
+    private boolean rebootDevice;
 
-    private MailboxConfig(String serialNumber, String productName, String externalName, boolean connectA2D, boolean disconnectA2DP, boolean systemStatus) {
+    private MailboxConfig(String serialNumber, String productName, String externalName, boolean connectA2D, boolean disconnectA2DP, boolean systemStatus, boolean rebootDevice) {
 
         this.serialNumber = serialNumber;
         this.productName = productName;
@@ -32,6 +34,7 @@ public class MailboxConfig extends DeviceCommandConfig {
         this.connectAudio = connectA2D;
         this.disconnectAudio = disconnectA2DP;
         this.systemStatus = systemStatus;
+        this.rebootDevice = rebootDevice;
     }
 
     public String getSerialNumber() {
@@ -58,6 +61,10 @@ public class MailboxConfig extends DeviceCommandConfig {
         return systemStatus;
     }
 
+    public boolean rebootDevice() {
+        return rebootDevice;
+    }
+
     @Keep
     public static class Builder{
 
@@ -71,6 +78,7 @@ public class MailboxConfig extends DeviceCommandConfig {
         boolean connectAudio = false;
         boolean disconnectAudio = false;
         boolean systemStatus = false;
+        boolean rebootDevice = false;
 
         public Builder(){}
 
@@ -120,6 +128,15 @@ public class MailboxConfig extends DeviceCommandConfig {
         }
 
         /**
+         * Reboot the current connected in Bluetooth Low Energy headset
+         */
+        @NonNull
+        public Builder rebootDevice(){
+            this.rebootDevice = true;
+            return this;
+        }
+
+        /**
          * Get the system status of the headset currently connected in Bluetooth Low Energy
          */
         @NonNull
@@ -130,7 +147,7 @@ public class MailboxConfig extends DeviceCommandConfig {
 
         @Nullable
         public MailboxConfig create() {
-            return new MailboxConfig(serialNumber, productName, externalName, connectAudio, disconnectAudio, systemStatus);
+            return new MailboxConfig(serialNumber, productName, externalName, connectAudio, disconnectAudio, systemStatus, rebootDevice);
         }
     }
 
@@ -143,6 +160,7 @@ public class MailboxConfig extends DeviceCommandConfig {
                 ", connectAudio=" + connectAudio +
                 ", disconnectAudio=" + disconnectAudio +
                 ", systemStatus=" + systemStatus +
+                ", reboot=" + rebootDevice +
                 '}';
     }
 }

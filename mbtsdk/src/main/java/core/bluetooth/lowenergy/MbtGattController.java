@@ -320,6 +320,10 @@ final class MbtGattController extends BluetoothGattCallback {
                 mbtBluetoothLE.notifyCommandResponseReceived(characteristic.getValue(), MailboxConfig.DISCONNECT_AUDIO_CONFIG);
                 break;
 
+            case MailboxEvents.MBX_SYS_REBOOT_EVT:
+                mbtBluetoothLE.notifyCommandResponseReceived(characteristic.getValue(), MailboxConfig.REBOOT_DEVICE_CONFIG);
+                break;
+
             case MailboxEvents.MBX_SET_NOTCH_FILT:
                 mbtBluetoothLE.notifyCommandResponseReceived(characteristic.getValue(), EegStreamConfig.NOTCH_FILTER_CONFIG);
                 break;
@@ -339,6 +343,7 @@ final class MbtGattController extends BluetoothGattCallback {
             case MailboxEvents.MBX_DC_OFFSET_ENABLE:
                 mbtBluetoothLE.notifyCommandResponseReceived(characteristic.getValue(), EegStreamConfig.OFFSET_CONFIG);
                 break;
+
 
             case (byte) 0xFF:
             default:
