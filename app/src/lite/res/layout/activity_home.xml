@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:custom="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white">
+
+    <ImageView
+        android:id="@+id/image"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_centerVertical="true"
+        android:adjustViewBounds="true"
+        android:src="@drawable/brain"
+
+        app:layout_constraintTop_toTopOf="@id/guidelineTopImage"
+        app:layout_constraintBottom_toBottomOf="@id/guidelineBottomImage"
+        app:layout_constraintEnd_toEndOf="@+id/guidelineEnd"
+        app:layout_constraintStart_toStartOf="@+id/guidelineStart" />
+
+    <Spinner
+        android:id="@+id/deviceNamePrefix"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+
+        app:layout_constraintStart_toStartOf="@+id/guidelineStart"
+        app:layout_constraintEnd_toEndOf="@+id/guidelineEndPrefix"
+        app:layout_constraintTop_toTopOf="@+id/guidelineTopName"
+        app:layout_constraintBottom_toBottomOf="@+id/guidelineBottomName"/>
+
+    <EditText
+        android:id="@+id/deviceNameField"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:singleLine="true"
+        android:hint="@string/device_name"
+        android:inputType="number"
+
+        app:layout_constraintStart_toEndOf="@+id/deviceQrCodePrefix"
+        app:layout_constraintEnd_toEndOf="@+id/guidelineEnd"
+        app:layout_constraintTop_toTopOf="@+id/guidelineTopName"
+        app:layout_constraintBottom_toBottomOf="@+id/guidelineBottomName"
+        />
+
+    <Spinner
+        android:id="@+id/deviceQrCodePrefix"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+
+        app:layout_constraintStart_toStartOf="@+id/guidelineStart"
+        app:layout_constraintEnd_toEndOf="@+id/guidelineEndPrefix"
+        app:layout_constraintTop_toTopOf="@+id/guidelineTopQrCode"
+        app:layout_constraintBottom_toBottomOf="@+id/guidelineBottomQrCode"/>
+
+    <EditText
+        android:id="@+id/deviceQrCodeField"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:singleLine="true"
+        android:hint="@string/device_qrcode"
+        android:inputType="text"
+
+        app:layout_constraintStart_toEndOf="@+id/deviceQrCodePrefix"
+        app:layout_constraintEnd_toEndOf="@+id/guidelineEnd"
+        app:layout_constraintTop_toTopOf="@+id/guidelineTopQrCode"
+        app:layout_constraintBottom_toBottomOf="@+id/guidelineBottomQrCode"
+        />
+
+    <Switch
+        android:id="@+id/connectAudio"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Bluetooth Audio Streaming"
+        app:layout_constraintTop_toTopOf="@id/guidelineTopSwitch"
+        app:layout_constraintBottom_toBottomOf="@id/guidelineBottomSwitch"
+        app:layout_constraintEnd_toEndOf="@+id/guidelineEnd"
+        app:layout_constraintStart_toStartOf="@+id/guidelineStart" />
+
+    <Button
+        android:id="@+id/scanButton"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:elevation="10dp"
+        android:text="@string/scan"
+        android:background="@color/light_blue"
+
+        android:textColor="@color/white"
+        android:textSize="12sp"
+        app:layout_constraintBottom_toTopOf="@+id/guidelineBottomButton"
+        app:layout_constraintEnd_toEndOf="@+id/guidelineEnd"
+        app:layout_constraintStart_toStartOf="@+id/guidelineStart"
+        app:layout_constraintTop_toTopOf="@+id/guidelineTopButton" />
+
+    <!--<Button-->
+        <!--android:id="@+id/scanAllButton"-->
+        <!--style="@style/Base.Widget.AppCompat.Button.Small"-->
+        <!--android:layout_width="0dp"-->
+        <!--android:layout_height="0dp"-->
+        <!--android:elevation="10dp"-->
+        <!--android:text="@string/scanAll"-->
+
+        <!--android:textColor="@color/light_blue"-->
+        <!--android:textSize="12sp"-->
+        <!--app:layout_constraintBottom_toTopOf="@+id/guidelineBottomButton"-->
+        <!--app:layout_constraintEnd_toEndOf="@+id/guidelineEnd"-->
+        <!--app:layout_constraintStart_toStartOf="@+id/guidelineStartCancelButton"-->
+        <!--app:layout_constraintTop_toTopOf="@+id/guidelineTopButton" />-->
+
+
+    <!-- VERTICAL GUIDELINES-->
+
+    <android.support.constraint.Guideline
+        android:id="@+id/guidelineStart"
+        android:layout_width="1dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        custom:layout_constraintGuide_percent="0.1" />
+
+    <android.support.constraint.Guideline
+        android:id="@+id/guidelineEndScanButton"
+        android:layout_width="1dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        custom:layout_constraintGuide_percent="0.47" />
+
+    <android.support.constraint.Guideline
+        android:id="@+id/guidelineEndPrefix"
+        android:layout_width="1dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        custom:layout_constraintGuide_percent="0.35" />
+
+    <android.support.constraint.Guideline
+        android:id="@+id/guidelineStartCancelButton"
+        android:layout_width="1dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        custom:layout_constraintGuide_percent="0.53" />
+
+    <android.support.constraint.Guideline
+        android:id="@+id/guidelineEnd"
+        android:layout_width="1dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        custom:layout_constraintGuide_percent="0.9" />
+
+    <!-- HORIZONTAL GUIDELINES-->
+
+
+    <android.support.constraint.Guideline
+        android:id="@+id/guidelineTopImage"
+        android:layout_width="1dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        custom:layout_constraintGuide_percent="0.1" />
+
+    <android.support.constraint.Guideline
+        android:id="@+id/guidelineBottomImage"
+        android:layout_width="1dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        custom:layout_constraintGuide_percent="0.53" />
+
+    <android.support.constraint.Guideline
+        android:id="@+id/guidelineTopName"
+        android:layout_width="1dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        custom:layout_constraintGuide_percent="0.53" />
+
+    <android.support.constraint.Guideline
+        android:id="@+id/guidelineBottomName"
+        android:layout_width="1dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        custom:layout_constraintGuide_percent="0.63" />
+
+    <android.support.constraint.Guideline
+        android:id="@+id/guidelineTopQrCode"
+        android:layout_width="1dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        custom:layout_constraintGuide_percent="0.63" />
+
+    <android.support.constraint.Guideline
+        android:id="@+id/guidelineBottomQrCode"
+        android:layout_width="1dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        custom:layout_constraintGuide_percent="0.73"/>
+
+    <android.support.constraint.Guideline
+        android:id="@+id/guidelineTopButton"
+        android:layout_width="1dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        custom:layout_constraintGuide_percent="0.825" />
+
+    <android.support.constraint.Guideline
+        android:id="@+id/guidelineBottomButton"
+        android:layout_width="1dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        custom:layout_constraintGuide_percent="0.925" />
+
+    <android.support.constraint.Guideline
+        android:id="@+id/guidelineTopSwitch"
+        android:layout_width="1dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        custom:layout_constraintGuide_percent="0.75" />
+
+
+    <android.support.constraint.Guideline
+        android:id="@+id/guidelineBottomSwitch"
+        android:layout_width="1dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        custom:layout_constraintGuide_percent="0.80" />
+
+</android.support.constraint.ConstraintLayout>

@@ -16,16 +16,22 @@ import android.widget.Switch;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import core.bluetooth.BtState;
 import config.ConnectionConfig;
+import core.device.model.MbtDevice;
+import core.device.model.MelomindDevice;
 import engine.MbtClient;
+import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
 
 import engine.clientevents.BluetoothStateListener;
+import features.MbtDeviceType;
 import features.MbtFeatures;
 
 import static features.MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX;
+import static features.MbtFeatures.QR_CODE_NAME_PREFIX;
 import static features.MbtFeatures.VPRO_DEVICE_NAME_PREFIX;
 import static features.MbtDeviceType.MELOMIND;
 import static features.MbtDeviceType.VPRO;
@@ -39,6 +45,8 @@ public class HomeActivity extends AppCompatActivity{
     private final static int SCAN_DURATION = 20000;
 
     public final static String DEVICE_NAME = "DEVICE_NAME";
+    public final static String DEVICE_QR_CODE = "DEVICE_QR_CODE";
+    public final static String DEVICE_TYPE = "DEVICE_TYPE";
     public final static String BLUETOOTH_STATE = "BLUETOOTH_STATE";
     public final static String PREVIOUS_ACTIVITY = "PREVIOUS_ACTIVITY";
 
@@ -46,30 +54,73 @@ public class HomeActivity extends AppCompatActivity{
 
     private EditText deviceNameField;
     private String deviceName;
+    private EditText deviceQrCodeField;
+    private String deviceQrCode;
+
+    private MbtDeviceType deviceType;
 
     private Switch connectAudioSwitch;
     private boolean connectAudioIfDeviceCompatible = false;
 
-    private Spinner devicePrefixSpinner;
-    private String devicePrefix;
+    private Spinner deviceNamePrefixSpinner;
+    private String deviceNamePrefix;
+    private ArrayList<String> prefixNameList;
+    private ArrayAdapter<String> prefixNameArrayAdapter;
+
+    private Spinner deviceQrCodePrefixSpinner;
+    private String deviceQrCodePrefix;
+    private ArrayList<String> prefixQrCodeList;
+    private ArrayAdapter<String> prefixQrCodeArrayAdapter;
 
     private Button scanButton;
 
     private boolean isCancelled = false;
+    private boolean isErrorRaised = false;
 
     private Toast toast;
 
     private BluetoothStateListener bluetoothStateListener = new BluetoothStateListener() {
         @Override
         public void onNewState(BtState newState) {
-
+            Log.d(TAG, "new state received "+newState);
+            if(newState.equals(BtState.READING_SUCCESS)){ //SERIAL NUMBER VALUE HAS NOT BEEN READ BEFORE THIS STEP
+                client.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
+                    @Override
+                    public void onRequestComplete(final MbtDevice device) {
+                        Log.d(TAG, "device received "+device);
+                        if(device != null) {
+                            runOnUiThread(new Runnable() {
+                                  @Override
+                                  public void run() {
+                                      deviceName = device.getProductName();
+                                      String deviceNameToDisplay = deviceName.replace(MELOMIND_DEVICE_NAME_PREFIX,"");
+                                      deviceNameField.setText(deviceNameToDisplay);
+                                      for(String prefix : prefixNameList){
+                                          if(device.getDeviceId() != null && device.getProductName().startsWith(prefix))
+                                              deviceNamePrefixSpinner.setSelection(prefixNameArrayAdapter.getPosition(prefix));
+                                      }
+                                      deviceQrCode = device.getExternalName();
+                                      String deviceQrCodeToDisplay = deviceQrCode.replace(QR_CODE_NAME_PREFIX,"");
+                                      deviceQrCodeField.setText(deviceQrCodeToDisplay);
+                                      for(String prefix : prefixQrCodeList){
+                                          if(device.getExternalName() != null && device.getExternalName().startsWith(prefix))
+                                              deviceQrCodePrefixSpinner.setSelection(prefixQrCodeArrayAdapter.getPosition(prefix));
+                                      }
+                                      deviceType = ( device instanceof MelomindDevice ? MELOMIND : VPRO);
+                                  }
+                              });
+                        }
+                    }
+                });
+            }
         }
 
         @Override
         public void onError(BaseError error, String additionnalInfo) {
             Log.e(TAG, "onError received "+error.getMessage()+ (additionnalInfo != null ? additionnalInfo : ""));
+            isErrorRaised = true;
             updateScanning(false);
-            toast = Toast.makeText(HomeActivity.this, error.getMessage(), Toast.LENGTH_LONG);
+            toast = Toast.makeText(HomeActivity.this, error.getMessage()+ (additionnalInfo != null ? additionnalInfo : ""), Toast.LENGTH_LONG);
             toast.show();
         }
 
@@ -103,30 +154,44 @@ public class HomeActivity extends AppCompatActivity{
         }
 
         initDeviceNameField();
+        initDeviceQrCodeField();
         initConnectAudioSwitch();
         initScanButton();
-        initDevicePrefix();
+        initDeviceNamePrefix();
+        initDeviceQrCodePrefix();
     }
 
     private void initConnectAudioSwitch() {
         connectAudioSwitch = findViewById(R.id.connectAudio);
     }
 
-    private void initDevicePrefix() {
-        devicePrefixSpinner = findViewById(R.id.devicePrefix);
-        ArrayList<String> prefixList = new ArrayList<>();
-        prefixList.add(MELOMIND_DEVICE_NAME_PREFIX);
-        prefixList.add(VPRO_DEVICE_NAME_PREFIX);
-        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_spinner_item, prefixList);
-        arrayAdapter.setDropDownViewResource(R.layout.spinner_item);
-        devicePrefixSpinner.setAdapter(arrayAdapter);
-        devicePrefixSpinner.setSelection(arrayAdapter.getPosition(MELOMIND_DEVICE_NAME_PREFIX));
+    private void initDeviceNamePrefix() {
+        deviceNamePrefixSpinner = findViewById(R.id.deviceNamePrefix);
+        prefixNameList = new ArrayList<>(Arrays.asList(MELOMIND_DEVICE_NAME_PREFIX, VPRO_DEVICE_NAME_PREFIX));
+        prefixNameArrayAdapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, prefixNameList);
+        prefixNameArrayAdapter.setDropDownViewResource(R.layout.spinner_item);
+        deviceNamePrefixSpinner.setAdapter(prefixNameArrayAdapter);
+        deviceNamePrefixSpinner.setSelection(prefixNameArrayAdapter.getPosition(MELOMIND_DEVICE_NAME_PREFIX));
+    }
+
+    private void initDeviceQrCodePrefix() {
+        deviceQrCodePrefixSpinner = findViewById(R.id.deviceQrCodePrefix);
+        prefixQrCodeList = new ArrayList<>(Arrays.asList(QR_CODE_NAME_PREFIX));
+        prefixQrCodeArrayAdapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, prefixQrCodeList);
+        prefixQrCodeArrayAdapter.setDropDownViewResource(R.layout.spinner_item);
+        deviceQrCodePrefixSpinner.setAdapter(prefixQrCodeArrayAdapter);
+        deviceQrCodePrefixSpinner.setSelection(prefixQrCodeArrayAdapter.getPosition(QR_CODE_NAME_PREFIX));
     }
 
 
     private void initDeviceNameField() {
         deviceNameField = findViewById(R.id.deviceNameField);
+    }
+
+    private void initDeviceQrCodeField() {
+        deviceQrCodeField = findViewById(R.id.deviceQrCodeField);
     }
 
     private void initScanButton(){
@@ -136,29 +201,36 @@ public class HomeActivity extends AppCompatActivity{
             @Override
             public void onClick(View v) {
                 notifyUser(getString(R.string.scan_in_progress));
-                devicePrefix = String.valueOf(devicePrefixSpinner.getSelectedItem()); //get the prefix chosed by the user in the Spinner
-                deviceName = devicePrefix+deviceNameField.getText().toString(); //get the name entered by the user in the EditText
-                connectAudioIfDeviceCompatible = connectAudioSwitch.isChecked();
-                if(isCancelled){ //Scan in progress : a second click means that the user is trying to cancel the scan
-                   cancelScan();
-                }else{ // Scan is not in progress : starting a new scan in order to connect to a Mbt Device
-                    startScan();
-                }
-                updateScanning(!isCancelled);
+                deviceNamePrefix = String.valueOf(deviceNamePrefixSpinner.getSelectedItem()); //get the prefix chosen by the user in the Spinner
+                deviceName = deviceNamePrefix+deviceNameField.getText().toString(); //get the name entered by the user in the EditText
 
+                deviceQrCodePrefix = String.valueOf(deviceQrCodePrefixSpinner.getSelectedItem()); //get the prefix chosen by the user in the Spinner
+                deviceQrCode = deviceQrCodePrefix+deviceQrCodeField.getText().toString(); //get the name entered by the user in the EditText
+
+                deviceType = isMelomindDevice() ? MELOMIND : VPRO;
+                connectAudioIfDeviceCompatible = connectAudioSwitch.isChecked();
+
+                if(isCancelled) //Scan in progress : a second click means that the user is trying to cancel the scan
+                   cancelScan();
+                else // Scan is not in progress : starting a new scan in order to connect to a Mbt Device
+                    startScan();
+                if(!isErrorRaised)
+                    updateScanning(!isCancelled);
             }
         });
     }
 
 
     private void startScan() {
-            client.connectBluetooth(new ConnectionConfig.Builder(bluetoothStateListener)
+        isErrorRaised = false;
+        client.connectBluetooth(new ConnectionConfig.Builder(bluetoothStateListener)
                     .deviceName(
-                            ((deviceName != null) && (deviceName.equals(MELOMIND_DEVICE_NAME_PREFIX) || deviceName.equals(VPRO_DEVICE_NAME_PREFIX)) ) ? //if no no name has been entered by the user, the default device name is the headset prefix
+                            ((deviceName != null) && (deviceName.equals(MELOMIND_DEVICE_NAME_PREFIX) || deviceName.equals(VPRO_DEVICE_NAME_PREFIX))) ? //if no name has been entered by the user, the default device name is the headset prefix
                             null : deviceName ) //null is given in parameters if no name has been entered by the user
+                    .deviceQrCode(
+                            ((deviceQrCode != null) && (deviceQrCode.equals(QR_CODE_NAME_PREFIX)) ) ? //if no QR code has been entered by the user, the default device name is the headset prefix
+                            null : deviceQrCode )
                     .maxScanDuration(SCAN_DURATION)
-                    .scanDeviceType(isMelomindDevice() ? MELOMIND : VPRO)
-                    .connectAudioIfDeviceCompatible(connectAudioIfDeviceCompatible)
                     .create());
 
     }
@@ -232,6 +304,8 @@ public class HomeActivity extends AppCompatActivity{
         bluetoothStateListener = null;
         final Intent intent = new Intent(HomeActivity.this, DeviceActivity.class);
         intent.putExtra(DEVICE_NAME, deviceName);
+        intent.putExtra(DEVICE_QR_CODE, deviceQrCode);
+        intent.putExtra(DEVICE_TYPE, deviceType);
         intent.putExtra(BLUETOOTH_STATE, isConnected);
         startActivity(intent);
         finish();
