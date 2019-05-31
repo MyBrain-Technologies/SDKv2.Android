@@ -155,7 +155,7 @@ public final class ConnectionConfig {
         }
 
         /**
-         * Use this method to define which king of device you want to connect to.
+         * Use this method to define which kind of device you want to connect to.
          * @see MbtDeviceType
          * @param deviceType
          * @return the builder instance
