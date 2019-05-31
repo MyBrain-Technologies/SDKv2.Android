@@ -110,9 +110,10 @@ public class MbtManager{
         }else if(deviceQrCodeRequested != null && (!deviceQrCodeRequested.startsWith(MbtFeatures.QR_CODE_NAME_PREFIX))){
             this.connectionStateListener.onError(HeadsetDeviceError.ERROR_PREFIX," "+MbtFeatures.QR_CODE_NAME_PREFIX);
         }else if(deviceQrCodeRequested != null && deviceNameRequested != null && !deviceNameRequested.equals(new MelomindsQRDataBase(mContext,  true).get(deviceQrCodeRequested))){
-            this.connectionStateListener.onError(HeadsetDeviceError.ERROR_PREFIX, mContext.getString(R.string.aborted_connection));
+            this.connectionStateListener.onError(HeadsetDeviceError.ERROR_MATCHING, mContext.getString(R.string.aborted_connection));
         }else{
             EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent(true, deviceNameRequested, deviceQrCodeRequested, deviceTypeRequested));
+
         }
     }
 

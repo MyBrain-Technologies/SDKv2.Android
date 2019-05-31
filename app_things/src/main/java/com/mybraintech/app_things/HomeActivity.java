@@ -48,8 +48,8 @@ public class HomeActivity extends AppCompatActivity{
     private Switch connectAudioSwitch;
     private boolean connectAudioIfDeviceCompatible = false;
 
-    private Spinner devicePrefixSpinner;
-    private String devicePrefix;
+    private Spinner deviceNamePrefixSpinner;
+    private String deviceNamePrefix;
 
     private Button scanButton;
 
@@ -101,15 +101,15 @@ public class HomeActivity extends AppCompatActivity{
     }
 
     private void initDevicePrefix() {
-        devicePrefixSpinner = findViewById(R.id.devicePrefix);
+        deviceNamePrefixSpinner = findViewById(R.id.deviceNamePrefix);
         ArrayList<String> prefixList = new ArrayList<>();
         prefixList.add(MELOMIND_DEVICE_NAME_PREFIX);
         prefixList.add(VPRO_DEVICE_NAME_PREFIX);
         ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(this,
                 android.R.layout.simple_spinner_item, prefixList);
         arrayAdapter.setDropDownViewResource(R.layout.spinner_item);
-        devicePrefixSpinner.setAdapter(arrayAdapter);
-        devicePrefixSpinner.setSelection(arrayAdapter.getPosition(MELOMIND_DEVICE_NAME_PREFIX));
+        deviceNamePrefixSpinner.setAdapter(arrayAdapter);
+        deviceNamePrefixSpinner.setSelection(arrayAdapter.getPosition(MELOMIND_DEVICE_NAME_PREFIX));
     }
 
 
@@ -124,8 +124,8 @@ public class HomeActivity extends AppCompatActivity{
             @Override
             public void onClick(View v) {
                 notifyUser(getString(R.string.scan_in_progress));
-                devicePrefix = String.valueOf(devicePrefixSpinner.getSelectedItem()); //get the prefix chosed by the user in the Spinner
-                deviceName = devicePrefix+deviceNameField.getText().toString(); //get the name entered by the user in the EditText
+                deviceNamePrefix = String.valueOf(deviceNamePrefixSpinner.getSelectedItem()); //get the prefix chosed by the user in the Spinner
+                deviceName = deviceNamePrefix+deviceNameField.getText().toString(); //get the name entered by the user in the EditText
                 connectAudioIfDeviceCompatible = connectAudioSwitch.isChecked();
                 if(isCancelled){ //Scan in progress : a second click means that the user is trying to cancel the scan
                     cancelScan();

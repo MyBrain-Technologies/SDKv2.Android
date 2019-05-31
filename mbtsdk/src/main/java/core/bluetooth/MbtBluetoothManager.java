@@ -201,6 +201,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                     deviceQrCodeRequested = new MelomindsQRDataBase(mContext, false).get(deviceNameRequested);  //retrieve the QR code from BLE name using QR code database
 
                 deviceTypeRequested = ((StartOrContinueConnectionRequestEvent) request).getTypeOfDeviceRequested();
+                Log.d(TAG," device name "+deviceNameRequested+ " | QR code "+deviceQrCodeRequested + " | type "+deviceTypeRequested);
                 startOrContinueConnectionOperation(((StartOrContinueConnectionRequestEvent) request).isClientUserRequest());
 
             } else if (request instanceof ReadRequestEvent) {
@@ -677,6 +678,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
             @Override
             public void onRequestComplete(MbtDevice device) {
+                LogUtils.d(TAG, "device "+device);
                 updateConnectionState(true);//current state is set to QR_CODE_SENDING
                 if (device.getDeviceId() != null && device.getExternalName() != null && (device.getExternalName().equals(MbtFeatures.MELOMIND_DEVICE_NAME) || device.getExternalName().length() == MbtFeatures.DEVICE_QR_CODE_LENGTH-1) //send the QR code found in the database if the headset do not know its own QR code
                         && new FirmwareUtils(device.getFirmwareVersion()).isFwValidForFeature(FirmwareUtils.FWFeature.REGISTER_EXTERNAL_NAME)) {

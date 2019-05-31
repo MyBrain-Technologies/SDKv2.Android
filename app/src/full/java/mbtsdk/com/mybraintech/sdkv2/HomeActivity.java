@@ -10,6 +10,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
+
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -190,6 +192,7 @@ public class HomeActivity extends AppCompatActivity{
          */
         @Override
         public void onError(BaseError error, String additionnalInfo) {
+            Log.e("HomeActivity", "onError received "+error.getMessage()+ (additionnalInfo != null ? additionnalInfo : ""));
             isErrorRaised = true;
             updateScanning(false);
             toast = Toast.makeText(HomeActivity.this, error.getMessage()+ (additionnalInfo != null ? additionnalInfo : ""), Toast.LENGTH_LONG);
@@ -208,6 +211,7 @@ public class HomeActivity extends AppCompatActivity{
         /**
          * Callback used to receive a notification when a connected headset is disconnected
          */
+
         @Override
         public void onDeviceDisconnected() {
             if(!toast.getView().isShown())
@@ -247,6 +251,7 @@ public class HomeActivity extends AppCompatActivity{
      * Method called by default when the Activity is started
      * It initializes all the views, SDK client, and permissions.
      */
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -297,6 +302,7 @@ public class HomeActivity extends AppCompatActivity{
         prefixNameList = new ArrayList<>();
         prefixNameList.add(MELOMIND_DEVICE_NAME_PREFIX);
         prefixNameArrayAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, prefixNameList);
+
         prefixNameArrayAdapter.setDropDownViewResource(R.layout.spinner_item);
         deviceNamePrefixSpinner.setAdapter(prefixNameArrayAdapter);
         deviceNamePrefixSpinner.setSelection(prefixNameArrayAdapter.getPosition(MELOMIND_DEVICE_NAME_PREFIX));
@@ -332,6 +338,7 @@ public class HomeActivity extends AppCompatActivity{
     /**
      * Method used to initialize the scan button
      */
+
     private void initScanButton(){
         scanButton = findViewById(R.id.scanButton);
 
@@ -350,6 +357,7 @@ public class HomeActivity extends AppCompatActivity{
 
                 if(isCancelled) //Scan in progress : a second click means that the user is trying to cancel the scan
                     cancelScan();
+
                 else // Scan is not in progress : starting a new scan in order to connect to a Mbt Device
                     startScan();
                 if(!isErrorRaised)
@@ -418,6 +426,7 @@ public class HomeActivity extends AppCompatActivity{
      */
     private void updateScanning(boolean isCancelled){
         this.isCancelled = isCancelled;
+
         if(!isCancelled)
             toast.cancel();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)

@@ -1,5 +1,6 @@
 package core.device.model;
 
+import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
