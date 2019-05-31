@@ -11,7 +11,7 @@ import engine.clientevents.DeviceStatusListener;
  * Mailbox commands and other headset commands related to EEG streaming are hold in this object
  */
 @Keep
-public class EegStreamConfig implements DeviceCommandConfig {
+public class EegStreamConfig extends DeviceCommandConfig {
 
     private FilterConfig notchFilter;
     private FilterConfig bandpassFilter;

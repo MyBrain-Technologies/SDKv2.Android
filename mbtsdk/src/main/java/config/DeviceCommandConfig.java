@@ -1,4 +1,4 @@
 package config;
 
-public interface DeviceCommandConfig {
+public class DeviceCommandConfig {
 }

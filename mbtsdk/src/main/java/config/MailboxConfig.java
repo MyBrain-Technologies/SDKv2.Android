@@ -8,7 +8,7 @@ import android.support.annotation.Nullable;
  * Mailbox commands NOT related to EEG streaming are hold in this object
  */
 @Keep
-public class MailboxConfig implements DeviceCommandConfig {
+public class MailboxConfig extends DeviceCommandConfig {
 
     public final static String SERIAL_NUMBER_CONFIG = "SERIAL_NUMBER_CONFIG";
     public final static String EXTERNAL_NAME_CONFIG = "EXTERNAL_NAME_CONFIG";
