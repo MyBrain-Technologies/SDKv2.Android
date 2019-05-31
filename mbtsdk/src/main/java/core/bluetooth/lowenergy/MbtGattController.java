@@ -312,12 +312,12 @@ final class MbtGattController extends BluetoothGattCallback {
 
             case MailboxEvents.MBX_CONNECT_IN_A2DP:
                 mbtBluetoothLE.notifyConnectionResponseReceived(characteristic.getValue()[0], characteristic.getValue()[1]);
-                mbtBluetoothLE.notifyCommandResponseReceived(characteristic.getValue(), MailboxConfig.CONNECT_A2DP_CONFIG);
+                mbtBluetoothLE.notifyCommandResponseReceived(characteristic.getValue(), MailboxConfig.CONNECT_AUDIO_CONFIG);
                 break;
 
             case MailboxEvents.MBX_DISCONNECT_IN_A2DP:
                 mbtBluetoothLE.notifyConnectionResponseReceived(characteristic.getValue()[0], characteristic.getValue()[1]);
-                mbtBluetoothLE.notifyCommandResponseReceived(characteristic.getValue(), MailboxConfig.DISCONNECT_A2DP_CONFIG);
+                mbtBluetoothLE.notifyCommandResponseReceived(characteristic.getValue(), MailboxConfig.DISCONNECT_AUDIO_CONFIG);
                 break;
 
             case MailboxEvents.MBX_SET_NOTCH_FILT:

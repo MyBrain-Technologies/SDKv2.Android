@@ -208,8 +208,8 @@ public final class MbtClient {
      * This response contains the command status and informations bundled in a byte array
      * @param requestCallback returns the headset raw response if the command has been well sent
      */
-    public void connectA2DP(@Nullable SimpleRequestCallback<byte[]> requestCallback){
-        mbtManager.sendDeviceCommand(new MailboxConfig.Builder().connectA2DP().create(), requestCallback);
+    public void connectAudio(@Nullable SimpleRequestCallback<byte[]> requestCallback){
+        mbtManager.sendDeviceCommand(new MailboxConfig.Builder().connectAudio().create(), requestCallback);
     }
 
     /**
@@ -218,8 +218,8 @@ public final class MbtClient {
      * This response contains the command status and informations bundled in a byte array
      * @param requestCallback returns the headset raw response if the command has been well sent
      */
-    public void disconnectA2DP(@Nullable SimpleRequestCallback<byte[]> requestCallback){
-        mbtManager.sendDeviceCommand(new MailboxConfig.Builder().disconnectA2DP().create(), requestCallback);
+    public void disconnectAudio(@Nullable SimpleRequestCallback<byte[]> requestCallback){
+        mbtManager.sendDeviceCommand(new MailboxConfig.Builder().disconnectAudio().create(), requestCallback);
     }
 
     /**

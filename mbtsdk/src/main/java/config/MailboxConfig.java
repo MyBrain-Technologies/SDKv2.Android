@@ -14,14 +14,14 @@ public class MailboxConfig implements DeviceCommandConfig {
     public final static String EXTERNAL_NAME_CONFIG = "EXTERNAL_NAME_CONFIG";
     public final static String PRODUCT_NAME_CONFIG = "PRODUCT_NAME_CONFIG";
     public final static String SYSTEM_STATUS_CONFIG = "SYSTEM_STATUS_CONFIG";
-    public final static String CONNECT_A2DP_CONFIG = "CONNECT_A2DP_CONFIG";
-    public final static String DISCONNECT_A2DP_CONFIG = "DISCONNECT_A2DP_CONFIG";
+    public final static String CONNECT_AUDIO_CONFIG = "CONNECT_AUDIO_CONFIG";
+    public final static String DISCONNECT_AUDIO_CONFIG = "DISCONNECT_AUDIO_CONFIG";
 
     private String serialNumber;
     private String externalName;
     private String productName;
-    private boolean connectA2DP;
-    private boolean disconnectA2DP;
+    private boolean connectAudio;
+    private boolean disconnectAudio;
     private boolean systemStatus;
 
     private MailboxConfig(String serialNumber, String productName, String externalName, boolean connectA2D, boolean disconnectA2DP, boolean systemStatus) {
@@ -29,8 +29,8 @@ public class MailboxConfig implements DeviceCommandConfig {
         this.serialNumber = serialNumber;
         this.productName = productName;
         this.externalName = externalName;
-        this.connectA2DP = connectA2D;
-        this.disconnectA2DP = disconnectA2DP;
+        this.connectAudio = connectA2D;
+        this.disconnectAudio = disconnectA2DP;
         this.systemStatus = systemStatus;
     }
 
@@ -46,12 +46,12 @@ public class MailboxConfig implements DeviceCommandConfig {
         return externalName;
     }
 
-    public boolean connectA2DP() {
-        return connectA2DP;
+    public boolean connectAudio() {
+        return connectAudio;
     }
 
-    public boolean disconnectA2DP() {
-        return disconnectA2DP;
+    public boolean disconnectAudio() {
+        return disconnectAudio;
     }
 
     public boolean getSystemStatus() {
@@ -68,8 +68,8 @@ public class MailboxConfig implements DeviceCommandConfig {
         @Nullable
         String externalName = null;
 
-        boolean connectA2DP = false;
-        boolean disconnectA2DP = false;
+        boolean connectAudio = false;
+        boolean disconnectAudio = false;
         boolean systemStatus = false;
 
         public Builder(){}
@@ -105,8 +105,8 @@ public class MailboxConfig implements DeviceCommandConfig {
          * Establish an audio Bluetooth A2DP connection to the headset currently connected in Bluetooth Low Energy
          */
         @NonNull
-        public Builder connectA2DP(){
-            this.connectA2DP = true;
+        public Builder connectAudio(){
+            this.connectAudio = true;
             return this;
         }
 
@@ -114,8 +114,8 @@ public class MailboxConfig implements DeviceCommandConfig {
          * Establish an audio Bluetooth A2DP disconnection to the headset current connected in Bluetooth Low Energy
          */
         @NonNull
-        public Builder disconnectA2DP(){
-            this.disconnectA2DP = true;
+        public Builder disconnectAudio(){
+            this.disconnectAudio = true;
             return this;
         }
 
@@ -130,7 +130,7 @@ public class MailboxConfig implements DeviceCommandConfig {
 
         @Nullable
         public MailboxConfig create() {
-            return new MailboxConfig(serialNumber, productName, externalName, connectA2DP, disconnectA2DP, systemStatus);
+            return new MailboxConfig(serialNumber, productName, externalName, connectAudio, disconnectAudio, systemStatus);
         }
     }
 
@@ -140,8 +140,8 @@ public class MailboxConfig implements DeviceCommandConfig {
                 "setSerialNumber=" + serialNumber +
                 ", setProductName=" + productName +
                 ", setExternalName=" + externalName +
-                ", connectA2DP=" + connectA2DP +
-                ", disconnectA2DP=" + disconnectA2DP +
+                ", connectAudio=" + connectAudio +
+                ", disconnectAudio=" + disconnectAudio +
                 ", systemStatus=" + systemStatus +
                 '}';
     }

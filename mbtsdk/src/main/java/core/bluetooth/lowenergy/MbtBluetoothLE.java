@@ -715,14 +715,14 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
                     requestSent = sendExternalName(externalName);
                 break;
 
-            case MailboxConfig.CONNECT_A2DP_CONFIG:
-                boolean connectA2DP = ((MailboxConfig)config).connectA2DP();
+            case MailboxConfig.CONNECT_AUDIO_CONFIG:
+                boolean connectA2DP = ((MailboxConfig)config).connectAudio();
                 if (connectA2DP)
                     requestSent = connectA2DPFromBLE();
                 break;
 
-            case MailboxConfig.DISCONNECT_A2DP_CONFIG:
-                boolean disconnectA2DP = ((MailboxConfig)config).disconnectA2DP();
+            case MailboxConfig.DISCONNECT_AUDIO_CONFIG:
+                boolean disconnectA2DP = ((MailboxConfig)config).disconnectAudio();
                 if (disconnectA2DP)
                     requestSent = disconnectA2DPFromBLE();
                 break;
@@ -787,10 +787,10 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
                     if(!waitResultOfDeviceCommand(MailboxConfig.EXTERNAL_NAME_CONFIG, config))
                         return false;
 
-                    if(!waitResultOfDeviceCommand(MailboxConfig.CONNECT_A2DP_CONFIG, config))
+                    if(!waitResultOfDeviceCommand(MailboxConfig.CONNECT_AUDIO_CONFIG, config))
                         return false;
 
-                    if(!waitResultOfDeviceCommand(MailboxConfig.DISCONNECT_A2DP_CONFIG, config))
+                    if(!waitResultOfDeviceCommand(MailboxConfig.DISCONNECT_AUDIO_CONFIG, config))
                         return false;
 
                 return waitResultOfDeviceCommand(MailboxConfig.SYSTEM_STATUS_CONFIG, config);
