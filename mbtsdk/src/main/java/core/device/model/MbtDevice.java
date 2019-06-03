@@ -7,7 +7,6 @@ import android.support.annotation.Nullable;
 
 import java.util.List;
 
-import config.DeviceConfig;
 import features.MbtAcquisitionLocations;
 import features.MbtFeatures;
 
@@ -25,7 +24,7 @@ public abstract class MbtDevice {
     @Nullable
     String firmwareVersion;
     @Nullable
-    String deviceId;
+    String serialNumber;
     @Nullable
     String externalName;
 
@@ -76,8 +75,8 @@ public abstract class MbtDevice {
      * @return the device unique ID
      */
     @Nullable
-    public String getDeviceId() {
-        return this.deviceId;
+    public String getSerialNumber() {
+        return this.serialNumber;
     }
 
     /**
@@ -115,7 +114,7 @@ public abstract class MbtDevice {
 
     public void setFirmwareVersion(@NonNull final String firmwareVersion) {this.firmwareVersion = firmwareVersion;}
 
-    public void setDeviceId(@NonNull final String deviceId) {this.deviceId = deviceId;}
+    public void setSerialNumber(@NonNull final String serialNumber) {this.serialNumber = serialNumber;}
 
     public void setProductName(@NonNull final String productName){
         this.productName = productName;
@@ -203,7 +202,7 @@ public abstract class MbtDevice {
                 "productName='" + productName + '\'' +
                 ", hardwareVersion='" + hardwareVersion + '\'' +
                 ", firmwareVersion='" + firmwareVersion + '\'' +
-                ", deviceId='" + deviceId + '\'' +
+                ", serialNumber='" + serialNumber + '\'' +
                 ", externalName='" + externalName + '\'' +
                 ", deviceAddress='" + deviceAddress + '\'' +
                 ", sampRate=" + sampRate +

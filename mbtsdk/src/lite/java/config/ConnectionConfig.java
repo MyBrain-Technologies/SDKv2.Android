@@ -79,7 +79,6 @@ public final class ConnectionConfig {
         private String deviceQrCode = null;
         private int maxScanDuration = MbtFeatures.DEFAULT_MAX_SCAN_DURATION_IN_MILLIS;
         private boolean connectAudio = false;
-        private MbtDeviceType deviceType = MbtDeviceType.MELOMIND;
         @NonNull
         private final ConnectionStateListener<BaseError> connectionStateListener;
 
@@ -150,8 +149,8 @@ public final class ConnectionConfig {
          * @return the builder instance
          */
         @NonNull
-        public Builder connectAudio(boolean useAudio){
-            this.connectAudio = useAudio;
+        public Builder connectAudio(){
+            this.connectAudio = true;
             return this;
         }
 

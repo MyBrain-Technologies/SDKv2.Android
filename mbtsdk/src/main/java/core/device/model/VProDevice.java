@@ -48,8 +48,8 @@ public class VProDevice extends MbtDevice{
      * @return the device unique ID
      */
     @Nullable
-    public final String getDeviceId() {
-        return this.deviceId;
+    public final String getSerialNumber() {
+        return this.serialNumber;
     }
 
     /**
@@ -80,7 +80,7 @@ public class VProDevice extends MbtDevice{
 
     public void setFirmwareVersion(@NonNull final String firmwareVersion) {this.firmwareVersion = firmwareVersion;}
 
-    public void setDeviceId(@NonNull final String deviceId) {this.deviceId = deviceId;}
+    public void setSerialNumber(@NonNull final String deviceId) {this.serialNumber = deviceId;}
 
     public void updateConfiguration(ArrayList<MbtAcquisitionLocations> acquisitionLocationsArrayList, ArrayList<MbtAcquisitionLocations> referenceArrayList, ArrayList<MbtAcquisitionLocations> grounLocationsArrayList){
         this.acquisitionLocations = acquisitionLocationsArrayList;

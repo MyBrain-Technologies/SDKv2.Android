@@ -22,19 +22,19 @@ public final class StreamConfig {
 
     private final int notificationPeriod;
 
-    //private final DeviceConfig deviceConfig; Will be used in future release
+    //private final EegStreamConfig eegStreamConfig; Will be used in future release
 
     private final EegListener<BaseError> eegListener;
 
     private final boolean computeQualities;
 
-    private DeviceConfig deviceConfig;
+    private EegStreamConfig eegStreamConfig;
 
-    private StreamConfig(boolean computeQualities, EegListener<BaseError> eegListener, int notificationPeriod, DeviceConfig deviceConfig){
+    private StreamConfig(boolean computeQualities, EegListener<BaseError> eegListener, int notificationPeriod, EegStreamConfig eegStreamConfig){
         this.computeQualities = computeQualities;
         this.eegListener = eegListener;
         this.notificationPeriod = notificationPeriod;
-        this.deviceConfig = deviceConfig;
+        this.eegStreamConfig = eegStreamConfig;
     }
 
     public EegListener getEegListener() {
@@ -49,8 +49,8 @@ public final class StreamConfig {
         return computeQualities;
     }
 
-    public DeviceConfig getDeviceConfig() {
-        return deviceConfig;
+    public EegStreamConfig getEegStreamConfig() {
+        return eegStreamConfig;
     }
 
     /**
@@ -58,7 +58,7 @@ public final class StreamConfig {
      */
     @Keep
     public static class Builder{
-        //long streamDuration = -1L;
+
         private int notificationPeriod = MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD;
 
         @NonNull
@@ -66,8 +66,7 @@ public final class StreamConfig {
 
         private boolean computeQualities = false;
 
-        private DeviceConfig deviceConfig = null;
-
+        private EegStreamConfig eegStreamConfig = new EegStreamConfig.Builder().create();
 
         /**
          * The eeg Listener is mandatory.
@@ -75,11 +74,6 @@ public final class StreamConfig {
         public Builder(@NonNull EegListener<BaseError> eegListener){
             this.eegListener = eegListener;
         }
-
-//        public Builder setStreamDuration(long durationInMillis){
-//            this.streamDuration = streamDuration;
-//            return this;
-//        }
 
         /**
          * Says whether or not the qualities are automatically computed while streaming EEG.
@@ -89,16 +83,15 @@ public final class StreamConfig {
          *
          * <p>The minimum notification period will be automatically set to 1000ms if qualities are enabled.</p>
          * <p>If the input {@link #notificationPeriod} is set by the user to less than 1000ms, the {@link engine.clientevents.ConfigError#ERROR_INVALID_PARAMS} error will be thrown</p>
-         * @param useQualities a flag indicating whether or not the qualities shall be computed
          * @return the builder instance
          */
-        public Builder useQualities(boolean useQualities){
-            this.computeQualities = useQualities;
+        public Builder useQualities(){
+            this.computeQualities = true;
             return this;
         }
 
-        public Builder configureHeadset(DeviceConfig deviceConfig){
-            this.deviceConfig = deviceConfig;
+        public Builder configureHeadset(EegStreamConfig eegStreamConfig){
+            this.eegStreamConfig = eegStreamConfig;
             return this;
         }
 
@@ -126,7 +119,7 @@ public final class StreamConfig {
 
         @Nullable
         public StreamConfig create(){
-            return new StreamConfig(this.computeQualities, this.eegListener, this.notificationPeriod, this.deviceConfig);
+            return new StreamConfig(this.computeQualities, this.eegListener, this.notificationPeriod, this.eegStreamConfig);
         }
     }
 

@@ -27,8 +27,13 @@ public enum DeviceInfo {
     SERIAL_NUMBER,
 
     /**
+     * Corresponds to a call to product name value
+     */
+    PRODUCT_NAME,
+
+    /**
      * Correspond to a call to model number value, which is supposed to contain the external identifier
      */
-    MODEL_NUMBER
+    MODEL_NUMBER;
 }
 

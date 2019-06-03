@@ -26,6 +26,11 @@ android {
             buildConfigField "boolean", "BLUETOOTH_ENABLED", "true"
             buildConfigField "boolean", "DEVICE_ENABLED", "true"
         }
+        staging {
+            buildConfigField "boolean", "EEG_ENABLED", "true"
+            buildConfigField "boolean", "BLUETOOTH_ENABLED", "true"
+            buildConfigField "boolean", "DEVICE_ENABLED", "true"
+        }
         debug {
             buildConfigField "boolean", "EEG_ENABLED", "true"
             buildConfigField "boolean", "BLUETOOTH_ENABLED", "true"
@@ -85,6 +90,7 @@ dependencies {
     androidTestImplementation 'org.hamcrest:hamcrest-library:1.3'
 }
 
+
 project.afterEvaluate {
     publishing {
         publications {
@@ -123,8 +129,10 @@ project.afterEvaluate {
                 artifactId 'sdk-lite'
                 version android.defaultConfig.versionName
 
-                artifact(liteSourcesJar)
-                artifact(liteJavadocJar)
+                afterEvaluate {
+                    artifact(liteSourcesJar)
+                    artifact(liteJavadocJar)
+                }
                 artifact("$buildDir/outputs/aar/${libName}")
                 //we can force send to nexus the version we want by changing the aar name
                 pom.withXml {
@@ -142,19 +150,20 @@ project.afterEvaluate {
                 }
             }
         }
-        //Add repository here with publisher credentials
-        repositories {
-            maven {
-                url nexusUrl
-                credentials {
-                    username nexusUsername
-                    password nexusPassword
+            //Add repository here with publisher credentials
+            repositories {
+                maven {
+                    url nexusUrl
+                    credentials {
+                        username nexusUsername
+                        password nexusPassword
+                    }
                 }
             }
         }
+
     }
 
-}
 //Task to generate sources into Jar file
 task liteSourcesJar(type: Jar) {
     classifier = 'sources'
