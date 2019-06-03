@@ -229,7 +229,7 @@ public class HomeActivity extends AppCompatActivity{
         String deviceNameToDisplay = deviceName.replace(MELOMIND_DEVICE_NAME_PREFIX,"");
         deviceNameField.setText(deviceNameToDisplay);
         for(String prefix : prefixNameList){
-            if(melomindDevice.getDeviceId() != null && melomindDevice.getProductName().startsWith(prefix))
+            if(melomindDevice.getSerialNumber() != null && melomindDevice.getProductName().startsWith(prefix))
                 deviceNamePrefixSpinner.setSelection(prefixNameArrayAdapter.getPosition(prefix));
         }
     }
@@ -401,15 +401,17 @@ public class HomeActivity extends AppCompatActivity{
      */
     private void startScan() {
         isErrorRaised = false;
-        sdkClient.connectBluetooth(new ConnectionConfig.Builder(bluetoothStateListener)
+        ConnectionConfig.Builder builder = new ConnectionConfig.Builder(bluetoothStateListener)
                 .deviceName(((deviceName != null) && (deviceName.equals(MELOMIND_DEVICE_NAME_PREFIX) || deviceName.equals(VPRO_DEVICE_NAME_PREFIX))) ? //if no name has been entered by the user, the default device name is the headset prefix
                         null : deviceName ) //null is given in parameters if no name has been entered by the user
                 .deviceQrCode(((deviceQrCode != null) && (deviceQrCode.equals(QR_CODE_NAME_PREFIX)) ) ? //if no QR code has been entered by the user, the default device name is the headset prefix
                         null : deviceQrCode )
                 .maxScanDuration(SCAN_DURATION)
-                .scanDeviceType(deviceType)
-                .connectAudioIfDeviceCompatible(connectAudioIfDeviceCompatible)
-                .create());
+                .scanDeviceType(deviceType);
+        if(connectAudioIfDeviceCompatible)
+            builder.connectAudioIfDeviceCompatible();
+
+        sdkClient.connectBluetooth(builder.create());
     }
 
     /**

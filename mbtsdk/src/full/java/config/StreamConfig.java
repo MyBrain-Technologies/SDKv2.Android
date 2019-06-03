@@ -83,11 +83,10 @@ public final class StreamConfig {
          *
          * <p>The minimum notification period will be automatically set to 1000ms if qualities are enabled.</p>
          * <p>If the input {@link #notificationPeriod} is set by the user to less than 1000ms, the {@link engine.clientevents.ConfigError#ERROR_INVALID_PARAMS} error will be thrown</p>
-         * @param useQualities a flag indicating whether or not the qualities shall be computed
          * @return the builder instance
          */
-        public Builder useQualities(boolean useQualities){
-            this.computeQualities = useQualities;
+        public Builder useQualities(){
+            this.computeQualities = true;
             return this;
         }
 

@@ -145,12 +145,11 @@ public final class ConnectionConfig {
          * <p>Caution, the audio is handled by the Android system itself and is not meant to be connect via a third party application.
          * If set to {@link Boolean#TRUE}, the connection attempt may fail. It is still possible to connect to audio through the system settings of your android device.</p>
          *
-         * @param useAudio true to connect automatically, false otherwise. If the device is not audio compatible, the flag is forced to false.
          * @return the builder instance
          */
         @NonNull
-        public Builder connectAudioIfDeviceCompatible(boolean useAudio){
-            this.connectAudio = useAudio;
+        public Builder connectAudioIfDeviceCompatible(){
+            this.connectAudio = true;
             return this;
         }
 

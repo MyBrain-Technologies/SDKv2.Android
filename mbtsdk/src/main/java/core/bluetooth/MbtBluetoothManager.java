@@ -24,6 +24,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
+import config.MailboxConfig;
 import config.MbtConfig;
 import config.EegStreamConfig;
 import core.BaseModuleManager;
@@ -151,9 +152,30 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         EventBusManager.postEvent(new ConfigEEGEvent(returnedConfig));
     }
 
+    /**
+     * Notify the Device Manager if a new device info has been received from the headset
+     * @param rawResponse is the raw byte array returned by the headset
+     * @param configType is the corresponding type of mailbox config command
+     */
     public void notifyDeviceResponseReceived(byte[] rawResponse, String configType) {
-        if(configType.equals(EegStreamConfig.EEG_CONFIG))
-            notifyDeviceConfigReceived(ArrayUtils.toObject(rawResponse));
+        switch (configType){
+
+            case EegStreamConfig.EEG_CONFIG :
+                notifyDeviceConfigReceived(ArrayUtils.toObject(rawResponse));
+                break;
+
+            case MailboxConfig.SERIAL_NUMBER_CONFIG :
+                notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER, new String(rawResponse));
+                break;
+
+            case MailboxConfig.EXTERNAL_NAME_CONFIG :
+                notifyDeviceInfoReceived(DeviceInfo.MODEL_NUMBER, new String(rawResponse));
+                break;
+
+            case MailboxConfig.PRODUCT_NAME_CONFIG :
+                notifyDeviceInfoReceived(DeviceInfo.PRODUCT_NAME, new String(rawResponse));
+                break;
+        }
         EventBusManager.postEvent(new DeviceEvents.RawDeviceResponseEvent(rawResponse));
     }
 
@@ -625,8 +647,9 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             EventBusManager.postEvent(new DeviceInfoEvent<>(DeviceInfo.SERIAL_NUMBER, null));
         }
     }
+
     /**
-     * Initiates a read serial number operation on this correct BtProtocol
+     * Initiates a read model number operation on this correct BtProtocol
      * In case of failure during read process, an event with error is posted to the main manager.
      */
     private void readModelNumber(){
@@ -680,12 +703,12 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             public void onRequestComplete(MbtDevice device) {
                 LogUtils.d(TAG, "device "+device);
                 updateConnectionState(true);//current state is set to QR_CODE_SENDING
-                if (device.getDeviceId() != null && device.getExternalName() != null && (device.getExternalName().equals(MbtFeatures.MELOMIND_DEVICE_NAME) || device.getExternalName().length() == MbtFeatures.DEVICE_QR_CODE_LENGTH-1) //send the QR code found in the database if the headset do not know its own QR code
+                if (device.getSerialNumber() != null && device.getExternalName() != null && (device.getExternalName().equals(MbtFeatures.MELOMIND_DEVICE_NAME) || device.getExternalName().length() == MbtFeatures.DEVICE_QR_CODE_LENGTH-1) //send the QR code found in the database if the headset do not know its own QR code
                         && new FirmwareUtils(device.getFirmwareVersion()).isFwValidForFeature(FirmwareUtils.FWFeature.REGISTER_EXTERNAL_NAME)) {
                    AsyncUtils.executeAsync(new Runnable() {
                        @Override
                        public void run() {
-                           mbtBluetoothLE.sendExternalName(new MelomindsQRDataBase(mContext, false).get(device.getDeviceId()));
+                           mbtBluetoothLE.sendExternalName(new MelomindsQRDataBase(mContext, false).get(device.getSerialNumber()));
                        }
                    });
                 }

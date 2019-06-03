@@ -26,6 +26,11 @@ android {
             buildConfigField "boolean", "BLUETOOTH_ENABLED", "true"
             buildConfigField "boolean", "DEVICE_ENABLED", "true"
         }
+        staging {
+            buildConfigField "boolean", "EEG_ENABLED", "true"
+            buildConfigField "boolean", "BLUETOOTH_ENABLED", "true"
+            buildConfigField "boolean", "DEVICE_ENABLED", "true"
+        }
         debug {
             buildConfigField "boolean", "EEG_ENABLED", "true"
             buildConfigField "boolean", "BLUETOOTH_ENABLED", "true"

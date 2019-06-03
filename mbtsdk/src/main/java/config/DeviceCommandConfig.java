@@ -1,4 +1,4 @@
 package config;
 
-public class DeviceCommandConfig {
+public abstract class DeviceCommandConfig {
 }

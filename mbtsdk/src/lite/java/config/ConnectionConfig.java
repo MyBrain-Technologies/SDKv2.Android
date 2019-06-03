@@ -149,8 +149,8 @@ public final class ConnectionConfig {
          * @return the builder instance
          */
         @NonNull
-        public Builder connectAudio(boolean useAudio){
-            this.connectAudio = useAudio;
+        public Builder connectAudio(){
+            this.connectAudio = true;
             return this;
         }
 

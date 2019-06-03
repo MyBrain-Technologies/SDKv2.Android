@@ -250,7 +250,7 @@ DeviceActivity extends AppCompatActivity {
 
                     startStream(new StreamConfig.Builder(eegListener)
                             .setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)
-                            .useQualities(true)
+                            .useQualities()
                             .create());
                 } else { //streaming is in progress : stopping streaming
                     stopStream(); // set false to isStreaming et null to the eegListener

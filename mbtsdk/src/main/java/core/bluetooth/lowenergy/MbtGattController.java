@@ -281,6 +281,10 @@ final class MbtGattController extends BluetoothGattCallback {
         mbtBluetoothLE.notifyCommandResponseReceived(new byte[]{(byte)mtu}, EegStreamConfig.MTU_CONFIG);
     }
 
+    /**
+     * Notifies that the connected headset returned a response after a characteristic writing operation
+     * @param characteristic
+     */
     private void notifyMailboxEventReceived(BluetoothGattCharacteristic characteristic) {
         Log.d(TAG, "Notify mailbox event received");
 
@@ -294,13 +298,13 @@ final class MbtGattController extends BluetoothGattCallback {
             case MailboxEvents.MBX_OTA_STATUS_EVT:
                 break;
 
-            case MailboxEvents.MBX_SET_SERIAL_NUMBER: //this case occurs when the QR code is sent to the Headset through a writing operation
-                ByteBuffer buf = ByteBuffer.allocate(characteristic.getValue().length-1);
-                for (int i = 1; i < characteristic.getValue().length; i++){
-                    buf.put(characteristic.getValue()[i]);
-                }
+            case MailboxEvents.MBX_SET_SERIAL_NUMBER: //this case occurs when a QR code or a serial number is sent to the headset through a writing operation
                 mbtBluetoothLE.notifyCommandResponseReceived(characteristic.getValue(), MailboxConfig.SERIAL_NUMBER_CONFIG);
                 break;
+
+//            case MailboxEvents.MBX_SET_SERIAL_NUMBER: //this case occurs when a QR code or a serial number is sent to the headset through a writing operation
+//                mbtBluetoothLE.notifyCommandResponseReceived(characteristic.getValue(), MailboxConfig.EXTERNAL_NAME_CONFIG);
+//                break;
 
             case MailboxEvents.MBX_SET_PRODUCT_NAME:
                 mbtBluetoothLE.notifyCommandResponseReceived(characteristic.getValue(), MailboxConfig.PRODUCT_NAME_CONFIG);
@@ -343,7 +347,6 @@ final class MbtGattController extends BluetoothGattCallback {
             case MailboxEvents.MBX_DC_OFFSET_ENABLE:
                 mbtBluetoothLE.notifyCommandResponseReceived(characteristic.getValue(), EegStreamConfig.OFFSET_CONFIG);
                 break;
-
 
             case (byte) 0xFF:
             default:
