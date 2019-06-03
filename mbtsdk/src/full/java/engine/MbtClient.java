@@ -1,17 +1,19 @@
 package engine;
 
-import android.bluetooth.le.ScanCallback;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 
-import config.DeviceConfig;
+import config.EegStreamConfig;
+import config.MailboxConfig;
 import config.MbtConfig;
 import config.StreamConfig;
 import config.ConnectionConfig;
 import core.MbtManager;
+import core.bluetooth.BtState;
 import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
 import core.eeg.storage.MbtEEGPacket;
@@ -71,10 +73,6 @@ public final class MbtClient {
     private MbtClient(MbtClientBuilder builder){
         //mContext = builder.mContext;
         this.mbtManager = builder.mbtManager;
-    }
-
-    public void scanDevicesForType(MbtDeviceType deviceType, long duration, ScanCallback scanCallback){
-        //TODO
     }
 
     /**
@@ -151,15 +149,11 @@ public final class MbtClient {
             streamConfig.getEegListener().onError(ConfigError.ERROR_INVALID_PARAMS, streamConfig.shouldComputeQualities() ?
                     ConfigError.NOTIFICATION_PERIOD_RANGE_QUALITIES : ConfigError.NOTIFICATION_PERIOD_RANGE);
         else
-            MbtConfig.setEegBufferLengthClientNotif((int)((streamConfig.getNotificationPeriod()* MbtFeatures.DEFAULT_SAMPLE_RATE)/1000));
+            MbtConfig.setEegBufferLengthClientNotif((streamConfig.getNotificationPeriod()* MbtFeatures.DEFAULT_SAMPLE_RATE)/1000);
 
-        mbtManager.startStream(streamConfig.shouldComputeQualities(), streamConfig.getEegListener(), streamConfig.getDeviceConfig());
+        mbtManager.startStream(streamConfig);
     }
 
-
-    public void configureHeadset(DeviceConfig deviceConfig){
-        mbtManager.configureHeadset(deviceConfig);
-    }
     /**
      * Stops the currently running eeg stream. This stops bluetooth acquisition and
      * reinit all internal buffering system.
@@ -168,10 +162,89 @@ public final class MbtClient {
         mbtManager.stopStream();
     }
 
+    /**
+     * Configures the connected headset filters, gain, MTU and enable or disable P300, Saturation and DC offset
+     * @param eegStreamConfig is the object that hold all the EEG streaming configuration
+     */
+    public void configureHeadset(EegStreamConfig eegStreamConfig){
+        mbtManager.configureHeadset(eegStreamConfig);
+    }
+
+    /**
+     * Sends a command to the connected headset to change its current serial number
+     * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
+     * This response contains the command status and informations bundled in a byte array
+     * @param serialNumber is the new value to set to the serial number
+     * @param requestCallback returns the headset raw response if the command has been well sent
+     */
+    public void updateSerialNumber(String serialNumber, @Nullable SimpleRequestCallback<byte[]> requestCallback){
+        mbtManager.sendDeviceCommand(new MailboxConfig.Builder().setSerialNumber(serialNumber).create(), requestCallback);
+    }
+
+    /**
+     * Sends a command to the connected headset to change its current product name
+     * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
+     * This response contains the command status and informations bundled in a byte array
+     * @param productName is the new value to set to the product name
+     * @param requestCallback returns the headset raw response if the command has been well sent
+     */
+    public void updateProductName(String productName, @Nullable SimpleRequestCallback<byte[]> requestCallback){
+        mbtManager.sendDeviceCommand(new MailboxConfig.Builder().setProductName(productName).create(), requestCallback);
+    }
+
+    /**
+     * Sends a command to the connected headset to change its current external name
+     * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
+     * This response contains the command status and informations bundled in a byte array
+     * @param externalName is the new value to set to the external name
+     * @param requestCallback returns the headset raw response if the command has been well sent
+     */
+    public void updateExternalName(String externalName, @Nullable SimpleRequestCallback<byte[]> requestCallback){
+        mbtManager.sendDeviceCommand(new MailboxConfig.Builder().setExternalName(externalName).create(), requestCallback);
+    }
+
+    /**
+     * Sends a command to the connected headset to establish an audio Bluetooth A2DP connection
+     * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
+     * This response contains the command status and informations bundled in a byte array
+     * @param requestCallback returns the headset raw response if the command has been well sent
+     */
+    public void connectAudio(@Nullable SimpleRequestCallback<byte[]> requestCallback){
+        mbtManager.sendDeviceCommand(new MailboxConfig.Builder().connectAudio().create(), requestCallback);
+    }
+
+    /**
+     * Sends a command to the connected headset to establish an audio Bluetooth A2DP disconnection
+     * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
+     * This response contains the command status and informations bundled in a byte array
+     * @param requestCallback returns the headset raw response if the command has been well sent
+     */
+    public void disconnectAudio(@Nullable SimpleRequestCallback<byte[]> requestCallback){
+        mbtManager.sendDeviceCommand(new MailboxConfig.Builder().disconnectAudio().create(), requestCallback);
+    }
+
+    /**
+     * Sends a command to the connected headset to get its system status
+     * The system status is returned as a byte array in the onRequestComplete callback of the requestCallback
+     * @param requestCallback returns the headset raw response if the command has been well sent
+     */
+    public void getDeviceSystemStatus(@Nullable SimpleRequestCallback<byte[]> requestCallback){
+        mbtManager.sendDeviceCommand(new MailboxConfig.Builder().getSystemStatus().create(), requestCallback);
+    }
+
+    /**
+     * Sends a command to reboot the connected headset
+     * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
+     * This response contains the command status and informations bundled in a byte array
+     * @param requestCallback returns the headset raw response if the command has been well sent
+     */
+    public void rebootDevice(@Nullable SimpleRequestCallback<byte[]> requestCallback){
+        mbtManager.sendDeviceCommand(new MailboxConfig.Builder().rebootDevice().create(), requestCallback);
+    }
 
     /**
      * Stops a pending connection process. If successful,
-     * the new state {@link core.bluetooth.BtState#CONNECTION_INTERRUPTED} is sent to the user in the
+     * the new state {@link core.bluetooth.BtState#CONNECTION_INTERRUPTED} is sent to the user in the {@link BluetoothStateListener#onNewState(BtState)} callback
      *
      * <p>If the device is already connected, it simply disconnects the device.</p>
      */
@@ -206,123 +279,6 @@ public final class MbtClient {
         mbtManager.requestCurrentConnectedDevice(callback);
     }
 
-
-
-//    public void testEEGpackageClient(){
-//        if (MbtFeatures.getBluetoothProtocol().equals(BLUETOOTH_LE)) {
-//            getBluetoothManager().getMbtBluetoothLE().testAcquireDataRandomByte();
-//        } else if (MbtFeatures.getBluetoothProtocol().equals(BLUETOOTH_SPP)){
-//            getBluetoothManager().getMbtBluetoothSPP().testAcquireDataRandomByte();
-//        }
-//    }
-//
-//    /**
-//     * Posts a BluetoothEEGEvent event to the bus so that MbtEEGManager can handle raw EEG data received
-//     * @param data the raw EEG data array acquired by the headset and transmitted by Bluetooth to the application
-//     */
-//    public void handleDataAcquired(@NonNull final byte[] data){
-//        getBluetoothManager().handleDataAcquired(data);
-//    }
-//
-//    /**
-//     * Initialize a new record session.
-//     */
-//    public void startRecord() {
-//        getRecordingSessionManager().startRecord();
-//    }
-//
-//    /**
-//     * Stop current record and convert saved data into a new <b>MbtRecording</b> object
-//     * @return the stopped recording data
-//     */
-//    public MbtRecording stopRecord() {
-//        getRecordingSessionManager().stopRecord();
-//        return getRecordingSessionManager().getCurrentRecording();
-//    }
-//
-//    /**
-//     * Saves current record into JSON file
-//     */
-//    public void saveRecordIntoJSON() {
-//        getRecordingSessionManager().saveRecord();
-//    }
-//
-//    /**
-//     * Saves current record into JSON file
-//     */
-//    public void sendJSONtoServer() {
-//        getRecordingSessionManager().sendJSONtoServer();
-//    }
-//
-
-//
-//    /**
-//     * Computes the relaxation index using the provided <code>MBTEEGPacket</code>.
-//     * For now, we admit there are only 2 channels for each packet
-//     * @param sampRate the samprate of a channel (must be consistent)
-//     * @param calibParams the calibration parameters previously performed
-//     * @param packets the packets that contains EEG data, theirs status and qualities.
-//     * @return the relaxation index
-//     * @exception IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
-//     */
-//    public float computeRelaxIndex(int sampRate, MBTCalibrationParameters calibParams, MBTEEGPacket... packets){
-//        return getEEGManager().computeRelaxIndex(sampRate,calibParams,packets);
-//    }
-//
-//    /**
-//     * Computes the results of the previously done session
-//     * @param threshold the level above which the relaxation indexes are considered in a relaxed state (under this threshold, they are considered not relaxed)
-//     * @param relaxIndexValues the array that contains the relaxation indexes of the session
-//     * @return the results of the previously done session
-//     * @exception IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
-//     */
-//    public HashMap<String, Float> computeStatisticsSNR(final float threshold, final Float[] relaxIndexValues){
-//        return getEEGManager().computeStatisticsSNR(threshold, relaxIndexValues);
-//    }
-//
-//    /**
-//     * Converts the EEG raw data array into a user-readable matrix
-//     * @param rawData the raw EEG data array acquired by the headset and transmitted by Bluetooth to the application
-//     * @return the converted EEG data matrix that contains readable values for any user
-//     */
-//    public ArrayList<ArrayList<Float>> launchConversionToEEG(byte[] rawData){
-//        return getEEGManager().launchConversionToEEG(rawData);
-//    }
-
-//    /**
-//     * Gets the MbtEEGManager instance.
-//     * The eeg manager that will manage the EEG data coming from the {@link MbtBluetoothManager}. It is responsible for
-//     * managing buffers size, conversion from raw packets to eeg values (voltages).
-//     */
-//    private MbtEEGManager getEEGManager(){
-//        return this.getMbtManager().getMbtEEGManager();
-//    }
-//
-//    /**
-//     * Gets the MbtBluetoothManager instance.
-//     *  The bluetooth manager will manage the communication between the headset and the application.
-//     */
-//    private MbtBluetoothManager getBluetoothManager(){
-//        return this.getMbtManager().getMbtBluetoothManager();
-//    }
-//
-//    /**
-//     * Gets the MbtRecordingSessionManager instance.
-//     * The recording session manager will manage all the recordings that are made during the lifetime of this instance.
-//     */
-//    private MbtRecordingSessionManager getRecordingSessionManager(){
-//        return this.getMbtManager().getMbtRecordingSessionManager();
-//    }
-//
-//    /**
-//     * Gets the MbtServerSyncManager instance.
-//     * The server sync manager will manage the communication with MBT server API.
-//     */
-//    private MbtServerSyncManager getMbtServerSyncManager(){
-//        return this.getMbtManager().getMbtServerSyncManager();
-//    }
-
-
     @Keep
     private static class MbtClientBuilder {
         private Context mContext;
@@ -330,7 +286,7 @@ public final class MbtClient {
 
         @NonNull
         public MbtClientBuilder setContext(final Context context){
-            this.mContext=context;
+            this.mContext = context;
             return this;
         }
 

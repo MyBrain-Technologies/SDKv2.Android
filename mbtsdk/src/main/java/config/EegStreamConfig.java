@@ -7,14 +7,20 @@ import android.support.annotation.Nullable;
 
 import engine.clientevents.DeviceStatusListener;
 
+/**
+ * Mailbox commands and other headset commands related to EEG streaming are hold in this object
+ */
 @Keep
-public class DeviceConfig {
+public class EegStreamConfig extends DeviceCommandConfig {
+
     private FilterConfig notchFilter;
     private FilterConfig bandpassFilter;
     private AmpGainConfig gainValue;
     private int mtuValue;
     private boolean useP300;
     private boolean enableDcOffset;
+
+    public final static int MTU_DEFAULT_VALUE = -1;
 
     public final static String MTU_CONFIG = "MTU";
     public final static String AMP_GAIN_CONFIG = "GAIN";
@@ -25,7 +31,7 @@ public class DeviceConfig {
 
     private DeviceStatusListener deviceStatusListener;
 
-    private DeviceConfig(FilterConfig notchFilter, FilterConfig bandpassFilter, AmpGainConfig gainValue, int mtuValue, boolean useP300, boolean enableDcOffset, DeviceStatusListener deviceStatusListener) {
+    private EegStreamConfig(FilterConfig notchFilter, FilterConfig bandpassFilter, AmpGainConfig gainValue, int mtuValue, boolean useP300, boolean enableDcOffset, DeviceStatusListener deviceStatusListener) {
         this.notchFilter = notchFilter;
         this.bandpassFilter = bandpassFilter;
         this.gainValue = gainValue;
@@ -69,19 +75,24 @@ public class DeviceConfig {
         return deviceStatusListener;
     }
 
+
     @Keep
     public static class Builder{
+
         @Nullable
-        FilterConfig notchFilter = null;
+        private FilterConfig notchFilter = null;
         @Nullable
-        FilterConfig bandpassFilter = null;
+        private FilterConfig bandpassFilter = null;
         @Nullable
-        AmpGainConfig gainValue = null;
-        int mtuValue = -1;
-        boolean useP300;
-        boolean enableDcOffset;
+        private AmpGainConfig gainValue = null;
+
+        private int mtuValue = MTU_DEFAULT_VALUE;
+
+        private boolean useP300 = false;
+        private boolean enableDcOffset = false;
+
         @Nullable
-        DeviceStatusListener deviceStatusListener = null;
+        private DeviceStatusListener deviceStatusListener = null;
 
         public Builder(){}
 
@@ -110,14 +121,14 @@ public class DeviceConfig {
         }
 
         @NonNull
-        public Builder useP300(boolean useP300){
-            this.useP300 = useP300;
+        public Builder useP300(){
+            this.useP300 = true;
             return this;
         }
 
         @NonNull
-        public Builder enableDcOffset(boolean enableDcOffset){
-            this.enableDcOffset = enableDcOffset;
+        public Builder enableDcOffset(){
+            this.enableDcOffset = true;
             return this;
         }
 
@@ -138,14 +149,14 @@ public class DeviceConfig {
 
 
         @Nullable
-        public DeviceConfig create() {
-            return new DeviceConfig(notchFilter, bandpassFilter, gainValue, mtuValue, useP300, enableDcOffset, deviceStatusListener);
+        public EegStreamConfig create() {
+            return new EegStreamConfig(notchFilter, bandpassFilter, gainValue, mtuValue, useP300, enableDcOffset, deviceStatusListener);
         }
     }
 
     @Override
     public String toString() {
-        return "DeviceConfig{" +
+        return "EegStreamConfig{" +
                 "notchFilter=" + notchFilter +
                 ", bandpassFilter=" + bandpassFilter +
                 ", gainValue=" + gainValue +

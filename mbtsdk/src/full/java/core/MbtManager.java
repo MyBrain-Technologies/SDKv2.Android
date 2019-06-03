@@ -4,13 +4,18 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
-import java.util.ArrayList;
+
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import config.DeviceConfig;
+
+import config.DeviceCommandConfig;
+import config.EegStreamConfig;
+import config.StreamConfig;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.IStreamable;
 import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
@@ -27,7 +32,6 @@ import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindsQRDataBase;
 import core.eeg.MbtEEGManager;
-import core.eeg.requests.QualityRequest;
 import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
 import engine.clientevents.BluetoothError;
@@ -79,10 +83,6 @@ public class MbtManager{
     @Nullable
     private DeviceStatusListener deviceStatusListener;
 
-    /**
-     *
-     * @param context
-     */
     public MbtManager(Context context) {
         this.mContext = context;
         this.registeredModuleManagers = new HashSet<>();
@@ -119,7 +119,6 @@ public class MbtManager{
             this.connectionStateListener.onError(HeadsetDeviceError.ERROR_MATCHING, mContext.getString(R.string.aborted_connection));
         }else{
             EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent(true, deviceNameRequested, deviceQrCodeRequested, deviceTypeRequested));
-            //EventBusManager.postEvent(new DeviceEvents.PostDeviceTypeEvent(deviceTypeRequested)); //notify device manager
         }
     }
 
@@ -139,19 +138,20 @@ public class MbtManager{
         EventBusManager.postEvent(new ReadRequestEvent(deviceInfo));
     }
 
-    
-
     /**
      * Posts an event to initiate a stream session.
-     * @param useQualities whether or not quality check algorithms have to be called (Currently false)
-     * @param eegListener the eeg listener
      */
-    public void startStream(boolean useQualities, @NonNull EegListener<BaseError> eegListener, DeviceConfig deviceConfig){
-        this.eegListener = eegListener;
-        if(deviceConfig != null)
-            this.deviceStatusListener = deviceConfig.getDeviceStatusListener();
+    public void startStream(StreamConfig streamConfig){
+        this.eegListener = streamConfig.getEegListener();
+        EegStreamConfig eegStreamConfig = streamConfig.getEegStreamConfig();
+        if(eegStreamConfig != null)
+            this.deviceStatusListener = eegStreamConfig.getDeviceStatusListener();
 
-        EventBusManager.postEvent(new StreamRequestEvent(true, useQualities,deviceStatusListener != null, deviceConfig));
+        EventBusManager.postEvent(
+                new StreamRequestEvent(true,
+                        streamConfig.shouldComputeQualities(),
+                        (deviceStatusListener != null),
+                        eegStreamConfig));
     }
 
     /**
@@ -161,18 +161,19 @@ public class MbtManager{
         EventBusManager.postEvent(new StreamRequestEvent(false, false, false));
     }
 
-    public void configureHeadset(DeviceConfig deviceConfig){
-        EventBusManager.postEvent(new UpdateConfigurationRequestEvent(deviceConfig));
+    public void configureHeadset(EegStreamConfig eegStreamConfig){
+        EventBusManager.postEvent(new UpdateConfigurationRequestEvent(eegStreamConfig));
     }
 
-    /**
-     * Posts an event to compute the signal quality of the EEG signal
-     */
-    public void computeEEGSignalQuality(ArrayList<ArrayList<Float>> consolidatedEEG){
-        if(consolidatedEEG.get(0).size() > MbtFeatures.DEFAULT_NUMBER_OF_DATA_TO_DISPLAY)
-            EventBusManager.postEvent(new QualityRequest(consolidatedEEG,null));
-        else
-            throw new IllegalArgumentException("You must acquire at least 1 second of EEG data to compute its signal quality");
+    public void sendDeviceCommand(@NonNull DeviceCommandConfig deviceCommandConfig, SimpleRequestCallback<byte[]> callback){
+        EventBusManager.postEventWithCallback(new DeviceEvents.SendDeviceCommandEvent(deviceCommandConfig), new EventBusManager.CallbackVoid<DeviceEvents.RawDeviceResponseEvent>(){
+            @Override
+            @Subscribe
+            public void onEventCallback(DeviceEvents.RawDeviceResponseEvent headsetRawResponse) {
+                Log.d(TAG, "Callback returned "+ Arrays.toString(headsetRawResponse.getRawResponse()));
+                callback.onRequestComplete(headsetRawResponse.getRawResponse());
+            }
+        });
     }
 
     /**
@@ -236,7 +237,6 @@ public class MbtManager{
 
     /**
      *Called when a new saturation event has been broadcast on the event bus.
-     * @param saturationEvent
      */
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onNewSaturationState(SaturationEvent saturationEvent){
@@ -247,7 +247,6 @@ public class MbtManager{
 
     /**
      * Called when a new DCOffset measure event has been broadcast on the event bus.
-     * @param dcOffsets
      */
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onNewDCOffset(DCOffsets dcOffsets){
@@ -269,13 +268,6 @@ public class MbtManager{
             eegListener.onNewPackets(event.getEegPackets());
     }
 
-//    @Subscribe(threadMode = ThreadMode.MAIN)
-//    public void onEegProcessingEvent(QualityRequest qualityRequest){
-//        if(eegListener != null)
-//            eegListener.onNewQualities(qualityRequest.getQualities());
-//    }
-
-
     /**
      * Sets an extended {@link BroadcastReceiver} to the connectionStateListener value
      * @param connectionStateListener the new {@link BluetoothStateListener}. Set it to null if you want to reset the listener
@@ -283,7 +275,6 @@ public class MbtManager{
     public void setConnectionStateListener(ConnectionStateListener<BaseError> connectionStateListener) {
         this.connectionStateListener = connectionStateListener;
     }
-
 
     /**
      * Sets the {@link EegListener} to the connectionStateListener value

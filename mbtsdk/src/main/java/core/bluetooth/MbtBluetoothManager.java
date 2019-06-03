@@ -14,6 +14,7 @@ import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
@@ -23,8 +24,9 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
+import config.MailboxConfig;
 import config.MbtConfig;
-import config.DeviceConfig;
+import config.EegStreamConfig;
 import core.BaseModuleManager;
 import core.MbtManager;
 import core.bluetooth.lowenergy.MbtBluetoothLE;
@@ -143,10 +145,39 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         BroadcastUtils.registerReceiverIntents(context, receiver, BluetoothAdapter.ACTION_STATE_CHANGED);
     }
 
-    public void notifyDeviceConfigReceived(Byte[] returnedConfig) {
-        EventBusManager.postEvent(new ConfigEEGEvent(returnedConfig)); //notify the DeviceManager and the EEGManager
+    /**
+     * Notify the DeviceManager and the EEGManager that the headset returned its stored configuration
+     */
+    private void notifyDeviceConfigReceived(Byte[] returnedConfig) {
+        EventBusManager.postEvent(new ConfigEEGEvent(returnedConfig));
     }
 
+    /**
+     * Notify the Device Manager if a new device info has been received from the headset
+     * @param rawResponse is the raw byte array returned by the headset
+     * @param configType is the corresponding type of mailbox config command
+     */
+    public void notifyDeviceResponseReceived(byte[] rawResponse, String configType) {
+        switch (configType){
+
+            case EegStreamConfig.EEG_CONFIG :
+                notifyDeviceConfigReceived(ArrayUtils.toObject(rawResponse));
+                break;
+
+            case MailboxConfig.SERIAL_NUMBER_CONFIG :
+                notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER, new String(rawResponse));
+                break;
+
+            case MailboxConfig.EXTERNAL_NAME_CONFIG :
+                notifyDeviceInfoReceived(DeviceInfo.MODEL_NUMBER, new String(rawResponse));
+                break;
+
+            case MailboxConfig.PRODUCT_NAME_CONFIG :
+                notifyDeviceInfoReceived(DeviceInfo.PRODUCT_NAME, new String(rawResponse));
+                break;
+        }
+        EventBusManager.postEvent(new DeviceEvents.RawDeviceResponseEvent(rawResponse));
+    }
 
     /**
      * This class is a specific thread that will handle all bluetooth operations. Bluetooth operations
@@ -207,7 +238,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
             } else if (request instanceof StreamRequestEvent) {
                 if (((StreamRequestEvent) request).isStart())
-                    startStreamOperation(((StreamRequestEvent) request).shouldMonitorDeviceStatus(), ((StreamRequestEvent) request).getDeviceConfig());
+                    startStreamOperation(((StreamRequestEvent) request).shouldMonitorDeviceStatus(), ((StreamRequestEvent) request).getEegStreamConfig());
                 else
                     stopStreamOperation();
 
@@ -616,8 +647,9 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             EventBusManager.postEvent(new DeviceInfoEvent<>(DeviceInfo.SERIAL_NUMBER, null));
         }
     }
+
     /**
-     * Initiates a read serial number operation on this correct BtProtocol
+     * Initiates a read model number operation on this correct BtProtocol
      * In case of failure during read process, an event with error is posted to the main manager.
      */
     private void readModelNumber(){
@@ -671,12 +703,12 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             public void onRequestComplete(MbtDevice device) {
                 LogUtils.d(TAG, "device "+device);
                 updateConnectionState(true);//current state is set to QR_CODE_SENDING
-                if (device.getDeviceId() != null && device.getExternalName() != null && (device.getExternalName().equals(MbtFeatures.MELOMIND_DEVICE_NAME) || device.getExternalName().length() == MbtFeatures.DEVICE_QR_CODE_LENGTH-1) //send the QR code found in the database if the headset do not know its own QR code
+                if (device.getSerialNumber() != null && device.getExternalName() != null && (device.getExternalName().equals(MbtFeatures.MELOMIND_DEVICE_NAME) || device.getExternalName().length() == MbtFeatures.DEVICE_QR_CODE_LENGTH-1) //send the QR code found in the database if the headset do not know its own QR code
                         && new FirmwareUtils(device.getFirmwareVersion()).isFwValidForFeature(FirmwareUtils.FWFeature.REGISTER_EXTERNAL_NAME)) {
                    AsyncUtils.executeAsync(new Runnable() {
                        @Override
                        public void run() {
-                           mbtBluetoothLE.sendExternalName(new MelomindsQRDataBase(mContext, false).get(device.getDeviceId()));
+                           mbtBluetoothLE.sendExternalName(new MelomindsQRDataBase(mContext, false).get(device.getSerialNumber()));
                        }
                    });
                 }
@@ -768,22 +800,32 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
     /**
      * This method manages a set of calls to perform in order to reconfigure some of the headset's
-     * parameters. All parameters are held in a {@link DeviceConfig instance}
+     * parameters. All parameters are held in a {@link EegStreamConfig instance}
      * Each new parameter is updated one after the other. All method inside are blocking.
-     * @param config the {@link DeviceConfig} instance to get new parameters from.
+     * @param config the {@link EegStreamConfig} instance to get new parameters from.
      */
-    private void configureHeadset(@NonNull DeviceConfig config){
+    private void configureHeadset(@NonNull EegStreamConfig config){
         if(deviceTypeRequested.useLowEnergyProtocol())
-            mbtBluetoothLE.configureHeadset(config);
+            mbtBluetoothLE.sendDeviceCommand(config);
         else
-            mbtBluetoothSPP.configureHeadset(config);
+            mbtBluetoothSPP.sendDeviceCommand(config);
+    }
+
+
+    /**
+     * This method triggers a mailbox request to send a command to the headset
+     */
+    @Subscribe
+    public void onSendDeviceCommand(DeviceEvents.SendDeviceCommandEvent event){
+        Log.d(TAG, "on Send device command "+event.toString());
+        mbtBluetoothLE.sendDeviceCommand(event.getConfig());
     }
 
     /**
      * Initiates the acquisition of EEG data. This method chooses between the correct BtProtocol.
      * If there is already a streaming session in progress, nothing happens and the method returns silently.
      */
-    private void startStreamOperation(boolean enableDeviceStatusMonitoring, DeviceConfig deviceConfig){
+    private void startStreamOperation(boolean enableDeviceStatusMonitoring, EegStreamConfig eegStreamConfig){
         if(!mbtBluetoothLE.isConnected()){
             notifyStreamStateChanged(IStreamable.StreamState.DISCONNECTED);
             requestBeingProcessed = false;
@@ -795,8 +837,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             return;
         }
 
-        //TODO remove configureHeadset method from here later on.
-        configureHeadset(deviceConfig);
+        //TODO remove sendDeviceCommand method from here later on.
+        configureHeadset(eegStreamConfig);
 
         if(enableDeviceStatusMonitoring)
             mbtBluetoothLE.activateDeviceStatusMonitoring();
