@@ -651,7 +651,6 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @return true if the request has been sent to the headset, false otherwise
      */
     private boolean waitResultOfDeviceCommand(String configType, DeviceCommandConfig config){
-        Log.d(TAG, "wait result of device command "+config.toString());
 
         boolean requestSent = false;
 
@@ -728,8 +727,8 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
                 break;
 
             case MailboxConfig.SYSTEM_STATUS_CONFIG:
-                boolean systemStatus = ((MailboxConfig)config).getSystemStatus();
-                if (systemStatus)
+                boolean readSystemStatus = ((MailboxConfig)config).getSystemStatus();
+                if (readSystemStatus)
                     requestSent = requestSystemStatus();
                 break;
 
@@ -757,57 +756,45 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * Each new parameter is updated one after the other. All method inside are blocking.
      * @param config the {@link DeviceCommandConfig} instance to get new parameters from.
      */
-    public boolean sendDeviceCommand(DeviceCommandConfig config){
+    public void sendDeviceCommand(DeviceCommandConfig config){
         Log.d(TAG, "Send device command ");
         if(config != null){
             LogUtils.i(TAG, "Send device command "+config.toString());
 
             if(config instanceof EegStreamConfig){
 
-                    if(!waitResultOfDeviceCommand(EegStreamConfig.MTU_CONFIG, config))
-                        return false;
+                waitResultOfDeviceCommand(EegStreamConfig.MTU_CONFIG, config);
 
-                    if(!waitResultOfDeviceCommand(EegStreamConfig.NOTCH_FILTER_CONFIG, config))
-                        return false;
+                waitResultOfDeviceCommand(EegStreamConfig.NOTCH_FILTER_CONFIG, config);
 
                 //TODO implement bandpass filter change
 
-                    if(!waitResultOfDeviceCommand(EegStreamConfig.AMP_GAIN_CONFIG, config))
-                        return false;
+                waitResultOfDeviceCommand(EegStreamConfig.AMP_GAIN_CONFIG, config);
 
-                if(!waitResultOfDeviceCommand(EegStreamConfig.P300_CONFIG, config))
-                    return false;
+                waitResultOfDeviceCommand(EegStreamConfig.P300_CONFIG, config);
 
-                if(!waitResultOfDeviceCommand(EegStreamConfig.OFFSET_CONFIG, config))
-                    return false;
+                waitResultOfDeviceCommand(EegStreamConfig.OFFSET_CONFIG, config);
 
-                return waitResultOfDeviceCommand(EegStreamConfig.EEG_CONFIG, null);
+                waitResultOfDeviceCommand(EegStreamConfig.EEG_CONFIG, null);
 
             }else {
-                    if(!waitResultOfDeviceCommand(MailboxConfig.SERIAL_NUMBER_CONFIG, config))
-                        return false;
+                waitResultOfDeviceCommand(MailboxConfig.SERIAL_NUMBER_CONFIG, config);
 
-                    if(!waitResultOfDeviceCommand(MailboxConfig.PRODUCT_NAME_CONFIG, config))
-                        return false;
+                waitResultOfDeviceCommand(MailboxConfig.PRODUCT_NAME_CONFIG, config);
 
-                    if(!waitResultOfDeviceCommand(MailboxConfig.EXTERNAL_NAME_CONFIG, config))
-                        return false;
+                waitResultOfDeviceCommand(MailboxConfig.EXTERNAL_NAME_CONFIG, config);
 
-                    if(!waitResultOfDeviceCommand(MailboxConfig.CONNECT_AUDIO_CONFIG, config))
-                        return false;
+                waitResultOfDeviceCommand(MailboxConfig.CONNECT_AUDIO_CONFIG, config);
 
-                    if(!waitResultOfDeviceCommand(MailboxConfig.DISCONNECT_AUDIO_CONFIG, config))
-                        return false;
+                waitResultOfDeviceCommand(MailboxConfig.DISCONNECT_AUDIO_CONFIG, config);
 
-                    if(!waitResultOfDeviceCommand(MailboxConfig.REBOOT_DEVICE_CONFIG, config))
-                        return false;
+                waitResultOfDeviceCommand(MailboxConfig.REBOOT_DEVICE_CONFIG, config);
 
-                return waitResultOfDeviceCommand(MailboxConfig.SYSTEM_STATUS_CONFIG, config);
+                waitResultOfDeviceCommand(MailboxConfig.SYSTEM_STATUS_CONFIG, config);
             }
         }
-        Log.d(TAG, "Device command sent "+config.toString());
+        Log.d(TAG, "Device command sent "+config);
 
-        return true;
     }
 
 
