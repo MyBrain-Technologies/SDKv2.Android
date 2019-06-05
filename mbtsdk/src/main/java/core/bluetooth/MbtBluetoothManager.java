@@ -237,8 +237,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                     stopStreamOperation();
                 }
 
-            } else if (request instanceof DeviceCommandRequestEvent) {
-                sendDeviceCommand(((DeviceCommandRequestEvent) request).getCommand());
+//            } else if (request instanceof DeviceCommandRequestEvent) {
+//                sendDeviceCommand(((DeviceCommandRequestEvent) request).getCommand());
             }
         }
 
@@ -793,6 +793,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             });
     }
 
+
     /**
      * This method manages a set of calls to perform in order to reconfigure some of the headset's
      * parameters. All parameters are held in a {@link DeviceCommand instance}
@@ -807,6 +808,15 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         requestBeingProcessed = false;
     }
 
+
+    /**
+     * This method triggers a mailbox request to send a command to the headset
+     */
+    @Subscribe
+    public void onSendDeviceCommand(DeviceCommandRequestEvent event){
+        Log.d(TAG, "on Send device command "+event.toString());
+        sendDeviceCommand(event.getCommand());
+    }
 
     /**
      * Initiates the acquisition of EEG data. This method chooses between the correct BtProtocol.

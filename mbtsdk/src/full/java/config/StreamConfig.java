@@ -39,8 +39,10 @@ public final class StreamConfig {
         this.deviceStatusListener = deviceStatusListener;
         this.notificationPeriod = notificationPeriod;
         this.deviceCommands = new ArrayList<>();
-        for (DeviceStreamingCommands deviceCommand : deviceCommands){
-            this.deviceCommands.add((DeviceCommand)deviceCommand);
+        if(deviceCommands != null) {
+            for (DeviceStreamingCommands deviceCommand : deviceCommands) {
+                this.deviceCommands.add((DeviceCommand) deviceCommand);
+            }
         }
     }
 
