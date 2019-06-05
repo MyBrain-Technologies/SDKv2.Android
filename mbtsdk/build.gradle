@@ -95,10 +95,10 @@ project.afterEvaluate {
     publishing {
         publications {
             full(MavenPublication) {
-                def libName = "lib_full_release_${android.defaultConfig.versionName}.aar"
+                def libName = "lib_full_staging_${android.defaultConfig.versionName}.aar"
                 //Select the library name here
 
-                groupId 'mybraintech.com'
+                groupId 'staging.mybraintech.com'
                 artifactId 'sdk-full'
                 version android.defaultConfig.versionName
 
@@ -122,10 +122,10 @@ project.afterEvaluate {
             }
 
             lite(MavenPublication) {
-                def libName = "lib_lite_release_${android.defaultConfig.versionName}.aar"
+                def libName = "lib_lite_staging_${android.defaultConfig.versionName}.aar"
                 //Select the library name here
 
-                groupId 'mybraintech.com'
+                groupId 'staging.mybraintech.com'
                 artifactId 'sdk-lite'
                 version android.defaultConfig.versionName
 

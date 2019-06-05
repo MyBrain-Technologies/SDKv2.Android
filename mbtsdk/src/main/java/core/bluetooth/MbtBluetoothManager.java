@@ -172,6 +172,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 notifyDeviceInfoReceived(DeviceInfo.PRODUCT_NAME, new String(rawResponse));
         }
         EventBusManager.postEvent(new DeviceEvents.RawDeviceResponseEvent(rawResponse));
+        requestBeingProcessed = false;
+
     }
 
     /**
@@ -237,9 +239,9 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                     stopStreamOperation();
                 }
 
-            } else if (request instanceof DeviceCommandRequestEvent) {
-                sendDeviceCommand(((DeviceCommandRequestEvent) request).getCommand());
-            }
+            } //else if (request instanceof DeviceCommandRequestEvent) {
+                //sendDeviceCommand(((DeviceCommandRequestEvent) request).getCommand());
+           // }
         }
 
         /**
@@ -301,6 +303,16 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         }
     }
 
+
+
+    /**
+     * This method triggers a mailbox request to send a command to the headset
+     */
+    @Subscribe
+    public void onSendDeviceCommand(DeviceCommandRequestEvent event){
+        Log.d(TAG, "on Send device command "+event.toString());
+        sendDeviceCommand(event.getCommand());
+    }
 
     private void switchToNextConnectionStep(){
         requestBeingProcessed = false;
@@ -804,7 +816,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             mbtBluetoothLE.sendDeviceCommand(command);
         else
             mbtBluetoothSPP.sendDeviceCommand(command);
-        requestBeingProcessed = false;
     }
 
 
