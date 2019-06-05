@@ -31,6 +31,7 @@ import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindsQRDataBase;
 import core.eeg.MbtEEGManager;
+import core.osc.MbtStreamingManager;
 import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
 import engine.clientevents.BluetoothError;
@@ -53,6 +54,7 @@ import utils.LogUtils;
 import static mbtsdk.com.mybraintech.mbtsdk.BuildConfig.BLUETOOTH_ENABLED;
 import static mbtsdk.com.mybraintech.mbtsdk.BuildConfig.DEVICE_ENABLED;
 import static mbtsdk.com.mybraintech.mbtsdk.BuildConfig.EEG_ENABLED;
+import static mbtsdk.com.mybraintech.mbtsdk.BuildConfig.STREAMING_ENABLED;
 
 /**
  * MbtManager is responsible for managing communication between all the package managers
@@ -94,6 +96,8 @@ public class MbtManager{
             registerManager(new MbtBluetoothManager(mContext, MbtManager.this));
         if(EEG_ENABLED)
             registerManager(new MbtEEGManager(mContext, MbtManager.this, BtProtocol.BLUETOOTH_LE)); //todo change protocol must not be initialized here : when connectBluetooth is called
+        if(STREAMING_ENABLED)
+            registerManager(new MbtStreamingManager(mContext, MbtManager.this));
     }
 
     /**
@@ -150,14 +154,16 @@ public class MbtManager{
         EventBusManager.postEvent(
                 new StreamRequestEvent(true,
                         streamConfig.shouldComputeQualities(),
-                        (deviceStatusListener != null)));
+                        (deviceStatusListener != null),
+                        (streamConfig.getOscConfig())
+                ));
     }
 
     /**
      * Posts an event to stop the currently started stream session
      */
     public void stopStream(){
-        EventBusManager.postEvent(new StreamRequestEvent(false, false, false));
+        EventBusManager.postEvent(new StreamRequestEvent(false, false, false, null));
     }
 
     public void sendDeviceCommand(@NonNull DeviceCommand deviceCommand){

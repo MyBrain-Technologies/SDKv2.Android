@@ -3,6 +3,7 @@ package config;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Pair;
 
 import java.util.ArrayList;
 
@@ -33,12 +34,16 @@ public final class StreamConfig {
 
     private ArrayList<DeviceCommand> deviceCommands;
 
-    private StreamConfig(boolean computeQualities, EegListener<BaseError> eegListener, DeviceStatusListener<BaseError> deviceStatusListener, int notificationPeriod, DeviceStreamingCommands[] deviceCommands){
+    private OscConfig oscConfig;
+
+    private StreamConfig(boolean computeQualities, EegListener<BaseError> eegListener, DeviceStatusListener<BaseError> deviceStatusListener,
+                         int notificationPeriod, DeviceStreamingCommands[] deviceCommands, OscConfig oscConfig){
         this.computeQualities = computeQualities;
         this.eegListener = eegListener;
         this.deviceStatusListener = deviceStatusListener;
         this.notificationPeriod = notificationPeriod;
         this.deviceCommands = new ArrayList<>();
+        this.oscConfig = oscConfig;
 
         if(deviceCommands != null && deviceCommands.length > 0) {
             for (DeviceStreamingCommands deviceCommand : deviceCommands) {
@@ -67,6 +72,10 @@ public final class StreamConfig {
         return deviceCommands;
     }
 
+    public OscConfig getOscConfig() {
+        return oscConfig;
+    }
+
     public void setNotificationPeriod(int notificationPeriod) {
         this.notificationPeriod = notificationPeriod;
     }
@@ -81,6 +90,10 @@ public final class StreamConfig {
 
     public void setDeviceStatusListener(DeviceStatusListener<BaseError> deviceStatusListener) {
         this.deviceStatusListener = deviceStatusListener;
+    }
+
+    public void setOscConfig(OscConfig oscConfig) {
+        this.oscConfig = oscConfig;
     }
 
     /**
@@ -100,6 +113,8 @@ public final class StreamConfig {
         private boolean computeQualities = false;
 
         private DeviceStreamingCommands[] deviceCommands;
+
+        private OscConfig oscConfig;
 
         /**
          * The eeg Listener is mandatory.
@@ -163,9 +178,15 @@ public final class StreamConfig {
             return this;
         }
 
+        @NonNull
+        public Builder streamRawDataOverOSC(@NonNull OscConfig oscConfig){
+            this.oscConfig = oscConfig;
+            return this;
+        }
+
         @Nullable
         public StreamConfig create(){
-            return new StreamConfig(this.computeQualities, this.eegListener, this.deviceStatusListener, this.notificationPeriod, this.deviceCommands);
+            return new StreamConfig(this.computeQualities, this.eegListener, this.deviceStatusListener, this.notificationPeriod, this.deviceCommands, this.oscConfig);
         }
     }
 

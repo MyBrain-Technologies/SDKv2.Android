@@ -25,6 +25,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 import config.MbtConfig;
+import config.OscConfig;
 import core.BaseModuleManager;
 import core.MbtManager;
 import command.DeviceCommand;
@@ -50,6 +51,7 @@ import eventbus.events.BluetoothEEGEvent;
 import eventbus.events.ConfigEEGEvent;
 import eventbus.events.ConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
+import eventbus.events.OscEvent;
 import features.MbtDeviceType;
 import features.MbtFeatures;
 import utils.AsyncUtils;
@@ -234,7 +236,10 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
             } else if (request instanceof StreamRequestEvent) {
                 if (((StreamRequestEvent) request).isStart()) {
-                    startStreamOperation(((StreamRequestEvent) request).shouldMonitorDeviceStatus());
+                    startStreamOperation(
+                            ((StreamRequestEvent) request).shouldMonitorDeviceStatus(),
+                            ((StreamRequestEvent) request).getOscConfig()
+                    );
                 }else {
                     stopStreamOperation();
                 }
@@ -823,7 +828,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * Initiates the acquisition of EEG data. This method chooses between the correct BtProtocol.
      * If there is already a streaming session in progress, nothing happens and the method returns silently.
      */
-    private void startStreamOperation(boolean enableDeviceStatusMonitoring){
+    private void startStreamOperation(boolean enableDeviceStatusMonitoring, OscConfig oscConfig){
         Log.d(TAG, "Bluetooth Manager starts streaming");
         if(!mbtBluetoothLE.isConnected()){
             notifyStreamStateChanged(IStreamable.StreamState.DISCONNECTED);
@@ -835,6 +840,9 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             requestBeingProcessed = false;
             return;
         }
+
+        if(oscConfig != null)
+            EventBusManager.postEvent(new OscEvent.InitEvent(oscConfig));
 
         if(enableDeviceStatusMonitoring)
             mbtBluetoothLE.activateDeviceStatusMonitoring();
