@@ -4,8 +4,13 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import java.util.ArrayList;
+
+import command.DeviceCommand;
+import command.DeviceStreamingCommands;
 import core.eeg.storage.MbtEEGPacket;
 import engine.clientevents.BaseError;
+import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.EegListener;
 import features.MbtFeatures;
 
@@ -18,27 +23,36 @@ import features.MbtFeatures;
 @Keep
 public final class StreamConfig {
 
-    //private final long streamDuration; //For later use
-
-    private final int notificationPeriod;
-
-    //private final EegStreamConfig eegStreamConfig; Will be used in future release
+    private int notificationPeriod;
 
     private final EegListener<BaseError> eegListener;
 
-    private final boolean computeQualities;
+    private DeviceStatusListener<BaseError> deviceStatusListener;
 
-    private EegStreamConfig eegStreamConfig;
+    private boolean computeQualities;
 
-    private StreamConfig(boolean computeQualities, EegListener<BaseError> eegListener, int notificationPeriod, EegStreamConfig eegStreamConfig){
+    private ArrayList<DeviceCommand> deviceCommands;
+
+    private StreamConfig(boolean computeQualities, EegListener<BaseError> eegListener, DeviceStatusListener<BaseError> deviceStatusListener, int notificationPeriod, DeviceStreamingCommands[] deviceCommands){
         this.computeQualities = computeQualities;
         this.eegListener = eegListener;
+        this.deviceStatusListener = deviceStatusListener;
         this.notificationPeriod = notificationPeriod;
-        this.eegStreamConfig = eegStreamConfig;
+        this.deviceCommands = new ArrayList<>();
+
+        if(deviceCommands != null && deviceCommands.length > 0) {
+            for (DeviceStreamingCommands deviceCommand : deviceCommands) {
+                this.deviceCommands.add((DeviceCommand) deviceCommand);
+            }
+        }
     }
 
     public EegListener getEegListener() {
         return eegListener;
+    }
+
+    public DeviceStatusListener<BaseError> getDeviceStatusListener() {
+        return deviceStatusListener;
     }
 
     public int getNotificationPeriod() {
@@ -49,8 +63,24 @@ public final class StreamConfig {
         return computeQualities;
     }
 
-    public EegStreamConfig getEegStreamConfig() {
-        return eegStreamConfig;
+    public ArrayList<DeviceCommand> getDeviceCommands() {
+        return deviceCommands;
+    }
+
+    public void setNotificationPeriod(int notificationPeriod) {
+        this.notificationPeriod = notificationPeriod;
+    }
+
+    public void setComputeQualities(boolean computeQualities) {
+        this.computeQualities = computeQualities;
+    }
+
+    public void setDeviceCommand(ArrayList<DeviceCommand> deviceCommands) {
+        this.deviceCommands = deviceCommands;
+    }
+
+    public void setDeviceStatusListener(DeviceStatusListener<BaseError> deviceStatusListener) {
+        this.deviceStatusListener = deviceStatusListener;
     }
 
     /**
@@ -64,9 +94,12 @@ public final class StreamConfig {
         @NonNull
         private final EegListener<BaseError> eegListener;
 
+        @Nullable
+        private DeviceStatusListener<BaseError> deviceStatusListener;
+
         private boolean computeQualities = false;
 
-        private EegStreamConfig eegStreamConfig = new EegStreamConfig.Builder().create();
+        private DeviceStreamingCommands[] deviceCommands;
 
         /**
          * The eeg Listener is mandatory.
@@ -90,8 +123,15 @@ public final class StreamConfig {
             return this;
         }
 
-        public Builder configureHeadset(EegStreamConfig eegStreamConfig){
-            this.eegStreamConfig = eegStreamConfig;
+        /**
+         * Configures optional parameters applied by the headset for the EEG signal acquisition
+         * such as the amplifier gain, the notch filter, the MTU, etc.
+         * Default values can be found in the user guide for the gain, filters, MTU
+         * if you do not specify these parameters in the {@link StreamConfig] Builder.
+         * @param deviceAcquisitionConfig bundles the configuration parameters
+         */
+        public Builder configureAcquisitionFromDeviceCommand(DeviceStreamingCommands... deviceCommands){
+            this.deviceCommands = deviceCommands;
             return this;
         }
 
@@ -117,9 +157,15 @@ public final class StreamConfig {
             return this;
         }
 
+        @NonNull
+        public Builder setDeviceStatusListener(DeviceStatusListener<BaseError> deviceStatusListener){
+            this.deviceStatusListener = deviceStatusListener;
+            return this;
+        }
+
         @Nullable
         public StreamConfig create(){
-            return new StreamConfig(this.computeQualities, this.eegListener, this.notificationPeriod, this.eegStreamConfig);
+            return new StreamConfig(this.computeQualities, this.eegListener, this.deviceStatusListener, this.notificationPeriod, this.deviceCommands);
         }
     }
 

@@ -31,11 +31,11 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
+import command.DeviceCommand;
+import command.DeviceCommands;
+import command.DeviceStreamingCommands;
 import config.AmpGainConfig;
-import config.MailboxConfig;
-import config.EegStreamConfig;
 import config.FilterConfig;
-import config.DeviceCommandConfig;
 import config.MbtConfig;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.BtState;
@@ -613,11 +613,11 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         }
     }
 
-    void notifyCommandResponseReceived(byte[] returnedResult, @NonNull String configType) {
-        LogUtils.i(TAG, "Received response from device "+configType+" | value:"+Arrays.toString(returnedResult));
-        mbtBluetoothManager.notifyDeviceResponseReceived(returnedResult, configType);
+    void notifyCommandResponseReceived(byte[] returnedResult, DeviceCommand commandType) {
+        LogUtils.i(TAG, "Received response from device "+commandType+" | value:"+Arrays.toString(returnedResult));
+        mbtBluetoothManager.notifyDeviceResponseReceived(returnedResult, commandType);
 
-        if(configType != null)
+        if(commandType != null)
             asyncConfiguration.stopWaitingOperation(false);
 
     }
@@ -638,21 +638,13 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     }
 
     /**
-     * Send a configuration request to the device if the given configType parameter is :
-     * {@link EegStreamConfig#MTU_CONFIG}
-     * or {@link EegStreamConfig#AMP_GAIN_CONFIG}
-     * or {@link EegStreamConfig#NOTCH_FILTER_CONFIG}
-     * or {@link EegStreamConfig#OFFSET_CONFIG}
-     * or {@link EegStreamConfig#P300_CONFIG}
-     * or {@link EegStreamConfig#MTU_CONFIG}
-     * Send a reading request to the device to get the current device configuration if the given config parameter is
-     * {@link EegStreamConfig#EEG_CONFIG}
-     * @param config contains the values that the device has to changed when it receives the request
+     * Send a configuration request to the device
+     * @param deviceCommand contains the values that the device has to changed when it receives the request
      * @return true if the request has been sent to the headset, false otherwise
      */
-    private boolean waitResultOfDeviceCommand(String configType, DeviceCommandConfig config){
-        Log.d(TAG, "wait result of device command "+config.toString());
+    private boolean waitResultOfDeviceCommand(DeviceCommand deviceCommand){
 
+        Log.d(TAG, "Wait result of device command "+deviceCommand);
         boolean requestSent = false;
 
         try {
@@ -661,90 +653,62 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             e.printStackTrace();
         }
 
-        switch (configType){
+        if (deviceCommand instanceof DeviceStreamingCommands.Mtu){
+            int mtu = ((DeviceStreamingCommands.Mtu) deviceCommand).getMtu();
+            requestSent = changeMTU(mtu);
 
-            // MAILBOX REQUESTS THAT HANDLE STREAMING CONFIGURATION
+        }else if(deviceCommand instanceof DeviceStreamingCommands.NotchFilter) {
+            FilterConfig filter = ((DeviceStreamingCommands.NotchFilter) deviceCommand).getNotchFilter();
+            requestSent = changeFilterConfiguration(filter);
 
-            case EegStreamConfig.MTU_CONFIG:
-                int mtu = ((EegStreamConfig)config).getMtuValue();
-                if (mtu != EegStreamConfig.MTU_DEFAULT_VALUE)
-                    requestSent = changeMTU(mtu);
-                break;
+        }else if(deviceCommand instanceof DeviceStreamingCommands.AmplifierGain) {
+            AmpGainConfig gain = ((DeviceStreamingCommands.AmplifierGain) deviceCommand).getAmpGainConfig();
+            requestSent = changeAmpGainConfiguration(gain);
 
-            case EegStreamConfig.NOTCH_FILTER_CONFIG:
-                FilterConfig filter = ((EegStreamConfig)config).getNotchFilter();
-                if(filter != null)
-                    requestSent = changeFilterConfiguration(filter);
-                break;
+        }else if(deviceCommand instanceof DeviceStreamingCommands.Triggers) {
+            boolean enableTriggers = ((DeviceStreamingCommands.Triggers) deviceCommand).areTriggersEnabled();
+            requestSent = enableOrDisableTriggers(enableTriggers);
 
-            case EegStreamConfig.AMP_GAIN_CONFIG:
-                if (((EegStreamConfig)config).getGainValue() != null)
-                    requestSent = changeAmpGainConfiguration(((EegStreamConfig)config).getGainValue());
-                break;
+        }else if(deviceCommand instanceof DeviceStreamingCommands.DcOffset) {
+            boolean enableOffset = ((DeviceStreamingCommands.DcOffset) deviceCommand).isEnableDcOffset();
+            requestSent = enableOrDisableDcOffset(enableOffset);
 
-            case EegStreamConfig.P300_CONFIG:
-                requestSent = switchP300Mode(((EegStreamConfig)config).isUseP300());
-                break;
+        }else if(deviceCommand instanceof DeviceStreamingCommands.EegConfig) {
+            requestSent = requestDeviceStreamingConfig();
 
-            case EegStreamConfig.OFFSET_CONFIG:
-                requestSent = enableOrDisableDcOffset(((EegStreamConfig)config).isDcOffsetEnabled());
-                break;
+        }else if(deviceCommand instanceof DeviceCommands.UpdateSerialNumber) {
+            String serialNumber = ((DeviceCommands.UpdateSerialNumber) deviceCommand).getSerialNumber();
+            if (serialNumber != null)
+                requestSent = sendSerialNumber(serialNumber);
 
-            case EegStreamConfig.EEG_CONFIG:
-                requestSent = requestDeviceStreamingConfig();
-                break;
+        }else if(deviceCommand instanceof DeviceCommands.UpdateExternalName) {
+            String externalName = ((DeviceCommands.UpdateExternalName) deviceCommand).getExternalName();
+            if (externalName != null)
+                requestSent = sendExternalName(externalName);
 
+        }else if(deviceCommand instanceof DeviceCommands.UpdateProductName) {
+            String productName = ((DeviceCommands.UpdateProductName) deviceCommand).getProductName();
+            if (productName != null)
+                requestSent = sendProductName(productName);
 
-                // MAILBOX REQUESTS THAT DO NOT HANDLE STREAMING CONFIGURATION
+        }else if(deviceCommand instanceof DeviceCommands.ConnectAudio) {
+            requestSent = connectA2DPFromBLE();
 
-            case MailboxConfig.SERIAL_NUMBER_CONFIG:
-                String serialNumber = ((MailboxConfig)config).getSerialNumber();
-                if (serialNumber != null)
-                    requestSent = sendSerialNumber(serialNumber);
-                break;
+        }else if(deviceCommand instanceof DeviceCommands.DisconnectAudio) {
+            requestSent = disconnectA2DPFromBLE();
 
-            case MailboxConfig.PRODUCT_NAME_CONFIG:
-                String productName = ((MailboxConfig)config).getProductName();
-                if (productName != null)
-                    requestSent = sendProductName(productName);
-                break;
+        }else if(deviceCommand instanceof DeviceCommands.Reboot) {
+            requestSent = rebootDevice();
 
-            case MailboxConfig.EXTERNAL_NAME_CONFIG:
-                String externalName = ((MailboxConfig)config).getExternalName();
-                if (externalName != null)
-                    requestSent = sendExternalName(externalName);
-                break;
-
-            case MailboxConfig.CONNECT_AUDIO_CONFIG:
-                boolean connectA2DP = ((MailboxConfig)config).connectAudio();
-                if (connectA2DP)
-                    requestSent = connectA2DPFromBLE();
-                break;
-
-            case MailboxConfig.DISCONNECT_AUDIO_CONFIG:
-                boolean disconnectA2DP = ((MailboxConfig)config).disconnectAudio();
-                if (disconnectA2DP)
-                    requestSent = disconnectA2DPFromBLE();
-                break;
-
-            case MailboxConfig.SYSTEM_STATUS_CONFIG:
-                boolean systemStatus = ((MailboxConfig)config).getSystemStatus();
-                if (systemStatus)
-                    requestSent = requestSystemStatus();
-                break;
-
-            case MailboxConfig.REBOOT_DEVICE_CONFIG:
-                boolean reboot = ((MailboxConfig)config).rebootDevice();
-                if (reboot)
-                    requestSent = rebootDevice();
-                break;
+        }else if(deviceCommand instanceof DeviceCommands.GetSystemStatus) {
+            requestSent = requestSystemStatus();
         }
 
         if(requestSent) {
             try {
                 asyncConfiguration.waitOperationResult(5000);
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                LogUtils.w(TAG, configType+" failed : "+e);
+                LogUtils.w(TAG, "Device command failed : "+e);
             }
         }
 
@@ -753,61 +717,17 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 
     /**
      * This method manages a set of calls to perform in order to reconfigure some of the headset's
-     * parameters. All parameters are held in a {@link DeviceCommandConfig instance}
+     * parameters. All parameters are held in a {@link DeviceCommand instance}
      * Each new parameter is updated one after the other. All method inside are blocking.
-     * @param config the {@link DeviceCommandConfig} instance to get new parameters from.
+     * @param command the {@link DeviceCommand} instance to get new parameters from.
      */
-    public boolean sendDeviceCommand(DeviceCommandConfig config){
-        Log.d(TAG, "Send device command ");
-        if(config != null){
-            LogUtils.i(TAG, "Send device command "+config.toString());
-
-            if(config instanceof EegStreamConfig){
-
-                    if(!waitResultOfDeviceCommand(EegStreamConfig.MTU_CONFIG, config))
-                        return false;
-
-                    if(!waitResultOfDeviceCommand(EegStreamConfig.NOTCH_FILTER_CONFIG, config))
-                        return false;
-
-                //TODO implement bandpass filter change
-
-                    if(!waitResultOfDeviceCommand(EegStreamConfig.AMP_GAIN_CONFIG, config))
-                        return false;
-
-                if(!waitResultOfDeviceCommand(EegStreamConfig.P300_CONFIG, config))
-                    return false;
-
-                if(!waitResultOfDeviceCommand(EegStreamConfig.OFFSET_CONFIG, config))
-                    return false;
-
-                return waitResultOfDeviceCommand(EegStreamConfig.EEG_CONFIG, null);
-
-            }else {
-                    if(!waitResultOfDeviceCommand(MailboxConfig.SERIAL_NUMBER_CONFIG, config))
-                        return false;
-
-                    if(!waitResultOfDeviceCommand(MailboxConfig.PRODUCT_NAME_CONFIG, config))
-                        return false;
-
-                    if(!waitResultOfDeviceCommand(MailboxConfig.EXTERNAL_NAME_CONFIG, config))
-                        return false;
-
-                    if(!waitResultOfDeviceCommand(MailboxConfig.CONNECT_AUDIO_CONFIG, config))
-                        return false;
-
-                    if(!waitResultOfDeviceCommand(MailboxConfig.DISCONNECT_AUDIO_CONFIG, config))
-                        return false;
-
-                    if(!waitResultOfDeviceCommand(MailboxConfig.REBOOT_DEVICE_CONFIG, config))
-                        return false;
-
-                return waitResultOfDeviceCommand(MailboxConfig.SYSTEM_STATUS_CONFIG, config);
-            }
+    public void sendDeviceCommand(DeviceCommand command){
+        LogUtils.i(TAG, "Send device command : "+command);
+        if(!waitResultOfDeviceCommand(command)) {
+            Log.e(TAG, "Device command sending failed");
+            mbtBluetoothManager.notifyDeviceResponseReceived(null, command);
         }
-        Log.d(TAG, "Device command sent "+config.toString());
-
-        return true;
+        Log.d(TAG, "Device command sent "+command);
     }
 
 
@@ -882,7 +802,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * charateristic are enabled.
      * @param useP300 is true to enable, false to disable.
      */
-    private boolean switchP300Mode(boolean useP300){
+    private boolean enableOrDisableTriggers(boolean useP300){
         LogUtils.i(TAG, "switch p300: new mode is " + (useP300 ? "enabled" : "disabled"));
 
         if(!isNotificationEnabledOnCharacteristic(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX)){

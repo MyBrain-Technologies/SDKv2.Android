@@ -4,7 +4,6 @@ import android.bluetooth.BluetoothDevice;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import config.DeviceCommandConfig;
 import core.device.model.MbtDevice;
 import features.MbtDeviceType;
 
@@ -94,22 +93,5 @@ public interface DeviceEvents {
             return rawResponse;
         }
     }
-
-    /**
-     * Send command to the connected headset using Mailbox or other characteristic writing methods
-     */
-    class SendDeviceCommandEvent {
-
-        private DeviceCommandConfig config;
-
-        public SendDeviceCommandEvent(@NonNull DeviceCommandConfig config) {
-            this.config = config;
-        }
-
-        public DeviceCommandConfig getConfig() {
-            return config;
-        }
-    }
-
 
 }

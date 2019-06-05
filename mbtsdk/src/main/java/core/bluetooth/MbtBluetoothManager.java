@@ -24,18 +24,19 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
-import config.MailboxConfig;
 import config.MbtConfig;
-import config.EegStreamConfig;
 import core.BaseModuleManager;
 import core.MbtManager;
+import command.DeviceCommand;
+import command.DeviceCommands;
+import command.DeviceStreamingCommands;
 import core.bluetooth.lowenergy.MbtBluetoothLE;
 import core.bluetooth.requests.BluetoothRequests;
 import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
 import core.bluetooth.requests.DisconnectRequestEvent;
 import core.bluetooth.requests.ReadRequestEvent;
 import core.bluetooth.requests.StreamRequestEvent;
-import core.bluetooth.requests.UpdateConfigurationRequestEvent;
+import core.bluetooth.requests.DeviceCommandRequestEvent;
 import core.bluetooth.spp.MbtBluetoothSPP;
 import core.device.DeviceEvents;
 import core.device.model.DeviceInfo;
@@ -155,28 +156,24 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     /**
      * Notify the Device Manager if a new device info has been received from the headset
      * @param rawResponse is the raw byte array returned by the headset
-     * @param configType is the corresponding type of mailbox config command
+     * @param commandType is the corresponding type of mailbox command
      */
-    public void notifyDeviceResponseReceived(byte[] rawResponse, String configType) {
-        switch (configType){
+    public void notifyDeviceResponseReceived(byte[] rawResponse, DeviceCommand commandType) {
+        if(commandType instanceof DeviceStreamingCommands.EegConfig){
+            notifyDeviceConfigReceived(ArrayUtils.toObject(rawResponse));
 
-            case EegStreamConfig.EEG_CONFIG :
-                notifyDeviceConfigReceived(ArrayUtils.toObject(rawResponse));
-                break;
+        }else if(commandType instanceof DeviceCommands.UpdateSerialNumber) {
+            notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER, new String(rawResponse));
 
-            case MailboxConfig.SERIAL_NUMBER_CONFIG :
-                notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER, new String(rawResponse));
-                break;
+        }else if(commandType instanceof DeviceCommands.UpdateExternalName) {
+            notifyDeviceInfoReceived(DeviceInfo.MODEL_NUMBER, new String(rawResponse));
 
-            case MailboxConfig.EXTERNAL_NAME_CONFIG :
-                notifyDeviceInfoReceived(DeviceInfo.MODEL_NUMBER, new String(rawResponse));
-                break;
-
-            case MailboxConfig.PRODUCT_NAME_CONFIG :
+        }else if(commandType instanceof DeviceCommands.UpdateProductName) {
                 notifyDeviceInfoReceived(DeviceInfo.PRODUCT_NAME, new String(rawResponse));
-                break;
         }
         EventBusManager.postEvent(new DeviceEvents.RawDeviceResponseEvent(rawResponse));
+        requestBeingProcessed = false;
+
     }
 
     /**
@@ -206,7 +203,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         void parseRequest(BluetoothRequests request) {
             //BluetoothRequests request = pendingRequests.remove();
             //disconnect request doesn't need to be in "queue" as it is top priority
-
             while (requestBeingProcessed);
             requestBeingProcessed = true;
             if (request instanceof StartOrContinueConnectionRequestEvent) {
@@ -237,13 +233,14 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 }
 
             } else if (request instanceof StreamRequestEvent) {
-                if (((StreamRequestEvent) request).isStart())
-                    startStreamOperation(((StreamRequestEvent) request).shouldMonitorDeviceStatus(), ((StreamRequestEvent) request).getEegStreamConfig());
-                else
+                if (((StreamRequestEvent) request).isStart()) {
+                    startStreamOperation(((StreamRequestEvent) request).shouldMonitorDeviceStatus());
+                }else {
                     stopStreamOperation();
+                }
 
-            } else if (request instanceof UpdateConfigurationRequestEvent) {
-                configureHeadset(((UpdateConfigurationRequestEvent) request).getConfig());
+//            } else if (request instanceof DeviceCommandRequestEvent) {
+//                sendDeviceCommand(((DeviceCommandRequestEvent) request).getCommand());
             }
         }
 
@@ -798,17 +795,18 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             });
     }
 
+
     /**
      * This method manages a set of calls to perform in order to reconfigure some of the headset's
-     * parameters. All parameters are held in a {@link EegStreamConfig instance}
+     * parameters. All parameters are held in a {@link DeviceCommand instance}
      * Each new parameter is updated one after the other. All method inside are blocking.
-     * @param config the {@link EegStreamConfig} instance to get new parameters from.
+     * @param command the {@link DeviceCommand} instance to get new parameters from.
      */
-    private void configureHeadset(@NonNull EegStreamConfig config){
+    private void sendDeviceCommand(@NonNull DeviceCommand command){
         if(deviceTypeRequested.useLowEnergyProtocol())
-            mbtBluetoothLE.sendDeviceCommand(config);
+            mbtBluetoothLE.sendDeviceCommand(command);
         else
-            mbtBluetoothSPP.sendDeviceCommand(config);
+            mbtBluetoothSPP.sendDeviceCommand(command);
     }
 
 
@@ -816,16 +814,17 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * This method triggers a mailbox request to send a command to the headset
      */
     @Subscribe
-    public void onSendDeviceCommand(DeviceEvents.SendDeviceCommandEvent event){
+    public void onSendDeviceCommand(DeviceCommandRequestEvent event){
         Log.d(TAG, "on Send device command "+event.toString());
-        mbtBluetoothLE.sendDeviceCommand(event.getConfig());
+        sendDeviceCommand(event.getCommand());
     }
 
     /**
      * Initiates the acquisition of EEG data. This method chooses between the correct BtProtocol.
      * If there is already a streaming session in progress, nothing happens and the method returns silently.
      */
-    private void startStreamOperation(boolean enableDeviceStatusMonitoring, EegStreamConfig eegStreamConfig){
+    private void startStreamOperation(boolean enableDeviceStatusMonitoring){
+        Log.d(TAG, "Bluetooth Manager starts streaming");
         if(!mbtBluetoothLE.isConnected()){
             notifyStreamStateChanged(IStreamable.StreamState.DISCONNECTED);
             requestBeingProcessed = false;
@@ -836,9 +835,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             requestBeingProcessed = false;
             return;
         }
-
-        //TODO remove sendDeviceCommand method from here later on.
-        configureHeadset(eegStreamConfig);
 
         if(enableDeviceStatusMonitoring)
             mbtBluetoothLE.activateDeviceStatusMonitoring();
@@ -855,6 +851,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * If there is no streaming session in progress, nothing happens and the method returns silently.
      */
     private void stopStreamOperation(){
+        Log.d(TAG, "Bluetooth Manager stops streaming");
         if(!mbtBluetoothLE.isStreaming()) {
             requestBeingProcessed = false;
             return;
@@ -996,11 +993,12 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     }
 
     void requestCurrentConnectedDevice(final SimpleRequestCallback<MbtDevice> callback) {
-        EventBusManager.postEventWithCallback(new DeviceEvents.GetDeviceEvent(), new EventBusManager.CallbackVoid<DeviceEvents.PostDeviceEvent>(){
+        EventBusManager.postEventWithCallback(new DeviceEvents.GetDeviceEvent(), new EventBusManager.Callback<DeviceEvents.PostDeviceEvent>(){
             @Override
             @Subscribe
-            public void onEventCallback(DeviceEvents.PostDeviceEvent device) {
+            public Void onEventCallback(DeviceEvents.PostDeviceEvent device) {
                 callback.onRequestComplete(device.getDevice());
+                return null;
             }
         });
     }

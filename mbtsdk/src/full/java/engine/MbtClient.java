@@ -7,13 +7,12 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 
-import config.EegStreamConfig;
-import config.MailboxConfig;
 import config.MbtConfig;
 import config.StreamConfig;
 import config.ConnectionConfig;
 import core.MbtManager;
 import core.bluetooth.BtState;
+import command.DeviceCommands;
 import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
 import core.eeg.storage.MbtEEGPacket;
@@ -163,14 +162,6 @@ public final class MbtClient {
     }
 
     /**
-     * Configures the connected headset filters, gain, MTU and enable or disable P300, Saturation and DC offset
-     * @param eegStreamConfig is the object that hold all the EEG streaming configuration
-     */
-    public void configureHeadset(EegStreamConfig eegStreamConfig){
-        mbtManager.configureHeadset(eegStreamConfig);
-    }
-
-    /**
      * Sends a command to the connected headset to change its current serial number
      * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
      * This response contains the command status and informations bundled in a byte array
@@ -178,7 +169,7 @@ public final class MbtClient {
      * @param requestCallback returns the headset raw response if the command has been well sent
      */
     public void updateSerialNumber(String serialNumber, @Nullable SimpleRequestCallback<byte[]> requestCallback){
-        mbtManager.sendDeviceCommand(new MailboxConfig.Builder().setSerialNumber(serialNumber).create(), requestCallback);
+        mbtManager.sendDeviceCommand(new DeviceCommands.UpdateSerialNumber(serialNumber, requestCallback));
     }
 
     /**
@@ -189,7 +180,7 @@ public final class MbtClient {
      * @param requestCallback returns the headset raw response if the command has been well sent
      */
     public void updateProductName(String productName, @Nullable SimpleRequestCallback<byte[]> requestCallback){
-        mbtManager.sendDeviceCommand(new MailboxConfig.Builder().setProductName(productName).create(), requestCallback);
+        mbtManager.sendDeviceCommand(new DeviceCommands.UpdateProductName(productName, requestCallback));
     }
 
     /**
@@ -200,7 +191,7 @@ public final class MbtClient {
      * @param requestCallback returns the headset raw response if the command has been well sent
      */
     public void updateExternalName(String externalName, @Nullable SimpleRequestCallback<byte[]> requestCallback){
-        mbtManager.sendDeviceCommand(new MailboxConfig.Builder().setExternalName(externalName).create(), requestCallback);
+        mbtManager.sendDeviceCommand(new DeviceCommands.UpdateExternalName(externalName, requestCallback));
     }
 
     /**
@@ -210,7 +201,7 @@ public final class MbtClient {
      * @param requestCallback returns the headset raw response if the command has been well sent
      */
     public void connectAudio(@Nullable SimpleRequestCallback<byte[]> requestCallback){
-        mbtManager.sendDeviceCommand(new MailboxConfig.Builder().connectAudio().create(), requestCallback);
+        mbtManager.sendDeviceCommand(new DeviceCommands.ConnectAudio(requestCallback));
     }
 
     /**
@@ -220,7 +211,7 @@ public final class MbtClient {
      * @param requestCallback returns the headset raw response if the command has been well sent
      */
     public void disconnectAudio(@Nullable SimpleRequestCallback<byte[]> requestCallback){
-        mbtManager.sendDeviceCommand(new MailboxConfig.Builder().disconnectAudio().create(), requestCallback);
+        mbtManager.sendDeviceCommand(new DeviceCommands.DisconnectAudio(requestCallback));
     }
 
     /**
@@ -229,7 +220,7 @@ public final class MbtClient {
      * @param requestCallback returns the headset raw response if the command has been well sent
      */
     public void getDeviceSystemStatus(@Nullable SimpleRequestCallback<byte[]> requestCallback){
-        mbtManager.sendDeviceCommand(new MailboxConfig.Builder().getSystemStatus().create(), requestCallback);
+        mbtManager.sendDeviceCommand(new DeviceCommands.GetSystemStatus(requestCallback));
     }
 
     /**
@@ -239,7 +230,7 @@ public final class MbtClient {
      * @param requestCallback returns the headset raw response if the command has been well sent
      */
     public void rebootDevice(@Nullable SimpleRequestCallback<byte[]> requestCallback){
-        mbtManager.sendDeviceCommand(new MailboxConfig.Builder().rebootDevice().create(), requestCallback);
+        mbtManager.sendDeviceCommand(new DeviceCommands.Reboot(requestCallback));
     }
 
     /**

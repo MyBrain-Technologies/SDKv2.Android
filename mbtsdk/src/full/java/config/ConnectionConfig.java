@@ -18,15 +18,15 @@ import features.MbtFeatures;
 @Keep
 public final class ConnectionConfig {
 
-    private final String deviceName;
+    private String deviceName;
 
-    private final String deviceQrCode;
+    private String deviceQrCode;
 
-    private final int maxScanDuration;
+    private int maxScanDuration;
 
-    private final boolean connectAudio;
+    private boolean connectAudio;
 
-    private final MbtDeviceType deviceType;
+    private MbtDeviceType deviceType;
 
     private final ConnectionStateListener<BaseError> connectionStateListener;
 
@@ -67,6 +67,26 @@ public final class ConnectionConfig {
 
     public ConnectionStateListener getConnectionStateListener() {
         return connectionStateListener;
+    }
+
+    public void setDeviceName(String deviceName){
+        this.deviceName = deviceName;
+    }
+
+    public void setDeviceQrCode(String deviceQrCode) {
+        this.deviceQrCode = deviceQrCode;
+    }
+
+    public void setMaxScanDuration(int maxScanDuration) {
+        this.maxScanDuration = maxScanDuration;
+    }
+
+    public void setConnectAudio(boolean connectAudio) {
+        this.connectAudio = connectAudio;
+    }
+
+    public void setDeviceType(MbtDeviceType deviceType) {
+        this.deviceType = deviceType;
     }
 
     /**
