@@ -21,11 +21,12 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
 
-import config.EegStreamConfig;
 import core.bluetooth.BtState;
 import core.bluetooth.IStreamable;
 import core.bluetooth.MbtBluetooth;
 import core.bluetooth.MbtBluetoothManager;
+import core.bluetooth.lowenergy.DeviceCommand;
+import core.bluetooth.lowenergy.DeviceCommands;
 import core.device.model.DeviceInfo;
 import core.device.model.MelomindDevice;
 import utils.AsyncUtils;
@@ -518,7 +519,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
     }
 
     //todo
-    public void sendDeviceCommand(EegStreamConfig config) {
+    public void sendDeviceCommand(DeviceCommand commands) {
     }
 }
 

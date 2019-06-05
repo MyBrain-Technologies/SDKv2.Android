@@ -1,6 +1,7 @@
 package eventbus;
 
 import android.support.annotation.NonNull;
+import android.util.Log;
 
 import org.greenrobot.eventbus.EventBus;
 
@@ -58,6 +59,7 @@ public final class EventBusManager {
     }
 
     public static void postEventWithCallback(Object event, Object callback){
+        Log.d(TAG, "Eventbus posts event with callback "+event);
         BUS.register(callback);
         BUS.post(event);
         BUS.unregister(callback);
@@ -73,8 +75,4 @@ public final class EventBusManager {
     public interface Callback<T> {
         public Object onEventCallback(T object);
     }
-    public interface CallbackVoid<T> {
-        public void onEventCallback(T object);
-    }
-
 }

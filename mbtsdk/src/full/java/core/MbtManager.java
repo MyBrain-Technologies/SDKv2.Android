@@ -13,17 +13,16 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import config.DeviceCommandConfig;
-import config.EegStreamConfig;
 import config.StreamConfig;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.IStreamable;
+import core.bluetooth.lowenergy.DeviceCommand;
 import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
 import core.bluetooth.requests.DisconnectRequestEvent;
 import core.bluetooth.MbtBluetoothManager;
 import core.bluetooth.requests.ReadRequestEvent;
 import core.bluetooth.requests.StreamRequestEvent;
-import core.bluetooth.requests.UpdateConfigurationRequestEvent;
+import core.bluetooth.requests.DeviceCommandRequestEvent;
 import core.device.DCOffsets;
 import core.device.DeviceEvents;
 import core.device.MbtDeviceManager;
@@ -143,15 +142,15 @@ public class MbtManager{
      */
     public void startStream(StreamConfig streamConfig){
         this.eegListener = streamConfig.getEegListener();
-        EegStreamConfig eegStreamConfig = streamConfig.getEegStreamConfig();
-        if(eegStreamConfig != null)
-            this.deviceStatusListener = eegStreamConfig.getDeviceStatusListener();
+        this.deviceStatusListener = streamConfig.getDeviceStatusListener();
 
+        for (DeviceCommand command : streamConfig.getDeviceCommands()) {
+            sendDeviceCommand(command);
+        }
         EventBusManager.postEvent(
                 new StreamRequestEvent(true,
                         streamConfig.shouldComputeQualities(),
-                        (deviceStatusListener != null),
-                        eegStreamConfig));
+                        (deviceStatusListener != null)));
     }
 
     /**
@@ -161,19 +160,21 @@ public class MbtManager{
         EventBusManager.postEvent(new StreamRequestEvent(false, false, false));
     }
 
-    public void configureHeadset(EegStreamConfig eegStreamConfig){
-        EventBusManager.postEvent(new UpdateConfigurationRequestEvent(eegStreamConfig));
-    }
-
-    public void sendDeviceCommand(@NonNull DeviceCommandConfig deviceCommandConfig, SimpleRequestCallback<byte[]> callback){
-        EventBusManager.postEventWithCallback(new DeviceEvents.SendDeviceCommandEvent(deviceCommandConfig), new EventBusManager.CallbackVoid<DeviceEvents.RawDeviceResponseEvent>(){
-            @Override
-            @Subscribe
-            public void onEventCallback(DeviceEvents.RawDeviceResponseEvent headsetRawResponse) {
-                Log.d(TAG, "Callback returned "+ Arrays.toString(headsetRawResponse.getRawResponse()));
-                callback.onRequestComplete(headsetRawResponse.getRawResponse());
-            }
-        });
+    public void sendDeviceCommand(@NonNull Object deviceCommand){
+        if(deviceCommand instanceof DeviceCommand){
+            DeviceCommand command = (DeviceCommand) deviceCommand;
+            EventBusManager.postEventWithCallback(new DeviceCommandRequestEvent(command), new EventBusManager.Callback<DeviceEvents.RawDeviceResponseEvent>(){
+                @Override
+                @Subscribe
+                public Void onEventCallback(DeviceEvents.RawDeviceResponseEvent headsetRawResponse) {
+                    Log.d(TAG, "Callback returned "+ Arrays.toString(headsetRawResponse.getRawResponse()));
+                    SimpleRequestCallback responseCallback = command.getResponseCallback();
+                    if(responseCallback != null)
+                        responseCallback.onRequestComplete(headsetRawResponse.getRawResponse());
+                    return null;
+                }
+            });
+        }
     }
 
     /**
@@ -286,11 +287,12 @@ public class MbtManager{
 
 
     public void requestCurrentConnectedDevice(final SimpleRequestCallback<MbtDevice> callback) {
-        EventBusManager.postEventWithCallback(new DeviceEvents.GetDeviceEvent(), new EventBusManager.CallbackVoid<DeviceEvents.PostDeviceEvent>(){
+        EventBusManager.postEventWithCallback(new DeviceEvents.GetDeviceEvent(), new EventBusManager.Callback<DeviceEvents.PostDeviceEvent>(){
             @Override
             @Subscribe
-            public void onEventCallback(DeviceEvents.PostDeviceEvent object) {
+            public Void onEventCallback(DeviceEvents.PostDeviceEvent object) {
                 callback.onRequestComplete(object.getDevice());
+                return null;
             }
         });
     }
