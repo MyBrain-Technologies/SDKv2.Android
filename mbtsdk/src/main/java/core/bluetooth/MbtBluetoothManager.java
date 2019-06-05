@@ -304,16 +304,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     }
 
 
-
-    /**
-     * This method triggers a mailbox request to send a command to the headset
-     */
-    @Subscribe
-    public void onSendDeviceCommand(DeviceCommandRequestEvent event){
-        Log.d(TAG, "on Send device command "+event.toString());
-        sendDeviceCommand(event.getCommand());
-    }
-
     private void switchToNextConnectionStep(){
         requestBeingProcessed = false;
         if(!getCurrentState().isAFailureState() && !isConnectionInterrupted && !getCurrentState().equals(BtState.IDLE))  //if nothing went wrong during the current step of the connection process, we continue the process
