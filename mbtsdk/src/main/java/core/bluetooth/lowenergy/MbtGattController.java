@@ -11,6 +11,8 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 
 
+import command.DeviceCommands;
+import command.DeviceStreamingCommands;
 import core.bluetooth.BtState;
 import core.device.model.DeviceInfo;
 import core.device.model.MelomindDevice;

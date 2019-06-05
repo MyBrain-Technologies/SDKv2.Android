@@ -16,7 +16,7 @@ import java.util.Set;
 import config.StreamConfig;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.IStreamable;
-import core.bluetooth.lowenergy.DeviceCommand;
+import command.DeviceCommand;
 import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
 import core.bluetooth.requests.DisconnectRequestEvent;
 import core.bluetooth.MbtBluetoothManager;
@@ -160,21 +160,19 @@ public class MbtManager{
         EventBusManager.postEvent(new StreamRequestEvent(false, false, false));
     }
 
-    public void sendDeviceCommand(@NonNull Object deviceCommand){
-        if(deviceCommand instanceof DeviceCommand){
-            DeviceCommand command = (DeviceCommand) deviceCommand;
-            EventBusManager.postEventWithCallback(new DeviceCommandRequestEvent(command), new EventBusManager.Callback<DeviceEvents.RawDeviceResponseEvent>(){
+    public void sendDeviceCommand(@NonNull DeviceCommand deviceCommand){
+            EventBusManager.postEventWithCallback(new DeviceCommandRequestEvent(deviceCommand), new EventBusManager.Callback<DeviceEvents.RawDeviceResponseEvent>(){
                 @Override
                 @Subscribe
                 public Void onEventCallback(DeviceEvents.RawDeviceResponseEvent headsetRawResponse) {
                     Log.d(TAG, "Callback returned "+ Arrays.toString(headsetRawResponse.getRawResponse()));
-                    SimpleRequestCallback responseCallback = command.getResponseCallback();
+                    SimpleRequestCallback responseCallback = deviceCommand.getResponseCallback();
                     if(responseCallback != null)
                         responseCallback.onRequestComplete(headsetRawResponse.getRawResponse());
                     return null;
                 }
             });
-        }
+
     }
 
     /**

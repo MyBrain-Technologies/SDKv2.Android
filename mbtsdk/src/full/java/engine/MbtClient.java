@@ -12,7 +12,7 @@ import config.StreamConfig;
 import config.ConnectionConfig;
 import core.MbtManager;
 import core.bluetooth.BtState;
-import core.bluetooth.lowenergy.DeviceCommands;
+import command.DeviceCommands;
 import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
 import core.eeg.storage.MbtEEGPacket;

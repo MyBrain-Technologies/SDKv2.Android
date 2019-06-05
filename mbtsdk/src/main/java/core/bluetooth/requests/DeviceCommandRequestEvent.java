@@ -1,6 +1,6 @@
 package core.bluetooth.requests;
 
-import core.bluetooth.lowenergy.DeviceCommand;
+import command.DeviceCommand;
 
 /**
  * An event class when a device configuration update request is being sent by the user.

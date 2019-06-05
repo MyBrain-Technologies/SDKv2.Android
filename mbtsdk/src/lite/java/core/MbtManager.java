@@ -7,9 +7,9 @@ import android.support.annotation.Nullable;
 
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
+
 import java.util.HashSet;
 import java.util.Set;
-import config.EegStreamConfig;
 import config.StreamConfig;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.IStreamable;
@@ -138,15 +138,12 @@ public class MbtManager{
      */
     public void startStream(@NonNull StreamConfig streamConfig){
         this.eegListener = streamConfig.getEegListener();
-        EegStreamConfig eegStreamConfig = streamConfig.getEegStreamConfig();
-        if(eegStreamConfig != null)
-            this.deviceStatusListener = eegStreamConfig.getDeviceStatusListener();
+        this.deviceStatusListener = streamConfig.getDeviceStatusListener();
 
         EventBusManager.postEvent(
                 new StreamRequestEvent(true,
                         streamConfig.shouldComputeQualities(),
-                        (deviceStatusListener != null),
-                        eegStreamConfig));
+                        (deviceStatusListener != null)));
     }
 
     /**
@@ -264,11 +261,12 @@ public class MbtManager{
     }
 
     public void requestCurrentConnectedDevice(final SimpleRequestCallback<MbtDevice> callback) {
-        EventBusManager.postEventWithCallback(new DeviceEvents.GetDeviceEvent(), new EventBusManager.CallbackVoid<DeviceEvents.PostDeviceEvent>(){
+        EventBusManager.postEventWithCallback(new DeviceEvents.GetDeviceEvent(), new EventBusManager.Callback<DeviceEvents.PostDeviceEvent>(){
             @Override
             @Subscribe
-            public void onEventCallback(DeviceEvents.PostDeviceEvent object) {
+            public Void onEventCallback(DeviceEvents.PostDeviceEvent object) {
                 callback.onRequestComplete(object.getDevice());
+                return null;
             }
         });
     }

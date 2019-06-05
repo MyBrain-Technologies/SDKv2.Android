@@ -6,9 +6,8 @@ import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
 
-import core.bluetooth.lowenergy.DeviceCommand;
-import core.bluetooth.lowenergy.DeviceCommands;
-import core.bluetooth.lowenergy.DeviceStreamingCommands;
+import command.DeviceCommand;
+import command.DeviceStreamingCommands;
 import core.eeg.storage.MbtEEGPacket;
 import engine.clientevents.BaseError;
 import engine.clientevents.DeviceStatusListener;

@@ -1,4 +1,4 @@
-package core.bluetooth.lowenergy;
+package command;
 
 
 import engine.SimpleRequestCallback;

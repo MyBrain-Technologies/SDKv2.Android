@@ -1,4 +1,4 @@
-package core.bluetooth.lowenergy;
+package command;
 
 import android.support.annotation.Keep;
 

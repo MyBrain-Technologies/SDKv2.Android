@@ -31,6 +31,9 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
+import command.DeviceCommand;
+import command.DeviceCommands;
+import command.DeviceStreamingCommands;
 import config.AmpGainConfig;
 import config.FilterConfig;
 import config.MbtConfig;
