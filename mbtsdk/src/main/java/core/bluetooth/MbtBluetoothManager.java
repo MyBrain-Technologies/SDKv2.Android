@@ -993,11 +993,12 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     }
 
     void requestCurrentConnectedDevice(final SimpleRequestCallback<MbtDevice> callback) {
-        EventBusManager.postEventWithCallback(new DeviceEvents.GetDeviceEvent(), new EventBusManager.Callback<DeviceEvents.PostDeviceEvent>(){
+        EventBusManager.postEvent(new DeviceEvents.GetDeviceEvent(), new EventBusManager.Callback<DeviceEvents.PostDeviceEvent>(){
             @Override
             @Subscribe
             public Void onEventCallback(DeviceEvents.PostDeviceEvent device) {
                 callback.onRequestComplete(device.getDevice());
+                EventBusManager.registerOrUnregister(false,this);
                 return null;
             }
         });

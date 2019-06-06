@@ -58,11 +58,16 @@ public final class EventBusManager {
         BUS.post(event);
     }
 
-    public static void postEventWithCallback(Object event, Object callback){
+    /**
+     * Posts event and registers a callback that returns a value when the event is triggered
+     * Warning : Its is mandatory to unregister the callback after it returns the value
+     * @param event is the event to post
+     * @param callback is the class that provide a callback that notify you when the value is returned
+     */
+    public static void postEvent(Object event, Object callback){
         Log.d(TAG, "Eventbus posts event with callback "+event);
         BUS.register(callback);
         BUS.post(event);
-        BUS.unregister(callback);
     }
 
     public static Object postEventWithCallbackAndReturnResult(Object event, Object callback){

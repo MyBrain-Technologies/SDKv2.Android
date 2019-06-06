@@ -266,6 +266,7 @@ public class MbtManager{
             @Subscribe
             public Void onEventCallback(DeviceEvents.PostDeviceEvent object) {
                 callback.onRequestComplete(object.getDevice());
+                EventBusManager.registerOrUnregister(false, this);
                 return null;
             }
         });

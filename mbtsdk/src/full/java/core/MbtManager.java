@@ -161,7 +161,7 @@ public class MbtManager{
     }
 
     public void sendDeviceCommand(@NonNull DeviceCommand deviceCommand){
-            EventBusManager.postEventWithCallback(new DeviceCommandRequestEvent(deviceCommand), new EventBusManager.Callback<DeviceEvents.RawDeviceResponseEvent>(){
+            EventBusManager.postEvent(new DeviceCommandRequestEvent(deviceCommand), new EventBusManager.Callback<DeviceEvents.RawDeviceResponseEvent>(){
                 @Override
                 @Subscribe
                 public Void onEventCallback(DeviceEvents.RawDeviceResponseEvent headsetRawResponse) {
@@ -169,6 +169,7 @@ public class MbtManager{
                     SimpleRequestCallback responseCallback = deviceCommand.getResponseCallback();
                     if(responseCallback != null)
                         responseCallback.onRequestComplete(headsetRawResponse.getRawResponse());
+                    EventBusManager.registerOrUnregister(false, this);
                     return null;
                 }
             });
@@ -285,11 +286,12 @@ public class MbtManager{
 
 
     public void requestCurrentConnectedDevice(final SimpleRequestCallback<MbtDevice> callback) {
-        EventBusManager.postEventWithCallback(new DeviceEvents.GetDeviceEvent(), new EventBusManager.Callback<DeviceEvents.PostDeviceEvent>(){
+        EventBusManager.postEvent(new DeviceEvents.GetDeviceEvent(), new EventBusManager.Callback<DeviceEvents.PostDeviceEvent>(){
             @Override
             @Subscribe
             public Void onEventCallback(DeviceEvents.PostDeviceEvent object) {
                 callback.onRequestComplete(object.getDevice());
+                EventBusManager.registerOrUnregister(false, this);
                 return null;
             }
         });
