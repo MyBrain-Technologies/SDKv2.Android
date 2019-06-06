@@ -227,10 +227,9 @@ public final class MbtClient {
      * Sends a command to reboot the connected headset
      * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
      * This response contains the command status and informations bundled in a byte array
-     * @param requestCallback returns the headset raw response if the command has been well sent
      */
-    public void rebootDevice(@Nullable SimpleRequestCallback<byte[]> requestCallback){
-        mbtManager.sendDeviceCommand(new DeviceCommands.Reboot(requestCallback));
+    public void rebootDevice(){
+        mbtManager.sendDeviceCommand(new DeviceCommands.Reboot());
     }
 
     /**
