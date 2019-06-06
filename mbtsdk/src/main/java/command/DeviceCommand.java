@@ -3,13 +3,28 @@ package command;
 
 import engine.SimpleRequestCallback;
 
+/**
+ * Mailbox command sent from the SDK to the headset
+ * in order to configure a parameter,
+ * or get values stored by the headset
+ * or ask the headset to perform an action.
+ * It stores a callback provided to return a raw response from the response to the SDK
+ */
 public abstract class DeviceCommand {
 
-        SimpleRequestCallback<byte[]> responseCallback;
+    /**
+     * Callback that returns the raw response of the headset to the SDK
+     * This raw response is a byte array that has be to converted to be readable.
+     */
+    SimpleRequestCallback<byte[]> responseCallback;
 
-        public SimpleRequestCallback<byte[]> getResponseCallback() {
-            return responseCallback;
-        }
+    /**
+     * Get the callback that returns the raw response of the headset to the SDK
+     * @return the callback that returns the raw response of the headset to the SDK
+     */
+    public SimpleRequestCallback<byte[]> getResponseCallback() {
+        return responseCallback;
+    }
 
     }
 

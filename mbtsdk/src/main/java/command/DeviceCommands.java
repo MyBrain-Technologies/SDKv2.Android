@@ -4,7 +4,10 @@ import android.support.annotation.Keep;
 import engine.SimpleRequestCallback;
 
 /**
- * Mailbox commands and other headset commands related to EEG streaming are hold in this object
+ * Mailbox commands sent from the SDK to the headset
+ * in order to configure a parameter,
+ * or get values stored by the headset
+ * or ask the headset to perform an action.
  */
 @Keep
 public interface DeviceCommands {
