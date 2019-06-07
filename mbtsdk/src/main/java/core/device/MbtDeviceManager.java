@@ -84,7 +84,7 @@ public class MbtDeviceManager extends BaseModuleManager{
     }
 
     @Subscribe
-    public void onNewAudioDeviceConnected(DeviceEvents.NewAudioBluetoothDeviceEvent deviceEvent) {
+    public void onNewAudioDeviceConnected(DeviceEvents.AudioBluetoothDeviceEvent deviceEvent) {
             setAudioConnectedDeviceAddress( (deviceEvent.getDevice() != null) ?
                     deviceEvent.getDevice().getAddress() : null);
     }

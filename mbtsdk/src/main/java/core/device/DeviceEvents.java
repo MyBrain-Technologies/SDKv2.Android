@@ -63,11 +63,11 @@ public interface DeviceEvents {
         }
     }
 
-    class NewAudioBluetoothDeviceEvent {
+    class AudioBluetoothDeviceEvent {
         @Nullable
         private final BluetoothDevice device;
 
-        public NewAudioBluetoothDeviceEvent(@Nullable BluetoothDevice device){
+        public AudioBluetoothDeviceEvent(@Nullable BluetoothDevice device){
             this.device = device;
         }
 

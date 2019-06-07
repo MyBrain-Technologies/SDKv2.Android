@@ -51,7 +51,7 @@ public interface DeviceCommands {
          * call the {@link UpdateSerialNumber}(String serialNumber) constructor
          */
         public UpdateSerialNumber(String serialNumber, SimpleRequestCallback<byte[]> responseCallback) {
-            this.serialNumber = serialNumber.replace(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX, ""); //make sure to avoid an unexpected prefix
+            this.serialNumber = serialNumber;
             this.responseCallback = responseCallback;
         }
 

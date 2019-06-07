@@ -25,9 +25,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 
+import command.DeviceStreamingCommands;
 import core.device.DCOffsets;
 import core.device.SaturationEvent;
 import core.bluetooth.BtState;
+import core.device.model.MbtDevice;
 import core.eeg.storage.MbtEEGPacket;
 import engine.MbtClient;
 
@@ -247,7 +249,8 @@ DeviceActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (!isStreaming) { //streaming is not in progress : starting streaming
-
+  //                  updateSerialNumber();
+                    //getAudioConnectedDevice();
                     startStream(new StreamConfig.Builder(eegListener)
                             .setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)
                             .useQualities()
@@ -376,11 +379,34 @@ DeviceActivity extends AppCompatActivity {
         }
     }
 
-    private void updateSerialNumber(String serialNumber) {
-        client.updateSerialNumber(serialNumber, new SimpleRequestCallback<byte[]>() {
+    private void sendCommands() {
+        client.connectAudio(null);
+        client.updateSerialNumber("1010100976", null);
+        client.getDeviceSystemStatus
+                ( null);
+        client.updateExternalName("MM10001229", null);
+        client.disconnectAudio( null);
+        client.rebootDevice();
+
+    }
+
+    private void updateSerialNumber(){
+        client.updateSerialNumber("1010100976", new SimpleRequestCallback<byte[]>() {
             @Override
-            public void onRequestComplete(byte[] response) {
-                Log.d(TAG," Request complete. Returned response : "+Arrays.toString(response));
+            public void onRequestComplete(byte[] object) {
+                Log.d(TAG, " on Request Complete "+ Arrays.toString(object));
+                getAudioConnectedDevice();
+
+            }
+        });
+
+    }
+
+    private void getAudioConnectedDevice(){
+        client.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
+            @Override
+            public void onRequestComplete(MbtDevice device) {
+                Log.d(TAG, " on Request Complete "+device.toString());
             }
         });
     }

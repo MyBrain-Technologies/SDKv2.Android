@@ -929,7 +929,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         switch (newState){ //This event is sent to device module if registered
             case AUDIO_BT_DISCONNECTED:
                 mbtBluetoothA2DP.notifyConnectionStateChanged(newState, false);
-                EventBusManager.postEvent(new DeviceEvents.NewAudioBluetoothDeviceEvent(null));
+                EventBusManager.postEvent(new DeviceEvents.AudioBluetoothDeviceEvent(null));
                 break;
             case AUDIO_BT_CONNECTION_SUCCESS:
                 mbtBluetoothA2DP.notifyConnectionStateChanged(newState,false);
@@ -940,7 +940,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                         connectBLEFromA2DP(bleDeviceName);
                     }
                 }
-                EventBusManager.postEvent(new DeviceEvents.NewAudioBluetoothDeviceEvent(mbtBluetoothA2DP.getConnectedDevice()));
+                EventBusManager.postEvent(new DeviceEvents.AudioBluetoothDeviceEvent(mbtBluetoothA2DP.getConnectedDevice()));
                 break;
             case JACK_CABLE_CONNECTED:
                 if(asyncOperation.isWaiting())
