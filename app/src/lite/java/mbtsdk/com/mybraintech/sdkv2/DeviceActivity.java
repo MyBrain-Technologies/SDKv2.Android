@@ -220,10 +220,11 @@ DeviceActivity extends AppCompatActivity {
 
     private void initDeviceNameTextView() {
         deviceNameTextView = findViewById(R.id.deviceNameTextView);
-        if(getIntent().hasExtra(HomeActivity.DEVICE_NAME_EXTRA)){
-            deviceName = Objects.requireNonNull(getIntent().getExtras()).getString(HomeActivity.DEVICE_NAME_EXTRA,"");
-            deviceNameTextView.setText(deviceName);
+        if (getIntent().hasExtra(HomeActivity.DEVICE_NAME)) {
+            deviceName = Objects.requireNonNull(getIntent().getExtras()).getString(HomeActivity.DEVICE_NAME, "");
         }
+
+        deviceNameTextView.setText(deviceName);
     }
 
     private void initReadBatteryButton() {
@@ -238,8 +239,6 @@ DeviceActivity extends AppCompatActivity {
     }
 
     private void initChannelsTextView() {
-        channel1Quality = findViewById(R.id.channel_1_quality);
-        channel2Quality = findViewById(R.id.channel_2_quality);
         channel1Quality.setText(getString(R.string.channel_1_qc) + " -- ");
         channel2Quality.setText(getString(R.string.channel_2_qc) + " -- ");
     }
@@ -397,7 +396,7 @@ DeviceActivity extends AppCompatActivity {
         bluetoothStateListener = null;
         finish();
         Intent intent = new Intent(DeviceActivity.this,HomeActivity.class);
-        intent.putExtra(HomeActivity.PREVIOUS_ACTIVITY_EXTRA, DeviceActivity.TAG);
+        intent.putExtra(HomeActivity.PREVIOUS_ACTIVITY, DeviceActivity.TAG);
         startActivity(intent);
     }
 

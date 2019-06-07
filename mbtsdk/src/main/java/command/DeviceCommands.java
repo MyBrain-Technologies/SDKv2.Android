@@ -2,6 +2,7 @@ package command;
 
 import android.support.annotation.Keep;
 import engine.SimpleRequestCallback;
+import features.MbtFeatures;
 
 /**
  * Mailbox commands sent from the SDK to the headset

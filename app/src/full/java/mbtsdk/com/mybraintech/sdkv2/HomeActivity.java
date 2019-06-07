@@ -39,6 +39,9 @@ import static features.MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX;
 import static features.MbtFeatures.QR_CODE_NAME_PREFIX;
 import static features.MbtFeatures.VPRO_DEVICE_NAME_PREFIX;
 
+/**
+ * First View displayed when you launch the application
+ */
 public class HomeActivity extends AppCompatActivity{
 
     /**
@@ -222,7 +225,7 @@ public class HomeActivity extends AppCompatActivity{
     };
 
     /**
-     * Method call to display the name of the connecting headset in the device name field
+     * Method called to display the name of the connecting headset in the device name field
      */
     private void showDeviceName(final MbtDevice melomindDevice){
         deviceName = melomindDevice.getProductName();
@@ -251,7 +254,6 @@ public class HomeActivity extends AppCompatActivity{
      * Method called by default when the Activity is started
      * It initializes all the views, SDK client, and permissions.
      */
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -408,9 +410,9 @@ public class HomeActivity extends AppCompatActivity{
                         null : deviceQrCode )
                 .maxScanDuration(SCAN_DURATION)
                 .scanDeviceType(deviceType);
-        if(connectAudioIfDeviceCompatible)
+        if(connectAudioIfDeviceCompatible) {
             builder.connectAudioIfDeviceCompatible();
-
+        }
         sdkClient.connectBluetooth(builder.create());
     }
 

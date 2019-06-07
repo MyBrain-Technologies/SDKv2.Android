@@ -22,7 +22,6 @@ public interface DeviceEvents {
     class GetDeviceEvent {
     }
 
-
     /**
      * This object is used to encapsulate the {@link MbtDevice} instance out of the module. The encapsulation
      * is mandatory because the {@link MbtDevice} instance be null at some point (for example, before a
@@ -42,13 +41,14 @@ public interface DeviceEvents {
         }
     }
 
-    class NewBluetoothDeviceEvent {
+
+    class FoundDeviceEvent {
         @Nullable
         private final BluetoothDevice device;
 
         private final MbtDeviceType deviceType;
 
-        public NewBluetoothDeviceEvent(@Nullable BluetoothDevice device, MbtDeviceType deviceType){
+        public FoundDeviceEvent(@Nullable BluetoothDevice device, MbtDeviceType deviceType){
             this.device = device;
             this.deviceType = deviceType;
         }
@@ -61,6 +61,25 @@ public interface DeviceEvents {
         MbtDeviceType getDeviceType() {
             return deviceType;
         }
+    }
+
+    class DisconnectedDeviceEvent {    }
+
+    class AudioDisconnectedDeviceEvent {    }
+
+    class AudioConnectedDeviceEvent {
+        @Nullable
+        private final BluetoothDevice device;
+
+        public AudioConnectedDeviceEvent(@Nullable BluetoothDevice device){
+            this.device = device;
+        }
+
+        @Nullable
+        public BluetoothDevice getDevice() {
+            return device;
+        }
+
     }
 
 

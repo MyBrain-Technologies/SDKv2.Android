@@ -614,7 +614,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     }
 
     void notifyCommandResponseReceived(byte[] returnedResult, DeviceCommand commandType) {
-        LogUtils.i(TAG, "Received response from device "+commandType+" | value:"+Arrays.toString(returnedResult));
+        LogUtils.i(TAG, "Received response from device "+commandType+" | raw value:"+Arrays.toString(returnedResult));
         mbtBluetoothManager.notifyDeviceResponseReceived(returnedResult, commandType);
 
         if(commandType != null)
@@ -1018,10 +1018,9 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     }
 
     public void notifyDeviceInfoReceived(@NonNull DeviceInfo deviceInfo, @NonNull String deviceValue){ // This method will be called when a DeviceInfoReceived is posted (fw or hw or serial number) by MbtBluetoothLE or MbtBluetoothSPP
-                super.notifyDeviceInfoReceived(deviceInfo,deviceValue);
+        super.notifyDeviceInfoReceived(deviceInfo,deviceValue);
         if(getCurrentState().isReadingDeviceInfoState())
             updateConnectionState(true); //current state is set to READING_FIRMWARE_VERSION_SUCCESS or READING_HARDWARE_VERSION_SUCCESS or READING_SERIAL_NUMBER_SUCCESS or READING_SUCCESS if reading device info and future is completed
-
     }
 
     protected void notifyBatteryReceived(int value) {

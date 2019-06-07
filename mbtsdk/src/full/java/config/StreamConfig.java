@@ -5,6 +5,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import command.DeviceCommand;
 import command.DeviceStreamingCommands;
@@ -38,18 +39,24 @@ public final class StreamConfig {
      */
     private ArrayList<DeviceCommand> deviceCommands;
 
+    private final ArrayList<DeviceCommand> DEFAULT_DEVICE_COMMAND = new ArrayList<>(Arrays.asList(
+            new DeviceStreamingCommands.DcOffset(false),
+            new DeviceStreamingCommands.Triggers(false)));
+
     private StreamConfig(boolean computeQualities, EegListener<BaseError> eegListener, DeviceStatusListener<BaseError> deviceStatusListener, int notificationPeriod, DeviceStreamingCommands[] deviceCommands){
         this.computeQualities = computeQualities;
         this.eegListener = eegListener;
         this.deviceStatusListener = deviceStatusListener;
         this.notificationPeriod = notificationPeriod;
-        this.deviceCommands = new ArrayList<>();
+        this.deviceCommands = DEFAULT_DEVICE_COMMAND;
 
         if(deviceCommands != null && deviceCommands.length > 0) {
+            this.deviceCommands = new ArrayList<>();
             for (DeviceStreamingCommands deviceCommand : deviceCommands) {
                 this.deviceCommands.add((DeviceCommand) deviceCommand);
             }
         }
+        this.deviceCommands.add(new DeviceStreamingCommands.EegConfig(null));
     }
 
     public EegListener getEegListener() {

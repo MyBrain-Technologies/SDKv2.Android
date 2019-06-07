@@ -168,8 +168,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         }else if(commandType instanceof DeviceCommands.UpdateExternalName) {
             notifyDeviceInfoReceived(DeviceInfo.MODEL_NUMBER, new String(rawResponse));
 
-        }else if(commandType instanceof DeviceCommands.UpdateProductName) {
-                notifyDeviceInfoReceived(DeviceInfo.PRODUCT_NAME, new String(rawResponse));
         }
         EventBusManager.postEvent(new DeviceEvents.RawDeviceResponseEvent(rawResponse));
         requestBeingProcessed = false;
@@ -930,6 +928,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         switch (newState){ //This event is sent to device module if registered
             case AUDIO_BT_DISCONNECTED:
                 mbtBluetoothA2DP.notifyConnectionStateChanged(newState, false);
+                EventBusManager.postEvent(new DeviceEvents.AudioDisconnectedDeviceEvent());
                 break;
             case AUDIO_BT_CONNECTION_SUCCESS:
                 mbtBluetoothA2DP.notifyConnectionStateChanged(newState,false);
@@ -940,13 +939,14 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                         connectBLEFromA2DP(bleDeviceName);
                     }
                 }
+                EventBusManager.postEvent(new DeviceEvents.AudioConnectedDeviceEvent(mbtBluetoothA2DP.getConnectedDevice()));
                 break;
             case JACK_CABLE_CONNECTED:
                 if(asyncOperation.isWaiting())
                     asyncOperation.stopWaitingOperation(false);
                 break;
             case DEVICE_FOUND:
-                EventBusManager.postEvent(new DeviceEvents.NewBluetoothDeviceEvent(getCurrentDevice(), deviceTypeRequested));
+                EventBusManager.postEvent(new DeviceEvents.FoundDeviceEvent(getCurrentDevice(), deviceTypeRequested));
 
                 break;
             case SCAN_TIMEOUT:
@@ -955,7 +955,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             case DATA_BT_DISCONNECTED:
             case CONNECTION_FAILURE:
             case CONNECTION_INTERRUPTED:
-                EventBusManager.postEvent(new DeviceEvents.NewBluetoothDeviceEvent(null, deviceTypeRequested));
+                EventBusManager.postEvent(new DeviceEvents.DisconnectedDeviceEvent());
                 break;
         }
 
@@ -969,6 +969,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * @param deviceValue the new value as String
      */
     void notifyDeviceInfoReceived(DeviceInfo deviceInfo, String deviceValue){
+        Log.d(TAG," Device info returned by the headset "+deviceInfo+ " : "+deviceValue);
         requestBeingProcessed = false;
         EventBusManager.postEvent(new DeviceInfoEvent<>(deviceInfo, deviceValue));
     }
@@ -1033,7 +1034,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * Return true if the user has requested connection with an already connected device, false otherwise
      */
     private boolean isAlreadyConnectedToRequestedDevice(String nameDeviceToConnect, MbtDevice deviceConnected){
-        return (nameDeviceToConnect != null && deviceConnected != null && deviceConnected.getBluetoothDevice().getName().equals(nameDeviceToConnect));
+        return (nameDeviceToConnect != null && deviceConnected != null && deviceConnected.getExternalName().equals(nameDeviceToConnect));
     }
 
     /**

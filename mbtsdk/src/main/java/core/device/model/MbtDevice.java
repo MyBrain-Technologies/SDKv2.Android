@@ -18,17 +18,44 @@ public abstract class MbtDevice {
 
     public static final String DEFAULT_FW_VERSION = "0.0.0";
 
+    /**
+     * Bluetooth Low Energy name
+     */
     String productName;
     @Nullable
+    /**
+     * Hardware version number
+     */
     String hardwareVersion;
+
+    /**
+     * Firmware version number
+     */
     @Nullable
     String firmwareVersion;
+
+    /**
+     * Serial number
+     */
     @Nullable
     String serialNumber;
+
+    /**
+     * Bluetooth A2DP /external name (QR code)
+     */
     @Nullable
     String externalName;
 
+    /**
+     * Bluetooth Low energy device address
+     */
     String deviceAddress;
+
+    /**
+     * Bluetooth A2DP device address
+     */
+    @Nullable
+    private String audioDeviceAddress;
 
     int sampRate;
 
@@ -40,11 +67,7 @@ public abstract class MbtDevice {
 
     private InternalConfig internalConfig;
 
-    @NonNull
-    private final BluetoothDevice bluetoothDevice; //TODO à enlever si non pertinent
-
     MbtDevice(BluetoothDevice bluetoothDevice){
-        this.bluetoothDevice = bluetoothDevice;
         this.deviceAddress = bluetoothDevice.getAddress();
         this.productName = bluetoothDevice.getName();
         this.internalConfig = null;
@@ -141,9 +164,12 @@ public abstract class MbtDevice {
         return externalName;
     }
 
-    @NonNull
-    public BluetoothDevice getBluetoothDevice() {
-        return bluetoothDevice;
+    public String getAudioDeviceAddress() {
+        return audioDeviceAddress;
+    }
+
+    public void setAudioDeviceAddress(String audioDeviceAddress) {
+        this.audioDeviceAddress = audioDeviceAddress;
     }
 
     public final static class InternalConfig{
@@ -154,12 +180,12 @@ public abstract class MbtDevice {
         private byte nbPackets;
 
         public InternalConfig(Byte[] configFromHeadset){
-            if (configFromHeadset.length >= 5){
+            if (configFromHeadset.length >= 4){
                 notchFilterConfig = configFromHeadset[0];
                 bandPassFilterConfig = configFromHeadset[1];
                 gainValue = configFromHeadset[2];
-                statusBytes = configFromHeadset[4];
-                nbPackets = configFromHeadset[5];
+                statusBytes = configFromHeadset[3];
+                nbPackets = configFromHeadset[4];
             }
         }
 
@@ -211,7 +237,7 @@ public abstract class MbtDevice {
                 ", referencesLocations=" + referencesLocations +
                 ", groundsLocation=" + groundsLocation +
                 ", internalConfig=" + internalConfig +
-                ", bluetoothDevice=" + bluetoothDevice +
+                ", audioBluetoothAddress=" + audioDeviceAddress +
                 '}';
     }
 }

@@ -96,7 +96,7 @@ public class HomeActivity extends AppCompatActivity{
                                       String deviceNameToDisplay = deviceName.replace(MELOMIND_DEVICE_NAME_PREFIX,"");
                                       deviceNameField.setText(deviceNameToDisplay);
                                       for(String prefix : prefixNameList){
-                                          if(device.getDeviceId() != null && device.getProductName().startsWith(prefix))
+                                          if(device.getSerialNumber() != null && device.getProductName().startsWith(prefix))
                                               deviceNamePrefixSpinner.setSelection(prefixNameArrayAdapter.getPosition(prefix));
                                       }
                                       deviceQrCode = device.getExternalName();
