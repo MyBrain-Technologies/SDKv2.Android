@@ -638,8 +638,17 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     }
 
     /**
-     * Send a configuration request to the device
-     * @param deviceCommand contains the values that the device has to changed when it receives the request
+     * This method handle a single command in order to
+     * reconfigure some headset's parameters
+     * or get values stored by the headset
+     * or ask the headset to perform an action.
+     * The command's parameters are bundled in a {@link DeviceCommand instance}
+     * that can provide a nullable response callback.
+     * All method inside are blocking.
+     * @param deviceCommand is the {@link DeviceCommand} object that defines the type of command to send
+     * and the associated command parameters.
+     * One of this parameter is an optional callback that returns the response
+     * sent by the headset to the SDK once the command is received.
      * @return true if the request has been sent to the headset, false otherwise
      */
     private boolean waitResultOfDeviceCommand(DeviceCommand deviceCommand){
@@ -716,18 +725,26 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     }
 
     /**
-     * This method manages a set of calls to perform in order to reconfigure some of the headset's
-     * parameters. All parameters are held in a {@link DeviceCommand instance}
-     * Each new parameter is updated one after the other. All method inside are blocking.
-     * @param command the {@link DeviceCommand} instance to get new parameters from.
+     * This method handle a single command in order to
+     * reconfigure some headset's parameters
+     * or get values stored by the headset
+     * or ask the headset to perform an action.
+     * The command's parameters are bundled in a {@link DeviceCommand instance}
+     * that can provide a nullable response callback.
+     * All method inside are blocking.
+     * @param command is the {@link DeviceCommand} object that defines the type of command to send
+     * and the associated command parameters.
+     * One of this parameter is an optional callback that returns the response
+     * sent by the headset to the SDK once the command is received.
      */
     public void sendDeviceCommand(DeviceCommand command){
         LogUtils.i(TAG, "Send device command : "+command);
         if(!waitResultOfDeviceCommand(command)) {
             Log.e(TAG, "Device command sending failed");
             mbtBluetoothManager.notifyDeviceResponseReceived(null, command);
+        }else {
+            Log.d(TAG, "Device command sent " + command);
         }
-        Log.d(TAG, "Device command sent "+command);
     }
 
 
@@ -797,7 +814,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     }
 
     /**
-     * Initiates a write operation in order to enable or disable the p300 mode in the melomind firmware.
+     * Initiates a write operation in order to enable or disable the triggers mode in the melomind firmware.
      * It first requires that notifications are enabled to the {@link MelomindCharacteristics#CHARAC_MEASUREMENT_MAILBOX}
      * charateristic are enabled.
      * @param useP300 is true to enable, false to disable.

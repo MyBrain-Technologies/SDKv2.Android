@@ -163,8 +163,9 @@ public final class MbtClient {
 
     /**
      * Sends a command to the connected headset to change its current serial number
+     * The new serial number is stored and returned by the headset if the command succeeds.
      * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
-     * This response contains the command status and informations bundled in a byte array
+     * This response contains the new serial number in a byte array
      * @param serialNumber is the new value to set to the serial number
      * @param requestCallback returns the headset raw response if the command has been well sent
      */
@@ -175,7 +176,7 @@ public final class MbtClient {
     /**
      * Sends a command to the connected headset to change its current product name
      * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
-     * This response contains the command status and informations bundled in a byte array
+     * This response contains the new product name in a byte array
      * @param productName is the new value to set to the product name
      * @param requestCallback returns the headset raw response if the command has been well sent
      */
@@ -186,7 +187,7 @@ public final class MbtClient {
     /**
      * Sends a command to the connected headset to change its current external name
      * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
-     * This response contains the command status and informations bundled in a byte array
+     * This response contains the new external name in a byte array
      * @param externalName is the new value to set to the external name
      * @param requestCallback returns the headset raw response if the command has been well sent
      */
@@ -197,7 +198,7 @@ public final class MbtClient {
     /**
      * Sends a command to the connected headset to establish an audio Bluetooth A2DP connection
      * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
-     * This response contains the command status and informations bundled in a byte array
+     * This response contains the connection status in a byte array
      * @param requestCallback returns the headset raw response if the command has been well sent
      */
     public void connectAudio(@Nullable SimpleRequestCallback<byte[]> requestCallback){
@@ -207,7 +208,7 @@ public final class MbtClient {
     /**
      * Sends a command to the connected headset to establish an audio Bluetooth A2DP disconnection
      * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
-     * This response contains the command status and informations bundled in a byte array
+     * This response contains the disconnection status in a byte array
      * @param requestCallback returns the headset raw response if the command has been well sent
      */
     public void disconnectAudio(@Nullable SimpleRequestCallback<byte[]> requestCallback){
@@ -226,7 +227,7 @@ public final class MbtClient {
     /**
      * Sends a command to reboot the connected headset
      * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
-     * This response contains the command status and informations bundled in a byte array
+     * This response contains the reboot status bundled in a byte array
      */
     public void rebootDevice(){
         mbtManager.sendDeviceCommand(new DeviceCommands.Reboot());
@@ -235,7 +236,6 @@ public final class MbtClient {
     /**
      * Stops a pending connection process. If successful,
      * the new state {@link core.bluetooth.BtState#CONNECTION_INTERRUPTED} is sent to the user in the {@link BluetoothStateListener#onNewState(BtState)} callback
-     *
      * <p>If the device is already connected, it simply disconnects the device.</p>
      */
     public void cancelConnection() {
@@ -257,7 +257,6 @@ public final class MbtClient {
     public void setEEGListener(EegListener<BaseError> eegListener){
         this.mbtManager.setEEGListener(eegListener);
     }
-
 
     /**
      * Perform a request to retrieve the currently connected device. The operation is done in the background

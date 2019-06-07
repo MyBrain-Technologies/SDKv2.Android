@@ -17,7 +17,6 @@ import features.MbtFeatures;
 /**
  * This class aims at configuring the stream process. It contains user configurable
  * parameters to specify how the streaming is going to be.
- *
  * <p>Use the {@link Builder} class to instanciate this.</p>
  */
 @Keep
@@ -31,6 +30,12 @@ public final class StreamConfig {
 
     private boolean computeQualities;
 
+    /**
+     * Optional list of commands sent to the headset in order to
+     * configure a parameter,
+     * or get values stored by the headset
+     * or ask the headset to perform an action.
+     */
     private ArrayList<DeviceCommand> deviceCommands;
 
     private StreamConfig(boolean computeQualities, EegListener<BaseError> eegListener, DeviceStatusListener<BaseError> deviceStatusListener, int notificationPeriod, DeviceStreamingCommands[] deviceCommands){
@@ -91,6 +96,10 @@ public final class StreamConfig {
 
         private int notificationPeriod = MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD;
 
+        /**
+         * The EEG Listener is a callback that receives the EEG raw data streamed
+         * from the headset to the SDK.
+         */
         @NonNull
         private final EegListener<BaseError> eegListener;
 
@@ -99,10 +108,16 @@ public final class StreamConfig {
 
         private boolean computeQualities = false;
 
+        /**
+         * Optional set of commands sent to the headset in order to
+         * configure a parameter,
+         * or get values stored by the headset
+         * or ask the headset to perform an action.
+         */
         private DeviceStreamingCommands[] deviceCommands;
 
         /**
-         * The eeg Listener is mandatory.
+         * The EEG Listener is mandatory to receive the EEG stream from the headset to the SDK.
          */
         public Builder(@NonNull EegListener<BaseError> eegListener){
             this.eegListener = eegListener;

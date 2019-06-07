@@ -797,10 +797,15 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
 
     /**
-     * This method manages a set of calls to perform in order to reconfigure some of the headset's
-     * parameters. All parameters are held in a {@link DeviceCommand instance}
-     * Each new parameter is updated one after the other. All method inside are blocking.
-     * @param command the {@link DeviceCommand} instance to get new parameters from.
+     * This method handle a single command in order to
+     * reconfigure some headset's parameters
+     * or get values stored by the headset
+     * or ask the headset to perform an action.
+     * The command's parameters are bundled in a {@link DeviceCommand instance}
+     * that can provide a nullable response callback.
+     * All method inside are blocking.
+     * @param command is the {@link DeviceCommand} object that defines the type of command to send
+     * and the asociated command parameters.
      */
     private void sendDeviceCommand(@NonNull DeviceCommand command){
         if(deviceTypeRequested.useLowEnergyProtocol())

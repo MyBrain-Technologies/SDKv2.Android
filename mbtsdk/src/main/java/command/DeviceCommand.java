@@ -8,7 +8,7 @@ import engine.SimpleRequestCallback;
  * in order to configure a parameter,
  * or get values stored by the headset
  * or ask the headset to perform an action.
- * It stores a callback provided to return a raw response from the response to the SDK
+ * It provides a callback used to return a raw response sent by the headset to the SDK
  */
 public abstract class DeviceCommand {
 
