@@ -174,17 +174,6 @@ public final class MbtClient {
     }
 
     /**
-     * Sends a command to the connected headset to change its current product name
-     * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
-     * This response contains the new product name in a byte array
-     * @param productName is the new value to set to the product name
-     * @param requestCallback returns the headset raw response if the command has been well sent
-     */
-    public void updateProductName(String productName, @Nullable SimpleRequestCallback<byte[]> requestCallback){
-        mbtManager.sendDeviceCommand(new DeviceCommands.UpdateProductName(productName, requestCallback));
-    }
-
-    /**
      * Sends a command to the connected headset to change its current external name
      * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
      * This response contains the new external name in a byte array

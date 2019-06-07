@@ -18,6 +18,7 @@ import org.apache.commons.lang.ArrayUtils;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.CancellationException;
@@ -168,8 +169,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         }else if(commandType instanceof DeviceCommands.UpdateExternalName) {
             notifyDeviceInfoReceived(DeviceInfo.MODEL_NUMBER, new String(rawResponse));
 
-        }else if(commandType instanceof DeviceCommands.UpdateProductName) {
-                notifyDeviceInfoReceived(DeviceInfo.PRODUCT_NAME, new String(rawResponse));
         }
         EventBusManager.postEvent(new DeviceEvents.RawDeviceResponseEvent(rawResponse));
         requestBeingProcessed = false;
@@ -930,6 +929,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         switch (newState){ //This event is sent to device module if registered
             case AUDIO_BT_DISCONNECTED:
                 mbtBluetoothA2DP.notifyConnectionStateChanged(newState, false);
+                EventBusManager.postEvent(new DeviceEvents.NewAudioBluetoothDeviceEvent(null));
                 break;
             case AUDIO_BT_CONNECTION_SUCCESS:
                 mbtBluetoothA2DP.notifyConnectionStateChanged(newState,false);
@@ -940,6 +940,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                         connectBLEFromA2DP(bleDeviceName);
                     }
                 }
+                EventBusManager.postEvent(new DeviceEvents.NewAudioBluetoothDeviceEvent(mbtBluetoothA2DP.getConnectedDevice()));
                 break;
             case JACK_CABLE_CONNECTED:
                 if(asyncOperation.isWaiting())
@@ -969,6 +970,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * @param deviceValue the new value as String
      */
     void notifyDeviceInfoReceived(DeviceInfo deviceInfo, String deviceValue){
+        Log.d(TAG," Device info returned by the headset "+deviceInfo+ " : "+deviceValue);
         requestBeingProcessed = false;
         EventBusManager.postEvent(new DeviceInfoEvent<>(deviceInfo, deviceValue));
     }
@@ -1033,7 +1035,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * Return true if the user has requested connection with an already connected device, false otherwise
      */
     private boolean isAlreadyConnectedToRequestedDevice(String nameDeviceToConnect, MbtDevice deviceConnected){
-        return (nameDeviceToConnect != null && deviceConnected != null && deviceConnected.getBluetoothDevice().getName().equals(nameDeviceToConnect));
+        return (nameDeviceToConnect != null && deviceConnected != null && deviceConnected.getExternalName().equals(nameDeviceToConnect));
     }
 
     /**

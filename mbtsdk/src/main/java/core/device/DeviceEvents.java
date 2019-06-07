@@ -21,6 +21,13 @@ public interface DeviceEvents {
      */
     class GetDeviceEvent {
     }
+    /**
+     * Creating an instance of this class on the EventBus allows to get the current connected audio device
+     * out of the Device module. Make sure to have a method in {@link MbtDeviceManager} that {@link org.greenrobot.eventbus.Subscribe}
+     * to this event.
+     */
+    class GetAudioDeviceEvent {
+    }
 
 
     /**
@@ -38,6 +45,25 @@ public interface DeviceEvents {
 
         @Nullable
         public MbtDevice getDevice() {
+            return device;
+        }
+    }
+
+    /**
+     * This object is used to encapsulate the {@link BluetoothDevice} instance out of the module. The encapsulation
+     * is mandatory because the {@link MbtDevice} instance be null at some point (for example, before a
+     * bluetooth connection).
+     */
+    class PostAudioDeviceEvent {
+        @Nullable
+        private final BluetoothDevice device;
+
+        PostAudioDeviceEvent(@Nullable BluetoothDevice device){
+            this.device = device;
+        }
+
+        @Nullable
+        public BluetoothDevice getDevice() {
             return device;
         }
     }
@@ -61,6 +87,21 @@ public interface DeviceEvents {
         MbtDeviceType getDeviceType() {
             return deviceType;
         }
+    }
+
+    class NewAudioBluetoothDeviceEvent {
+        @Nullable
+        private final BluetoothDevice device;
+
+        public NewAudioBluetoothDeviceEvent(@Nullable BluetoothDevice device){
+            this.device = device;
+        }
+
+        @Nullable
+        public BluetoothDevice getDevice() {
+            return device;
+        }
+
     }
 
 

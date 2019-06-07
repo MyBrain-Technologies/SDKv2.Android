@@ -1,5 +1,6 @@
 package core.device;
 
+import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.util.Log;
@@ -64,6 +65,11 @@ public class MbtDeviceManager extends BaseModuleManager{
         return mCurrentConnectedDevice;
     }
 
+    private void setAudioConnectedDeviceAddress(String audioDeviceAddress) {
+        Log.d(TAG,"new connected audio device address stored "+audioDeviceAddress);
+        this.mCurrentConnectedDevice.setAudioDeviceAddress(audioDeviceAddress);
+    }
+
     private void setmCurrentConnectedDevice(MbtDevice mCurrentConnectedDevice) {
         Log.d(TAG,"new connected device stored "+mCurrentConnectedDevice);
         this.mCurrentConnectedDevice = mCurrentConnectedDevice;
@@ -75,6 +81,12 @@ public class MbtDeviceManager extends BaseModuleManager{
             setmCurrentConnectedDevice(deviceEvent.getDevice() != null ? new MelomindDevice(deviceEvent.getDevice()) : null);
         else if (deviceEvent.getDeviceType().equals(MbtDeviceType.VPRO))
             setmCurrentConnectedDevice(deviceEvent.getDevice() != null ? new VProDevice(deviceEvent.getDevice()) : null);
+    }
+
+    @Subscribe
+    public void onNewAudioDeviceConnected(DeviceEvents.NewAudioBluetoothDeviceEvent deviceEvent) {
+            setAudioConnectedDeviceAddress( (deviceEvent.getDevice() != null) ?
+                    deviceEvent.getDevice().getAddress() : null);
     }
 
     @Subscribe

@@ -2,6 +2,7 @@ package command;
 
 import android.support.annotation.Keep;
 import engine.SimpleRequestCallback;
+import features.MbtFeatures;
 
 /**
  * Mailbox commands sent from the SDK to the headset
@@ -50,7 +51,7 @@ public interface DeviceCommands {
          * call the {@link UpdateSerialNumber}(String serialNumber) constructor
          */
         public UpdateSerialNumber(String serialNumber, SimpleRequestCallback<byte[]> responseCallback) {
-            this.serialNumber = serialNumber;
+            this.serialNumber = serialNumber.replace(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX, ""); //make sure to avoid an unexpected prefix
             this.responseCallback = responseCallback;
         }
 
