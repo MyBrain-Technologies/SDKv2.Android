@@ -1,6 +1,5 @@
 package core.device;
 
-import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.util.Log;
@@ -19,7 +18,6 @@ import core.oad.OADFileManager;
 import eventbus.EventBusManager;
 import eventbus.events.ConfigEEGEvent;
 import eventbus.events.DeviceInfoEvent;
-import features.MbtDeviceType;
 import utils.LogUtils;
 
 import static features.MbtDeviceType.MELOMIND;
@@ -85,7 +83,7 @@ public class MbtDeviceManager extends BaseModuleManager{
         getmCurrentConnectedDevice().setAudioDeviceAddress(null);
     }
 
-    public void onNewDeviceConnected(DeviceEvents.ConnectedDeviceEvent deviceEvent) {
+    public void onNewDeviceConnected(DeviceEvents.FoundDeviceEvent deviceEvent) {
 
         MbtDevice device = null;
         if(deviceEvent.getDevice() != null){

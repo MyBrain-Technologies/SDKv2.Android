@@ -42,13 +42,13 @@ public interface DeviceEvents {
     }
 
 
-    class ConnectedDeviceEvent {
+    class FoundDeviceEvent {
         @Nullable
         private final BluetoothDevice device;
 
         private final MbtDeviceType deviceType;
 
-        public ConnectedDeviceEvent(@Nullable BluetoothDevice device, MbtDeviceType deviceType){
+        public FoundDeviceEvent(@Nullable BluetoothDevice device, MbtDeviceType deviceType){
             this.device = device;
             this.deviceType = deviceType;
         }

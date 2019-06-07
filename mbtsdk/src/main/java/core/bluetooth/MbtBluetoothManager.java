@@ -946,7 +946,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                     asyncOperation.stopWaitingOperation(false);
                 break;
             case DEVICE_FOUND:
-                EventBusManager.postEvent(new DeviceEvents.ConnectedDeviceEvent(getCurrentDevice(), deviceTypeRequested));
+                EventBusManager.postEvent(new DeviceEvents.FoundDeviceEvent(getCurrentDevice(), deviceTypeRequested));
 
                 break;
             case SCAN_TIMEOUT:
