@@ -18,7 +18,6 @@ import org.apache.commons.lang.ArrayUtils;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.CancellationException;
@@ -929,7 +928,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         switch (newState){ //This event is sent to device module if registered
             case AUDIO_BT_DISCONNECTED:
                 mbtBluetoothA2DP.notifyConnectionStateChanged(newState, false);
-                EventBusManager.postEvent(new DeviceEvents.AudioBluetoothDeviceEvent(null));
+                EventBusManager.postEvent(new DeviceEvents.AudioDisconnectedDeviceEvent());
                 break;
             case AUDIO_BT_CONNECTION_SUCCESS:
                 mbtBluetoothA2DP.notifyConnectionStateChanged(newState,false);
@@ -940,14 +939,14 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                         connectBLEFromA2DP(bleDeviceName);
                     }
                 }
-                EventBusManager.postEvent(new DeviceEvents.AudioBluetoothDeviceEvent(mbtBluetoothA2DP.getConnectedDevice()));
+                EventBusManager.postEvent(new DeviceEvents.AudioConnectedDeviceEvent(mbtBluetoothA2DP.getConnectedDevice()));
                 break;
             case JACK_CABLE_CONNECTED:
                 if(asyncOperation.isWaiting())
                     asyncOperation.stopWaitingOperation(false);
                 break;
             case DEVICE_FOUND:
-                EventBusManager.postEvent(new DeviceEvents.NewBluetoothDeviceEvent(getCurrentDevice(), deviceTypeRequested));
+                EventBusManager.postEvent(new DeviceEvents.ConnectedDeviceEvent(getCurrentDevice(), deviceTypeRequested));
 
                 break;
             case SCAN_TIMEOUT:
@@ -956,7 +955,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             case DATA_BT_DISCONNECTED:
             case CONNECTION_FAILURE:
             case CONNECTION_INTERRUPTED:
-                EventBusManager.postEvent(new DeviceEvents.NewBluetoothDeviceEvent(null, deviceTypeRequested));
+                EventBusManager.postEvent(new DeviceEvents.DisconnectedDeviceEvent());
                 break;
         }
 

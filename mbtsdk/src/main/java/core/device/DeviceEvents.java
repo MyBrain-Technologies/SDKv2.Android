@@ -42,13 +42,13 @@ public interface DeviceEvents {
     }
 
 
-    class NewBluetoothDeviceEvent {
+    class ConnectedDeviceEvent {
         @Nullable
         private final BluetoothDevice device;
 
         private final MbtDeviceType deviceType;
 
-        public NewBluetoothDeviceEvent(@Nullable BluetoothDevice device, MbtDeviceType deviceType){
+        public ConnectedDeviceEvent(@Nullable BluetoothDevice device, MbtDeviceType deviceType){
             this.device = device;
             this.deviceType = deviceType;
         }
@@ -63,11 +63,15 @@ public interface DeviceEvents {
         }
     }
 
-    class AudioBluetoothDeviceEvent {
+    class DisconnectedDeviceEvent {    }
+
+    class AudioDisconnectedDeviceEvent {    }
+
+    class AudioConnectedDeviceEvent {
         @Nullable
         private final BluetoothDevice device;
 
-        public AudioBluetoothDeviceEvent(@Nullable BluetoothDevice device){
+        public AudioConnectedDeviceEvent(@Nullable BluetoothDevice device){
             this.device = device;
         }
 

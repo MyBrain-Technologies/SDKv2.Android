@@ -76,15 +76,27 @@ public class MbtDeviceManager extends BaseModuleManager{
     }
 
     @Subscribe
-    public void onNewDeviceConnected(DeviceEvents.NewBluetoothDeviceEvent deviceEvent) {
-        if (deviceEvent.getDeviceType().equals(MELOMIND))
-            setmCurrentConnectedDevice(deviceEvent.getDevice() != null ? new MelomindDevice(deviceEvent.getDevice()) : null);
-        else if (deviceEvent.getDeviceType().equals(MbtDeviceType.VPRO))
-            setmCurrentConnectedDevice(deviceEvent.getDevice() != null ? new VProDevice(deviceEvent.getDevice()) : null);
+    public void onNewDeviceDisconnected(DeviceEvents.DisconnectedDeviceEvent deviceEvent) {
+        setmCurrentConnectedDevice(null);
     }
 
     @Subscribe
-    public void onNewAudioDeviceConnected(DeviceEvents.AudioBluetoothDeviceEvent deviceEvent) {
+    public void onNewDeviceAudioDisconnected(DeviceEvents.AudioDisconnectedDeviceEvent deviceEvent) {
+        getmCurrentConnectedDevice().setAudioDeviceAddress(null);
+    }
+
+    public void onNewDeviceConnected(DeviceEvents.ConnectedDeviceEvent deviceEvent) {
+
+        MbtDevice device = null;
+        if(deviceEvent.getDevice() != null){
+            device = deviceEvent.getDeviceType().equals(MELOMIND) ?
+                    new MelomindDevice(deviceEvent.getDevice()) : new VProDevice(deviceEvent.getDevice());
+        }
+        setmCurrentConnectedDevice(device);
+    }
+
+    @Subscribe
+    public void onNewAudioDeviceConnected(DeviceEvents.AudioConnectedDeviceEvent deviceEvent) {
             setAudioConnectedDeviceAddress( (deviceEvent.getDevice() != null) ?
                     deviceEvent.getDevice().getAddress() : null);
     }
