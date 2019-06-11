@@ -83,6 +83,7 @@ public class MbtDeviceManager extends BaseModuleManager{
         getmCurrentConnectedDevice().setAudioDeviceAddress(null);
     }
 
+    @Subscribe
     public void onNewDeviceConnected(DeviceEvents.FoundDeviceEvent deviceEvent) {
 
         MbtDevice device = null;
