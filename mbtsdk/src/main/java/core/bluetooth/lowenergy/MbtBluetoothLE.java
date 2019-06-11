@@ -737,13 +737,15 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * One of this parameter is an optional callback that returns the response
      * sent by the headset to the SDK once the command is received.
      */
-    public void sendDeviceCommand(DeviceCommand command){
+    public boolean sendDeviceCommand(DeviceCommand command){
         LogUtils.i(TAG, "Send device command : "+command);
         if(!waitResultOfDeviceCommand(command)) {
             Log.e(TAG, "Device command sending failed");
             mbtBluetoothManager.notifyDeviceResponseReceived(null, command);
+            return false;
         }else {
             Log.d(TAG, "Device command sent " + command);
+            return true;
         }
     }
 

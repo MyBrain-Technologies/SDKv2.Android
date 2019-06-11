@@ -11,19 +11,27 @@ import android.support.annotation.NonNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
+import java.util.Arrays;
 import java.util.UUID;
 
+import command.DeviceCommands;
+import command.DeviceStreamingCommands;
 import config.MbtConfig;
 import core.MbtManager;
 import core.bluetooth.BtState;
 import core.bluetooth.IStreamable;
 import core.bluetooth.MbtBluetoothManager;
 import core.bluetooth.spp.MbtBluetoothSPP;
+import engine.SimpleRequestCallback;
 import features.MbtDeviceType;
 
 import static java.util.UUID.fromString;
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
 public class MbtBluetoothLETest {
@@ -1202,6 +1210,402 @@ public class MbtBluetoothLETest {
 
     @Test
     public void enableBluetoothOnDevice() {
+    }
+
+    /**
+     * Check that a mailbox command is sent
+     * if the required command is valid
+     * to update the serial number.
+     * No response callback is provided.
+     */
+    @Test
+    public void sendDeviceCommand_serialNumber_valid_noCallback(){
+        String serialNumber = "1010100100";
+        byte[] response = serialNumber.getBytes();
+
+        BluetoothGatt gatt = Mockito.mock(BluetoothGatt.class);
+        BluetoothGattService gattService = Mockito.mock(BluetoothGattService.class);
+        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT)).thenReturn(gattService);
+        when(gattService.getUuid()).thenReturn(MelomindCharacteristics.SERVICE_MEASUREMENT);
+        bluetoothLE.gatt = gatt;
+        BluetoothGattCharacteristic characteristic = Mockito.mock(BluetoothGattCharacteristic.class);
+        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(CHARACTERISTIC_MAILBOX)).thenReturn(characteristic);
+        BluetoothGattDescriptor descriptor = Mockito.mock(BluetoothGattDescriptor.class);
+        when(gatt.setCharacteristicNotification(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG), false)).thenReturn(true);
+        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(CHARACTERISTIC_MAILBOX).getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID)).thenReturn(descriptor);
+        when(gatt.writeCharacteristic(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(CHARACTERISTIC_MAILBOX))).thenReturn(true).thenAnswer(
+                (Answer<Void>) invocation -> {
+                    bluetoothLE.notifyCommandResponseReceived(response, new DeviceCommands.UpdateSerialNumber(null));
+                    return null;
+                });
+        assertTrue(bluetoothLE.sendDeviceCommand(new DeviceCommands.UpdateSerialNumber(serialNumber)));
+
+    }
+
+    /**
+     * Check that a mailbox command is sent
+     * if the required command is valid
+     * to update the serial number.
+     * A response response callback is provided
+     */
+    @Test
+    public void sendDeviceCommand_serialNumber_valid_withCallback(){
+        String serialNumber = "1010100100";
+        byte[] response = serialNumber.getBytes();
+
+        BluetoothGatt gatt = Mockito.mock(BluetoothGatt.class);
+        BluetoothGattService gattService = Mockito.mock(BluetoothGattService.class);
+        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT)).thenReturn(gattService);
+        when(gattService.getUuid()).thenReturn(MelomindCharacteristics.SERVICE_MEASUREMENT);
+        bluetoothLE.gatt = gatt;
+        BluetoothGattCharacteristic characteristic = Mockito.mock(BluetoothGattCharacteristic.class);
+        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(CHARACTERISTIC_MAILBOX)).thenReturn(characteristic);
+        BluetoothGattDescriptor descriptor = Mockito.mock(BluetoothGattDescriptor.class);
+        when(gatt.setCharacteristicNotification(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG), false)).thenReturn(true);
+        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(CHARACTERISTIC_MAILBOX).getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID)).thenReturn(descriptor);
+
+        when(gatt.writeCharacteristic(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(CHARACTERISTIC_MAILBOX))).thenReturn(true).thenAnswer(
+                (Answer<Void>) invocation -> {
+                    bluetoothLE.notifyCommandResponseReceived(response, new DeviceCommands.UpdateSerialNumber(null));
+                    return null;
+        });
+        assertTrue(bluetoothLE.sendDeviceCommand(new DeviceCommands.UpdateSerialNumber(serialNumber, new SimpleRequestCallback<byte[]>() {
+            @Override
+            public void onRequestComplete(byte[] response) {
+                assertNotNull(response);
+                assertEquals(serialNumber, Arrays.toString(response));
+            }
+        })));
+    }
+
+    /**
+     * Check that a mailbox command is sent
+     * if the required command is valid
+     * to update the serial number.
+     * A response response callback is provided
+     */
+    @Test
+    public void sendDeviceCommand_serialNumber_valid_wrongHeadsetResponse_withCallback(){
+        String serialNumber = "1010100100";
+        byte[] response = serialNumber.getBytes();
+
+        BluetoothGatt gatt = Mockito.mock(BluetoothGatt.class);
+        BluetoothGattService gattService = Mockito.mock(BluetoothGattService.class);
+        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT)).thenReturn(gattService);
+        when(gattService.getUuid()).thenReturn(MelomindCharacteristics.SERVICE_MEASUREMENT);
+        bluetoothLE.gatt = gatt;
+        BluetoothGattCharacteristic characteristic = Mockito.mock(BluetoothGattCharacteristic.class);
+        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(CHARACTERISTIC_MAILBOX)).thenReturn(characteristic);
+        BluetoothGattDescriptor descriptor = Mockito.mock(BluetoothGattDescriptor.class);
+        when(gatt.setCharacteristicNotification(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG), false)).thenReturn(true);
+        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(CHARACTERISTIC_MAILBOX).getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID)).thenReturn(descriptor);
+
+        when(gatt.writeCharacteristic(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(CHARACTERISTIC_MAILBOX))).thenReturn(true).thenAnswer(
+                (Answer<Void>) invocation -> {
+                    bluetoothLE.notifyCommandResponseReceived(response, new DeviceCommands.UpdateExternalName(null));
+                    return null;
+                });
+        assertTrue(bluetoothLE.sendDeviceCommand(new DeviceCommands.UpdateSerialNumber(serialNumber, new SimpleRequestCallback<byte[]>() {
+            @Override
+            public void onRequestComplete(byte[] response) {
+                assertNotNull(response);
+                assertEquals(serialNumber, Arrays.toString(response));
+                //assert callback never called ? > is called even if the headset response is not for the right command
+            }
+        })));
+    }
+
+    /**
+     * Check that a mailbox command is not sent
+     * if the required command is invalid
+     * to update the serial number.
+     * No response callback is provided.
+     */
+    @Test
+    public void sendDeviceCommand_serialNumber_invalid_NoCallback(){
+        String serialNumber = null;
+        assertFalse(bluetoothLE.sendDeviceCommand(new DeviceCommands.UpdateSerialNumber(serialNumber)));
+    }
+
+    /**
+     * Check that a mailbox command is not sent
+     * if the required command is invalid
+     * to update the serial number.
+     * A response response callback is provided
+     */
+    @Test
+    public void sendDeviceCommand_serialNumber_invalid_withCallback(){
+        String serialNumber = null;
+        assertFalse(bluetoothLE.sendDeviceCommand(new DeviceCommands.UpdateSerialNumber(serialNumber, new SimpleRequestCallback<byte[]>() {
+            @Override
+            public void onRequestComplete(byte[] response) {
+                // assert callback never called ?
+            }
+        })));
+    }
+
+    /**
+     * Check that a mailbox command is sent
+     * if the required command is valid
+     * to update the product name.
+     * A response response callback is provided
+     */
+    @Test
+    public void sendDeviceCommand_productName_valid_withCallback(){
+        String productName = "melo_1010100100";
+        byte[] response = productName.getBytes();
+
+        BluetoothGatt gatt = Mockito.mock(BluetoothGatt.class);
+        BluetoothGattService gattService = Mockito.mock(BluetoothGattService.class);
+        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT)).thenReturn(gattService);
+        when(gattService.getUuid()).thenReturn(MelomindCharacteristics.SERVICE_MEASUREMENT);
+        bluetoothLE.gatt = gatt;
+        BluetoothGattCharacteristic characteristic = Mockito.mock(BluetoothGattCharacteristic.class);
+        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(CHARACTERISTIC_MAILBOX)).thenReturn(characteristic);
+        BluetoothGattDescriptor descriptor = Mockito.mock(BluetoothGattDescriptor.class);
+        when(gatt.setCharacteristicNotification(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG), false)).thenReturn(true);
+        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(CHARACTERISTIC_MAILBOX).getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID)).thenReturn(descriptor);
+
+        when(gatt.writeCharacteristic(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(CHARACTERISTIC_MAILBOX))).thenReturn(true).thenAnswer(
+                (Answer<Void>) invocation -> {
+                    bluetoothLE.notifyCommandResponseReceived(response, new DeviceCommands.UpdateProductName(null));
+                    return null;
+                });
+        assertTrue(bluetoothLE.sendDeviceCommand(new DeviceCommands.UpdateProductName(productName, new SimpleRequestCallback<byte[]>() {
+            @Override
+            public void onRequestComplete(byte[] response) {
+                assertNotNull(response);
+                assertEquals(productName, Arrays.toString(response));
+            }
+        })));
+    }
+
+    /**
+     * Check that a mailbox command is sent
+     * if the required command is valid
+     * to update the product name.
+     * No response response callback is provided
+     */
+    @Test
+    public void sendDeviceCommand_productName_valid_noCallback(){
+        String productName = "melo_1010100100";
+        byte[] response = productName.getBytes();
+
+        BluetoothGatt gatt = Mockito.mock(BluetoothGatt.class);
+        BluetoothGattService gattService = Mockito.mock(BluetoothGattService.class);
+        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT)).thenReturn(gattService);
+        when(gattService.getUuid()).thenReturn(MelomindCharacteristics.SERVICE_MEASUREMENT);
+        bluetoothLE.gatt = gatt;
+        BluetoothGattCharacteristic characteristic = Mockito.mock(BluetoothGattCharacteristic.class);
+        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(CHARACTERISTIC_MAILBOX)).thenReturn(characteristic);
+        BluetoothGattDescriptor descriptor = Mockito.mock(BluetoothGattDescriptor.class);
+        when(gatt.setCharacteristicNotification(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG), false)).thenReturn(true);
+        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(CHARACTERISTIC_MAILBOX).getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID)).thenReturn(descriptor);
+
+        when(gatt.writeCharacteristic(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(CHARACTERISTIC_MAILBOX))).thenReturn(true).thenAnswer(
+                (Answer<Void>) invocation -> {
+                    bluetoothLE.notifyCommandResponseReceived(response, new DeviceCommands.UpdateProductName(null));
+                    return null;
+                });
+        assertTrue(bluetoothLE.sendDeviceCommand(new DeviceCommands.UpdateProductName(productName)));
+    }
+
+    /**
+     * Check that a mailbox command is not sent
+     * if the required command is invalid
+     * to update the product name.
+     * A response response callback is provided
+     */
+    @Test
+    public void sendDeviceCommand_productName_invalid_withCallback(){
+        String productName = null;
+        assertFalse(bluetoothLE.sendDeviceCommand(new DeviceCommands.UpdateProductName(productName, new SimpleRequestCallback<byte[]>() {
+            @Override
+            public void onRequestComplete(byte[] object) {
+                //assert callback never called ?
+            }
+        })));
+    }
+
+    /**
+     * Check that a mailbox command is not sent
+     * if the required command is invalid
+     * to update the product name.
+     * No response response callback is provided
+     */
+    @Test
+    public void sendDeviceCommand_productName_invalid_noCallback(){
+        String productName = null;
+        assertFalse(bluetoothLE.sendDeviceCommand(new DeviceCommands.UpdateProductName(productName)));
+    }
+
+
+
+    /**
+     * Check that a mailbox command is sent
+     * if the required command is valid
+     * to update the external name.
+     * No response callback is provided.
+     */
+    @Test
+    public void sendDeviceCommand_externalName_valid_noCallback(){
+        String externalName = "MM10001000";
+        byte[] response = externalName.getBytes();
+
+        BluetoothGatt gatt = Mockito.mock(BluetoothGatt.class);
+        BluetoothGattService gattService = Mockito.mock(BluetoothGattService.class);
+        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT)).thenReturn(gattService);
+        when(gattService.getUuid()).thenReturn(MelomindCharacteristics.SERVICE_MEASUREMENT);
+        bluetoothLE.gatt = gatt;
+        BluetoothGattCharacteristic characteristic = Mockito.mock(BluetoothGattCharacteristic.class);
+        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(CHARACTERISTIC_MAILBOX)).thenReturn(characteristic);
+        BluetoothGattDescriptor descriptor = Mockito.mock(BluetoothGattDescriptor.class);
+        when(gatt.setCharacteristicNotification(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG), false)).thenReturn(true);
+        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(CHARACTERISTIC_MAILBOX).getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID)).thenReturn(descriptor);
+        when(gatt.writeCharacteristic(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(CHARACTERISTIC_MAILBOX))).thenReturn(true).thenAnswer(
+                (Answer<Void>) invocation -> {
+                    bluetoothLE.notifyCommandResponseReceived(response, new DeviceCommands.UpdateExternalName(null));
+                    return null;
+                });
+        assertTrue(bluetoothLE.sendDeviceCommand(new DeviceCommands.UpdateExternalName(externalName)));
+
+    }
+
+    /**
+     * Check that a mailbox command is sent
+     * if the required command is valid
+     * to update the external name.
+     * A response response callback is provided
+     */
+    @Test
+    public void sendDeviceCommand_externalName_valid_withCallback(){
+        String externalName = "MM10001000";
+        byte[] response = externalName.getBytes();
+
+        BluetoothGatt gatt = Mockito.mock(BluetoothGatt.class);
+        BluetoothGattService gattService = Mockito.mock(BluetoothGattService.class);
+        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT)).thenReturn(gattService);
+        when(gattService.getUuid()).thenReturn(MelomindCharacteristics.SERVICE_MEASUREMENT);
+        bluetoothLE.gatt = gatt;
+        BluetoothGattCharacteristic characteristic = Mockito.mock(BluetoothGattCharacteristic.class);
+        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(CHARACTERISTIC_MAILBOX)).thenReturn(characteristic);
+        BluetoothGattDescriptor descriptor = Mockito.mock(BluetoothGattDescriptor.class);
+        when(gatt.setCharacteristicNotification(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG), false)).thenReturn(true);
+        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(CHARACTERISTIC_MAILBOX).getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID)).thenReturn(descriptor);
+
+        when(gatt.writeCharacteristic(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(CHARACTERISTIC_MAILBOX))).thenReturn(true).thenAnswer(
+                (Answer<Void>) invocation -> {
+                    bluetoothLE.notifyCommandResponseReceived(response, new DeviceCommands.UpdateExternalName(null));
+                    return null;
+                });
+        assertTrue(bluetoothLE.sendDeviceCommand(new DeviceCommands.UpdateExternalName(externalName, new SimpleRequestCallback<byte[]>() {
+            @Override
+            public void onRequestComplete(byte[] response) {
+                assertNotNull(response);
+                assertEquals(externalName, Arrays.toString(response));
+            }
+        })));
+    }
+
+    /**
+     * Check that a mailbox command is not sent
+     * if the required command is invalid
+     * to update the external name.
+     * No response callback is provided.
+     */
+    @Test
+    public void sendDeviceCommand_externalName_invalid_NoCallback(){
+        String externalName = null;
+        assertFalse(bluetoothLE.sendDeviceCommand(new DeviceCommands.UpdateExternalName(externalName)));
+    }
+
+    /**
+     * Check that a mailbox command is not sent
+     * if the required command is invalid
+     * to update the external name.
+     * A response response callback is provided
+     */
+    @Test
+    public void sendDeviceCommand_externalName_invalid_withCallback(){
+        String externalName = null;
+        assertFalse(bluetoothLE.sendDeviceCommand(new DeviceCommands.UpdateExternalName(externalName, new SimpleRequestCallback<byte[]>() {
+            @Override
+            public void onRequestComplete(byte[] response) {
+                // assert callback never called ?
+            }
+        })));
+    }
+
+
+    /**
+     * Check that a mailbox command is sent
+     * if the required command is valid
+     * to update the external name.
+     * No response callback is provided.
+     */
+    @Test
+    public void sendDeviceCommand_mtu_valid_noCallback(){
+        int mtu = 47;
+
+        BluetoothGatt gatt = Mockito.mock(BluetoothGatt.class);
+        when(gatt.requestMtu(mtu)).thenReturn(true).thenAnswer(
+                (Answer<Void>) invocation -> {
+                    bluetoothLE.notifyCommandResponseReceived(new byte[]{(byte)mtu}, new DeviceStreamingCommands.Mtu(mtu));
+                    return null;
+                });
+        assertTrue(bluetoothLE.sendDeviceCommand(new DeviceStreamingCommands.Mtu(mtu)));
+        //todo complete mock >> false is returned instead of true
+    }
+
+    /**
+     * Check that a mailbox command is sent
+     * if the required command is valid
+     * to update the external name.
+     * A response response callback is provided
+     */
+    @Test
+    public void sendDeviceCommand_mtu_valid_withCallback(){
+        int mtu = 47;
+
+        BluetoothGatt gatt = Mockito.mock(BluetoothGatt.class);
+        when(gatt.requestMtu(mtu)).thenReturn(true).thenAnswer(
+                (Answer<Void>) invocation -> {
+                    bluetoothLE.notifyCommandResponseReceived(new byte[]{(byte)mtu}, new DeviceStreamingCommands.Mtu(mtu));
+                    return null;
+                });
+        assertTrue(bluetoothLE.sendDeviceCommand(new DeviceStreamingCommands.Mtu(mtu, new SimpleRequestCallback<byte[]>() {
+            @Override
+            public void onRequestComplete(byte[] response) {
+                assertNotNull(response);
+                assertEquals(mtu, response[0]);
+            }
+        })));
+        //todo complete mock >> false is returned instead of true
+
+    }
+
+    /**
+     * Check that a mailbox command is not sent
+     * if the required command is invalid (too low)
+     * to update the MTU.
+     * No response callback is provided.
+     */
+    @Test
+    public void sendDeviceCommand_mtu_invalid_noCallback(){
+        int mtu = 22;
+        assertFalse(bluetoothLE.sendDeviceCommand(new DeviceStreamingCommands.Mtu(mtu)));
+    }
+
+    /**
+     * Check that a mailbox command is not sent
+     * if the required command is invalid (too high)
+     * to update the MTU.
+     * A response response callback is provided
+     */
+    @Test
+    public void sendDeviceCommand_mtu_invalid_withCallback(){
+        int mtu = 121;
+        assertFalse(bluetoothLE.sendDeviceCommand(new DeviceStreamingCommands.Mtu(mtu)));
     }
 
     private class MbtBluetoothLEWrapper extends MbtBluetoothLE{

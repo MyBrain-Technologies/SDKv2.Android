@@ -11,6 +11,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
@@ -158,16 +159,17 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * @param rawResponse is the raw byte array returned by the headset
      * @param commandType is the corresponding type of mailbox command
      */
-    public void notifyDeviceResponseReceived(byte[] rawResponse, DeviceCommand commandType) {
-        if(commandType instanceof DeviceStreamingCommands.EegConfig){
-            notifyDeviceConfigReceived(ArrayUtils.toObject(rawResponse));
+    public void notifyDeviceResponseReceived(@Nullable byte[] rawResponse, DeviceCommand commandType) {
+        if(rawResponse != null){
+            if(commandType instanceof DeviceStreamingCommands.EegConfig){
+                notifyDeviceConfigReceived(ArrayUtils.toObject(rawResponse));
 
-        }else if(commandType instanceof DeviceCommands.UpdateSerialNumber) {
-            notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER, new String(rawResponse));
+            }else if(commandType instanceof DeviceCommands.UpdateSerialNumber) {
+                notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER, new String(rawResponse));
 
-        }else if(commandType instanceof DeviceCommands.UpdateExternalName) {
-            notifyDeviceInfoReceived(DeviceInfo.MODEL_NUMBER, new String(rawResponse));
-
+            }else if(commandType instanceof DeviceCommands.UpdateExternalName) {
+                notifyDeviceInfoReceived(DeviceInfo.MODEL_NUMBER, new String(rawResponse));
+            }
         }
         EventBusManager.postEvent(new DeviceEvents.RawDeviceResponseEvent(rawResponse));
         requestBeingProcessed = false;
