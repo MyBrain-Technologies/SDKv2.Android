@@ -70,13 +70,6 @@ public final class EventBusManager {
         BUS.post(event);
     }
 
-    public static Object postEventWithCallbackAndReturnResult(Object event, Object callback){
-        BUS.register(callback);
-        BUS.post(event);
-        BUS.unregister(callback);
-        return callback;
-    }
-
     public interface Callback<T> {
         public Object onEventCallback(T object);
     }

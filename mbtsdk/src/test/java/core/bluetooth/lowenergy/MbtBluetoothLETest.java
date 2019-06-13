@@ -1224,20 +1224,25 @@ public class MbtBluetoothLETest {
         byte[] response = serialNumber.getBytes();
 
         BluetoothGatt gatt = Mockito.mock(BluetoothGatt.class);
+        bluetoothLE.gatt = gatt;
+
         BluetoothGattService gattService = Mockito.mock(BluetoothGattService.class);
         when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT)).thenReturn(gattService);
         when(gattService.getUuid()).thenReturn(MelomindCharacteristics.SERVICE_MEASUREMENT);
-        bluetoothLE.gatt = gatt;
+
         BluetoothGattCharacteristic characteristic = Mockito.mock(BluetoothGattCharacteristic.class);
         when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(CHARACTERISTIC_MAILBOX)).thenReturn(characteristic);
+
         BluetoothGattDescriptor descriptor = Mockito.mock(BluetoothGattDescriptor.class);
         when(gatt.setCharacteristicNotification(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG), false)).thenReturn(true);
         when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(CHARACTERISTIC_MAILBOX).getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID)).thenReturn(descriptor);
+
         when(gatt.writeCharacteristic(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(CHARACTERISTIC_MAILBOX))).thenReturn(true).thenAnswer(
                 (Answer<Void>) invocation -> {
                     bluetoothLE.notifyCommandResponseReceived(response, new DeviceCommands.UpdateSerialNumber(null));
                     return null;
                 });
+
         assertTrue(bluetoothLE.sendDeviceCommand(new DeviceCommands.UpdateSerialNumber(serialNumber)));
 
     }
@@ -1546,15 +1551,15 @@ public class MbtBluetoothLETest {
     @Test
     public void sendDeviceCommand_mtu_valid_noCallback(){
         int mtu = 47;
-
+        bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
         BluetoothGatt gatt = Mockito.mock(BluetoothGatt.class);
+        bluetoothLE.gatt = gatt;
         when(gatt.requestMtu(mtu)).thenReturn(true).thenAnswer(
                 (Answer<Void>) invocation -> {
                     bluetoothLE.notifyCommandResponseReceived(new byte[]{(byte)mtu}, new DeviceStreamingCommands.Mtu(mtu));
                     return null;
                 });
         assertTrue(bluetoothLE.sendDeviceCommand(new DeviceStreamingCommands.Mtu(mtu)));
-        //todo complete mock >> false is returned instead of true
     }
 
     /**
@@ -1566,8 +1571,9 @@ public class MbtBluetoothLETest {
     @Test
     public void sendDeviceCommand_mtu_valid_withCallback(){
         int mtu = 47;
-
+        bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
         BluetoothGatt gatt = Mockito.mock(BluetoothGatt.class);
+        bluetoothLE.gatt = gatt;
         when(gatt.requestMtu(mtu)).thenReturn(true).thenAnswer(
                 (Answer<Void>) invocation -> {
                     bluetoothLE.notifyCommandResponseReceived(new byte[]{(byte)mtu}, new DeviceStreamingCommands.Mtu(mtu));
@@ -1580,7 +1586,6 @@ public class MbtBluetoothLETest {
                 assertEquals(mtu, response[0]);
             }
         })));
-        //todo complete mock >> false is returned instead of true
 
     }
 

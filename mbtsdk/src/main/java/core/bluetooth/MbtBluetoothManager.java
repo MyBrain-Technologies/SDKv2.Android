@@ -126,8 +126,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * @param context the application context
      * @param mbtManagerController the main manager that sends and receives bluetooth events
      */
-    public MbtBluetoothManager(@NonNull Context context, MbtManager mbtManagerController){
-        super(context, mbtManagerController);
+    public MbtBluetoothManager(@NonNull Context context){
+        super(context);
         //save client side objects in variables
 
         this.mbtBluetoothLE = new MbtBluetoothLE(context, this);

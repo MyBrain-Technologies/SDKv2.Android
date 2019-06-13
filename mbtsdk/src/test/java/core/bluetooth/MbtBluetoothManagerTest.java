@@ -5,9 +5,18 @@ import android.content.Context;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.mockito.stubbing.Answer;
 
+import android.os.Handler;
+
+import command.DeviceCommand;
+import command.DeviceCommands;
 import core.MbtManager;
 import core.bluetooth.lowenergy.MbtBluetoothLE;
+import core.bluetooth.requests.DeviceCommandRequestEvent;
+import core.device.DeviceEvents;
+import engine.SimpleRequestCallback;
+import eventbus.EventBusManager;
 
 import static org.junit.Assert.*;
 
@@ -15,12 +24,37 @@ public class MbtBluetoothManagerTest {
 
     private Context context;
     MbtBluetoothManager bluetoothManager;
-    MbtManager mbtManager;
     @Before
     public void setUp() throws Exception {
         context = Mockito.mock(Context.class);
-        mbtManager = new MbtManager(context);
-        bluetoothManager = new MbtBluetoothManager(context, mbtManager);
+        bluetoothManager = new MbtBluetoothManager(context);
+    }
+
+    /**
+     * Check that a response callback is triggered
+     * if any mailbox command is sent
+     * Also check that no subscriber was registered before the request,
+     * and the subscriber is unregistered once the response callback is returned.
+     */
+    @Test
+    public void onNewBluetoothRequest_DeviceCommandRequestEvent_withCallback(){
+        byte[] response = new byte[]{0,1,2,3,4,5,6,7,8,9};
+        //MbtBluetoothManager bluetoothManager = Mockito.mock(MbtBluetoothManager.class);
+        Handler requestHandler = Mockito.mock(Handler.class);
+        DeviceCommand command = new DeviceCommands.ConnectAudio(callbackResponse -> {
+            assertEquals(response, callbackResponse);
+            //the subscriber is supposed to be unregistered once the callback is triggered
+            assertFalse(EventBusManager.BUS.hasSubscriberForEvent(DeviceEvents.RawDeviceResponseEvent.class));
+        });
+
+        Mockito.doAnswer((Answer<Void>) invocation -> {
+            bluetoothManager.notifyDeviceResponseReceived(response, command);
+            return null;
+        }).when(requestHandler).post(Mockito.any(Runnable.class));
+
+        //no subscriber is supposed to be registered before the command call
+        assertFalse(EventBusManager.BUS.hasSubscriberForEvent(DeviceEvents.RawDeviceResponseEvent.class));
+        bluetoothManager.onNewBluetoothRequest(new DeviceCommandRequestEvent(command));
     }
 
     @Test

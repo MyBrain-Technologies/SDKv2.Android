@@ -29,8 +29,8 @@ public class MbtDeviceManager extends BaseModuleManager{
 
     private MbtDevice mCurrentConnectedDevice;
 
-    public MbtDeviceManager(Context context, MbtManager mbtManagerController){
-        super(context, mbtManagerController);
+    public MbtDeviceManager(Context context){
+        super(context);
         this.mContext = context;
     }
 
