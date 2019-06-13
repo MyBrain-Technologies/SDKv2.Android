@@ -178,11 +178,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
             this.btSocket = toConnect.createRfcommSocketToServiceRecord(SERVER_UUID);
             this.btSocket.connect();
             if (retrieveStreams()) {
-                AsyncUtils.executeAsync(new Runnable() {
-                    public final void run() {
-                        listenForIncomingMessages();
-                    }
-                });
+                AsyncUtils.executeAsync(() -> listenForIncomingMessages());
                 notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
                 notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER,toConnect.getAddress());
                 LogUtils.i(TAG,toConnect.getName() + " Connected");
@@ -396,12 +392,8 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
 
 
                                 final byte[] finalData =  (byte[])data.clone();//Arrays.copyOf(data, data.length);
-                                AsyncUtils.executeAsync(new Runnable() {
-                                    //private final byte[] toAcquire = Arrays.copyOf(finalData, finalData.length);
-                                    public void run() {
-                                        notifyNewDataAcquired(finalData);
-                                    }
-                                });
+                                //private final byte[] toAcquire = Arrays.copyOf(finalData, finalData.length);
+                                AsyncUtils.executeAsync(() -> notifyNewDataAcquired(finalData));
                             }
 
                         }else if(command == 4) {

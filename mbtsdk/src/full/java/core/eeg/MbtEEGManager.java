@@ -118,22 +118,19 @@ public final class MbtEEGManager extends BaseModuleManager {
      */
     public void convertToEEG(@NonNull final ArrayList<RawEEGSample> toDecodeRawEEG) {
 
-        AsyncUtils.executeAsync(new Runnable() {
-            @Override
-            public void run() {
-                consolidatedEEG = new ArrayList<>();
-                ArrayList<Float> toDecodeStatus = new ArrayList<>();
-                for (RawEEGSample rawEEGSample : toDecodeRawEEG) {
-                    if (rawEEGSample.getStatus() != null) {
-                        if (rawEEGSample.getStatus() != Float.NaN)
-                            toDecodeStatus.add(rawEEGSample.getStatus());
-                    }
+        AsyncUtils.executeAsync(() -> {
+            consolidatedEEG = new ArrayList<>();
+            ArrayList<Float> toDecodeStatus = new ArrayList<>();
+            for (RawEEGSample rawEEGSample : toDecodeRawEEG) {
+                if (rawEEGSample.getStatus() != null) {
+                    if (rawEEGSample.getStatus() != Float.NaN)
+                        toDecodeStatus.add(rawEEGSample.getStatus());
                 }
-                consolidatedEEG = MbtDataConversion.convertRawDataToEEG(toDecodeRawEEG, protocol); //convert byte table data to Float matrix and store the matrix in MbtEEGManager as eegResult attribute
-
-                dataBuffering.storeConsolidatedEegInPacketBuffer(consolidatedEEG, toDecodeStatus);// if the packet buffer is full, this method returns the non null packet buffer
-
             }
+            consolidatedEEG = MbtDataConversion.convertRawDataToEEG(toDecodeRawEEG, protocol); //convert byte table data to Float matrix and store the matrix in MbtEEGManager as eegResult attribute
+
+            dataBuffering.storeConsolidatedEegInPacketBuffer(consolidatedEEG, toDecodeStatus);// if the packet buffer is full, this method returns the non null packet buffer
+
         });
     }
 
@@ -146,15 +143,12 @@ public final class MbtEEGManager extends BaseModuleManager {
     public void notifyEEGDataIsReady(@NonNull final MbtEEGPacket eegPackets) {
         LogUtils.d(TAG, "notify EEG Data Is Ready ");
 
-        AsyncUtils.executeAsync(new Runnable() {
-            @Override
-            public void run() {
-                if (hasQualities) {
-                    eegPackets.setQualities(MbtEEGManager.this.computeEEGSignalQuality(eegPackets));
-                    eegPackets.setFeatures(MBTSignalQualityChecker.getFeatures());
-                }
-                EventBusManager.postEvent(new ClientReadyEEGEvent(eegPackets));
+        AsyncUtils.executeAsync(() -> {
+            if (hasQualities) {
+                eegPackets.setQualities(MbtEEGManager.this.computeEEGSignalQuality(eegPackets));
+                eegPackets.setFeatures(MBTSignalQualityChecker.getFeatures());
             }
+            EventBusManager.postEvent(new ClientReadyEEGEvent(eegPackets));
         });
 
     }
