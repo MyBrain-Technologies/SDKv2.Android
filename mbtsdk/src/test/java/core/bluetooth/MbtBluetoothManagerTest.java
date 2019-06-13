@@ -12,10 +12,9 @@ import android.os.Handler;
 import command.DeviceCommand;
 import command.DeviceCommands;
 import core.MbtManager;
-import core.bluetooth.lowenergy.MbtBluetoothLE;
+import core.bluetooth.requests.BluetoothRequests;
 import core.bluetooth.requests.DeviceCommandRequestEvent;
 import core.device.DeviceEvents;
-import engine.SimpleRequestCallback;
 import eventbus.EventBusManager;
 
 import static org.junit.Assert.*;
@@ -57,154 +56,43 @@ public class MbtBluetoothManagerTest {
         bluetoothManager.onNewBluetoothRequest(new DeviceCommandRequestEvent(command));
     }
 
+    /**
+     * Check that any incoming request is added to the handler queue
+     */
     @Test
-    public void reconnectIfAudioConnected() {
+    public void onNewBluetoothRequest_requestAddedToQueue(){
+        Handler requestHandler = Mockito.spy(Handler.class);
+        bluetoothManager.setRequestHandler(requestHandler);
+        DeviceCommand command = new DeviceCommands.ConnectAudio();
+        bluetoothManager.onNewBluetoothRequest(new DeviceCommandRequestEvent(command));
+        Mockito.verify(requestHandler).post(Mockito.any(Runnable.class));
+
     }
 
+    /**
+     * Check that any queued request is executed by the handler
+     */
     @Test
-    public void resetBackgroundReconnectionRetryCounter() {
+    public void onNewBluetoothRequest_requestQueuedExecuted(){
+        MbtBluetoothManager.RequestThread requestThread = Mockito.mock(MbtBluetoothManager.RequestThread.class);
+        bluetoothManager.setRequestThread(requestThread);
+        Handler requestHandler = Mockito.spy(new Handler(requestThread.getLooper()));
+        bluetoothManager.setRequestHandler(requestHandler);
+
+        DeviceCommand command = new DeviceCommands.ConnectAudio();
+        bluetoothManager.onNewBluetoothRequest(new DeviceCommandRequestEvent(command));
+        Mockito.verify(requestHandler).post(Mockito.any(Runnable.class));
+
+        Mockito.doAnswer(( Answer<Void>) invocation -> {
+            Mockito.verify(requestThread).parseRequest(Mockito.any(BluetoothRequests.class));
+            return null;
+        }).when(requestHandler).post(Mockito.any(Runnable.class));
+        //Mockito.doCallRealMethod().when(requestThread).parseRequest(Mockito.any(DeviceCommandRequestEvent.class));
+
     }
 
-    @Test
-    public void registerReceiverIntents() {
-    }
 
-    @Test
-    public void scanAndConnect() {
-        //bluetoothManager.scanAndConnect("melo_01010101",true);
-    }
 
-    @Test
-    public void isBluetoothEnabled() {
-    }
-
-    @Test
-    public void isLocationEnabledAndGranted() {
-    }
-
-    @Test
-    public void isAlreadyConnected() {
-    }
-
-    @Test
-    public void scan() {
-    }
-
-    @Test
-    public void bondAndConnectAudioIfRequested() {
-    }
-
-    @Test
-    public void connect() {
-    }
-
-    @Test
-    public void scanDevices() {
-    }
-
-    @Test
-    public void scanSingle() {
-    }
-
-    @Test
-    public void stopCurrentScan() {
-    }
-
-    @Test
-    public void configureHeadset() {
-    }
-
-    @Test
-    public void startStream() {
-    }
-
-    @Test
-    public void stopStream() {
-    }
-
-    @Test
-    public void readBattery() {
-    }
-
-    @Test
-    public void readFwVersion() {
-    }
-
-    @Test
-    public void readHwVersion() {
-    }
-
-    @Test
-    public void readSerialNumber() {
-    }
-
-    @Test
-    public void readModelNumber() {
-    }
-
-    @Test
-    public void disconnect() {
-    }
-
-    @Test
-    public void cancelPendingConnection() {
-    }
-
-    @Test
-    public void handleDataAcquired() {
-    }
-
-    @Test
-    public void deinit() {
-    }
-
-    @Test
-    public void onNewBluetoothRequest() {
-    }
-
-    @Test
-    public void getConnectionError() {
-    }
-
-    @Test
-    public void notifyDeviceInfoReceived() {
-    }
-
-    @Test
-    public void notifyStreamStateChanged() {
-    }
-
-    @Test
-    public void notifyNewHeadsetStatus() {
-    }
-
-    @Test
-    public void isConnected() {
-    }
-
-    @Test
-    public void notifyStateChanged() {
-    }
-
-    @Test
-    public void connectBLEFromA2DP() {
-    }
-
-    @Test
-    public void requestCurrentConnectedDevice() {
-    }
-
-    @Test
-    public void connectA2DPFromBLE() {
-    }
-
-    @Test
-    public void disconnectA2DPFromBLE() {
-    }
-
-    @Test
-    public void isAlreadyConnectedToRequestedDevice() {
-    }
 
     private class MbtManagerWrapper extends MbtManager{
 
