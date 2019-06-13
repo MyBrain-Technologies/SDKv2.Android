@@ -11,7 +11,6 @@ import android.support.annotation.NonNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.util.Arrays;
@@ -30,8 +29,6 @@ import features.MbtDeviceType;
 
 import static java.util.UUID.fromString;
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
 public class MbtBluetoothLETest {
@@ -52,7 +49,7 @@ public class MbtBluetoothLETest {
 
         context = Mockito.mock(Context.class);
         mbtManager = new MbtManager(context);
-        bluetoothManager = new MbtBluetoothManager(context, mbtManager);
+        bluetoothManager = new MbtBluetoothManager(context);
         bluetoothLE = new MbtBluetoothLE(context, bluetoothManager);
     }
 //

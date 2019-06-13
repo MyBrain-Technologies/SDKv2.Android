@@ -14,7 +14,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 
 import config.MbtConfig;
-import core.MbtManager;
 import core.bluetooth.BtProtocol;
 import core.eeg.MbtEEGManager;
 import core.eeg.storage.RawEEGSample;
@@ -38,7 +37,7 @@ public class MbtDataAcquisitionTest {
     @Before
     public void setUp() {
         BtProtocol protocol = BtProtocol.BLUETOOTH_LE;
-        this.dataAcquisition = new MbtDataAcquisition(new MbtEEGManager(context, new MbtManager(context),protocol),protocol);
+        this.dataAcquisition = new MbtDataAcquisition(new MbtEEGManager(context, protocol),protocol);
     }
 
     /**

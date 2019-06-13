@@ -10,14 +10,12 @@ import org.mockito.Mockito;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 
 import core.MbtManager;
 import core.bluetooth.BtProtocol;
-import core.eeg.acquisition.MbtDataAcquisition;
 import core.eeg.storage.MbtDataBuffering;
 import core.eeg.storage.MbtEEGPacket;
 import core.eeg.storage.RawEEGSample;

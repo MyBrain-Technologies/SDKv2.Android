@@ -4,7 +4,6 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 
 import core.BaseModuleManager;
-import core.MbtManager;
 
 /**
  * Created by Etienne on 08/02/2018.
@@ -12,8 +11,8 @@ import core.MbtManager;
 
 public final class MbtServerSyncManager extends BaseModuleManager{
 
-    public MbtServerSyncManager(@NonNull Context context, @NonNull MbtManager manager){
-        super(context, manager);
+    public MbtServerSyncManager(@NonNull Context context){
+        super(context);
     }
 
 }

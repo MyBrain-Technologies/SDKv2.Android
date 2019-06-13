@@ -7,10 +7,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
-import org.mockito.internal.verification.VerificationModeFactory;
 import org.mockito.stubbing.Answer;
-import org.powermock.core.PowerMockUtils;
-import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.ArrayList;
@@ -29,16 +26,13 @@ import mbtsdk.com.mybraintech.mbtsdk.BuildConfig;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import org.powermock.api.mockito.PowerMockito;
 
-//@PrepareForTest({EventBusManager.class})
 @RunWith( PowerMockRunner.class )
 public class MbtManagerTest {
 
     Context context;
     MbtManager manager;
-    MbtBluetoothManager bluetoothManager;
 
     @Before
     public void setUp() throws Exception {

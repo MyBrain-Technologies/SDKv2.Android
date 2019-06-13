@@ -11,7 +11,6 @@ import org.robolectric.RuntimeEnvironment;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import core.MbtManager;
 import core.bluetooth.BtProtocol;
 import core.eeg.MbtEEGManager;
 
@@ -28,7 +27,7 @@ public class MbtDataBufferingTest {
     public void setUp() {
         Context context = RuntimeEnvironment.application.getApplicationContext();
         //default value for protocol is BLE
-        eegManager = new MbtEEGManager(context,new MbtManager(context), BtProtocol.BLUETOOTH_LE);
+        eegManager = new MbtEEGManager(context, BtProtocol.BLUETOOTH_LE);
         this.buffering = new MbtDataBuffering(eegManager);
     }
 
