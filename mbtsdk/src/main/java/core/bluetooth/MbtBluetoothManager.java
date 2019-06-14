@@ -389,21 +389,21 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
             @Override
             public void onRequestComplete(MbtDevice device) { //when the BUS has returned the device object
-                if (device != null && MbtBluetoothManager.this.isAlreadyConnected(device)) // assert that headset is not already connected
+                if (device != null && isAlreadyConnected(device)) // assert that headset is not already connected
                     return;
 
-                if (MbtBluetoothManager.this.isBluetoothDisabled()) //assert that Bluetooth is on
+                if (isBluetoothDisabled()) //assert that Bluetooth is on
                     return;
 
-                if (MbtBluetoothManager.this.isLocationDisabledOrNotGranted()) //assert that Location is on and Location permissions are granted
+                if (isLocationDisabledOrNotGranted()) //assert that Location is on and Location permissions are granted
                     return;
 
                 if (MbtConfig.connectAudioIfDeviceCompatible()) //if user requested audio connection
                     mbtBluetoothA2DP.initA2dpProxy(); //initialization to check if a Melomind is already connected in A2DP : as the next step is the scanning, the SDK is able to filter on the name of this device
 
-                if (MbtBluetoothManager.this.getCurrentState().equals(BtState.IDLE))
-                    MbtBluetoothManager.this.updateConnectionState(false); //current state is set to READY_FOR_BLUETOOTH_OPERATION
-                MbtBluetoothManager.this.switchToNextConnectionStep();
+                if (getCurrentState().equals(BtState.IDLE))
+                    updateConnectionState(false); //current state is set to READY_FOR_BLUETOOTH_OPERATION
+                switchToNextConnectionStep();
             }
         });
     }
@@ -547,7 +547,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             AsyncUtils.executeAsync(new Runnable() {
                 @Override
                 public void run() {
-                    MbtBluetoothManager.this.startReadOperation(deviceInfo);
+                    startReadOperation(deviceInfo);
                 }
             });
             asyncOperation.waitOperationResult(MbtConfig.getBluetoothReadingTimeout());
@@ -686,7 +686,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                     }
 
                 } else  //if firmware version bonding is older than 1.6.7, the connection process is considered completed
-                    MbtBluetoothManager.this.updateConnectionState(BtState.CONNECTED);
+                    updateConnectionState(BtState.CONNECTED);
             }
         });
         if(getCurrentState().equals(BtState.BONDING)) { //at this point : current state should be BONDED if bonding succeeded

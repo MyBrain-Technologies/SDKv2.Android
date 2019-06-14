@@ -181,7 +181,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
                 AsyncUtils.executeAsync(new Runnable() {
                     @Override
                     public void run() {
-                        MbtBluetoothSPP.this.listenForIncomingMessages();
+                        listenForIncomingMessages();
                     }
                 });
                 notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
@@ -401,7 +401,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
                                 AsyncUtils.executeAsync(new Runnable() {
                                     @Override
                                     public void run() {
-                                        MbtBluetoothSPP.this.notifyNewDataAcquired(finalData);
+                                        notifyNewDataAcquired(finalData);
                                     }
                                 });
                             }
