@@ -9,6 +9,8 @@
     <string name="cancel">Cancel</string>
 
     <string name="device_name">Enter a device name</string>
+    <string name="device_qrcode">Enter a device QR code</string>
+
     <string name="start_streaming">Start Streaming</string>
     <string name="stop_streaming">Stop Streaming</string>
     <string name="read_battery">Get Battery Level</string>

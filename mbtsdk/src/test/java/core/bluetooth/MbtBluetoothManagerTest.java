@@ -37,8 +37,8 @@ public class MbtBluetoothManagerTest {
      */
     @Test
     public void onNewBluetoothRequest_DeviceCommandRequestEvent_withCallback(){
+
         byte[] response = new byte[]{0,1,2,3,4,5,6,7,8,9};
-        //MbtBluetoothManager bluetoothManager = Mockito.mock(MbtBluetoothManager.class);
         Handler requestHandler = Mockito.mock(Handler.class);
         DeviceCommand command = new DeviceCommands.ConnectAudio(callbackResponse -> {
             assertEquals(response, callbackResponse);

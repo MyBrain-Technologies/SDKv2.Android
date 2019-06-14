@@ -99,9 +99,12 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
                 LogUtils.d(TAG, "received intent " + action + " for device " + (device != null ? device.getName() : null));
                 if (action.equals(BluetoothDevice.ACTION_BOND_STATE_CHANGED)){
                     if (intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, 0) == BluetoothDevice.BOND_BONDED) {
-                        new Handler().postDelayed(() -> {
-                            if (getCurrentState().equals(BtState.BONDING))
-                                updateConnectionState(true); //current state is set to BONDED & and future is completed
+                        new Handler().postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (getCurrentState().equals(BtState.BONDING))
+                                    updateConnectionState(true); //current state is set to BONDED & and future is completed
+                            }
                         }, 1000);
                     }
                 }

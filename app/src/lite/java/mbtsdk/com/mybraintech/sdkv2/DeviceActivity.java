@@ -63,8 +63,6 @@ DeviceActivity extends AppCompatActivity {
     private LineDataSet channel2;
 
     private long eegDataCounter  = 0;
-    private TextView channel1Quality;
-    private TextView channel2Quality;
 
     private Button startStopStreamingButton;
 
@@ -96,7 +94,6 @@ DeviceActivity extends AppCompatActivity {
         initEegListener();
 
         initToolBar();
-        initChannelsTextView();
         initDeviceNameTextView();
         initDisconnectButton();
         initReadBatteryButton();
@@ -136,11 +133,7 @@ DeviceActivity extends AppCompatActivity {
 
                 if(isStreaming){
                     if(eegGraph!=null){
-                        addEegDataToGraph(mbtEEGPackets);
-
-                        channel1Quality.setText(getString(R.string.channel_1_qc) + ((mbtEEGPackets.getQualities() != null && mbtEEGPackets.getQualities().get(0) != null) ? mbtEEGPackets.getQualities().get(0) : " -- "));
-                        channel2Quality.setText(getString(R.string.channel_2_qc) + ( (mbtEEGPackets.getQualities() != null && mbtEEGPackets.getQualities().get(1) != null ) ? mbtEEGPackets.getQualities().get(1) : " -- "));
-                    }
+                        addEegDataToGraph(mbtEEGPackets); }
                 }
             }
         };
@@ -236,11 +229,6 @@ DeviceActivity extends AppCompatActivity {
                     client.readBattery(deviceInfoListener);
             }
         });
-    }
-
-    private void initChannelsTextView() {
-        channel1Quality.setText(getString(R.string.channel_1_qc) + " -- ");
-        channel2Quality.setText(getString(R.string.channel_2_qc) + " -- ");
     }
 
     private void initStartStopStreamingButton(){

@@ -55,6 +55,8 @@ public final class EventBusManager {
      * @param event contains data to transmit to the subscriber class.
      */
     public static void postEvent(Object event){
+        if(event == null)
+            return;
         BUS.post(event);
     }
 
@@ -66,6 +68,9 @@ public final class EventBusManager {
      */
     public static void postEvent(Object event, Object callback){
         Log.d(TAG, "Eventbus posts event with callback "+event);
+        if(callback == null || event == null)
+            return;
+
         BUS.register(callback);
         BUS.post(event);
     }

@@ -249,8 +249,6 @@ DeviceActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (!isStreaming) { //streaming is not in progress : starting streaming
-  //                  updateSerialNumber();
-                    //getAudioConnectedDevice();
                     startStream(new StreamConfig.Builder(eegListener)
                             .setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)
                             .useQualities()
@@ -377,38 +375,6 @@ DeviceActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getColor(R.color.light_blue)));
         }
-    }
-
-    private void sendCommands() {
-        client.connectAudio(null);
-        client.updateSerialNumber("1010100976", null);
-        client.getDeviceSystemStatus
-                ( null);
-        client.updateExternalName("MM10001229", null);
-        client.disconnectAudio( null);
-        client.rebootDevice();
-
-    }
-
-    private void updateSerialNumber(){
-        client.updateSerialNumber("1010100976", new SimpleRequestCallback<byte[]>() {
-            @Override
-            public void onRequestComplete(byte[] object) {
-                Log.d(TAG, " on Request Complete "+ Arrays.toString(object));
-                getAudioConnectedDevice();
-
-            }
-        });
-
-    }
-
-    private void getAudioConnectedDevice(){
-        client.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
-            @Override
-            public void onRequestComplete(MbtDevice device) {
-                Log.d(TAG, " on Request Complete "+device.toString());
-            }
-        });
     }
 
     private void startStream(StreamConfig streamConfig) {

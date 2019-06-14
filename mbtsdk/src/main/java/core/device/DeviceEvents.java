@@ -31,7 +31,7 @@ public interface DeviceEvents {
         @Nullable
         private final MbtDevice device;
 
-        PostDeviceEvent(@Nullable MbtDevice device){
+        public PostDeviceEvent(@Nullable MbtDevice device){
             this.device = device;
         }
 

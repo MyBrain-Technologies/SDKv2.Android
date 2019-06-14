@@ -84,11 +84,11 @@ public class MbtManager{
         EventBusManager.registerOrUnregister(true, this);
 
         if(DEVICE_ENABLED)
-            registerManager(new MbtDeviceManager(mContext, MbtManager.this));
+            registerManager(new MbtDeviceManager(mContext));
         if(BLUETOOTH_ENABLED)
-            registerManager(new MbtBluetoothManager(mContext, MbtManager.this));
+            registerManager(new MbtBluetoothManager(mContext));
         if(EEG_ENABLED)
-            registerManager(new MbtEEGManager(mContext, MbtManager.this, BtProtocol.BLUETOOTH_LE));
+            registerManager(new MbtEEGManager(mContext, BtProtocol.BLUETOOTH_LE));
     }
 
     /**
@@ -261,7 +261,7 @@ public class MbtManager{
     }
 
     public void requestCurrentConnectedDevice(final SimpleRequestCallback<MbtDevice> callback) {
-        EventBusManager.postEventWithCallback(new DeviceEvents.GetDeviceEvent(), new EventBusManager.Callback<DeviceEvents.PostDeviceEvent>(){
+        EventBusManager.postEvent(new DeviceEvents.GetDeviceEvent(), new EventBusManager.Callback<DeviceEvents.PostDeviceEvent>(){
             @Override
             @Subscribe
             public Void onEventCallback(DeviceEvents.PostDeviceEvent object) {

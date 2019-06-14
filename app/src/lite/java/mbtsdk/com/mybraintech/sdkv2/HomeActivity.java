@@ -223,25 +223,19 @@ public class HomeActivity extends AppCompatActivity{
 
     private void startScan() {
         isErrorRaised = false;
-        client.connectBluetooth(new ConnectionConfig.Builder(bluetoothStateListener)
-                    .deviceName(
-                            ((deviceName != null) && (deviceName.equals(MELOMIND_DEVICE_NAME_PREFIX) || deviceName.equals(VPRO_DEVICE_NAME_PREFIX))) ? //if no name has been entered by the user, the default device name is the headset prefix
-                            null : deviceName ) //null is given in parameters if no name has been entered by the user
-                    .deviceQrCode(
-                            ((deviceQrCode != null) && (deviceQrCode.equals(QR_CODE_NAME_PREFIX)) ) ? //if no QR code has been entered by the user, the default device name is the headset prefix
-                            null : deviceQrCode )
-                    .maxScanDuration(SCAN_DURATION)
-                    .create());
+        ConnectionConfig.Builder builder = new ConnectionConfig.Builder(bluetoothStateListener)
+                .deviceName(
+                        (deviceName != null && deviceName.equals(MELOMIND_DEVICE_NAME_PREFIX)) ? //if no name has been entered by the user, the default device name is the headset prefix
+                                null : deviceName ) //null is given in parameters if no name has been entered by the user
+                .deviceQrCode(
+                        ((deviceQrCode != null) && (deviceQrCode.equals(QR_CODE_NAME_PREFIX)) ) ? //if no QR code has been entered by the user, the default device name is the headset prefix
+                                null : deviceQrCode )
+                .maxScanDuration(SCAN_DURATION);
+        if(connectAudioIfDeviceCompatible) {
+            builder.connectAudio();
+        }
+        client.connectBluetooth(builder.create());
 
-    }
-
-    private void findAvailableDevice() {
-        notifyUser(getString(R.string.find_first_available_headset));
-        //deviceName =  ;//todo replace  by the method that detects the first available device
-        deviceNameField.setText(deviceName);
-        scanButton.setText(getString(R.string.connect));
-        scanButton.setTextColor(getResources().getColor(R.color.white));
-        scanButton.setBackgroundColor(getResources().getColor(R.color.light_blue));
     }
 
     private void cancelScan(){
@@ -252,7 +246,6 @@ public class HomeActivity extends AppCompatActivity{
      * Updates the scanning state boolean and the Scan button text
      * The Scan button text is changed into into "Cancel" if scanning is launched
      * or into "Find a device" if scanning is cancelled
-     * @param newIsCancelled
      */
     private void updateScanning(boolean newIsCancelled){
         isCancelled = newIsCancelled;

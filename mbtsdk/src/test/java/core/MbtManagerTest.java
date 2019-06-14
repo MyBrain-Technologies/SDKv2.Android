@@ -1,5 +1,6 @@
 package core;
 
+import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 
 import org.junit.Before;
@@ -19,6 +20,8 @@ import core.bluetooth.MbtBluetoothManager;
 import core.bluetooth.requests.DeviceCommandRequestEvent;
 import core.device.DeviceEvents;
 import core.device.MbtDeviceManager;
+import core.device.model.MbtDevice;
+import core.device.model.MelomindDevice;
 import core.eeg.MbtEEGManager;
 import engine.SimpleRequestCallback;
 import eventbus.EventBusManager;
@@ -71,7 +74,6 @@ public class MbtManagerTest {
     public void sendDeviceCommand_noCallback(){
         byte[] response = new byte[]{0,1,2,3,4,5,6,7,8,9};
         DeviceCommand command = new DeviceCommands.ConnectAudio();
-        SimpleRequestCallback<byte[]> simpleRequestCallback = Mockito.mock(SimpleRequestCallback.class);
 
         //no subscriber is supposed to be registered before the command is called
         assertFalse(EventBusManager.BUS.hasSubscriberForEvent(DeviceEvents.RawDeviceResponseEvent.class));
@@ -80,6 +82,7 @@ public class MbtManagerTest {
         //a subscriber is supposed to be registered once the command is called
         assertTrue(EventBusManager.BUS.hasSubscriberForEvent(DeviceEvents.RawDeviceResponseEvent.class));
         //verify that the "on request complete" callback is not triggered if the client didn't provide any callback
+        SimpleRequestCallback<byte[]> simpleRequestCallback = Mockito.mock(SimpleRequestCallback.class);
         Mockito.verify(simpleRequestCallback, Mockito.never()).onRequestComplete(response);
     }
 
@@ -93,6 +96,7 @@ public class MbtManagerTest {
      */
     @Test
     public void sendDeviceCommand_withCallback(){
+
         MbtBluetoothManager bluetoothManager = Mockito.mock(MbtBluetoothManager.class);
         byte[] response = new byte[]{0,1,2,3,4,5,6,7,8,9};
         ArgumentCaptor<DeviceCommandRequestEvent> captor = ArgumentCaptor.forClass(DeviceCommandRequestEvent.class); //capture any DeviceCommandRequestEvent
@@ -125,5 +129,41 @@ public class MbtManagerTest {
         }
         manager.sendDeviceCommand(command);
 
+    }
+
+    /**
+     *  Check that a subscriber is well registered
+     *  to receive the headset instance
+     *  and if a callback is provided by the client
+     *  Also check that no subscriber was registered before the request,
+     *  and the subscriber is unregistered once the response callback is returned.
+     */
+    @Test
+    public void requestCurrentConnectedDevice_withCallback(){
+
+        BluetoothDevice bluetoothDevice = Mockito.mock(BluetoothDevice.class);
+        MbtDevice connectedDevice  = new MelomindDevice(bluetoothDevice);
+        ArgumentCaptor<DeviceEvents.GetDeviceEvent> captor = ArgumentCaptor.forClass(DeviceEvents.GetDeviceEvent.class); //capture any get device request
+
+        SimpleRequestCallback<MbtDevice> callback = device -> {
+            assertEquals(device, connectedDevice);
+            //the subscriber is supposed to be unregistered once the callback is triggered
+            assertFalse(EventBusManager.BUS.hasSubscriberForEvent(DeviceEvents.PostDeviceEvent.class));
+        };
+        //no subscriber is supposed to be registered before the command call
+        assertFalse(EventBusManager.BUS.hasSubscriberForEvent(DeviceEvents.PostDeviceEvent.class));
+        PowerMockito.spy(EventBusManager.class);
+        try {
+            PowerMockito
+                    .doAnswer((Answer<Void>) invocation -> {
+                        //a subscriber is supposed to be registered once the postEvent method is called
+                        assertTrue(EventBusManager.BUS.hasSubscriberForEvent(DeviceEvents.PostDeviceEvent.class));
+                        return null;
+                    }).when(EventBusManager.class, "postEvent", captor, Mockito.any(EventBusManager.Callback.class));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        //manager.requestCurrentConnectedDevice(callback);
     }
 }

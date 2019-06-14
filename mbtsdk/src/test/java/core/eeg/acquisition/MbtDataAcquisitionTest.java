@@ -198,11 +198,14 @@ public class MbtDataAcquisitionTest {
         data [9] = new byte[]{14, 92, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1};
 
 
-        final CompletableFuture<Void> future = CompletableFuture.runAsync(()->{ //as handledataacquired calls methods that contain an async task where the eeg result matrix is returned, we must wait that the eeg matrix computation is done
+        final CompletableFuture<Void> future = CompletableFuture.runAsync(new Runnable() {
+            @Override
+            public void run() { //as handledataacquired calls methods that contain an async task where the eeg result matrix is returned, we must wait that the eeg matrix computation is done
 
-            for (int i=0; i<nbAcquisition; i++) {
-                dataAcquisition.handleDataAcquired(data[i]);
-                assertTrue(data[i].length == 18);
+                for (int i = 0; i < nbAcquisition; i++) {
+                    dataAcquisition.handleDataAcquired(data[i]);
+                    assertTrue(data[i].length == 18);
+                }
             }
         },Executors.newCachedThreadPool());
 
@@ -237,11 +240,14 @@ public class MbtDataAcquisitionTest {
 
         byte[] rawData = new byte[]{14, 92, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1, 127, -1};
         int sizeArray = rawData.length;
-        final CompletableFuture<Void> future= CompletableFuture.runAsync(()->{ //as handledataacquired calls methods that contain an async task where the eeg result matrix is returned, we must wait that the eeg matrix computation is done
+        final CompletableFuture<Void> future= CompletableFuture.runAsync(new Runnable() {
+            @Override
+            public void run() { //as handledataacquired calls methods that contain an async task where the eeg result matrix is returned, we must wait that the eeg matrix computation is done
 
-            for (int i=0; i<nbAcquisition; i++) {
-                dataAcquisition.handleDataAcquired(rawData);
-                assertTrue(rawData.length == 18);
+                for (int i = 0; i < nbAcquisition; i++) {
+                    dataAcquisition.handleDataAcquired(rawData);
+                    assertTrue(rawData.length == 18);
+                }
             }
         },Executors.newCachedThreadPool());
 
@@ -275,11 +281,14 @@ public class MbtDataAcquisitionTest {
         byte[] data = new byte[sizeArray];
         new Random().nextBytes(data); //Generates random bytes and places them into a user-supplied byte array
 
-        final CompletableFuture<Void> future= CompletableFuture.runAsync(()->{ //as handledataacquired calls methods that contain an async task where the eeg result matrix is returned, we must wait that the eeg matrix computation is done
+        final CompletableFuture<Void> future= CompletableFuture.runAsync(new Runnable() {
+            @Override
+            public void run() { //as handledataacquired calls methods that contain an async task where the eeg result matrix is returned, we must wait that the eeg matrix computation is done
 
-            for (int i=0; i<nbAcquisition; i++) {
-                dataAcquisition.handleDataAcquired(data);
-                assertTrue(data.length == 18);
+                for (int i = 0; i < nbAcquisition; i++) {
+                    dataAcquisition.handleDataAcquired(data);
+                    assertTrue(data.length == 18);
+                }
             }
         },Executors.newCachedThreadPool());
 
@@ -311,9 +320,12 @@ public class MbtDataAcquisitionTest {
         byte[] data = new byte[sizeArray];
         new Random().nextBytes(data); //Generates random bytes and places them into a user-supplied byte array
 
-        final CompletableFuture<Void> future = CompletableFuture.runAsync(() -> { //as handledataacquired calls methods that contain an async task where the eeg result matrix is returned, we must wait that the eeg matrix computation is done
-            for (int i = 0; i < nbAcquisition; i++) {// buffer size = 1000=16*62,5 => matrix size always = 1000/2 (in case nbChannel is 2) = 500
-                dataAcquisition.handleDataAcquired(data);
+        final CompletableFuture<Void> future = CompletableFuture.runAsync(new Runnable() {
+            @Override
+            public void run() { //as handledataacquired calls methods that contain an async task where the eeg result matrix is returned, we must wait that the eeg matrix computation is done
+                for (int i = 0; i < nbAcquisition; i++) {// buffer size = 1000=16*62,5 => matrix size always = 1000/2 (in case nbChannel is 2) = 500
+                    dataAcquisition.handleDataAcquired(data);
+                }
             }
         }, Executors.newCachedThreadPool());
 

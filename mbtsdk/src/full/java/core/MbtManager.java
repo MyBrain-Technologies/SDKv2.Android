@@ -286,6 +286,10 @@ public class MbtManager{
 
 
     public void requestCurrentConnectedDevice(final SimpleRequestCallback<MbtDevice> callback) {
+        if (callback == null){
+            throw new IllegalArgumentException("Impossible to return the current connected device if no callback is provided in input");
+        }
+
         EventBusManager.postEvent(new DeviceEvents.GetDeviceEvent(), new EventBusManager.Callback<DeviceEvents.PostDeviceEvent>(){
             @Override
             @Subscribe

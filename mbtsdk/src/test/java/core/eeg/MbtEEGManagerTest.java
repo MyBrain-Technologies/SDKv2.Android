@@ -67,12 +67,15 @@ public class MbtEEGManagerTest {
         ArrayList<RawEEGSample> rawEEGSampleList = new ArrayList<>();
         eegManager.setTestConsolidatedEEG(matrixBefore);
 
-        final CompletableFuture<Void> future= CompletableFuture.runAsync(()->{ //as handledataacquired calls methods that contain an async task where the eeg result matrix is returned, we must wait that the eeg matrix computation is done
-            for (int i=0 ; i< MbtFeatures.DEFAULT_MAX_PENDING_RAW_DATA_BUFFER_SIZE ; i++){
-                rawEEGSampleList.add(new RawEEGSample(new ArrayList<>(Arrays.asList(new byte[]{-13, -29},new byte[]{68, 59})),Float.NaN));
-            }
-            dataBuffering.storePendingDataInBuffer(rawEEGSampleList);
+        final CompletableFuture<Void> future= CompletableFuture.runAsync(new Runnable() {
+            @Override
+            public void run() { //as handledataacquired calls methods that contain an async task where the eeg result matrix is returned, we must wait that the eeg matrix computation is done
+                for (int i = 0; i < MbtFeatures.DEFAULT_MAX_PENDING_RAW_DATA_BUFFER_SIZE; i++) {
+                    rawEEGSampleList.add(new RawEEGSample(new ArrayList<>(Arrays.asList(new byte[]{-13, -29}, new byte[]{68, 59})), Float.NaN));
+                }
+                dataBuffering.storePendingDataInBuffer(rawEEGSampleList);
 
+            }
         }, Executors.newCachedThreadPool());
 
         try {
