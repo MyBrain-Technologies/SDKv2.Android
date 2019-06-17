@@ -261,8 +261,6 @@ final class MbtGattController extends BluetoothGattCallback {
 
         mbtBluetoothLE.stopWaitingOperation();
         mbtBluetoothLE.onNotificationStateChanged(status == BluetoothGatt.GATT_SUCCESS, descriptor.getCharacteristic(), descriptor.getValue() == BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-
-
     }
 
     @Override

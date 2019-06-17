@@ -1,6 +1,7 @@
 package core;
 
 import android.content.Context;
+import android.os.Handler;
 
 import org.greenrobot.eventbus.EventBus;
 import org.junit.After;
@@ -144,6 +145,7 @@ public class MbtManagerTest {
         manager.sendDeviceCommand(command);
 
     }
+
 
     @After
     public void tearDown() throws Exception {

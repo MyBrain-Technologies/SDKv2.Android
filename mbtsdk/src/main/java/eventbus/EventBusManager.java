@@ -22,7 +22,7 @@ public final class EventBusManager {
      * Gets a Event Bus instance that will manage the events
      * Each instance is a separate scope in which events are delivered.
      */
-    public static final EventBus BUS = EventBus.getDefault();
+    public static EventBus BUS = EventBus.getDefault();
     private static final String TAG = EventBusManager.class.getSimpleName();
 
     /**
@@ -75,7 +75,8 @@ public final class EventBusManager {
         BUS.post(event);
     }
 
+
     public interface Callback<T> {
-        public Object onEventCallback(T object);
+        Object onEventCallback(T object);
     }
 }

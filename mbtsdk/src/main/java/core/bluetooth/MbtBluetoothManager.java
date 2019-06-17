@@ -86,6 +86,9 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private boolean requestBeingProcessed = false;
 
     private RequestThread requestThread;
+    /**
+     * Handler object enqueues an action to be performed on a different thread than the main thread
+     */
     private Handler requestHandler;
 
     private boolean isConnectionInterrupted = false;
@@ -309,6 +312,14 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
     void setRequestHandler(Handler requestHandler) {
         this.requestHandler = requestHandler;
+    }
+
+    void setMbtBluetoothLE(MbtBluetoothLE mbtBluetoothLE) {
+        this.mbtBluetoothLE = mbtBluetoothLE;
+    }
+
+    public RequestThread getRequestThread() {
+        return requestThread;
     }
 
     private void switchToNextConnectionStep(){
@@ -793,10 +804,10 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         if(request instanceof DisconnectRequestEvent && ((DisconnectRequestEvent) request).isInterrupted())
             cancelPendingConnection(((DisconnectRequestEvent) request).isInterrupted());
         else
-            requestHandler.post(new Runnable() {
+            requestHandler.post(new Runnable() { // enqueue a Runnable object to be called by the Handler message queue when they are received
                 @Override
                 public void run() {
-                    requestThread.parseRequest(request);
+                    requestThread.parseRequest(request);//When posting or sending to a Handler, the item is processed as soon as the message queue is ready to do so
                 }
             });
     }
