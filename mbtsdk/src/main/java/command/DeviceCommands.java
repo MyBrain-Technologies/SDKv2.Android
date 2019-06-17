@@ -18,6 +18,7 @@ public interface DeviceCommands {
      * in order to change its serial number.
      * The new serial number is stored and returned by the headset if the command succeeds
      */
+    @Keep
     class UpdateSerialNumber extends DeviceCommand{
 
         /**
@@ -65,6 +66,7 @@ public interface DeviceCommands {
      * in order to change its external name (QR code number).
      * The new external name is stored and returned by the headset if the command succeeds.
      */
+    @Keep
     class UpdateExternalName extends DeviceCommand{
 
         /**
@@ -112,6 +114,7 @@ public interface DeviceCommands {
      * in order to change its product name.
      * The new product name is stored and returned by the headset if the command succeeds.
      */
+    @Keep
     class UpdateProductName extends DeviceCommand{
 
         /**
@@ -163,6 +166,7 @@ public interface DeviceCommands {
      * and the ADS status.
      * The device system status is returned by the headset if the command succeeds.
      */
+    @Keep
     class GetSystemStatus extends DeviceCommand{
 
         /**
@@ -189,6 +193,7 @@ public interface DeviceCommands {
      * in order to reboot the headset after the next disconnection.
      * No response is returned by the headset if the command succeeds.
      */
+    @Keep
     class Reboot extends DeviceCommand{
 
         /**
@@ -205,6 +210,7 @@ public interface DeviceCommands {
      * in order to establish a Bluetooth connection for audio streaming.
      * The connection status is returned by the headset if the command succeeds.
      */
+    @Keep
     class ConnectAudio extends DeviceCommand{
 
         /**
@@ -242,6 +248,7 @@ public interface DeviceCommands {
      * in order to establish a Bluetooth disconnection for audio streaming.
      * The disconnection status is returned by the headset if the command succeeds.
      */
+    @Keep
     class DisconnectAudio extends DeviceCommand{
 
         /**

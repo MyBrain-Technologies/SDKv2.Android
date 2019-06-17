@@ -22,6 +22,7 @@ public interface DeviceStreamingCommands {
      * (maximum size of the data sent by the headset to the SDK).
      * The new serial number is stored and returned by the headset if the command succeeds.
      */
+    @Keep
     class Mtu extends DeviceCommand implements DeviceStreamingCommands{
 
         /**
@@ -65,11 +66,13 @@ public interface DeviceStreamingCommands {
         }
 
     }
+
     /**
      * Mailbox command sent from the SDK to the connected headset
      * in order to change the applied Notch filter.
      * The new notch filter is stored and returned by the headset if the command succeeds.
      */
+    @Keep
     class NotchFilter extends DeviceCommand implements DeviceStreamingCommands {
         /**
          * The new notch filter to apply
@@ -113,6 +116,7 @@ public interface DeviceStreamingCommands {
      * in order to change the applied Bandpass filter.
      * The new bandpass filter is stored and returned by the headset if the command succeeds.
      */
+    @Keep
     class BandpassFilter extends DeviceCommand implements DeviceStreamingCommands{
         /**
          * The new bandpass filter to apply
@@ -156,6 +160,7 @@ public interface DeviceStreamingCommands {
      * in order to change the applied amplifier gain.
      * The new bandpass filter is stored and returned by the headset if the command succeeds.
      */
+    @Keep
     class AmplifierGain extends DeviceCommand implements DeviceStreamingCommands{
         /**
          * The new amplifier gain to apply
@@ -199,6 +204,7 @@ public interface DeviceStreamingCommands {
      * in order to enable or disable triggers receiving and synchronize external acquisitions.
      * The triggers receiving status is returned by the headset if the command succeeds.
      */
+    @Keep
     class Triggers extends DeviceCommand implements DeviceStreamingCommands{
         /**
          * The new boolean status of triggers receiving
@@ -248,6 +254,7 @@ public interface DeviceStreamingCommands {
      * in order to enable or disable EEG signal DC offset receiving.
      * The DC offset receiving status is returned by the headset if the command succeeds.
      */
+    @Keep
     class DcOffset extends DeviceCommand implements DeviceStreamingCommands {
         /**
          * The new boolean status of EEG signal DC offset receiving
@@ -302,6 +309,7 @@ public interface DeviceStreamingCommands {
      * and real frequency sample measured by the firmware.
      * The DC offset receiving status is returned by the headset if the command succeeds.
      */
+    @Keep
     class EegConfig extends DeviceCommand implements DeviceStreamingCommands{
 
         /**
