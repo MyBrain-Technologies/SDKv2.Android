@@ -31,9 +31,10 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
-import command.DeviceCommand;
+import command.DeviceCommandOld;
 import command.DeviceCommands;
 import command.DeviceStreamingCommands;
+import command.MailboxEvents;
 import config.AmpGainConfig;
 import config.FilterConfig;
 import config.MbtConfig;
@@ -613,7 +614,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         }
     }
 
-    void notifyCommandResponseReceived(byte[] returnedResult, DeviceCommand commandType) {
+    void notifyCommandResponseReceived(byte[] returnedResult, DeviceCommandOld commandType) {
         LogUtils.i(TAG, "Received response from device "+commandType+" | raw value:"+Arrays.toString(returnedResult));
         mbtBluetoothManager.notifyDeviceResponseReceived(returnedResult, commandType);
 
@@ -642,16 +643,16 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * reconfigure some headset's parameters
      * or get values stored by the headset
      * or ask the headset to perform an action.
-     * The command's parameters are bundled in a {@link DeviceCommand instance}
+     * The command's parameters are bundled in a {@link DeviceCommandOld instance}
      * that can provide a nullable response callback.
      * All method inside are blocking.
-     * @param deviceCommand is the {@link DeviceCommand} object that defines the type of command to send
+     * @param deviceCommand is the {@link DeviceCommandOld} object that defines the type of command to send
      * and the associated command parameters.
      * One of this parameter is an optional callback that returns the response
      * sent by the headset to the SDK once the command is received.
      * @return true if the request has been sent to the headset, false otherwise
      */
-    private void waitResultOfDeviceCommand(DeviceCommand deviceCommand){
+    private void waitResultOfDeviceCommand(DeviceCommandOld deviceCommand){
         Log.d(TAG, "Wait result of device command "+deviceCommand);
             try {
                 asyncConfiguration.waitOperationResult(5000);
@@ -665,15 +666,15 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * reconfigure some headset's parameters
      * or get values stored by the headset
      * or ask the headset to perform an action.
-     * The command's parameters are bundled in a {@link DeviceCommand instance}
+     * The command's parameters are bundled in a {@link DeviceCommandOld instance}
      * that can provide a nullable response callback.
      * All method inside are blocking.
-     * @param deviceCommand is the {@link DeviceCommand} object that defines the type of command to send
+     * @param deviceCommand is the {@link DeviceCommandOld} object that defines the type of command to send
      * and the associated command parameters.
      * One of this parameter is an optional callback that returns the response
      * sent by the headset to the SDK once the command is received.
      */
-    public boolean sendDeviceCommand(DeviceCommand deviceCommand){
+    public boolean sendDeviceCommand(DeviceCommandOld deviceCommand){
         LogUtils.i(TAG, "Send device command : "+deviceCommand);
         boolean requestSent = false;
 

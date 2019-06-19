@@ -15,9 +15,10 @@ import org.mockito.Mockito;
 import java.nio.ByteBuffer;
 import java.util.UUID;
 
-import command.DeviceCommand;
+import command.DeviceCommandOld;
 import command.DeviceCommands;
 import command.DeviceStreamingCommands;
+import command.MailboxEvents;
 import config.AmpGainConfig;
 import config.FilterConfig;
 import config.MbtConfig;
@@ -1305,7 +1306,7 @@ public class MbtBluetoothLETest {
     @Test
     public void sendDeviceCommand_valid(){
         String serialNumber = DEVICE_NAME;
-        DeviceCommand command = new DeviceCommands.UpdateSerialNumber(serialNumber);
+        DeviceCommandOld command = new DeviceCommands.UpdateSerialNumber(serialNumber);
         when(gatt.getService(SERVICE)).thenReturn(gattService);
         when(gattService.getUuid()).thenReturn(SERVICE);
         when(gattService.getCharacteristic(CHARACTERISTIC_MAILBOX)).thenReturn(characteristic);
@@ -1326,8 +1327,8 @@ public class MbtBluetoothLETest {
     @Test
     public void sendDeviceCommand_invalid(){
         //String serialNumber = null;
-        //DeviceCommand command = new DeviceCommands.UpdateSerialNumber(serialNumber);
-        DeviceCommand command = null;
+        //DeviceCommandOld command = new DeviceCommands.UpdateSerialNumber(serialNumber);
+        DeviceCommandOld command = null;
         Mockito.doNothing().when(bluetoothManager).notifyDeviceResponseReceived(null, command);
 
         boolean isCommandSent = bluetoothLE.sendDeviceCommand(command);

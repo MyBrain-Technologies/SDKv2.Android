@@ -25,9 +25,9 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
+import command.DeviceCommandOld;
 import config.MbtConfig;
 import core.BaseModuleManager;
-import command.DeviceCommand;
 import command.DeviceCommands;
 import command.DeviceStreamingCommands;
 import core.bluetooth.lowenergy.MbtBluetoothLE;
@@ -160,7 +160,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * @param rawResponse is the raw byte array returned by the headset
      * @param commandType is the corresponding type of mailbox command
      */
-    public void notifyDeviceResponseReceived(@Nullable byte[] rawResponse, DeviceCommand commandType) {
+    public void notifyDeviceResponseReceived(@Nullable byte[] rawResponse, DeviceCommandOld commandType) {
         if(rawResponse != null){
             if(commandType instanceof DeviceStreamingCommands.EegConfig){
                 notifyDeviceConfigReceived(ArrayUtils.toObject(rawResponse));
@@ -183,7 +183,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * are synchronous, meaning two or more operations can't be run simultaneously. This {@link HandlerThread}
      * extended class is able to hold pending operations.
      */
-     class RequestThread extends HandlerThread {
+    class RequestThread extends HandlerThread {
 
         RequestThread(String name) {
             super(name);
@@ -409,8 +409,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 if (isLocationDisabledOrNotGranted()) //assert that Location is on and Location permissions are granted
                     return;
 
-                if (MbtConfig.connectAudioIfDeviceCompatible()) //if user requested audio connection
-                    mbtBluetoothA2DP.initA2dpProxy(); //initialization to check if a Melomind is already connected in A2DP : as the next step is the scanning, the SDK is able to filter on the name of this device
+                mbtBluetoothA2DP.initA2dpProxy(); //initialization to check if a Melomind is already connected in A2DP : as the next step is the scanning, the SDK is able to filter on the name of this device
 
                 if (getCurrentState().equals(BtState.IDLE))
                     updateConnectionState(false); //current state is set to READY_FOR_BLUETOOTH_OPERATION
@@ -478,7 +477,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             AsyncUtils.executeAsync(new Runnable() {
                 @Override
                 public void run() {
-                    MbtBluetoothManager.this.connect(deviceTypeRequested.useLowEnergyProtocol() ? BLUETOOTH_LE : BLUETOOTH_SPP);
+                    connect(deviceTypeRequested.useLowEnergyProtocol() ? BLUETOOTH_LE : BLUETOOTH_SPP);
                 }
             });
             asyncOperation.waitOperationResult(MbtConfig.getBluetoothConnectionTimeout()); // blocked until the futureOperation.complete() is called or until timeout
@@ -719,12 +718,12 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 updateConnectionState(true);//current state is set to QR_CODE_SENDING
                 if (device.getSerialNumber() != null && device.getExternalName() != null && (device.getExternalName().equals(MbtFeatures.MELOMIND_DEVICE_NAME) || device.getExternalName().length() == MbtFeatures.DEVICE_QR_CODE_LENGTH-1) //send the QR code found in the database if the headset do not know its own QR code
                         && new FirmwareUtils(device.getFirmwareVersion()).isFwValidForFeature(FirmwareUtils.FWFeature.REGISTER_EXTERNAL_NAME)) {
-                   AsyncUtils.executeAsync(new Runnable() {
-                       @Override
-                       public void run() {
-                           mbtBluetoothLE.sendExternalName(new MelomindsQRDataBase(mContext, false).get(device.getSerialNumber()));
-                       }
-                   });
+                    AsyncUtils.executeAsync(new Runnable() {
+                        @Override
+                        public void run() {
+                            mbtBluetoothLE.sendExternalName(new MelomindsQRDataBase(mContext, false).get(device.getSerialNumber()));
+                        }
+                    });
                 }
                 updateConnectionState(true);//current state is set to CONNECTED in any case (success or failure) the connection process is completed and the SDK consider that everything is ready for any operation (for example ready to acquire EEG data)
             }
@@ -769,7 +768,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                     }
                 }
             });
-          
+
             if(!mbtBluetoothA2DP.isConnected()) {
                 if (connectionRetryCounter < MAX_CONNECTION_RETRY) {
                     connectionRetryCounter++;
@@ -818,13 +817,13 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * reconfigure some headset's parameters
      * or get values stored by the headset
      * or ask the headset to perform an action.
-     * The command's parameters are bundled in a {@link DeviceCommand instance}
+     * The command's parameters are bundled in a {@link DeviceCommandOld instance}
      * that can provide a nullable response callback.
      * All method inside are blocking.
-     * @param command is the {@link DeviceCommand} object that defines the type of command to send
+     * @param command is the {@link DeviceCommandOld} object that defines the type of command to send
      * and the asociated command parameters.
      */
-    private void sendDeviceCommand(@NonNull DeviceCommand command){
+    private void sendDeviceCommand(@NonNull DeviceCommandOld command){
         if(deviceTypeRequested.useLowEnergyProtocol())
             mbtBluetoothLE.sendDeviceCommand(command);
         else
@@ -957,8 +956,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                     if(((!isDataBluetoothConnected() || !mbtBluetoothLE.isCurrentDeviceNameEqual(bleDeviceName))) && MbtConfig.connectAudioIfDeviceCompatible()) {
                         connectBLEFromA2DP(bleDeviceName);
                     }
+                    EventBusManager.postEvent(new DeviceEvents.AudioConnectedDeviceEvent(mbtBluetoothA2DP.getConnectedDevice()));
                 }
-                EventBusManager.postEvent(new DeviceEvents.AudioConnectedDeviceEvent(mbtBluetoothA2DP.getConnectedDevice()));
                 break;
             case JACK_CABLE_CONNECTED:
                 if(asyncOperation.isWaiting())

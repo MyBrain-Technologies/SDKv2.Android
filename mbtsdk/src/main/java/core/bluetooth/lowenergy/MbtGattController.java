@@ -15,6 +15,7 @@ import java.util.Arrays;
 
 import command.DeviceCommands;
 import command.DeviceStreamingCommands;
+import command.MailboxEvents;
 import core.bluetooth.BtState;
 import core.device.model.DeviceInfo;
 import core.device.model.MelomindDevice;

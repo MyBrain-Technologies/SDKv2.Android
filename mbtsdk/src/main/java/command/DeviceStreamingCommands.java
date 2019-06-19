@@ -5,6 +5,7 @@ import android.support.annotation.Keep;
 import config.AmpGainConfig;
 import config.FilterConfig;
 import engine.SimpleRequestCallback;
+import engine.clientevents.BaseError;
 
 /**
  * Device commands sent from the SDK to the headset
@@ -40,6 +41,7 @@ public interface DeviceStreamingCommands {
          * @param mtu is the new Maximum Transmission Unit
          */
         public Mtu(int mtu) {
+            super();
             this.mtu = mtu;
         }
 
@@ -65,6 +67,20 @@ public interface DeviceStreamingCommands {
             return mtu;
         }
 
+        @Override
+        public void init() {
+
+        }
+
+        @Override
+        public boolean isValid() {
+            return false;
+        }
+
+        @Override
+        public BaseError onError() {
+            return null;
+        }
     }
 
     /**
@@ -108,6 +124,21 @@ public interface DeviceStreamingCommands {
 
         public FilterConfig getNotchFilter() {
             return notchFilter;
+        }
+
+        @Override
+        public void init() {
+
+        }
+
+        @Override
+        public boolean isValid() {
+            return false;
+        }
+
+        @Override
+        public BaseError onError() {
+            return null;
         }
     }
 
@@ -153,6 +184,21 @@ public interface DeviceStreamingCommands {
         public FilterConfig getBandpassFilter() {
             return bandpassFilter;
         }
+
+        @Override
+        public void init() {
+
+        }
+
+        @Override
+        public boolean isValid() {
+            return false;
+        }
+
+        @Override
+        public BaseError onError() {
+            return null;
+        }
     }
 
     /**
@@ -196,6 +242,21 @@ public interface DeviceStreamingCommands {
 
         public AmpGainConfig getAmpGainConfig() {
             return ampGainConfig;
+        }
+
+        @Override
+        public void init() {
+
+        }
+
+        @Override
+        public boolean isValid() {
+            return false;
+        }
+
+        @Override
+        public BaseError onError() {
+            return null;
         }
     }
 
@@ -247,6 +308,21 @@ public interface DeviceStreamingCommands {
         public boolean areTriggersEnabled() {
             return enableTriggers;
         }
+
+        @Override
+        public void init() {
+
+        }
+
+        @Override
+        public boolean isValid() {
+            return false;
+        }
+
+        @Override
+        public BaseError onError() {
+            return null;
+        }
     }
 
     /**
@@ -297,6 +373,21 @@ public interface DeviceStreamingCommands {
         public boolean isEnableDcOffset() {
             return enableDcOffset;
         }
+
+        @Override
+        public void init() {
+
+        }
+
+        @Override
+        public boolean isValid() {
+            return false;
+        }
+
+        @Override
+        public BaseError onError() {
+            return null;
+        }
     }
 
     /**
@@ -331,6 +422,20 @@ public interface DeviceStreamingCommands {
             this.responseCallback = responseCallback;
         }
 
+        @Override
+        public void init() {
+
+        }
+
+        @Override
+        public boolean isValid() {
+            return false;
+        }
+
+        @Override
+        public BaseError onError() {
+            return null;
+        }
     }
 
 }

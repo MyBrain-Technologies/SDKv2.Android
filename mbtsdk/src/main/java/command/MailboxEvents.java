@@ -1,10 +1,10 @@
-package core.bluetooth.lowenergy;
+package command;
 
 /**
  * A class that contains all currently used mailbox codes.
  * One code has one specific functionnality.
  */
-final class MailboxEvents{
+public final class MailboxEvents{
 
             static final byte MBX_SET_ADS_CONFIG = 0;
             static final byte MBX_SET_AUDIO_CONFIG = 1;
@@ -17,6 +17,9 @@ final class MailboxEvents{
             static final byte MBX_SYS_GET_STATUS = 8;   // allows to retrieve to system global status
             static final byte MBX_SYS_REBOOT_EVT = 9;   // trigger a reboot event at disconnection
             static final byte MBX_SET_SERIAL_NUMBER = 10; // Set the melomind serial nb
+            static final byte MBX_SET_SERIAL_NUMBER_ADDITIONAL_FIRST = (byte) 0x53;
+            static final byte MBX_SET_SERIAL_NUMBER_ADDITIONAL_SECOND = (byte) 0x4D;
+
             static final byte MBX_SET_NOTCH_FILT = 11;      // allows to hotswap the filters' parameters
             static final byte MBX_SET_BANDPASS_FILT = 12;   // Set the signal bandwidth by changing the embedded bandpass filter
             static final byte MBX_SET_AMP_GAIN = 13;        // Set the eeg signal amplifier gain

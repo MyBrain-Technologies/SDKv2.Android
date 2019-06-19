@@ -7,16 +7,14 @@ import android.content.Context;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.powermock.utils.ArrayUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 
-import command.DeviceCommand;
-import core.bluetooth.MbtBluetoothManager;
+import command.DeviceCommandOld;
+import command.MailboxEvents;
 
 import static org.junit.Assert.*;
 import static org.mockito.AdditionalMatchers.eq;
@@ -154,7 +152,7 @@ public class MbtGattControllerTest {
     @Test
     public void notifyMailboxEventReceived_ConnectAudio_inProgress(){
         byte code = MailboxEvents.MBX_CONNECT_IN_A2DP;
-        ArgumentCaptor<DeviceCommand> captor = ArgumentCaptor.forClass(DeviceCommand.class);
+        ArgumentCaptor<DeviceCommandOld> captor = ArgumentCaptor.forClass(DeviceCommandOld.class);
         BluetoothGatt gatt = Mockito.mock(BluetoothGatt.class);
         BluetoothGattCharacteristic characteristic = Mockito.mock(BluetoothGattCharacteristic.class);
         Mockito.when(characteristic.getValue()).thenReturn(getCharacteristic(code));
@@ -208,7 +206,7 @@ public class MbtGattControllerTest {
      * when a characteristic related to the mailbox has changed
      */
     private void notifyMailboxEventReceived(byte code){
-        ArgumentCaptor<DeviceCommand> captor = ArgumentCaptor.forClass(DeviceCommand.class);
+        ArgumentCaptor<DeviceCommandOld> captor = ArgumentCaptor.forClass(DeviceCommandOld.class);
         BluetoothGatt gatt = Mockito.mock(BluetoothGatt.class);
         BluetoothGattCharacteristic characteristic = Mockito.mock(BluetoothGattCharacteristic.class);
         byte[] characteristicValue = getCharacteristic(code);

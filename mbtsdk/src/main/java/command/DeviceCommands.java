@@ -2,7 +2,7 @@ package command;
 
 import android.support.annotation.Keep;
 import engine.SimpleRequestCallback;
-import features.MbtFeatures;
+import engine.clientevents.BaseError;
 
 /**
  * Mailbox commands sent from the SDK to the headset
@@ -19,7 +19,7 @@ public interface DeviceCommands {
      * The new serial number is stored and returned by the headset if the command succeeds
      */
     @Keep
-    class UpdateSerialNumber extends DeviceCommand{
+    class UpdateSerialNumber extends DeviceCommand {
 
         /**
          * The new serial number value to set
@@ -36,6 +36,9 @@ public interface DeviceCommands {
          * call the {@link UpdateSerialNumber}(String serialNumber, {@linkSimpleRequestCallback<byte[]>)} constructor.
          */
         public UpdateSerialNumber(String serialNumber) {
+            super(MailboxEvents.MBX_SET_SERIAL_NUMBER,
+                    MailboxEvents.MBX_SET_SERIAL_NUMBER_ADDITIONAL_FIRST,
+                    MailboxEvents.MBX_SET_SERIAL_NUMBER_ADDITIONAL_SECOND);
             this.serialNumber = serialNumber;
         }
 
@@ -52,12 +55,33 @@ public interface DeviceCommands {
          * call the {@link UpdateSerialNumber}(String serialNumber) constructor
          */
         public UpdateSerialNumber(String serialNumber, SimpleRequestCallback<byte[]> responseCallback) {
+            super(MailboxEvents.MBX_SET_SERIAL_NUMBER);
             this.serialNumber = serialNumber;
             this.responseCallback = responseCallback;
         }
 
         public String getSerialNumber() {
             return serialNumber;
+        }
+
+        @Override
+        public SimpleRequestCallback<byte[]> getResponseCallback() {
+            return super.getResponseCallback();
+        }
+
+        @Override
+        public void init() {
+
+        }
+
+        @Override
+        public boolean isValid() {
+            return false;
+        }
+
+        @Override
+        public BaseError onError() {
+            return null;
         }
     }
 
@@ -67,7 +91,7 @@ public interface DeviceCommands {
      * The new external name is stored and returned by the headset if the command succeeds.
      */
     @Keep
-    class UpdateExternalName extends DeviceCommand{
+    class UpdateExternalName extends DeviceCommand {
 
         /**
          * The new external name to set
@@ -84,6 +108,7 @@ public interface DeviceCommands {
          * @param externalName the new external name value to set
          */
         public UpdateExternalName(String externalName) {
+            super(MailboxEvents.MBX_SET_SERIAL_NUMBER);
             this.externalName = externalName;
         }
 
@@ -100,12 +125,28 @@ public interface DeviceCommands {
          * call the {@link UpdateExternalName}(String externalName) constructor
          */
         public UpdateExternalName(String externalName, SimpleRequestCallback<byte[]> responseCallback) {
+            super(MailboxEvents.MBX_SET_SERIAL_NUMBER);
             this.externalName = externalName;
             this.responseCallback = responseCallback;
         }
 
         public String getExternalName() {
             return externalName;
+        }
+
+        @Override
+        public void init() {
+
+        }
+
+        @Override
+        public boolean isValid() {
+            return false;
+        }
+
+        @Override
+        public BaseError onError() {
+            return null;
         }
     }
 
@@ -115,7 +156,7 @@ public interface DeviceCommands {
      * The new product name is stored and returned by the headset if the command succeeds.
      */
     @Keep
-    class UpdateProductName extends DeviceCommand{
+    class UpdateProductName extends DeviceCommand {
 
         /**
          * The new product name to set
@@ -132,6 +173,7 @@ public interface DeviceCommands {
          * @param productName is the new product name value to set
          */
         public UpdateProductName(String productName) {
+            super(MailboxEvents.MBX_SET_PRODUCT_NAME);
             this.productName = productName;
         }
 
@@ -148,12 +190,28 @@ public interface DeviceCommands {
          * call the {@link UpdateProductName}(String productName) constructor
          */
         public UpdateProductName(String productName, SimpleRequestCallback<byte[]> responseCallback) {
+            super(MailboxEvents.MBX_SET_PRODUCT_NAME);
             this.productName = productName;
             this.responseCallback = responseCallback;
         }
 
         public String getProductName() {
             return productName;
+        }
+
+        @Override
+        public void init() {
+
+        }
+
+        @Override
+        public boolean isValid() {
+            return false;
+        }
+
+        @Override
+        public BaseError onError() {
+            return null;
         }
     }
 
@@ -167,7 +225,7 @@ public interface DeviceCommands {
      * The device system status is returned by the headset if the command succeeds.
      */
     @Keep
-    class GetSystemStatus extends DeviceCommand{
+    class GetSystemStatus extends DeviceCommand {
 
         /**
          * Mailbox command sent from the SDK to the connected headset
@@ -184,7 +242,23 @@ public interface DeviceCommands {
          * Each status is returned in one byte of the raw response array.
          */
         public GetSystemStatus(SimpleRequestCallback<byte[]> responseCallback) {
+            super(MailboxEvents.MBX_SYS_GET_STATUS);
             this.responseCallback = responseCallback;
+        }
+
+        @Override
+        public void init() {
+
+        }
+
+        @Override
+        public boolean isValid() {
+            return false;
+        }
+
+        @Override
+        public BaseError onError() {
+            return null;
         }
     }
 
@@ -194,7 +268,7 @@ public interface DeviceCommands {
      * No response is returned by the headset if the command succeeds.
      */
     @Keep
-    class Reboot extends DeviceCommand{
+    class Reboot extends DeviceCommand {
 
         /**
          * Mailbox command sent from the SDK to the connected headset
@@ -202,6 +276,22 @@ public interface DeviceCommands {
          * No response is returned by the headset if the command succeeds.
          */
         public Reboot() {
+            super(MailboxEvents.MBX_SYS_REBOOT_EVT);
+        }
+
+        @Override
+        public void init() {
+
+        }
+
+        @Override
+        public boolean isValid() {
+            return false;
+        }
+
+        @Override
+        public BaseError onError() {
+            return null;
         }
     }
 
@@ -211,7 +301,7 @@ public interface DeviceCommands {
      * The connection status is returned by the headset if the command succeeds.
      */
     @Keep
-    class ConnectAudio extends DeviceCommand{
+    class ConnectAudio extends DeviceCommand {
 
         /**
          * Mailbox command sent from the SDK to the connected headset
@@ -224,6 +314,21 @@ public interface DeviceCommands {
          * call the {@link ConnectAudio}({@link SimpleRequestCallback}<byte[]> responseCallback) constructor
          */
         public ConnectAudio() {
+        }
+
+        @Override
+        public void init() {
+
+        }
+
+        @Override
+        public boolean isValid() {
+            return false;
+        }
+
+        @Override
+        public BaseError onError() {
+            return null;
         }
 
         /**
@@ -249,7 +354,7 @@ public interface DeviceCommands {
      * The disconnection status is returned by the headset if the command succeeds.
      */
     @Keep
-    class DisconnectAudio extends DeviceCommand{
+    class DisconnectAudio extends DeviceCommand {
 
         /**
          * Mailbox command sent from the SDK to the connected headset
@@ -260,6 +365,21 @@ public interface DeviceCommands {
          * call the {@link DisconnectAudio}({@link SimpleRequestCallback}<byte[]> responseCallback) constructor
          */
         public DisconnectAudio() {
+        }
+
+        @Override
+        public void init() {
+
+        }
+
+        @Override
+        public boolean isValid() {
+            return false;
+        }
+
+        @Override
+        public BaseError onError() {
+            return null;
         }
 
         /**

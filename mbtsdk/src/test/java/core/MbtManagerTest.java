@@ -13,7 +13,7 @@ import org.mockito.stubbing.Answer;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 
-import command.DeviceCommand;
+import command.DeviceCommandOld;
 import command.DeviceCommands;
 import core.bluetooth.MbtBluetoothManager;
 
@@ -74,7 +74,7 @@ public class MbtManagerTest {
     public void sendDeviceCommand_noCallback(){
 
         byte[] response = new byte[]{0,1,2,3,4,5,6,7,8,9};
-        DeviceCommand command = new DeviceCommands.ConnectAudio();
+        DeviceCommandOld command = new DeviceCommands.ConnectAudio();
 
         //no subscriber is supposed to be registered before the command is called
         assertFalse(EventBusManager.BUS.isRegistered(manager));
@@ -108,7 +108,7 @@ public class MbtManagerTest {
             //the subscriber is supposed to be unregistered once the callback is triggered
             assertFalse(EventBusManager.BUS.hasSubscriberForEvent(DeviceEvents.RawDeviceResponseEvent.class));
         };
-        DeviceCommand command = new DeviceCommands.ConnectAudio(simpleRequestCallback);
+        DeviceCommandOld command = new DeviceCommands.ConnectAudio(simpleRequestCallback);
 
         //no subscriber is supposed to be registered before the command call
         assertFalse(EventBusManager.BUS.isRegistered(manager));

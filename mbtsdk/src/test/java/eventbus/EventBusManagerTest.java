@@ -1,17 +1,13 @@
 package eventbus;
 
 
-import android.os.Handler;
-
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import command.DeviceCommand;
 import command.DeviceCommands;
-import core.bluetooth.MbtBluetoothManager;
 import core.bluetooth.requests.DeviceCommandRequestEvent;
 import core.device.DeviceEvents;
 import engine.SimpleRequestCallback;

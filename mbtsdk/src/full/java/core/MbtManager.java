@@ -13,10 +13,10 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import command.DeviceCommandOld;
 import config.StreamConfig;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.IStreamable;
-import command.DeviceCommand;
 import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
 import core.bluetooth.requests.DisconnectRequestEvent;
 import core.bluetooth.MbtBluetoothManager;
@@ -144,7 +144,7 @@ public class MbtManager{
         this.eegListener = streamConfig.getEegListener();
         this.deviceStatusListener = streamConfig.getDeviceStatusListener();
 
-        for (DeviceCommand command : streamConfig.getDeviceCommands()) {
+        for (DeviceCommandOld command : streamConfig.getDeviceCommands()) {
             sendDeviceCommand(command);
         }
         EventBusManager.postEvent(
@@ -160,7 +160,7 @@ public class MbtManager{
         EventBusManager.postEvent(new StreamRequestEvent(false, false, false));
     }
 
-    public void sendDeviceCommand(@NonNull DeviceCommand deviceCommand){
+    public void sendDeviceCommand(@NonNull DeviceCommandOld deviceCommand){
             EventBusManager.postEvent(new DeviceCommandRequestEvent(deviceCommand), new EventBusManager.Callback<DeviceEvents.RawDeviceResponseEvent>(){
                 @Override
                 @Subscribe

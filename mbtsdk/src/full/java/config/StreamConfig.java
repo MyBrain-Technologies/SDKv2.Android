@@ -7,7 +7,7 @@ import android.support.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import command.DeviceCommand;
+import command.DeviceCommandOld;
 import command.DeviceStreamingCommands;
 import core.eeg.storage.MbtEEGPacket;
 import engine.clientevents.BaseError;
@@ -37,9 +37,9 @@ public final class StreamConfig {
      * or get values stored by the headset
      * or ask the headset to perform an action.
      */
-    private ArrayList<DeviceCommand> deviceCommands;
+    private ArrayList<DeviceCommandOld> deviceCommands;
 
-    private final ArrayList<DeviceCommand> DEFAULT_DEVICE_COMMAND = new ArrayList<>(Arrays.asList(
+    private final ArrayList<DeviceCommandOld> DEFAULT_DEVICE_COMMAND = new ArrayList<>(Arrays.asList(
             new DeviceStreamingCommands.DcOffset(false),
             new DeviceStreamingCommands.Triggers(false)));
 
@@ -53,7 +53,7 @@ public final class StreamConfig {
         if(deviceCommands != null && deviceCommands.length > 0) {
             this.deviceCommands = new ArrayList<>();
             for (DeviceStreamingCommands deviceCommand : deviceCommands) {
-                this.deviceCommands.add((DeviceCommand) deviceCommand);
+                this.deviceCommands.add((DeviceCommandOld) deviceCommand);
             }
         }
         this.deviceCommands.add(new DeviceStreamingCommands.EegConfig(null));
@@ -75,7 +75,7 @@ public final class StreamConfig {
         return computeQualities;
     }
 
-    public ArrayList<DeviceCommand> getDeviceCommands() {
+    public ArrayList<DeviceCommandOld> getDeviceCommands() {
         return deviceCommands;
     }
 
@@ -87,7 +87,7 @@ public final class StreamConfig {
         this.computeQualities = computeQualities;
     }
 
-    public void setDeviceCommand(ArrayList<DeviceCommand> deviceCommands) {
+    public void setDeviceCommand(ArrayList<DeviceCommandOld> deviceCommands) {
         this.deviceCommands = deviceCommands;
     }
 

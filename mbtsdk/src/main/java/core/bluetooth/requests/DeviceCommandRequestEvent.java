@@ -1,6 +1,6 @@
 package core.bluetooth.requests;
 
-import command.DeviceCommand;
+import command.DeviceCommandOld;
 
 /**
  * Event triggered when a Mailbox command request is sent from the SDK to the headset
@@ -16,7 +16,7 @@ public class DeviceCommandRequestEvent extends BluetoothRequests{
      * or get values stored by the headset
      * or ask the headset to perform an action. .
      */
-    private final DeviceCommand command;
+    private final DeviceCommandOld command;
 
     /**
      * Event triggered when a Mailbox command request is sent from the SDK to the headset
@@ -24,7 +24,7 @@ public class DeviceCommandRequestEvent extends BluetoothRequests{
      *  or get values stored by the headset
      *  or ask the headset to perform an action. .
      */
-    public DeviceCommandRequestEvent(DeviceCommand command) {
+    public DeviceCommandRequestEvent(DeviceCommandOld command) {
         this.command = command;
     }
 
@@ -34,7 +34,7 @@ public class DeviceCommandRequestEvent extends BluetoothRequests{
      * or get values stored by the headset
      * or ask the headset to perform an action. .
      */
-    public DeviceCommand getCommand() {
+    public DeviceCommandOld getCommand() {
         return command;
     }
 
