@@ -104,7 +104,7 @@ public interface DeviceEvents {
     class RawDeviceResponseEvent {
         private byte[] rawResponse;
 
-        public RawDeviceResponseEvent(@NonNull byte[] rawResponse){
+        public RawDeviceResponseEvent(byte[] rawResponse){
             this.rawResponse = rawResponse;
         }
 

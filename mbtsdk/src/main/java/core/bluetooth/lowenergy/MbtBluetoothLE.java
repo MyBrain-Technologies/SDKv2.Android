@@ -651,9 +651,30 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * sent by the headset to the SDK once the command is received.
      * @return true if the request has been sent to the headset, false otherwise
      */
-    private boolean waitResultOfDeviceCommand(DeviceCommand deviceCommand){
-
+    private void waitResultOfDeviceCommand(DeviceCommand deviceCommand){
         Log.d(TAG, "Wait result of device command "+deviceCommand);
+            try {
+                asyncConfiguration.waitOperationResult(5000);
+            } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                LogUtils.w(TAG, "Device command failed : "+e);
+            }
+    }
+
+    /**
+     * This method handle a single command in order to
+     * reconfigure some headset's parameters
+     * or get values stored by the headset
+     * or ask the headset to perform an action.
+     * The command's parameters are bundled in a {@link DeviceCommand instance}
+     * that can provide a nullable response callback.
+     * All method inside are blocking.
+     * @param deviceCommand is the {@link DeviceCommand} object that defines the type of command to send
+     * and the associated command parameters.
+     * One of this parameter is an optional callback that returns the response
+     * sent by the headset to the SDK once the command is received.
+     */
+    public boolean sendDeviceCommand(DeviceCommand deviceCommand){
+        LogUtils.i(TAG, "Send device command : "+deviceCommand);
         boolean requestSent = false;
 
         try {
@@ -687,18 +708,15 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 
         }else if(deviceCommand instanceof DeviceCommands.UpdateSerialNumber) {
             String serialNumber = ((DeviceCommands.UpdateSerialNumber) deviceCommand).getSerialNumber();
-            if (serialNumber != null)
-                requestSent = sendSerialNumber(serialNumber);
+            requestSent = sendSerialNumber(serialNumber);
 
         }else if(deviceCommand instanceof DeviceCommands.UpdateExternalName) {
             String externalName = ((DeviceCommands.UpdateExternalName) deviceCommand).getExternalName();
-            if (externalName != null)
-                requestSent = sendExternalName(externalName);
+            requestSent = sendExternalName(externalName);
 
         }else if(deviceCommand instanceof DeviceCommands.UpdateProductName) {
             String productName = ((DeviceCommands.UpdateProductName) deviceCommand).getProductName();
-            if (productName != null)
-                requestSent = sendProductName(productName);
+            requestSent = sendProductName(productName);
 
         }else if(deviceCommand instanceof DeviceCommands.ConnectAudio) {
             requestSent = connectA2DPFromBLE();
@@ -713,38 +731,13 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             requestSent = requestSystemStatus();
         }
 
-        if(requestSent) {
-            try {
-                asyncConfiguration.waitOperationResult(5000);
-            } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                LogUtils.w(TAG, "Device command failed : "+e);
-            }
-        }
-
-        return requestSent;
-    }
-
-    /**
-     * This method handle a single command in order to
-     * reconfigure some headset's parameters
-     * or get values stored by the headset
-     * or ask the headset to perform an action.
-     * The command's parameters are bundled in a {@link DeviceCommand instance}
-     * that can provide a nullable response callback.
-     * All method inside are blocking.
-     * @param command is the {@link DeviceCommand} object that defines the type of command to send
-     * and the associated command parameters.
-     * One of this parameter is an optional callback that returns the response
-     * sent by the headset to the SDK once the command is received.
-     */
-    public boolean sendDeviceCommand(DeviceCommand command){
-        LogUtils.i(TAG, "Send device command : "+command);
-        if(!waitResultOfDeviceCommand(command)) {
+        if(!requestSent) {
             Log.e(TAG, "Device command sending failed");
-            mbtBluetoothManager.notifyDeviceResponseReceived(null, command);
+            mbtBluetoothManager.notifyDeviceResponseReceived(null, deviceCommand); //return null response if the request sending has failed
             return false;
         }else {
-            Log.d(TAG, "Device command sent " + command);
+            waitResultOfDeviceCommand(deviceCommand);
+            Log.d(TAG, "Device command sent " + deviceCommand);
             return true;
         }
     }
@@ -763,7 +756,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      *
      * @return false if request dod not start as planned, true otherwise.
      */
-    boolean changeMTU(@IntRange(from = 23, to = 121) final int newMTU) {
+    private boolean changeMTU(@IntRange(from = 23, to = 121) final int newMTU) {
         LogUtils.i(TAG, "change mtu " + newMTU);
         if(!isConnected()){
             return false;
@@ -785,6 +778,9 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      */
     private boolean changeFilterConfiguration(@NonNull FilterConfig newConfig){
         Log.d(TAG, "send notch "+newConfig);
+        if (newConfig == null)
+            return false;
+
         if(!isNotificationEnabledOnCharacteristic(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX)){
             enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX));
         }
@@ -804,6 +800,8 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      */
     private boolean changeAmpGainConfiguration(@NonNull AmpGainConfig newConfig){
         Log.d(TAG, "send gain "+newConfig);
+        if (newConfig == null)
+            return false;
 
         if(!isNotificationEnabledOnCharacteristic(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX))
             enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX));
@@ -897,7 +895,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         return startWriteOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX, nameToBytes.array());
     }
 
-    public boolean sendExternalName(String externalName) {
+    public boolean sendExternalName(@NonNull String externalName) {
         LogUtils.d(TAG, "send external name "+externalName);
         if (externalName == null)
             return false;
@@ -920,7 +918,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         return true;
     }
 
-    private boolean sendProductName(String productName) {
+    private boolean sendProductName(@NonNull String productName) {
         Log.d(TAG, "send product name "+productName);
         if (productName == null)
             return false;
@@ -941,7 +939,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         return true;
     }
 
-    private boolean sendSerialNumber(String serialNumber) {
+    private boolean sendSerialNumber(@NonNull String serialNumber) {
         Log.d(TAG, "send serial number "+serialNumber);
         if (serialNumber == null)
             return false;
@@ -1046,4 +1044,6 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     void stopWaitingOperation() {
         asyncOperation.stopWaitingOperation(false);
     }
+
+
 }

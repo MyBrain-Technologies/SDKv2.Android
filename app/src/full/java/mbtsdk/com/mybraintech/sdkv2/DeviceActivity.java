@@ -25,16 +25,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 
-import command.DeviceStreamingCommands;
 import core.device.DCOffsets;
 import core.device.SaturationEvent;
 import core.bluetooth.BtState;
-import core.device.model.MbtDevice;
 import core.eeg.storage.MbtEEGPacket;
 import engine.MbtClient;
 
 import config.StreamConfig;
-import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
 import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.BluetoothStateListener;
