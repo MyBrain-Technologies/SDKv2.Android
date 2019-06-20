@@ -22,6 +22,7 @@ import config.MbtConfig;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindsQRDataBase;
 import engine.SimpleRequestCallback;
+import engine.clientevents.BaseError;
 import features.MbtFeatures;
 import utils.FirmwareUtils;
 import utils.LogUtils;
@@ -219,6 +220,11 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                     connectedDevice = a2dpProxy.getConnectedDevices().get(0); //assuming that one device is connected and its obviously the melomind
 
                 mbtBluetoothManager.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
+                    @Override
+                    public void onError(BaseError error, String additionnalInfo) {
+
+                    }
+
                     @Override
                     public void onRequestComplete(MbtDevice device) {
                         if(device == null)

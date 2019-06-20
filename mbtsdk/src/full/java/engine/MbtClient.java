@@ -7,6 +7,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 
+import command.DeviceCommand;
 import config.MbtConfig;
 import config.StreamConfig;
 import config.ConnectionConfig;
@@ -17,6 +18,7 @@ import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
 import core.eeg.storage.MbtEEGPacket;
 import engine.clientevents.BaseError;
+import engine.clientevents.BasicError;
 import engine.clientevents.BluetoothStateListener;
 import engine.clientevents.ConfigError;
 import engine.clientevents.ConnectionStateListener;

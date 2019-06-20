@@ -13,7 +13,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import command.DeviceCommandOld;
+import command.DeviceCommand;
+
 import config.StreamConfig;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.IStreamable;
@@ -34,6 +35,7 @@ import core.eeg.MbtEEGManager;
 import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
 import engine.clientevents.BluetoothError;
+import engine.clientevents.ConfigError;
 import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.BluetoothStateListener;
 import engine.clientevents.DeviceBatteryListener;
@@ -144,7 +146,7 @@ public class MbtManager{
         this.eegListener = streamConfig.getEegListener();
         this.deviceStatusListener = streamConfig.getDeviceStatusListener();
 
-        for (DeviceCommandOld command : streamConfig.getDeviceCommands()) {
+        for (DeviceCommand command : streamConfig.getDeviceCommands()) {
             sendDeviceCommand(command);
         }
         EventBusManager.postEvent(
@@ -160,7 +162,7 @@ public class MbtManager{
         EventBusManager.postEvent(new StreamRequestEvent(false, false, false));
     }
 
-    public void sendDeviceCommand(@NonNull DeviceCommandOld deviceCommand){
+    public void sendDeviceCommand(@NonNull DeviceCommand deviceCommand){
             EventBusManager.postEvent(new DeviceCommandRequestEvent(deviceCommand), new EventBusManager.Callback<DeviceEvents.RawDeviceResponseEvent>(){
                 @Override
                 @Subscribe
@@ -287,7 +289,7 @@ public class MbtManager{
 
     public void requestCurrentConnectedDevice(final SimpleRequestCallback<MbtDevice> callback) {
         if (callback == null){
-            throw new IllegalArgumentException("Impossible to return the current connected device if no callback is provided in input");
+            callback.onError(ConfigError.ERROR_INVALID_PARAMS,"Impossible to return the current connected device if no callback is provided in input");
         }
 
         EventBusManager.postEvent(new DeviceEvents.GetDeviceEvent(), new EventBusManager.Callback<DeviceEvents.PostDeviceEvent>(){

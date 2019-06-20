@@ -13,8 +13,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 
-import command.DeviceCommandOld;
-import command.MailboxEvents;
+
+import command.DeviceCommandEvents;
 
 import static org.junit.Assert.*;
 import static org.mockito.AdditionalMatchers.eq;
@@ -42,7 +42,7 @@ public class MbtGattControllerTest {
      */
     @Test
     public void notifyMailboxEventReceived_SerialNumber(){
-        byte code = MailboxEvents.MBX_SET_SERIAL_NUMBER;
+        byte code = DeviceCommandEvents.MBX_SET_SERIAL_NUMBER;
         notifyMailboxEventReceived(code);
     }
 
@@ -54,7 +54,7 @@ public class MbtGattControllerTest {
      */
     @Test
     public void notifyMailboxEventReceived_ProductName(){
-        byte code = MailboxEvents.MBX_SET_PRODUCT_NAME;
+        byte code = DeviceCommandEvents.MBX_SET_PRODUCT_NAME;
         notifyMailboxEventReceived(code);
     }
 
@@ -66,7 +66,7 @@ public class MbtGattControllerTest {
      */
     @Test
     public void notifyMailboxEventReceived_SystemStatus(){
-        byte code = MailboxEvents.MBX_SYS_GET_STATUS;
+        byte code = DeviceCommandEvents.MBX_SYS_GET_STATUS;
         notifyMailboxEventReceived(code);
     }
 
@@ -78,7 +78,7 @@ public class MbtGattControllerTest {
      */
     @Test
     public void notifyMailboxEventReceived_SystemReboot(){
-        byte code = MailboxEvents.MBX_SYS_REBOOT_EVT;
+        byte code = DeviceCommandEvents.MBX_SYS_REBOOT_EVT;
         notifyMailboxEventReceived(code);
     }
 
@@ -90,7 +90,7 @@ public class MbtGattControllerTest {
      */
     @Test
     public void notifyMailboxEventReceived_NotchFilter(){
-        byte code = MailboxEvents.MBX_SET_NOTCH_FILT;
+        byte code = DeviceCommandEvents.MBX_SET_NOTCH_FILT;
         notifyMailboxEventReceived(code);
     }
 
@@ -102,7 +102,7 @@ public class MbtGattControllerTest {
      */
     @Test
     public void notifyMailboxEventReceived_AmpGain(){
-        byte code = MailboxEvents.MBX_SET_AMP_GAIN;
+        byte code = DeviceCommandEvents.MBX_SET_AMP_GAIN;
         notifyMailboxEventReceived(code);
     }
 
@@ -114,7 +114,7 @@ public class MbtGattControllerTest {
      */
     @Test
     public void notifyMailboxEventReceived_EegConfig(){
-        byte code = MailboxEvents.MBX_GET_EEG_CONFIG;
+        byte code = DeviceCommandEvents.MBX_GET_EEG_CONFIG;
         notifyMailboxEventReceived(code);
     }
 
@@ -126,7 +126,7 @@ public class MbtGattControllerTest {
      */
     @Test
     public void notifyMailboxEventReceived_Triggers(){
-        byte code = MailboxEvents.MBX_P300_ENABLE;
+        byte code = DeviceCommandEvents.MBX_P300_ENABLE;
         notifyMailboxEventReceived(code);
     }
 
@@ -138,7 +138,7 @@ public class MbtGattControllerTest {
      */
     @Test
     public void notifyMailboxEventReceived_DC_offset(){
-        byte code = MailboxEvents.MBX_DC_OFFSET_ENABLE;
+        byte code = DeviceCommandEvents.MBX_DC_OFFSET_ENABLE;
         notifyMailboxEventReceived(code);
     }
 
@@ -151,8 +151,8 @@ public class MbtGattControllerTest {
      */
     @Test
     public void notifyMailboxEventReceived_ConnectAudio_inProgress(){
-        byte code = MailboxEvents.MBX_CONNECT_IN_A2DP;
-        ArgumentCaptor<DeviceCommandOld> captor = ArgumentCaptor.forClass(DeviceCommandOld.class);
+        byte code = DeviceCommandEvents.MBX_CONNECT_IN_A2DP;
+        ArgumentCaptor<DeviceCommand> captor = ArgumentCaptor.forClass(DeviceCommand.class);
         BluetoothGatt gatt = Mockito.mock(BluetoothGatt.class);
         BluetoothGattCharacteristic characteristic = Mockito.mock(BluetoothGattCharacteristic.class);
         Mockito.when(characteristic.getValue()).thenReturn(getCharacteristic(code));
@@ -173,7 +173,7 @@ public class MbtGattControllerTest {
      */
     @Test
     public void notifyMailboxEventReceived_ConnectAudio_notInProgress(){
-        byte code = MailboxEvents.MBX_CONNECT_IN_A2DP;
+        byte code = DeviceCommandEvents.MBX_CONNECT_IN_A2DP;
         notifyMailboxEventReceived(code);
         notifyConnectionResponseReceived(code, RESPONSE);
     }
@@ -186,7 +186,7 @@ public class MbtGattControllerTest {
      */
     @Test
     public void notifyMailboxEventReceived_DisconnectAudio(){
-        byte code = MailboxEvents.MBX_DISCONNECT_IN_A2DP;
+        byte code = DeviceCommandEvents.MBX_DISCONNECT_IN_A2DP;
         notifyMailboxEventReceived(code);
         notifyConnectionResponseReceived(code, RESPONSE);
     }
@@ -206,7 +206,7 @@ public class MbtGattControllerTest {
      * when a characteristic related to the mailbox has changed
      */
     private void notifyMailboxEventReceived(byte code){
-        ArgumentCaptor<DeviceCommandOld> captor = ArgumentCaptor.forClass(DeviceCommandOld.class);
+        ArgumentCaptor<DeviceCommand> captor = ArgumentCaptor.forClass(DeviceCommand.class);
         BluetoothGatt gatt = Mockito.mock(BluetoothGatt.class);
         BluetoothGattCharacteristic characteristic = Mockito.mock(BluetoothGattCharacteristic.class);
         byte[] characteristicValue = getCharacteristic(code);

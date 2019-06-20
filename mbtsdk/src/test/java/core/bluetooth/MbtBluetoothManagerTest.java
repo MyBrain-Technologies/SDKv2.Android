@@ -12,7 +12,7 @@ import android.os.Handler;
 
 import java.util.Arrays;
 
-import command.DeviceCommandOld;
+
 import command.DeviceCommands;
 import core.MbtManager;
 import core.bluetooth.lowenergy.MbtBluetoothLE;
@@ -47,7 +47,7 @@ public class MbtBluetoothManagerTest {
 
         byte[] response = new byte[]{0,1,2,3,4,5,6,7,8,9};
         Handler requestHandler = Mockito.mock(Handler.class);
-        DeviceCommandOld command = new DeviceCommands.ConnectAudio(callbackResponse -> {
+        DeviceCommand command = new DeviceCommands.ConnectAudio(callbackResponse -> {
             assertEquals(response, callbackResponse);
             //the subscriber is supposed to be unregistered once the callback is triggered
             assertFalse(EventBusManager.BUS.hasSubscriberForEvent(DeviceEvents.RawDeviceResponseEvent.class));
@@ -71,7 +71,7 @@ public class MbtBluetoothManagerTest {
     public void onNewBluetoothRequest_requestAddedToQueue(){
         Handler requestHandler = Mockito.spy(Handler.class);
         bluetoothManager.setRequestHandler(requestHandler);
-        DeviceCommandOld command = new DeviceCommands.ConnectAudio();
+        DeviceCommand command = new DeviceCommands.ConnectAudio();
 //        MessageQueue queueBeforeEvent = requestHandler.getLooper().getQueue();
         bluetoothManager.onNewBluetoothRequest(new DeviceCommandRequestEvent(command));
         Mockito.verify(requestHandler).post(Mockito.any(Runnable.class));
@@ -90,7 +90,7 @@ public class MbtBluetoothManagerTest {
         Handler requestHandler = Mockito.spy(new Handler(requestThread.getLooper()));
         bluetoothManager.setRequestHandler(requestHandler);
 
-        DeviceCommandOld command = new DeviceCommands.ConnectAudio();
+        DeviceCommand command = new DeviceCommands.ConnectAudio();
         bluetoothManager.onNewBluetoothRequest(new DeviceCommandRequestEvent(command));
         Mockito.verify(requestHandler).post(Mockito.any(Runnable.class)); //check that the handler posts the runnable
 
@@ -109,7 +109,7 @@ public class MbtBluetoothManagerTest {
      */
     @Test
     public void postEvent_receivedRequest(){
-        DeviceCommandOld command = new DeviceCommands.ConnectAudio();
+        DeviceCommand command = new DeviceCommands.ConnectAudio();
         DeviceCommandRequestEvent deviceCommandRequestEvent = new DeviceCommandRequestEvent(command);
         Handler requestHandler = Mockito.spy(Handler.class);
         bluetoothManager.setRequestHandler(requestHandler);
@@ -129,7 +129,7 @@ public class MbtBluetoothManagerTest {
     @Test
     public void postEvent_executedRequest(){
         MbtBluetoothLE bluetoothLE = Mockito.mock(MbtBluetoothLE.class);
-        DeviceCommandOld command = new DeviceCommands.ConnectAudio();
+        DeviceCommand command = new DeviceCommands.ConnectAudio();
         DeviceCommandRequestEvent deviceCommandRequestEvent = new DeviceCommandRequestEvent(command);
         MbtBluetoothManager.RequestThread requestThread = Mockito.mock(MbtBluetoothManager.RequestThread.class);
         bluetoothManager.setRequestThread(requestThread);
@@ -152,7 +152,7 @@ public class MbtBluetoothManagerTest {
     public void parseRequest_DeviceCommandRequest_valid(){
         MbtBluetoothLE bluetoothLE = Mockito.mock(MbtBluetoothLE.class);
         bluetoothManager.setMbtBluetoothLE(bluetoothLE);
-        DeviceCommandOld command = new DeviceCommands.ConnectAudio();
+        DeviceCommand command = new DeviceCommands.ConnectAudio();
         DeviceCommandRequestEvent deviceCommandRequestEvent = new DeviceCommandRequestEvent(command);
         StartOrContinueConnectionRequestEvent initRequest = new StartOrContinueConnectionRequestEvent(true, "testName", "testQrCode", MbtDeviceType.MELOMIND);
         Mockito.when(bluetoothLE.getCurrentState()).thenReturn(BtState.CONNECTED_AND_READY);
@@ -160,7 +160,7 @@ public class MbtBluetoothManagerTest {
 
         bluetoothManager.getRequestThread().parseRequest(deviceCommandRequestEvent);
 
-        Mockito.verify(bluetoothLE).sendDeviceCommand(command);
+        Mockito.verify(bluetoothLE).sendRequestForCharacteristic(command);
     }
 
     /**
@@ -171,7 +171,7 @@ public class MbtBluetoothManagerTest {
     @Test
     public void notifyDeviceResponseReceived_DeviceCommandRequest_valid(){
 
-        DeviceCommandOld command = new DeviceCommands.ConnectAudio();
+        DeviceCommand command = new DeviceCommands.ConnectAudio();
         EventBusManager.Callback callback = new EventBusManager.Callback<DeviceEvents.RawDeviceResponseEvent>(){
             @Override
             @Subscribe

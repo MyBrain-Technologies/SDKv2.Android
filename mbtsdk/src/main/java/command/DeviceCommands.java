@@ -36,10 +36,10 @@ public interface DeviceCommands {
          * call the {@link UpdateSerialNumber}(String serialNumber, {@linkSimpleRequestCallback<byte[]>)} constructor.
          */
         public UpdateSerialNumber(String serialNumber) {
-            super(MailboxEvents.MBX_SET_SERIAL_NUMBER,
-                    MailboxEvents.MBX_SET_SERIAL_NUMBER_ADDITIONAL_FIRST,
-                    MailboxEvents.MBX_SET_SERIAL_NUMBER_ADDITIONAL_SECOND);
+            super(DeviceCommandEvents.MBX_SET_SERIAL_NUMBER,
+                    DeviceCommandEvents.MBX_SET_SERIAL_NUMBER_ADDITIONAL);
             this.serialNumber = serialNumber;
+            init();
         }
 
         /**
@@ -55,13 +55,10 @@ public interface DeviceCommands {
          * call the {@link UpdateSerialNumber}(String serialNumber) constructor
          */
         public UpdateSerialNumber(String serialNumber, SimpleRequestCallback<byte[]> responseCallback) {
-            super(MailboxEvents.MBX_SET_SERIAL_NUMBER);
-            this.serialNumber = serialNumber;
+            super(DeviceCommandEvents.MBX_SET_SERIAL_NUMBER,
+                    DeviceCommandEvents.MBX_SET_SERIAL_NUMBER_ADDITIONAL);
+            new UpdateSerialNumber(serialNumber);
             this.responseCallback = responseCallback;
-        }
-
-        public String getSerialNumber() {
-            return serialNumber;
         }
 
         @Override
@@ -70,18 +67,21 @@ public interface DeviceCommands {
         }
 
         @Override
-        public void init() {
-
-        }
-
-        @Override
         public boolean isValid() {
-            return false;
+            return serialNumber != null && !serialNumber.isEmpty();
         }
 
         @Override
-        public BaseError onError() {
-            return null;
+        public void onError(BaseError error, String additionnalInfo) {
+            serialNumber = null;
+        }
+
+        @Override
+        public byte[] getData() {
+            if(serialNumber == null)
+                return null;
+
+            return serialNumber.getBytes();
         }
     }
 
@@ -108,8 +108,10 @@ public interface DeviceCommands {
          * @param externalName the new external name value to set
          */
         public UpdateExternalName(String externalName) {
-            super(MailboxEvents.MBX_SET_SERIAL_NUMBER);
+            super(DeviceCommandEvents.MBX_SET_SERIAL_NUMBER,
+                    DeviceCommandEvents.MBX_SET_EXTERNAL_NAME_ADDITIONAL);
             this.externalName = externalName;
+            init();
         }
 
         /**
@@ -125,28 +127,28 @@ public interface DeviceCommands {
          * call the {@link UpdateExternalName}(String externalName) constructor
          */
         public UpdateExternalName(String externalName, SimpleRequestCallback<byte[]> responseCallback) {
-            super(MailboxEvents.MBX_SET_SERIAL_NUMBER);
-            this.externalName = externalName;
+            super(DeviceCommandEvents.MBX_SET_SERIAL_NUMBER,
+                    DeviceCommandEvents.MBX_SET_EXTERNAL_NAME_ADDITIONAL);
+            new UpdateExternalName(externalName);
             this.responseCallback = responseCallback;
-        }
-
-        public String getExternalName() {
-            return externalName;
-        }
-
-        @Override
-        public void init() {
-
         }
 
         @Override
         public boolean isValid() {
-            return false;
+            return externalName != null && !externalName.isEmpty();
         }
 
         @Override
-        public BaseError onError() {
-            return null;
+        public void onError(BaseError error, String additionnalInfo) {
+            externalName = null;
+        }
+
+        @Override
+        public byte[] getData() {
+            if(externalName == null)
+                return null;
+
+            return externalName.getBytes();
         }
     }
 
@@ -173,8 +175,9 @@ public interface DeviceCommands {
          * @param productName is the new product name value to set
          */
         public UpdateProductName(String productName) {
-            super(MailboxEvents.MBX_SET_PRODUCT_NAME);
+            super(DeviceCommandEvents.MBX_SET_PRODUCT_NAME);
             this.productName = productName;
+            init();
         }
 
         /**
@@ -190,28 +193,27 @@ public interface DeviceCommands {
          * call the {@link UpdateProductName}(String productName) constructor
          */
         public UpdateProductName(String productName, SimpleRequestCallback<byte[]> responseCallback) {
-            super(MailboxEvents.MBX_SET_PRODUCT_NAME);
-            this.productName = productName;
+            super(DeviceCommandEvents.MBX_SET_PRODUCT_NAME);
+            new UpdateProductName(productName);
             this.responseCallback = responseCallback;
-        }
-
-        public String getProductName() {
-            return productName;
-        }
-
-        @Override
-        public void init() {
-
         }
 
         @Override
         public boolean isValid() {
-            return false;
+            return productName != null && !productName.isEmpty();
         }
 
         @Override
-        public BaseError onError() {
-            return null;
+        public void onError(BaseError error, String additionnalInfo) {
+            productName = null;
+        }
+
+        @Override
+        public byte[] getData() {
+            if(productName == null)
+                return null;
+
+            return productName.getBytes();
         }
     }
 
@@ -242,22 +244,21 @@ public interface DeviceCommands {
          * Each status is returned in one byte of the raw response array.
          */
         public GetSystemStatus(SimpleRequestCallback<byte[]> responseCallback) {
-            super(MailboxEvents.MBX_SYS_GET_STATUS);
+            super(DeviceCommandEvents.MBX_SYS_GET_STATUS);
             this.responseCallback = responseCallback;
-        }
-
-        @Override
-        public void init() {
-
+            init();
         }
 
         @Override
         public boolean isValid() {
-            return false;
+            return responseCallback != null;
         }
 
         @Override
-        public BaseError onError() {
+        public void onError(BaseError error, String additionnalInfo) { }
+
+        @Override
+        public byte[] getData() {
             return null;
         }
     }
@@ -276,21 +277,21 @@ public interface DeviceCommands {
          * No response is returned by the headset if the command succeeds.
          */
         public Reboot() {
-            super(MailboxEvents.MBX_SYS_REBOOT_EVT);
-        }
-
-        @Override
-        public void init() {
-
+            super(DeviceCommandEvents.MBX_SYS_REBOOT_EVT,
+                    DeviceCommandEvents.MBX_SYS_REBOOT_EVT_ADDITIONAL);
+            init();
         }
 
         @Override
         public boolean isValid() {
-            return false;
+            return true;
         }
 
         @Override
-        public BaseError onError() {
+        public void onError(BaseError error, String additionnalInfo) { }
+
+        @Override
+        public byte[] getData() {
             return null;
         }
     }
@@ -314,21 +315,9 @@ public interface DeviceCommands {
          * call the {@link ConnectAudio}({@link SimpleRequestCallback}<byte[]> responseCallback) constructor
          */
         public ConnectAudio() {
-        }
-
-        @Override
-        public void init() {
-
-        }
-
-        @Override
-        public boolean isValid() {
-            return false;
-        }
-
-        @Override
-        public BaseError onError() {
-            return null;
+            super(DeviceCommandEvents.MBX_CONNECT_IN_A2DP,
+                    DeviceCommandEvents.MBX_CONNECT_IN_A2DP_ADDITIONAL);
+            init();
         }
 
         /**
@@ -344,8 +333,27 @@ public interface DeviceCommands {
          * call the {@link ConnectAudio}() constructor
          */
         public ConnectAudio(SimpleRequestCallback<byte[]> responseCallback) {
+            super(DeviceCommandEvents.MBX_CONNECT_IN_A2DP,
+                    DeviceCommandEvents.MBX_CONNECT_IN_A2DP_ADDITIONAL);
+            new ConnectAudio();
             this.responseCallback = responseCallback;
         }
+
+
+
+        @Override
+        public boolean isValid() {
+            return true;
+        }
+
+        @Override
+        public void onError(BaseError error, String additionnalInfo) { }
+
+        @Override
+        public byte[] getData() {
+            return null;
+        }
+
     }
 
     /**
@@ -365,21 +373,9 @@ public interface DeviceCommands {
          * call the {@link DisconnectAudio}({@link SimpleRequestCallback}<byte[]> responseCallback) constructor
          */
         public DisconnectAudio() {
-        }
-
-        @Override
-        public void init() {
-
-        }
-
-        @Override
-        public boolean isValid() {
-            return false;
-        }
-
-        @Override
-        public BaseError onError() {
-            return null;
+            super(DeviceCommandEvents.MBX_DISCONNECT_IN_A2DP,
+                    DeviceCommandEvents.MBX_DISCONNECT_IN_A2DP_ADDITIONAL);
+            init();
         }
 
         /**
@@ -395,8 +391,25 @@ public interface DeviceCommands {
          * call the {@link DisconnectAudio}() constructor
          */
         public DisconnectAudio(SimpleRequestCallback<byte[]> responseCallback) {
+            super(DeviceCommandEvents.MBX_DISCONNECT_IN_A2DP,
+                    DeviceCommandEvents.MBX_DISCONNECT_IN_A2DP_ADDITIONAL);
+            new DisconnectAudio();
             this.responseCallback = responseCallback;
         }
+
+        @Override
+        public boolean isValid() {
+            return true;
+        }
+
+        @Override
+        public void onError(BaseError error, String additionnalInfo) { }
+
+        @Override
+        public byte[] getData() {
+            return null;
+        }
+
     }
 
 }

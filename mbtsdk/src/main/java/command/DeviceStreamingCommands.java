@@ -1,5 +1,6 @@
 package command;
 
+import android.support.annotation.IntRange;
 import android.support.annotation.Keep;
 
 import config.AmpGainConfig;
@@ -31,7 +32,11 @@ public interface DeviceStreamingCommands {
          * (maximum size of the data sent by the headset to the SDK)
          * to set
          */
-        private int mtu;
+        private final int UNDEFINED = 0;
+        private int mtu = UNDEFINED;
+
+        private final int MINIMUM = 23;
+        private final int MAXIMUM = 121;
 
         /**
          * Command sent from the SDK to the connected headset
@@ -40,9 +45,10 @@ public interface DeviceStreamingCommands {
          * The new serial number is stored and returned by the headset if the command succeeds.
          * @param mtu is the new Maximum Transmission Unit
          */
-        public Mtu(int mtu) {
-            super();
+        public Mtu(@IntRange(from = 23, to = 121) int mtu) {
+            super(DeviceCommandEvents.MTU);
             this.mtu = mtu;
+            init();
         }
 
         /**
@@ -58,28 +64,28 @@ public interface DeviceStreamingCommands {
          * If you're not interested in getting the returned response,
          * call the {@link Mtu}(int mtu) constructor
          */
-        public Mtu(int mtu, SimpleRequestCallback<byte[]> responseCallback) {
-            this.mtu = mtu;
-            this.responseCallback = responseCallback;
-        }
-
-        public int getMtu() {
-            return mtu;
-        }
-
-        @Override
-        public void init() {
-
+        public Mtu(@IntRange(from = MINIMUM, to = MAXIMUM) int mtu, SimpleRequestCallback<byte[]> responseCallback) {
+             super(DeviceCommandEvents.MTU);
+             new Mtu(mtu);
+             this.responseCallback = responseCallback;
         }
 
         @Override
         public boolean isValid() {
-            return false;
+            return mtu >= MINIMUM && mtu <= MAXIMUM ;
         }
 
         @Override
-        public BaseError onError() {
-            return null;
+        public void onError(BaseError error, String additionnalInfo) {
+            mtu = UNDEFINED;
+        }
+
+        @Override
+        public byte[] getData() {
+            if(mtu == UNDEFINED)
+                return null;
+
+            return new byte[]{(byte)mtu};
         }
     }
 
@@ -102,7 +108,9 @@ public interface DeviceStreamingCommands {
          * @param notchFilter is the new Notch filter to apply
          */
         public NotchFilter(FilterConfig notchFilter) {
+            super(DeviceCommandEvents.MBX_SET_NOTCH_FILT);
             this.notchFilter = notchFilter;
+            init();
         }
 
         /**
@@ -118,27 +126,27 @@ public interface DeviceStreamingCommands {
          * call the {@link NotchFilter}(FilterConfig notchFilter) constructor.
          */
         public NotchFilter(FilterConfig notchFilter, SimpleRequestCallback<byte[]> responseCallback) {
-            this.notchFilter = notchFilter;
+            super(DeviceCommandEvents.MBX_SET_NOTCH_FILT);
+            new NotchFilter(notchFilter);
             this.responseCallback = responseCallback;
-        }
-
-        public FilterConfig getNotchFilter() {
-            return notchFilter;
-        }
-
-        @Override
-        public void init() {
-
         }
 
         @Override
         public boolean isValid() {
-            return false;
+            return notchFilter != null;
         }
 
         @Override
-        public BaseError onError() {
-            return null;
+        public void onError(BaseError error, String additionnalInfo) {
+            notchFilter = null;
+        }
+
+        @Override
+        public byte[] getData() {
+            if(notchFilter == null)
+                return null;
+
+            return new byte[]{(byte)notchFilter.getNumVal()};
         }
     }
 
@@ -161,7 +169,9 @@ public interface DeviceStreamingCommands {
          * @param bandpassFilter is the new Bandpass filter to apply
          */
         public BandpassFilter(FilterConfig bandpassFilter) {
+            super(DeviceCommandEvents.MBX_SET_BANDPASS_FILT);
             this.bandpassFilter = bandpassFilter;
+            init();
         }
 
         /**
@@ -177,27 +187,27 @@ public interface DeviceStreamingCommands {
          * call the {@link BandpassFilter}(FilterConfig bandpassFilter) constructor
          */
         public BandpassFilter(FilterConfig bandpassFilter, SimpleRequestCallback<byte[]> responseCallback) {
-            this.bandpassFilter = bandpassFilter;
+            super(DeviceCommandEvents.MBX_SET_BANDPASS_FILT);
+            new BandpassFilter(bandpassFilter);
             this.responseCallback = responseCallback;
-        }
-
-        public FilterConfig getBandpassFilter() {
-            return bandpassFilter;
-        }
-
-        @Override
-        public void init() {
-
         }
 
         @Override
         public boolean isValid() {
-            return false;
+            return bandpassFilter != null;
         }
 
         @Override
-        public BaseError onError() {
-            return null;
+        public void onError(BaseError error, String additionnalInfo) {
+            bandpassFilter = null;
+        }
+
+        @Override
+        public byte[] getData() {
+            if(bandpassFilter == null)
+                return null;
+
+            return new byte[]{(byte)bandpassFilter.getNumVal()};
         }
     }
 
@@ -207,7 +217,7 @@ public interface DeviceStreamingCommands {
      * The new bandpass filter is stored and returned by the headset if the command succeeds.
      */
     @Keep
-    class AmplifierGain extends DeviceCommand implements DeviceStreamingCommands{
+    class AmplifierGain extends DeviceCommand implements DeviceStreamingCommands {
         /**
          * The new amplifier gain to apply
          */
@@ -217,48 +227,54 @@ public interface DeviceStreamingCommands {
          * Mailbox command sent from the SDK to the connected headset
          * in order to change the applied amplifier gain.
          * The new amplifier gain is stored and returned by the headset if the command succeeds
+         *
          * @param ampGainConfig is the new Amplifier gain to apply
          */
         public AmplifierGain(AmpGainConfig ampGainConfig) {
+            super(DeviceCommandEvents.MBX_SET_AMP_GAIN);
             this.ampGainConfig = ampGainConfig;
+            init();
         }
 
         /**
          * Mailbox command sent from the SDK to the connected headset
          * in order to change the applied amplifier gain.
          * The new amplifier gain is stored and returned by the headset if the command succeeds
-         * @param ampGainConfig is the new Amplifier gain to apply
+         *
+         * @param ampGainConfig    is the new Amplifier gain to apply
          * @param responseCallback is a {@link SimpleRequestCallback} object
-         * that provides a callback for the returned raw response
-         * sent by the headset to the SDK once the configuration command is received.
-         * This raw response is a byte array that has be to converted to be readable.
-         * If you're not interested in getting the returned response,
-         * call the {@link AmplifierGain}(AmpGainConfig ampGainConfig) constructor.
+         *                         that provides a callback for the returned raw response
+         *                         sent by the headset to the SDK once the configuration command is received.
+         *                         This raw response is a byte array that has be to converted to be readable.
+         *                         If you're not interested in getting the returned response,
+         *                         call the {@link AmplifierGain}(AmpGainConfig ampGainConfig) constructor.
          */
         public AmplifierGain(AmpGainConfig ampGainConfig, SimpleRequestCallback<byte[]> responseCallback) {
-            this.ampGainConfig = ampGainConfig;
+            super(DeviceCommandEvents.MBX_SET_AMP_GAIN);
+            new AmplifierGain(ampGainConfig);
             this.responseCallback = responseCallback;
-        }
-
-        public AmpGainConfig getAmpGainConfig() {
-            return ampGainConfig;
-        }
-
-        @Override
-        public void init() {
-
         }
 
         @Override
         public boolean isValid() {
-            return false;
+            return ampGainConfig != null;
+        }
+
+
+        @Override
+        public void onError(BaseError error, String additionnalInfo) {
+            ampGainConfig = null;
         }
 
         @Override
-        public BaseError onError() {
-            return null;
+        public byte[] getData() {
+            if (ampGainConfig == null)
+                return null;
+
+            return new byte[]{(byte) ampGainConfig.getNumVal()};
         }
     }
+
 
     /**
      * Mailbox command sent from the SDK to the connected headset
@@ -283,7 +299,9 @@ public interface DeviceStreamingCommands {
          * Triggers are not sent to the SDK if enableTriggers is set to false.
          */
         public Triggers(boolean enableTriggers) {
+            super(DeviceCommandEvents.MBX_P300_ENABLE);
             this.enableTriggers = enableTriggers;
+            init();
         }
 
         /**
@@ -301,27 +319,23 @@ public interface DeviceStreamingCommands {
          * call the {@link Triggers}(boolean enableTriggers) constructor.
          */
         public Triggers(boolean enableTriggers, SimpleRequestCallback<byte[]> responseCallback) {
-            this.enableTriggers = enableTriggers;
+            super(DeviceCommandEvents.MBX_P300_ENABLE);
+            new Triggers(enableTriggers);
             this.responseCallback = responseCallback;
-        }
-
-        public boolean areTriggersEnabled() {
-            return enableTriggers;
-        }
-
-        @Override
-        public void init() {
-
         }
 
         @Override
         public boolean isValid() {
-            return false;
+            return true;
         }
 
         @Override
-        public BaseError onError() {
-            return null;
+        public void onError(BaseError error, String additionnalInfo) { }
+
+        @Override
+        public byte[] getData() {
+
+            return new byte[]{enableTriggers ? ENABLE : DISABLE};
         }
     }
 
@@ -348,7 +362,9 @@ public interface DeviceStreamingCommands {
          * DC offsets are not sent to the SDK if enableDcOffset is set to false.
          */
         public DcOffset(boolean enableDcOffset) {
+            super(DeviceCommandEvents.MBX_DC_OFFSET_ENABLE);
             this.enableDcOffset = enableDcOffset;
+            init();
         }
 
         /**
@@ -366,27 +382,22 @@ public interface DeviceStreamingCommands {
          * call the {@link DcOffset}(boolean enableDcOffset) constructor.
          */
         public DcOffset(boolean enableDcOffset, SimpleRequestCallback<byte[]> responseCallback) {
-            this.enableDcOffset = enableDcOffset;
+            super(DeviceCommandEvents.MBX_DC_OFFSET_ENABLE);
+            new DcOffset(enableDcOffset);
             this.responseCallback = responseCallback;
-        }
-
-        public boolean isEnableDcOffset() {
-            return enableDcOffset;
-        }
-
-        @Override
-        public void init() {
-
         }
 
         @Override
         public boolean isValid() {
-            return false;
+            return true;
         }
 
         @Override
-        public BaseError onError() {
-            return null;
+        public void onError(BaseError error, String additionnalInfo) { }
+
+        @Override
+        public byte[] getData() {
+            return new byte[]{enableDcOffset ? ENABLE : DISABLE};
         }
     }
 
@@ -419,21 +430,21 @@ public interface DeviceStreamingCommands {
          * Each status is returned in one byte of the raw response array.
          */
         public EegConfig(SimpleRequestCallback<byte[]> responseCallback) {
+            super(DeviceCommandEvents.MBX_GET_EEG_CONFIG);
             this.responseCallback = responseCallback;
-        }
-
-        @Override
-        public void init() {
-
+            init();
         }
 
         @Override
         public boolean isValid() {
-            return false;
+            return responseCallback != null;
         }
 
         @Override
-        public BaseError onError() {
+        public void onError(BaseError error, String additionnalInfo) { }
+
+        @Override
+        public byte[] getData() {
             return null;
         }
     }

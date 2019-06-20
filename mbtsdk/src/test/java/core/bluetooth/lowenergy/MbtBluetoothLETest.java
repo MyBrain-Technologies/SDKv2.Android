@@ -15,10 +15,10 @@ import org.mockito.Mockito;
 import java.nio.ByteBuffer;
 import java.util.UUID;
 
-import command.DeviceCommandOld;
+
+import command.DeviceCommandEvents;
 import command.DeviceCommands;
 import command.DeviceStreamingCommands;
-import command.MailboxEvents;
 import config.AmpGainConfig;
 import config.FilterConfig;
 import config.MbtConfig;
@@ -882,13 +882,13 @@ public class MbtBluetoothLETest {
     @Test
     public void startWriteOperation_GattNull() {
         bluetoothLE.gatt = null;
-        byte[] code = {MailboxEvents.MBX_GET_EEG_CONFIG};
+        byte[] code = {DeviceCommandEvents.MBX_GET_EEG_CONFIG};
         assertFalse(bluetoothLE.startWriteOperation(CHARACTERISTIC_MAILBOX, code));
     }
 
     @Test
     public void startWriteOperation_GattCharacteristicNull() {
-        byte[] code = {MailboxEvents.MBX_GET_EEG_CONFIG};
+        byte[] code = {DeviceCommandEvents.MBX_GET_EEG_CONFIG};
         assertFalse(bluetoothLE.startWriteOperation(UNKNOWN, code));
     }
 
@@ -1125,14 +1125,14 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void changeMTU_LowerThanMinimum() {
-        assertFalse(bluetoothLE.sendDeviceCommand(new DeviceStreamingCommands.Mtu(0)));
+        assertFalse(bluetoothLE.sendRequestForCharacteristic(new DeviceStreamingCommands.Mtu(0)));
     }
     /**
      * Check that MTU is not changed if the new value is higher than the maximum required value
      */
     @Test
     public void changeMTU_HigherThanMaximmum() {
-        assertFalse(bluetoothLE.sendDeviceCommand(new DeviceStreamingCommands.Mtu(200)));
+        assertFalse(bluetoothLE.sendRequestForCharacteristic(new DeviceStreamingCommands.Mtu(200)));
     }
 
     /**
@@ -1141,7 +1141,7 @@ public class MbtBluetoothLETest {
     @Test
     public void changeMTU_NotConnected() {
         bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED, true);
-        assertFalse(bluetoothLE.sendDeviceCommand(new DeviceStreamingCommands.Mtu((200))));
+        assertFalse(bluetoothLE.sendRequestForCharacteristic(new DeviceStreamingCommands.Mtu((200))));
     }
 
     /**
@@ -1150,7 +1150,7 @@ public class MbtBluetoothLETest {
     @Test
     public void changeMTU_GattNull() {
         bluetoothLE.gatt = null;
-        assertFalse(bluetoothLE.sendDeviceCommand(new DeviceStreamingCommands.Mtu(47)));
+        assertFalse(bluetoothLE.sendRequestForCharacteristic(new DeviceStreamingCommands.Mtu(47)));
     }
 
     /**
@@ -1306,7 +1306,7 @@ public class MbtBluetoothLETest {
     @Test
     public void sendDeviceCommand_valid(){
         String serialNumber = DEVICE_NAME;
-        DeviceCommandOld command = new DeviceCommands.UpdateSerialNumber(serialNumber);
+        DeviceCommand command = new DeviceCommands.UpdateSerialNumber(serialNumber);
         when(gatt.getService(SERVICE)).thenReturn(gattService);
         when(gattService.getUuid()).thenReturn(SERVICE);
         when(gattService.getCharacteristic(CHARACTERISTIC_MAILBOX)).thenReturn(characteristic);
@@ -1315,7 +1315,7 @@ public class MbtBluetoothLETest {
         when(characteristic.getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID)).thenReturn(descriptor);
         when(gatt.writeCharacteristic(characteristic)).thenReturn(true);
 
-        boolean isCommandSent = bluetoothLE.sendDeviceCommand(command);
+        boolean isCommandSent = bluetoothLE.sendRequestForCharacteristic(command);
 
         assertTrue(isCommandSent);
     }
@@ -1327,11 +1327,11 @@ public class MbtBluetoothLETest {
     @Test
     public void sendDeviceCommand_invalid(){
         //String serialNumber = null;
-        //DeviceCommandOld command = new DeviceCommands.UpdateSerialNumber(serialNumber);
-        DeviceCommandOld command = null;
+        //DeviceCommand command = new DeviceCommands.UpdateSerialNumber(serialNumber);
+        DeviceCommand command = null;
         Mockito.doNothing().when(bluetoothManager).notifyDeviceResponseReceived(null, command);
 
-        boolean isCommandSent = bluetoothLE.sendDeviceCommand(command);
+        boolean isCommandSent = bluetoothLE.sendRequestForCharacteristic(command);
 
         assertFalse(isCommandSent);
     }
@@ -1345,7 +1345,7 @@ public class MbtBluetoothLETest {
     public void sendDeviceCommand_sendSerialNumber(){
         String serialNumber = "1010100100";
         ByteBuffer nameToBytes = ByteBuffer.allocate(3 + serialNumber.getBytes().length);
-        nameToBytes.put(MailboxEvents.MBX_SET_SERIAL_NUMBER);
+        nameToBytes.put(DeviceCommandEvents.MBX_SET_SERIAL_NUMBER);
         nameToBytes.put((byte) 0x53);
         nameToBytes.put((byte) 0x4D);
         nameToBytes.put(serialNumber.getBytes());
@@ -1359,7 +1359,7 @@ public class MbtBluetoothLETest {
 //        when(characteristic.setValue(rawRequest)).thenReturn(true);
         when(gatt.writeCharacteristic(characteristic)).thenReturn(true);
 
-        assertTrue(bluetoothLE.sendDeviceCommand(new DeviceCommands.UpdateSerialNumber(serialNumber)));
+        assertTrue(bluetoothLE.sendRequestForCharacteristic(new DeviceCommands.UpdateSerialNumber(serialNumber)));
         Mockito.verify(characteristic).setValue(nameToBytes.array());
         Mockito.verify(gatt).writeCharacteristic(characteristic);
     }
@@ -1373,7 +1373,7 @@ public class MbtBluetoothLETest {
     public void sendDeviceCommand_sendProductName(){
         String productName = DEVICE_NAME;
         ByteBuffer nameToBytes = ByteBuffer.allocate(1 + productName.getBytes().length); // +1 for mailbox code
-        nameToBytes.put(MailboxEvents.MBX_SET_PRODUCT_NAME);
+        nameToBytes.put(DeviceCommandEvents.MBX_SET_PRODUCT_NAME);
         nameToBytes.put(productName.getBytes());
 
         when(gatt.getService(SERVICE)).thenReturn(gattService);
@@ -1384,7 +1384,7 @@ public class MbtBluetoothLETest {
         when(characteristic.getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID)).thenReturn(descriptor);
         when(gatt.writeCharacteristic(characteristic)).thenReturn(true);
 
-        assertTrue(bluetoothLE.sendDeviceCommand(new DeviceCommands.UpdateProductName(productName)));
+        assertTrue(bluetoothLE.sendRequestForCharacteristic(new DeviceCommands.UpdateProductName(productName)));
         Mockito.verify(characteristic).setValue(nameToBytes.array());
         Mockito.verify(gatt).writeCharacteristic(characteristic);
     }
@@ -1397,7 +1397,7 @@ public class MbtBluetoothLETest {
     @Test
     public void sendDeviceCommand_rebootDevice(){
         ByteBuffer nameToBytes = ByteBuffer.allocate(3);
-        nameToBytes.put(MailboxEvents.MBX_SYS_REBOOT_EVT);
+        nameToBytes.put(DeviceCommandEvents.MBX_SYS_REBOOT_EVT);
         nameToBytes.put((byte)0x29);
         nameToBytes.put((byte)0x08);
 
@@ -1409,7 +1409,7 @@ public class MbtBluetoothLETest {
         when(characteristic.getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID)).thenReturn(descriptor);
         when(gatt.writeCharacteristic(characteristic)).thenReturn(true);
 
-        assertTrue(bluetoothLE.sendDeviceCommand(new DeviceCommands.Reboot()));
+        assertTrue(bluetoothLE.sendRequestForCharacteristic(new DeviceCommands.Reboot()));
         Mockito.verify(characteristic).setValue(nameToBytes.array());
         Mockito.verify(gatt).writeCharacteristic(characteristic);
     }
@@ -1423,7 +1423,7 @@ public class MbtBluetoothLETest {
     public void sendDeviceCommand_changeFilterConfiguration(){
         FilterConfig filterConfig = FilterConfig.NOTCH_FILTER_50HZ;
         ByteBuffer nameToBytes = ByteBuffer.allocate(2); // +1 for mailbox code
-        nameToBytes.put(MailboxEvents.MBX_SET_NOTCH_FILT);
+        nameToBytes.put(DeviceCommandEvents.MBX_SET_NOTCH_FILT);
         nameToBytes.put((byte)filterConfig.getNumVal());
 
         when(gatt.getService(SERVICE)).thenReturn(gattService);
@@ -1434,7 +1434,7 @@ public class MbtBluetoothLETest {
         when(characteristic.getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID)).thenReturn(descriptor);
         when(gatt.writeCharacteristic(characteristic)).thenReturn(true);
 
-        assertTrue(bluetoothLE.sendDeviceCommand(new DeviceStreamingCommands.NotchFilter(filterConfig)));
+        assertTrue(bluetoothLE.sendRequestForCharacteristic(new DeviceStreamingCommands.NotchFilter(filterConfig)));
         Mockito.verify(characteristic).setValue(nameToBytes.array());
         Mockito.verify(gatt).writeCharacteristic(characteristic);
     }
@@ -1448,7 +1448,7 @@ public class MbtBluetoothLETest {
     public void sendDeviceCommand_changeAmpGainConfiguration(){
         AmpGainConfig ampGainConfig = AmpGainConfig.AMP_GAIN_X12_DEFAULT;
         ByteBuffer nameToBytes = ByteBuffer.allocate(2); // +1 for mailbox code
-        nameToBytes.put(MailboxEvents.MBX_SET_AMP_GAIN);
+        nameToBytes.put(DeviceCommandEvents.MBX_SET_AMP_GAIN);
         nameToBytes.put((byte)ampGainConfig.getNumVal());
 
         when(gatt.getService(SERVICE)).thenReturn(gattService);
@@ -1459,7 +1459,7 @@ public class MbtBluetoothLETest {
         when(characteristic.getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID)).thenReturn(descriptor);
         when(gatt.writeCharacteristic(characteristic)).thenReturn(true);
 
-        assertTrue(bluetoothLE.sendDeviceCommand(new DeviceStreamingCommands.AmplifierGain(ampGainConfig)));
+        assertTrue(bluetoothLE.sendRequestForCharacteristic(new DeviceStreamingCommands.AmplifierGain(ampGainConfig)));
         Mockito.verify(characteristic).setValue(nameToBytes.array());
         Mockito.verify(gatt).writeCharacteristic(characteristic);
     }
@@ -1488,7 +1488,7 @@ public class MbtBluetoothLETest {
 
     private void test_enableOrDisableTriggers(boolean useP300){
         ByteBuffer nameToBytes = ByteBuffer.allocate(2); // +1 for mailbox code
-        nameToBytes.put(MailboxEvents.MBX_P300_ENABLE);
+        nameToBytes.put(DeviceCommandEvents.MBX_P300_ENABLE);
         nameToBytes.put((byte)(useP300 ? 0x01 : 0x00));
 
         when(gatt.getService(SERVICE)).thenReturn(gattService);
@@ -1499,7 +1499,7 @@ public class MbtBluetoothLETest {
         when(characteristic.getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID)).thenReturn(descriptor);
         when(gatt.writeCharacteristic(characteristic)).thenReturn(true);
 
-        assertTrue(bluetoothLE.sendDeviceCommand(new DeviceStreamingCommands.Triggers(useP300)));
+        assertTrue(bluetoothLE.sendRequestForCharacteristic(new DeviceStreamingCommands.Triggers(useP300)));
         Mockito.verify(characteristic).setValue(nameToBytes.array());
         Mockito.verify(gatt).writeCharacteristic(characteristic);
     }
@@ -1528,7 +1528,7 @@ public class MbtBluetoothLETest {
 
     private void test_enableOrDisableDcOffset(boolean enableDcOffset){
         ByteBuffer nameToBytes = ByteBuffer.allocate(2); // +1 for mailbox code
-        nameToBytes.put(MailboxEvents.MBX_DC_OFFSET_ENABLE);
+        nameToBytes.put(DeviceCommandEvents.MBX_DC_OFFSET_ENABLE);
         nameToBytes.put((byte)(enableDcOffset ? 0x01 : 0x00));
 
         when(gatt.getService(SERVICE)).thenReturn(gattService);
@@ -1539,7 +1539,7 @@ public class MbtBluetoothLETest {
         when(characteristic.getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID)).thenReturn(descriptor);
         when(gatt.writeCharacteristic(characteristic)).thenReturn(true);
 
-        assertTrue(bluetoothLE.sendDeviceCommand(new DeviceStreamingCommands.DcOffset(enableDcOffset)));
+        assertTrue(bluetoothLE.sendRequestForCharacteristic(new DeviceStreamingCommands.DcOffset(enableDcOffset)));
         Mockito.verify(characteristic).setValue(nameToBytes.array());
         Mockito.verify(gatt).writeCharacteristic(characteristic);
     }
@@ -1551,7 +1551,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void sendDeviceCommand_requestDeviceStreamingConfig(){
-        byte[] code = {MailboxEvents.MBX_GET_EEG_CONFIG};
+        byte[] code = {DeviceCommandEvents.MBX_GET_EEG_CONFIG};
 
         when(gatt.getService(SERVICE)).thenReturn(gattService);
         when(gattService.getUuid()).thenReturn(SERVICE);
@@ -1561,7 +1561,7 @@ public class MbtBluetoothLETest {
         when(characteristic.getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID)).thenReturn(descriptor);
         when(gatt.writeCharacteristic(characteristic)).thenReturn(true);
 
-        assertTrue(bluetoothLE.sendDeviceCommand(new DeviceStreamingCommands.EegConfig(new SimpleRequestCallback<byte[]>() {
+        assertTrue(bluetoothLE.sendRequestForCharacteristic(new DeviceStreamingCommands.EegConfig(new SimpleRequestCallback<byte[]>() {
             @Override
             public void onRequestComplete(byte[] object) {
 
@@ -1579,7 +1579,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void sendDeviceCommand_requestSystemStatus(){
-        byte[] code = {MailboxEvents.MBX_SYS_GET_STATUS};
+        byte[] code = {DeviceCommandEvents.MBX_SYS_GET_STATUS};
 
         when(gatt.getService(SERVICE)).thenReturn(gattService);
         when(gattService.getUuid()).thenReturn(SERVICE);
@@ -1589,7 +1589,7 @@ public class MbtBluetoothLETest {
         when(characteristic.getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID)).thenReturn(descriptor);
         when(gatt.writeCharacteristic(characteristic)).thenReturn(true);
 
-        assertTrue(bluetoothLE.sendDeviceCommand(new DeviceCommands.GetSystemStatus(new SimpleRequestCallback<byte[]>() {
+        assertTrue(bluetoothLE.sendRequestForCharacteristic(new DeviceCommands.GetSystemStatus(new SimpleRequestCallback<byte[]>() {
             @Override
             public void onRequestComplete(byte[] object) {
 
@@ -1616,7 +1616,7 @@ public class MbtBluetoothLETest {
         when(characteristic.getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID)).thenReturn(descriptor);
         when(gatt.requestMtu(mtu)).thenReturn(true);
 
-        assertTrue(bluetoothLE.sendDeviceCommand(new DeviceStreamingCommands.Mtu(mtu)));
+        assertTrue(bluetoothLE.sendRequestForCharacteristic(new DeviceStreamingCommands.Mtu(mtu)));
         Mockito.verify(gatt).requestMtu(mtu);
     }
 
@@ -1629,7 +1629,7 @@ public class MbtBluetoothLETest {
     public void sendExternalName_validName(){
         String externalName = "MM10001000";
         ByteBuffer nameToBytes = ByteBuffer.allocate(3 + externalName.getBytes().length); // +1 for mailbox code
-        nameToBytes.put(MailboxEvents.MBX_SET_SERIAL_NUMBER);
+        nameToBytes.put(DeviceCommandEvents.MBX_SET_SERIAL_NUMBER);
         nameToBytes.put((byte) 0xAB);
         nameToBytes.put((byte) 0x21);
         nameToBytes.put(externalName.getBytes());
@@ -1666,7 +1666,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void connectA2DPFromBLE(){
-        byte[] buffer = {MailboxEvents.MBX_CONNECT_IN_A2DP, (byte)0x25, (byte)0xA2}; //Send buffer
+        byte[] buffer = {DeviceCommandEvents.MBX_CONNECT_IN_A2DP, (byte)0x25, (byte)0xA2}; //Send buffer
 
         when(gatt.getService(SERVICE)).thenReturn(gattService);
         when(gattService.getUuid()).thenReturn(SERVICE);
@@ -1688,7 +1688,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void disconnectA2DPFromBLE(){
-        byte[] buffer = {MailboxEvents.MBX_DISCONNECT_IN_A2DP, (byte)0x85, (byte)0x11};
+        byte[] buffer = {DeviceCommandEvents.MBX_DISCONNECT_IN_A2DP, (byte)0x85, (byte)0x11};
 
         when(gatt.getService(SERVICE)).thenReturn(gattService);
         when(gattService.getUuid()).thenReturn(SERVICE);
