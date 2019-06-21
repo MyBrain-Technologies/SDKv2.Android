@@ -16,7 +16,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.ParcelUuid;
-import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
@@ -30,6 +29,8 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
+import command.BluetoothCommand;
+import command.BluetoothCommands;
 import command.DeviceCommand;
 
 import command.DeviceCommandEvents;
@@ -69,9 +70,9 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     private final static String REMOVE_BOND_METHOD = "removeBond";
     private final static String REFRESH_METHOD = "refresh";
 
-    private MbtAsyncWaitOperation asyncOperation = new MbtAsyncWaitOperation();
+    private MbtAsyncWaitOperation asyncOperation = new MbtAsyncWaitOperation<Boolean>();
 
-    private MbtAsyncWaitOperation asyncConfiguration = new MbtAsyncWaitOperation();
+    private MbtAsyncWaitOperation asyncConfiguration = new MbtAsyncWaitOperation<byte[]>();
 
     /**
      * An internal event used to notify MbtBluetoothLE that A2DP has disconnected.
@@ -611,13 +612,12 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         }
     }
 
-    void notifyCommandResponseReceived(byte[] response, Class command) {
-        LogUtils.i(TAG, "Received response from device | value: "+Arrays.toString(response));
-        mbtBluetoothManager.notifyDeviceResponseReceived(response, command);
+    void notifyMtuChanged(int mtu) {
+        mbtBluetoothManager.notifyMtuChanged(mtu);
+    }
 
-        if(command != null)
-            asyncConfiguration.stopWaitingOperation(false);
-
+    void notifyCommandResponseReceived(byte[] response) {
+        asyncConfiguration.stopWaitingOperation(response);
     }
 
     void notifyConnectionResponseReceived(byte mailboxEvents, byte mailboxResponse){
@@ -639,13 +639,35 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * This method waits until the device has returned a response
      * related to the SDK request (blocking method).
      */
-    private void waitResultOfDeviceCommand(){
+    private byte[] waitResponseForCommand(){
         Log.d(TAG, "Wait result of device command ");
             try {
-                asyncConfiguration.waitOperationResult(5000);
+                return (byte[]) asyncConfiguration.waitOperationResult(5000);
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                LogUtils.w(TAG, "Device command failed : "+e);
+                LogUtils.e(TAG, "Device command response not received : "+e);
             }
+        return null;
+    }
+
+    /**
+     * This method handle a single command in order to
+     * reconfigure some bluetooth streaming parameters
+     * The command's parameters are bundled in a {@link command.BluetoothCommand instance}
+     * that can provide a nullable response callback.
+     * All method inside are blocking.
+     * @param command is the {@link command.BluetoothCommand} object that defines the type of command to send
+     * and the associated command parameters.
+     * One of this parameter is an optional callback that returns the response
+     * sent by the headset to the SDK once the command is received.
+     */
+    public boolean sendBluetoothCommand(BluetoothCommand command){
+        boolean requestSent = false;
+        if(command instanceof BluetoothCommands.Mtu){
+            requestSent = changeMTU((Integer) command.getData());
+            if(!requestSent)
+                notifyMtuChanged(BluetoothCommands.Mtu.UNDEFINED);
+        }
+        return requestSent;
     }
 
     /**
@@ -656,17 +678,14 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * The command's parameters are bundled in a {@link DeviceCommand instance}
      * that can provide a nullable response callback.
      * All method inside are blocking.
-     * @param deviceCommand is the {@link DeviceCommand} object that defines the type of command to send
+     * @param command is the {@link DeviceCommand} object that defines the type of command to send
      * and the associated command parameters.
      * One of this parameter is an optional callback that returns the response
      * sent by the headset to the SDK once the command is received.
      */
-    public boolean sendDeviceCommand(DeviceCommand deviceCommand){
-        if(!isConnected()){
-            deviceCommand.onError(BluetoothError.ERROR_NOT_CONNECTED, null);
-            return false;
-        }
-        LogUtils.i(TAG, "Send device command : "+deviceCommand);
+    public boolean sendDeviceCommand(DeviceCommand command){
+        LogUtils.i(TAG, "Send device command : "+command);
+        byte[] response = null;
 
         try {
             Thread.sleep(50);
@@ -674,22 +693,24 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             e.printStackTrace();
         }
 
-        byte[] requestData = deviceCommand.serialize(); //Bundles the data to send to the headset for the request
-        boolean requestSent =
-                (deviceCommand instanceof DeviceStreamingCommands.Mtu ? //only command that is not a mailbox command
-                changeMTU(requestData[1]) //first byte is the identifier and second byte is the MTU value
-                : sendRequestForCharacteristic(requestData, MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX));
+        byte[] requestData = command.serialize(); //Bundles the data to send to the headset for the request
+        boolean requestSent = writeCharacteristic(requestData, MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX);
 
         if(!requestSent) { //if request sending has failed
             Log.e(TAG, "Device command sending failed");
-            deviceCommand.onError(BluetoothError.ERROR_WRITE_CHARACTERISTIC_OPERATION, null);
-            mbtBluetoothManager.notifyDeviceResponseReceived(null, deviceCommand.getClass()); //return null response to the client
-            return false;
+            command.onError(BluetoothError.ERROR_WRITE_CHARACTERISTIC_OPERATION, null);
+
         } else {  //if request sending has succeeded
-            waitResultOfDeviceCommand(); ////return headset response to the client
-            Log.d(TAG, "Device command sent " + deviceCommand);
-            return true;
+            command.onRequestSent();
+
+            if (command.isResponseExpected()){
+                response = waitResponseForCommand(); //get the headset response to return to the client on the onResponseReceived callback
+                command.onResponseReceived(response);
+            }
         }
+        mbtBluetoothManager.notifyDeviceResponseReceived(response, command);//return null response to the client if request has not been sent
+
+        return requestSent;
     }
 
     /**
@@ -705,7 +726,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      *
      * @return false if request dod not start as planned, true otherwise.
      */
-    private boolean changeMTU(final int newMTU) {
+    public boolean changeMTU(final int newMTU) {
         LogUtils.i(TAG, "change mtu " + newMTU);
 
         if(this.gatt == null)
@@ -714,7 +735,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         return this.gatt.requestMtu(newMTU);
     }
 
-    private boolean sendRequestForCharacteristic(@NonNull byte[] buffer, UUID characteristic) {
+    private boolean writeCharacteristic(@NonNull byte[] buffer, UUID characteristic) {
         Log.d(TAG, "send device command "+ Arrays.toString(buffer));
         if (buffer.length == 0)
             return false;

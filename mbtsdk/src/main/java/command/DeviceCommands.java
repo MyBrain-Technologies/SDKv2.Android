@@ -1,8 +1,9 @@
 package command;
 
 import android.support.annotation.Keep;
-import engine.SimpleRequestCallback;
+
 import engine.clientevents.BaseError;
+import engine.clientevents.MbtClientEvents;
 
 /**
  * Mailbox commands sent from the SDK to the headset
@@ -33,7 +34,7 @@ public interface DeviceCommands {
          * @param serialNumber is the new serial number value to set
          * If you're interested in getting the returned response,
          * sent by the headset to the SDK once the update command is received,
-         * call the {@link UpdateSerialNumber}(String serialNumber, {@linkSimpleRequestCallback<byte[]>)} constructor.
+         * call the {@link UpdateSerialNumber}(String serialNumber, {@linkCommandCallback<DeviceCommand, byte[]>)} constructor.
          */
         public UpdateSerialNumber(String serialNumber) {
             super(DeviceCommandEvents.MBX_SET_SERIAL_NUMBER,
@@ -47,33 +48,25 @@ public interface DeviceCommands {
          * in order to change its serial number.
          * The new serial number is stored by the headset if the command succeeds
          * @param serialNumber is the new serial number value to set
-         * @param responseCallback is a {@link SimpleRequestCallback} object
+         * @param commandCallback is a {@link MbtClientEvents.CommandCallback} object
          * that provides a callback for the returned raw response
          * sent by the headset to the SDK once the update command is received.
          * This raw response is a byte array that has be to converted to be readable.
          * If you're not interested in getting the returned response,
          * call the {@link UpdateSerialNumber}(String serialNumber) constructor
+         * The onRequestSent callback is triggered if the command has successfully been sent.
          */
-        public UpdateSerialNumber(String serialNumber, SimpleRequestCallback<byte[]> responseCallback) {
+        public UpdateSerialNumber(String serialNumber, MbtClientEvents.CommandCallback<DeviceCommand, byte[]> commandCallback) {
             super(DeviceCommandEvents.MBX_SET_SERIAL_NUMBER,
                     DeviceCommandEvents.MBX_SET_SERIAL_NUMBER_ADDITIONAL);
-            new UpdateSerialNumber(serialNumber);
-            this.responseCallback = responseCallback;
-        }
-
-        @Override
-        public SimpleRequestCallback<byte[]> getResponseCallback() {
-            return super.getResponseCallback();
+            this.serialNumber = serialNumber;
+            this.commandCallback = commandCallback;
+            init();
         }
 
         @Override
         public boolean isValid() {
             return serialNumber != null && !serialNumber.isEmpty();
-        }
-
-        @Override
-        public void onError(BaseError error, String additionnalInfo) {
-            serialNumber = null;
         }
 
         @Override
@@ -91,7 +84,7 @@ public interface DeviceCommands {
      * The new external name is stored and returned by the headset if the command succeeds.
      */
     @Keep
-    class UpdateExternalName extends DeviceCommand {
+    class UpdateExternalName extends DeviceCommand<BaseError> {
 
         /**
          * The new external name to set
@@ -104,7 +97,7 @@ public interface DeviceCommands {
          * The new external name is stored by the headset if the command succeeds.
          * If you're interested in getting the returned raw response
          * sent by the headset to the SDK once the update command is received,
-         * call the {@link UpdateExternalName}({@link SimpleRequestCallback}<byte[]>) constructor.
+         * call the {@link UpdateExternalName}({@link MbtClientEvents.CommandCallback}<DeviceCommand, byte[]>) constructor.
          * @param externalName the new external name value to set
          */
         public UpdateExternalName(String externalName) {
@@ -119,28 +112,25 @@ public interface DeviceCommands {
          * in order to change its external name.
          * The new external name is stored by the headset if the command succeeds.
          * @param externalName the new external name value to set
-         * @param responseCallback is a {@link SimpleRequestCallback} object
+         * @param commandCallback is a {@link MbtClientEvents.CommandCallback} object
          * that provides a callback for the returned raw response
          * sent by the headset to the SDK once the update command is received.
          * This raw response is a byte array that has be to converted to be readable.
          * If you're not interested in getting the returned response,
          * call the {@link UpdateExternalName}(String externalName) constructor
+         * The onRequestSent callback is triggered if the command has successfully been sent.
          */
-        public UpdateExternalName(String externalName, SimpleRequestCallback<byte[]> responseCallback) {
+        public UpdateExternalName(String externalName, MbtClientEvents.CommandCallback<DeviceCommand, byte[]> commandCallback) {
             super(DeviceCommandEvents.MBX_SET_SERIAL_NUMBER,
                     DeviceCommandEvents.MBX_SET_EXTERNAL_NAME_ADDITIONAL);
-            new UpdateExternalName(externalName);
-            this.responseCallback = responseCallback;
+            this.commandCallback = commandCallback;
+            this.externalName = externalName;
+            init();
         }
 
         @Override
         public boolean isValid() {
             return externalName != null && !externalName.isEmpty();
-        }
-
-        @Override
-        public void onError(BaseError error, String additionnalInfo) {
-            externalName = null;
         }
 
         @Override
@@ -158,7 +148,7 @@ public interface DeviceCommands {
      * The new product name is stored and returned by the headset if the command succeeds.
      */
     @Keep
-    class UpdateProductName extends DeviceCommand {
+    class UpdateProductName extends DeviceCommand<BaseError>{
 
         /**
          * The new product name to set
@@ -171,7 +161,7 @@ public interface DeviceCommands {
          * The new product name is stored by the headset if the command succeeds.
          * If you're interested in getting the returned raw response
          * sent by the headset to the SDK once the update command is received,
-         * call the {@link UpdateProductName}({@link SimpleRequestCallback}<byte[]>) constructor.
+         * call the {@link UpdateProductName}({@link MbtClientEvents.CommandCallback}<DeviceCommand, byte[]>) constructor.
          * @param productName is the new product name value to set
          */
         public UpdateProductName(String productName) {
@@ -185,27 +175,24 @@ public interface DeviceCommands {
          * in order to change its product name.
          * The new product name is stored by the headset if the command succeeds.
          * @param productName the new product name value to set
-         * @param responseCallback is a {@link SimpleRequestCallback} object
+         * @param commandCallback is a {@link MbtClientEvents.CommandCallback} object
          * that provides a callback for the returned raw response
          * sent by the headset to the SDK once the update command is received.
          * This raw response is a byte array that has be to converted to be readable.
          * If you're not interested in getting the returned raw response
          * call the {@link UpdateProductName}(String productName) constructor
+         * The onRequestSent callback is triggered if the command has successfully been sent.
          */
-        public UpdateProductName(String productName, SimpleRequestCallback<byte[]> responseCallback) {
+        public UpdateProductName(String productName, MbtClientEvents.CommandCallback<DeviceCommand, byte[]> commandCallback) {
             super(DeviceCommandEvents.MBX_SET_PRODUCT_NAME);
-            new UpdateProductName(productName);
-            this.responseCallback = responseCallback;
+            this.commandCallback = commandCallback;
+            this.productName = productName;
+            init();
         }
 
         @Override
         public boolean isValid() {
             return productName != null && !productName.isEmpty();
-        }
-
-        @Override
-        public void onError(BaseError error, String additionnalInfo) {
-            productName = null;
         }
 
         @Override
@@ -227,7 +214,7 @@ public interface DeviceCommands {
      * The device system status is returned by the headset if the command succeeds.
      */
     @Keep
-    class GetSystemStatus extends DeviceCommand {
+    class GetSystemStatus extends DeviceCommand<BaseError>{
 
         /**
          * Mailbox command sent from the SDK to the connected headset
@@ -237,30 +224,30 @@ public interface DeviceCommands {
          * the audio status,
          * and the ADS status.
          * The device system status is returned by the headset if the command succeeds.
-         * @param responseCallback is a {@link SimpleRequestCallback} object
+         * @param commandCallback is a {@link engine.clientevents.MbtClientEvents.CommandCallback} object
          * that provides a callback for the returned raw response
          * sent by the headset to the SDK once the get command is received.
          * This raw response is a byte array that has be to converted to be readable.
          * Each status is returned in one byte of the raw response array.
+         * The onRequestSent callback is triggered if the command has successfully been sent.
          */
-        public GetSystemStatus(SimpleRequestCallback<byte[]> responseCallback) {
+        public GetSystemStatus(MbtClientEvents.CommandCallback<DeviceCommand, byte[]> commandCallback) {
             super(DeviceCommandEvents.MBX_SYS_GET_STATUS);
-            this.responseCallback = responseCallback;
-            init();
+            this.commandCallback = commandCallback;
+            init(); //must be called after the commandCallback initialisation : isValid will return false otherwise
         }
 
         @Override
         public boolean isValid() {
-            return responseCallback != null;
+            return commandCallback != null;
         }
-
-        @Override
-        public void onError(BaseError error, String additionnalInfo) { }
 
         @Override
         public byte[] getData() {
             return null;
         }
+
+
     }
 
     /**
@@ -269,7 +256,7 @@ public interface DeviceCommands {
      * No response is returned by the headset if the command succeeds.
      */
     @Keep
-    class Reboot extends DeviceCommand {
+    class Reboot extends DeviceCommand<BaseError>{
 
         /**
          * Mailbox command sent from the SDK to the connected headset
@@ -279,16 +266,38 @@ public interface DeviceCommands {
         public Reboot() {
             super(DeviceCommandEvents.MBX_SYS_REBOOT_EVT,
                     DeviceCommandEvents.MBX_SYS_REBOOT_EVT_ADDITIONAL);
+
             init();
+        }
+
+        /**
+         * Mailbox command sent from the SDK to the connected headset
+         * in order to reboot the headset after the next disconnection.
+         * No response is returned by the headset if the command succeeds.
+         * The onRequestSent callback is triggered if the command has successfully been sent.
+         */
+        public Reboot(MbtClientEvents.SimpleCommandCallback<DeviceCommand, byte[]> commandCallback) {
+            super(DeviceCommandEvents.MBX_SYS_REBOOT_EVT,
+                    DeviceCommandEvents.MBX_SYS_REBOOT_EVT_ADDITIONAL);
+            this.commandCallback = commandCallback;
+            init();
+        }
+
+        @Override
+        public void init() {
+            commandCallback = new MbtClientEvents.SimpleCommandCallback<DeviceCommand, byte[]>() {
+                @Override
+                public void onError(DeviceCommand request, BaseError error, String additionnalInfo) { }
+                @Override
+                public void onRequestSent(DeviceCommand request) { }
+            };
+            super.init();
         }
 
         @Override
         public boolean isValid() {
             return true;
         }
-
-        @Override
-        public void onError(BaseError error, String additionnalInfo) { }
 
         @Override
         public byte[] getData() {
@@ -302,7 +311,7 @@ public interface DeviceCommands {
      * The connection status is returned by the headset if the command succeeds.
      */
     @Keep
-    class ConnectAudio extends DeviceCommand {
+    class ConnectAudio extends DeviceCommand<BaseError>{
 
         /**
          * Mailbox command sent from the SDK to the connected headset
@@ -312,7 +321,7 @@ public interface DeviceCommands {
          * This raw response is a byte array that has be to converted to be readable.
          * If you're interested in getting the returned raw response
          * sent by the headset to the SDK once the connect command is received,
-         * call the {@link ConnectAudio}({@link SimpleRequestCallback}<byte[]> responseCallback) constructor
+         * call the {@link ConnectAudio}({@link MbtClientEvents.CommandCallback}<DeviceCommand, byte[]> commandCallback) constructor
          */
         public ConnectAudio() {
             super(DeviceCommandEvents.MBX_CONNECT_IN_A2DP,
@@ -324,19 +333,20 @@ public interface DeviceCommands {
          * Mailbox command sent from the SDK to the connected headset
          * in order to establish a Bluetooth connection for audio streaming.
          * The connection status is returned by the headset if the command succeeds.
-         * @param responseCallback is a {@link SimpleRequestCallback} object
+         * @param commandCallback is a {@link MbtClientEvents.CommandCallback} object
          * that provides a callback for the returned raw response
          * sent by the headset to the SDK once the connect command is received.
          * This raw response is a byte array that has be to converted to be readable.
          * If you're not interested in getting the returned raw response
          * sent by the headset to the SDK once the connect command is received,
          * call the {@link ConnectAudio}() constructor
+         * The onRequestSent callback is triggered if the command has successfully been sent.
          */
-        public ConnectAudio(SimpleRequestCallback<byte[]> responseCallback) {
+        public ConnectAudio(MbtClientEvents.CommandCallback<DeviceCommand, byte[]> commandCallback) {
             super(DeviceCommandEvents.MBX_CONNECT_IN_A2DP,
                     DeviceCommandEvents.MBX_CONNECT_IN_A2DP_ADDITIONAL);
-            new ConnectAudio();
-            this.responseCallback = responseCallback;
+            this.commandCallback = commandCallback;
+            init();
         }
 
 
@@ -345,9 +355,6 @@ public interface DeviceCommands {
         public boolean isValid() {
             return true;
         }
-
-        @Override
-        public void onError(BaseError error, String additionnalInfo) { }
 
         @Override
         public byte[] getData() {
@@ -362,7 +369,7 @@ public interface DeviceCommands {
      * The disconnection status is returned by the headset if the command succeeds.
      */
     @Keep
-    class DisconnectAudio extends DeviceCommand {
+    class DisconnectAudio extends DeviceCommand<BaseError>{
 
         /**
          * Mailbox command sent from the SDK to the connected headset
@@ -370,7 +377,7 @@ public interface DeviceCommands {
          * The disconnection status is returned by the headset if the command succeeds.
          * If you're interested in getting the returned raw response
          * sent by the headset to the SDK once the connect command is received,
-         * call the {@link DisconnectAudio}({@link SimpleRequestCallback}<byte[]> responseCallback) constructor
+         * call the {@link DisconnectAudio}({@link MbtClientEvents.CommandCallback}<DeviceCommand, byte[]> commandCallback) constructor
          */
         public DisconnectAudio() {
             super(DeviceCommandEvents.MBX_DISCONNECT_IN_A2DP,
@@ -382,28 +389,26 @@ public interface DeviceCommands {
          * Mailbox command sent from the SDK to the connected headset
          * in order to establish a Bluetooth disconnection for audio streaming.
          * The disconnection status is returned by the headset if the command succeeds.
-         * @param responseCallback is a {@link SimpleRequestCallback} object
+         * @param commandCallback is a {@link MbtClientEvents.CommandCallback} object
          * that provides a callback for the returned raw response
          * sent by the headset to the SDK once the disconnect command is received.
          * This raw response is a byte array that has be to converted to be readable.
          * If you're not interested in getting the returned raw response
          * sent by the headset to the SDK once the connect command is received,
          * call the {@link DisconnectAudio}() constructor
+         * The onRequestSent callback is triggered if the command has successfully been sent.
          */
-        public DisconnectAudio(SimpleRequestCallback<byte[]> responseCallback) {
+        public DisconnectAudio(MbtClientEvents.CommandCallback<DeviceCommand, byte[]> commandCallback) {
             super(DeviceCommandEvents.MBX_DISCONNECT_IN_A2DP,
                     DeviceCommandEvents.MBX_DISCONNECT_IN_A2DP_ADDITIONAL);
-            new DisconnectAudio();
-            this.responseCallback = responseCallback;
+            this.commandCallback = commandCallback;
+            init();
         }
 
         @Override
         public boolean isValid() {
             return true;
         }
-
-        @Override
-        public void onError(BaseError error, String additionnalInfo) { }
 
         @Override
         public byte[] getData() {

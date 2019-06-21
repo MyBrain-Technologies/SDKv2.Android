@@ -98,6 +98,7 @@ public enum BtState {
      */
     READING_SUCCESS,
 
+
     /**
      * Exchanging and storing of the long term keys for the next times a connection is initiated.
      * This operation is included in the connection process only for headsets whose firmware version are higher than or equal to 1.7.0.
@@ -111,6 +112,10 @@ public enum BtState {
      * Successfully completed bonding operation
      */
     BONDED,
+
+    CHANGING_MTU,
+
+    MTU_CHANGED,
 
     /**
      * Sending the QR Code as an external name to the headset

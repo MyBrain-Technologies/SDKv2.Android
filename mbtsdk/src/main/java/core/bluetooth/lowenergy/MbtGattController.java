@@ -279,7 +279,7 @@ final class MbtGattController extends BluetoothGattCallback {
     @Override
     public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
         super.onMtuChanged(gatt, mtu, status);
-        mbtBluetoothLE.notifyCommandResponseReceived(new byte[]{(byte)mtu}, DeviceStreamingCommands.Mtu.class);
+        mbtBluetoothLE.notifyMtuChanged(mtu);
     }
 
     /**
@@ -300,56 +300,28 @@ final class MbtGattController extends BluetoothGattCallback {
             case DeviceCommandEvents.MBX_OTA_STATUS_EVT:
                 break;
 
-            case DeviceCommandEvents.MBX_SET_SERIAL_NUMBER: //this case occurs when a QR code or a serial number is sent to the headset through a writing operation);
-                mbtBluetoothLE.notifyCommandResponseReceived(response, DeviceCommands.UpdateSerialNumber.class);
-                break;
-
-//            case DeviceCommandEvents.MBX_SET_SERIAL_NUMBER: //this case occurs when a QR code or a serial number is sent to the headset through a writing operation
-//                mbtBluetoothLE.notifyCommandResponseReceived(response, MailboxConfig.EXTERNAL_NAME_CONFIG);
-//                break;
-
-            case DeviceCommandEvents.MBX_SET_PRODUCT_NAME:
-                mbtBluetoothLE.notifyCommandResponseReceived(response, DeviceCommands.UpdateProductName.class);
-                break;
-
-            case DeviceCommandEvents.MBX_SYS_GET_STATUS:
-                mbtBluetoothLE.notifyCommandResponseReceived(response, DeviceCommands.GetSystemStatus.class);
-                break;
-
             case DeviceCommandEvents.MBX_CONNECT_IN_A2DP:
                 if(((response[0] & DeviceCommandEvents.CMD_CODE_CONNECT_IN_A2DP_IN_PROGRESS) != 0x01)) {
                     mbtBluetoothLE.notifyConnectionResponseReceived(characteristic.getValue()[0], response[0]);
-                    mbtBluetoothLE.notifyCommandResponseReceived(response, DeviceCommands.ConnectAudio.class);
+                    mbtBluetoothLE.notifyCommandResponseReceived(response);
                 }
                 break;
 
             case DeviceCommandEvents.MBX_DISCONNECT_IN_A2DP:
                 mbtBluetoothLE.notifyConnectionResponseReceived(characteristic.getValue()[0], response[0]);
-                mbtBluetoothLE.notifyCommandResponseReceived(response, DeviceCommands.DisconnectAudio.class);
+                mbtBluetoothLE.notifyCommandResponseReceived(response);
                 break;
 
-            case DeviceCommandEvents.MBX_SYS_REBOOT_EVT:
-                mbtBluetoothLE.notifyCommandResponseReceived(response, DeviceCommands.Reboot.class);
-                break;
-
+            case DeviceCommandEvents.MBX_SET_SERIAL_NUMBER: //this case occurs when a QR code or a serial number is sent to the headset through a writing operation);
+            case DeviceCommandEvents.MBX_SET_PRODUCT_NAME:
+            case DeviceCommandEvents.MBX_SYS_GET_STATUS:
+            case DeviceCommandEvents.MBX_SYS_REBOOT_EVT: //to this day, this case is supposed to never be called : there is no response for reboot
             case DeviceCommandEvents.MBX_SET_NOTCH_FILT:
-                mbtBluetoothLE.notifyCommandResponseReceived(response, DeviceStreamingCommands.NotchFilter.class);
-                break;
-
             case DeviceCommandEvents.MBX_SET_AMP_GAIN:
-                mbtBluetoothLE.notifyCommandResponseReceived(response, DeviceStreamingCommands.AmplifierGain.class);
-                break;
-
             case DeviceCommandEvents.MBX_GET_EEG_CONFIG:
-                mbtBluetoothLE.notifyCommandResponseReceived(response, DeviceStreamingCommands.EegConfig.class);
-                break;
-
             case DeviceCommandEvents.MBX_P300_ENABLE:
-                mbtBluetoothLE.notifyCommandResponseReceived(response, DeviceStreamingCommands.Triggers.class);
-                break;
-
             case DeviceCommandEvents.MBX_DC_OFFSET_ENABLE:
-                mbtBluetoothLE.notifyCommandResponseReceived(response, DeviceStreamingCommands.DcOffset.class);
+                mbtBluetoothLE.notifyCommandResponseReceived(response);
                 break;
 
             case (byte) 0xFF:

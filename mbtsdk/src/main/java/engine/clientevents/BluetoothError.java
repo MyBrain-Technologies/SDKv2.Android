@@ -40,6 +40,7 @@ public final class BluetoothError extends BaseError {
     public static BluetoothError ERROR_CONNECTION_INTERRUPTED               = new BluetoothError( CODE_RANGE+26,  "Bluetooth Connection has been interrupted.");
     public static BluetoothError ERROR_SETTINGS_INTERFACE_ACTION            = new BluetoothError( CODE_RANGE+27,  "Bluetooth Audio Connection with an unpaired headset is not supported on your mobile. Please read the User Guide to connect Audio in a different way.");
     public static BluetoothError ERROR_WRITE_CHARACTERISTIC_OPERATION       = new BluetoothError( CODE_RANGE+28,  "Bluetooth characteristic write operation failed.");
+    public static BluetoothError ERROR_VALIDITY_CHARACTERISTIC_OPERATION    = new BluetoothError( CODE_RANGE+29,  "Error: failed to check service and characteristic validity.");
 
 
     private BluetoothError(int code, String exception){

@@ -35,7 +35,6 @@ import core.eeg.MbtEEGManager;
 import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
 import engine.clientevents.BluetoothError;
-import engine.clientevents.ConfigError;
 import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.BluetoothStateListener;
 import engine.clientevents.DeviceBatteryListener;
@@ -162,20 +161,19 @@ public class MbtManager{
         EventBusManager.postEvent(new StreamRequestEvent(false, false, false));
     }
 
+    /**
+     * Send a Mailbox command request to the connected headset
+     * in order to configure a parameter,
+     * or get values stored by the headset
+     * or ask the headset to perform an action. .
+     * @param deviceCommand is the command to send
+     * @return true if the command has been sent, false otherwise
+     */
     public void sendDeviceCommand(@NonNull DeviceCommand deviceCommand){
-            EventBusManager.postEvent(new DeviceCommandRequestEvent(deviceCommand), new EventBusManager.Callback<DeviceEvents.RawDeviceResponseEvent>(){
-                @Override
-                @Subscribe
-                public Void onEventCallback(DeviceEvents.RawDeviceResponseEvent headsetRawResponse) {
-                    Log.d(TAG, "Callback returned "+ Arrays.toString(headsetRawResponse.getRawResponse()));
-                    SimpleRequestCallback responseCallback = deviceCommand.getResponseCallback();
-                    if(responseCallback != null)
-                        responseCallback.onRequestComplete(headsetRawResponse.getRawResponse());
-                    EventBusManager.registerOrUnregister(false, this);
-                    return null;
-                }
-            });
+        if(!deviceCommand.isValid()) //any invalid command is not sent : validity criteria are defined in each DeviceCommand implemented class , the onError callback is triggered in the DeviceCommand constructor
+            return;
 
+            EventBusManager.postEvent(new DeviceCommandRequestEvent(deviceCommand));
     }
 
     /**
@@ -288,9 +286,8 @@ public class MbtManager{
 
 
     public void requestCurrentConnectedDevice(final SimpleRequestCallback<MbtDevice> callback) {
-        if (callback == null){
-            callback.onError(ConfigError.ERROR_INVALID_PARAMS,"Impossible to return the current connected device if no callback is provided in input");
-        }
+        if (callback == null)
+            return;
 
         EventBusManager.postEvent(new DeviceEvents.GetDeviceEvent(), new EventBusManager.Callback<DeviceEvents.PostDeviceEvent>(){
             @Override

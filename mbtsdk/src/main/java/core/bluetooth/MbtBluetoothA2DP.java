@@ -22,11 +22,12 @@ import config.MbtConfig;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindsQRDataBase;
 import engine.SimpleRequestCallback;
-import engine.clientevents.BaseError;
 import features.MbtFeatures;
 import utils.FirmwareUtils;
 import utils.LogUtils;
 import utils.MbtAsyncWaitOperation;
+
+import static utils.MbtAsyncWaitOperation.CANCEL;
 
 /**
  * Created by Etienne on 08/02/2018.
@@ -42,9 +43,9 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
 
     private BluetoothDevice connectedDevice;
 
-    private MbtAsyncWaitOperation asyncInit = new MbtAsyncWaitOperation();
-    private MbtAsyncWaitOperation asyncConnection = new MbtAsyncWaitOperation();
-    private MbtAsyncWaitOperation asyncDisconnection = new MbtAsyncWaitOperation();
+    private MbtAsyncWaitOperation asyncInit = new MbtAsyncWaitOperation<Boolean>();
+    private MbtAsyncWaitOperation asyncConnection = new MbtAsyncWaitOperation<Boolean>();
+    private MbtAsyncWaitOperation asyncDisconnection = new MbtAsyncWaitOperation<Boolean>();
 
     public MbtBluetoothA2DP(@NonNull Context context, MbtBluetoothManager mbtBluetoothManager) {
         super(context, mbtBluetoothManager);
@@ -114,7 +115,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                     }, 100, 500);
                     Boolean status = false;
                     try {
-                        status = asyncConnection.waitOperationResult(5000);
+                        status = (Boolean) asyncConnection.waitOperationResult(5000);
                     } catch (CancellationException | InterruptedException | ExecutionException | TimeoutException e) {
                         if(e instanceof CancellationException)
                             asyncConnection.resetWaitingOperation();
@@ -167,7 +168,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                 final int timeout = deviceToConnect.getBondState() == BluetoothDevice.BOND_BONDED ? MbtConfig.getBluetoothA2DpConnectionTimeout() : 25000;
                 Boolean status = false;
                 try{
-                    status = asyncConnection.waitOperationResult(timeout);
+                    status = (Boolean) asyncConnection.waitOperationResult(timeout);
                 }catch (CancellationException | InterruptedException | ExecutionException | TimeoutException e) {
                     if(e instanceof CancellationException)
                         asyncConnection.resetWaitingOperation();
@@ -211,7 +212,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
     @Override
     public boolean disconnect() {
         if(asyncConnection.isWaiting()){
-            asyncConnection.stopWaitingOperation(true);
+            asyncConnection.stopWaitingOperation(CANCEL);
         }else {
             LogUtils.d(TAG, "disconnect a2dp");
             if (this.bluetoothAdapter != null) {
@@ -220,11 +221,6 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                     connectedDevice = a2dpProxy.getConnectedDevices().get(0); //assuming that one device is connected and its obviously the melomind
 
                 mbtBluetoothManager.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
-                    @Override
-                    public void onError(BaseError error, String additionnalInfo) {
-
-                    }
-
                     @Override
                     public void onRequestComplete(MbtDevice device) {
                         if(device == null)
@@ -237,7 +233,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                                if(e instanceof CancellationException)
                                    asyncDisconnection.resetWaitingOperation();
                             } finally {
-                                asyncDisconnection.stopWaitingOperation(true);
+                                asyncDisconnection.stopWaitingOperation(CANCEL);
                             }
                         }
                         if(isConnected()){

@@ -14,6 +14,7 @@ import core.eeg.storage.MbtEEGPacket;
 import engine.clientevents.BaseError;
 import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.EegListener;
+import engine.clientevents.MbtClientEvents;
 import features.MbtFeatures;
 
 /**
@@ -40,9 +41,11 @@ public final class StreamConfig {
      */
     private ArrayList<DeviceCommand> deviceCommands;
 
-    private final ArrayList<DeviceCommand> DEFAULT_DEVICE_COMMAND = new ArrayList<>(Arrays.asList(
-            new DeviceStreamingCommands.DcOffset(false),
-            new DeviceStreamingCommands.Triggers(false)));
+    private final ArrayList<DeviceCommand> DEFAULT_DEVICE_COMMAND = new ArrayList<>(
+            Arrays.asList(
+                new DeviceStreamingCommands.DcOffset(false),
+                new DeviceStreamingCommands.Triggers(false)
+            ));
 
     private StreamConfig(boolean computeQualities, EegListener<BaseError> eegListener, DeviceStatusListener<BaseError> deviceStatusListener, int notificationPeriod, DeviceStreamingCommands[] deviceCommands){
         this.computeQualities = computeQualities;
@@ -57,7 +60,22 @@ public final class StreamConfig {
                 this.deviceCommands.add((DeviceCommand) deviceCommand);
             }
         }
-        this.deviceCommands.add(new DeviceStreamingCommands.EegConfig(null));
+        this.deviceCommands.add(new DeviceStreamingCommands.EegConfig(new MbtClientEvents.CommandCallback<DeviceCommand, byte[]>() {
+            @Override
+            public void onResponseReceived(DeviceCommand request, byte[] response) {
+
+            }
+
+            @Override
+            public void onError(DeviceCommand request, BaseError error, String additionnalInfo) {
+
+            }
+
+            @Override
+            public void onRequestSent(DeviceCommand request) {
+
+            }
+        }));
     }
 
     public EegListener getEegListener() {

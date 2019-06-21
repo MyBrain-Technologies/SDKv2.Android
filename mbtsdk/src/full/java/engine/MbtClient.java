@@ -18,16 +18,15 @@ import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
 import core.eeg.storage.MbtEEGPacket;
 import engine.clientevents.BaseError;
-import engine.clientevents.BasicError;
 import engine.clientevents.BluetoothStateListener;
 import engine.clientevents.ConfigError;
 import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.DeviceBatteryListener;
 import engine.clientevents.EegListener;
 import engine.clientevents.HeadsetDeviceError;
+import engine.clientevents.MbtClientEvents;
 import features.MbtFeatures;
 import features.MbtDeviceType;
-
 
 /**
  * Created by Etienne on 08/02/2018.
@@ -137,8 +136,8 @@ public final class MbtClient {
      *
      * <p>You can customize some parameters in the {@link StreamConfig}class.</p>
      *
-     * <p>If the parameters are incorrect, the function returns directly and the {@link EegListener#onError(engine.clientevents.BaseError,String)} method is called</p>
-     * If something wrong happens during the operation, {@link EegListener#onError(engine.clientevents.BaseError,String)} method is called.
+     * <p>If the parameters are incorrect, the function returns directly and the {@link EegListener#onError} method is called</p>
+     * If something wrong happens during the operation, {@link EegListener#onError} method is called.
      *
      * <p>If everything went well, the EEG will be available in the {@link EegListener#onNewPackets(MbtEEGPacket)} callback.</p>
      *
@@ -169,10 +168,12 @@ public final class MbtClient {
      * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
      * This response contains the new serial number in a byte array
      * @param serialNumber is the new value to set to the serial number
-     * @param requestCallback returns the headset raw response if the command has been well sent
+     * @param commandCallback returns the headset raw response in the onRequestComplete callback if the command has been well sent
+     * A non null requestCallback instance is mandatory if you want to get the headset response
+     * The onError callback provided by the requestCallback is triggered if an error occurred during the request sending.
      */
-    public void updateSerialNumber(String serialNumber, @Nullable SimpleRequestCallback<byte[]> requestCallback){
-        mbtManager.sendDeviceCommand(new DeviceCommands.UpdateSerialNumber(serialNumber, requestCallback));
+    public void updateSerialNumber(String serialNumber, @Nullable MbtClientEvents.CommandCallback<DeviceCommand, byte[]> commandCallback){
+        mbtManager.sendDeviceCommand(new DeviceCommands.UpdateSerialNumber(serialNumber, commandCallback));
     }
 
     /**
@@ -180,48 +181,58 @@ public final class MbtClient {
      * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
      * This response contains the new external name in a byte array
      * @param externalName is the new value to set to the external name
-     * @param requestCallback returns the headset raw response if the command has been well sent
+     * @param commandCallback returns the headset raw response in the onRequestComplete callback if the command has been well sent
+     * A non null requestCallback instance is mandatory if you want to get the headset response
+     * The onError callback provided by the requestCallback is triggered if an error occurred during the request sending.
      */
-    public void updateExternalName(String externalName, @Nullable SimpleRequestCallback<byte[]> requestCallback){
-        mbtManager.sendDeviceCommand(new DeviceCommands.UpdateExternalName(externalName, requestCallback));
+    public void updateExternalName(String externalName, @Nullable MbtClientEvents.CommandCallback<DeviceCommand, byte[]> commandCallback){
+        mbtManager.sendDeviceCommand(new DeviceCommands.UpdateExternalName(externalName, commandCallback));
     }
 
     /**
      * Sends a command to the connected headset to establish an audio Bluetooth A2DP connection
      * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
      * This response contains the connection status in a byte array
-     * @param requestCallback returns the headset raw response if the command has been well sent
+     * @param commandCallback returns the headset raw response in the onRequestComplete callback if the command has been well sent
+     * A non null requestCallback instance is mandatory if you want to get the headset response
+     * The onError callback provided by the requestCallback is triggered if an error occurred during the request sending.
      */
-    public void connectAudio(@Nullable SimpleRequestCallback<byte[]> requestCallback){
-        mbtManager.sendDeviceCommand(new DeviceCommands.ConnectAudio(requestCallback));
+    public void connectAudio(@Nullable MbtClientEvents.CommandCallback<DeviceCommand, byte[]> commandCallback){
+        mbtManager.sendDeviceCommand(new DeviceCommands.ConnectAudio(commandCallback));
     }
 
     /**
      * Sends a command to the connected headset to establish an audio Bluetooth A2DP disconnection
      * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
      * This response contains the disconnection status in a byte array
-     * @param requestCallback returns the headset raw response if the command has been well sent
+     * @param commandCallback returns the headset raw response in the onRequestComplete callback if the command has been well sent
+     * A non null requestCallback instance is mandatory if you want to get the headset response
+     * The onError callback provided by the requestCallback is triggered if an error occurred during the request sending.
      */
-    public void disconnectAudio(@Nullable SimpleRequestCallback<byte[]> requestCallback){
-        mbtManager.sendDeviceCommand(new DeviceCommands.DisconnectAudio(requestCallback));
+    public void disconnectAudio(@Nullable MbtClientEvents.CommandCallback<DeviceCommand, byte[]> commandCallback){
+        mbtManager.sendDeviceCommand(new DeviceCommands.DisconnectAudio(commandCallback));
     }
 
     /**
      * Sends a command to the connected headset to get its system status
      * The system status is returned as a byte array in the onRequestComplete callback of the requestCallback
-     * @param requestCallback returns the headset raw response if the command has been well sent
+     * @param commandCallback returns the headset raw response in the onRequestComplete callback if the command has been well sent
+     * A non null requestCallback instance is mandatory if you want to get the headset response
+     * The onError callback provided by the requestCallback is triggered if an error occurred during the request sending.
      */
-    public void getDeviceSystemStatus(@Nullable SimpleRequestCallback<byte[]> requestCallback){
-        mbtManager.sendDeviceCommand(new DeviceCommands.GetSystemStatus(requestCallback));
+    public void getDeviceSystemStatus(@Nullable MbtClientEvents.CommandCallback<DeviceCommand, byte[]> commandCallback){
+        mbtManager.sendDeviceCommand(new DeviceCommands.GetSystemStatus(commandCallback));
     }
 
     /**
      * Sends a command to reboot the connected headset
-     * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
-     * This response contains the reboot status bundled in a byte array
+     * @param commandCallback returns the headset raw response in the onRequestComplete callback if the command has been well sent
+     * The onError callback provided by the requestCallback is triggered if an error occurred during the request sending.
+     * A non null requestCallback instance is mandatory to be notified if an error occurred during the request sending.
+     * The onRequestComplete callback provided by the requestCallback is never called
      */
-    public void rebootDevice(){
-        mbtManager.sendDeviceCommand(new DeviceCommands.Reboot());
+    public void rebootDevice(@Nullable MbtClientEvents.SimpleCommandCallback<DeviceCommand, byte[]> commandCallback){
+        mbtManager.sendDeviceCommand(new DeviceCommands.Reboot(commandCallback));
     }
 
     /**

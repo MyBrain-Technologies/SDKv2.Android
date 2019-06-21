@@ -44,6 +44,8 @@ import static features.MbtFeatures.VPRO_DEVICE_NAME_PREFIX;
  */
 public class HomeActivity extends AppCompatActivity{
 
+    private static String TAG = HomeActivity.class.getName();
+
     /**
      * Maximum duration allocated to find a headset
      */
