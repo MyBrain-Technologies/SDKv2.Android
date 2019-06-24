@@ -23,7 +23,6 @@ public interface BluetoothCommands {
      * Command sent from the SDK to the connected headset
      * in order to change its Maximum Transmission Unit
      * (maximum size of the data sent by the headset to the SDK).
-     * The new serial number is stored and returned by the headset if the command succeeds.
      */
     @Keep
     class Mtu extends BluetoothCommand<Integer, BaseError>{
@@ -33,8 +32,7 @@ public interface BluetoothCommands {
          * (maximum size of the data sent by the headset to the SDK)
          * to set
          */
-        public static final int UNDEFINED = 0;
-        private int mtu = UNDEFINED;
+        private int mtu;
 
         private final int MINIMUM = 23;
         private final int MAXIMUM = 121;
@@ -46,9 +44,9 @@ public interface BluetoothCommands {
          * The new serial number is stored and returned by the headset if the command succeeds.
          * @param mtu is the new Maximum Transmission Unit
          */
-        public Mtu(@IntRange(from = 23, to = 121) int mtu) {
+        public Mtu(@IntRange(from = MINIMUM, to = MAXIMUM) int mtu) {
             this.mtu = mtu;
-            init();
+            this.init();
         }
 
         /**
@@ -57,7 +55,7 @@ public interface BluetoothCommands {
          * (maximum size of the data sent by the headset to the SDK).
          * The new serial number is stored and returned by the headset if the command succeeds.
          * @param mtu is the new Maximum Transmission Unit
-         * @param commandCallback is a {@link MbtClientEvents.CommandCallback} object
+         * @param commandCallback is a {@link CommandInterface.CommandCallback} object
          * that provides a callback for the returned raw response
          * sent by the headset to the SDK once the configuration command is received.
          * This raw response is a byte array that has be to converted to be readable.
@@ -65,11 +63,17 @@ public interface BluetoothCommands {
          * call the {@link Mtu}(int mtu) constructor
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
-        public Mtu(@IntRange(from = MINIMUM, to = MAXIMUM) int mtu, MbtClientEvents.CommandCallback<BluetoothCommand,Integer> commandCallback) {
+        public Mtu(@IntRange(from = MINIMUM, to = MAXIMUM) int mtu, CommandInterface.CommandCallback<Integer> commandCallback) {
             this.mtu = mtu;
             this.commandCallback = commandCallback;
-            init();
+            this.init();
         }
+
+        @Override
+        public Integer serialize() {
+            return getData();
+        }
+
 
         @Override
         public boolean isValid() {
@@ -78,10 +82,8 @@ public interface BluetoothCommands {
 
         @Override
         public Integer getData() {
-            if(mtu == UNDEFINED)
-                return null;
-
             return mtu;
         }
+
     }
 }

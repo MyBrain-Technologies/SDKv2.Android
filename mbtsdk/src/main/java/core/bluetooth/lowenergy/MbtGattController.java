@@ -279,7 +279,7 @@ final class MbtGattController extends BluetoothGattCallback {
     @Override
     public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
         super.onMtuChanged(gatt, mtu, status);
-        mbtBluetoothLE.notifyMtuChanged(mtu);
+        mbtBluetoothLE.notifyCommandResponseReceived(mtu);
     }
 
     /**

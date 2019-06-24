@@ -18,7 +18,6 @@ import org.apache.commons.lang.ArrayUtils;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.CancellationException;
@@ -27,6 +26,7 @@ import java.util.concurrent.TimeoutException;
 
 import command.BluetoothCommand;
 import command.BluetoothCommands;
+import command.CommandInterface;
 import command.DeviceCommand;
 
 import config.MbtConfig;
@@ -48,6 +48,7 @@ import core.device.model.MelomindsQRDataBase;
 import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
 import engine.clientevents.BluetoothError;
+import engine.clientevents.ConfigError;
 import engine.clientevents.ConnectionStateReceiver;
 import eventbus.EventBusManager;
 import eventbus.events.BluetoothEEGEvent;
@@ -102,6 +103,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private MbtAsyncWaitOperation asyncOperation = new MbtAsyncWaitOperation<Boolean>();
     private MbtAsyncWaitOperation asyncSwitchOperation = new MbtAsyncWaitOperation<Boolean>();
 
+    private int mtu;
     private String deviceNameRequested;
     private String deviceQrCodeRequested;
     private MbtDeviceType deviceTypeRequested;
@@ -161,27 +163,43 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     }
 
     /**
-     * Notify the Device Manager if a new device info has been received from the headset
-     * @param command is the corresponding type of mailbox command
+     * Notify a command response has been received from the headset
+     * @param command is the corresponding type of command
      */
-    public void notifyDeviceResponseReceived(byte[] response, DeviceCommand command) {
-        LogUtils.i(TAG, "Received response from device : "+ Arrays.toString(response));
-        if(response != null){
-            if(command instanceof DeviceStreamingCommands.EegConfig){
-                notifyDeviceConfigReceived(ArrayUtils.toObject(response));
+    public void notifyResponseReceived(Object response, CommandInterface.MbtCommand command) {
+        LogUtils.i(TAG, "Received response from device : "+ response);
 
-            }else if(command instanceof DeviceCommands.UpdateSerialNumber) {
-                notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER, new String(response));
+        if(command instanceof DeviceCommand)
+            notifyDeviceResponseReceived(response, (DeviceCommand) command);
 
-            }else if(command instanceof DeviceCommands.UpdateExternalName) {
-                notifyDeviceInfoReceived(DeviceInfo.MODEL_NUMBER, new String(response));
-            }
-        }
+        else if (command instanceof BluetoothCommand)
+            notifyBluetoothResponseReceived(response, (BluetoothCommand) command);
+
         requestBeingProcessed = false;
-
     }
 
+    void notifyDeviceResponseReceived(Object response, DeviceCommand command) {
+        if(response != null){
+            if(command instanceof DeviceStreamingCommands.EegConfig){
+                notifyDeviceConfigReceived(ArrayUtils.toObject((byte[])response));
 
+            }else if(command instanceof DeviceCommands.UpdateSerialNumber) {
+                notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER, new String((byte[]) response));
+
+            }else if(command instanceof DeviceCommands.UpdateExternalName) {
+                notifyDeviceInfoReceived(DeviceInfo.MODEL_NUMBER, new String((byte[]) response));
+            }
+        }
+    }
+
+    /**
+     * Notify the Connection process handler if the MTU has been well changed
+     * @param command is the corresponding type of bluetooth command
+     */
+    void notifyBluetoothResponseReceived(Object response, BluetoothCommand command) {
+        if(command instanceof BluetoothCommands.Mtu)
+            notifyMtuChanged(response == command.getData());
+    }
     /**
      * This class is a specific thread that will handle all bluetooth operations. Bluetooth operations
      * are synchronous, meaning two or more operations can't be run simultaneously. This {@link HandlerThread}
@@ -217,6 +235,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 deviceQrCodeRequested = ((StartOrContinueConnectionRequestEvent) request).getQrCodeOfDeviceRequested();
                 deviceNameRequested = ((StartOrContinueConnectionRequestEvent) request).getNameOfDeviceRequested();
 
+                mtu = ((StartOrContinueConnectionRequestEvent)request).getMtu();
+
                 if (deviceQrCodeRequested != null){
                     if(deviceNameRequested == null) //if a QR code has been specified but no device name
                         deviceNameRequested = new MelomindsQRDataBase(mContext, true).get(deviceQrCodeRequested); //retrieve the BLE name from the QR code database
@@ -226,7 +246,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                     deviceQrCodeRequested = new MelomindsQRDataBase(mContext, false).get(deviceNameRequested);  //retrieve the QR code from BLE name using QR code database
 
                 deviceTypeRequested = ((StartOrContinueConnectionRequestEvent) request).getTypeOfDeviceRequested();
-                Log.d(TAG," device name "+deviceNameRequested+ " | QR code "+deviceQrCodeRequested + " | type "+deviceTypeRequested);
                 startOrContinueConnectionOperation(((StartOrContinueConnectionRequestEvent) request).isClientUserRequest());
 
             } else if (request instanceof ReadRequestEvent) {
@@ -297,9 +316,9 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                         startBonding();
                         break;
                     case BONDED:
-                        sendBluetoothCommand(new BluetoothCommands.Mtu(47));
+                        changeMTU();
                         break;
-                    case MTU_CHANGED: //equivalent to READING_MODEL_NUMBER_SUCCESS
+                    case BT_PARAMETERS_CHANGED:
                         startSendingExternalName();
                        break;
                         case CONNECTED:
@@ -332,7 +351,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private void switchToNextConnectionStep(){
         requestBeingProcessed = false;
         if(!getCurrentState().isAFailureState() && !isConnectionInterrupted && !getCurrentState().equals(BtState.IDLE))  //if nothing went wrong during the current step of the connection process, we continue the process
-            onNewBluetoothRequest(new StartOrContinueConnectionRequestEvent(false, deviceNameRequested, deviceQrCodeRequested, deviceTypeRequested));
+            onNewBluetoothRequest(new StartOrContinueConnectionRequestEvent(false, deviceNameRequested, deviceQrCodeRequested, deviceTypeRequested, mtu));
 
     }
 
@@ -684,12 +703,16 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
             @Override
             public void onRequestComplete(MbtDevice device) { //Firmware version has been read during the previous step so we retrieve its value, as it has been stored in the Device Manager
+
                 boolean isBondingSupported = new FirmwareUtils(device.getFirmwareVersion()).isFwValidForFeature(FirmwareUtils.FWFeature.BLE_BONDING);
                 if (isBondingSupported) { //if firmware version bonding is higher than 1.6.7, the bonding is launched
                     try {
                         AsyncUtils.executeAsync(new Runnable() {
                             @Override
                             public void run() {
+                                if(getCurrentState() == BtState.BONDING) //avoid double bond
+                                    return;
+
                                 mbtBluetoothLE.bond();
                             }
                         });
@@ -729,7 +752,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                         @Override
                         public void run() {
                             String externalName = new MelomindsQRDataBase(mContext, false).get(device.getSerialNumber());
-                            mbtBluetoothLE.sendDeviceCommand(new DeviceCommands.UpdateExternalName(externalName));
+                            mbtBluetoothLE.sendCommand(new DeviceCommands.UpdateExternalName(externalName));
                         }
                     });
                 }
@@ -756,7 +779,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                                 @Override
                                 public void run() {
                                     if (isDataBluetoothConnected() && connectionFromBleAvailable)   //A2DP cannot be connected from BLE if BLE connection state is not CONNECTED_AND_READY or CONNECTED
-                                        mbtBluetoothLE.sendDeviceCommand(new DeviceCommands.ConnectAudio());
+                                        mbtBluetoothLE.sendCommand(new DeviceCommands.ConnectAudio());
                                     else {// if connectA2DPFromBLE failed or is not supported by the headset firmware version
                                         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P || mbtBluetoothA2DP.isPairedDevice(getCurrentDevice()))
                                             connect(BLUETOOTH_A2DP);
@@ -800,15 +823,28 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         LogUtils.i(TAG, "connection completed");
     }
 
-
-    private void sendBluetoothCommand(BluetoothCommand bluetoothCommand){
-        updateConnectionState(true); //current state is set to CHANGING_MTU
-        mbtBluetoothLE.sendBluetoothCommand(bluetoothCommand);
+    /**
+     * Command sent from the SDK to the connected headset
+     * in order to change its Maximum Transmission Unit
+     * (maximum size of the data sent by the headset to the SDK).
+     */
+    private void changeMTU(){
+        updateConnectionState(true); //current state is set to CHANGING_BT_PARAMETERS
+        sendBluetoothCommand(new BluetoothCommands.Mtu(mtu));
     }
 
-    public void notifyMtuChanged(int mtu){
-        updateConnectionState(true);
-        requestBeingProcessed = true;
+    private void sendBluetoothCommand(BluetoothCommand command){
+        if (!command.isValid()){//any invalid command is not sent : validity criteria are defined in each Bluetooth implemented class , the onError callback is triggered in the constructor of the command object
+            command.onError(ConfigError.ERROR_INVALID_PARAMS, null);
+            notifyResponseReceived(null, command);
+            return;
+        }
+
+        mbtBluetoothLE.sendCommand(command);
+    }
+
+    private void notifyMtuChanged(boolean isSuccess){
+        updateConnectionState(true); //current state is set to BT_PARAMETERS_CHANGED
         switchToNextConnectionStep();
     }
 
@@ -850,9 +886,9 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         }
 
         if(deviceTypeRequested.useLowEnergyProtocol())
-            mbtBluetoothLE.sendDeviceCommand(command);
+            mbtBluetoothLE.sendCommand(command);
         else
-            mbtBluetoothSPP.sendDeviceCommand(command);
+            mbtBluetoothSPP.sendCommand(command);
     }
 
     /**
@@ -1124,7 +1160,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     void disconnectA2DPFromBLE() {
         LogUtils.i(TAG, " disconnect A2dp from ble");
         if(isDataBluetoothConnected() && isAudioBluetoothConnected())
-            mbtBluetoothLE.sendDeviceCommand(new DeviceCommands.DisconnectAudio());
+            mbtBluetoothLE.sendCommand(new DeviceCommands.DisconnectAudio());
     }
 
     /**
@@ -1144,7 +1180,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 }catch (CancellationException | InterruptedException | ExecutionException | TimeoutException e) {
                     LogUtils.w(TAG, "Exception raised during disconnection "+e);
                 }
-                EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent(false, deviceNameRequested, deviceQrCodeRequested, deviceTypeRequested)); //current state should be IDLE
+                EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent(false, deviceNameRequested, deviceQrCodeRequested, deviceTypeRequested, mtu)); //current state should be IDLE
             }
         }
     }

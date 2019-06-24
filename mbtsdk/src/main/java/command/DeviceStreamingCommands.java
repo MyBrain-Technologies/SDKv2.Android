@@ -25,7 +25,7 @@ public interface DeviceStreamingCommands {
      * The new notch filter is stored and returned by the headset if the command succeeds.
      */
     @Keep
-    class NotchFilter extends DeviceCommand<BaseError> implements DeviceStreamingCommands {
+    class NotchFilter extends DeviceCommand<byte[], BaseError> implements DeviceStreamingCommands {
         /**
          * The new notch filter to apply
          */
@@ -48,7 +48,7 @@ public interface DeviceStreamingCommands {
          * in order to change the applied Notch filter.
          * The new notch filter is stored and returned by the headset if the command succeeds.
          * @param notchFilter is the new Notch filter to apply
-         * @param commandCallback is a {@link MbtClientEvents.CommandCallback} object
+         * @param commandCallback is a {@link CommandInterface.CommandCallback} object
          * that provides a callback for the returned raw response
          * sent by the headset to the SDK once the configuration command is received.
          * This raw response is a byte array that has be to converted to be readable.
@@ -56,7 +56,7 @@ public interface DeviceStreamingCommands {
          * call the {@link NotchFilter}(FilterConfig notchFilter) constructor.
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
-        public NotchFilter(FilterConfig notchFilter, MbtClientEvents.CommandCallback<DeviceCommand,byte[]> commandCallback) {
+        public NotchFilter(FilterConfig notchFilter, CommandInterface.CommandCallback<byte[]> commandCallback) {
             super(DeviceCommandEvents.MBX_SET_NOTCH_FILT);
             this.notchFilter = notchFilter;
             this.commandCallback = commandCallback;
@@ -83,7 +83,7 @@ public interface DeviceStreamingCommands {
      * The new bandpass filter is stored and returned by the headset if the command succeeds.
      */
     @Keep
-    class BandpassFilter extends DeviceCommand<BaseError> implements DeviceStreamingCommands{
+    class BandpassFilter extends DeviceCommand<byte[], BaseError> implements DeviceStreamingCommands{
         /**
          * The new bandpass filter to apply
          */
@@ -106,7 +106,7 @@ public interface DeviceStreamingCommands {
          * in order to change the applied Bandpass filter.
          * The new bandpass filter is stored and returned by the headset if the command succeeds
          * @param bandpassFilter is the new Bandpass filter to apply
-         * @param commandCallback is a {@link MbtClientEvents.CommandCallback} object
+         * @param commandCallback is a {@link CommandInterface.CommandCallback} object
          * that provides a callback for the returned raw response
          * sent by the headset to the SDK once the configuration command is received.
          * This raw response is a byte array that has be to converted to be readable.
@@ -114,7 +114,7 @@ public interface DeviceStreamingCommands {
          * call the {@link BandpassFilter}(FilterConfig bandpassFilter) constructor
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
-        public BandpassFilter(FilterConfig bandpassFilter, MbtClientEvents.CommandCallback<DeviceCommand,byte[]> commandCallback) {
+        public BandpassFilter(FilterConfig bandpassFilter, CommandInterface.CommandCallback<byte[]> commandCallback) {
             super(DeviceCommandEvents.MBX_SET_BANDPASS_FILT);
             this.bandpassFilter = bandpassFilter;
             this.commandCallback = commandCallback;
@@ -141,7 +141,7 @@ public interface DeviceStreamingCommands {
      * The new bandpass filter is stored and returned by the headset if the command succeeds.
      */
     @Keep
-    class AmplifierGain extends DeviceCommand<BaseError> implements DeviceStreamingCommands {
+    class AmplifierGain extends DeviceCommand<byte[], BaseError> implements DeviceStreamingCommands {
         /**
          * The new amplifier gain to apply
          */
@@ -166,7 +166,7 @@ public interface DeviceStreamingCommands {
          * The new amplifier gain is stored and returned by the headset if the command succeeds
          *
          * @param ampGainConfig    is the new Amplifier gain to apply
-         * @param commandCallback is a {@link MbtClientEvents.CommandCallback} object
+         * @param commandCallback is a {@link CommandInterface.CommandCallback} object
          *                         that provides a callback for the returned raw response
          *                         sent by the headset to the SDK once the configuration command is received.
          *                         This raw response is a byte array that has be to converted to be readable.
@@ -174,7 +174,7 @@ public interface DeviceStreamingCommands {
          *                         call the {@link AmplifierGain}(AmpGainConfig ampGainConfig) constructor.
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
-        public AmplifierGain(AmpGainConfig ampGainConfig, MbtClientEvents.CommandCallback<DeviceCommand,byte[]> commandCallback) {
+        public AmplifierGain(AmpGainConfig ampGainConfig, CommandInterface.CommandCallback<byte[]> commandCallback) {
             super(DeviceCommandEvents.MBX_SET_AMP_GAIN);
             this.ampGainConfig = ampGainConfig;
             this.commandCallback = commandCallback;
@@ -202,7 +202,7 @@ public interface DeviceStreamingCommands {
      * The triggers receiving status is returned by the headset if the command succeeds.
      */
     @Keep
-    class Triggers extends DeviceCommand<BaseError> implements DeviceStreamingCommands{
+    class Triggers extends DeviceCommand<byte[], BaseError> implements DeviceStreamingCommands{
         /**
          * The new boolean status of triggers receiving
          * Triggers are sent to the SDK if enableTriggers is set to true.
@@ -231,7 +231,7 @@ public interface DeviceStreamingCommands {
          * @param enableTriggers is the new boolean status of triggers receiving
          * Triggers are sent to the SDK if enableTriggers is set to true.
          * Triggers are not sent to the SDK if enableTriggers is set to false.
-         * @param commandCallback is a {@link MbtClientEvents.CommandCallback} object
+         * @param commandCallback is a {@link CommandInterface.CommandCallback} object
          * that provides a callback for the returned raw response
          * sent by the headset to the SDK once the configuration command is received.
          * This raw response is a byte array that has be to converted to be readable.
@@ -239,7 +239,7 @@ public interface DeviceStreamingCommands {
          * call the {@link Triggers}(boolean enableTriggers) constructor.
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
-        public Triggers(boolean enableTriggers, MbtClientEvents.CommandCallback<DeviceCommand,byte[]> commandCallback) {
+        public Triggers(boolean enableTriggers, CommandInterface.CommandCallback<byte[]> commandCallback) {
             super(DeviceCommandEvents.MBX_P300_ENABLE);
             this.enableTriggers = enableTriggers;
             this.commandCallback = commandCallback;
@@ -264,7 +264,7 @@ public interface DeviceStreamingCommands {
      * The DC offset receiving status is returned by the headset if the command succeeds.
      */
     @Keep
-    class DcOffset extends DeviceCommand<BaseError> implements DeviceStreamingCommands {
+    class DcOffset extends DeviceCommand<byte[], BaseError> implements DeviceStreamingCommands {
         /**
          * The new boolean status of EEG signal DC offset receiving
          * DC offsets are sent to the SDK if enableDcOffset is set to true.
@@ -293,7 +293,7 @@ public interface DeviceStreamingCommands {
          * @param enableDcOffset is the new boolean status of EEG signal DC offset receiving
          * DC offsets are sent to the SDK if enableDcOffset is set to true.
          * DC offsets are not sent to the SDK if enableDcOffset is set to false.
-         * @param commandCallback is a {@link MbtClientEvents.CommandCallback} object
+         * @param commandCallback is a {@link CommandInterface.CommandCallback} object
          * that provides a callback for the returned raw response
          * sent by the headset to the SDK once the configuration command is received.
          * This raw response is a byte array that has be to converted to be readable.
@@ -301,7 +301,7 @@ public interface DeviceStreamingCommands {
          * call the {@link DcOffset}(boolean enableDcOffset) constructor.
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
-        public DcOffset(boolean enableDcOffset, MbtClientEvents.CommandCallback<DeviceCommand,byte[]> commandCallback) {
+        public DcOffset(boolean enableDcOffset, CommandInterface.CommandCallback<byte[]> commandCallback) {
             super(DeviceCommandEvents.MBX_DC_OFFSET_ENABLE);
             this.enableDcOffset = enableDcOffset;
             this.commandCallback = commandCallback;
@@ -330,7 +330,7 @@ public interface DeviceStreamingCommands {
      * The DC offset receiving status is returned by the headset if the command succeeds.
      */
     @Keep
-    class EegConfig extends DeviceCommand<BaseError> implements DeviceStreamingCommands{
+    class EegConfig extends DeviceCommand<byte[], BaseError> implements DeviceStreamingCommands{
 
         /**
          * Mailbox command sent from the SDK to the connected headset
@@ -341,14 +341,14 @@ public interface DeviceStreamingCommands {
          * the signal processing buffer size (number of EEG sample times),
          * and real frequency sample measured by the firmware.
          * The DC offset receiving status is returned by the headset if the command succeeds.
-         * @param commandCallback is a {@link MbtClientEvents.CommandCallback} object
+         * @param commandCallback is a {@link CommandInterface.CommandCallback} object
          * that provides a callback for the returned raw response
          * sent by the headset to the SDK once the get command is received.
          * This raw response is a byte array that has be to converted to be readable.
          * Each status is returned in one byte of the raw response array.
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
-        public EegConfig(MbtClientEvents.CommandCallback<DeviceCommand, byte[]> commandCallback) {
+        public EegConfig(CommandInterface.CommandCallback< byte[]> commandCallback) {
             super(DeviceCommandEvents.MBX_GET_EEG_CONFIG);
             this.commandCallback = commandCallback;
             init(); //must be called after the commandCallback initialisation : isValid will return false otherwise

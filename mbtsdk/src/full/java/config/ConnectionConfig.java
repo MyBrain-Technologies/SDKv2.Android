@@ -1,5 +1,6 @@
 package config;
 
+import android.support.annotation.IntRange;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -18,6 +19,10 @@ import features.MbtFeatures;
 @Keep
 public final class ConnectionConfig {
 
+    private static final int MINIMUM_MTU = 23;
+    private static final int MAXIMUM_MTU = 121;
+    private static final int DEFAULT_MTU = 47;
+
     private String deviceName;
 
     private String deviceQrCode;
@@ -28,15 +33,24 @@ public final class ConnectionConfig {
 
     private MbtDeviceType deviceType;
 
+    /**
+     *  Maximum Transmission Unit
+     *  is the maximum size of the data packets
+     *  sent by the headset to the SDK.
+     */
+    @IntRange(from = MINIMUM_MTU ,to = MAXIMUM_MTU)
+    private int mtu;
+
     private final ConnectionStateListener<BaseError> connectionStateListener;
 
-    private ConnectionConfig(String deviceName, String deviceQrCode, int maxScanDuration, boolean connectAudio, MbtDeviceType deviceType, ConnectionStateListener<BaseError> connectionStateListener){
+    private ConnectionConfig(String deviceName, String deviceQrCode, int maxScanDuration, boolean connectAudio, MbtDeviceType deviceType, int mtu, ConnectionStateListener<BaseError> connectionStateListener){
         this.deviceName = deviceName;
         this.deviceQrCode = deviceQrCode;
         this.maxScanDuration = maxScanDuration;
         this.deviceType = deviceType;
         this.connectAudio = (deviceType == MbtDeviceType.MELOMIND && connectAudio);
         this.connectionStateListener = connectionStateListener;
+        this.mtu = mtu;
     }
 
     /**
@@ -52,6 +66,51 @@ public final class ConnectionConfig {
 
     public int getMaxScanDuration() {
         return maxScanDuration;
+    }
+
+    public int getMtu(){
+        return mtu;
+    }
+
+
+    /**
+     * Check the validity of the configured MTU
+     * @return true if the MTU is included between
+     * {@link ConnectionConfig#MINIMUM_MTU} and {@link ConnectionConfig#MAXIMUM_MTU}
+     * Return false otherwise.
+     */
+    public boolean isMtuValid(){
+        return (mtu >= MINIMUM_MTU && mtu <= MAXIMUM_MTU);
+    }
+
+    /**
+     * Check the validity of the configured Bluetooth scanning duration
+     * @return true if the duration is higher than
+     * {@link MbtFeatures#MIN_SCAN_DURATION}
+     * Return false otherwise.
+     */
+    public boolean isScanDurationValid(){
+        return maxScanDuration >= MbtFeatures.MIN_SCAN_DURATION;
+    }
+
+    /**
+     * Check the validity of the configured QR code
+     * @return true if the QR code is :
+     * - null (looking for any device, no matter its name)
+     * - or not null and its length matchs the expected length
+     */
+    public boolean isDeviceQrCodeValid(){
+        return deviceQrCode == null ||  (deviceQrCode.length() == MbtFeatures.DEVICE_QR_CODE_LENGTH || deviceQrCode.length() == MbtFeatures.DEVICE_QR_CODE_LENGTH-1);
+    }
+
+    /**
+     * Check the validity of the configured name
+     * @return true if the QR code is
+     * - null (looking for any device, no matter its QR code)
+     * - or not null and its length matchs the expected length
+     */
+    public boolean isDeviceNameValid(){
+        return deviceName == null || deviceName.length() == MbtFeatures.DEVICE_NAME_LENGTH;
     }
 
     /**
@@ -98,6 +157,10 @@ public final class ConnectionConfig {
         private String deviceName = null;
         private String deviceQrCode = null;
         private int maxScanDuration = MbtFeatures.DEFAULT_MAX_SCAN_DURATION_IN_MILLIS;
+
+        @IntRange(from = MINIMUM_MTU, to = MAXIMUM_MTU)
+        private int mtu = DEFAULT_MTU;
+
         private boolean connectAudio = false;
         private MbtDeviceType deviceType = MbtDeviceType.MELOMIND;
         @NonNull
@@ -150,6 +213,20 @@ public final class ConnectionConfig {
         }
 
         /**
+         *  Maximum Transmission Unit
+         *  is the maximum size of the data packets
+         *  sent by the headset to the SDK.
+         *  Enter a value included between {@link ConnectionConfig#MINIMUM_MTU} and {@link ConnectionConfig#MAXIMUM_MTU}
+         *  Enter a value included between {@link ConnectionConfig#MINIMUM_MTU} and {@link ConnectionConfig#MAXIMUM_MTU}
+         */
+        @NonNull
+        public Builder mtu(@IntRange(from = MINIMUM_MTU, to = MAXIMUM_MTU) int mtu){
+            this.mtu = mtu;
+            //BluetoothCommand command = new BluetoothCommands.Mtu(mtu);
+            return this;
+        }
+
+        /**
          * Unused at the moment
          * */
 //        public Builder connectionTimeout(int connectionTimeoutInMillis){
@@ -158,12 +235,12 @@ public final class ConnectionConfig {
 //        }
 
         /**
-         * Use this method to force audio connection to a device. This is automatically set to {@link Boolean#FALSE}
+         * Use this method to force audio connection to a device. This is automatically set to Boolean#FALSE
          * if the device is not a melomind.
          *
          * If the device is a melomind, then the flag will tell either or not the SDK has to connect the audio bluetooth.
          * <p>Caution, the audio is handled by the Android system itself and is not meant to be connect via a third party application.
-         * If set to {@link Boolean#TRUE}, the connection attempt may fail. It is still possible to connect to audio through the system settings of your android device.</p>
+         * If set to Boolean#TRUE, the connection attempt may fail. It is still possible to connect to audio through the system settings of your android device.</p>
          *
          * @return the builder instance
          */
@@ -187,7 +264,7 @@ public final class ConnectionConfig {
 
         @NonNull
         public ConnectionConfig create(){
-            return new ConnectionConfig(this.deviceName, this.deviceQrCode, this.maxScanDuration, this.connectAudio, this.deviceType, this.connectionStateListener);
+            return new ConnectionConfig(this.deviceName, this.deviceQrCode, this.maxScanDuration, this.connectAudio, this.deviceType, this.mtu, this.connectionStateListener);
         }
 
 

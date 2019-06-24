@@ -60,19 +60,19 @@ public final class StreamConfig {
                 this.deviceCommands.add((DeviceCommand) deviceCommand);
             }
         }
-        this.deviceCommands.add(new DeviceStreamingCommands.EegConfig(new MbtClientEvents.CommandCallback<DeviceCommand, byte[]>() {
+        this.deviceCommands.add(new DeviceStreamingCommands.EegConfig(new CommandCallback<byte[]>() {
             @Override
-            public void onResponseReceived(DeviceCommand request, byte[] response) {
+            public void onResponseReceived(MbtClientEvents.MbtCommand request, byte[] response) {
 
             }
 
             @Override
-            public void onError(DeviceCommand request, BaseError error, String additionnalInfo) {
+            public void onError(MbtClientEvents.MbtCommand request, BaseError error, String additionnalInfo) {
 
             }
 
             @Override
-            public void onRequestSent(DeviceCommand request) {
+            public void onRequestSent(MbtClientEvents.MbtCommand request) {
 
             }
         }));

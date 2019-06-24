@@ -521,7 +521,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
     }
 
     //todo
-    public void sendDeviceCommand(DeviceCommand commands) {
+    public void sendCommand(DeviceCommand commands) {
     }
 }
 

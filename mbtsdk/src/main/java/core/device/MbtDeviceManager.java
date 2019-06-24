@@ -79,7 +79,8 @@ public class MbtDeviceManager extends BaseModuleManager{
 
     @Subscribe
     public void onNewDeviceAudioDisconnected(DeviceEvents.AudioDisconnectedDeviceEvent deviceEvent) {
-        getmCurrentConnectedDevice().setAudioDeviceAddress(null);
+        if(getmCurrentConnectedDevice() != null)
+            getmCurrentConnectedDevice().setAudioDeviceAddress(null);
     }
 
     @Subscribe

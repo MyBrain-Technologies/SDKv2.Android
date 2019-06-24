@@ -7,6 +7,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 
+import command.CommandInterface;
 import command.DeviceCommand;
 import config.MbtConfig;
 import config.StreamConfig;
@@ -88,15 +89,17 @@ public final class MbtClient {
         MbtConfig.setBluetoothScanTimeout(config.getMaxScanDuration());
         MbtConfig.setConnectAudioIfDeviceCompatible(config.useAudio());
 
-        if(config.getDeviceName()!= null && config.getDeviceName().length() != MbtFeatures.DEVICE_NAME_LENGTH) {
+        if(!config.isDeviceNameValid()) {
             config.getConnectionStateListener().onError(ConfigError.ERROR_INVALID_PARAMS, " Device name must start with the " + MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX + " and contain 10 digits ");
             return;
         }
-        if(config.getDeviceQrCode() != null && config.getDeviceQrCode().length() != MbtFeatures.DEVICE_QR_CODE_LENGTH && config.getDeviceQrCode().length() != MbtFeatures.DEVICE_QR_CODE_LENGTH-1 ) {
-            config.getConnectionStateListener().onError(ConfigError.ERROR_INVALID_PARAMS, " Device QR code must start with " + MbtFeatures.QR_CODE_NAME_PREFIX + " and contain 8 digits "+ MbtFeatures.DEVICE_QR_CODE_LENGTH);
+
+        if(!config.isDeviceQrCodeValid()){
+            config.getConnectionStateListener().onError(ConfigError.ERROR_INVALID_PARAMS, " Device QR code must start with " + MbtFeatures.QR_CODE_NAME_PREFIX + " and contain "+ MbtFeatures.DEVICE_QR_CODE_LENGTH+ " digits ");
             return;
         }
-        if(config.getMaxScanDuration() < MbtFeatures.MIN_SCAN_DURATION){
+
+        if(!config.isScanDurationValid()){
             config.getConnectionStateListener().onError(ConfigError.ERROR_INVALID_PARAMS,ConfigError.SCANNING_MINIMUM_DURATION);
             return;
         }
@@ -106,7 +109,12 @@ public final class MbtClient {
             return;
         }
 
-        this.mbtManager.connectBluetooth(config.getConnectionStateListener(), config.getDeviceName(), config.getDeviceQrCode(), config.getDeviceType());
+        if(!config.isMtuValid()){
+            config.getConnectionStateListener().onError(ConfigError.ERROR_INVALID_PARAMS,"MTU must be included between 23 and 121");
+            return;
+        }
+
+        this.mbtManager.connectBluetooth(config.getConnectionStateListener(), config.getDeviceName(), config.getDeviceQrCode(), config.getDeviceType(), config.getMtu());
     }
 
     /**
@@ -172,7 +180,7 @@ public final class MbtClient {
      * A non null requestCallback instance is mandatory if you want to get the headset response
      * The onError callback provided by the requestCallback is triggered if an error occurred during the request sending.
      */
-    public void updateSerialNumber(String serialNumber, @Nullable MbtClientEvents.CommandCallback<DeviceCommand, byte[]> commandCallback){
+    public void updateSerialNumber(String serialNumber, @Nullable CommandInterface.CommandCallback< byte[]> commandCallback){
         mbtManager.sendDeviceCommand(new DeviceCommands.UpdateSerialNumber(serialNumber, commandCallback));
     }
 
@@ -185,7 +193,7 @@ public final class MbtClient {
      * A non null requestCallback instance is mandatory if you want to get the headset response
      * The onError callback provided by the requestCallback is triggered if an error occurred during the request sending.
      */
-    public void updateExternalName(String externalName, @Nullable MbtClientEvents.CommandCallback<DeviceCommand, byte[]> commandCallback){
+    public void updateExternalName(String externalName, @Nullable CommandInterface.CommandCallback<byte[]> commandCallback){
         mbtManager.sendDeviceCommand(new DeviceCommands.UpdateExternalName(externalName, commandCallback));
     }
 
@@ -197,7 +205,7 @@ public final class MbtClient {
      * A non null requestCallback instance is mandatory if you want to get the headset response
      * The onError callback provided by the requestCallback is triggered if an error occurred during the request sending.
      */
-    public void connectAudio(@Nullable MbtClientEvents.CommandCallback<DeviceCommand, byte[]> commandCallback){
+    public void connectAudio(@Nullable CommandInterface.CommandCallback<byte[]> commandCallback){
         mbtManager.sendDeviceCommand(new DeviceCommands.ConnectAudio(commandCallback));
     }
 
@@ -209,7 +217,7 @@ public final class MbtClient {
      * A non null requestCallback instance is mandatory if you want to get the headset response
      * The onError callback provided by the requestCallback is triggered if an error occurred during the request sending.
      */
-    public void disconnectAudio(@Nullable MbtClientEvents.CommandCallback<DeviceCommand, byte[]> commandCallback){
+    public void disconnectAudio(@Nullable CommandInterface.CommandCallback<byte[]> commandCallback){
         mbtManager.sendDeviceCommand(new DeviceCommands.DisconnectAudio(commandCallback));
     }
 
@@ -220,7 +228,7 @@ public final class MbtClient {
      * A non null requestCallback instance is mandatory if you want to get the headset response
      * The onError callback provided by the requestCallback is triggered if an error occurred during the request sending.
      */
-    public void getDeviceSystemStatus(@Nullable MbtClientEvents.CommandCallback<DeviceCommand, byte[]> commandCallback){
+    public void getDeviceSystemStatus(@Nullable CommandInterface.CommandCallback<byte[]> commandCallback){
         mbtManager.sendDeviceCommand(new DeviceCommands.GetSystemStatus(commandCallback));
     }
 
@@ -230,8 +238,11 @@ public final class MbtClient {
      * The onError callback provided by the requestCallback is triggered if an error occurred during the request sending.
      * A non null requestCallback instance is mandatory to be notified if an error occurred during the request sending.
      * The onRequestComplete callback provided by the requestCallback is never called
+     * It is useless to enter a CommandCallback Object for the commandCallback input :
+     * as no response is expected, you have to enter a SimpleCommandCallback Object.
+     * The onError callback is triggered in case you enter a CommandCallback and the device command is not sent.
      */
-    public void rebootDevice(@Nullable MbtClientEvents.SimpleCommandCallback<DeviceCommand, byte[]> commandCallback){
+    public void rebootDevice(@Nullable CommandInterface.SimpleCommandCallback commandCallback) {
         mbtManager.sendDeviceCommand(new DeviceCommands.Reboot(commandCallback));
     }
 

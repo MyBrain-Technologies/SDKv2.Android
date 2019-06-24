@@ -113,9 +113,9 @@ public enum BtState {
      */
     BONDED,
 
-    CHANGING_MTU,
+    CHANGING_BT_PARAMETERS,
 
-    MTU_CHANGED,
+    BT_PARAMETERS_CHANGED,
 
     /**
      * Sending the QR Code as an external name to the headset

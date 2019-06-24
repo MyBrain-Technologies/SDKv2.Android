@@ -1,14 +1,8 @@
 package command;
 
-
-import android.util.Log;
-
 import java.nio.ByteBuffer;
 
 import engine.clientevents.BaseError;
-import engine.clientevents.BaseErrorEvent;
-import engine.clientevents.ConfigError;
-import engine.clientevents.MbtClientEvents;
 
 /**
  * Mailbox command sent from the SDK to the headset
@@ -17,9 +11,7 @@ import engine.clientevents.MbtClientEvents;
  * or ask the headset to perform an action.
  * It provides a callback used to return a raw response sent by the headset to the SDK
  */
-public abstract class DeviceCommand <U extends BaseError> implements BaseErrorEvent<U>  {
-
-    private static final String TAG = DeviceCommand.class.getName();
+public abstract class DeviceCommand <T, U extends BaseError> extends CommandInterface.MbtCommand<T, U> {
 
     final byte ENABLE = 0x01;
     final byte DISABLE = 0x00;
@@ -34,7 +26,7 @@ public abstract class DeviceCommand <U extends BaseError> implements BaseErrorEv
      * Optional additional code associated to the identifier code
      * to add security and avoid requests sent by hackers
      */
-    private byte[] additionalCodes;
+    private /*T*/byte[] additionalCodes;
 
     /**
      * Buffer that hold the identifier code,
@@ -43,27 +35,13 @@ public abstract class DeviceCommand <U extends BaseError> implements BaseErrorEv
      */
     private ByteBuffer rawDataBuffer;
 
-    /**
-     * Callback that returns the raw response of the headset to the SDK
-     * This raw response is a byte array that has be to converted to be readable.
-     */
-    MbtClientEvents.SimpleCommandCallback <DeviceCommand, byte[]> commandCallback;
-
     DeviceCommand(byte mailboxCode) {
         this.identifierCode = mailboxCode;
     }
 
-    DeviceCommand(byte mailboxCode, byte... additionalCodes) {
+    DeviceCommand(byte mailboxCode, byte/*T*/... additionalCodes) {
         this.identifierCode = mailboxCode;
         this.additionalCodes = additionalCodes;
-    }
-
-    /**
-     * Get the callback that returns the raw response of the headset to the SDK
-     * @return the callback that returns the raw response of the headset to the SDK
-     */
-    public MbtClientEvents.SimpleCommandCallback <DeviceCommand, byte[]> getCommandCallback() {
-        return commandCallback;
     }
 
     /**
@@ -110,77 +88,33 @@ public abstract class DeviceCommand <U extends BaseError> implements BaseErrorEv
      * to the raw data buffer to send to the headset
      * @return the complete buffer (identifier + additional codes + optional data)
      */
-    private byte[] fillPayload(){
+    private T fillPayload(){
         if(getData() != null){
             for(byte singleData : getData()){
                 rawDataBuffer.put(singleData);
             }
         }
-        return rawDataBuffer.array();
+        return ((T)rawDataBuffer.array());
     }
 
     /**
      * Bundles the data to send to the headset
      * for the write characteristic operation / request
-     * @return the bundled data in a byte array
+     * @return the bundled data in a object
      */
-    public byte[] serialize(){
+    @Override
+    public T serialize(){
         allocateBuffer();
         fillHeader();
         return fillPayload();
     }
 
     /**
-     * Init the device command to send to the headset
-     */
-    public void init() {
-        if (commandCallback == null)
-            commandCallback = new MbtClientEvents.CommandCallback<DeviceCommand, byte[]>() {
-                @Override
-                public void onResponseReceived(DeviceCommand request, byte[] response) { }
-                @Override
-                public void onError(DeviceCommand request, BaseError error, String additionnalInfo) { }
-                @Override
-                public void onRequestSent(DeviceCommand request) { }
-            };
-
-        if(!isValid() && commandCallback != null)
-            commandCallback.onError(this, ConfigError.ERROR_INVALID_PARAMS, "Invalid parameter : the input must not be null and/or empty.");
-    }
-
-    /**
-     * Returns true if the client inputs
-     * are valid for sending the command
-     */
-    public abstract boolean isValid();
-
-    /**
      * Returns the optional data specific to the implemented class
      * @return the optional data specific to the implemented class
      */
-    public abstract byte[] getData();
+    public abstract /*T*/byte[] getData();
 
-    @Override
-    public void onError(U error, String additionnalInfo) {
-        if (commandCallback != null)
-            commandCallback.onError(this, error, additionnalInfo);
-    }
-
-    public void onRequestSent() {
-        Log.d(TAG, "Device command sent " + this);
-        if (commandCallback != null)
-            commandCallback.onRequestSent(this);
-    }
-
-    public void onResponseReceived(byte[] response) {
-        Log.d(TAG, "Device response received " + this);
-        if (commandCallback != null && commandCallback instanceof MbtClientEvents.CommandCallback)
-            ((MbtClientEvents.CommandCallback) commandCallback).onResponseReceived(this,response);
-    }
-
-    public boolean isResponseExpected() {
-        return this.commandCallback instanceof MbtClientEvents.CommandCallback;
-    }
 }
 
 
