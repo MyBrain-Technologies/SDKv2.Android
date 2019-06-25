@@ -232,16 +232,16 @@ public final class MbtClient {
 
     /**
      * Sends a command to reboot the connected headset
-     * @param commandCallback returns the headset raw response in the onRequestComplete callback if the command has been well sent
+     * @param simpleCommandCallback returns the headset raw response in the onRequestComplete callback if the command has been well sent
      * The onError callback provided by the requestCallback is triggered if an error occurred during the request sending.
      * A non null requestCallback instance is mandatory to be notified if an error occurred during the request sending.
      * The onRequestComplete callback provided by the requestCallback is never called
      * It is useless to enter a CommandCallback Object for the commandCallback input :
-     * as no response is expected, you have to enter a SimpleCommandCallback Object.
+     * as no response is expected, you have to enter a CommandCallbackInterface Object.
      * The onError callback is triggered in case you enter a CommandCallback and the device command is not sent.
      */
-    public void rebootDevice(@Nullable CommandInterface.SimpleCommandCallback commandCallback) {
-        mbtManager.sendDeviceCommand(new DeviceCommands.Reboot(commandCallback));
+    public void rebootDevice(@Nullable CommandInterface.SimpleCommandCallback simpleCommandCallback) {
+        mbtManager.sendDeviceCommand(new DeviceCommands.Reboot(simpleCommandCallback));
     }
 
     /**

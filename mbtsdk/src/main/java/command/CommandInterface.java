@@ -36,13 +36,24 @@ public interface CommandInterface<E extends BaseError> extends BaseErrorEvent<E>
     }
 
     /**
-     * A SimpleCommandCallback implementation object is a request
+     * A CommandCallbackInterface implementation object is a request
      * that is sent in suitables conditions to define when you extend this interface.
      * It means that the request can fail to be sent to a receiver (peripheral object/device/class).
      * In case of failure, the onError callback is triggered to return the info associated to the failure
      */
     @Keep
-    interface SimpleCommandCallback extends MbtRequest, CommandBaseErrorEvent {
+    interface CommandCallbackInterface extends MbtRequest, CommandBaseErrorEvent {
+
+    }
+
+    /**
+     * A CommandCallback implementation object is a request
+     * that is sent in suitables conditions to define when you extend this interface.
+     * It means that the request can fail to be sent to a receiver (peripheral object/device/class).
+     * In case of failure, the onError callback is triggered to return the info associated to the failure
+     */
+    @Keep
+    interface SimpleCommandCallback extends CommandCallbackInterface {
 
     }
 
@@ -56,7 +67,7 @@ public interface CommandInterface<E extends BaseError> extends BaseErrorEvent<E>
      * @param <N> the response Object type returned by the receiver
      */
     @Keep
-    interface CommandCallback<N> extends SimpleCommandCallback, MbtResponse<N> {
+    interface CommandCallback<N> extends CommandCallbackInterface, MbtResponse<N> {
 
     }
 
@@ -74,13 +85,13 @@ public interface CommandInterface<E extends BaseError> extends BaseErrorEvent<E>
 
         private static final String TAG = MbtCommand.class.getName();
 
-        CommandInterface.SimpleCommandCallback commandCallback;
+        CommandCallbackInterface commandCallback;
 
         /**
          * Get the callback that returns the raw response of the headset to the SDK
          * @return the callback that returns the raw response of the headset to the SDK
          */
-        public CommandInterface.SimpleCommandCallback getCommandCallback() {
+        public CommandCallbackInterface getCommandCallback() {
             return commandCallback;
         }
 
@@ -131,7 +142,7 @@ public interface CommandInterface<E extends BaseError> extends BaseErrorEvent<E>
                             public void onRequestSent(MbtCommand request) { }
                         }
 
-                        : new SimpleCommandCallback() { //if no response is expected once the request is sent, we use a SimpleCommandCallback object (other object that does not extend MbtResponse)
+                        : new CommandCallbackInterface() { //if no response is expected once the request is sent, we use a CommandCallbackInterface object (other object that does not extend MbtResponse)
                     @Override
                     public void onError(MbtCommand request, BaseError error, String additionalInfo) { }
                     @Override

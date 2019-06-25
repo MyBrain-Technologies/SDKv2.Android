@@ -3,7 +3,6 @@ package command;
 import android.support.annotation.Keep;
 
 import engine.clientevents.BaseError;
-import engine.clientevents.ConfigError;
 
 /**
  * Mailbox commands sent from the SDK to the headset
@@ -298,7 +297,7 @@ public interface DeviceCommands {
          * No response is returned by the headset if the command succeeds.
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
-        public Reboot(CommandInterface.SimpleCommandCallback commandCallback) {
+        public Reboot(CommandInterface.CommandCallbackInterface commandCallback) {
             super(DeviceCommandEvents.MBX_SYS_REBOOT_EVT,
                     DeviceCommandEvents.MBX_SYS_REBOOT_EVT_ADDITIONAL);
             this.commandCallback = commandCallback;
@@ -318,7 +317,7 @@ public interface DeviceCommands {
         @Override
         public String getInvalidityError() {
             return "You are not allowed to use a CommandCallback or other Object that extends the MbtResponse interface for the commandCallback input.\n"
-            +"As no response is expected, you have to call the SimpleCommandCallback constructor to create a instance of SimpleCommandCallback object.\n"
+            +"As no response is expected, you have to call the CommandCallbackInterface constructor to create a instance of CommandCallbackInterface object.\n"
             +"If you still use a CommandCallback or other Object that extends the MbtResponse interface, the command won't be sent and the onError callback will be triggered.";
         }
     }
