@@ -3,6 +3,7 @@ package command;
 import android.support.annotation.Keep;
 
 import engine.clientevents.BaseError;
+import engine.clientevents.ConfigError;
 
 /**
  * Mailbox commands sent from the SDK to the headset
@@ -66,6 +67,11 @@ public interface DeviceCommands {
         @Override
         public boolean isValid() {
             return serialNumber != null && !serialNumber.isEmpty();
+        }
+
+        @Override
+        public String getInvalidityError() {
+            return "You are not allowed to provide a null or empty serial number in the "+this.getClass().getSimpleName()+ " contructor.";
         }
 
         @Override
@@ -135,6 +141,11 @@ public interface DeviceCommands {
         }
 
         @Override
+        public String getInvalidityError() {
+            return "You are not allowed to provide a null or empty external name in the "+this.getClass().getSimpleName()+ " contructor.";
+        }
+
+        @Override
         public byte[] getData() {
             if(externalName == null)
                 return null;
@@ -197,6 +208,11 @@ public interface DeviceCommands {
         }
 
         @Override
+        public String getInvalidityError() {
+            return "You are not allowed to provide a null or empty product name in the "+this.getClass().getSimpleName()+ " contructor.";
+        }
+
+        @Override
         public byte[] getData() {
             if(productName == null)
                 return null;
@@ -244,6 +260,11 @@ public interface DeviceCommands {
         }
 
         @Override
+        public String getInvalidityError() {
+            return "You are not allowed to provide a null CommandCallback instance in the "+this.getClass().getSimpleName()+ " contructor.";
+        }
+
+        @Override
         public byte[] getData() {
             return null;
         }
@@ -268,7 +289,7 @@ public interface DeviceCommands {
             super(DeviceCommandEvents.MBX_SYS_REBOOT_EVT,
                     DeviceCommandEvents.MBX_SYS_REBOOT_EVT_ADDITIONAL);
 
-            init();
+            init(false);
         }
 
         /**
@@ -281,28 +302,24 @@ public interface DeviceCommands {
             super(DeviceCommandEvents.MBX_SYS_REBOOT_EVT,
                     DeviceCommandEvents.MBX_SYS_REBOOT_EVT_ADDITIONAL);
             this.commandCallback = commandCallback;
-            init();
-        }
-
-        @Override
-        public void init() {
-            commandCallback = new CommandInterface.SimpleCommandCallback() {
-                @Override
-                public void onError(CommandInterface.MbtCommand request, BaseError error, String additionnalInfo) { }
-                @Override
-                public void onRequestSent(CommandInterface.MbtCommand request) { }
-            };
-            super.init();
+            init(false);
         }
 
         @Override
         public boolean isValid() {
-            return !(commandCallback instanceof DeviceCommand);
+            return !(commandCallback instanceof CommandInterface.MbtResponse);
         }
 
         @Override
         public byte[] getData() {
             return null;
+        }
+
+        @Override
+        public String getInvalidityError() {
+            return "You are not allowed to use a CommandCallback or other Object that extends the MbtResponse interface for the commandCallback input.\n"
+            +"As no response is expected, you have to call the SimpleCommandCallback constructor to create a instance of SimpleCommandCallback object.\n"
+            +"If you still use a CommandCallback or other Object that extends the MbtResponse interface, the command won't be sent and the onError callback will be triggered.";
         }
     }
 
@@ -362,6 +379,11 @@ public interface DeviceCommands {
             return null;
         }
 
+        @Override
+        public String getInvalidityError() {
+            return null;
+        }
+
     }
 
     /**
@@ -416,6 +438,10 @@ public interface DeviceCommands {
             return null;
         }
 
+        @Override
+        public String getInvalidityError() {
+            return null;
+        }
     }
 
 }

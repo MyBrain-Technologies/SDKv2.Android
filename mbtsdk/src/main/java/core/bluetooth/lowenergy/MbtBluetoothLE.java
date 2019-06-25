@@ -29,13 +29,11 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
-import command.BluetoothCommand;
 import command.BluetoothCommands;
 import command.CommandInterface;
 import command.DeviceCommand;
 
 import command.DeviceCommandEvents;
-import command.DeviceStreamingCommands;
 import config.MbtConfig;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.BtState;
@@ -91,7 +89,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 
     private ConnectionStateReceiver receiver = new ConnectionStateReceiver() {
         @Override
-        public void onError(BaseError error, String additionnalInfo) { }
+        public void onError(BaseError error, String additionalInfo) { }
 
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -452,6 +450,11 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         return (getCurrentState() == BtState.CONNECTED_AND_READY || getCurrentState() == BtState.CONNECTED);
     }
 
+
+    public boolean isConnectedDeviceReadyForCommand() {
+        return (getCurrentState().ordinal() >= BtState.DATA_BT_CONNECTION_SUCCESS.ordinal());
+    }
+
     /**
      * Starts a read operation on a specific characteristic
      * @param characteristic the characteristic to read
@@ -646,7 +649,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             }
         return null;
     }
-    
+
     /**
      * This method handle a single command in order to
      * reconfigure some headset or bluetooth streaming parameters
@@ -661,29 +664,38 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * sent by the headset to the SDK once the command is received.
      */
     public void sendCommand(CommandInterface.MbtCommand command){
-        LogUtils.i(TAG, "Send command : "+command);
         Object response = null;
 
-        try {
-            Thread.sleep(200);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        if (!isConnectedDeviceReadyForCommand()){ //error returned if no headset is connected
+            LogUtils.w(TAG, "Command not sent : "+command);
+            command.onError(BluetoothError.ERROR_NOT_CONNECTED, null);
+        } else { //any command is not sent if no device is connected
+            if (command.isValid()){//any invalid command is not sent : validity criteria are defined in each Bluetooth implemented class , the onError callback is triggered in the constructor of the command object
+                LogUtils.i(TAG, "Send command : "+command);
+                try {
+                    Thread.sleep(200);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                boolean requestSent = sendRequestData(command);
+
+                if(!requestSent) {
+                    LogUtils.e(TAG, "Command sending failed");
+                    command.onError(BluetoothError.ERROR_REQUEST_OPERATION, null);
+
+                }else {
+                    command.onRequestSent();
+
+                    if (command.isResponseExpected()) {
+                        response = waitResponseForCommand();
+                        command.onResponseReceived(response);
+                    }
+                }
+            }else
+                LogUtils.w(TAG, "Command not sent : "+command);
         }
 
-        boolean requestSent = sendRequestData(command);
-
-        if(!requestSent) {
-            LogUtils.e(TAG, "Bluetooth command sending failed");
-            command.onError(BluetoothError.ERROR_REQUEST_OPERATION, null);
-
-        }else {
-            command.onRequestSent();
-
-            if (command.isResponseExpected()) {
-                response = waitResponseForCommand();
-                command.onResponseReceived(response);
-            }
-        }
         mbtBluetoothManager.notifyResponseReceived(response, command);//return null response to the client if request has not been sent
     }
 
@@ -720,7 +732,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     }
 
     private boolean writeCharacteristic(@NonNull byte[] buffer, UUID characteristic) {
-        Log.d(TAG, "send device command "+ Arrays.toString(buffer));
+        Log.d(TAG, "write characteristic "+ Arrays.toString(buffer));
         if (buffer.length == 0)
             return false;
 

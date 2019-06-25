@@ -11,7 +11,7 @@ import engine.clientevents.BaseError;
  * or ask the headset to perform an action.
  * It provides a callback used to return a raw response sent by the headset to the SDK
  */
-public abstract class DeviceCommand <T, U extends BaseError> extends CommandInterface.MbtCommand<T, U> {
+public abstract class DeviceCommand <T, U extends BaseError> extends CommandInterface.MbtCommand<U> {
 
     final byte ENABLE = 0x01;
     final byte DISABLE = 0x00;

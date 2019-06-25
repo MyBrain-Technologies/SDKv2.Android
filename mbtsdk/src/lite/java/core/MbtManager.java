@@ -189,7 +189,7 @@ public class MbtManager{
                 break;
             default:
                 if (connectionStateEvent.getNewState().isAFailureState())
-                    connectionStateListener.onError(connectionStateEvent.getNewState().getAssociatedError(), connectionStateEvent.getAdditionnalInfo());
+                    connectionStateListener.onError(connectionStateEvent.getNewState().getAssociatedError(), connectionStateEvent.getAdditionalInfo());
                 break;
         }
     }
@@ -265,8 +265,8 @@ public class MbtManager{
             @Override
             @Subscribe
             public Void onEventCallback(DeviceEvents.PostDeviceEvent object) {
-                callback.onRequestComplete(object.getDevice());
                 EventBusManager.registerOrUnregister(false, this);
+                callback.onRequestComplete(object.getDevice());
                 return null;
             }
         });

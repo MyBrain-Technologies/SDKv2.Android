@@ -15,6 +15,7 @@ import java.util.Set;
 
 import command.DeviceCommand;
 
+import command.DeviceStreamingCommands;
 import config.StreamConfig;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.IStreamable;
@@ -169,11 +170,8 @@ public class MbtManager{
      * @param deviceCommand is the command to send
      * @return true if the command has been sent, false otherwise
      */
-    public void sendDeviceCommand(@NonNull DeviceCommand deviceCommand){
-        if(!deviceCommand.isValid()) //any invalid command is not sent : validity criteria are defined in each DeviceCommand implemented class , the onError callback is triggered in the DeviceCommand constructor
-            return;
-
-            EventBusManager.postEvent(new DeviceCommandRequestEvent(deviceCommand));
+    public void sendDeviceCommand(@NonNull DeviceCommand deviceCommand) {
+       EventBusManager.postEvent(new DeviceCommandRequestEvent(deviceCommand));
     }
 
     /**
@@ -213,7 +211,7 @@ public class MbtManager{
                 break;
             default:
                 if (connectionStateEvent.getNewState().isAFailureState())
-                    connectionStateListener.onError(connectionStateEvent.getNewState().getAssociatedError(), connectionStateEvent.getAdditionnalInfo());
+                    connectionStateListener.onError(connectionStateEvent.getNewState().getAssociatedError(), connectionStateEvent.getAdditionalInfo());
                 break;
         }
     }
@@ -285,7 +283,7 @@ public class MbtManager{
     }
 
 
-    public void requestCurrentConnectedDevice(final SimpleRequestCallback<MbtDevice> callback) {
+    public void requestCurrentConnectedDevice(@NonNull final SimpleRequestCallback<MbtDevice> callback) {
         if (callback == null)
             return;
 
@@ -293,8 +291,8 @@ public class MbtManager{
             @Override
             @Subscribe
             public Void onEventCallback(DeviceEvents.PostDeviceEvent object) {
-                callback.onRequestComplete(object.getDevice());
                 EventBusManager.registerOrUnregister(false, this);
+                callback.onRequestComplete(object.getDevice());
                 return null;
             }
         });

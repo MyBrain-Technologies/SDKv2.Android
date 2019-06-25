@@ -3,7 +3,6 @@ package command;
 import android.support.annotation.Keep;
 import android.util.Log;
 
-import core.oad.OADEvent;
 import engine.clientevents.BaseError;
 import engine.clientevents.BaseErrorEvent;
 import engine.clientevents.ConfigError;
@@ -15,13 +14,25 @@ import engine.clientevents.ConfigError;
 @Keep
 public interface CommandInterface<E extends BaseError> extends BaseErrorEvent<E> {
     /**
-     * A MbtRequestable implementation object is a request
+     * A MbtRequest implementation object is a request
      * that is sent in suitables conditions to define when you extend this interface.
      * It means that the request can fail to be sent to a receiver (peripheral object/device/class).
      */
-    interface MbtRequestable {
+    interface MbtRequest {
 
         void onRequestSent(CommandInterface.MbtCommand request);
+    }
+
+    @Keep
+    interface MbtResponse<N> {
+
+        void onResponseReceived(MbtCommand request, N response);
+    }
+
+    @Keep
+    interface CommandBaseErrorEvent {
+
+        void onError(MbtCommand request, BaseError error, String additionalInfo);
     }
 
     /**
@@ -31,9 +42,8 @@ public interface CommandInterface<E extends BaseError> extends BaseErrorEvent<E>
      * In case of failure, the onError callback is triggered to return the info associated to the failure
      */
     @Keep
-    interface SimpleCommandCallback extends MbtRequestable {
+    interface SimpleCommandCallback extends MbtRequest, CommandBaseErrorEvent {
 
-        void onError(MbtCommand request, BaseError error, String additionnalInfo);
     }
 
     /**
@@ -41,14 +51,13 @@ public interface CommandInterface<E extends BaseError> extends BaseErrorEvent<E>
      * that is sent in suitables conditions to define when you extend this interface.
      * It means that the request can fail to be sent to a receiver (peripheral object/device/class).
      * In case of failure, the onError callback is triggered to return the info associated to the failure
-     * If it succeeded to be sent, the MbtRequestable implementation object
+     * If it succeeded to be sent, the MbtRequest implementation object
      * receives in return a response sent by the receiver
-     * @param <U> the response Object type returned by the receiver
+     * @param <N> the response Object type returned by the receiver
      */
     @Keep
-    interface CommandCallback<U> extends SimpleCommandCallback {
+    interface CommandCallback<N> extends SimpleCommandCallback, MbtResponse<N> {
 
-        void onResponseReceived(MbtCommand request, U response);
     }
 
     /**
@@ -56,12 +65,12 @@ public interface CommandInterface<E extends BaseError> extends BaseErrorEvent<E>
      * perform a request and notify the client when
      * the request has been sent
      * If the client is interested in getting the response associated to the request,
-     * it also notify the client when this response is caught by the SDK
-     * @param <U> the response Object type
+     * it also notify the client when this response is caught by the SDK.
+     * A Command can be seen as a package that hold the request and its associated optional response.
      * @param <E> the expected Error Object
      */
     @Keep
-    abstract class MbtCommand< U, E extends BaseError>  {
+    abstract class MbtCommand<E extends BaseError>  {
 
         private static final String TAG = MbtCommand.class.getName();
 
@@ -75,19 +84,20 @@ public interface CommandInterface<E extends BaseError> extends BaseErrorEvent<E>
             return commandCallback;
         }
 
-        public void onError(E error, String additionnalInfo) {
+        public void onError(E error, String additionalInfo) {
+            Log.d(TAG, "Command not sent " + error.toString());
             if (commandCallback != null)
-                commandCallback.onError(this, error, additionnalInfo);
+                commandCallback.onError(this, error, additionalInfo);
         }
 
         public void onRequestSent() {
-            Log.d(TAG, "Device command sent " + this);
+            Log.d(TAG, "Command sent " + this);
             if (commandCallback != null)
                 commandCallback.onRequestSent(this);
         }
 
-        public void onResponseReceived(U response) {
-            Log.d(TAG, "Device response received " + this);
+        public void onResponseReceived(Object response) {
+            Log.d(TAG, "Response received " + this);
             if (commandCallback != null && commandCallback instanceof CommandCallback)
                 ((CommandCallback) commandCallback).onResponseReceived(this,response);
         }
@@ -100,18 +110,37 @@ public interface CommandInterface<E extends BaseError> extends BaseErrorEvent<E>
          * Init the command to send to the headset
          */
         protected void init() {
-            if (commandCallback == null)
-                commandCallback = new CommandCallback<U>() {
+            init(true);
+        }
+
+        /**
+         * Init the command to send to the headset
+         * Init a command callback that handle responses if
+         * @param responseExpected is true.
+         * No response can be retrieved in the onResponseReceived callback if responseExcepted is false.
+         */
+        protected void init(boolean responseExpected) {
+            if (commandCallback == null) {
+                commandCallback = responseExpected ? //if a response is expected once the request is sent, we use a CommandCallback object (other object that extend MbtResponse)
+                        new CommandCallback<Object>() {
+                            @Override
+                            public void onResponseReceived(MbtCommand request, Object response) { }
+                            @Override
+                            public void onError(MbtCommand request, BaseError error, String additionalInfo) { }
+                            @Override
+                            public void onRequestSent(MbtCommand request) { }
+                        }
+
+                        : new SimpleCommandCallback() { //if no response is expected once the request is sent, we use a SimpleCommandCallback object (other object that does not extend MbtResponse)
                     @Override
-                    public void onResponseReceived(MbtCommand request, U response) { }
-                    @Override
-                    public void onError(MbtCommand request, BaseError error, String additionnalInfo) { }
+                    public void onError(MbtCommand request, BaseError error, String additionalInfo) { }
                     @Override
                     public void onRequestSent(MbtCommand request) { }
                 };
+            }
 
-            if(!isValid() && commandCallback != null)
-                commandCallback.onError(this, ConfigError.ERROR_INVALID_PARAMS, "Invalid parameter : the input must not be null and/or empty.");
+            if(!isValid())
+                commandCallback.onError(this, ConfigError.ERROR_INVALID_PARAMS, getInvalidityError());
         }
 
         /**
@@ -121,11 +150,18 @@ public interface CommandInterface<E extends BaseError> extends BaseErrorEvent<E>
         public abstract boolean isValid();
 
         /**
+         * Returns a String message that contain the reason of invalidity input.
+         * Returns null if the input is valid (isValid returns true)
+         * @return the reason of invalidity input as a String
+         */
+        public abstract String getInvalidityError();
+
+        /**
          * Bundles the data to send to the headset
          * for the write characteristic operation / request
          * @return the bundled data in a object
          */
-        public abstract U serialize();
+        public abstract Object serialize();
 
     }
 }

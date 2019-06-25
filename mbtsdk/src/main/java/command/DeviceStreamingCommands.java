@@ -1,13 +1,12 @@
 package command;
 
-import android.support.annotation.IntRange;
+
 import android.support.annotation.Keep;
 
 import config.AmpGainConfig;
 import config.FilterConfig;
 
 import engine.clientevents.BaseError;
-import engine.clientevents.MbtClientEvents;
 
 /**
  * Device commands sent from the SDK to the headset
@@ -69,6 +68,11 @@ public interface DeviceStreamingCommands {
         }
 
         @Override
+        public String getInvalidityError() {
+            return "You are not allowed to provide a null FilterConfig instance in the "+this.getClass().getSimpleName()+ " contructor.";
+        }
+
+        @Override
         public byte[] getData() {
             if(notchFilter == null)
                 return null;
@@ -124,6 +128,11 @@ public interface DeviceStreamingCommands {
         @Override
         public boolean isValid() {
             return bandpassFilter != null;
+        }
+
+        @Override
+        public String getInvalidityError() {
+            return "You are not allowed to provide a null FilterConfig instance in the "+this.getClass().getSimpleName()+ " contructor.";
         }
 
         @Override
@@ -184,6 +193,11 @@ public interface DeviceStreamingCommands {
         @Override
         public boolean isValid() {
             return ampGainConfig != null;
+        }
+
+        @Override
+        public String getInvalidityError() {
+            return "You are not allowed to provide a null AmpGainConfig instance in the "+this.getClass().getSimpleName()+ " contructor.";
         }
 
         @Override
@@ -252,6 +266,11 @@ public interface DeviceStreamingCommands {
         }
 
         @Override
+        public String getInvalidityError() {
+            return null;
+        }
+
+        @Override
         public byte[] getData() {
 
             return new byte[]{enableTriggers ? ENABLE : DISABLE};
@@ -314,6 +333,11 @@ public interface DeviceStreamingCommands {
         }
 
         @Override
+        public String getInvalidityError() {
+            return null;
+        }
+
+        @Override
         public byte[] getData() {
             return new byte[]{enableDcOffset ? ENABLE : DISABLE};
         }
@@ -330,7 +354,7 @@ public interface DeviceStreamingCommands {
      * The DC offset receiving status is returned by the headset if the command succeeds.
      */
     @Keep
-    class EegConfig extends DeviceCommand<byte[], BaseError> implements DeviceStreamingCommands{
+    class EegConfig extends DeviceCommand<byte[], BaseError>{
 
         /**
          * Mailbox command sent from the SDK to the connected headset
@@ -357,6 +381,11 @@ public interface DeviceStreamingCommands {
         @Override
         public boolean isValid() {
             return commandCallback != null;
+        }
+
+        @Override
+        public String getInvalidityError() {
+            return "You are not allowed to provide a null CommandCallback instance in the "+this.getClass().getSimpleName()+ " contructor.";
         }
 
         @Override

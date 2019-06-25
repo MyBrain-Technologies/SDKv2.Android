@@ -27,6 +27,8 @@ import java.util.Objects;
 import java.util.Queue;
 
 
+import command.DeviceCommand;
+import command.DeviceStreamingCommands;
 import core.bluetooth.BtState;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindDevice;
@@ -39,6 +41,7 @@ import engine.clientevents.BaseError;
 import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.DeviceBatteryListener;
 import engine.clientevents.EegListener;
+import engine.clientevents.MbtClientEvents;
 import features.MbtDeviceType;
 import features.MbtFeatures;
 import mbtsdk.com.mybraintech.sdkv2.R;
@@ -46,8 +49,7 @@ import utils.LogUtils;
 
 import static utils.MatrixUtils.invertFloatMatrix;
 
-public class
-DeviceActivity extends AppCompatActivity {
+public class DeviceActivity extends AppCompatActivity {
 
     private static final int MAX_NUMBER_OF_DATA_TO_DISPLAY = 500;
     private static String TAG = DeviceActivity.class.getName();
@@ -97,8 +99,8 @@ DeviceActivity extends AppCompatActivity {
             //returnOnPreviousActivity();
         }
 
-        public void onError(BaseError error, String additionnalInfo) {
-            notifyUser(error.getMessage()+(additionnalInfo != null ? additionnalInfo : ""));
+        public void onError(BaseError error, String additionalInfo) {
+            notifyUser(error.getMessage()+(additionalInfo != null ? additionalInfo : ""));
         }
     };
 
@@ -111,7 +113,7 @@ DeviceActivity extends AppCompatActivity {
         }
 
         @Override
-        public void onError(BaseError error, String additionnalInfo) {
+        public void onError(BaseError error, String additionalInfo) {
             notifyUser(getString(R.string.error_read_battery));
         }
     };
@@ -121,7 +123,7 @@ DeviceActivity extends AppCompatActivity {
     private EegListener<BaseError> eegListener = new EegListener<BaseError>() {
 
         @Override
-        public void onError(BaseError error, String additionnalInfo) {
+        public void onError(BaseError error, String additionalInfo) {
             Toast.makeText(DeviceActivity.this, error.toString(), Toast.LENGTH_SHORT).show();
         }
 
@@ -161,13 +163,17 @@ DeviceActivity extends AppCompatActivity {
 
         client.setConnectionStateListener(connectionStateListener);
         client.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
+
             @Override
             public void onRequestComplete(MbtDevice object) {
+                Log.d(TAG," on Request complete request current connected device "+object);
+
                 deviceNameTextView.setText(object.getProductName());
                 currentDeviceType = (object instanceof MelomindDevice ? MbtDeviceType.MELOMIND : MbtDeviceType.VPRO);
 
             }
         });
+
     }
 
     private void initDisconnectButton() {
@@ -214,8 +220,9 @@ DeviceActivity extends AppCompatActivity {
         startStopStreamingButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 if(!isStreaming) { //streaming is not in progress : starting streaming
-                    startStream(new StreamConfig.Builder(eegListener).configureAcquisitionFromDeviceCommand().setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)/*.useQualities(true)*/.create());
+                    startStream(new StreamConfig.Builder(eegListener).setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)/*.useQualities(true)*/.create());
                 }else { //streaming is in progress : stopping streaming
                     stopStream(); // set false to isStreaming et null to the eegListener
                 }

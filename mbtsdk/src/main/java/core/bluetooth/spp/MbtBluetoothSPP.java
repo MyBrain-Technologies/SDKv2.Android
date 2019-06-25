@@ -21,6 +21,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
 
+import command.CommandInterface;
 import command.DeviceCommand;
 import core.bluetooth.BtState;
 import core.bluetooth.IStreamable;
@@ -521,7 +522,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
     }
 
     //todo
-    public void sendCommand(DeviceCommand commands) {
+    public void sendCommand(CommandInterface.MbtCommand command) {
     }
 }
 

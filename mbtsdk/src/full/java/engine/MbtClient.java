@@ -8,7 +8,6 @@ import android.support.annotation.Nullable;
 
 
 import command.CommandInterface;
-import command.DeviceCommand;
 import config.MbtConfig;
 import config.StreamConfig;
 import config.ConnectionConfig;
@@ -25,7 +24,6 @@ import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.DeviceBatteryListener;
 import engine.clientevents.EegListener;
 import engine.clientevents.HeadsetDeviceError;
-import engine.clientevents.MbtClientEvents;
 import features.MbtFeatures;
 import features.MbtDeviceType;
 
@@ -180,7 +178,7 @@ public final class MbtClient {
      * A non null requestCallback instance is mandatory if you want to get the headset response
      * The onError callback provided by the requestCallback is triggered if an error occurred during the request sending.
      */
-    public void updateSerialNumber(String serialNumber, @Nullable CommandInterface.CommandCallback< byte[]> commandCallback){
+    public void updateSerialNumber(@NonNull String serialNumber, @Nullable CommandInterface.CommandCallback< byte[]> commandCallback){
         mbtManager.sendDeviceCommand(new DeviceCommands.UpdateSerialNumber(serialNumber, commandCallback));
     }
 
@@ -193,7 +191,7 @@ public final class MbtClient {
      * A non null requestCallback instance is mandatory if you want to get the headset response
      * The onError callback provided by the requestCallback is triggered if an error occurred during the request sending.
      */
-    public void updateExternalName(String externalName, @Nullable CommandInterface.CommandCallback<byte[]> commandCallback){
+    public void updateExternalName(@NonNull String externalName, @Nullable CommandInterface.CommandCallback<byte[]> commandCallback){
         mbtManager.sendDeviceCommand(new DeviceCommands.UpdateExternalName(externalName, commandCallback));
     }
 
@@ -228,7 +226,7 @@ public final class MbtClient {
      * A non null requestCallback instance is mandatory if you want to get the headset response
      * The onError callback provided by the requestCallback is triggered if an error occurred during the request sending.
      */
-    public void getDeviceSystemStatus(@Nullable CommandInterface.CommandCallback<byte[]> commandCallback){
+    public void getDeviceSystemStatus(@NonNull CommandInterface.CommandCallback<byte[]> commandCallback){
         mbtManager.sendDeviceCommand(new DeviceCommands.GetSystemStatus(commandCallback));
     }
 

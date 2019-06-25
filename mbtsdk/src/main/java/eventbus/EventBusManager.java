@@ -5,8 +5,6 @@ import android.util.Log;
 
 import org.greenrobot.eventbus.EventBus;
 
-import engine.clientevents.BaseError;
-import engine.clientevents.BaseErrorEvent;
 
 /**
  * EventBusManager.java

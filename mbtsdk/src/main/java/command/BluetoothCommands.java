@@ -74,10 +74,14 @@ public interface BluetoothCommands {
             return getData();
         }
 
-
         @Override
         public boolean isValid() {
             return mtu >= MINIMUM && mtu <= MAXIMUM ;
+        }
+
+        @Override
+        public String getInvalidityError() {
+            return "You are not allowed to provide a MTU lower than "+ MINIMUM + " and higher than "+ MAXIMUM +" in the "+this.getClass().getSimpleName()+ " contructor.";
         }
 
         @Override

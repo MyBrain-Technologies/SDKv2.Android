@@ -11,7 +11,7 @@ import engine.clientevents.BaseError;
  * or ask the headset to perform an action.
  * It provides a callback used to return a raw response sent by the headset to the SDK
  */
-public abstract class BluetoothCommand <T,U extends BaseError> extends CommandInterface.MbtCommand<T,U> {
+public abstract class BluetoothCommand <T,U extends BaseError> extends CommandInterface.MbtCommand<U> {
 
     /**
      * Returns the optional data specific to the implemented class

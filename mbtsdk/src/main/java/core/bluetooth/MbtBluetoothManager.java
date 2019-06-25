@@ -48,7 +48,6 @@ import core.device.model.MelomindsQRDataBase;
 import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
 import engine.clientevents.BluetoothError;
-import engine.clientevents.ConfigError;
 import engine.clientevents.ConnectionStateReceiver;
 import eventbus.EventBusManager;
 import eventbus.events.BluetoothEEGEvent;
@@ -106,7 +105,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private int mtu;
     private String deviceNameRequested;
     private String deviceQrCodeRequested;
-    private MbtDeviceType deviceTypeRequested;
+    private MbtDeviceType deviceTypeRequested = MbtDeviceType.MELOMIND;
 
     //private MbtDeviceAcquisition deviceAcquisition;
 
@@ -115,7 +114,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
     private ConnectionStateReceiver receiver = new ConnectionStateReceiver() {
         @Override
-        public void onError(BaseError error, String additionnalInfo) {
+        public void onError(BaseError error, String additionalInfo) {
         }
 
         @Override
@@ -266,7 +265,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 }
 
             } else if (request instanceof DeviceCommandRequestEvent) {
-                sendDeviceCommand(((DeviceCommandRequestEvent) request).getCommand());
+                sendCommand(((DeviceCommandRequestEvent) request).getCommand());
             }
         }
 
@@ -703,14 +702,13 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
             @Override
             public void onRequestComplete(MbtDevice device) { //Firmware version has been read during the previous step so we retrieve its value, as it has been stored in the Device Manager
-
                 boolean isBondingSupported = new FirmwareUtils(device.getFirmwareVersion()).isFwValidForFeature(FirmwareUtils.FWFeature.BLE_BONDING);
                 if (isBondingSupported) { //if firmware version bonding is higher than 1.6.7, the bonding is launched
                     try {
                         AsyncUtils.executeAsync(new Runnable() {
                             @Override
                             public void run() {
-                                if(getCurrentState() == BtState.BONDING) //avoid double bond
+                                if(getCurrentState() == BtState.BONDING) //avoid double bond if several requestCurrentConnectedDevice are called at the same moment
                                     return;
 
                                 mbtBluetoothLE.bond();
@@ -752,7 +750,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                         @Override
                         public void run() {
                             String externalName = new MelomindsQRDataBase(mContext, false).get(device.getSerialNumber());
-                            mbtBluetoothLE.sendCommand(new DeviceCommands.UpdateExternalName(externalName));
+                            sendCommand(new DeviceCommands.UpdateExternalName(externalName));
                         }
                     });
                 }
@@ -779,7 +777,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                                 @Override
                                 public void run() {
                                     if (isDataBluetoothConnected() && connectionFromBleAvailable)   //A2DP cannot be connected from BLE if BLE connection state is not CONNECTED_AND_READY or CONNECTED
-                                        mbtBluetoothLE.sendCommand(new DeviceCommands.ConnectAudio());
+                                        sendCommand(new DeviceCommands.ConnectAudio());
                                     else {// if connectA2DPFromBLE failed or is not supported by the headset firmware version
                                         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P || mbtBluetoothA2DP.isPairedDevice(getCurrentDevice()))
                                             connect(BLUETOOTH_A2DP);
@@ -830,17 +828,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      */
     private void changeMTU(){
         updateConnectionState(true); //current state is set to CHANGING_BT_PARAMETERS
-        sendBluetoothCommand(new BluetoothCommands.Mtu(mtu));
-    }
-
-    private void sendBluetoothCommand(BluetoothCommand command){
-        if (!command.isValid()){//any invalid command is not sent : validity criteria are defined in each Bluetooth implemented class , the onError callback is triggered in the constructor of the command object
-            command.onError(ConfigError.ERROR_INVALID_PARAMS, null);
-            notifyResponseReceived(null, command);
-            return;
-        }
-
-        mbtBluetoothLE.sendCommand(command);
+        sendCommand(new BluetoothCommands.Mtu(mtu));
     }
 
     private void notifyMtuChanged(boolean isSuccess){
@@ -879,12 +867,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * @param command is the {@link DeviceCommand} object that defines the type of command to send
      * and the asociated command parameters.
      */
-    private void sendDeviceCommand(@NonNull DeviceCommand command) {
-        if (!isConnected()){
-            command.onError(BluetoothError.ERROR_NOT_CONNECTED, null);
-            return;
-        }
 
+    private void sendCommand(@NonNull CommandInterface.MbtCommand command) {
         if(deviceTypeRequested.useLowEnergyProtocol())
             mbtBluetoothLE.sendCommand(command);
         else
@@ -1026,6 +1010,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 break;
             case DEVICE_FOUND:
                 EventBusManager.postEvent(new DeviceEvents.FoundDeviceEvent(getCurrentDevice(), deviceTypeRequested));
+                if(mbtBluetoothA2DP.currentDevice != null)
+                    EventBusManager.postEvent(new DeviceEvents.AudioConnectedDeviceEvent(mbtBluetoothA2DP.currentDevice));
 
                 break;
             case SCAN_TIMEOUT:
@@ -1072,8 +1058,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             @Override
             @Subscribe
             public Void onEventCallback(DeviceEvents.PostDeviceEvent device) {
-                callback.onRequestComplete(device.getDevice());
                 EventBusManager.registerOrUnregister(false,this);
+                callback.onRequestComplete(device.getDevice());
                 return null;
             }
         });
@@ -1160,7 +1146,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     void disconnectA2DPFromBLE() {
         LogUtils.i(TAG, " disconnect A2dp from ble");
         if(isDataBluetoothConnected() && isAudioBluetoothConnected())
-            mbtBluetoothLE.sendCommand(new DeviceCommands.DisconnectAudio());
+            sendCommand(new DeviceCommands.DisconnectAudio());
     }
 
     /**

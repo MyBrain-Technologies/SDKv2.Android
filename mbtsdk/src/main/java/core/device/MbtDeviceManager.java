@@ -64,7 +64,8 @@ public class MbtDeviceManager extends BaseModuleManager{
 
     private void setAudioConnectedDeviceAddress(String audioDeviceAddress) {
         Log.d(TAG,"new connected audio device address stored "+audioDeviceAddress);
-        this.mCurrentConnectedDevice.setAudioDeviceAddress(audioDeviceAddress);
+        if(mCurrentConnectedDevice != null)
+            this.mCurrentConnectedDevice.setAudioDeviceAddress(audioDeviceAddress);
     }
 
     private void setmCurrentConnectedDevice(MbtDevice mCurrentConnectedDevice) {

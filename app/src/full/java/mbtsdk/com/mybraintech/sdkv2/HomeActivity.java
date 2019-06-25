@@ -23,6 +23,7 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import command.CommandInterface;
 import core.bluetooth.BtState;
 import config.ConnectionConfig;
 import core.device.model.MbtDevice;
@@ -196,11 +197,11 @@ public class HomeActivity extends AppCompatActivity{
          * Callback used to receive a notification when the Bluetooth connection is aborted if the SDK returns an error
          */
         @Override
-        public void onError(BaseError error, String additionnalInfo) {
-            Log.e("HomeActivity", "onError received "+error.getMessage()+ (additionnalInfo != null ? additionnalInfo : ""));
+        public void onError(BaseError error, String additionalInfo) {
+            Log.e("HomeActivity", "onError received "+error.getMessage()+ (additionalInfo != null ? additionalInfo : ""));
             isErrorRaised = true;
             updateScanning(false);
-            toast = Toast.makeText(HomeActivity.this, error.getMessage()+ (additionnalInfo != null ? additionnalInfo : ""), Toast.LENGTH_LONG);
+            toast = Toast.makeText(HomeActivity.this, error.getMessage()+ (additionalInfo != null ? additionalInfo : ""), Toast.LENGTH_LONG);
             toast.show();
         }
 
