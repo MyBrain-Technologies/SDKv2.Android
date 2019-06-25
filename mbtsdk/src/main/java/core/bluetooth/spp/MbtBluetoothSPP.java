@@ -22,7 +22,6 @@ import java.util.TimerTask;
 import java.util.UUID;
 
 import command.CommandInterface;
-import command.DeviceCommand;
 import core.bluetooth.BtState;
 import core.bluetooth.IStreamable;
 import core.bluetooth.MbtBluetooth;

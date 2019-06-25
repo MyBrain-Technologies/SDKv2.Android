@@ -47,7 +47,6 @@ import core.device.model.MbtDevice;
 import core.device.model.MelomindsQRDataBase;
 import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
-import engine.clientevents.BluetoothError;
 import engine.clientevents.ConnectionStateReceiver;
 import eventbus.EventBusManager;
 import eventbus.events.BluetoothEEGEvent;
@@ -177,7 +176,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         requestBeingProcessed = false;
     }
 
-    void notifyDeviceResponseReceived(Object response, DeviceCommand command) {
+    private void notifyDeviceResponseReceived(Object response, DeviceCommand command) {
         if(response != null){
             if(command instanceof DeviceStreamingCommands.EegConfig){
                 notifyDeviceConfigReceived(ArrayUtils.toObject((byte[])response));
@@ -195,7 +194,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * Notify the Connection process handler if the MTU has been well changed
      * @param command is the corresponding type of bluetooth command
      */
-    void notifyBluetoothResponseReceived(Object response, BluetoothCommand command) {
+    private void notifyBluetoothResponseReceived(Object response, BluetoothCommand command) {
         if(command instanceof BluetoothCommands.Mtu)
             notifyMtuChanged(response == command.getData());
     }

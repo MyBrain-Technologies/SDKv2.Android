@@ -22,13 +22,10 @@ import com.github.mikephil.charting.data.LineDataSet;
 
 import java.util.ArrayList;
 
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.Queue;
 
 
-import command.DeviceCommand;
-import command.DeviceStreamingCommands;
 import core.bluetooth.BtState;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindDevice;
@@ -41,7 +38,6 @@ import engine.clientevents.BaseError;
 import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.DeviceBatteryListener;
 import engine.clientevents.EegListener;
-import engine.clientevents.MbtClientEvents;
 import features.MbtDeviceType;
 import features.MbtFeatures;
 import mbtsdk.com.mybraintech.sdkv2.R;
@@ -220,7 +216,6 @@ public class DeviceActivity extends AppCompatActivity {
         startStopStreamingButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 if(!isStreaming) { //streaming is not in progress : starting streaming
                     startStream(new StreamConfig.Builder(eegListener).setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)/*.useQualities(true)*/.create());
                 }else { //streaming is in progress : stopping streaming

@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 
-import command.CommandInterface;
 import command.DeviceCommand;
 import command.DeviceStreamingCommands;
 import core.eeg.storage.MbtEEGPacket;

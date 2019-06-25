@@ -23,7 +23,6 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import command.CommandInterface;
 import core.bluetooth.BtState;
 import config.ConnectionConfig;
 import core.device.model.MbtDevice;

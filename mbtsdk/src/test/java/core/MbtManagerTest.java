@@ -70,23 +70,23 @@ public class MbtManagerTest {
      * and if no callback is provided by the client
      * Also check that no subscriber was registered before the request.
      */
-    @Test
-    public void sendDeviceCommand_noCallback(){
-
-        byte[] response = new byte[]{0,1,2,3,4,5,6,7,8,9};
-        DeviceCommand command = new DeviceCommands.ConnectAudio();
-
-        //no subscriber is supposed to be registered before the command is called
-        assertFalse(EventBusManager.BUS.isRegistered(manager));
-        //assertFalse(EventBusManager.BUS.hasSubscriberForEvent(DeviceEvents.RawDeviceResponseEvent.class));
-        manager.sendDeviceCommand(command);
-
-        //a subscriber is supposed to be registered once the command is called
-        assertTrue(EventBusManager.BUS.hasSubscriberForEvent(DeviceEvents.RawDeviceResponseEvent.class));
-        //verify that the "on request complete" callback is not triggered if the client didn't provide any callback
-        SimpleRequestCallback<byte[]> simpleRequestCallback = Mockito.spy(SimpleRequestCallback.class);
-        Mockito.verify(simpleRequestCallback, Mockito.never()).onRequestComplete(response);
-    }
+//    @Test
+//    public void sendDeviceCommand_noCallback(){
+//
+//        byte[] response = new byte[]{0,1,2,3,4,5,6,7,8,9};
+//        DeviceCommand command = new DeviceCommands.ConnectAudio();
+//
+//        //no subscriber is supposed to be registered before the command is called
+//        assertFalse(EventBusManager.BUS.isRegistered(manager));
+//        //assertFalse(EventBusManager.BUS.hasSubscriberForEvent(DeviceEvents.RawDeviceResponseEvent.class));
+//        manager.sendDeviceCommand(command);
+//
+//        //a subscriber is supposed to be registered once the command is called
+//        assertTrue(EventBusManager.BUS.hasSubscriberForEvent(DeviceEvents.RawDeviceResponseEvent.class));
+//        //verify that the "on request complete" callback is not triggered if the client didn't provide any callback
+//        SimpleRequestCallback<byte[]> simpleRequestCallback = Mockito.spy(SimpleRequestCallback.class);
+//        Mockito.verify(simpleRequestCallback, Mockito.never()).onRequestComplete(response);
+//    }
 
     /**
      * Check that a subscriber is well registered
@@ -96,54 +96,54 @@ public class MbtManagerTest {
      * Also check that no subscriber was registered before the request,
      * and the subscriber is unregistered once the response callback is returned.
      */
-    @Test
-    public void sendDeviceCommand_withCallback(){
-
-        MbtBluetoothManager bluetoothManager = Mockito.mock(MbtBluetoothManager.class);
-        byte[] response = new byte[]{0,1,2,3,4,5,6,7,8,9};
-        ArgumentCaptor<DeviceCommandRequestEvent> captor = ArgumentCaptor.forClass(DeviceCommandRequestEvent.class); //capture any DeviceCommandRequestEvent
-
-        SimpleRequestCallback<byte[]> simpleRequestCallback = callbackResponse -> {
-            assertEquals(response, callbackResponse);
-            //the subscriber is supposed to be unregistered once the callback is triggered
-            assertFalse(EventBusManager.BUS.hasSubscriberForEvent(DeviceEvents.RawDeviceResponseEvent.class));
-        };
-        DeviceCommand command = new DeviceCommands.ConnectAudio(simpleRequestCallback);
-
-        //no subscriber is supposed to be registered before the command call
-        assertFalse(EventBusManager.BUS.isRegistered(manager));
-//        assertFalse(EventBusManager.BUS.hasSubscriberForEvent(DeviceEvents.RawDeviceResponseEvent.class));
-        PowerMockito.spy(EventBusManager.class);
-        try {
-//            PowerMockito
-//                    .doAnswer((Answer<Void>) invocation -> {
-//                        //a subscriber is supposed to be registered once the postEvent method is called
-//                        assertTrue(EventBusManager.BUS.hasSubscriberForEvent(DeviceEvents.RawDeviceResponseEvent.class));
-//                        DeviceCommandRequestEvent deviceCommandRequestEvent = captor.getValue();
-//                        //assert that the right event is posted to send the mailbox command
-//                        assertThat(deviceCommandRequestEvent.getCommand(), is(command));
-//                        bluetoothManager.notifyDeviceResponseReceived(response, command);
-//                        return null;
-//                    })
-//                    .when(EventBusManager.class, "postEvent", captor, Mockito.any(EventBusManager.Callback.class));
-
-            PowerMockito.when(EventBusManager.class, "postEvent", captor, Mockito.any(EventBusManager.Callback.class))
-                        .then((Answer<Void>) invocation -> {
-                            //a subscriber is supposed to be registered once the postEvent method is called
-                            assertTrue(EventBusManager.BUS.hasSubscriberForEvent(DeviceEvents.RawDeviceResponseEvent.class));
-                            DeviceCommandRequestEvent deviceCommandRequestEvent = captor.getValue();
-                            //assert that the right event is posted to send the mailbox command
-                            assertThat(deviceCommandRequestEvent.getCommand(), is(command));
-                            bluetoothManager.notifyDeviceResponseReceived(response, command);
-                            return null;
-                        });
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        manager.sendDeviceCommand(command);
-
-    }
+//    @Test
+//    public void sendDeviceCommand_withCallback(){
+//
+//        MbtBluetoothManager bluetoothManager = Mockito.mock(MbtBluetoothManager.class);
+//        byte[] response = new byte[]{0,1,2,3,4,5,6,7,8,9};
+//        ArgumentCaptor<DeviceCommandRequestEvent> captor = ArgumentCaptor.forClass(DeviceCommandRequestEvent.class); //capture any DeviceCommandRequestEvent
+//
+//        SimpleRequestCallback<byte[]> simpleRequestCallback = callbackResponse -> {
+//            assertEquals(response, callbackResponse);
+//            //the subscriber is supposed to be unregistered once the callback is triggered
+//            assertFalse(EventBusManager.BUS.hasSubscriberForEvent(DeviceEvents.RawDeviceResponseEvent.class));
+//        };
+//        DeviceCommand command = new DeviceCommands.ConnectAudio(simpleRequestCallback);
+//
+//        //no subscriber is supposed to be registered before the command call
+//        assertFalse(EventBusManager.BUS.isRegistered(manager));
+////        assertFalse(EventBusManager.BUS.hasSubscriberForEvent(DeviceEvents.RawDeviceResponseEvent.class));
+//        PowerMockito.spy(EventBusManager.class);
+//        try {
+////            PowerMockito
+////                    .doAnswer((Answer<Void>) invocation -> {
+////                        //a subscriber is supposed to be registered once the postEvent method is called
+////                        assertTrue(EventBusManager.BUS.hasSubscriberForEvent(DeviceEvents.RawDeviceResponseEvent.class));
+////                        DeviceCommandRequestEvent deviceCommandRequestEvent = captor.getValue();
+////                        //assert that the right event is posted to send the mailbox command
+////                        assertThat(deviceCommandRequestEvent.getCommand(), is(command));
+////                        bluetoothManager.notifyDeviceResponseReceived(response, command);
+////                        return null;
+////                    })
+////                    .when(EventBusManager.class, "postEvent", captor, Mockito.any(EventBusManager.Callback.class));
+//
+//            PowerMockito.when(EventBusManager.class, "postEvent", captor, Mockito.any(EventBusManager.Callback.class))
+//                        .then((Answer<Void>) invocation -> {
+//                            //a subscriber is supposed to be registered once the postEvent method is called
+//                            assertTrue(EventBusManager.BUS.hasSubscriberForEvent(DeviceEvents.RawDeviceResponseEvent.class));
+//                            DeviceCommandRequestEvent deviceCommandRequestEvent = captor.getValue();
+//                            //assert that the right event is posted to send the mailbox command
+//                            assertThat(deviceCommandRequestEvent.getCommand(), is(command));
+//                            bluetoothManager.notifyDeviceResponseReceived(response, command);
+//                            return null;
+//                        });
+//
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//        manager.sendDeviceCommand(command);
+//
+//    }
 
 
     @After

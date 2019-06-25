@@ -46,7 +46,6 @@ import core.device.model.MelomindsQRDataBase;
 import engine.clientevents.BaseError;
 import engine.clientevents.BluetoothError;
 import engine.clientevents.ConnectionStateReceiver;
-import engine.clientevents.MbtClientEvents;
 import features.MbtFeatures;
 import utils.BroadcastUtils;
 import utils.LogUtils;
