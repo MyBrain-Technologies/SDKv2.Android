@@ -1,5 +1,7 @@
 package command;
 
+import android.support.annotation.Keep;
+
 import java.nio.ByteBuffer;
 
 import engine.clientevents.BaseError;
@@ -11,6 +13,7 @@ import engine.clientevents.BaseError;
  * or ask the headset to perform an action.
  * It provides a callback used to return a raw response sent by the headset to the SDK
  */
+@Keep
 public abstract class DeviceCommand <T, U extends BaseError> extends CommandInterface.MbtCommand<U> {
 
     final byte ENABLE = 0x01;

@@ -4,18 +4,16 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
 
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import command.CommandInterface;
 import command.DeviceCommand;
 
-import command.DeviceStreamingCommands;
 import config.StreamConfig;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.IStreamable;
@@ -24,7 +22,7 @@ import core.bluetooth.requests.DisconnectRequestEvent;
 import core.bluetooth.MbtBluetoothManager;
 import core.bluetooth.requests.ReadRequestEvent;
 import core.bluetooth.requests.StreamRequestEvent;
-import core.bluetooth.requests.DeviceCommandRequestEvent;
+import core.bluetooth.requests.CommandRequestEvent;
 import core.device.DCOffsets;
 import core.device.DeviceEvents;
 import core.device.MbtDeviceManager;
@@ -147,7 +145,7 @@ public class MbtManager{
         this.deviceStatusListener = streamConfig.getDeviceStatusListener();
 
         for (DeviceCommand command : streamConfig.getDeviceCommands()) {
-            sendDeviceCommand(command);
+            sendCommand(command);
         }
         EventBusManager.postEvent(
                 new StreamRequestEvent(true,
@@ -163,15 +161,16 @@ public class MbtManager{
     }
 
     /**
-     * Send a Mailbox command request to the connected headset
+     * Send a command request
+     * to the connected headset,
+     * such as a Mailbox command,
      * in order to configure a parameter,
      * or get values stored by the headset
-     * or ask the headset to perform an action. .
-     * @param deviceCommand is the command to send
-     * @return true if the command has been sent, false otherwise
+     * or ask the headset to perform an action.
+     * @param command is the command to send
      */
-    public void sendDeviceCommand(@NonNull DeviceCommand deviceCommand) {
-       EventBusManager.postEvent(new DeviceCommandRequestEvent(deviceCommand));
+    public void sendCommand(@NonNull CommandInterface.MbtCommand command) {
+       EventBusManager.postEvent(new CommandRequestEvent(command));
     }
 
     /**
@@ -281,7 +280,6 @@ public class MbtManager{
     public void setEEGListener(EegListener<BaseError> EEGListener) {
         this.eegListener = EEGListener;
     }
-
 
     public void requestCurrentConnectedDevice(@NonNull final SimpleRequestCallback<MbtDevice> callback) {
         if (callback == null)

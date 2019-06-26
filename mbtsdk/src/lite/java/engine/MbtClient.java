@@ -62,6 +62,15 @@ public final class MbtClient {
     public static MbtClient getClientInstance(){
         return clientInstance;
     }
+
+    /**
+     * Set the current instance of the client client instance to null
+     * @return
+     */
+    public static void resetClientInstance(){
+        clientInstance = null;
+    }
+
     /**
      * Constructor that use the MbtClientBuilder
      * @param builder object for creating the MbtClient instance with a setters syntax.

@@ -1,6 +1,6 @@
 package command;
 
-
+import android.support.annotation.Keep;
 
 import engine.clientevents.BaseError;
 
@@ -11,6 +11,7 @@ import engine.clientevents.BaseError;
  * or ask the headset to perform an action.
  * It provides a callback used to return a raw response sent by the headset to the SDK
  */
+@Keep
 public abstract class BluetoothCommand <T,U extends BaseError> extends CommandInterface.MbtCommand<U> {
 
     /**

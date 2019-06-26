@@ -107,7 +107,7 @@ public interface DeviceCommands {
          * @param externalName the new external name value to set
          */
         public UpdateExternalName(String externalName) {
-            super(DeviceCommandEvents.MBX_SET_SERIAL_NUMBER,
+            super(DeviceCommandEvents.MBX_SET_EXTERNAL_NAME,
                     DeviceCommandEvents.MBX_SET_EXTERNAL_NAME_ADDITIONAL);
             this.externalName = externalName;
             init();
@@ -127,7 +127,7 @@ public interface DeviceCommands {
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
         public UpdateExternalName(String externalName, CommandInterface.CommandCallback<byte[]> commandCallback) {
-            super(DeviceCommandEvents.MBX_SET_SERIAL_NUMBER,
+            super(DeviceCommandEvents.MBX_SET_EXTERNAL_NAME,
                     DeviceCommandEvents.MBX_SET_EXTERNAL_NAME_ADDITIONAL);
             this.commandCallback = commandCallback;
             this.externalName = externalName;

@@ -6,8 +6,6 @@ package command;
  */
 public final class DeviceCommandEvents {
 
-            public static final byte MTU = -1;
-
             public static final byte MBX_SET_ADS_CONFIG = 0;
             public static final byte MBX_SET_AUDIO_CONFIG = 1;
             public static final byte MBX_SET_PRODUCT_NAME = 2; // Product name configuration request
@@ -24,6 +22,7 @@ public final class DeviceCommandEvents {
             public static final byte MBX_SET_SERIAL_NUMBER = 10; // Set the melomind serial nb
             static final byte[] MBX_SET_SERIAL_NUMBER_ADDITIONAL = {(byte) 0x53, (byte) 0x4D};
 
+            public static final byte MBX_SET_EXTERNAL_NAME = MBX_SET_SERIAL_NUMBER; // Set the external name
             static final byte[] MBX_SET_EXTERNAL_NAME_ADDITIONAL = {(byte) 0xAB, (byte) 0x21};
 
             public static final byte MBX_SET_NOTCH_FILT = 11;      // allows to hotswap the filters' parameters

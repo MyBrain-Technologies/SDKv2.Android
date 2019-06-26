@@ -66,6 +66,12 @@ public final class MbtClient {
     }
 
     /**
+     * Set the current instance of the client instance to null
+     */
+    public static void resetClientInstance(){
+        clientInstance = null;
+    }
+    /**
      * Constructor that use the MbtClientBuilder
      * @param builder object for creating the MbtClient instance with a setters syntax.
      */
@@ -179,7 +185,7 @@ public final class MbtClient {
      * The onError callback provided by the requestCallback is triggered if an error occurred during the request sending.
      */
     public void updateSerialNumber(@NonNull String serialNumber, @Nullable CommandInterface.CommandCallback< byte[]> commandCallback){
-        mbtManager.sendDeviceCommand(new DeviceCommands.UpdateSerialNumber(serialNumber, commandCallback));
+        mbtManager.sendCommand(new DeviceCommands.UpdateSerialNumber(serialNumber, commandCallback));
     }
 
     /**
@@ -192,7 +198,7 @@ public final class MbtClient {
      * The onError callback provided by the requestCallback is triggered if an error occurred during the request sending.
      */
     public void updateExternalName(@NonNull String externalName, @Nullable CommandInterface.CommandCallback<byte[]> commandCallback){
-        mbtManager.sendDeviceCommand(new DeviceCommands.UpdateExternalName(externalName, commandCallback));
+        mbtManager.sendCommand(new DeviceCommands.UpdateExternalName(externalName, commandCallback));
     }
 
     /**
@@ -204,7 +210,7 @@ public final class MbtClient {
      * The onError callback provided by the requestCallback is triggered if an error occurred during the request sending.
      */
     public void connectAudio(@Nullable CommandInterface.CommandCallback<byte[]> commandCallback){
-        mbtManager.sendDeviceCommand(new DeviceCommands.ConnectAudio(commandCallback));
+        mbtManager.sendCommand(new DeviceCommands.ConnectAudio(commandCallback));
     }
 
     /**
@@ -216,7 +222,7 @@ public final class MbtClient {
      * The onError callback provided by the requestCallback is triggered if an error occurred during the request sending.
      */
     public void disconnectAudio(@Nullable CommandInterface.CommandCallback<byte[]> commandCallback){
-        mbtManager.sendDeviceCommand(new DeviceCommands.DisconnectAudio(commandCallback));
+        mbtManager.sendCommand(new DeviceCommands.DisconnectAudio(commandCallback));
     }
 
     /**
@@ -227,7 +233,7 @@ public final class MbtClient {
      * The onError callback provided by the requestCallback is triggered if an error occurred during the request sending.
      */
     public void getDeviceSystemStatus(@NonNull CommandInterface.CommandCallback<byte[]> commandCallback){
-        mbtManager.sendDeviceCommand(new DeviceCommands.GetSystemStatus(commandCallback));
+        mbtManager.sendCommand(new DeviceCommands.GetSystemStatus(commandCallback));
     }
 
     /**
@@ -241,7 +247,7 @@ public final class MbtClient {
      * The onError callback is triggered in case you enter a CommandCallback and the device command is not sent.
      */
     public void rebootDevice(@Nullable CommandInterface.SimpleCommandCallback simpleCommandCallback) {
-        mbtManager.sendDeviceCommand(new DeviceCommands.Reboot(simpleCommandCallback));
+        mbtManager.sendCommand(new DeviceCommands.Reboot(simpleCommandCallback));
     }
 
     /**

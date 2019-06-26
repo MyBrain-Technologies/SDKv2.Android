@@ -18,6 +18,7 @@ public interface CommandInterface<E extends BaseError> extends BaseErrorEvent<E>
      * that is sent in suitables conditions to define when you extend this interface.
      * It means that the request can fail to be sent to a receiver (peripheral object/device/class).
      */
+    @Keep
     interface MbtRequest {
 
         void onRequestSent(CommandInterface.MbtCommand request);

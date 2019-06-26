@@ -6,198 +6,52 @@ import android.content.Context;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.UUID;
 
 
-import command.DeviceCommandEvents;
+import utils.CommandUtils;
 
-import static org.junit.Assert.*;
-import static org.mockito.AdditionalMatchers.eq;
+import static java.util.UUID.fromString;
 
+
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(MbtGattController.class)
 public class MbtGattControllerTest {
 
-    private final byte[] RESPONSE = new byte[]{0,1,2,3,4,5};
+    private final byte[] MAILBOX_RAW_RESPONSE = new byte[]{0,10,1,2,3,4,5};
+    private final byte[] MAILBOX_RESPONSE = new byte[]{10,1,2,3,4,5};
     private final byte[] IN_PROGRESS_RESPONSE = new byte[]{1,1,2,3,4,5};
 
+    private final UUID SERVICE = MelomindCharacteristics.SERVICE_MEASUREMENT;
+    private final UUID CHARACTERISTIC_MAILBOX = MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX;
+    private final UUID CHARACTERISTIC_EEG = MelomindCharacteristics.CHARAC_MEASUREMENT_EEG;
+    private final UUID CHARACTERISTIC_STATUS = MelomindCharacteristics.CHARAC_HEADSET_STATUS;
+    private final UUID UNKNOWN = fromString("0-0-0-0-0");
+
     private MbtGattController gattController;
+    private MbtGattController spyGattController;
     private MbtBluetoothLE mbtBluetoothLE;
+
+    private BluetoothGatt gatt;
+    private BluetoothGattCharacteristic characteristic;
+
 
     @Before
     public void setUp() throws Exception {
         Context context = Mockito.mock(Context.class);
         mbtBluetoothLE = Mockito.mock(MbtBluetoothLE.class);
         gattController = new MbtGattController(context,mbtBluetoothLE);
-    }
-
-    /**
-     * Check that the Bluetooth Gatt controller
-     * notifies the Bluetooth LE class
-     * when a characteristic related to the mailbox
-     * ( serial number command ) has changed
-     */
-    @Test
-    public void notifyMailboxEventReceived_SerialNumber(){
-        byte code = DeviceCommandEvents.MBX_SET_SERIAL_NUMBER;
-        notifyMailboxEventReceived(code);
-    }
-
-    /**
-     * Check that the Bluetooth Gatt controller
-     * notifies the Bluetooth LE class
-     * when a characteristic related to the mailbox
-     * ( product name command ) has changed
-     */
-    @Test
-    public void notifyMailboxEventReceived_ProductName(){
-        byte code = DeviceCommandEvents.MBX_SET_PRODUCT_NAME;
-        notifyMailboxEventReceived(code);
-    }
-
-    /**
-     * Check that the Bluetooth Gatt controller
-     * notifies the Bluetooth LE class
-     * when a characteristic related to the mailbox
-     * ( system status command ) has changed
-     */
-    @Test
-    public void notifyMailboxEventReceived_SystemStatus(){
-        byte code = DeviceCommandEvents.MBX_SYS_GET_STATUS;
-        notifyMailboxEventReceived(code);
-    }
-
-    /**
-     * Check that the Bluetooth Gatt controller
-     * notifies the Bluetooth LE class
-     * when a characteristic related to the mailbox
-     * ( reboot command ) has changed
-     */
-    @Test
-    public void notifyMailboxEventReceived_SystemReboot(){
-        byte code = DeviceCommandEvents.MBX_SYS_REBOOT_EVT;
-        notifyMailboxEventReceived(code);
-    }
-
-    /**
-     * Check that the Bluetooth Gatt controller
-     * notifies the Bluetooth LE class
-     * when a characteristic related to the mailbox
-     * ( notch filter command ) has changed
-     */
-    @Test
-    public void notifyMailboxEventReceived_NotchFilter(){
-        byte code = DeviceCommandEvents.MBX_SET_NOTCH_FILT;
-        notifyMailboxEventReceived(code);
-    }
-
-    /**
-     * Check that the Bluetooth Gatt controller
-     * notifies the Bluetooth LE class
-     * when a characteristic related to the mailbox
-     * (amplifier gain command ) has changed
-     */
-    @Test
-    public void notifyMailboxEventReceived_AmpGain(){
-        byte code = DeviceCommandEvents.MBX_SET_AMP_GAIN;
-        notifyMailboxEventReceived(code);
-    }
-
-    /**
-     * Check that the Bluetooth Gatt controller
-     * notifies the Bluetooth LE class
-     * when a characteristic related to the mailbox
-     * ( EEG config command ) has changed
-     */
-    @Test
-    public void notifyMailboxEventReceived_EegConfig(){
-        byte code = DeviceCommandEvents.MBX_GET_EEG_CONFIG;
-        notifyMailboxEventReceived(code);
-    }
-
-    /**
-     * Check that the Bluetooth Gatt controller
-     * notifies the Bluetooth LE class
-     * when a characteristic related to the mailbox
-     * ( triggers command ) has changed
-     */
-    @Test
-    public void notifyMailboxEventReceived_Triggers(){
-        byte code = DeviceCommandEvents.MBX_P300_ENABLE;
-        notifyMailboxEventReceived(code);
-    }
-
-    /**
-     * Check that the Bluetooth Gatt controller
-     * notifies the Bluetooth LE class
-     * when a characteristic related to the mailbox
-     * ( DC offset command ) has changed
-     */
-    @Test
-    public void notifyMailboxEventReceived_DC_offset(){
-        byte code = DeviceCommandEvents.MBX_DC_OFFSET_ENABLE;
-        notifyMailboxEventReceived(code);
-    }
-
-    /**
-     * Check that the Bluetooth Gatt controller
-     * does not notifies the Bluetooth LE class
-     * when a characteristic related to the mailbox
-     * ( connect command with a "in progress" response from the headset )
-     * and when the Bluetooth audio connection has changed
-     */
-    @Test
-    public void notifyMailboxEventReceived_ConnectAudio_inProgress(){
-        byte code = DeviceCommandEvents.MBX_CONNECT_IN_A2DP;
-        ArgumentCaptor<DeviceCommand> captor = ArgumentCaptor.forClass(DeviceCommand.class);
-        BluetoothGatt gatt = Mockito.mock(BluetoothGatt.class);
-        BluetoothGattCharacteristic characteristic = Mockito.mock(BluetoothGattCharacteristic.class);
-        Mockito.when(characteristic.getValue()).thenReturn(getCharacteristic(code));
-        Mockito.when(characteristic.getUuid()).thenReturn(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX);
-
-        gattController.onCharacteristicChanged(gatt, characteristic);
-
-        Mockito.verify(mbtBluetoothLE, Mockito.never()).notifyCommandResponseReceived(Mockito.eq(IN_PROGRESS_RESPONSE), captor.capture());
-        Mockito.verify(mbtBluetoothLE).stopWaitingOperation();
-    }
-
-    /**
-     * Check that the Bluetooth Gatt controller
-     * notifies the Bluetooth LE class
-     * when a characteristic related to the mailbox
-     * ( connect command with a response that is not "in progress"  )
-     * and when the Bluetooth audio connection has changed
-     */
-    @Test
-    public void notifyMailboxEventReceived_ConnectAudio_notInProgress(){
-        byte code = DeviceCommandEvents.MBX_CONNECT_IN_A2DP;
-        notifyMailboxEventReceived(code);
-        notifyConnectionResponseReceived(code, RESPONSE);
-    }
-
-    /**
-     * Check that the Bluetooth Gatt controller
-     * notifies the Bluetooth LE class
-     * when a characteristic related to the mailbox
-     * ( disconnect command ) and when the Bluetooth audio connection has changed
-     */
-    @Test
-    public void notifyMailboxEventReceived_DisconnectAudio(){
-        byte code = DeviceCommandEvents.MBX_DISCONNECT_IN_A2DP;
-        notifyMailboxEventReceived(code);
-        notifyConnectionResponseReceived(code, RESPONSE);
-    }
-
-    /**
-     * Check that the Bluetooth Gatt controller
-     * notifies the Bluetooth LE class
-     * when a characteristic related to the Bluetooth connection has changed
-     */
-    private void notifyConnectionResponseReceived(byte code, byte[] response){
-        Mockito.verify(mbtBluetoothLE).notifyConnectionResponseReceived(code, response[0]);
+        spyGattController = PowerMockito.spy(gattController);
+        gatt = Mockito.mock(BluetoothGatt.class);
+        characteristic = Mockito.mock(BluetoothGattCharacteristic.class);
     }
 
     /**
@@ -205,29 +59,57 @@ public class MbtGattControllerTest {
      * notifies the Bluetooth LE class
      * when a characteristic related to the mailbox has changed
      */
-    private void notifyMailboxEventReceived(byte code){
-        ArgumentCaptor<DeviceCommand> captor = ArgumentCaptor.forClass(DeviceCommand.class);
-        BluetoothGatt gatt = Mockito.mock(BluetoothGatt.class);
-        BluetoothGattCharacteristic characteristic = Mockito.mock(BluetoothGattCharacteristic.class);
-        byte[] characteristicValue = getCharacteristic(code);
-        Mockito.when(characteristic.getValue()).thenReturn(characteristicValue);
-        Mockito.when(characteristic.getUuid()).thenReturn(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX);
+    @Test
+    public void onCharacteristicChanged_MailboxCommandReceived(){
+        Mockito.when(characteristic.getUuid()).thenReturn(CHARACTERISTIC_MAILBOX);
+        Mockito.when(characteristic.getValue()).thenReturn(MAILBOX_RAW_RESPONSE);
+        PowerMockito.spy(CommandUtils.class);
 
         gattController.onCharacteristicChanged(gatt, characteristic);
 
-        Mockito.verify(mbtBluetoothLE).notifyCommandResponseReceived(Mockito.eq(RESPONSE), captor.capture());
         Mockito.verify(mbtBluetoothLE).stopWaitingOperation();
-        assertEquals("RESPONSE: " + Arrays.toString(RESPONSE) + " CHARACTERISTIC: " + Arrays.toString(Arrays.copyOfRange(characteristicValue, 1, characteristicValue.length)), Arrays.toString(RESPONSE), Arrays.toString(Arrays.copyOfRange(characteristicValue, 1, characteristicValue.length)));
     }
 
-    private byte[] getCharacteristic(byte mailboxEventsCode){
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
-        outputStream.write( mailboxEventsCode );
-        try {
-            outputStream.write( RESPONSE );
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return outputStream.toByteArray();
+    /**
+     * Check that the Bluetooth Gatt controller
+     * notifies the Bluetooth LE class
+     * when a characteristic related to the EEG has changed
+     */
+    @Test
+    public void onCharacteristicChanged_EegReceived(){
+        Mockito.when(characteristic.getUuid()).thenReturn(CHARACTERISTIC_EEG);
+
+        gattController.onCharacteristicChanged(gatt, characteristic);
+
+        Mockito.verify(mbtBluetoothLE).notifyNewDataAcquired(characteristic.getValue());
     }
+
+    /**
+     * Check that the Bluetooth Gatt controller
+     * notifies the Bluetooth LE class
+     * when a characteristic related to the EEG has changed
+     */
+    @Test
+    public void onCharacteristicChanged_StatusReceived(){
+        Mockito.when(characteristic.getUuid()).thenReturn(CHARACTERISTIC_STATUS);
+
+        gattController.onCharacteristicChanged(gatt, characteristic);
+
+        Mockito.verify(mbtBluetoothLE).notifyNewHeadsetStatus(characteristic.getValue());
+    }
+
+    /**
+     * Check that the Bluetooth Gatt controller
+     * do not notify the Bluetooth LE class
+     * when a unknown characteristic has changed
+     */
+    @Test
+    public void onCharacteristicChanged_UnknownCharacteristicReceived(){
+        Mockito.when(characteristic.getUuid()).thenReturn(UNKNOWN);
+
+        gattController.onCharacteristicChanged(gatt, characteristic);
+
+        Mockito.verifyZeroInteractions(mbtBluetoothLE);
+    }
+
 }

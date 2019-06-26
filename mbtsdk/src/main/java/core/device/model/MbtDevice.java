@@ -180,7 +180,7 @@ public abstract class MbtDevice {
         private byte nbPackets;
 
         public InternalConfig(Byte[] configFromHeadset){
-            if (configFromHeadset.length >= 4){
+            if (configFromHeadset.length >= 5){
                 notchFilterConfig = configFromHeadset[0];
                 bandPassFilterConfig = configFromHeadset[1];
                 gainValue = configFromHeadset[2];

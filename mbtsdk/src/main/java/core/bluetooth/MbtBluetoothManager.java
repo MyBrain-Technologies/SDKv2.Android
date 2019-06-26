@@ -35,11 +35,11 @@ import command.DeviceCommands;
 import command.DeviceStreamingCommands;
 import core.bluetooth.lowenergy.MbtBluetoothLE;
 import core.bluetooth.requests.BluetoothRequests;
+import core.bluetooth.requests.CommandRequestEvent;
 import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
 import core.bluetooth.requests.DisconnectRequestEvent;
 import core.bluetooth.requests.ReadRequestEvent;
 import core.bluetooth.requests.StreamRequestEvent;
-import core.bluetooth.requests.DeviceCommandRequestEvent;
 import core.bluetooth.spp.MbtBluetoothSPP;
 import core.device.DeviceEvents;
 import core.device.model.DeviceInfo;
@@ -263,8 +263,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                     stopStreamOperation();
                 }
 
-            } else if (request instanceof DeviceCommandRequestEvent) {
-                sendCommand(((DeviceCommandRequestEvent) request).getCommand());
+            } else if (request instanceof CommandRequestEvent) {
+                sendCommand(((CommandRequestEvent) request).getCommand());
             }
         }
 

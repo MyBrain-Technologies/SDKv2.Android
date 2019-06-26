@@ -2,7 +2,7 @@ package core.bluetooth;
 
 import android.content.Context;
 
-import org.greenrobot.eventbus.Subscribe;
+import org.apache.commons.lang.ArrayUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -10,157 +10,271 @@ import org.mockito.stubbing.Answer;
 
 import android.os.Handler;
 
-import java.util.Arrays;
-
-
+import command.BluetoothCommand;
+import command.BluetoothCommands;
+import command.CommandInterface;
+import command.DeviceCommand;
+import command.DeviceCommandEvents;
 import command.DeviceCommands;
-import core.MbtManager;
 import core.bluetooth.lowenergy.MbtBluetoothLE;
 import core.bluetooth.requests.BluetoothRequests;
-import core.bluetooth.requests.DeviceCommandRequestEvent;
+import core.bluetooth.requests.CommandRequestEvent;
+import core.bluetooth.requests.DisconnectRequestEvent;
+import core.bluetooth.requests.ReadRequestEvent;
 import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
-import core.device.DeviceEvents;
-import eventbus.EventBusManager;
-import features.MbtDeviceType;
+import core.bluetooth.requests.StreamRequestEvent;
+import core.device.model.DeviceInfo;
+import core.device.model.MbtDevice;
+import engine.clientevents.BaseError;
+
 
 import static org.junit.Assert.*;
 
 public class MbtBluetoothManagerTest {
 
     private MbtBluetoothManager bluetoothManager;
-    private final byte[] RESPONSE = new byte[]{0,1,2,3,4,5};
+    private final int RESPONSE_MTU = 47;
+    private final byte[] RESPONSE_SERIAL_NUMBER = new byte[]{DeviceCommandEvents.MBX_SET_SERIAL_NUMBER,1,2,3,4,5};
+    private final byte[] RESPONSE_MODEL_NUMBER = new byte[]{DeviceCommandEvents.MBX_SET_EXTERNAL_NAME,1,2,3,4,5};
+    private final byte[] RESPONSE_EEG_CONFIG = new byte[]{DeviceCommandEvents.MBX_GET_EEG_CONFIG,1,2,3,4,5};
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         Context context = Mockito.mock(Context.class);
         bluetoothManager = new MbtBluetoothManager(context);
     }
 
     /**
-     * Check that a RESPONSE callback is triggered
-     * if any mailbox command is sent
-     * Also check that no subscriber was registered before the request,
-     * and the subscriber is unregistered once the RESPONSE callback is returned.
+     * Check that any incoming disconnection request is not added
+     * to the handler queue to perform directly the disconnection
+     * if connection is not aborted
      */
     @Test
-    public void onNewBluetoothRequest_DeviceCommandRequestEvent_withCallback(){
+    public void onNewBluetoothRequest_DisconnectRequestEvent_Aborted(){
+        MbtBluetoothManager.RequestThread requestThread = Mockito.mock(MbtBluetoothManager.RequestThread.class);
+        bluetoothManager.setRequestThread(requestThread);
+        Handler requestHandler = Mockito.spy(Handler.class);
+        bluetoothManager.setRequestHandler(requestHandler);
+        DisconnectRequestEvent request = Mockito.mock(DisconnectRequestEvent.class);
+        Mockito.when(request.isInterrupted()).thenReturn(true);
 
-        byte[] response = new byte[]{0,1,2,3,4,5,6,7,8,9};
-        Handler requestHandler = Mockito.mock(Handler.class);
-        DeviceCommand command = new DeviceCommands.ConnectAudio(callbackResponse -> {
-            assertEquals(response, callbackResponse);
-            //the subscriber is supposed to be unregistered once the callback is triggered
-            assertFalse(EventBusManager.BUS.hasSubscriberForEvent(DeviceEvents.RawDeviceResponseEvent.class));
-        });
+        bluetoothManager.onNewBluetoothRequest(request);
 
-        Mockito.doAnswer((Answer<Void>) invocation -> {
-            bluetoothManager.notifyDeviceResponseReceived(response, command);
-            return null;
-        }).when(requestHandler).post(Mockito.any(Runnable.class));
+        Mockito.verifyZeroInteractions(requestHandler);
 
-        //no subscriber is supposed to be registered before the command call
-//        assertFalse(EventBusManager.BUS.hasSubscriberForEvent(DeviceEvents.RawDeviceResponseEvent.class));
-        bluetoothManager.onNewBluetoothRequest(new DeviceCommandRequestEvent(command));
     }
 
     /**
-     * Check that any incoming request is added to the handler queue
-     * by verifying that the request handler has posted the runnable
+     * Check that any incoming disconnection request is added
+     * if connection is not aborted
      */
     @Test
-    public void onNewBluetoothRequest_requestAddedToQueue(){
+    public void onNewBluetoothRequest_DisconnectRequestEvent_NotAborted(){
+        MbtBluetoothManager.RequestThread requestThread = Mockito.mock(MbtBluetoothManager.RequestThread.class);
+        bluetoothManager.setRequestThread(requestThread);
         Handler requestHandler = Mockito.spy(Handler.class);
         bluetoothManager.setRequestHandler(requestHandler);
-        DeviceCommand command = new DeviceCommands.ConnectAudio();
-//        MessageQueue queueBeforeEvent = requestHandler.getLooper().getQueue();
-        bluetoothManager.onNewBluetoothRequest(new DeviceCommandRequestEvent(command));
+        DisconnectRequestEvent request = Mockito.mock(DisconnectRequestEvent.class);
+        Mockito.when(request.isInterrupted()).thenReturn(false);
+
+        bluetoothManager.onNewBluetoothRequest(request);
+
         Mockito.verify(requestHandler).post(Mockito.any(Runnable.class));
+
+    }
+
+    /** Check that :
+     * - any incoming request (non disconnection request) is added to the handler queue
+     *   by verifying that the request handler has posted the runnable.
+     * - any queued request is executed by the handler
+     *   by checking that the request Thread has parsed the request
+     */
+    @Test
+    public void onNewBluetoothRequest_BluetoothRequests(){
+        MbtBluetoothManager.RequestThread requestThread = Mockito.mock(MbtBluetoothManager.RequestThread.class);
+        bluetoothManager.setRequestThread(requestThread);
+        Handler requestHandler = Mockito.spy(Handler.class);
+        bluetoothManager.setRequestHandler(requestHandler);
+
+        BluetoothRequests request = Mockito.mock(BluetoothRequests.class);
+        Mockito.doAnswer((Answer<Void>) invocation -> {
+            requestThread.parseRequest(request);
+            return null;
+        }).when(requestHandler).post(Mockito.any(Runnable.class));
+//        MessageQueue queueBeforeEvent = requestHandler.getLooper().getQueue();
+
+        bluetoothManager.onNewBluetoothRequest(request);
+
+        Mockito.verify(requestHandler).post(Mockito.any(Runnable.class));
+
 //        MessageQueue queueAfterEvent = requestHandler.getLooper().getQueue();
 //        assertNotSame(queueBeforeEvent, queueAfterEvent);
     }
-
     /**
-     * Check that any queued request is executed by the handler
-     * by checking that the request Thread has parsed the request
+     * Check that a response callback is triggered and returns the right value
+     *  if any mailbox command is sent.
      */
     @Test
-    public void onNewBluetoothRequest_requestQueuedExecuted(){
+    public void onNewBluetoothRequest_DeviceCommandRequestEvent(){
+
+        byte[] expectedResponse = new byte[]{0,1,2,3,4,5,6,7,8,9};
         MbtBluetoothManager.RequestThread requestThread = Mockito.mock(MbtBluetoothManager.RequestThread.class);
         bluetoothManager.setRequestThread(requestThread);
-        Handler requestHandler = Mockito.spy(new Handler(requestThread.getLooper()));
-        bluetoothManager.setRequestHandler(requestHandler);
-
-        DeviceCommand command = new DeviceCommands.ConnectAudio();
-        bluetoothManager.onNewBluetoothRequest(new DeviceCommandRequestEvent(command));
-        Mockito.verify(requestHandler).post(Mockito.any(Runnable.class)); //check that the handler posts the runnable
-
-        Mockito.doAnswer(( Answer<Void>) invocation -> { //check that the thread parses the request posted
-            Mockito.verify(requestThread).parseRequest(Mockito.any(BluetoothRequests.class));
-            return null;
-        }).when(requestHandler).post(Mockito.any(Runnable.class));
-        //Mockito.doCallRealMethod().when(requestThread).parseRequest(Mockito.any(DeviceCommandRequestEvent.class));
-
-    }
-
-    /**
-     * Check that the bluetooth manager receives
-     * the Bluetooth request Event posted by the BUS
-     *
-     */
-    @Test
-    public void postEvent_receivedRequest(){
-        DeviceCommand command = new DeviceCommands.ConnectAudio();
-        DeviceCommandRequestEvent deviceCommandRequestEvent = new DeviceCommandRequestEvent(command);
         Handler requestHandler = Mockito.spy(Handler.class);
         bluetoothManager.setRequestHandler(requestHandler);
 
-        EventBusManager.postEvent(deviceCommandRequestEvent);
-        //as the bluetooth manager is the tested class, we cannot mock it and call verify(bluetoothmanager).onNewBluetoothRequest so we verify that a method present inside this method is called
-        Mockito.verify(requestHandler).post(Mockito.any(Runnable.class));
+        DeviceCommand command = new DeviceCommands.ConnectAudio(new CommandInterface.CommandCallback<byte[]>() {
+            @Override
+            public void onError(CommandInterface.MbtCommand request, BaseError error, String additionalInfo) {
+            }
 
+            @Override
+            public void onRequestSent(CommandInterface.MbtCommand request) {
+            }
+
+            @Override
+            public void onResponseReceived(CommandInterface.MbtCommand request, byte[] callbackResponse) {
+                assertEquals(expectedResponse,callbackResponse);
+            }
+        });
+
+        Mockito.doAnswer((Answer<Void>) invocation -> {
+            //Mockito.verify(requestThread).parseRequest(Mockito.any(BluetoothRequests.class));
+            bluetoothManager.notifyResponseReceived(expectedResponse, command);
+            return null;
+        }).when(requestHandler).post(Mockito.any(Runnable.class));
+
+        bluetoothManager.onNewBluetoothRequest(new CommandRequestEvent(command));
+
+        Mockito.verify(requestHandler).post(Mockito.any(Runnable.class));
     }
 
     /**
-     * Check that the bluetooth manager sends the device command
-     * to the Bluetooth low energy class
-     * once the requested has been parsed
+     * Check that the read method
+     * is called if a read request is parsed
      *
      */
     @Test
-    public void postEvent_executedRequest(){
+    public void parseRequest_StartOrContinueConnectionRequestEvent(){
         MbtBluetoothLE bluetoothLE = Mockito.mock(MbtBluetoothLE.class);
-        DeviceCommand command = new DeviceCommands.ConnectAudio();
-        DeviceCommandRequestEvent deviceCommandRequestEvent = new DeviceCommandRequestEvent(command);
-        MbtBluetoothManager.RequestThread requestThread = Mockito.mock(MbtBluetoothManager.RequestThread.class);
-        bluetoothManager.setRequestThread(requestThread);
-        Handler requestHandler = Mockito.spy(new Handler(requestThread.getLooper()));
-        bluetoothManager.setRequestHandler(requestHandler);
         bluetoothManager.setMbtBluetoothLE(bluetoothLE);
+        StartOrContinueConnectionRequestEvent requestEvent = Mockito.mock(StartOrContinueConnectionRequestEvent.class);
+        Mockito.when(requestEvent.isClientUserRequest()).thenReturn(true);
+        Mockito.when(bluetoothLE.getCurrentState()).thenReturn(BtState.READY_FOR_BLUETOOTH_OPERATION);
 
-        bluetoothManager.onNewBluetoothRequest(deviceCommandRequestEvent);
+        //bluetoothManager.getRequestThread().parseRequest(requestEvent);
 
-        //as the bluetooth manager is the tested class, we cannot mock it and call verify(bluetoothmanager).onNewBluetoothRequest so we verify that a method called inside this method is called
-        Mockito.verify(requestHandler).post(Mockito.any(Runnable.class));
+        //Mockito.verify(bluetoothLE).startLowEnergyScan(true);
+    }
+
+    /**
+     * Check that the read method
+     * is called if a read request is parsed
+     *
+     */
+    @Test
+    public void parseRequest_ReadRequestEvent(){
+        MbtBluetoothLE bluetoothLE = Mockito.mock(MbtBluetoothLE.class);
+        bluetoothManager.setMbtBluetoothLE(bluetoothLE);
+        ReadRequestEvent requestEvent = Mockito.mock(ReadRequestEvent.class);
+        Mockito.when(requestEvent.getDeviceInfo()).thenReturn(DeviceInfo.BATTERY);
+
+        bluetoothManager.getRequestThread().parseRequest(requestEvent);
+
+        Mockito.verify(bluetoothLE).readBattery();
     }
 
     /**
      * Check that the send device command method
-     * is called if a device command request is parsed
+     * is called if a command request is parsed
      *
      */
     @Test
-    public void parseRequest_DeviceCommandRequest_valid(){
+    public void parseRequest_CommandRequestEvent(){
         MbtBluetoothLE bluetoothLE = Mockito.mock(MbtBluetoothLE.class);
         bluetoothManager.setMbtBluetoothLE(bluetoothLE);
-        DeviceCommand command = new DeviceCommands.ConnectAudio();
-        DeviceCommandRequestEvent deviceCommandRequestEvent = new DeviceCommandRequestEvent(command);
-        StartOrContinueConnectionRequestEvent initRequest = new StartOrContinueConnectionRequestEvent(true, "testName", "testQrCode", MbtDeviceType.MELOMIND);
+        CommandInterface.MbtCommand command = Mockito.mock(CommandInterface.MbtCommand.class);
+        CommandRequestEvent commandRequestEvent = new CommandRequestEvent(command);
+
+        bluetoothManager.getRequestThread().parseRequest(commandRequestEvent);
+
+        Mockito.verify(bluetoothLE).sendCommand(command);
+    }
+
+    /**
+     * Check that the start stream  method
+     * is called if a stream request is parsed
+     *
+     */
+    @Test
+    public void parseRequest_StartStreamRequestEvent(){
+        bluetoothManager.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
+        MbtBluetoothLE bluetoothLE = Mockito.mock(MbtBluetoothLE.class);
+        bluetoothManager.setMbtBluetoothLE(bluetoothLE);
+        StreamRequestEvent request = Mockito.mock(StreamRequestEvent.class);
+        Mockito.when(request.isStart()).thenReturn(true);
+        Mockito.when(bluetoothLE.isConnected()).thenReturn(true);
+        Mockito.when(bluetoothLE.isStreaming()).thenReturn(false);
+
+        bluetoothManager.getRequestThread().parseRequest(request);
+
+        Mockito.verify(bluetoothLE).startStream();
+    }
+
+
+    /**
+     * Check that the start stream  method
+     * is called if a stream request is parsed
+     *
+     */
+    @Test
+    public void parseRequest_StopStreamRequestEvent(){
+        MbtBluetoothLE bluetoothLE = Mockito.mock(MbtBluetoothLE.class);
+        bluetoothManager.setMbtBluetoothLE(bluetoothLE);
+        StreamRequestEvent request = Mockito.mock(StreamRequestEvent.class);
+        Mockito.when(request.isStart()).thenReturn(false);
+        Mockito.when(bluetoothLE.isStreaming()).thenReturn(true);
+
+        bluetoothManager.getRequestThread().parseRequest(request);
+
+        Mockito.verify(bluetoothLE).stopStream();
+    }
+
+    /**
+     * Check that the cancel connection method
+     * is called if a disconnect request is parsed
+     *
+     */
+    @Test
+    public void parseRequest_CancelConnectionRequestEvent(){
+        MbtBluetoothLE bluetoothLE = Mockito.mock(MbtBluetoothLE.class);
+        bluetoothManager.setMbtBluetoothLE(bluetoothLE);
+        DisconnectRequestEvent request = Mockito.mock(DisconnectRequestEvent.class);
+        Mockito.when(request.isInterrupted()).thenReturn(true);
+        Mockito.when(bluetoothLE.isConnected()).thenReturn(true);
         Mockito.when(bluetoothLE.getCurrentState()).thenReturn(BtState.CONNECTED_AND_READY);
-        bluetoothManager.getRequestThread().parseRequest(initRequest);
 
-        bluetoothManager.getRequestThread().parseRequest(deviceCommandRequestEvent);
+        bluetoothManager.getRequestThread().parseRequest(request);
 
-        Mockito.verify(bluetoothLE).sendRequestForCharacteristic(command);
+        Mockito.verify(bluetoothLE).disconnect();
+    }
+
+    /**
+     * Check that the disconnect  method
+     * is called if a disconnect request is parsed
+     */
+    @Test
+    public void parseRequest_DisconnectRequestEvent(){
+        MbtBluetoothLE bluetoothLE = Mockito.mock(MbtBluetoothLE.class);
+        bluetoothManager.setMbtBluetoothLE(bluetoothLE);
+        DisconnectRequestEvent request = Mockito.mock(DisconnectRequestEvent.class);
+        Mockito.when(request.isInterrupted()).thenReturn(false);
+        Mockito.when(bluetoothLE.isConnected()).thenReturn(true);
+        Mockito.when(bluetoothLE.getCurrentState()).thenReturn(BtState.CONNECTED_AND_READY);
+
+        bluetoothManager.getRequestThread().parseRequest(request);
+
+        Mockito.verify(bluetoothLE).disconnect();
     }
 
     /**
@@ -169,36 +283,119 @@ public class MbtBluetoothManagerTest {
      *
      */
     @Test
-    public void notifyDeviceResponseReceived_DeviceCommandRequest_valid(){
+    public void notifyResponseReceived_DeviceCommand_NullResponse(){
+        bluetoothManager.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
+        MbtBluetoothLE bluetoothLE = Mockito.mock(MbtBluetoothLE.class);
+        bluetoothManager.setMbtBluetoothLE(bluetoothLE);
+        CommandInterface.MbtCommand command = Mockito.mock(DeviceCommand.class);
 
-        DeviceCommand command = new DeviceCommands.ConnectAudio();
-        EventBusManager.Callback callback = new EventBusManager.Callback<DeviceEvents.RawDeviceResponseEvent>(){
-            @Override
-            @Subscribe
-            public Void onEventCallback(DeviceEvents.RawDeviceResponseEvent headsetRawResponse) {
-                assertTrue(Arrays.equals(headsetRawResponse.getRawResponse(), RESPONSE));
-                EventBusManager.registerOrUnregister(false, this);
-                return null;
-            }
-        };
-        EventBusManager.registerOrUnregister(true, callback);
-        assertTrue(EventBusManager.BUS.hasSubscriberForEvent(DeviceEvents.RawDeviceResponseEvent.class));
+        bluetoothManager.requestCurrentConnectedDevice(deviceBeforeUpdate -> {
+            bluetoothManager.notifyResponseReceived(null, command);
 
-        //bluetoothManager.notifyDeviceResponseReceived(RESPONSE, command);
-        // Event post throws IllegalAccessException: Class org.greenrobot.eventbus.EventBus can not access a member of class core.bluetooth.MbtBluetoothManagerTest$1 with modifiers "public"
-        //Eventbus invokes a method by reflection but this raises an exception in the tests only
-        // The workaround is to call method.setAccessible(true) before the call to method.invoke(listener)
-        // but the call is performed in the Eventbus.java class so we can't do anything for this test
-        //assertFalse(EventBusManager.BUS.hasSubscriberForEvent(DeviceEvents.RawDeviceResponseEvent.class));
+            bluetoothManager.requestCurrentConnectedDevice(deviceAfterUpdate ->
+                    assertEquals(deviceAfterUpdate, deviceBeforeUpdate));
+        });
     }
 
-    private class MbtManagerWrapper extends MbtManager{
+    /**
+     * Check that the serial number has been well updated on the device unit when
+     * a headset RESPONSE has been received after a update serial number request
+     */
+    @Test
+    public void notifyResponseReceived_DeviceCommand_SerialNumber(){
+        bluetoothManager.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
+        bluetoothManager.requestCurrentConnectedDevice(deviceBeforeUpdate -> {
+            MbtBluetoothLE bluetoothLE = Mockito.mock(MbtBluetoothLE.class);
+            bluetoothManager.setMbtBluetoothLE(bluetoothLE);
+            CommandInterface.MbtCommand command = Mockito.mock(DeviceCommands.UpdateSerialNumber.class);
+            bluetoothManager.notifyResponseReceived(RESPONSE_SERIAL_NUMBER, command);
 
-        /**
-         * @param context
-         */
-        public MbtManagerWrapper(Context context) {
-            super(context);
-        }
+            bluetoothManager.requestCurrentConnectedDevice(deviceAfterUpdate -> {
+                assertEquals(deviceAfterUpdate.getSerialNumber(), new String(RESPONSE_SERIAL_NUMBER) ); //we check that the serial number has been updated on the Device unit
+                assertNotEquals(deviceBeforeUpdate.getSerialNumber(), deviceBeforeUpdate.getSerialNumber());//we compare the device serial number after and before the update
+                assertEquals(deviceBeforeUpdate.getExternalName(), deviceAfterUpdate.getExternalName()); //we make sure that the external name has not been updated, as the serial number update command and external name update command have the same identifier code
+                assertNotEquals(deviceAfterUpdate.getSerialNumber(), deviceAfterUpdate.getExternalName()); //we make sure that the external name has not been updated, as the serial number update command and external name update command have the same identifier code
+            });
+        });
     }
+
+    /**
+     * Check that the model number (external name) has been well updated on the device unit when
+     * a headset RESPONSE has been received after a update external name request
+     */
+    @Test
+    public void notifyResponseReceived_DeviceCommand_ExternalName(){
+        bluetoothManager.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
+        bluetoothManager.requestCurrentConnectedDevice(deviceBeforeUpdate -> {
+            MbtBluetoothLE bluetoothLE = Mockito.mock(MbtBluetoothLE.class);
+            bluetoothManager.setMbtBluetoothLE(bluetoothLE);
+            CommandInterface.MbtCommand command = Mockito.mock(DeviceCommands.UpdateExternalName.class);
+            bluetoothManager.notifyResponseReceived(RESPONSE_MODEL_NUMBER, command);
+
+            bluetoothManager.requestCurrentConnectedDevice(deviceAfterUpdate -> {
+                assertNotEquals(deviceBeforeUpdate.getExternalName(), deviceAfterUpdate.getExternalName()); //we make sure that the external name has not been updated, as the serial number update command and external name update command have the same identifier code
+                assertEquals(deviceAfterUpdate.getExternalName(), new String(RESPONSE_MODEL_NUMBER) ); //we check that the serial number has been updated on the Device unit
+                assertEquals(deviceBeforeUpdate.getSerialNumber(), deviceBeforeUpdate.getSerialNumber());//we compare the device serial number after and before the update
+                assertNotEquals(deviceAfterUpdate.getSerialNumber(), deviceAfterUpdate.getExternalName()); //we make sure that the external name has not been updated, as the serial number update command and external name update command have the same identifier code
+            });
+        });
+    }
+
+    /**
+     * Check that the current connection state is not updated to {@link BtState#BT_PARAMETERS_CHANGED}
+     * when a bluetooth command response that is not a MTU command has been received
+     */
+    @Test
+    public void notifyResponseReceived_BluetoothCommand(){
+        bluetoothManager.notifyConnectionStateChanged(BtState.CHANGING_BT_PARAMETERS);
+        MbtBluetoothLE bluetoothLE = Mockito.mock(MbtBluetoothLE.class);
+        bluetoothManager.setMbtBluetoothLE(bluetoothLE);
+        Mockito.when(bluetoothLE.getCurrentState()).thenReturn(BtState.CHANGING_BT_PARAMETERS);
+        CommandInterface.MbtCommand command = Mockito.mock(BluetoothCommand.class);
+
+        bluetoothManager.notifyResponseReceived(new Object(), command);
+        //assertEquals(bluetoothManager.getCurrentState(), BtState.BT_PARAMETERS_CHANGED ); //impossible to know as getCurrentState is private
+        Mockito.verifyZeroInteractions(bluetoothLE);
+
+    }
+
+    /**
+     * Check that the current connection state is updated to {@link BtState#BT_PARAMETERS_CHANGED}
+     * when a new MTU has been received
+     */
+    @Test
+    public void notifyResponseReceived_BluetoothCommand_MTU(){
+        bluetoothManager.notifyConnectionStateChanged(BtState.CHANGING_BT_PARAMETERS);
+        MbtBluetoothLE bluetoothLE = Mockito.mock(MbtBluetoothLE.class);
+        bluetoothManager.setMbtBluetoothLE(bluetoothLE);
+        Mockito.when(bluetoothLE.getCurrentState()).thenReturn(BtState.CHANGING_BT_PARAMETERS);
+        CommandInterface.MbtCommand command = Mockito.mock(BluetoothCommands.Mtu.class);
+
+        bluetoothManager.notifyResponseReceived(RESPONSE_MTU, command);
+        //assertEquals(bluetoothManager.getCurrentState(), BtState.BT_PARAMETERS_CHANGED ); //impossible to know as getCurrentState is private
+        Mockito.verify(bluetoothLE).notifyConnectionStateChanged(BtState.BT_PARAMETERS_CHANGED);
+
+    }
+
+    /**
+     * Check that the EEG internal config has been well updated on the device unit when
+     * a headset RESPONSE has been received after a get EEG config request
+     */
+    @Test
+    public void notifyResponseReceived_DeviceCommand_EegConfig(){
+        bluetoothManager.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
+        bluetoothManager.requestCurrentConnectedDevice(deviceBeforeUpdate -> {
+            deviceBeforeUpdate.setInternalConfig(new MbtDevice.InternalConfig(new Byte[]{1,2,3,4,5}));
+            MbtBluetoothLE bluetoothLE = Mockito.mock(MbtBluetoothLE.class);
+            bluetoothManager.setMbtBluetoothLE(bluetoothLE);
+            CommandInterface.MbtCommand command = Mockito.mock(DeviceCommand.class);
+            bluetoothManager.notifyResponseReceived(RESPONSE_EEG_CONFIG, command);
+
+            bluetoothManager.requestCurrentConnectedDevice(deviceAfterUpdate -> {
+                assertEquals(deviceAfterUpdate.getInternalConfig(), new MbtDevice.InternalConfig(ArrayUtils.toObject((RESPONSE_EEG_CONFIG)))); //we check that the internal config has been updated on the Device unit
+                assertNotEquals(deviceBeforeUpdate.getInternalConfig(), deviceBeforeUpdate.getInternalConfig());//we compare the internal config before and after the request command
+            });
+        });
+    }
+
 }

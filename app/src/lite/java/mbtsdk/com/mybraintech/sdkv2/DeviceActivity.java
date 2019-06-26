@@ -51,7 +51,7 @@ DeviceActivity extends AppCompatActivity {
     private static final int MAX_NUMBER_OF_DATA_TO_DISPLAY = 500;
     private static String TAG = DeviceActivity.class.getName();
 
-    private MbtClient client;
+    private MbtClient sdkClient;
 
     private String deviceName;
     private TextView deviceNameTextView;
@@ -77,7 +77,6 @@ DeviceActivity extends AppCompatActivity {
     private MbtDeviceType currentDeviceType;
 
     private BluetoothStateListener bluetoothStateListener;
-    private DeviceStatusListener<BaseError> deviceStatusListener;
     private DeviceBatteryListener deviceInfoListener;
 
     private EegListener<BaseError> eegListener;
@@ -86,11 +85,10 @@ DeviceActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_device);
-        client = MbtClient.getClientInstance();
+        sdkClient = MbtClient.getClientInstance();
 
         initConnectionStateListener();
         initDeviceInfoListener();
-        initDeviceStatusListener();
         initEegListener();
 
         initToolBar();
@@ -100,9 +98,9 @@ DeviceActivity extends AppCompatActivity {
         initStartStopStreamingButton();
         initEegGraph();
 
-        client.setConnectionStateListener(bluetoothStateListener);
+        sdkClient.setConnectionStateListener(bluetoothStateListener);
 
-        client.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
+        sdkClient.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
             @Override
             public void onRequestComplete(MbtDevice object) {
                 if(object != null) {
@@ -139,25 +137,6 @@ DeviceActivity extends AppCompatActivity {
         };
     }
 
-    private void initDeviceStatusListener() {
-        deviceStatusListener = new DeviceStatusListener<BaseError>() {
-
-            @Override
-            public void onError(BaseError error, String additionalInfo) {
-
-            }
-
-            @Override
-            public void onSaturationStateChanged(SaturationEvent saturation) {
-                notifyUser("Saturation: "+saturation.getSaturationCode());
-            }
-
-            @Override
-            public void onNewDCOffsetMeasured(DCOffsets dcOffsets) {
-                notifyUser("Offset: "+ Arrays.toString(dcOffsets.getOffset()));
-            }
-        };
-    }
 
     private void initDeviceInfoListener() {
         deviceInfoListener = new DeviceBatteryListener() {
@@ -206,7 +185,7 @@ DeviceActivity extends AppCompatActivity {
                 //returnOnPreviousActivity();
                 if(isStreaming)
                     stopStream();
-                client.disconnectBluetooth();
+                sdkClient.disconnectBluetooth();
             }
         });
     }
@@ -226,7 +205,7 @@ DeviceActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if(deviceInfoListener != null)
-                    client.readBattery(deviceInfoListener);
+                    sdkClient.readBattery(deviceInfoListener);
             }
         });
     }
@@ -369,12 +348,12 @@ DeviceActivity extends AppCompatActivity {
 
     private void startStream(StreamConfig streamConfig){
         isStreaming = true;
-        client.startStream(streamConfig);
+        sdkClient.startStream(streamConfig);
     }
 
     private void stopStream(){
         isStreaming = false;
-        client.stopStream();
+        sdkClient.stopStream();
     }
 
     private void returnOnPreviousActivity(){
@@ -390,10 +369,10 @@ DeviceActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        client.disconnectBluetooth();
+        sdkClient.disconnectBluetooth();
         eegListener = null;
         bluetoothStateListener = null;
-        client.setConnectionStateListener(null);
+        sdkClient.setConnectionStateListener(null);
         returnOnPreviousActivity();
     }
 }

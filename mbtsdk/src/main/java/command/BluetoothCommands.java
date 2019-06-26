@@ -3,11 +3,7 @@ package command;
 import android.support.annotation.IntRange;
 import android.support.annotation.Keep;
 
-import config.AmpGainConfig;
-import config.FilterConfig;
-
 import engine.clientevents.BaseError;
-import engine.clientevents.MbtClientEvents;
 
 /**
  * Device commands sent from the SDK to the headset
