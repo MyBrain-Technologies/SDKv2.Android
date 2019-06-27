@@ -19,7 +19,7 @@ public interface DeviceCommands {
      * The new serial number is stored and returned by the headset if the command succeeds
      */
     @Keep
-    class UpdateSerialNumber extends DeviceCommand {
+    class UpdateSerialNumber extends DeviceCommand<byte[], BaseError> {
 
         /**
          * The new serial number value to set
@@ -297,7 +297,7 @@ public interface DeviceCommands {
          * No response is returned by the headset if the command succeeds.
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
-        public Reboot(CommandInterface.CommandCallbackInterface commandCallback) {
+        public Reboot(CommandInterface.ICommandCallback commandCallback) {
             super(DeviceCommandEvents.MBX_SYS_REBOOT_EVT,
                     DeviceCommandEvents.MBX_SYS_REBOOT_EVT_ADDITIONAL);
             this.commandCallback = commandCallback;
@@ -317,7 +317,7 @@ public interface DeviceCommands {
         @Override
         public String getInvalidityError() {
             return "You are not allowed to use a CommandCallback or other Object that extends the MbtResponse interface for the commandCallback input.\n"
-            +"As no response is expected, you have to call the CommandCallbackInterface constructor to create a instance of CommandCallbackInterface object.\n"
+            +"As no response is expected, you have to call the ICommandCallback constructor to create a instance of ICommandCallback object.\n"
             +"If you still use a CommandCallback or other Object that extends the MbtResponse interface, the command won't be sent and the onError callback will be triggered.";
         }
     }

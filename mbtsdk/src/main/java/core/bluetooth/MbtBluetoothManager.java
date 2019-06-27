@@ -11,6 +11,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
+import android.support.annotation.VisibleForTesting;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
@@ -330,18 +331,22 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         }
     }
 
+    @VisibleForTesting
     void setRequestThread(RequestThread requestThread) {
         this.requestThread = requestThread;
     }
 
+    @VisibleForTesting
     void setRequestHandler(Handler requestHandler) {
         this.requestHandler = requestHandler;
     }
 
+    @VisibleForTesting
     void setMbtBluetoothLE(MbtBluetoothLE mbtBluetoothLE) {
         this.mbtBluetoothLE = mbtBluetoothLE;
     }
 
+    @VisibleForTesting
     public RequestThread getRequestThread() {
         return requestThread;
     }

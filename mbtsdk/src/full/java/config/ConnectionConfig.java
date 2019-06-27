@@ -5,6 +5,8 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import command.BluetoothCommand;
+import command.BluetoothCommands;
 import engine.clientevents.BaseError;
 import engine.clientevents.ConnectionStateListener;
 import features.MbtDeviceType;
@@ -18,10 +20,6 @@ import features.MbtFeatures;
  */
 @Keep
 public final class ConnectionConfig {
-
-    private static final int MINIMUM_MTU = 23;
-    private static final int MAXIMUM_MTU = 121;
-    private static final int DEFAULT_MTU = 47;
 
     private String deviceName;
 
@@ -38,7 +36,7 @@ public final class ConnectionConfig {
      *  is the maximum size of the data packets
      *  sent by the headset to the SDK.
      */
-    @IntRange(from = MINIMUM_MTU ,to = MAXIMUM_MTU)
+    @IntRange(from = BluetoothCommands.Mtu.MINIMUM,to = BluetoothCommands.Mtu.MAXIMUM)
     private int mtu;
 
     private final ConnectionStateListener<BaseError> connectionStateListener;
@@ -76,11 +74,11 @@ public final class ConnectionConfig {
     /**
      * Check the validity of the configured MTU
      * @return true if the MTU is included between
-     * {@link ConnectionConfig#MINIMUM_MTU} and {@link ConnectionConfig#MAXIMUM_MTU}
+     * {@link BluetoothCommands.Mtu#MINIMUM} and {@link BluetoothCommands.Mtu#MAXIMUM}
      * Return false otherwise.
      */
     public boolean isMtuValid(){
-        return (mtu >= MINIMUM_MTU && mtu <= MAXIMUM_MTU);
+        return new BluetoothCommands.Mtu(mtu).isValid();
     }
 
     /**
@@ -158,8 +156,8 @@ public final class ConnectionConfig {
         private String deviceQrCode = null;
         private int maxScanDuration = MbtFeatures.DEFAULT_MAX_SCAN_DURATION_IN_MILLIS;
 
-        @IntRange(from = MINIMUM_MTU, to = MAXIMUM_MTU)
-        private int mtu = DEFAULT_MTU;
+        @IntRange(from = BluetoothCommands.Mtu.MINIMUM, to = BluetoothCommands.Mtu.MAXIMUM)
+        private int mtu = BluetoothCommands.Mtu.DEFAULT;
 
         private boolean connectAudio = false;
         private MbtDeviceType deviceType = MbtDeviceType.MELOMIND;
@@ -216,11 +214,11 @@ public final class ConnectionConfig {
          *  Maximum Transmission Unit
          *  is the maximum size of the data packets
          *  sent by the headset to the SDK.
-         *  Enter a value included between {@link ConnectionConfig#MINIMUM_MTU} and {@link ConnectionConfig#MAXIMUM_MTU}
-         *  Enter a value included between {@link ConnectionConfig#MINIMUM_MTU} and {@link ConnectionConfig#MAXIMUM_MTU}
+         *  Enter a value included between {@link BluetoothCommands.Mtu#MINIMUM} and {@link BluetoothCommands.Mtu#MAXIMUM}
+         *  Enter a value included between {@link BluetoothCommands.Mtu#MINIMUM} and {@link BluetoothCommands.Mtu#MAXIMUM}
          */
         @NonNull
-        public Builder mtu(@IntRange(from = MINIMUM_MTU, to = MAXIMUM_MTU) int mtu){
+        public Builder mtu(@IntRange(from = BluetoothCommands.Mtu.MINIMUM, to = BluetoothCommands.Mtu.MAXIMUM) int mtu){
             this.mtu = mtu;
             //BluetoothCommand command = new BluetoothCommands.Mtu(mtu);
             return this;

@@ -243,7 +243,7 @@ public final class MbtClient {
      * A non null requestCallback instance is mandatory to be notified if an error occurred during the request sending.
      * The onRequestComplete callback provided by the requestCallback is never called
      * It is useless to enter a CommandCallback Object for the commandCallback input :
-     * as no response is expected, you have to enter a CommandCallbackInterface Object.
+     * as no response is expected, you have to enter a ICommandCallback Object.
      * The onError callback is triggered in case you enter a CommandCallback and the device command is not sent.
      */
     public void rebootDevice(@Nullable CommandInterface.SimpleCommandCallback simpleCommandCallback) {

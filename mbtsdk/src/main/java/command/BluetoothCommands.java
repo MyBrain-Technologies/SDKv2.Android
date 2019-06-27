@@ -30,8 +30,9 @@ public interface BluetoothCommands {
          */
         private int mtu;
 
-        private final int MINIMUM = 23;
-        private final int MAXIMUM = 121;
+        public final static int MINIMUM = 23;
+        public final static int MAXIMUM = 121;
+        public final static int DEFAULT = 47;
 
         /**
          * Command sent from the SDK to the connected headset
