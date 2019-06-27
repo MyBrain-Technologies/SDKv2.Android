@@ -9,7 +9,7 @@ import core.oad.OADEvent;
  */
 
 @Keep
-public interface MbtClientEvents extends BaseErrorEvent {
+public interface MbtClientEvents<E extends BaseError> extends BaseErrorEvent<E> {
 
     interface OADEventListener {
         /**
@@ -23,14 +23,4 @@ public interface MbtClientEvents extends BaseErrorEvent {
         void onPacketTransferComplete(boolean state);
         void onOADComplete(boolean result);
     }
-
-    interface MailboxEventListener{
-        /**
-         * Callback triggered after a new mailbox message has been received by the central from the peripheral
-         * @param eventCode the Mailbox code associated with the message. See {@link core.bluetooth.lowenergy.MailboxEvents} for the list of all codes
-         * @param eventValues the values sent by the peripheral.
-         */
-        void onMailBoxEvent(final byte eventCode, final Object eventValues);
-    }
-
 }

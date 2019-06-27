@@ -51,7 +51,7 @@ DeviceActivity extends AppCompatActivity {
     private static final int MAX_NUMBER_OF_DATA_TO_DISPLAY = 500;
     private static String TAG = DeviceActivity.class.getName();
 
-    private MbtClient client;
+    private MbtClient sdkClient;
 
     private String deviceName;
     private TextView deviceNameTextView;
@@ -63,8 +63,6 @@ DeviceActivity extends AppCompatActivity {
     private LineDataSet channel2;
 
     private long eegDataCounter  = 0;
-    private TextView channel1Quality;
-    private TextView channel2Quality;
 
     private Button startStopStreamingButton;
 
@@ -79,7 +77,6 @@ DeviceActivity extends AppCompatActivity {
     private MbtDeviceType currentDeviceType;
 
     private BluetoothStateListener bluetoothStateListener;
-    private DeviceStatusListener<BaseError> deviceStatusListener;
     private DeviceBatteryListener deviceInfoListener;
 
     private EegListener<BaseError> eegListener;
@@ -88,24 +85,22 @@ DeviceActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_device);
-        client = MbtClient.getClientInstance();
+        sdkClient = MbtClient.getClientInstance();
 
         initConnectionStateListener();
         initDeviceInfoListener();
-        initDeviceStatusListener();
         initEegListener();
 
         initToolBar();
-        initChannelsTextView();
         initDeviceNameTextView();
         initDisconnectButton();
         initReadBatteryButton();
         initStartStopStreamingButton();
         initEegGraph();
 
-        client.setConnectionStateListener(bluetoothStateListener);
+        sdkClient.setConnectionStateListener(bluetoothStateListener);
 
-        client.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
+        sdkClient.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
             @Override
             public void onRequestComplete(MbtDevice object) {
                 if(object != null) {
@@ -120,7 +115,7 @@ DeviceActivity extends AppCompatActivity {
     private void initEegListener() {
         eegListener = new EegListener<BaseError>() {
             @Override
-            public void onError(BaseError error, String additionnalInfo) {
+            public void onError(BaseError error, String additionalInfo) {
                 LogUtils.w(TAG, "error : "+error.getMessage());
                 Toast.makeText(DeviceActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
                 if(isStreaming) {
@@ -136,35 +131,12 @@ DeviceActivity extends AppCompatActivity {
 
                 if(isStreaming){
                     if(eegGraph!=null){
-                        addEegDataToGraph(mbtEEGPackets);
-
-                        channel1Quality.setText(getString(R.string.channel_1_qc) + ((mbtEEGPackets.getQualities() != null && mbtEEGPackets.getQualities().get(0) != null) ? mbtEEGPackets.getQualities().get(0) : " -- "));
-                        channel2Quality.setText(getString(R.string.channel_2_qc) + ( (mbtEEGPackets.getQualities() != null && mbtEEGPackets.getQualities().get(1) != null ) ? mbtEEGPackets.getQualities().get(1) : " -- "));
-                    }
+                        addEegDataToGraph(mbtEEGPackets); }
                 }
             }
         };
     }
 
-    private void initDeviceStatusListener() {
-        deviceStatusListener = new DeviceStatusListener<BaseError>() {
-
-            @Override
-            public void onError(BaseError error, String additionnalInfo) {
-
-            }
-
-            @Override
-            public void onSaturationStateChanged(SaturationEvent saturation) {
-                notifyUser("Saturation: "+saturation.getSaturationCode());
-            }
-
-            @Override
-            public void onNewDCOffsetMeasured(DCOffsets dcOffsets) {
-                notifyUser("Offset: "+ Arrays.toString(dcOffsets.getOffset()));
-            }
-        };
-    }
 
     private void initDeviceInfoListener() {
         deviceInfoListener = new DeviceBatteryListener() {
@@ -175,7 +147,7 @@ DeviceActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onError(BaseError error, String additionnalInfo) {
+            public void onError(BaseError error, String additionalInfo) {
                 notifyUser(getString(R.string.error_read_battery));
             }
         };
@@ -200,8 +172,8 @@ DeviceActivity extends AppCompatActivity {
                 returnOnPreviousActivity();
             }
 
-            public void onError(BaseError error, String additionnalInfo) {
-                notifyUser(error.getMessage()+(additionnalInfo != null ? additionnalInfo : ""));
+            public void onError(BaseError error, String additionalInfo) {
+                notifyUser(error.getMessage()+(additionalInfo != null ? additionalInfo : ""));
             }
         };}
 
@@ -213,17 +185,18 @@ DeviceActivity extends AppCompatActivity {
                 //returnOnPreviousActivity();
                 if(isStreaming)
                     stopStream();
-                client.disconnectBluetooth();
+                sdkClient.disconnectBluetooth();
             }
         });
     }
 
     private void initDeviceNameTextView() {
         deviceNameTextView = findViewById(R.id.deviceNameTextView);
-        if(getIntent().hasExtra(HomeActivity.DEVICE_NAME_EXTRA)){
-            deviceName = Objects.requireNonNull(getIntent().getExtras()).getString(HomeActivity.DEVICE_NAME_EXTRA,"");
-            deviceNameTextView.setText(deviceName);
+        if (getIntent().hasExtra(HomeActivity.DEVICE_NAME)) {
+            deviceName = Objects.requireNonNull(getIntent().getExtras()).getString(HomeActivity.DEVICE_NAME, "");
         }
+
+        deviceNameTextView.setText(deviceName);
     }
 
     private void initReadBatteryButton() {
@@ -232,16 +205,9 @@ DeviceActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if(deviceInfoListener != null)
-                    client.readBattery(deviceInfoListener);
+                    sdkClient.readBattery(deviceInfoListener);
             }
         });
-    }
-
-    private void initChannelsTextView() {
-        channel1Quality = findViewById(R.id.channel_1_quality);
-        channel2Quality = findViewById(R.id.channel_2_quality);
-        channel1Quality.setText(getString(R.string.channel_1_qc) + " -- ");
-        channel2Quality.setText(getString(R.string.channel_2_qc) + " -- ");
     }
 
     private void initStartStopStreamingButton(){
@@ -382,12 +348,12 @@ DeviceActivity extends AppCompatActivity {
 
     private void startStream(StreamConfig streamConfig){
         isStreaming = true;
-        client.startStream(streamConfig);
+        sdkClient.startStream(streamConfig);
     }
 
     private void stopStream(){
         isStreaming = false;
-        client.stopStream();
+        sdkClient.stopStream();
     }
 
     private void returnOnPreviousActivity(){
@@ -397,16 +363,16 @@ DeviceActivity extends AppCompatActivity {
         bluetoothStateListener = null;
         finish();
         Intent intent = new Intent(DeviceActivity.this,HomeActivity.class);
-        intent.putExtra(HomeActivity.PREVIOUS_ACTIVITY_EXTRA, DeviceActivity.TAG);
+        intent.putExtra(HomeActivity.PREVIOUS_ACTIVITY, DeviceActivity.TAG);
         startActivity(intent);
     }
 
     @Override
     public void onBackPressed() {
-        client.disconnectBluetooth();
+        sdkClient.disconnectBluetooth();
         eegListener = null;
         bluetoothStateListener = null;
-        client.setConnectionStateListener(null);
+        sdkClient.setConnectionStateListener(null);
         returnOnPreviousActivity();
     }
 }

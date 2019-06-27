@@ -1,11 +1,10 @@
 package eventbus;
 
 import android.support.annotation.NonNull;
+import android.util.Log;
 
 import org.greenrobot.eventbus.EventBus;
 
-import engine.clientevents.BaseError;
-import engine.clientevents.BaseErrorEvent;
 
 /**
  * EventBusManager.java
@@ -21,7 +20,7 @@ public final class EventBusManager {
      * Gets a Event Bus instance that will manage the events
      * Each instance is a separate scope in which events are delivered.
      */
-    public static final EventBus BUS = EventBus.getDefault();
+    public static EventBus BUS = EventBus.getDefault();
     private static final String TAG = EventBusManager.class.getSimpleName();
 
     /**
@@ -54,27 +53,28 @@ public final class EventBusManager {
      * @param event contains data to transmit to the subscriber class.
      */
     public static void postEvent(Object event){
+        if(event == null)
+            return;
         BUS.post(event);
     }
 
-    public static void postEventWithCallback(Object event, Object callback){
+    /**
+     * Posts event and registers a callback that returns a value when the event is triggered
+     * Warning : Its is mandatory to unregister the callback after it returns the value
+     * @param event is the event to post
+     * @param callback is the class that provide a callback that notify you when the value is returned
+     */
+    public static void postEvent(Object event, Object callback){
+        Log.d(TAG, "Eventbus posts event with callback "+event);
+        if(callback == null || event == null)
+            return;
+
         BUS.register(callback);
         BUS.post(event);
-        BUS.unregister(callback);
     }
 
-    public static Object postEventWithCallbackAndReturnResult(Object event, Object callback){
-        BUS.register(callback);
-        BUS.post(event);
-        BUS.unregister(callback);
-        return callback;
-    }
 
     public interface Callback<T> {
-        public Object onEventCallback(T object);
+        Object onEventCallback(T object);
     }
-    public interface CallbackVoid<T> {
-        public void onEventCallback(T object);
-    }
-
 }

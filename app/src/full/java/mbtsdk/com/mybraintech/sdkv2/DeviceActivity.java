@@ -32,7 +32,6 @@ import core.eeg.storage.MbtEEGPacket;
 import engine.MbtClient;
 
 import config.StreamConfig;
-import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
 import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.BluetoothStateListener;
@@ -50,7 +49,7 @@ DeviceActivity extends AppCompatActivity {
     private static final int MAX_NUMBER_OF_DATA_TO_DISPLAY = 500;
     private static String TAG = DeviceActivity.class.getName();
 
-    private MbtClient client;
+    private MbtClient sdkClient;
 
     private String deviceName;
     private String deviceQrCode;
@@ -88,7 +87,7 @@ DeviceActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_device);
-        client = MbtClient.getClientInstance();
+        sdkClient = MbtClient.getClientInstance();
 
         initConnectionStateListener();
         initDeviceInfoListener();
@@ -103,13 +102,13 @@ DeviceActivity extends AppCompatActivity {
         initStartStopStreamingButton();
         initEegGraph();
 
-        client.setConnectionStateListener(bluetoothStateListener);
+        sdkClient.setConnectionStateListener(bluetoothStateListener);
     }
 
     private void initEegListener() {
         eegListener = new EegListener<BaseError>() {
             @Override
-            public void onError(BaseError error, String additionnalInfo) {
+            public void onError(BaseError error, String additionalInfo) {
                 LogUtils.w(TAG, "error : " + error.getMessage());
                 Toast.makeText(DeviceActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
                 if (isStreaming) {
@@ -139,7 +138,7 @@ DeviceActivity extends AppCompatActivity {
         deviceStatusListener = new DeviceStatusListener<BaseError>() {
 
             @Override
-            public void onError(BaseError error, String additionnalInfo) {
+            public void onError(BaseError error, String additionalInfo) {
 
             }
 
@@ -164,7 +163,7 @@ DeviceActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onError(BaseError error, String additionnalInfo) {
+            public void onError(BaseError error, String additionalInfo) {
                 notifyUser(getString(R.string.error_read_battery));
             }
         };
@@ -189,8 +188,8 @@ DeviceActivity extends AppCompatActivity {
                 returnOnPreviousActivity();
             }
 
-            public void onError(BaseError error, String additionnalInfo) {
-                notifyUser(error.getMessage() + (additionnalInfo != null ? additionnalInfo : ""));
+            public void onError(BaseError error, String additionalInfo) {
+                notifyUser(error.getMessage() + (additionalInfo != null ? additionalInfo : ""));
             }
         };
     }
@@ -203,7 +202,7 @@ DeviceActivity extends AppCompatActivity {
                 //returnOnPreviousActivity();
                 if (isStreaming)
                     stopStream();
-                client.disconnectBluetooth();
+                sdkClient.disconnectBluetooth();
             }
         });
     }
@@ -229,7 +228,7 @@ DeviceActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (deviceInfoListener != null)
-                    client.readBattery(deviceInfoListener);
+                    sdkClient.readBattery(deviceInfoListener);
             }
         });
     }
@@ -246,11 +245,12 @@ DeviceActivity extends AppCompatActivity {
         startStopStreamingButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (!isStreaming) { //streaming is not in progress : starting streaming
 
-                    startStream(new StreamConfig.Builder(eegListener)
+                if (!isStreaming) { //streaming is not in progress : starting streaming
+                        startStream(new StreamConfig.Builder(eegListener)
                             .setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)
                             .useQualities()
+                                .configureAcquisitionFromDeviceCommand(null, null)
                             .create());
                 } else { //streaming is in progress : stopping streaming
                     stopStream(); // set false to isStreaming et null to the eegListener
@@ -376,23 +376,14 @@ DeviceActivity extends AppCompatActivity {
         }
     }
 
-    private void updateSerialNumber(String serialNumber) {
-        client.updateSerialNumber(serialNumber, new SimpleRequestCallback<byte[]>() {
-            @Override
-            public void onRequestComplete(byte[] response) {
-                Log.d(TAG," Request complete. Returned response : "+Arrays.toString(response));
-            }
-        });
-    }
-
     private void startStream(StreamConfig streamConfig) {
         isStreaming = true;
-        client.startStream(streamConfig);
+        sdkClient.startStream(streamConfig);
     }
 
     private void stopStream() {
         isStreaming = false;
-        client.stopStream();
+        sdkClient.stopStream();
     }
 
     private void returnOnPreviousActivity() {
@@ -408,10 +399,10 @@ DeviceActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        client.disconnectBluetooth();
+        sdkClient.disconnectBluetooth();
         eegListener = null;
         bluetoothStateListener = null;
-        client.setConnectionStateListener(null);
+        sdkClient.setConnectionStateListener(null);
         returnOnPreviousActivity();
     }
 }

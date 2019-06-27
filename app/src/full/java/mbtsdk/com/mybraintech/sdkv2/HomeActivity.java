@@ -39,7 +39,12 @@ import static features.MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX;
 import static features.MbtFeatures.QR_CODE_NAME_PREFIX;
 import static features.MbtFeatures.VPRO_DEVICE_NAME_PREFIX;
 
+/**
+ * First View displayed when you launch the application
+ */
 public class HomeActivity extends AppCompatActivity{
+
+    private static String TAG = HomeActivity.class.getName();
 
     /**
      * Maximum duration allocated to find a headset
@@ -191,11 +196,11 @@ public class HomeActivity extends AppCompatActivity{
          * Callback used to receive a notification when the Bluetooth connection is aborted if the SDK returns an error
          */
         @Override
-        public void onError(BaseError error, String additionnalInfo) {
-            Log.e("HomeActivity", "onError received "+error.getMessage()+ (additionnalInfo != null ? additionnalInfo : ""));
+        public void onError(BaseError error, String additionalInfo) {
+            Log.e("HomeActivity", "onError received "+error.getMessage()+ (additionalInfo != null ? additionalInfo : ""));
             isErrorRaised = true;
             updateScanning(false);
-            toast = Toast.makeText(HomeActivity.this, error.getMessage()+ (additionnalInfo != null ? additionnalInfo : ""), Toast.LENGTH_LONG);
+            toast = Toast.makeText(HomeActivity.this, error.getMessage()+ (additionalInfo != null ? additionalInfo : ""), Toast.LENGTH_LONG);
             toast.show();
         }
 
@@ -222,7 +227,7 @@ public class HomeActivity extends AppCompatActivity{
     };
 
     /**
-     * Method call to display the name of the connecting headset in the device name field
+     * Method called to display the name of the connecting headset in the device name field
      */
     private void showDeviceName(final MbtDevice melomindDevice){
         deviceName = melomindDevice.getProductName();
@@ -251,7 +256,6 @@ public class HomeActivity extends AppCompatActivity{
      * Method called by default when the Activity is started
      * It initializes all the views, SDK client, and permissions.
      */
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -408,9 +412,9 @@ public class HomeActivity extends AppCompatActivity{
                         null : deviceQrCode )
                 .maxScanDuration(SCAN_DURATION)
                 .scanDeviceType(deviceType);
-        if(connectAudioIfDeviceCompatible)
+        if(connectAudioIfDeviceCompatible) {
             builder.connectAudioIfDeviceCompatible();
-
+        }
         sdkClient.connectBluetooth(builder.create());
     }
 

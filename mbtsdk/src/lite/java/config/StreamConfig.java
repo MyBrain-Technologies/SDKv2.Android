@@ -4,8 +4,12 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import java.util.ArrayList;
+
+import command.DeviceCommand;
 import core.eeg.storage.MbtEEGPacket;
 import engine.clientevents.BaseError;
+import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.EegListener;
 import features.MbtFeatures;
 
@@ -26,14 +30,16 @@ public final class StreamConfig {
 
     private final boolean computeQualities;
 
-    private EegStreamConfig eegStreamConfig;
+    private ArrayList<DeviceCommand> deviceCommands;
 
-    private StreamConfig(EegListener<BaseError> eegListener, int notificationPeriod){
+    private StreamConfig(EegListener<BaseError> eegListener, DeviceStatusListener<BaseError> deviceStatusListener,int notificationPeriod){
         this.computeQualities = false;
         this.eegListener = eegListener;
         this.notificationPeriod = notificationPeriod;
-        this.eegStreamConfig = new EegStreamConfig.Builder().create();
+        this.deviceStatusListener = deviceStatusListener;
+        this.deviceCommands = null;
     }
+    private DeviceStatusListener<BaseError> deviceStatusListener;
 
     public EegListener getEegListener() {
         return eegListener;
@@ -47,8 +53,12 @@ public final class StreamConfig {
         return computeQualities;
     }
 
-    public EegStreamConfig getEegStreamConfig() {
-        return eegStreamConfig;
+    public DeviceStatusListener<BaseError> getDeviceStatusListener() {
+        return deviceStatusListener;
+    }
+
+    public ArrayList<DeviceCommand> getDeviceCommands() {
+        return deviceCommands;
     }
 
     /**
@@ -59,6 +69,9 @@ public final class StreamConfig {
 
         private int notificationPeriod = MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD;
 
+        @Nullable
+        private DeviceStatusListener<BaseError> deviceStatusListener;
+
         @NonNull
         private final EegListener<BaseError> eegListener;
 
@@ -67,6 +80,13 @@ public final class StreamConfig {
          */
         public Builder(@NonNull EegListener<BaseError> eegListener){
             this.eegListener = eegListener;
+        }
+
+
+        @NonNull
+        public Builder setDeviceStatusListener(DeviceStatusListener<BaseError> deviceStatusListener){
+            this.deviceStatusListener = deviceStatusListener;
+            return this;
         }
 
         /**
@@ -93,7 +113,7 @@ public final class StreamConfig {
 
         @Nullable
         public StreamConfig create(){
-            return new StreamConfig(this.eegListener, this.notificationPeriod);
+            return new StreamConfig(this.eegListener, this.deviceStatusListener, this.notificationPeriod);
         }
     }
 

@@ -7,13 +7,13 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 
-import config.EegStreamConfig;
-import config.MailboxConfig;
+import command.CommandInterface;
 import config.MbtConfig;
 import config.StreamConfig;
 import config.ConnectionConfig;
 import core.MbtManager;
 import core.bluetooth.BtState;
+import command.DeviceCommands;
 import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
 import core.eeg.storage.MbtEEGPacket;
@@ -26,7 +26,6 @@ import engine.clientevents.EegListener;
 import engine.clientevents.HeadsetDeviceError;
 import features.MbtFeatures;
 import features.MbtDeviceType;
-
 
 /**
  * Created by Etienne on 08/02/2018.
@@ -67,6 +66,12 @@ public final class MbtClient {
     }
 
     /**
+     * Set the current instance of the client instance to null
+     */
+    public static void resetClientInstance(){
+        clientInstance = null;
+    }
+    /**
      * Constructor that use the MbtClientBuilder
      * @param builder object for creating the MbtClient instance with a setters syntax.
      */
@@ -88,15 +93,17 @@ public final class MbtClient {
         MbtConfig.setBluetoothScanTimeout(config.getMaxScanDuration());
         MbtConfig.setConnectAudioIfDeviceCompatible(config.useAudio());
 
-        if(config.getDeviceName()!= null && config.getDeviceName().length() != MbtFeatures.DEVICE_NAME_LENGTH) {
+        if(!config.isDeviceNameValid()) {
             config.getConnectionStateListener().onError(ConfigError.ERROR_INVALID_PARAMS, " Device name must start with the " + MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX + " and contain 10 digits ");
             return;
         }
-        if(config.getDeviceQrCode() != null && config.getDeviceQrCode().length() != MbtFeatures.DEVICE_QR_CODE_LENGTH && config.getDeviceQrCode().length() != MbtFeatures.DEVICE_QR_CODE_LENGTH-1 ) {
-            config.getConnectionStateListener().onError(ConfigError.ERROR_INVALID_PARAMS, " Device QR code must start with " + MbtFeatures.QR_CODE_NAME_PREFIX + " and contain 8 digits "+ MbtFeatures.DEVICE_QR_CODE_LENGTH);
+
+        if(!config.isDeviceQrCodeValid()){
+            config.getConnectionStateListener().onError(ConfigError.ERROR_INVALID_PARAMS, " Device QR code must start with " + MbtFeatures.QR_CODE_NAME_PREFIX + " and contain "+ MbtFeatures.DEVICE_QR_CODE_LENGTH+ " digits ");
             return;
         }
-        if(config.getMaxScanDuration() < MbtFeatures.MIN_SCAN_DURATION){
+
+        if(!config.isScanDurationValid()){
             config.getConnectionStateListener().onError(ConfigError.ERROR_INVALID_PARAMS,ConfigError.SCANNING_MINIMUM_DURATION);
             return;
         }
@@ -106,7 +113,12 @@ public final class MbtClient {
             return;
         }
 
-        this.mbtManager.connectBluetooth(config.getConnectionStateListener(), config.getDeviceName(), config.getDeviceQrCode(), config.getDeviceType());
+        if(!config.isMtuValid()){
+            config.getConnectionStateListener().onError(ConfigError.ERROR_INVALID_PARAMS,"MTU must be included between 23 and 121");
+            return;
+        }
+
+        this.mbtManager.connectBluetooth(config.getConnectionStateListener(), config.getDeviceName(), config.getDeviceQrCode(), config.getDeviceType(), config.getMtu());
     }
 
     /**
@@ -136,8 +148,8 @@ public final class MbtClient {
      *
      * <p>You can customize some parameters in the {@link StreamConfig}class.</p>
      *
-     * <p>If the parameters are incorrect, the function returns directly and the {@link EegListener#onError(engine.clientevents.BaseError,String)} method is called</p>
-     * If something wrong happens during the operation, {@link EegListener#onError(engine.clientevents.BaseError,String)} method is called.
+     * <p>If the parameters are incorrect, the function returns directly and the {@link EegListener#onError} method is called</p>
+     * If something wrong happens during the operation, {@link EegListener#onError} method is called.
      *
      * <p>If everything went well, the EEG will be available in the {@link EegListener#onNewPackets(MbtEEGPacket)} callback.</p>
      *
@@ -163,89 +175,84 @@ public final class MbtClient {
     }
 
     /**
-     * Configures the connected headset filters, gain, MTU and enable or disable P300, Saturation and DC offset
-     * @param eegStreamConfig is the object that hold all the EEG streaming configuration
-     */
-    public void configureHeadset(EegStreamConfig eegStreamConfig){
-        mbtManager.configureHeadset(eegStreamConfig);
-    }
-
-    /**
      * Sends a command to the connected headset to change its current serial number
+     * The new serial number is stored and returned by the headset if the command succeeds.
      * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
-     * This response contains the command status and informations bundled in a byte array
+     * This response contains the new serial number in a byte array
      * @param serialNumber is the new value to set to the serial number
-     * @param requestCallback returns the headset raw response if the command has been well sent
+     * @param commandCallback returns the headset raw response in the onRequestComplete callback if the command has been well sent
+     * A non null requestCallback instance is mandatory if you want to get the headset response
+     * The onError callback provided by the requestCallback is triggered if an error occurred during the request sending.
      */
-    public void updateSerialNumber(String serialNumber, @Nullable SimpleRequestCallback<byte[]> requestCallback){
-        mbtManager.sendDeviceCommand(new MailboxConfig.Builder().setSerialNumber(serialNumber).create(), requestCallback);
-    }
-
-    /**
-     * Sends a command to the connected headset to change its current product name
-     * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
-     * This response contains the command status and informations bundled in a byte array
-     * @param productName is the new value to set to the product name
-     * @param requestCallback returns the headset raw response if the command has been well sent
-     */
-    public void updateProductName(String productName, @Nullable SimpleRequestCallback<byte[]> requestCallback){
-        mbtManager.sendDeviceCommand(new MailboxConfig.Builder().setProductName(productName).create(), requestCallback);
+    public void updateSerialNumber(@NonNull String serialNumber, @Nullable CommandInterface.CommandCallback< byte[]> commandCallback){
+        mbtManager.sendCommand(new DeviceCommands.UpdateSerialNumber(serialNumber, commandCallback));
     }
 
     /**
      * Sends a command to the connected headset to change its current external name
      * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
-     * This response contains the command status and informations bundled in a byte array
+     * This response contains the new external name in a byte array
      * @param externalName is the new value to set to the external name
-     * @param requestCallback returns the headset raw response if the command has been well sent
+     * @param commandCallback returns the headset raw response in the onRequestComplete callback if the command has been well sent
+     * A non null requestCallback instance is mandatory if you want to get the headset response
+     * The onError callback provided by the requestCallback is triggered if an error occurred during the request sending.
      */
-    public void updateExternalName(String externalName, @Nullable SimpleRequestCallback<byte[]> requestCallback){
-        mbtManager.sendDeviceCommand(new MailboxConfig.Builder().setExternalName(externalName).create(), requestCallback);
+    public void updateExternalName(@NonNull String externalName, @Nullable CommandInterface.CommandCallback<byte[]> commandCallback){
+        mbtManager.sendCommand(new DeviceCommands.UpdateExternalName(externalName, commandCallback));
     }
 
     /**
      * Sends a command to the connected headset to establish an audio Bluetooth A2DP connection
      * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
-     * This response contains the command status and informations bundled in a byte array
-     * @param requestCallback returns the headset raw response if the command has been well sent
+     * This response contains the connection status in a byte array
+     * @param commandCallback returns the headset raw response in the onRequestComplete callback if the command has been well sent
+     * A non null requestCallback instance is mandatory if you want to get the headset response
+     * The onError callback provided by the requestCallback is triggered if an error occurred during the request sending.
      */
-    public void connectAudio(@Nullable SimpleRequestCallback<byte[]> requestCallback){
-        mbtManager.sendDeviceCommand(new MailboxConfig.Builder().connectAudio().create(), requestCallback);
+    public void connectAudio(@Nullable CommandInterface.CommandCallback<byte[]> commandCallback){
+        mbtManager.sendCommand(new DeviceCommands.ConnectAudio(commandCallback));
     }
 
     /**
      * Sends a command to the connected headset to establish an audio Bluetooth A2DP disconnection
      * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
-     * This response contains the command status and informations bundled in a byte array
-     * @param requestCallback returns the headset raw response if the command has been well sent
+     * This response contains the disconnection status in a byte array
+     * @param commandCallback returns the headset raw response in the onRequestComplete callback if the command has been well sent
+     * A non null requestCallback instance is mandatory if you want to get the headset response
+     * The onError callback provided by the requestCallback is triggered if an error occurred during the request sending.
      */
-    public void disconnectAudio(@Nullable SimpleRequestCallback<byte[]> requestCallback){
-        mbtManager.sendDeviceCommand(new MailboxConfig.Builder().disconnectAudio().create(), requestCallback);
+    public void disconnectAudio(@Nullable CommandInterface.CommandCallback<byte[]> commandCallback){
+        mbtManager.sendCommand(new DeviceCommands.DisconnectAudio(commandCallback));
     }
 
     /**
      * Sends a command to the connected headset to get its system status
      * The system status is returned as a byte array in the onRequestComplete callback of the requestCallback
-     * @param requestCallback returns the headset raw response if the command has been well sent
+     * @param commandCallback returns the headset raw response in the onRequestComplete callback if the command has been well sent
+     * A non null requestCallback instance is mandatory if you want to get the headset response
+     * The onError callback provided by the requestCallback is triggered if an error occurred during the request sending.
      */
-    public void getDeviceSystemStatus(@Nullable SimpleRequestCallback<byte[]> requestCallback){
-        mbtManager.sendDeviceCommand(new MailboxConfig.Builder().getSystemStatus().create(), requestCallback);
+    public void getDeviceSystemStatus(@NonNull CommandInterface.CommandCallback<byte[]> commandCallback){
+        mbtManager.sendCommand(new DeviceCommands.GetSystemStatus(commandCallback));
     }
 
     /**
      * Sends a command to reboot the connected headset
-     * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
-     * This response contains the command status and informations bundled in a byte array
-     * @param requestCallback returns the headset raw response if the command has been well sent
+     * @param simpleCommandCallback returns the headset raw response in the onRequestComplete callback if the command has been well sent
+     * The onError callback provided by the requestCallback is triggered if an error occurred during the request sending.
+     * A non null requestCallback instance is mandatory to be notified if an error occurred during the request sending.
+     * The onRequestComplete callback provided by the requestCallback is never called
+     * It is useless to enter a CommandCallback Object for the commandCallback input :
+     * as no response is expected, you have to enter a ICommandCallback Object.
+     * The onError callback is triggered in case you enter a CommandCallback and the device command is not sent.
      */
-    public void rebootDevice(@Nullable SimpleRequestCallback<byte[]> requestCallback){
-        mbtManager.sendDeviceCommand(new MailboxConfig.Builder().rebootDevice().create(), requestCallback);
+    public void rebootDevice(@Nullable CommandInterface.SimpleCommandCallback simpleCommandCallback) {
+        mbtManager.sendCommand(new DeviceCommands.Reboot(simpleCommandCallback));
     }
 
     /**
      * Stops a pending connection process. If successful,
      * the new state {@link core.bluetooth.BtState#CONNECTION_INTERRUPTED} is sent to the user in the {@link BluetoothStateListener#onNewState(BtState)} callback
-     *
      * <p>If the device is already connected, it simply disconnects the device.</p>
      */
     public void cancelConnection() {
@@ -267,7 +274,6 @@ public final class MbtClient {
     public void setEEGListener(EegListener<BaseError> eegListener){
         this.mbtManager.setEEGListener(eegListener);
     }
-
 
     /**
      * Perform a request to retrieve the currently connected device. The operation is done in the background

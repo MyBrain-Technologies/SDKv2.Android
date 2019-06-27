@@ -22,7 +22,6 @@ import com.github.mikephil.charting.data.LineDataSet;
 
 import java.util.ArrayList;
 
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.Queue;
 
@@ -46,8 +45,7 @@ import utils.LogUtils;
 
 import static utils.MatrixUtils.invertFloatMatrix;
 
-public class
-DeviceActivity extends AppCompatActivity {
+public class DeviceActivity extends AppCompatActivity {
 
     private static final int MAX_NUMBER_OF_DATA_TO_DISPLAY = 500;
     private static String TAG = DeviceActivity.class.getName();
@@ -97,8 +95,8 @@ DeviceActivity extends AppCompatActivity {
             //returnOnPreviousActivity();
         }
 
-        public void onError(BaseError error, String additionnalInfo) {
-            notifyUser(error.getMessage()+(additionnalInfo != null ? additionnalInfo : ""));
+        public void onError(BaseError error, String additionalInfo) {
+            notifyUser(error.getMessage()+(additionalInfo != null ? additionalInfo : ""));
         }
     };
 
@@ -111,7 +109,7 @@ DeviceActivity extends AppCompatActivity {
         }
 
         @Override
-        public void onError(BaseError error, String additionnalInfo) {
+        public void onError(BaseError error, String additionalInfo) {
             notifyUser(getString(R.string.error_read_battery));
         }
     };
@@ -121,7 +119,7 @@ DeviceActivity extends AppCompatActivity {
     private EegListener<BaseError> eegListener = new EegListener<BaseError>() {
 
         @Override
-        public void onError(BaseError error, String additionnalInfo) {
+        public void onError(BaseError error, String additionalInfo) {
             Toast.makeText(DeviceActivity.this, error.toString(), Toast.LENGTH_SHORT).show();
         }
 
@@ -161,13 +159,17 @@ DeviceActivity extends AppCompatActivity {
 
         client.setConnectionStateListener(connectionStateListener);
         client.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
+
             @Override
             public void onRequestComplete(MbtDevice object) {
+                Log.d(TAG," on Request complete request current connected device "+object);
+
                 deviceNameTextView.setText(object.getProductName());
                 currentDeviceType = (object instanceof MelomindDevice ? MbtDeviceType.MELOMIND : MbtDeviceType.VPRO);
 
             }
         });
+
     }
 
     private void initDisconnectButton() {
