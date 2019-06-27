@@ -15,14 +15,9 @@ public abstract class BaseModuleManager {
      */
     protected Context mContext;
 
-    /**
-     * The main manager reference
-     */
-    protected MbtManager mbtManager;
 
-    protected BaseModuleManager(Context context, MbtManager manager){
+    protected BaseModuleManager(Context context){
         this.mContext = context;
-        this.mbtManager = manager;
         EventBusManager.registerOrUnregister(true, this);
     }
 

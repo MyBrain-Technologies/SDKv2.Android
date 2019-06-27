@@ -84,11 +84,11 @@ public class MbtManager{
         EventBusManager.registerOrUnregister(true, this);
 
         if(DEVICE_ENABLED)
-            registerManager(new MbtDeviceManager(mContext, MbtManager.this));
+            registerManager(new MbtDeviceManager(mContext));
         if(BLUETOOTH_ENABLED)
-            registerManager(new MbtBluetoothManager(mContext, MbtManager.this));
+            registerManager(new MbtBluetoothManager(mContext));
         if(EEG_ENABLED)
-            registerManager(new MbtEEGManager(mContext, MbtManager.this, BtProtocol.BLUETOOTH_LE));
+            registerManager(new MbtEEGManager(mContext, BtProtocol.BLUETOOTH_LE));
     }
 
     /**
@@ -103,7 +103,7 @@ public class MbtManager{
      * Perform a new Bluetooth connection.
      * @param connectionStateListener a set of callback that will notify the user about connection progress.
      */
-    public void connectBluetooth(@NonNull ConnectionStateListener<BaseError> connectionStateListener, String deviceNameRequested, String deviceQrCodeRequested, MbtDeviceType deviceTypeRequested){
+    public void connectBluetooth(@NonNull ConnectionStateListener<BaseError> connectionStateListener, String deviceNameRequested, String deviceQrCodeRequested, MbtDeviceType deviceTypeRequested, int mtu){
         this.connectionStateListener = connectionStateListener;
         if(deviceNameRequested != null && (!deviceNameRequested.startsWith(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX) && !deviceNameRequested.startsWith(MbtFeatures.VPRO_DEVICE_NAME_PREFIX) )){
             this.connectionStateListener.onError(HeadsetDeviceError.ERROR_PREFIX," "+ (deviceTypeRequested.equals(MbtDeviceType.MELOMIND) ? MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX : MbtFeatures.VPRO_DEVICE_NAME_PREFIX));
@@ -112,7 +112,7 @@ public class MbtManager{
         }else if(deviceQrCodeRequested != null && deviceNameRequested != null && !deviceNameRequested.equals(new MelomindsQRDataBase(mContext,  true).get(deviceQrCodeRequested))){
             this.connectionStateListener.onError(HeadsetDeviceError.ERROR_MATCHING, mContext.getString(R.string.aborted_connection));
         }else{
-            EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent(true, deviceNameRequested, deviceQrCodeRequested, deviceTypeRequested));
+            EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent(true, deviceNameRequested, deviceQrCodeRequested, deviceTypeRequested, mtu));
 
         }
     }
@@ -189,7 +189,7 @@ public class MbtManager{
                 break;
             default:
                 if (connectionStateEvent.getNewState().isAFailureState())
-                    connectionStateListener.onError(connectionStateEvent.getNewState().getAssociatedError(), connectionStateEvent.getAdditionnalInfo());
+                    connectionStateListener.onError(connectionStateEvent.getNewState().getAssociatedError(), connectionStateEvent.getAdditionalInfo());
                 break;
         }
     }
@@ -261,12 +261,12 @@ public class MbtManager{
     }
 
     public void requestCurrentConnectedDevice(final SimpleRequestCallback<MbtDevice> callback) {
-        EventBusManager.postEventWithCallback(new DeviceEvents.GetDeviceEvent(), new EventBusManager.Callback<DeviceEvents.PostDeviceEvent>(){
+        EventBusManager.postEvent(new DeviceEvents.GetDeviceEvent(), new EventBusManager.Callback<DeviceEvents.PostDeviceEvent>(){
             @Override
             @Subscribe
             public Void onEventCallback(DeviceEvents.PostDeviceEvent object) {
-                callback.onRequestComplete(object.getDevice());
                 EventBusManager.registerOrUnregister(false, this);
+                callback.onRequestComplete(object.getDevice());
                 return null;
             }
         });

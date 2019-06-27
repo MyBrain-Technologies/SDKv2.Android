@@ -7,6 +7,7 @@ import android.support.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+
 import command.DeviceCommand;
 import command.DeviceStreamingCommands;
 import core.eeg.storage.MbtEEGPacket;
@@ -37,26 +38,44 @@ public final class StreamConfig {
      * or get values stored by the headset
      * or ask the headset to perform an action.
      */
-    private ArrayList<DeviceCommand> deviceCommands;
-
-    private final ArrayList<DeviceCommand> DEFAULT_DEVICE_COMMAND = new ArrayList<>(Arrays.asList(
-            new DeviceStreamingCommands.DcOffset(false),
-            new DeviceStreamingCommands.Triggers(false)));
+    private ArrayList<DeviceCommand> deviceCommands = new ArrayList<>(
+            Arrays.asList(
+                new DeviceStreamingCommands.DcOffset(false),
+                new DeviceStreamingCommands.Triggers(false)
+            ));
 
     private StreamConfig(boolean computeQualities, EegListener<BaseError> eegListener, DeviceStatusListener<BaseError> deviceStatusListener, int notificationPeriod, DeviceStreamingCommands[] deviceCommands){
         this.computeQualities = computeQualities;
         this.eegListener = eegListener;
         this.deviceStatusListener = deviceStatusListener;
         this.notificationPeriod = notificationPeriod;
-        this.deviceCommands = DEFAULT_DEVICE_COMMAND;
 
         if(deviceCommands != null && deviceCommands.length > 0) {
-            this.deviceCommands = new ArrayList<>();
             for (DeviceStreamingCommands deviceCommand : deviceCommands) {
-                this.deviceCommands.add((DeviceCommand) deviceCommand);
+                if(deviceCommand != null){
+                    int index = commandAlreadyRegisteredAtIndex(deviceCommand);
+                    if(index != -1) //if a command with the same type is already in the list, it is replaced (input can be different)
+                        this.deviceCommands.set(index, (DeviceCommand) deviceCommand);
+                    else
+                        this.deviceCommands.add((DeviceCommand) deviceCommand);
+                }
             }
         }
         this.deviceCommands.add(new DeviceStreamingCommands.EegConfig(null));
+    }
+
+    /**
+     * Returns the index of the already registered command in the deviceCommands list
+     * Returns -1 if the command is not already registered
+     * @param deviceCommand
+     * @return
+     */
+    private int commandAlreadyRegisteredAtIndex(DeviceStreamingCommands deviceCommand){
+        for (DeviceCommand registeredCommand : deviceCommands) {
+                if(registeredCommand.getClass() == deviceCommand.getClass())
+                return deviceCommands.indexOf(registeredCommand);
+        }
+        return -1;
     }
 
     public EegListener getEegListener() {

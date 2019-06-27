@@ -6,21 +6,21 @@ import core.bluetooth.BtState;
 
 public class ConnectionStateEvent {
     private BtState newState;
-    private String additionnalInfo;
+    private String additionalInfo;
 
     public ConnectionStateEvent(@NonNull BtState newState){
         this.newState = newState;
     }
-    public ConnectionStateEvent(@NonNull BtState newState, String additionnalInfo){
+    public ConnectionStateEvent(@NonNull BtState newState, String additionalInfo){
         this.newState = newState;
-        this.additionnalInfo = additionnalInfo;
+        this.additionalInfo = additionalInfo;
     }
 
     public BtState getNewState() {
         return newState;
     }
 
-    public String getAdditionnalInfo() {
-        return additionnalInfo;
+    public String getAdditionalInfo() {
+        return additionalInfo;
     }
 }

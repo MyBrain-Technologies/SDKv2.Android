@@ -13,13 +13,13 @@ import android.util.Log;
 
 import java.util.Arrays;
 
-import command.DeviceCommands;
-import command.DeviceStreamingCommands;
 import core.bluetooth.BtState;
 import core.device.model.DeviceInfo;
 import core.device.model.MelomindDevice;
+import utils.CommandUtils;
 import utils.LogUtils;
 
+import static command.DeviceCommandEvents.*;
 import static core.bluetooth.lowenergy.MelomindCharacteristics.CHARAC_HEADSET_STATUS;
 import static core.bluetooth.lowenergy.MelomindCharacteristics.CHARAC_INFO_FIRMWARE_VERSION;
 import static core.bluetooth.lowenergy.MelomindCharacteristics.CHARAC_INFO_HARDWARE_VERSION;
@@ -40,7 +40,9 @@ import static core.bluetooth.lowenergy.MelomindCharacteristics.SERVICE_MEASUREME
  * @see BluetoothGattCallback
  */
 final class MbtGattController extends BluetoothGattCallback {
+
     private final static String TAG = MbtGattController.class.getSimpleName();
+    private final static byte TRUE = (byte) 0x01;
 
     @Nullable
     private BluetoothGattService mainService = null;
@@ -261,8 +263,6 @@ final class MbtGattController extends BluetoothGattCallback {
 
         mbtBluetoothLE.stopWaitingOperation();
         mbtBluetoothLE.onNotificationStateChanged(status == BluetoothGatt.GATT_SUCCESS, descriptor.getCharacteristic(), descriptor.getValue() == BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-
-
     }
 
     @Override
@@ -278,7 +278,7 @@ final class MbtGattController extends BluetoothGattCallback {
     @Override
     public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
         super.onMtuChanged(gatt, mtu, status);
-        mbtBluetoothLE.notifyCommandResponseReceived(new byte[]{(byte)mtu}, new DeviceStreamingCommands.Mtu(mtu));
+        mbtBluetoothLE.notifyCommandResponseReceived(mtu);
     }
 
     /**
@@ -286,75 +286,43 @@ final class MbtGattController extends BluetoothGattCallback {
      * @param characteristic
      */
     private void notifyMailboxEventReceived(BluetoothGattCharacteristic characteristic) {
-        byte[] response = Arrays.copyOfRange(characteristic.getValue(), 1 , characteristic.getValue().length);
-        Log.d(TAG, "Notify mailbox event received "+Arrays.toString(response));
+        Log.d(TAG, "Notify mailbox event received "+Arrays.toString(characteristic.getValue()));
+        byte[] response = CommandUtils.deserialize(characteristic.getValue());
+        byte mailboxEvent = characteristic.getValue()[0];
 
-        switch (characteristic.getValue()[0]) {
-            case MailboxEvents.MBX_SET_ADS_CONFIG:
-            case MailboxEvents.MBX_SET_AUDIO_CONFIG:
-            case MailboxEvents.MBX_START_OTA_TXF:
-            case MailboxEvents.MBX_LEAD_OFF_EVT:
-            case MailboxEvents.MBX_OTA_MODE_EVT:
-            case MailboxEvents.MBX_OTA_IDX_RESET_EVT:
-            case MailboxEvents.MBX_OTA_STATUS_EVT:
+        switch (mailboxEvent) {
+
+            case MBX_CONNECT_IN_A2DP:
+            case MBX_DISCONNECT_IN_A2DP:
+            case MBX_SET_SERIAL_NUMBER: //this case occurs when a QR code or a serial number is sent to the headset through a writing operation);
+            case MBX_SET_PRODUCT_NAME:
+            case MBX_SYS_GET_STATUS:
+            case MBX_SYS_REBOOT_EVT: //to this day, this case is supposed to never be called : there is no response for reboot
+            case MBX_SET_NOTCH_FILT:
+            case MBX_SET_AMP_GAIN:
+            case MBX_GET_EEG_CONFIG:
+            case MBX_P300_ENABLE:
+            case MBX_DC_OFFSET_ENABLE:
+                notifyResponseReceived(mailboxEvent, response);
                 break;
 
-            case MailboxEvents.MBX_SET_SERIAL_NUMBER: //this case occurs when a QR code or a serial number is sent to the headset through a writing operation
-                mbtBluetoothLE.notifyCommandResponseReceived(response, new DeviceCommands.UpdateSerialNumber(null));
-                break;
-
-//            case MailboxEvents.MBX_SET_SERIAL_NUMBER: //this case occurs when a QR code or a serial number is sent to the headset through a writing operation
-//                mbtBluetoothLE.notifyCommandResponseReceived(response, MailboxConfig.EXTERNAL_NAME_CONFIG);
-//                break;
-
-            case MailboxEvents.MBX_SET_PRODUCT_NAME:
-                mbtBluetoothLE.notifyCommandResponseReceived(response, new DeviceCommands.UpdateProductName(null));
-                break;
-
-            case MailboxEvents.MBX_SYS_GET_STATUS:
-                mbtBluetoothLE.notifyCommandResponseReceived(response, new DeviceCommands.GetSystemStatus(null));
-                break;
-
-            case MailboxEvents.MBX_CONNECT_IN_A2DP:
-                if(((response[0] & MailboxEvents.CMD_CODE_CONNECT_IN_A2DP_IN_PROGRESS) != 0x01)) {
-                    mbtBluetoothLE.notifyConnectionResponseReceived(characteristic.getValue()[0], response[0]);
-                    mbtBluetoothLE.notifyCommandResponseReceived(response, new DeviceCommands.ConnectAudio());
-                }
-                break;
-
-            case MailboxEvents.MBX_DISCONNECT_IN_A2DP:
-                mbtBluetoothLE.notifyConnectionResponseReceived(characteristic.getValue()[0], response[0]);
-                mbtBluetoothLE.notifyCommandResponseReceived(response, new DeviceCommands.DisconnectAudio());
-                break;
-
-            case MailboxEvents.MBX_SYS_REBOOT_EVT:
-                mbtBluetoothLE.notifyCommandResponseReceived(response, new DeviceCommands.Reboot());
-                break;
-
-            case MailboxEvents.MBX_SET_NOTCH_FILT:
-                mbtBluetoothLE.notifyCommandResponseReceived(response, new DeviceStreamingCommands.NotchFilter(null));
-                break;
-
-            case MailboxEvents.MBX_SET_AMP_GAIN:
-                mbtBluetoothLE.notifyCommandResponseReceived(response, new DeviceStreamingCommands.AmplifierGain(null));
-                break;
-
-            case MailboxEvents.MBX_GET_EEG_CONFIG:
-                mbtBluetoothLE.notifyCommandResponseReceived(response, new DeviceStreamingCommands.EegConfig(null));
-                break;
-
-            case MailboxEvents.MBX_P300_ENABLE:
-                mbtBluetoothLE.notifyCommandResponseReceived(response, new DeviceStreamingCommands.Triggers(true));
-                break;
-
-            case MailboxEvents.MBX_DC_OFFSET_ENABLE:
-                mbtBluetoothLE.notifyCommandResponseReceived(response, new DeviceStreamingCommands.DcOffset(true));
-                break;
-
-            case (byte) 0xFF:
+            case MBX_SET_ADS_CONFIG:
+            case MBX_SET_AUDIO_CONFIG:
+            case MBX_START_OTA_TXF:
+            case MBX_LEAD_OFF_EVT:
+            case MBX_OTA_MODE_EVT:
+            case MBX_OTA_IDX_RESET_EVT:
+            case MBX_OTA_STATUS_EVT:
+            case MBX_BAD_EVT:
             default:
                 break;
-
         }
     }
+
+     private void notifyResponseReceived(byte mailboxEvent, byte[] response){
+         if(mailboxEvent == MBX_DISCONNECT_IN_A2DP
+                 || (mailboxEvent == MBX_CONNECT_IN_A2DP && ((response[0] & CMD_CODE_CONNECT_IN_A2DP_IN_PROGRESS) != TRUE)))
+             mbtBluetoothLE.notifyConnectionResponseReceived(mailboxEvent, response[0]); //connection and disconnection response are composed of only one byte
+         mbtBluetoothLE.notifyCommandResponseReceived(response);
+     }
 }

@@ -9,7 +9,6 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 import core.BaseModuleManager;
-import core.MbtManager;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindDevice;
 import core.device.model.VProDevice;
@@ -29,8 +28,8 @@ public class MbtDeviceManager extends BaseModuleManager{
 
     private MbtDevice mCurrentConnectedDevice;
 
-    public MbtDeviceManager(Context context, MbtManager mbtManagerController){
-        super(context, mbtManagerController);
+    public MbtDeviceManager(Context context){
+        super(context);
         this.mContext = context;
     }
 
@@ -65,7 +64,8 @@ public class MbtDeviceManager extends BaseModuleManager{
 
     private void setAudioConnectedDeviceAddress(String audioDeviceAddress) {
         Log.d(TAG,"new connected audio device address stored "+audioDeviceAddress);
-        this.mCurrentConnectedDevice.setAudioDeviceAddress(audioDeviceAddress);
+        if(mCurrentConnectedDevice != null)
+            this.mCurrentConnectedDevice.setAudioDeviceAddress(audioDeviceAddress);
     }
 
     private void setmCurrentConnectedDevice(MbtDevice mCurrentConnectedDevice) {
@@ -80,7 +80,8 @@ public class MbtDeviceManager extends BaseModuleManager{
 
     @Subscribe
     public void onNewDeviceAudioDisconnected(DeviceEvents.AudioDisconnectedDeviceEvent deviceEvent) {
-        getmCurrentConnectedDevice().setAudioDeviceAddress(null);
+        if(getmCurrentConnectedDevice() != null)
+            getmCurrentConnectedDevice().setAudioDeviceAddress(null);
     }
 
     @Subscribe

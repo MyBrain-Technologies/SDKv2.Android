@@ -31,7 +31,7 @@ public interface DeviceEvents {
         @Nullable
         private final MbtDevice device;
 
-        PostDeviceEvent(@Nullable MbtDevice device){
+        public PostDeviceEvent(@Nullable MbtDevice device){
             this.device = device;
         }
 
@@ -104,7 +104,7 @@ public interface DeviceEvents {
     class RawDeviceResponseEvent {
         private byte[] rawResponse;
 
-        public RawDeviceResponseEvent(@NonNull byte[] rawResponse){
+        public RawDeviceResponseEvent(byte[] rawResponse){
             this.rawResponse = rawResponse;
         }
 
