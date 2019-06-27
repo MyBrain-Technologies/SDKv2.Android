@@ -7,7 +7,6 @@ import android.support.annotation.Nullable;
 
 import java.util.List;
 
-import config.DeviceConfig;
 import features.MbtAcquisitionLocations;
 import features.MbtFeatures;
 
@@ -19,17 +18,44 @@ public abstract class MbtDevice {
 
     public static final String DEFAULT_FW_VERSION = "0.0.0";
 
+    /**
+     * Bluetooth Low Energy name
+     */
     String productName;
     @Nullable
+    /**
+     * Hardware version number
+     */
     String hardwareVersion;
+
+    /**
+     * Firmware version number
+     */
     @Nullable
     String firmwareVersion;
+
+    /**
+     * Serial number
+     */
     @Nullable
-    String deviceId;
+    String serialNumber;
+
+    /**
+     * Bluetooth A2DP /external name (QR code)
+     */
     @Nullable
     String externalName;
 
+    /**
+     * Bluetooth Low energy device address
+     */
     String deviceAddress;
+
+    /**
+     * Bluetooth A2DP device address
+     */
+    @Nullable
+    private String audioDeviceAddress;
 
     int sampRate;
 
@@ -41,11 +67,7 @@ public abstract class MbtDevice {
 
     private InternalConfig internalConfig;
 
-    @NonNull
-    private final BluetoothDevice bluetoothDevice; //TODO à enlever si non pertinent
-
     MbtDevice(BluetoothDevice bluetoothDevice){
-        this.bluetoothDevice = bluetoothDevice;
         this.deviceAddress = bluetoothDevice.getAddress();
         this.productName = bluetoothDevice.getName();
         this.internalConfig = null;
@@ -76,8 +98,8 @@ public abstract class MbtDevice {
      * @return the device unique ID
      */
     @Nullable
-    public String getDeviceId() {
-        return this.deviceId;
+    public String getSerialNumber() {
+        return this.serialNumber;
     }
 
     /**
@@ -115,7 +137,7 @@ public abstract class MbtDevice {
 
     public void setFirmwareVersion(@NonNull final String firmwareVersion) {this.firmwareVersion = firmwareVersion;}
 
-    public void setDeviceId(@NonNull final String deviceId) {this.deviceId = deviceId;}
+    public void setSerialNumber(@NonNull final String serialNumber) {this.serialNumber = serialNumber;}
 
     public void setProductName(@NonNull final String productName){
         this.productName = productName;
@@ -142,9 +164,12 @@ public abstract class MbtDevice {
         return externalName;
     }
 
-    @NonNull
-    public BluetoothDevice getBluetoothDevice() {
-        return bluetoothDevice;
+    public String getAudioDeviceAddress() {
+        return audioDeviceAddress;
+    }
+
+    public void setAudioDeviceAddress(String audioDeviceAddress) {
+        this.audioDeviceAddress = audioDeviceAddress;
     }
 
     public final static class InternalConfig{
@@ -159,8 +184,8 @@ public abstract class MbtDevice {
                 notchFilterConfig = configFromHeadset[0];
                 bandPassFilterConfig = configFromHeadset[1];
                 gainValue = configFromHeadset[2];
-                statusBytes = configFromHeadset[4];
-                nbPackets = configFromHeadset[5];
+                statusBytes = configFromHeadset[3];
+                nbPackets = configFromHeadset[4];
             }
         }
 
@@ -203,7 +228,7 @@ public abstract class MbtDevice {
                 "productName='" + productName + '\'' +
                 ", hardwareVersion='" + hardwareVersion + '\'' +
                 ", firmwareVersion='" + firmwareVersion + '\'' +
-                ", deviceId='" + deviceId + '\'' +
+                ", serialNumber='" + serialNumber + '\'' +
                 ", externalName='" + externalName + '\'' +
                 ", deviceAddress='" + deviceAddress + '\'' +
                 ", sampRate=" + sampRate +
@@ -212,7 +237,7 @@ public abstract class MbtDevice {
                 ", referencesLocations=" + referencesLocations +
                 ", groundsLocation=" + groundsLocation +
                 ", internalConfig=" + internalConfig +
-                ", bluetoothDevice=" + bluetoothDevice +
+                ", audioBluetoothAddress=" + audioDeviceAddress +
                 '}';
     }
 }

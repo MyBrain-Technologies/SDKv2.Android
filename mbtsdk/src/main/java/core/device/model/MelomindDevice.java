@@ -27,7 +27,7 @@ public class MelomindDevice extends MbtDevice{
         this.sampRate = MbtFeatures.DEFAULT_SAMPLE_RATE;
         this.firmwareVersion = "0.0.0";
         this.hardwareVersion = "0.0.0";
-        this.deviceId = "0000000000";
+        this.serialNumber = "0000000000";
     }
 
     public static short getBatteryPercentageFromByteValue(byte value){
@@ -87,7 +87,7 @@ public class MelomindDevice extends MbtDevice{
      */
     @Nullable
     public final String getSerialNumber() {
-        return this.deviceId;
+        return this.serialNumber;
     }
 
     @NonNull
@@ -143,7 +143,7 @@ public class MelomindDevice extends MbtDevice{
 
     public void setFirmwareVersion(@NonNull final String firmwareVersion) {this.firmwareVersion = firmwareVersion;}
 
-    public void setSerialNumber(@NonNull final String deviceId) {this.deviceId = deviceId;}
+    public void setSerialNumber(@NonNull final String deviceId) {this.serialNumber = deviceId;}
 
     public void updateConfiguration(ArrayList<MbtAcquisitionLocations> acquisitionLocationsArrayList, ArrayList<MbtAcquisitionLocations> referenceArrayList, ArrayList<MbtAcquisitionLocations> grounLocationsArrayList){
         this.acquisitionLocations = acquisitionLocationsArrayList;

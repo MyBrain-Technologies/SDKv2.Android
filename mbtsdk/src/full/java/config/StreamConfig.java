@@ -4,41 +4,86 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
+
+import command.DeviceCommand;
+import command.DeviceStreamingCommands;
 import core.eeg.storage.MbtEEGPacket;
 import engine.clientevents.BaseError;
+import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.EegListener;
 import features.MbtFeatures;
 
 /**
  * This class aims at configuring the stream process. It contains user configurable
  * parameters to specify how the streaming is going to be.
- *
  * <p>Use the {@link Builder} class to instanciate this.</p>
  */
 @Keep
 public final class StreamConfig {
 
-    //private final long streamDuration; //For later use
-
-    private final int notificationPeriod;
-
-    //private final DeviceConfig deviceConfig; Will be used in future release
+    private int notificationPeriod;
 
     private final EegListener<BaseError> eegListener;
 
-    private final boolean computeQualities;
+    private DeviceStatusListener<BaseError> deviceStatusListener;
 
-    private DeviceConfig deviceConfig;
+    private boolean computeQualities;
 
-    private StreamConfig(boolean computeQualities, EegListener<BaseError> eegListener, int notificationPeriod, DeviceConfig deviceConfig){
+    /**
+     * Optional list of commands sent to the headset in order to
+     * configure a parameter,
+     * or get values stored by the headset
+     * or ask the headset to perform an action.
+     */
+    private ArrayList<DeviceCommand> deviceCommands = new ArrayList<>(
+            Arrays.asList(
+                new DeviceStreamingCommands.DcOffset(false),
+                new DeviceStreamingCommands.Triggers(false)
+            ));
+
+    private StreamConfig(boolean computeQualities, EegListener<BaseError> eegListener, DeviceStatusListener<BaseError> deviceStatusListener, int notificationPeriod, DeviceStreamingCommands[] deviceCommands){
         this.computeQualities = computeQualities;
         this.eegListener = eegListener;
+        this.deviceStatusListener = deviceStatusListener;
         this.notificationPeriod = notificationPeriod;
-        this.deviceConfig = deviceConfig;
+
+        if(deviceCommands != null && deviceCommands.length > 0) {
+            for (DeviceStreamingCommands deviceCommand : deviceCommands) {
+                if(deviceCommand != null){
+                    int index = commandAlreadyRegisteredAtIndex(deviceCommand);
+                    if(index != -1) //if a command with the same type is already in the list, it is replaced (input can be different)
+                        this.deviceCommands.set(index, (DeviceCommand) deviceCommand);
+                    else
+                        this.deviceCommands.add((DeviceCommand) deviceCommand);
+                }
+            }
+        }
+        this.deviceCommands.add(new DeviceStreamingCommands.EegConfig(null));
+    }
+
+    /**
+     * Returns the index of the already registered command in the deviceCommands list
+     * Returns -1 if the command is not already registered
+     * @param deviceCommand
+     * @return
+     */
+    private int commandAlreadyRegisteredAtIndex(DeviceStreamingCommands deviceCommand){
+        for (DeviceCommand registeredCommand : deviceCommands) {
+                if(registeredCommand.getClass() == deviceCommand.getClass())
+                return deviceCommands.indexOf(registeredCommand);
+        }
+        return -1;
     }
 
     public EegListener getEegListener() {
         return eegListener;
+    }
+
+    public DeviceStatusListener<BaseError> getDeviceStatusListener() {
+        return deviceStatusListener;
     }
 
     public int getNotificationPeriod() {
@@ -49,8 +94,24 @@ public final class StreamConfig {
         return computeQualities;
     }
 
-    public DeviceConfig getDeviceConfig() {
-        return deviceConfig;
+    public ArrayList<DeviceCommand> getDeviceCommands() {
+        return deviceCommands;
+    }
+
+    public void setNotificationPeriod(int notificationPeriod) {
+        this.notificationPeriod = notificationPeriod;
+    }
+
+    public void setComputeQualities(boolean computeQualities) {
+        this.computeQualities = computeQualities;
+    }
+
+    public void setDeviceCommand(ArrayList<DeviceCommand> deviceCommands) {
+        this.deviceCommands = deviceCommands;
+    }
+
+    public void setDeviceStatusListener(DeviceStatusListener<BaseError> deviceStatusListener) {
+        this.deviceStatusListener = deviceStatusListener;
     }
 
     /**
@@ -58,28 +119,35 @@ public final class StreamConfig {
      */
     @Keep
     public static class Builder{
-        //long streamDuration = -1L;
+
         private int notificationPeriod = MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD;
 
+        /**
+         * The EEG Listener is a callback that receives the EEG raw data streamed
+         * from the headset to the SDK.
+         */
         @NonNull
         private final EegListener<BaseError> eegListener;
 
+        @Nullable
+        private DeviceStatusListener<BaseError> deviceStatusListener;
+
         private boolean computeQualities = false;
 
-        private DeviceConfig deviceConfig = null;
-
+        /**
+         * Optional set of commands sent to the headset in order to
+         * configure a parameter,
+         * or get values stored by the headset
+         * or ask the headset to perform an action.
+         */
+        private DeviceStreamingCommands[] deviceCommands;
 
         /**
-         * The eeg Listener is mandatory.
+         * The EEG Listener is mandatory to receive the EEG stream from the headset to the SDK.
          */
         public Builder(@NonNull EegListener<BaseError> eegListener){
             this.eegListener = eegListener;
         }
-
-//        public Builder setStreamDuration(long durationInMillis){
-//            this.streamDuration = streamDuration;
-//            return this;
-//        }
 
         /**
          * Says whether or not the qualities are automatically computed while streaming EEG.
@@ -89,16 +157,22 @@ public final class StreamConfig {
          *
          * <p>The minimum notification period will be automatically set to 1000ms if qualities are enabled.</p>
          * <p>If the input {@link #notificationPeriod} is set by the user to less than 1000ms, the {@link engine.clientevents.ConfigError#ERROR_INVALID_PARAMS} error will be thrown</p>
-         * @param useQualities a flag indicating whether or not the qualities shall be computed
          * @return the builder instance
          */
-        public Builder useQualities(boolean useQualities){
-            this.computeQualities = useQualities;
+        public Builder useQualities(){
+            this.computeQualities = true;
             return this;
         }
 
-        public Builder configureHeadset(DeviceConfig deviceConfig){
-            this.deviceConfig = deviceConfig;
+        /**
+         * Configures optional parameters applied by the headset for the EEG signal acquisition
+         * such as the amplifier gain, the notch filter, the MTU, etc.
+         * Default values can be found in the user guide for the gain, filters, MTU
+         * if you do not specify these parameters in the {@link StreamConfig] Builder.
+         * @param deviceAcquisitionConfig bundles the configuration parameters
+         */
+        public Builder configureAcquisitionFromDeviceCommand(DeviceStreamingCommands... deviceCommands){
+            this.deviceCommands = deviceCommands;
             return this;
         }
 
@@ -124,9 +198,15 @@ public final class StreamConfig {
             return this;
         }
 
+        @NonNull
+        public Builder setDeviceStatusListener(DeviceStatusListener<BaseError> deviceStatusListener){
+            this.deviceStatusListener = deviceStatusListener;
+            return this;
+        }
+
         @Nullable
         public StreamConfig create(){
-            return new StreamConfig(this.computeQualities, this.eegListener, this.notificationPeriod, this.deviceConfig);
+            return new StreamConfig(this.computeQualities, this.eegListener, this.deviceStatusListener, this.notificationPeriod, this.deviceCommands);
         }
     }
 

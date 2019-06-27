@@ -22,7 +22,6 @@ public interface DeviceEvents {
     class GetDeviceEvent {
     }
 
-
     /**
      * This object is used to encapsulate the {@link MbtDevice} instance out of the module. The encapsulation
      * is mandatory because the {@link MbtDevice} instance be null at some point (for example, before a
@@ -32,7 +31,7 @@ public interface DeviceEvents {
         @Nullable
         private final MbtDevice device;
 
-        PostDeviceEvent(@Nullable MbtDevice device){
+        public PostDeviceEvent(@Nullable MbtDevice device){
             this.device = device;
         }
 
@@ -42,13 +41,14 @@ public interface DeviceEvents {
         }
     }
 
-    class NewBluetoothDeviceEvent {
+
+    class FoundDeviceEvent {
         @Nullable
         private final BluetoothDevice device;
 
         private final MbtDeviceType deviceType;
 
-        public NewBluetoothDeviceEvent(@Nullable BluetoothDevice device, MbtDeviceType deviceType){
+        public FoundDeviceEvent(@Nullable BluetoothDevice device, MbtDeviceType deviceType){
             this.device = device;
             this.deviceType = deviceType;
         }
@@ -63,9 +63,28 @@ public interface DeviceEvents {
         }
     }
 
+    class DisconnectedDeviceEvent {    }
+
+    class AudioDisconnectedDeviceEvent {    }
+
+    class AudioConnectedDeviceEvent {
+        @Nullable
+        private final BluetoothDevice device;
+
+        public AudioConnectedDeviceEvent(@Nullable BluetoothDevice device){
+            this.device = device;
+        }
+
+        @Nullable
+        public BluetoothDevice getDevice() {
+            return device;
+        }
+
+    }
+
 
     /**
-     *
+     * Event that handle DC offset and Saturation raw measures
      */
     class RawDeviceMeasure {
         private byte[] rawMeasure;
@@ -76,6 +95,21 @@ public interface DeviceEvents {
 
         byte[] getRawMeasure() {
             return rawMeasure;
+        }
+    }
+
+    /**
+     * Event that returns the headset's response after the SDK has sent a command to it using Mailbox or other characteristic writing methods
+     */
+    class RawDeviceResponseEvent {
+        private byte[] rawResponse;
+
+        public RawDeviceResponseEvent(byte[] rawResponse){
+            this.rawResponse = rawResponse;
+        }
+
+        public byte[] getRawResponse() {
+            return rawResponse;
         }
     }
 

@@ -4,8 +4,12 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import java.util.ArrayList;
+
+import command.DeviceCommand;
 import core.eeg.storage.MbtEEGPacket;
 import engine.clientevents.BaseError;
+import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.EegListener;
 import features.MbtFeatures;
 
@@ -22,20 +26,20 @@ public final class StreamConfig {
 
     private final int notificationPeriod;
 
-    //private final DeviceConfig deviceConfig; Will be used in future release
-
     private final EegListener<BaseError> eegListener;
 
     private final boolean computeQualities;
 
-    private DeviceConfig deviceConfig;
+    private ArrayList<DeviceCommand> deviceCommands;
 
-    private StreamConfig(EegListener<BaseError> eegListener, int notificationPeriod){
+    private StreamConfig(EegListener<BaseError> eegListener, DeviceStatusListener<BaseError> deviceStatusListener,int notificationPeriod){
         this.computeQualities = false;
         this.eegListener = eegListener;
         this.notificationPeriod = notificationPeriod;
-        this.deviceConfig = null;
+        this.deviceStatusListener = deviceStatusListener;
+        this.deviceCommands = null;
     }
+    private DeviceStatusListener<BaseError> deviceStatusListener;
 
     public EegListener getEegListener() {
         return eegListener;
@@ -49,8 +53,12 @@ public final class StreamConfig {
         return computeQualities;
     }
 
-    public DeviceConfig getDeviceConfig() {
-        return deviceConfig;
+    public DeviceStatusListener<BaseError> getDeviceStatusListener() {
+        return deviceStatusListener;
+    }
+
+    public ArrayList<DeviceCommand> getDeviceCommands() {
+        return deviceCommands;
     }
 
     /**
@@ -58,12 +66,14 @@ public final class StreamConfig {
      */
     @Keep
     public static class Builder{
-        //long streamDuration = -1L;
+
         private int notificationPeriod = MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD;
+
+        @Nullable
+        private DeviceStatusListener<BaseError> deviceStatusListener;
 
         @NonNull
         private final EegListener<BaseError> eegListener;
-
 
         /**
          * The eeg Listener is mandatory.
@@ -72,10 +82,12 @@ public final class StreamConfig {
             this.eegListener = eegListener;
         }
 
-//        public Builder setStreamDuration(long durationInMillis){
-//            this.streamDuration = streamDuration;
-//            return this;
-//        }
+
+        @NonNull
+        public Builder setDeviceStatusListener(DeviceStatusListener<BaseError> deviceStatusListener){
+            this.deviceStatusListener = deviceStatusListener;
+            return this;
+        }
 
         /**
          * Use this method to specify how much eeg you want to receive in the {@link EegListener#onNewPackets(MbtEEGPacket)} method.
@@ -101,7 +113,7 @@ public final class StreamConfig {
 
         @Nullable
         public StreamConfig create(){
-            return new StreamConfig(this.eegListener, this.notificationPeriod);
+            return new StreamConfig(this.eegListener, this.deviceStatusListener, this.notificationPeriod);
         }
     }
 

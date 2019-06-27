@@ -9,7 +9,6 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 import core.BaseModuleManager;
-import core.MbtManager;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindDevice;
 import core.device.model.VProDevice;
@@ -18,7 +17,6 @@ import core.oad.OADFileManager;
 import eventbus.EventBusManager;
 import eventbus.events.ConfigEEGEvent;
 import eventbus.events.DeviceInfoEvent;
-import features.MbtDeviceType;
 import utils.LogUtils;
 
 import static features.MbtDeviceType.MELOMIND;
@@ -30,8 +28,8 @@ public class MbtDeviceManager extends BaseModuleManager{
 
     private MbtDevice mCurrentConnectedDevice;
 
-    public MbtDeviceManager(Context context, MbtManager mbtManagerController){
-        super(context, mbtManagerController);
+    public MbtDeviceManager(Context context){
+        super(context);
         this.mContext = context;
     }
 
@@ -64,17 +62,43 @@ public class MbtDeviceManager extends BaseModuleManager{
         return mCurrentConnectedDevice;
     }
 
+    private void setAudioConnectedDeviceAddress(String audioDeviceAddress) {
+        Log.d(TAG,"new connected audio device address stored "+audioDeviceAddress);
+        if(mCurrentConnectedDevice != null)
+            this.mCurrentConnectedDevice.setAudioDeviceAddress(audioDeviceAddress);
+    }
+
     private void setmCurrentConnectedDevice(MbtDevice mCurrentConnectedDevice) {
         Log.d(TAG,"new connected device stored "+mCurrentConnectedDevice);
         this.mCurrentConnectedDevice = mCurrentConnectedDevice;
     }
 
     @Subscribe
-    public void onNewDeviceConnected(DeviceEvents.NewBluetoothDeviceEvent deviceEvent) {
-        if (deviceEvent.getDeviceType().equals(MELOMIND))
-            setmCurrentConnectedDevice(deviceEvent.getDevice() != null ? new MelomindDevice(deviceEvent.getDevice()) : null);
-        else if (deviceEvent.getDeviceType().equals(MbtDeviceType.VPRO))
-            setmCurrentConnectedDevice(deviceEvent.getDevice() != null ? new VProDevice(deviceEvent.getDevice()) : null);
+    public void onNewDeviceDisconnected(DeviceEvents.DisconnectedDeviceEvent deviceEvent) {
+        setmCurrentConnectedDevice(null);
+    }
+
+    @Subscribe
+    public void onNewDeviceAudioDisconnected(DeviceEvents.AudioDisconnectedDeviceEvent deviceEvent) {
+        if(getmCurrentConnectedDevice() != null)
+            getmCurrentConnectedDevice().setAudioDeviceAddress(null);
+    }
+
+    @Subscribe
+    public void onNewDeviceConnected(DeviceEvents.FoundDeviceEvent deviceEvent) {
+
+        MbtDevice device = null;
+        if(deviceEvent.getDevice() != null){
+            device = deviceEvent.getDeviceType().equals(MELOMIND) ?
+                    new MelomindDevice(deviceEvent.getDevice()) : new VProDevice(deviceEvent.getDevice());
+        }
+        setmCurrentConnectedDevice(device);
+    }
+
+    @Subscribe
+    public void onNewAudioDeviceConnected(DeviceEvents.AudioConnectedDeviceEvent deviceEvent) {
+            setAudioConnectedDeviceAddress( (deviceEvent.getDevice() != null) ?
+                    deviceEvent.getDevice().getAddress() : null);
     }
 
     @Subscribe
@@ -102,11 +126,15 @@ public class MbtDeviceManager extends BaseModuleManager{
                     break;
                 case SERIAL_NUMBER:
                     if(event.getInfo() != null)
-                        mCurrentConnectedDevice.setDeviceId((String) event.getInfo());
+                        mCurrentConnectedDevice.setSerialNumber((String) event.getInfo());
                     break;
                 case MODEL_NUMBER:
                     if(event.getInfo() != null)
                         mCurrentConnectedDevice.setExternalName((String) event.getInfo());
+                    break;
+                case PRODUCT_NAME:
+                    if(event.getInfo() != null)
+                        mCurrentConnectedDevice.setProductName((String) event.getInfo());
                     break;
             }
         }

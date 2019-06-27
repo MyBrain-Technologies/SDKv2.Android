@@ -10,6 +10,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
+
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -37,102 +38,184 @@ import features.MbtFeatures;
 import static features.MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX;
 import static features.MbtFeatures.QR_CODE_NAME_PREFIX;
 import static features.MbtFeatures.VPRO_DEVICE_NAME_PREFIX;
-import static features.MbtDeviceType.MELOMIND;
-import static features.MbtDeviceType.VPRO;
 
+/**
+ * First View displayed when you launch the application
+ */
 public class HomeActivity extends AppCompatActivity{
 
     private static String TAG = HomeActivity.class.getName();
+
     /**
-     * Duration to find a headset
+     * Maximum duration allocated to find a headset
      */
     private final static int SCAN_DURATION = 20000;
 
-    public final static String DEVICE_NAME = "DEVICE_NAME";
-    public final static String DEVICE_QR_CODE = "DEVICE_QR_CODE";
-    public final static String DEVICE_TYPE = "DEVICE_TYPE";
-    public final static String BLUETOOTH_STATE = "BLUETOOTH_STATE";
-    public final static String PREVIOUS_ACTIVITY = "PREVIOUS_ACTIVITY";
+    /**
+     * Extra keys used to share data to the next started activity
+     */
+    public final static String DEVICE_NAME_EXTRA = "DEVICE_NAME_EXTRA";
+    public final static String DEVICE_QR_CODE_EXTRA = "DEVICE_QR_CODE_EXTRA";
+    public final static String DEVICE_TYPE_EXTRA = "DEVICE_TYPE_EXTRA";
+    public final static String PREVIOUS_ACTIVITY_EXTRA = "PREVIOUS_ACTIVITY_EXTRA";
 
-    private MbtClient client;
+    /**
+     * Instance of SDK client used to access all the SDK features
+     */
+    private MbtClient sdkClient;
 
+    /**
+     * Device name field used to enter a specific headset name on the application for Bluetooth connection
+     */
     private EditText deviceNameField;
+
+    /**
+     * Device name value stored from the value of the {@link HomeActivity#deviceNameField}
+     */
     private String deviceName;
+
+    /**
+     * Device QR code field used to enter a specific headset QR code on the application for Bluetooth connection
+     */
     private EditText deviceQrCodeField;
+
+    /**
+     * Device QR code value stored from the value of the {@link HomeActivity#deviceQrCodeField}
+     */
     private String deviceQrCode;
 
-    private MbtDeviceType deviceType;
-
-    private Switch connectAudioSwitch;
-    private boolean connectAudioIfDeviceCompatible = false;
-
+    /**
+     * Spinner used to select one of the possible Melomind device name prefixs
+     */
     private Spinner deviceNamePrefixSpinner;
+
+    /**
+     * Device name prefix value stored from the value of the {@link HomeActivity#deviceNamePrefixSpinner}
+     */
     private String deviceNamePrefix;
+
+    /**
+     * Possible device name prefix values for {@link HomeActivity#deviceNamePrefixSpinner}
+     */
     private ArrayList<String> prefixNameList;
+
+    /**
+     * Adapter that uses {@link HomeActivity#prefixNameList} to initialize the {@link HomeActivity#deviceNamePrefixSpinner}
+     */
     private ArrayAdapter<String> prefixNameArrayAdapter;
 
+    /**
+     * Spinner used to select one of the possible Melomind device QR code prefixs
+     */
     private Spinner deviceQrCodePrefixSpinner;
+
+    /**
+     * Device QR code prefix value stored from the value of the {@link HomeActivity#deviceQrCodePrefixSpinner}
+     */
     private String deviceQrCodePrefix;
+
+    /**
+     * Possible QR code prefix values for deviceQrCodePrefixSpinner
+     */
     private ArrayList<String> prefixQrCodeList;
+
+    /**
+     * Adapter that uses {@link HomeActivity#prefixQrCodeList} to initialize the {@link HomeActivity#deviceQrCodePrefixSpinner}
+     */
     private ArrayAdapter<String> prefixQrCodeArrayAdapter;
 
+    /**
+     * Switch used to enable or disable Bluetooth audio connection.
+     */
+    private Switch connectAudioSwitch;
+
+    /**
+     * Boolean value stored from the value of the {@link HomeActivity#connectAudioSwitch} :
+     * Audio Bluetooth connection is enabled if {@link HomeActivity#connectAudioIfDeviceCompatible} is true.
+     * Audio Bluetooth connection is disabled if {@link HomeActivity#connectAudioIfDeviceCompatible} is false.
+     */
+    private boolean connectAudioIfDeviceCompatible = false;
+
+    /**
+     * Device type stored to distinguish Melomind and Vpro headset
+     */
+    private MbtDeviceType deviceType;
+
+    /**
+     * Button used to initiate the Bluetooth connection with a Melomind headset on click
+     */
     private Button scanButton;
 
+    /**
+     * Boolean value stored for Bluetooth connection cancel :
+     * A Bluetooth connection in progress can be cancelled by the user within the {@link HomeActivity#SCAN_DURATION} duration by clicking on the {@link HomeActivity#scanButton}
+     * If no Bluetooth connection is in progress, clicking on the {@link HomeActivity#scanButton} starts a Bluetooth connection
+     */
     private boolean isCancelled = false;
+
+    /**
+     * Boolean value stored for Bluetooth connection error :
+     * A Bluetooth connection in progress can be cancelled by the SDK if it returns an error
+     */
     private boolean isErrorRaised = false;
 
+    /**
+     * Toast used to notify the user by displaying a temporary message on the foreground of the screen
+     */
     private Toast toast;
 
+    /**
+     * Listener used to receive a notification when the Bluetooth connection state changes
+     */
     private BluetoothStateListener bluetoothStateListener = new BluetoothStateListener() {
+        /**
+         * Callback used to receive a notification when the Bluetooth connection state changes
+         */
         @Override
         public void onNewState(BtState newState) {
-            Log.d(TAG, "new state received "+newState);
-            if(newState.equals(BtState.READING_SUCCESS)){ //SERIAL NUMBER VALUE HAS NOT BEEN READ BEFORE THIS STEP
-                client.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
+            if(newState.equals(BtState.READING_SUCCESS)){
+                sdkClient.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
                     @Override
-                    public void onRequestComplete(final MbtDevice device) {
-                        Log.d(TAG, "device received "+device);
-                        if(device != null) {
+                    public void onRequestComplete(final MbtDevice melomindDevice) {
+                        if(melomindDevice != null) {
                             runOnUiThread(new Runnable() {
-                                  @Override
-                                  public void run() {
-                                      deviceName = device.getProductName();
-                                      String deviceNameToDisplay = deviceName.replace(MELOMIND_DEVICE_NAME_PREFIX,"");
-                                      deviceNameField.setText(deviceNameToDisplay);
-                                      for(String prefix : prefixNameList){
-                                          if(device.getDeviceId() != null && device.getProductName().startsWith(prefix))
-                                              deviceNamePrefixSpinner.setSelection(prefixNameArrayAdapter.getPosition(prefix));
-                                      }
-                                      deviceQrCode = device.getExternalName();
-                                      String deviceQrCodeToDisplay = deviceQrCode.replace(QR_CODE_NAME_PREFIX,"");
-                                      deviceQrCodeField.setText(deviceQrCodeToDisplay);
-                                      for(String prefix : prefixQrCodeList){
-                                          if(device.getExternalName() != null && device.getExternalName().startsWith(prefix))
-                                              deviceQrCodePrefixSpinner.setSelection(prefixQrCodeArrayAdapter.getPosition(prefix));
-                                      }
-                                      deviceType = ( device instanceof MelomindDevice ? MELOMIND : VPRO);
-                                  }
-                              });
+                                @Override
+                                public void run() {
+                                    showDeviceName(melomindDevice);
+                                    showDeviceQrCode(melomindDevice);
+                                    deviceType = ( melomindDevice instanceof MelomindDevice ? MbtDeviceType.MELOMIND : MbtDeviceType.VPRO);
+                                }
+                            });
                         }
                     }
                 });
             }
         }
 
+        /**
+         * Callback used to receive a notification when the Bluetooth connection is aborted if the SDK returns an error
+         */
         @Override
-        public void onError(BaseError error, String additionnalInfo) {
-            Log.e(TAG, "onError received "+error.getMessage()+ (additionnalInfo != null ? additionnalInfo : ""));
+        public void onError(BaseError error, String additionalInfo) {
+            Log.e("HomeActivity", "onError received "+error.getMessage()+ (additionalInfo != null ? additionalInfo : ""));
             isErrorRaised = true;
             updateScanning(false);
-            toast = Toast.makeText(HomeActivity.this, error.getMessage()+ (additionnalInfo != null ? additionnalInfo : ""), Toast.LENGTH_LONG);
+            toast = Toast.makeText(HomeActivity.this, error.getMessage()+ (additionalInfo != null ? additionalInfo : ""), Toast.LENGTH_LONG);
             toast.show();
         }
 
+        /**
+         * Callback used to receive a notification when the Bluetooth connection is established
+         */
         @Override
         public void onDeviceConnected() {
             toast.cancel();
-            deinitCurrentActivity(true);
+            deinitCurrentActivity();
         }
+
+        /**
+         * Callback used to receive a notification when a connected headset is disconnected
+         */
 
         @Override
         public void onDeviceDisconnected() {
@@ -143,48 +226,102 @@ public class HomeActivity extends AppCompatActivity{
         }
     };
 
+    /**
+     * Method called to display the name of the connecting headset in the device name field
+     */
+    private void showDeviceName(final MbtDevice melomindDevice){
+        deviceName = melomindDevice.getProductName();
+        String deviceNameToDisplay = deviceName.replace(MELOMIND_DEVICE_NAME_PREFIX,"");
+        deviceNameField.setText(deviceNameToDisplay);
+        for(String prefix : prefixNameList){
+            if(melomindDevice.getSerialNumber() != null && melomindDevice.getProductName().startsWith(prefix))
+                deviceNamePrefixSpinner.setSelection(prefixNameArrayAdapter.getPosition(prefix));
+        }
+    }
+
+    /**
+     * Method called to display the QR code of the connecting headset in the QR code field
+     */
+    private void showDeviceQrCode(final MbtDevice melomindDevice){
+        deviceQrCode = melomindDevice.getExternalName();
+        String deviceQrCodeToDisplay = deviceQrCode.replace(QR_CODE_NAME_PREFIX,"");
+        deviceQrCodeField.setText(deviceQrCodeToDisplay);
+        for(String prefix : prefixQrCodeList){
+            if(melomindDevice.getExternalName() != null && melomindDevice.getExternalName().startsWith(prefix))
+                deviceQrCodePrefixSpinner.setSelection(prefixQrCodeArrayAdapter.getPosition(prefix));
+        }
+    }
+
+    /**
+     * Method called by default when the Activity is started
+     * It initializes all the views, SDK client, and permissions.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
-        initToolBar();
+
         toast = Toast.makeText(HomeActivity.this, "", Toast.LENGTH_LONG);
-        client = MbtClient.getClientInstance();
+        sdkClient = MbtClient.init(getApplicationContext());
         isCancelled = false;
 
-        if(getIntent().hasExtra(HomeActivity.PREVIOUS_ACTIVITY)){
-            if(getIntent().getStringExtra(HomeActivity.PREVIOUS_ACTIVITY)!=null)
-                client.setConnectionStateListener(bluetoothStateListener);
+        if(getIntent().hasExtra(HomeActivity.PREVIOUS_ACTIVITY_EXTRA)){
+            if(getIntent().getStringExtra(HomeActivity.PREVIOUS_ACTIVITY_EXTRA) != null)
+                sdkClient.setConnectionStateListener(bluetoothStateListener);
         }
 
+        initToolBar();
         initDeviceNameField();
+        initDeviceNamePrefix();
         initDeviceQrCodeField();
+        initDeviceQrCodePrefix();
         initConnectAudioSwitch();
         initScanButton();
-        initDeviceNamePrefix();
-        initDeviceQrCodePrefix();
-        int PERMISSION_ALL = 1;
-
-        String[] PERMISSIONS = new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION};
-
-        if(!hasPermissions(getApplicationContext(), PERMISSIONS))
-            ActivityCompat.requestPermissions(HomeActivity.this, PERMISSIONS, PERMISSION_ALL);
+        initPermissions();
     }
 
-    private void initConnectAudioSwitch() {
-        connectAudioSwitch = findViewById(R.id.connectAudio);
+    /**
+     * Method used to initialize the top tool bar view
+     */
+    private void initToolBar(){
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
+        getSupportActionBar().setIcon(R.drawable.logo);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getColor(R.color.light_blue)));
+        }
     }
 
+    /**
+     * Method used to initialize the device name field
+     */
+    private void initDeviceNameField() {
+        deviceNameField = findViewById(R.id.deviceNameField);
+    }
+
+    /**
+     * Method used to initialize the device name prefix spinner
+     */
     private void initDeviceNamePrefix() {
         deviceNamePrefixSpinner = findViewById(R.id.deviceNamePrefix);
-        prefixNameList = new ArrayList<>(Arrays.asList(MELOMIND_DEVICE_NAME_PREFIX, VPRO_DEVICE_NAME_PREFIX));
-        prefixNameArrayAdapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_item, prefixNameList);
+        prefixNameList = new ArrayList<>();
+        prefixNameList.add(MELOMIND_DEVICE_NAME_PREFIX);
+        prefixNameArrayAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, prefixNameList);
+
         prefixNameArrayAdapter.setDropDownViewResource(R.layout.spinner_item);
         deviceNamePrefixSpinner.setAdapter(prefixNameArrayAdapter);
         deviceNamePrefixSpinner.setSelection(prefixNameArrayAdapter.getPosition(MELOMIND_DEVICE_NAME_PREFIX));
     }
 
+    /**
+     * Method used to initialize the device QR code field
+     */
+    private void initDeviceQrCodeField() {
+        deviceQrCodeField = findViewById(R.id.deviceQrCodeField);
+    }
+
+    /**
+     * Method used to initialize the device QR code prefix spinner
+     */
     private void initDeviceQrCodePrefix() {
         deviceQrCodePrefixSpinner = findViewById(R.id.deviceQrCodePrefix);
         prefixQrCodeList = new ArrayList<>(Arrays.asList(QR_CODE_NAME_PREFIX));
@@ -195,14 +332,16 @@ public class HomeActivity extends AppCompatActivity{
         deviceQrCodePrefixSpinner.setSelection(prefixQrCodeArrayAdapter.getPosition(QR_CODE_NAME_PREFIX));
     }
 
-
-    private void initDeviceNameField() {
-        deviceNameField = findViewById(R.id.deviceNameField);
+    /**
+     * Method used to initialize the audio connection switch
+     */
+    private void initConnectAudioSwitch() {
+        connectAudioSwitch = findViewById(R.id.connectAudio);
     }
 
-    private void initDeviceQrCodeField() {
-        deviceQrCodeField = findViewById(R.id.deviceQrCodeField);
-    }
+    /**
+     * Method used to initialize the scan button
+     */
 
     private void initScanButton(){
         scanButton = findViewById(R.id.scanButton);
@@ -217,11 +356,12 @@ public class HomeActivity extends AppCompatActivity{
                 deviceQrCodePrefix = String.valueOf(deviceQrCodePrefixSpinner.getSelectedItem()); //get the prefix chosen by the user in the Spinner
                 deviceQrCode = deviceQrCodePrefix+deviceQrCodeField.getText().toString(); //get the name entered by the user in the EditText
 
-                deviceType = isMelomindDevice() ? MELOMIND : VPRO;
+                deviceType = isMelomindDevice() ? MbtDeviceType.MELOMIND : MbtDeviceType.VPRO;
                 connectAudioIfDeviceCompatible = connectAudioSwitch.isChecked();
 
                 if(isCancelled) //Scan in progress : a second click means that the user is trying to cancel the scan
-                   cancelScan();
+                    cancelScan();
+
                 else // Scan is not in progress : starting a new scan in order to connect to a Mbt Device
                     startScan();
                 if(!isErrorRaised)
@@ -230,6 +370,22 @@ public class HomeActivity extends AppCompatActivity{
         });
     }
 
+    /**
+     * Method used to initialize the required application permissions :
+     * A system popup appears on the foreground if the permissions are not granted
+     * /!\ Bluetooth Low Energy requires Location permission to find an available device
+     */
+    private void initPermissions() {
+        int PERMISSION_ALL = 1;
+        String[] PERMISSIONS = new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION};
+        if(!hasPermissions(getApplicationContext(), PERMISSIONS))
+            ActivityCompat.requestPermissions(HomeActivity.this, PERMISSIONS, PERMISSION_ALL);
+    }
+
+    /**
+     * Method used to check if required permissions are granted :
+     * it returns true if permissions are granted, false otherwise
+     */
     public static boolean hasPermissions(Context context, String... permissions) {
         if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && context != null && permissions != null) {
             for (String permission : permissions) {
@@ -241,43 +397,42 @@ public class HomeActivity extends AppCompatActivity{
         return true;
     }
 
+    /**
+     * Method used to start a Bluetooth scan if order to find an available headset and initiate connection
+     * If a device name is entered, the SDK connects the corresponding headset.
+     * If no device name is entered, the SDK connects the first found available headset.
+     * The SDK stops the scan after {@link HomeActivity#SCAN_DURATION} seconds if no headset is found
+     */
     private void startScan() {
         isErrorRaised = false;
-        client.connectBluetooth(new ConnectionConfig.Builder(bluetoothStateListener)
-                    .deviceName(
-                            ((deviceName != null) && (deviceName.equals(MELOMIND_DEVICE_NAME_PREFIX) || deviceName.equals(VPRO_DEVICE_NAME_PREFIX))) ? //if no name has been entered by the user, the default device name is the headset prefix
-                            null : deviceName ) //null is given in parameters if no name has been entered by the user
-                    .deviceQrCode(
-                            ((deviceQrCode != null) && (deviceQrCode.equals(QR_CODE_NAME_PREFIX)) ) ? //if no QR code has been entered by the user, the default device name is the headset prefix
-                            null : deviceQrCode )
-                    .maxScanDuration(SCAN_DURATION)
-                    .scanDeviceType(deviceType)
-                    .connectAudioIfDeviceCompatible(connectAudioIfDeviceCompatible)
-                    .create());
-
-    }
-
-    private void findAvailableDevice() {
-        notifyUser(getString(R.string.find_first_available_headset));
-        //deviceName =  ;//todo replace  by the method that detects the first available device
-        deviceNameField.setText(deviceName);
-        scanButton.setText(getString(R.string.connect));
-        scanButton.setTextColor(getResources().getColor(R.color.white));
-        scanButton.setBackgroundColor(getResources().getColor(R.color.light_blue));
-    }
-
-    private void cancelScan(){
-        client.cancelConnection();
+        ConnectionConfig.Builder builder = new ConnectionConfig.Builder(bluetoothStateListener)
+                .deviceName(((deviceName != null) && (deviceName.equals(MELOMIND_DEVICE_NAME_PREFIX) || deviceName.equals(VPRO_DEVICE_NAME_PREFIX))) ? //if no name has been entered by the user, the default device name is the headset prefix
+                        null : deviceName ) //null is given in parameters if no name has been entered by the user
+                .deviceQrCode(((deviceQrCode != null) && (deviceQrCode.equals(QR_CODE_NAME_PREFIX)) ) ? //if no QR code has been entered by the user, the default device name is the headset prefix
+                        null : deviceQrCode )
+                .maxScanDuration(SCAN_DURATION)
+                .scanDeviceType(deviceType);
+        if(connectAudioIfDeviceCompatible) {
+            builder.connectAudioIfDeviceCompatible();
+        }
+        sdkClient.connectBluetooth(builder.create());
     }
 
     /**
-     * Updates the scanning state boolean and the Scan button text
+     * Method used to cancel a Bluetooth scan or connection in progress
+     */
+    private void cancelScan(){
+        sdkClient.cancelConnection();
+    }
+
+    /**
+     * Method used to update the scanning state boolean and the Scan button text
      * The Scan button text is changed into into "Cancel" if scanning is launched
      * or into "Find a device" if scanning is cancelled
-     * @param newIsCancelled
      */
-    private void updateScanning(boolean newIsCancelled){
-        isCancelled = newIsCancelled;
+    private void updateScanning(boolean isCancelled){
+        this.isCancelled = isCancelled;
+
         if(!isCancelled)
             toast.cancel();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
@@ -299,9 +454,12 @@ public class HomeActivity extends AppCompatActivity{
     }
 
     private boolean isVproDevice(){
-        return deviceName.startsWith(MbtFeatures.VPRO_DEVICE_NAME_PREFIX);
+        return deviceName.startsWith(VPRO_DEVICE_NAME_PREFIX);
     }
 
+    /**
+     * Method used to notify the user by showing a temporary message on the foreground
+     */
     private void notifyUser(String message){
         toast.setText("");
         toast.show();
@@ -309,26 +467,24 @@ public class HomeActivity extends AppCompatActivity{
         toast.show();
     }
 
+    /**
+     * Method called by default when the Android device back buttton is clicked :
+     * the listener is set to null to avoid memory leaks
+     */
     @Override
     public void onBackPressed() {
         bluetoothStateListener = null;
     }
 
-    private void initToolBar(){
-        getSupportActionBar().setDisplayShowHomeEnabled(true);
-        getSupportActionBar().setIcon(R.drawable.logo);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getColor(R.color.light_blue)));
-        }
-    }
-
-    private void deinitCurrentActivity(boolean isConnected){
+    /**
+     * Method called when the {@link HomeActivity} is closed
+     */
+    private void deinitCurrentActivity(){
         bluetoothStateListener = null;
         final Intent intent = new Intent(HomeActivity.this, DeviceActivity.class);
-        intent.putExtra(DEVICE_NAME, deviceName);
-        intent.putExtra(DEVICE_QR_CODE, deviceQrCode);
-        intent.putExtra(DEVICE_TYPE, deviceType);
-        intent.putExtra(BLUETOOTH_STATE, isConnected);
+        intent.putExtra(DEVICE_NAME_EXTRA, deviceName);
+        intent.putExtra(DEVICE_QR_CODE_EXTRA, deviceQrCode);
+        intent.putExtra(DEVICE_TYPE_EXTRA, deviceType);
         startActivity(intent);
         finish();
     }

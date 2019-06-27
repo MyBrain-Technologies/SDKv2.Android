@@ -21,11 +21,12 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
 
-import config.DeviceConfig;
+import command.CommandInterface;
 import core.bluetooth.BtState;
 import core.bluetooth.IStreamable;
 import core.bluetooth.MbtBluetooth;
 import core.bluetooth.MbtBluetoothManager;
+
 import core.device.model.DeviceInfo;
 import core.device.model.MelomindDevice;
 import utils.AsyncUtils;
@@ -179,7 +180,8 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
             this.btSocket.connect();
             if (retrieveStreams()) {
                 AsyncUtils.executeAsync(new Runnable() {
-                    public final void run() {
+                    @Override
+                    public void run() {
                         listenForIncomingMessages();
                     }
                 });
@@ -396,8 +398,9 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
 
 
                                 final byte[] finalData =  (byte[])data.clone();//Arrays.copyOf(data, data.length);
+                                //private final byte[] toAcquire = Arrays.copyOf(finalData, finalData.length);
                                 AsyncUtils.executeAsync(new Runnable() {
-                                    //private final byte[] toAcquire = Arrays.copyOf(finalData, finalData.length);
+                                    @Override
                                     public void run() {
                                         notifyNewDataAcquired(finalData);
                                     }
@@ -518,7 +521,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
     }
 
     //todo
-    public void configureHeadset(DeviceConfig config) {
+    public void sendCommand(CommandInterface.MbtCommand command) {
     }
 }
 

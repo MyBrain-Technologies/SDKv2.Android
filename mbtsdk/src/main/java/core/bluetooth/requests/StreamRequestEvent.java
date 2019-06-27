@@ -1,27 +1,19 @@
 package core.bluetooth.requests;
 
-import config.DeviceConfig;
 
 /**
  * An event class when a stream request is being sent by the user.
  */
 public class StreamRequestEvent extends BluetoothRequests {
-    private final boolean isStart;
-    private final boolean monitorDeviceStatus;
-    private final boolean computeQualities;
-    private DeviceConfig deviceConfig;
+
+    private boolean isStart = false;
+    private boolean monitorDeviceStatus = false;
+    private boolean computeQualities = false;
 
     public StreamRequestEvent(boolean isStartRequest, boolean computeQualities, boolean monitorDeviceStatus){
         this.isStart = isStartRequest;
         this.monitorDeviceStatus = monitorDeviceStatus;
         this.computeQualities = computeQualities;
-        this.deviceConfig = new DeviceConfig.Builder().useP300(false).enableDcOffset(false).create();
-    }
-    public StreamRequestEvent(boolean isStartRequest, boolean computeQualities, boolean monitorDeviceStatus, DeviceConfig deviceConfig){
-        this.isStart = isStartRequest;
-        this.monitorDeviceStatus = monitorDeviceStatus;
-        this.computeQualities = computeQualities;
-        this.deviceConfig = deviceConfig;
     }
 
     public boolean isStart() {
@@ -36,7 +28,4 @@ public class StreamRequestEvent extends BluetoothRequests {
         return computeQualities;
     }
 
-    public DeviceConfig getDeviceConfig() {
-        return deviceConfig;
-    }
 }

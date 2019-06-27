@@ -18,6 +18,8 @@ import features.MbtFeatures;
 @Keep
 public final class ConnectionConfig {
 
+    private static final int DEFAULT_MTU = 47;
+
     private final String deviceName;
 
     private final String deviceQrCode;
@@ -69,6 +71,41 @@ public final class ConnectionConfig {
         return connectionStateListener;
     }
 
+    public int getMtu(){
+        return DEFAULT_MTU;
+    }
+
+
+    /**
+     * Check the validity of the configured Bluetooth scanning duration
+     * @return true if the duration is higher than
+     * {@link MbtFeatures#MIN_SCAN_DURATION}
+     * Return false otherwise.
+     */
+    public boolean isScanDurationValid(){
+        return maxScanDuration >= MbtFeatures.MIN_SCAN_DURATION;
+    }
+
+    /**
+     * Check the validity of the configured QR code
+     * @return true if the QR code is :
+     * - null (looking for any device, no matter its name)
+     * - or not null and its length matchs the expected length
+     */
+    public boolean isDeviceQrCodeValid(){
+        return deviceQrCode == null || ( deviceQrCode.length() == MbtFeatures.DEVICE_QR_CODE_LENGTH && deviceQrCode.length() == MbtFeatures.DEVICE_QR_CODE_LENGTH-1);
+    }
+
+    /**
+     * Check the validity of the configured name
+     * @return true if the QR code is
+     * - null (looking for any device, no matter its QR code)
+     * - or not null and its length matchs the expected length
+     */
+    public boolean isDeviceNameValid(){
+        return deviceName == null || deviceName.length() == MbtFeatures.DEVICE_NAME_LENGTH;
+    }
+
     /**
      * Builder class to ease construction of the {@link ConnectionConfig} instance.
      */
@@ -79,7 +116,6 @@ public final class ConnectionConfig {
         private String deviceQrCode = null;
         private int maxScanDuration = MbtFeatures.DEFAULT_MAX_SCAN_DURATION_IN_MILLIS;
         private boolean connectAudio = false;
-        private MbtDeviceType deviceType = MbtDeviceType.MELOMIND;
         @NonNull
         private final ConnectionStateListener<BaseError> connectionStateListener;
 
@@ -150,8 +186,8 @@ public final class ConnectionConfig {
          * @return the builder instance
          */
         @NonNull
-        public Builder connectAudio(boolean useAudio){
-            this.connectAudio = useAudio;
+        public Builder connectAudio(){
+            this.connectAudio = true;
             return this;
         }
 

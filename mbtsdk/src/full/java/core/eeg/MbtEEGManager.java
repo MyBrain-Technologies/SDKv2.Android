@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import config.AmpGainConfig;
 import core.BaseModuleManager;
 import core.MbtManager;
 import core.bluetooth.BtProtocol;
@@ -33,7 +32,6 @@ import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.BluetoothEEGEvent;
 import eventbus.events.ConfigEEGEvent;
 import features.MbtFeatures;
-import features.MbtDeviceType;
 import mbtsdk.com.mybraintech.mbtsdk.BuildConfig;
 import utils.AsyncUtils;
 import utils.LogUtils;
@@ -70,8 +68,8 @@ public final class MbtEEGManager extends BaseModuleManager {
 //    private MbtEEGManager.RequestThread requestThread;
 //    private Handler requestHandler;
 
-    public MbtEEGManager(@NonNull Context context, MbtManager mbtManagerController, @NonNull BtProtocol protocol) {
-        super(context, mbtManagerController);
+    public MbtEEGManager(@NonNull Context context, @NonNull BtProtocol protocol) {
+        super(context);
         this.protocol = protocol;
         this.dataAcquisition = new MbtDataAcquisition(this, protocol);
         this.dataBuffering = new MbtDataBuffering(this);
@@ -182,7 +180,6 @@ public final class MbtEEGManager extends BaseModuleManager {
      * @param threshold the level above which the relaxation indexes are considered in a relaxed state (under this threshold, they are considered not relaxed)
      * @param snrValues the array that contains the relaxation indexes of the session
      * @return the qualities for each provided channels
-     * @throws IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
      */
     @NonNull
     public HashMap<String, Float> computeStatisticsSNR(final float threshold, @NonNull final Float[] snrValues) {
@@ -198,7 +195,6 @@ public final class MbtEEGManager extends BaseModuleManager {
      * This array contains 2 qualities (items) if the headset used is MELOMIND.
      * This array contains 9 qualities (items) if the headset used is VPRO.
      * The method computes and displays the duration for quality computation.
-     * @throws IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
      */
     private ArrayList<Float> computeEEGSignalQuality(final MbtEEGPacket packet) {
 
@@ -228,7 +224,6 @@ public final class MbtEEGManager extends BaseModuleManager {
      * @param calibParams the calibration paramters previously performed
      *                    the EEG packets containing EEG data, theirs status and qualities.
      * @return the relaxation index
-     * @throws IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
      */
     private float computeRelaxIndex(int sampRate, MBTCalibrationParameters calibParams, MbtEEGPacket... packets) {
         return MBTComputeRelaxIndex.computeRelaxIndex(sampRate, calibParams, packets);

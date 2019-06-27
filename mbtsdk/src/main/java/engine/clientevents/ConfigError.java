@@ -24,6 +24,7 @@ public final class ConfigError extends BaseError{
     public static ConfigError ERROR_P300                    = new ConfigError(CODE_RANGE+4, "Failed to enable P300.");
     public static ConfigError ERROR_MTU                     = new ConfigError(CODE_RANGE+5, "Failed to change MTU configuration value.");
     public static ConfigError ERROR_GAIN                    = new ConfigError(CODE_RANGE+6, "Failed to change amplifier gain configuration value.");
+    public static ConfigError ERROR_CALLBACK                = new ConfigError(CODE_RANGE+6, "Failed to change amplifier gain configuration value.");
 
     private ConfigError(int code, String exception) {
         super(DOMAIN, code, exception);
