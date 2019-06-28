@@ -99,16 +99,19 @@ project.afterEvaluate {
     publishing {
         publications {
             full(MavenPublication) {
-                def libName = "lib_full_release_${android.defaultConfig.versionName}.aar"
-                //Select the library name here
-
                 groupId 'mybraintech.com'
                 artifactId 'sdk-full'
                 version android.defaultConfig.versionName
 
                 artifact(fullSourcesJar)
                 artifact(fullJavadocJar)
-                artifact("$buildDir/outputs/aar/${libName}")
+
+                android.buildTypes.all { buildType ->//Select the library name here
+                    def libName = "lib_full_${buildType}_${android.defaultConfig.versionName}.aar"
+                    artifact("$buildDir/outputs/aar/${libName}")
+                }
+
+
                 //we can force send to nexus the version we want by changing the aar name
                 pom.withXml {
                     def dependenciesNode = asNode().appendNode('dependencies')
@@ -126,18 +129,18 @@ project.afterEvaluate {
             }
 
             lite(MavenPublication) {
-                def libName = "lib_lite_release_${android.defaultConfig.versionName}.aar"
-                //Select the library name here
-
                 groupId 'mybraintech.com'
                 artifactId 'sdk-lite'
                 version android.defaultConfig.versionName
 
-                afterEvaluate {
-                    artifact(liteSourcesJar)
-                    artifact(liteJavadocJar)
+                artifact(liteSourcesJar)
+                artifact(liteJavadocJar)
+
+                android.buildTypes.all { buildType ->//Select the library name here
+                    def libName = "lib_lite_${buildType}_${android.defaultConfig.versionName}.aar"
+                    artifact("$buildDir/outputs/aar/${libName}")
                 }
-                artifact("$buildDir/outputs/aar/${libName}")
+
                 //we can force send to nexus the version we want by changing the aar name
                 pom.withXml {
                     def dependenciesNode = asNode().appendNode('dependencies')
