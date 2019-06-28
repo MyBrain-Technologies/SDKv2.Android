@@ -95,7 +95,7 @@ project.afterEvaluate {
     publishing {
         publications {
             full(MavenPublication) {
-                groupId 'staging.mybraintech.com'
+                groupId 'mybraintech.com'
                 artifactId 'sdk-full'
                 version android.defaultConfig.versionName
 
@@ -125,7 +125,7 @@ project.afterEvaluate {
             }
 
             lite(MavenPublication) {
-                groupId 'staging.mybraintech.com'
+                groupId 'mybraintech.com'
                 artifactId 'sdk-lite'
                 version android.defaultConfig.versionName
 
