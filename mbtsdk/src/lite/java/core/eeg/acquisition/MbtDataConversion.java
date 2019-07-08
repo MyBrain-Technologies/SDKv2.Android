@@ -67,9 +67,10 @@ public class MbtDataConversion {
                 for (byte[] bytes : singleRawEEGdata.getBytesEEG()) {
                     int temp = 0x0000000;
                     for (int i = 0; i < bytes.length; i++){
-                        temp |= (bytes[i] & 0xFF) << ((protocol.equals(BLUETOOTH_LE)) ? (SHIFT_BLE - i*8) : (16 - i*8));
+                        temp |= BitUtils.shiftLeft(BitUtils.mask(bytes[i], 0xFF),
+                                (protocol.equals(BLUETOOTH_LE)) ? (SHIFT_BLE - i*8) : (16 - i*8));
                     }
-                    temp = ((temp & ((protocol.equals(BLUETOOTH_LE)) ? CHECK_SIGN_BLE : CHECK_SIGN_SPP)) > 0) ? (temp | ((protocol.equals(BLUETOOTH_LE)) ? NEGATIVE_MASK_BLE : NEGATIVE_MASK_SPP )) : (temp & ((protocol.equals(BLUETOOTH_LE)) ? POSITIVE_MASK_BLE : POSITIVE_MASK_SPP));
+                    temp = (BitUtils.mask(temp, (protocol.equals(BLUETOOTH_LE)) ? CHECK_SIGN_BLE : CHECK_SIGN_SPP) > 0) ? (temp | ((protocol.equals(BLUETOOTH_LE)) ? NEGATIVE_MASK_BLE : NEGATIVE_MASK_SPP )) : BitUtils.mask(temp, ((protocol.equals(BLUETOOTH_LE)) ? POSITIVE_MASK_BLE : POSITIVE_MASK_SPP));
                     consolidatedEEGSample.add(temp * ((protocol.equals(BLUETOOTH_LE)) ? VOLTAGE_BLE : VOLTAGE_SPP)); //fill the EEG data matrix with the converted EEG data
 
                     //Here are data from sensors, whom need to be transformed to float
@@ -87,12 +88,12 @@ public class MbtDataConversion {
             return -1;
 
         int digit = 0x00000000;
-        digit = ((offset[0] & 0xFF) << (SHIFT_DC_OFFSET)) | ((offset[1] & 0xFF) << (SHIFT_DC_OFFSET-8));
+        digit = BitUtils.shiftLeft(BitUtils.mask(offset[0], 0xFF), (SHIFT_DC_OFFSET)) | BitUtils.shiftLeft(BitUtils.mask(offset[1], 0xFF), (SHIFT_DC_OFFSET-8));
 
-        if ((digit & CHECK_SIGN_BLE) > 0) {
+        if (BitUtils.mask(digit, CHECK_SIGN_BLE) > 0) {
             digit = (int) (digit | NEGATIVE_MASK_BLE );// value is negative
         }else{
-            digit = (int) (digit & POSITIVE_MASK_BLE);// value is positive
+            digit = (int) BitUtils.mask(digit, POSITIVE_MASK_BLE);// value is positive
         }
 
         return digit * VOLTAGE_BLE;
