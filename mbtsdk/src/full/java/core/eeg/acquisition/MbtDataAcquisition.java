@@ -63,7 +63,7 @@ public class MbtDataAcquisition {
             return;
 
         //1st step : check index
-        final int currentIndex = BitUtils.shiftLeft(BitUtils.mask(data[0], 0xff), 8) | BitUtils.mask(data[1], 0xff); //index bytes are the 2 first bytes for BLE only
+        final int currentIndex = (data[0] & 0xff) << 8 | (data[1] & 0xff); //index bytes are the 2 first bytes for BLE only
 
         if(previousIndex == -1){
             previousIndex = currentIndex -1;

@@ -30,7 +30,6 @@ import core.bluetooth.MbtBluetoothManager;
 import core.device.model.DeviceInfo;
 import core.device.model.MelomindDevice;
 import utils.AsyncUtils;
-import utils.BitUtils;
 import utils.LogUtils;
 
 import static core.bluetooth.spp.MessageStatus.STATE_ACQ;
@@ -354,7 +353,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
                         payloadSizeBuf[counter++] = b;
                         if(counter == 2){
                             counter = 0;
-                            payloadSize = (BitUtils.shiftLeft(BitUtils.mask(payloadSizeBuf[0], 0xFF), 8) + BitUtils.mask(payloadSizeBuf[1], 0xFF);
+                            payloadSize = ((payloadSizeBuf[0] & 0xFF) << 8) + (payloadSizeBuf[1] & 0xFF);
                             data = new byte[payloadSize + 3];
                             currentStatus = STATE_COMMAND;
                         }

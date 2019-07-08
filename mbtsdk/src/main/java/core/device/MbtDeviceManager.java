@@ -17,7 +17,6 @@ import core.oad.OADFileManager;
 import eventbus.EventBusManager;
 import eventbus.events.ConfigEEGEvent;
 import eventbus.events.DeviceInfoEvent;
-import utils.BitUtils;
 import utils.LogUtils;
 
 import static features.MbtDeviceType.MELOMIND;
@@ -46,9 +45,7 @@ public class MbtDeviceManager extends BaseModuleManager{
         else if (rawDeviceMeasure.getRawMeasure()[0] == 0x02){
             if(rawDeviceMeasure.getRawMeasure().length < 8)
                 return;
-            long timestamp = BitUtils.shiftLeft(BitUtils.mask(rawDeviceMeasure.getRawMeasure()[1],0xFF), 16)
-                    | (BitUtils.shiftLeft(BitUtils.mask(rawDeviceMeasure.getRawMeasure()[2] ,0xFF), 8)
-                        | BitUtils.mask(rawDeviceMeasure.getRawMeasure()[3],0xFF)); //parsing first 3 bytes as they represents the device intenal clock
+            long timestamp = ((rawDeviceMeasure.getRawMeasure()[1] & 0xFF) << (16)) | ((rawDeviceMeasure.getRawMeasure()[2] & 0xFF) << (8) | ((rawDeviceMeasure.getRawMeasure()[3] & 0xFF))); //parsing first 3 bytes as they represents the device intenal clock
 
             float[] dcOffsets = new float[2]; // parsing last 4 bytes as they represent the dcOffsets
             byte[] temp = new byte[2];

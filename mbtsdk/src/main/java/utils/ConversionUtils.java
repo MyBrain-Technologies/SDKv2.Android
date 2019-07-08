@@ -65,15 +65,15 @@ public class ConversionUtils {
     private static final Float FALSE_AS_FLOAT = 0f;
 
     public static byte loUint16(short v) {
-        return (byte) BitUtils.mask(v, 0xFF);
+        return (byte) (v & 0xFF);
     }
 
     public static byte hiUint16(short v) {
-        return (byte) BitUtils.shiftRight(v, 8);
+        return (byte) (v >> 8);
     }
 
     public static short buildUint16(byte hi, byte lo) {
-        return (short) ((hi << 8) + BitUtils.mask(lo, 0xff));
+        return (short) ((hi << 8) + (lo & 0xff));
     }
 
     public static String BytetohexString(byte[] b, int len) {
@@ -132,7 +132,7 @@ public class ConversionUtils {
                         results[i] += (byte) (Character.digit(sb.charAt(k), 16));
                         i++;
                     } else {
-                        results[i] = (byte) (BitUtils.shiftLeft(Character.digit(sb.charAt(k), 16), 4);
+                        results[i] = (byte) (Character.digit(sb.charAt(k), 16) << 4);
                     }
                     j = !j;
                 }
