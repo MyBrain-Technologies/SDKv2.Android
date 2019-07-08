@@ -44,17 +44,17 @@ public final class DeviceCommandEvents {
              * Event codes related to #MBX_CONNECT_IN_A2DP event
              */
             public static final byte CMD_CODE_CONNECT_IN_A2DP_IN_PROGRESS = 0x01;
-            public static final byte CMD_CODE_CONNECT_IN_A2DP_FAILED_BAD_BDADDR = 0x02;
-            public static final byte CMD_CODE_CONNECT_IN_A2DP_FAILED_ALREADY_CONNECTED = 0x04;
-            public static final byte CMD_CODE_CONNECT_IN_A2DP_FAILED_TIMEOUT = 0x08;
-            public static final byte CMD_CODE_CONNECT_IN_A2DP_LINKKEY_INVALID = 0x10;
-            public static final byte CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED = 0x20;
-            public static final byte CMD_CODE_CONNECT_IN_A2DP_SUCCESS = (byte)0x80;
+            public static final byte CMD_CODE_CONNECT_IN_A2DP_FAILED_BAD_BDADDR = 0x02;//2
+            public static final byte CMD_CODE_CONNECT_IN_A2DP_FAILED_ALREADY_CONNECTED = 0x04;//4
+            public static final byte CMD_CODE_CONNECT_IN_A2DP_FAILED_TIMEOUT = 0x08; //8
+            public static final byte CMD_CODE_CONNECT_IN_A2DP_LINKKEY_INVALID = 0x10; //16
+            public static final byte CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED = 0x20; //32
+            public static final byte CMD_CODE_CONNECT_IN_A2DP_SUCCESS = (byte)0x80; //128
 
             /**
              * Event codes related to #MBX_DISCONNECT_IN_A2DP event
              */
-            public static final byte CMD_CODE_DISCONNECT_IN_A2DP_FAILED = 0x01;
-            public static final byte CMD_CODE_DISCONNECT_IN_A2DP_SUCCESS = (byte)0xFF;
+            public static final byte CMD_CODE_DISCONNECT_IN_A2DP_FAILED = 0x01; //1
+            public static final byte CMD_CODE_DISCONNECT_IN_A2DP_SUCCESS = (byte)0xFF; //-1
 
 }

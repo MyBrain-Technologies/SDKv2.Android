@@ -49,7 +49,12 @@ import engine.clientevents.ConnectionStateReceiver;
 import features.MbtFeatures;
 import utils.BroadcastUtils;
 import utils.LogUtils;
+import utils.BitUtils;
 import utils.MbtAsyncWaitOperation;
+
+import static command.DeviceCommandEvents.CMD_CODE_CONNECT_IN_A2DP_FAILED_ALREADY_CONNECTED;
+import static command.DeviceCommandEvents.CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED;
+import static command.DeviceCommandEvents.CMD_CODE_CONNECT_IN_A2DP_SUCCESS;
 
 /**
  *
@@ -485,7 +490,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
                     BtState.BONDING_FAILURE : BtState.READING_FAILURE);
             return false;
         }
-        if(getCurrentState().isReadingDeviceInfoState())
+        //if(getCurrentState().isReadingDeviceInfoState())
 
         LogUtils.i(TAG, "Successfully initiated read characteristic operation");
        return true;
@@ -620,14 +625,21 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         asyncConfiguration.stopWaitingOperation(response);
     }
 
-    void notifyConnectionResponseReceived(byte mailboxEvents, byte mailboxResponse){
-        LogUtils.i(TAG, "Received response for "+ (mailboxEvents == DeviceCommandEvents.MBX_CONNECT_IN_A2DP ? "connection":"disconnection"+ " : "+ mailboxResponse));
-        if(mailboxEvents == DeviceCommandEvents.MBX_CONNECT_IN_A2DP){
-            if((mailboxResponse & DeviceCommandEvents.CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED) == DeviceCommandEvents.CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED)
+    void notifyConnectionResponseReceived(byte mailboxEvent, byte mailboxResponse) {
+        if (!mbtGattController.isConnectionMailboxEvent(mailboxEvent)){
+            LogUtils.e(TAG, "Error : received response is not related to Bluetooth connection");
+            return;
+        }
+        LogUtils.i(TAG, "Received response for " + (mailboxEvent == DeviceCommandEvents.MBX_CONNECT_IN_A2DP ? "connection" : "disconnection" + " : " + mailboxResponse));
+
+        if(mailboxEvent == DeviceCommandEvents.MBX_CONNECT_IN_A2DP){
+            if(BitUtils.isMaskInByteData(CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED, mailboxResponse))
                 mbtBluetoothManager.notifyConnectionStateChanged(BtState.JACK_CABLE_CONNECTED);
-            else if ((mailboxResponse & DeviceCommandEvents.CMD_CODE_CONNECT_IN_A2DP_SUCCESS) == DeviceCommandEvents.CMD_CODE_CONNECT_IN_A2DP_SUCCESS)
+
+            else if(BitUtils.isMaskInByteData(CMD_CODE_CONNECT_IN_A2DP_SUCCESS, mailboxResponse)
+                || BitUtils.isMaskInByteData(CMD_CODE_CONNECT_IN_A2DP_FAILED_ALREADY_CONNECTED, mailboxResponse))
                 mbtBluetoothManager.notifyConnectionStateChanged(BtState.AUDIO_BT_CONNECTION_SUCCESS);
-        } else if(mailboxEvents == DeviceCommandEvents.MBX_DISCONNECT_IN_A2DP)
+        }else
             mbtBluetoothManager.notifyConnectionStateChanged(BtState.AUDIO_BT_DISCONNECTED);
     }
 
