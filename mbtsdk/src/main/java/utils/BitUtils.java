@@ -20,7 +20,7 @@ public class BitUtils {
      * @param data digits to mask
      * @return the the result value
      */
-    public static int maskToZero(int data, int mask){
+    public static int maskAND(int data, int mask){
         return (mask & data);
     }
 
@@ -38,7 +38,7 @@ public class BitUtils {
      * @param data digits to mask
      * @return the the result value
      */
-    public static int maskToOne(int data, int mask){
+    public static int maskOR(int data, int mask){
         return (mask | data);
     }
 
@@ -56,7 +56,7 @@ public class BitUtils {
      * @param data digits to mask
      * @return the the result value
      */
-    public static byte maskToZero(byte data, byte mask){
+    public static byte maskAND(byte data, byte mask){
         return (byte) (mask & data);
     }
 
@@ -74,7 +74,7 @@ public class BitUtils {
      * @param data digits to mask
      * @return the the result value
      */
-    public static byte maskToOne(byte data, byte mask){
+    public static byte maskOR(byte data, byte mask){
         return (byte) (mask | data);
     }
 
@@ -114,15 +114,6 @@ public class BitUtils {
         return (byte) (data << shift);
     }
 
-    /**
-     * Return 1 if the masked data is equal to the mask,
-     * false otherwise.
-     * @param mask mask to apply
-     * @param data digits to mask
-     */
-    public static boolean isEquals(byte data, byte mask){
-        return maskToZero(mask,data) == mask;
-    }
 
     /**
      * Return 1 if the masked data is equal to the mask,
@@ -131,7 +122,7 @@ public class BitUtils {
      * @param data digits to mask
      */
     public static boolean isIntegerEquals(int data, int mask){
-        return maskToZero(mask,data) == mask;
+        return maskAND(mask,data) == mask;
     }
 
     /**
@@ -141,7 +132,7 @@ public class BitUtils {
      * @param data digits to mask
      */
     public static boolean isByteEquals(byte data, byte mask){
-        return maskToZero(mask,data) == mask;
+        return maskAND(mask,data) == mask;
     }
 
 
@@ -152,7 +143,7 @@ public class BitUtils {
      * @param dataToShift the digits to shift
      */
     public static boolean isBitSet(byte mask, byte dataToShift, int shift) {
-        return ! isZero((byte) maskToZero(mask, shiftLeft(dataToShift, shift)));
+        return ! isZero((byte) maskAND(mask, shiftLeft(dataToShift, shift)));
     }
 
 
