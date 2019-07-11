@@ -121,7 +121,7 @@ public class BitUtils {
      * @param mask mask to apply
      * @param data digits to mask
      */
-    public static boolean isIntegerEquals(int data, int mask){
+    public static boolean areIntegerEquals(int data, int mask){
         return maskAND(mask,data) == mask;
     }
 
@@ -131,7 +131,7 @@ public class BitUtils {
      * @param mask mask to apply
      * @param data digits to mask
      */
-    public static boolean isByteEquals(byte data, byte mask){
+    public static boolean areByteEquals(byte data, byte mask){
         return maskAND(mask,data) == mask;
     }
 
