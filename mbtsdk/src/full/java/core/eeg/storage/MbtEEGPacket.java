@@ -2,9 +2,11 @@ package core.eeg.storage;
 
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
+
+import core.eeg.signalprocessing.Frequency;
+import core.eeg.signalprocessing.MbtEegFeatures;
 
 @Keep
 public final class MbtEEGPacket {
@@ -143,7 +145,16 @@ public final class MbtEEGPacket {
         return features;
     }
 
+    public ArrayList<Float> getFeature(int frequency) {
+        ArrayList<Float> feature = new ArrayList<>();
+        for (int channelIndex = 0; channelIndex < features.length ; channelIndex++){
+            feature.add(features[channelIndex][frequency]);
+        }
+        return feature;
+    }
+
     public void setFeatures(float[][] features) {
         this.features = features;
     }
+
 }
