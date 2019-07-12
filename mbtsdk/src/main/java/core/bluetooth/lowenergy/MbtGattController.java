@@ -18,6 +18,7 @@ import core.device.model.DeviceInfo;
 import core.device.model.MelomindDevice;
 import utils.CommandUtils;
 import utils.LogUtils;
+import utils.BitUtils;
 
 import static command.DeviceCommandEvents.*;
 import static core.bluetooth.lowenergy.MelomindCharacteristics.CHARAC_HEADSET_STATUS;
@@ -42,7 +43,6 @@ import static core.bluetooth.lowenergy.MelomindCharacteristics.SERVICE_MEASUREME
 final class MbtGattController extends BluetoothGattCallback {
 
     private final static String TAG = MbtGattController.class.getSimpleName();
-    private final static byte TRUE = (byte) 0x01;
 
     @Nullable
     private BluetoothGattService mainService = null;
@@ -190,6 +190,7 @@ final class MbtGattController extends BluetoothGattCallback {
     @Override
     public void onCharacteristicRead(BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, int status) {
         super.onCharacteristicRead(gatt, characteristic, status);
+        Log.d(TAG, "on Characteristic Read value: "+(characteristic.getValue() == null ? characteristic.getValue() : Arrays.toString(characteristic.getValue())) );
 
         if (characteristic.getUuid().compareTo(CHARAC_INFO_FIRMWARE_VERSION) == 0)
             mbtBluetoothLE.notifyDeviceInfoReceived(DeviceInfo.FW_VERSION, new String(characteristic.getValue()));
@@ -233,12 +234,15 @@ final class MbtGattController extends BluetoothGattCallback {
     @Override
     public void onCharacteristicWrite(BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, int status) {
         super.onCharacteristicWrite(gatt, characteristic, status);
+        Log.d(TAG, "on Characteristic Write value: "+(characteristic.getValue() == null ? characteristic.getValue() : Arrays.toString(characteristic.getValue())) );
+
         mbtBluetoothLE.stopWaitingOperation();
     }
 
     @Override
     public void onCharacteristicChanged(BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic) {
         super.onCharacteristicChanged(gatt, characteristic);
+        Log.d(TAG, "on Characteristic Changed value: "+(characteristic.getValue() == null ? characteristic.getValue() : Arrays.toString(characteristic.getValue())) );
 
         if (characteristic.getUuid().compareTo(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG) == 0) {
             this.mbtBluetoothLE.notifyNewDataAcquired(characteristic.getValue());
@@ -320,9 +324,30 @@ final class MbtGattController extends BluetoothGattCallback {
     }
 
      private void notifyResponseReceived(byte mailboxEvent, byte[] response){
-         if(mailboxEvent == MBX_DISCONNECT_IN_A2DP
-                 || (mailboxEvent == MBX_CONNECT_IN_A2DP && ((response[0] & CMD_CODE_CONNECT_IN_A2DP_IN_PROGRESS) != TRUE)))
-             mbtBluetoothLE.notifyConnectionResponseReceived(mailboxEvent, response[0]); //connection and disconnection response are composed of only one byte
-         mbtBluetoothLE.notifyCommandResponseReceived(response);
+         if(isMailboxEventFinished(mailboxEvent , response)){
+             if(isConnectionMailboxEvent(mailboxEvent))
+                 mbtBluetoothLE.notifyConnectionResponseReceived(mailboxEvent, response[0]); //connection and disconnection response are composed of only one byte
+             mbtBluetoothLE.notifyCommandResponseReceived(response);
+         }
+
+     }
+
+    /**
+     * Return true if the mailboxEvent if the Bluetooth connection or disconnection event is finished (no more reponse will be received)
+     * @param mailboxEvent mailbox command identifier
+     */
+     boolean isConnectionMailboxEvent(byte mailboxEvent){
+         return (mailboxEvent == MBX_DISCONNECT_IN_A2DP || mailboxEvent == MBX_CONNECT_IN_A2DP);
+     }
+
+    /**
+     * Return true if the mailboxEvent if the Bluetooth connection or disconnection event is finished (no more reponse will be received)
+     * The SDK waits until timeout if a mailbox response is received for a command that is not finished
+     * @param mailboxEvent mailbox command identifier
+     */
+     private boolean isMailboxEventFinished(byte mailboxEvent, byte[] response){
+        return mailboxEvent != MBX_CONNECT_IN_A2DP //the connect a2dp command is the only command where the headset returns several responses
+                || (!BitUtils.areByteEquals(CMD_CODE_CONNECT_IN_A2DP_IN_PROGRESS, response[0])//wait another response until timeout if the connection is not in progress
+                    && !BitUtils.areByteEquals(CMD_CODE_CONNECT_IN_A2DP_LINKKEY_INVALID, response[0])); //wait another response until timeout if the linkkey invalid response is returned
      }
 }

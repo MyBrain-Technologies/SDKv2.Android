@@ -61,6 +61,9 @@ import java.util.Formatter;
 @Keep
 public class ConversionUtils {
 
+    private static final Float TRUE_AS_FLOAT = 1f;
+    private static final Float FALSE_AS_FLOAT = 0f;
+
     public static byte loUint16(short v) {
         return (byte) (v & 0xFF);
     }
@@ -155,4 +158,14 @@ public class ConversionUtils {
         return ch >= 32 && ch < 127;
     }
 
+    /**
+     * Return 0f if booleanValue is false
+     * Return 1f if booleanValue is true
+     * @param valueToConvert is the boolean value to convert into Float value
+     * @return 0f if booleanValue is false, 1f otherwise
+     */
+    public static Float booleanToFloat(boolean valueToConvert){
+        return valueToConvert ?
+                TRUE_AS_FLOAT : FALSE_AS_FLOAT;
+    }
 }
