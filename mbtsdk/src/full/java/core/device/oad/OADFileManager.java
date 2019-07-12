@@ -1,10 +1,9 @@
-package core.oad;
+package core.device.oad;
 
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,7 +42,7 @@ public final class OADFileManager {
 
 
     /**
-     * Constructor in case the oad binary file is stored in the application's assets.
+     * Constructor in case the core.device.oad binary file is stored in the application's assets.
      * @param assetManager
      * @param filepath
      */
@@ -213,7 +212,7 @@ public final class OADFileManager {
 
     /**
      *
-     * @return the final oad buffer
+     * @return the final core.device.oad buffer
      */
     @NonNull
     public ArrayList<byte[]> getmOadBuffer(){
@@ -262,7 +261,7 @@ public final class OADFileManager {
         }
         LogUtils.i(TAG, "buffer complete");
 
-        //Resetting programInfo for the oad session
+        //Resetting programInfo for the core.device.oad session
         mProgInfo.reset();
     }
 

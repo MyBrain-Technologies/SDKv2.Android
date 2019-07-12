@@ -7,7 +7,7 @@ import engine.clientevents.BaseError;
 import engine.clientevents.BasicError;
 import engine.clientevents.BluetoothError;
 import engine.clientevents.EegError;
-import engine.clientevents.FirmwareError;
+import engine.clientevents.OADError;
 import engine.clientevents.MobileDeviceError;
 
 /**
@@ -150,7 +150,7 @@ public enum BtState {
     /**
      * Failed to replace the current firmware installed with a new one. This failure trigger a disconnection.
      */
-    UPGRADING_FAILURE(FirmwareError.ERROR_FIRMWARE_UPGRADE_FAILED),
+    UPGRADING_FAILURE(OADError.ERROR_FIRMWARE_UPGRADE_FAILED),
 
     /**
      * When connection is being disconnected

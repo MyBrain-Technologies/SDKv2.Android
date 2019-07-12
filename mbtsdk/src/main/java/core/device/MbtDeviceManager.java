@@ -12,8 +12,10 @@ import core.BaseModuleManager;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindDevice;
 import core.device.model.VProDevice;
+import core.device.event.DCOffsetEvent;
+import core.device.event.SaturationEvent;
 import core.eeg.acquisition.MbtDataConversion;
-import core.oad.OADFileManager;
+import core.device.oad.OADFileManager;
 import eventbus.EventBusManager;
 import eventbus.events.ConfigEEGEvent;
 import eventbus.events.DeviceInfoEvent;
@@ -53,7 +55,7 @@ public class MbtDeviceManager extends BaseModuleManager{
             dcOffsets[1] = MbtDataConversion.convertRawDataToDcOffset(temp);
             System.arraycopy(rawDeviceMeasure.getRawMeasure(), 6, temp, 0, 2);
             dcOffsets[0] = MbtDataConversion.convertRawDataToDcOffset(temp);
-            EventBusManager.postEvent(new DCOffsets(timestamp, dcOffsets));
+            EventBusManager.postEvent(new DCOffsetEvent(timestamp, dcOffsets));
         }
     }
 

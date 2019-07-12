@@ -7,7 +7,7 @@ core.eeg
 core.eeg.acquisition
 core.eeg.signalprocessing
 core.eeg.storage
-core.oad
+core.core.device.oad
 core.recordingsession
 core.recordingsession.metadata
 core.serversync

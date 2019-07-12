@@ -158,7 +158,7 @@ final class MbtGattController extends BluetoothGattCallback {
             this.mailBox = this.mainService.getCharacteristic(CHARAC_MEASUREMENT_MAILBOX);
             this.oadPacketsCharac = this.mainService.getCharacteristic(CHARAC_MEASUREMENT_OAD_PACKETS_TRANSFER);
             this.headsetStatus = this.mainService.getCharacteristic(CHARAC_HEADSET_STATUS);
-            //write no response requested in oad fw specification
+            //write no response requested in core.device.oad fw specification
             this.oadPacketsCharac.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
         }
 

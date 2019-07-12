@@ -23,10 +23,10 @@ import core.bluetooth.MbtBluetoothManager;
 import core.bluetooth.requests.ReadRequestEvent;
 import core.bluetooth.requests.StreamRequestEvent;
 import core.bluetooth.requests.CommandRequestEvent;
-import core.device.DCOffsets;
+import core.device.event.DCOffsetEvent;
 import core.device.DeviceEvents;
 import core.device.MbtDeviceManager;
-import core.device.SaturationEvent;
+import core.device.event.SaturationEvent;
 import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindsQRDataBase;
@@ -246,7 +246,7 @@ public class MbtManager{
      * Called when a new DCOffset measure event has been broadcast on the event bus.
      */
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onNewDCOffset(DCOffsets dcOffsets){
+    public void onNewDCOffset(DCOffsetEvent dcOffsets){
         if(deviceStatusListener != null){
             deviceStatusListener.onNewDCOffsetMeasured(dcOffsets);
         }

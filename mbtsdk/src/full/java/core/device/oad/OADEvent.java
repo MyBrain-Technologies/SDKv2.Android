@@ -1,4 +1,4 @@
-package core.oad;
+package core.device.oad;
 
 /**
  * Created by Etienne on 14/10/2016.
@@ -12,7 +12,7 @@ public enum OADEvent {
 
 
     /**
-     * Corresponds to the completion progress of the oad.
+     * Corresponds to the completion progress of the core.device.oad.
      */
     PROGRESS,
 
@@ -24,7 +24,7 @@ public enum OADEvent {
 
 
     /**
-     * Corresponds to the last checking value, whether oad has completed or not.
+     * Corresponds to the last checking value, whether core.device.oad has completed or not.
      */
     OAD_COMPLETION
 }

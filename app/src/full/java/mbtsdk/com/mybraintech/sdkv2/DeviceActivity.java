@@ -7,7 +7,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -25,8 +24,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 
-import core.device.DCOffsets;
-import core.device.SaturationEvent;
+import core.device.event.DCOffsetEvent;
+import core.device.event.SaturationEvent;
 import core.bluetooth.BtState;
 import core.eeg.storage.MbtEEGPacket;
 import engine.MbtClient;
@@ -148,7 +147,7 @@ DeviceActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onNewDCOffsetMeasured(DCOffsets dcOffsets) {
+            public void onNewDCOffsetMeasured(DCOffsetEvent dcOffsets) {
                 notifyUser("Offset: " + Arrays.toString(dcOffsets.getOffset()));
             }
         };
