@@ -347,7 +347,7 @@ final class MbtGattController extends BluetoothGattCallback {
      */
      private boolean isMailboxEventFinished(byte mailboxEvent, byte[] response){
         return mailboxEvent != MBX_CONNECT_IN_A2DP //the connect a2dp command is the only command where the headset returns several responses
-                || (!BitUtils.isByteEquals(CMD_CODE_CONNECT_IN_A2DP_IN_PROGRESS, response[0])//wait another response until timeout if the connection is not in progress
-                    && !BitUtils.isByteEquals(CMD_CODE_CONNECT_IN_A2DP_LINKKEY_INVALID, response[0])); //wait another response until timeout if the linkkey invalid response is returned
+                || (!BitUtils.areByteEquals(CMD_CODE_CONNECT_IN_A2DP_IN_PROGRESS, response[0])//wait another response until timeout if the connection is not in progress
+                    && !BitUtils.areByteEquals(CMD_CODE_CONNECT_IN_A2DP_LINKKEY_INVALID, response[0])); //wait another response until timeout if the linkkey invalid response is returned
      }
 }

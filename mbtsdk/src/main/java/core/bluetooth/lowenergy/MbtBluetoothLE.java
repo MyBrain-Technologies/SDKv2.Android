@@ -633,11 +633,11 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         LogUtils.i(TAG, "Received response for " + (mailboxEvent == DeviceCommandEvents.MBX_CONNECT_IN_A2DP ? "connection" : "disconnection" + " : " + mailboxResponse));
 
         if(mailboxEvent == DeviceCommandEvents.MBX_CONNECT_IN_A2DP){
-            if(BitUtils.isByteEquals(CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED, mailboxResponse))
+            if(BitUtils.areByteEquals(CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED, mailboxResponse))
                 mbtBluetoothManager.notifyConnectionStateChanged(BtState.JACK_CABLE_CONNECTED);
 
-            else if(BitUtils.isByteEquals(CMD_CODE_CONNECT_IN_A2DP_SUCCESS, mailboxResponse)
-                || BitUtils.isByteEquals(CMD_CODE_CONNECT_IN_A2DP_FAILED_ALREADY_CONNECTED, mailboxResponse))
+            else if(BitUtils.areByteEquals(CMD_CODE_CONNECT_IN_A2DP_SUCCESS, mailboxResponse)
+                || BitUtils.areByteEquals(CMD_CODE_CONNECT_IN_A2DP_FAILED_ALREADY_CONNECTED, mailboxResponse))
                 mbtBluetoothManager.notifyConnectionStateChanged(BtState.AUDIO_BT_CONNECTION_SUCCESS);
         }else
             mbtBluetoothManager.notifyConnectionStateChanged(BtState.AUDIO_BT_DISCONNECTED);
