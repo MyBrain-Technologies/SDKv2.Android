@@ -113,7 +113,7 @@ import android.util.Log;
 
 
         /**
-         * Verifies if a specific feature can be enabled on the bt communication based on the firwmare version.
+         * Verifies if a specific feature can be enabled on the bt communication based on the firmware version.
          * @param featureMain the minimum value for the main, ie X in X.Y.Z nomenclature
          * @param featureMajor the minimum value for the major, ie Y in X.Y.Z nomenclature
          * @param featureMinor the minimum value for the minor, ie Z in X.Y.Z nomenclature
