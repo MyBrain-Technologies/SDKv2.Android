@@ -23,7 +23,7 @@ import core.device.model.MbtDevice;
 import core.device.model.MelomindsQRDataBase;
 import engine.SimpleRequestCallback;
 import features.MbtFeatures;
-import utils.FirmwareUtils;
+import utils.VersionHelper;
 import utils.LogUtils;
 import utils.MbtAsyncWaitOperation;
 
@@ -225,7 +225,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                     public void onRequestComplete(MbtDevice device) {
                         if(device == null)
                             return;
-                        if(new FirmwareUtils(device.getFirmwareVersion()).isFwValidForFeature(FirmwareUtils.FWFeature.A2DP_FROM_HEADSET)){
+                        if(new VersionHelper(device.getFirmwareVersion()).isFwValidForFeature(VersionHelper.FWFeature.A2DP_FROM_HEADSET)){
                             mbtBluetoothManager.disconnectA2DPFromBLE();
                             try {
                                 asyncDisconnection.waitOperationResult(MbtConfig.getBluetoothA2DpConnectionTimeout());

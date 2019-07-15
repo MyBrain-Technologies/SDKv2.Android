@@ -27,20 +27,24 @@ public enum BtState {
 
 
 
-        /**
-     * Initial state that corresponds to a standby mode : it represents a state where the mobile device is not connected to any headset and is awaiting order from the user or the SDK.
+    /**
+     * Initial state that corresponds to a standby mode :
+     * it represents a state where the mobile device is not connected to any headset and is awaiting order from the user or the SDK.
      * For example, he is awaiting for the user to call the connect method.
-     * The IDLE state is automatically returned few minutes after the DATA_BT_DISCONNECTED state is returned (= after disconnection or lost connection or failure during the connection process).
+     * The IDLE state is automatically returned few minutes after the DATA_BT_DISCONNECTED state is returned
+     * (= after disconnection or lost connection or failure during the connection process).
      */
     IDLE,
 
     /**
-     * All the prerequisites are ok to start a bluetooth connection operation (device is not already connected, bluetooth is enabled, location is enabled & location permission is granted)
+     * All the prerequisites are ok to start a bluetooth connection operation
+     * (device is not already connected, bluetooth is enabled, location is enabled & location permission is granted)
      */
     READY_FOR_BLUETOOTH_OPERATION,
 
     /**
-     * In case all the connection prerequisites are valid, a scanning has just started to look for an available headset using the LE scan discovery.
+     * In case all the connection prerequisites are valid,
+     * a scanning has just started to look for an available headset using the LE scan discovery.
      * The Low Energy Scanner is used first, as it is more efficient than the classical Bluetooth discovery Scanner.
      * A specific headset can be targeted if the user specify a headset name when he call the connect method.
      */

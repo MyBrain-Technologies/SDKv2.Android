@@ -1,67 +1,36 @@
 package core.device.oad;
 
+import android.support.annotation.IntRange;
+
 public enum OADState {
 
-    /**
-     * Initial pending state that describe a state
-     * where the SDK is waiting for a headset device connection.
-     * This state is triggered when any headset device is disconnected.
-     */
-    IDLE,
-
-    /**
-     * State triggered when a device has just been connected
-     * if the firmware version is lower than the last released version.
-     */
-    UPDATE_NEEDED,
-
-    /**
+     /**
      * State triggered when the client requests an OAD firmware update.
      * As the OAD binary file that holds the new firmware is too big to be sent in a single request,
      * the file is chunked into small packets.
      */
-    PREPARING_REQUEST,
+    INIT(0),
 
     /**
-     * State triggered when an OAD request is ready (preparation complete)
+     * State triggered when an OAD request is ready
      * to be submitted for validation by the headset device that is out-of-date.
-     */
-    SENDING_VALIDATION_REQUEST,
-
-    /**
-     * State triggered when the validation request is sent
-     * to the headset device that is out-of-date.
      * The SDK is then waiting for a return response that validate or invalidate the OAD request.
      */
-    VALIDATION_REQUEST_SENT,
-
-    /**
-     * State triggered when the out-of-date headset device validate the OAD request.
-     */
-    DEVICE_VALIDATED,
+    FIRMWARE_VALIDATION(2),
 
     /**
      * State triggered once the out-of-date headset device has validated the OAD request
      * to start the OAD packets transfer.
      */
-    TRANSFER_STARTED,
+    TRANSFERRING(5),
 
     /**
-     * State triggered when all the packets have been transferred by the SDK to the out-of-date headset device.
-     */
-    TRANSFER_COMPLETE,
-
-    /**
-     * State triggered once the transfer is complete.
+     * State triggered once the transfer is complete
+     * (all the packets have been transferred by the SDK to the out-of-date headset device).
      * The SDK is then waiting that the headset device returns a success or failure transfer state.
      * For example, it might return a failure state if any corruption occurred while transferring the binary file.
      */
-    WAITING_DEVICE_READBACK,
-
-    /**
-     * State triggered when the SDK receives a success transfer state from the headset device.
-     */
-    READBACK_SUCCESS,
+    AWAITING_DEVICE_READBACK(105),
 
     /**
      * State triggered when the SDK has received a success transfer response from the headset device
@@ -69,36 +38,55 @@ public enum OADState {
      * The SDK needs to reset the mobile device Bluetooth (disable then enable)
      * and clear the pairing keys of the updated headset device.
      */
-    REBOOT,
+    REBOOTING(110),
 
     /**
      * State triggered when the SDK is reconnecting the updated headset device.
      */
-    RECONNECTING,
+    RECONNECTING(115),
 
     /**
      * State triggered when the headset device is reconnected.
      * The SDK checks that update has succeeded by reading the current firmware version
      * and compare it to the OAD file one.
      */
-    VERIFYING_FIRMWARE_VERSION,
+    VERIFYING_FIRMWARE_VERSION(117),
 
     /**
-     * State triggered :
-     * - when a device has just been connected, if the firmware version is equal to the last released version.
-     * - when an OAD update is completed (final state)
+     * State triggered when an OAD update is completed (final state)
      */
-    UP_TO_DATE,
-
-    /**
-     * State triggered when the headset device invalidate the OAD request prepared by the SDK.
-     */
-    DEVICE_REJECTED,
+    COMPLETE(120),
 
     /**
      * State triggered when the SDK encounters a problem
      * that is blocking and that keeps from doing any OAD update.
      */
-    ABORTED,
+    ABORTED(0);
+
+    private final int MINIMUM_INTERNAL_PROGRESS = 0;
+    private final int MAXIMUM_INTERNAL_PROGRESS = 120;
+
+    /**
+     * Corresponding progress in percentage
+     * A progress of 0 means that the transfer has not started yet.
+     * A progress of 100 means that the transfer is complete.
+     */
+    private int progress;
+
+    OADState(int progress) {
+        this.progress = progress;
+    }
+
+    public void setProgress(@IntRange(from = MINIMUM_INTERNAL_PROGRESS, to = MAXIMUM_INTERNAL_PROGRESS) int progress) {
+        this.progress = progress;
+    }
+
+    public int convertToProgress() {
+       return progress * 100 / 120;
+    }
+
+    public boolean triggersReset(){
+        return this.equals(ABORTED);
+    }
 
 }

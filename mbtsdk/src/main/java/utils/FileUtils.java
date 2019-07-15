@@ -7,6 +7,7 @@ import android.text.TextUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -165,7 +166,7 @@ public final class FileUtils {
      * @param filePath is the file to extract
      * @return the file content as a byte array
      */
-    public static final byte[] extractFile(@Nullable final String filePath) {
+    public static final byte[] extractFile(@Nullable final String filePath) throws FileNotFoundException {
         return null;
     }
 }
