@@ -113,4 +113,120 @@ public interface DeviceEvents {
         }
     }
 
+    /**
+     * Event triggered to notify the SDK Bluetooth unit
+     * that the SDK Device unit needs to check the OAD update request validity, in order
+     * to know if the current firmware validate or reject the new firmware to upload
+     */
+    class OADValidationRequestEvent{
+
+        /**
+         * New firmware version
+         */
+        private String firmwareVersion;
+
+        /**
+         * Number of OAD packets to send to the firmware (chunk of the binary file that holds the new firmware)
+         */
+        private int binaryFileLength;
+
+        public OADValidationRequestEvent(String firmwareVersion, int binaryFileLength) {
+            this.firmwareVersion = firmwareVersion;
+            this.binaryFileLength = binaryFileLength;
+        }
+
+        /**
+         * Returns the new firmware version
+         * @return the new firmware version
+         */
+        public String getFirmwareVersion() {
+            return firmwareVersion;
+        }
+
+        /**
+         * Number of OAD packets to send to the firmware (chunk of the binary file that holds the new firmware)
+         */
+        public int getBinaryFileLength() {
+            return binaryFileLength;
+        }
+    }
+
+    /**
+     * Event triggered to notify the SDK Device unit
+     * when a response is received by the SDK Bluetooth unit
+     * to know if the current firmware validate or reject the new firmware to upload
+     */
+    class OADValidationResponseEvent{
+
+        /**
+         * Validation flag used to transmit the firmware response related to a validity request
+         * True if the headset device validated the OAD update request
+         * False if the headset device rejected the OAD update request
+         */
+        private boolean isValidated;
+
+        public OADValidationResponseEvent(boolean isValidated) {
+            this.isValidated = isValidated;
+        }
+
+        /**
+         * Validation flag used to transmit the firmware response related to a validity request
+         * True if the headset device validated the OAD update request
+         * False if the headset device rejected the OAD update request
+         */
+        public boolean isValidated() {
+            return isValidated;
+        }
+    }
+
+    /**
+     * Event triggered when a packet has to be sent to the Bluetooth manager
+     * so that it can send it to the headset
+     */
+    class OADTransferEvent{
+
+        /**
+         * OAD packet is a chunk of the binary file that holds the new firmware
+         */
+        private byte[] OADPacket;
+
+        public OADTransferEvent(byte[] OADPacket) {
+            this.OADPacket = OADPacket;
+        }
+
+        /**
+         * OAD packet is a chunk of the binary file that holds the new firmware
+         */
+        public byte[] getOADPacket() {
+            return OADPacket;
+        }
+    }
+
+    /**
+     * Event triggered to notify the SDK Device unit
+     * when a response is caught by the SDK Bluetooth unit
+     * to know if the new firmware has been fully received by the headset device to update
+     */
+    class OADReadbackEvent {
+
+        /**
+         * Readback flag used to transmit the firmware response related to a transfer request
+         * True if the headset device received all the OAD packets sent by the SDK
+         * False if the headset device encountered a problem during the transfer
+         */
+        private boolean CRCreadback;
+
+        public OADReadbackEvent(boolean readback) {
+            this.CRCreadback = readback;
+        }
+
+        /**
+         * Readback flag used to transmit the firmware response related to a transfer request
+         * True if the headset device received all the OAD packets sent by the SDK
+         * False if the headset device encountered a problem during the transfer
+         */
+        public boolean isCRCreadback() {
+            return CRCreadback;
+        }
+    }
 }
