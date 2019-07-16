@@ -16,13 +16,13 @@ public enum OADState {
      * to be submitted for validation by the headset device that is out-of-date.
      * The SDK is then waiting for a return response that validate or invalidate the OAD request.
      */
-    FIRMWARE_VALIDATION(2),
+    FIRMWARE_VALIDATION(2, 10000),
 
     /**
      * State triggered once the out-of-date headset device has validated the OAD request
      * to start the OAD packets transfer.
      */
-    TRANSFERRING(5),
+    TRANSFERRING(5,600000),
 
     /**
      * State triggered once the transfer is complete
@@ -30,7 +30,7 @@ public enum OADState {
      * The SDK is then waiting that the headset device returns a success or failure transfer state.
      * For example, it might return a failure state if any corruption occurred while transferring the binary file.
      */
-    AWAITING_DEVICE_READBACK(105),
+    AWAITING_DEVICE_READBACK(105,10000),
 
     /**
      * State triggered when the SDK has received a success transfer response from the headset device
@@ -38,7 +38,7 @@ public enum OADState {
      * The SDK needs to reset the mobile device Bluetooth (disable then enable)
      * and clear the pairing keys of the updated headset device.
      */
-    REBOOTING(110),
+    REBOOTING(110,20000),
 
     /**
      * State triggered when the SDK is reconnecting the updated headset device.
@@ -61,7 +61,7 @@ public enum OADState {
      * State triggered when the SDK encounters a problem
      * that is blocking and that keeps from doing any OAD update.
      */
-    ABORTED(0);
+    ABORTED();
 
     private final int MINIMUM_INTERNAL_PROGRESS = 0;
     private final int MAXIMUM_INTERNAL_PROGRESS = 120;
@@ -73,8 +73,23 @@ public enum OADState {
      */
     private int progress;
 
+    /**
+     * Maximum amount of time to allocate for the state.
+     * A timeout error is triggered if the step is not complete within this allocated time.
+     */
+    private int timeout;
+
+    OADState() {
+
+    }
+
     OADState(int progress) {
         this.progress = progress;
+    }
+
+    OADState(int progress, int timeout) {
+        this.progress = progress;
+        this.timeout = timeout;
     }
 
     public void setProgress(@IntRange(from = MINIMUM_INTERNAL_PROGRESS, to = MAXIMUM_INTERNAL_PROGRESS) int progress) {
@@ -85,8 +100,7 @@ public enum OADState {
        return progress * 100 / 120;
     }
 
-    public boolean triggersReset(){
-        return this.equals(ABORTED);
+    public int getMaximumDuration() {
+        return timeout;
     }
-
 }

@@ -1,42 +1,59 @@
 package core.device.oad;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
 
+import java.io.FileNotFoundException;
+
+import core.device.MbtDeviceManager;
 import core.device.model.MbtDevice;
 import engine.clientevents.OADStateListener;
+import mbtsdk.com.mybraintech.mbtsdk.BuildConfig;
 import utils.LogUtils;
+import utils.OADExtractionUtils;
 
 
 public final class OADManager {
 
     private final static String TAG = OADManager.class.getName();
 
-    static final int BUFFER_LENGTH = 14223;
-    static final int CHUNK_NB_BYTES = 14223;
-    static final int FILE_LENGTH_NB_BYTES = 4;
-    static final int FIRMWARE_VERSION_NB_BYTES = 2;
+    private final static String BINARY_HOOK = "mm-ota-";
+    private final static String BINARY_FORMAT = ".bin";
+    private final static String FWVERSION_REGEX = "_";
 
-    static final int FIRMWARE_VERSION_LENGTH = 3;
-    static final String FIRMWARE_VERSION_SPLITTER = "\\.";
+    public final static String CURRENT_FW_VERSION = BINARY_HOOK + BuildConfig.FIRMWARE_VERSION + BINARY_FORMAT;
+
+    public static final int NB_PACKETS_TO_SEND = 14223;
+
+    static final int OAD_PACKET_SIZE = 18;
+    static final int OAD_INDEX_SIZE = 2;
+    static final int OAD_BUFFER_SIZE = OAD_INDEX_SIZE + OAD_PACKET_SIZE;
+
+    private static final int FIRMWARE_VERSION_LENGTH = 3;
+    private static final String FIRMWARE_VERSION_SPLITTER = "\\.";
 
     private final Context context;
+    private final MbtDeviceManager deviceManager;
 
     private OADState currentState;
     private OADStateListener stateListener;
+    PacketCounter packetEngine;
 
-    public OADManager(Context context) {
+    private OADContext oadContext;
+
+    public OADManager(Context context, MbtDeviceManager deviceManager) {
         this.context = context;
+        this.deviceManager = deviceManager;
+        this.oadContext = new OADContext();
+
     }
 
-    void notifyOADStateChanged(@NonNull OADState state) {
+    public void startOADupdate(){
+        init(CURRENT_FW_VERSION);
+
+    }
+
+    void notifyOADStateChanged(OADState state) {
         currentState = state;
-        if(state.triggersReset())
-            reset();
-    }
-
-    void reset() {
-        notifyOADStateChanged(null);
     }
 
     void abort(String reason) {
@@ -44,12 +61,29 @@ public final class OADManager {
         notifyOADStateChanged(OADState.ABORTED);
     }
 
-    public boolean prepareOADFile(String oadFilePath){
-
-        return true;//todo
+    /**
+     * Initialize the OAD update process
+     * Extract from the binary file that holds the new firmware:
+     * - the firmware version
+     * - the number of OAD packets (chunks of binary file)
+     * @param oadFilePath is the path of the binary file that holds the new firmware
+     * @return true if the
+     */
+    public boolean init(String oadFilePath){
+        this.packetEngine = new PacketCounter();
+        oadContext.setFilePath(oadFilePath);
+        try {
+            byte[] content = OADExtractionUtils.extractFileContent(context.getAssets(), oadFilePath);
+            String firmwareVersion = OADExtractionUtils.extractFirmwareVersion(content);
+            oadContext.setNbBytesToSend(content.length);
+            oadContext.setFirmwareVersion(firmwareVersion);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        return true; //todo if valid/invalid true /false
     }
 
-    public boolean initiateOADRequest(){
+    public boolean requestFirmwareValidation(int nbPacketToSend, String firmwareVersion){
 
         return true;//todo
     }
@@ -69,9 +103,8 @@ public final class OADManager {
         return true;//todo
     }
 
-    public boolean verifyFirmwareVersion(){
-
-        return true;//todo
+    public void verifyFirmwareVersion(){
+        isFirmwareVersionUpToDate(deviceManager.getmCurrentConnectedDevice().getFirmwareVersion());
     }
 
     /**
