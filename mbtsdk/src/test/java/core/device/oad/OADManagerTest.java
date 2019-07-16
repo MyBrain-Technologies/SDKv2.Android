@@ -217,7 +217,7 @@ public class OADManagerTest {
     @Test
     public void init_disconnection(){
         MbtBluetoothLE bluetoothLE = Mockito.mock(MbtBluetoothLE.class);
-        PacketEngine packetEngine = Mockito.mock(PacketEngine.class);
+        PacketCounter packetEngine = Mockito.mock(PacketCounter.class);
 
         oadManager.setStateListener(new OADStateListener() {
             @Override
