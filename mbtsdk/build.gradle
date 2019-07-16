@@ -25,22 +25,26 @@ android {
             buildConfigField "boolean", "EEG_ENABLED", "true"
             buildConfigField "boolean", "BLUETOOTH_ENABLED", "true"
             buildConfigField "boolean", "DEVICE_ENABLED", "true"
+            buildConfigField "String", "FIRMWARE_VERSION", "\"1_7_4\""
         }
         staging {
             buildConfigField "boolean", "EEG_ENABLED", "true"
             buildConfigField "boolean", "BLUETOOTH_ENABLED", "true"
             buildConfigField "boolean", "DEVICE_ENABLED", "true"
+            buildConfigField "String", "FIRMWARE_VERSION", "\"1_7_4\""
         }
         debug {
             buildConfigField "boolean", "EEG_ENABLED", "true"
             buildConfigField "boolean", "BLUETOOTH_ENABLED", "true"
             buildConfigField "boolean", "DEVICE_ENABLED", "true"
+            buildConfigField "String", "FIRMWARE_VERSION", "\"1_7_4\""
         }
         unitTests {
             initWith (buildTypes.debug)
             buildConfigField "boolean", "EEG_ENABLED", "false"
             buildConfigField "boolean", "BLUETOOTH_ENABLED", "true"
             buildConfigField "boolean", "DEVICE_ENABLED", "false"
+            buildConfigField "String", "FIRMWARE_VERSION", "\"1_7_4\""
         }
     }
 

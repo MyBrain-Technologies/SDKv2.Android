@@ -16,7 +16,6 @@ import core.device.event.DCOffsetEvent;
 import core.device.event.SaturationEvent;
 import core.device.oad.OADManager;
 import core.eeg.acquisition.MbtDataConversion;
-import core.device.oad.OADFileManager;
 import eventbus.EventBusManager;
 import eventbus.events.ConfigEEGEvent;
 import eventbus.events.DeviceInfoEvent;
@@ -36,7 +35,7 @@ public class MbtDeviceManager extends BaseModuleManager{
     public MbtDeviceManager(Context context){
         super(context);
         this.mContext = context;
-        this.oadManager = new OADManager(context);
+        this.oadManager = new OADManager(context, this);
     }
 
 
@@ -64,7 +63,7 @@ public class MbtDeviceManager extends BaseModuleManager{
     }
 
 
-    private MbtDevice getmCurrentConnectedDevice() {
+    public MbtDevice getmCurrentConnectedDevice() {
         return mCurrentConnectedDevice;
     }
 
@@ -155,6 +154,5 @@ public class MbtDeviceManager extends BaseModuleManager{
     private boolean isFirmwareVersionUpToDate(){
         return oadManager.isFirmwareVersionUpToDate(mCurrentConnectedDevice.getFirmwareVersion());
     }
-
 
 }

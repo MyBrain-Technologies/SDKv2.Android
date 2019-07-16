@@ -161,12 +161,4 @@ public final class FileUtils {
         return outPutFile;
     }
 
-    /**
-     * Extract the file content into a byte array
-     * @param filePath is the file to extract
-     * @return the file content as a byte array
-     */
-    public static final byte[] extractFile(@Nullable final String filePath) throws FileNotFoundException {
-        return null;
-    }
 }
