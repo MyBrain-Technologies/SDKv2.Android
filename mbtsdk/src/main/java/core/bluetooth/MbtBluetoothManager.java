@@ -199,6 +199,15 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         if(command instanceof BluetoothCommands.Mtu)
             notifyMtuChanged(response == command.getData());
     }
+
+    public void notifyFirmwareValidationReceived(boolean isValidated) {
+        //todo
+    }
+
+    public void notifyOADPacketLost(int packetIndex) {
+        //todo
+    }
+
     /**
      * This class is a specific thread that will handle all bluetooth operations. Bluetooth operations
      * are synchronous, meaning two or more operations can't be run simultaneously. This {@link HandlerThread}

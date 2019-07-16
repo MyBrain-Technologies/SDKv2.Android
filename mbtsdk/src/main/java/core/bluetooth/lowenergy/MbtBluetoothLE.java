@@ -202,6 +202,24 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         super.mbtBluetoothManager.notifyStreamStateChanged(newStreamState);
     }
 
+    /**
+     * Notify the Bluetooth manager that the firmware validated or rejected the OAD request.
+     *
+     */
+    public void notifyFirmwareValidationReceived(boolean isValidated) {
+        LogUtils.i(TAG, "Firmware " + (isValidated ? "validates":"rejects"+ " the OAD request." ));
+        super.mbtBluetoothManager.notifyFirmwareValidationReceived(isValidated);
+    }
+
+    /**
+     * Notify the Bluetooth manager that the firmware validated or rejected the OAD request.
+     *
+     */
+    public void notifyOADPacketLost(int packetIndex) {
+        LogUtils.i(TAG, "OAD packet lost: " + packetIndex);
+        super.mbtBluetoothManager.notifyOADPacketLost(packetIndex);
+    }
+
 
     /**
      * Whenever there is a new headset status received, this method is called to notify the bluetooth manager about it.
