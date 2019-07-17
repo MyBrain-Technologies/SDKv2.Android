@@ -9,6 +9,13 @@ import static command.DeviceCommandEvents.MBX_OTA_STATUS_EVT;
  */
 
 public enum OADEvent {
+
+    /**
+     * Event triggered when the client request an OAD update.
+     * Initialize the OAD process.
+     */
+    INIT(),
+
     /**
      * Event triggered when the Bluetooth unit receives a response
      * to its OAD validation request from the headset device.
@@ -45,7 +52,7 @@ public enum OADEvent {
     /**
      * Event triggered when the headset device has disconnected after sending the CRC readback
      */
-    REBOOT,
+    REBOOT_PERFORMED,
 
     /**
      * Event triggered when the current headset device has been reconnected or has failed to reconnect.
@@ -67,10 +74,20 @@ public enum OADEvent {
      */
     private byte mailboxEvent;
 
+    private Object associatedValue;
+
     OADEvent() { }
 
     OADEvent(byte mailboxEvent) {
         this.mailboxEvent = mailboxEvent;
+    }
+
+    public void setAssociatedValue(Object associatedValue) {
+        this.associatedValue = associatedValue;
+    }
+
+    public Object getAssociatedValue() {
+        return associatedValue;
     }
 
     public static OADEvent getEventFromMailboxCommand(int mailboxIdentifier){

@@ -14,6 +14,8 @@ import core.device.model.MelomindDevice;
 import core.device.model.VProDevice;
 import core.device.event.DCOffsetEvent;
 import core.device.event.SaturationEvent;
+import core.device.oad.EventListener;
+import core.device.oad.OADEvent;
 import core.device.oad.OADManager;
 import core.eeg.acquisition.MbtDataConversion;
 import eventbus.EventBusManager;
@@ -31,6 +33,7 @@ public class MbtDeviceManager extends BaseModuleManager{
     private OADManager oadManager;
 
     private MbtDevice mCurrentConnectedDevice;
+    private EventListener.OADEventListener oadEventListener;
 
     public MbtDeviceManager(Context context){
         super(context);
@@ -151,8 +154,17 @@ public class MbtDeviceManager extends BaseModuleManager{
         EventBusManager.postEvent(new DeviceEvents.PostDeviceEvent(mCurrentConnectedDevice));
     }
 
+    @Subscribe
+    public void onOADEvent(OADEvent event){
+        if (oadEventListener != null)
+            oadEventListener.onOADEvent(event);
+    }
+
     private boolean isFirmwareVersionUpToDate(){
         return oadManager.isFirmwareVersionUpToDate(mCurrentConnectedDevice.getFirmwareVersion());
     }
 
+    public void setOADEventListener(EventListener.OADEventListener eventListener){
+        this.oadEventListener = eventListener;
+    }
 }
