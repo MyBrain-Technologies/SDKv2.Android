@@ -317,8 +317,11 @@ final class MbtGattController extends BluetoothGattCallback {
             case MBX_OTA_MODE_EVT:
             case MBX_OTA_IDX_RESET_EVT:
             case MBX_OTA_STATUS_EVT:
-                if(oadEventListener != null)
-                    oadEventListener.onOADEvent(OADEvent.getEventFromMailboxCommand(mailboxEvent), response);
+                if(oadEventListener != null) {
+                    OADEvent event = OADEvent.getEventFromMailboxCommand(mailboxEvent);
+                    event.setAssociatedValue(response);
+                    oadEventListener.onOADEvent(event);
+                }
                 break;
 
             case MBX_SET_ADS_CONFIG:
