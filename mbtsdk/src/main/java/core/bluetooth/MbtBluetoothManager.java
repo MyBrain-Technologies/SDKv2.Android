@@ -46,6 +46,8 @@ import core.device.DeviceEvents;
 import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindsQRDataBase;
+import core.device.oad.EventListener;
+import core.device.oad.OADEvent;
 import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
 import engine.clientevents.ConnectionStateReceiver;
@@ -128,6 +130,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             }
         }
     };
+
+    private EventListener.OADEventListener oadEventListener;
 
     /**
      * Constructor of the manager.
@@ -1173,5 +1177,24 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent(false, deviceNameRequested, deviceQrCodeRequested, deviceTypeRequested, mtu)); //current state should be IDLE
             }
         }
+    }
+
+    void startOADUpdate(){
+        oadEventListener = new EventListener.OADEventListener() {
+            @Override
+            public void onOADEvent(OADEvent oadEvent) {
+                EventBusManager.postEvent(oadEvent);
+            }
+
+            @Override
+            public void onError(BaseError error, String additionalInfo) {
+
+            }
+        };
+
+        if(deviceTypeRequested.useLowEnergyProtocol())
+            mbtBluetoothLE.startOADUpdate(oadEventListener);
+        else
+            mbtBluetoothSPP.startOADUpdate(oadEventListener);
     }
 }

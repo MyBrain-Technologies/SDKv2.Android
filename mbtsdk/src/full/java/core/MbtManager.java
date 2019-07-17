@@ -30,6 +30,8 @@ import core.device.event.SaturationEvent;
 import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindsQRDataBase;
+import core.device.oad.FirmwareVersion;
+import core.device.oad.OADEvent;
 import core.eeg.MbtEEGManager;
 import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
@@ -41,6 +43,7 @@ import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.EegError;
 import engine.clientevents.EegListener;
 import engine.clientevents.HeadsetDeviceError;
+import engine.clientevents.OADStateListener;
 import eventbus.EventBusManager;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.ConnectionStateEvent;
@@ -298,5 +301,11 @@ public class MbtManager{
 
     Set<BaseModuleManager> getRegisteredModuleManagers() {
         return registeredModuleManagers;
+    }
+
+    public void startOADUpdate(FirmwareVersion firmwareVersion, OADStateListener<BaseError> stateListener) {
+        OADEvent event = OADEvent.INIT;
+        event.setAssociatedValue(firmwareVersion);
+        EventBusManager.postEvent(event);
     }
 }
