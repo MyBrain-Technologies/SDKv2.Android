@@ -257,6 +257,7 @@ DeviceActivity extends AppCompatActivity {
                                     .port(8000)
                                     .ipAddress("1.2.3.4")
                                     .streamRawEEG()
+                                    .streamQualities()
                                     .streamFeature(MbtEEGFeatures.Frequency.ALPHA.getPower())
                                     .streamFrequencyFeatures(MbtEEGFeatures.Frequency.GAMMA, MbtEEGFeatures.Frequency.BETA)
                                     .create())

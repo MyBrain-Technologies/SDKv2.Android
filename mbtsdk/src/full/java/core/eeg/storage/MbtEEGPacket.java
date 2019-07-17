@@ -144,15 +144,15 @@ public final class MbtEEGPacket {
     }
 
     /**
-     * Get one of the features available using its index
-     * @param featureIndex is the index of the feature
+     * Get one of the features available for all channels of acquisition using its name
+     * @param feature is the feature to get
      * @return a list of {@link features.MbtFeatures#MELOMIND_NB_CHANNELS} elements
      * or {@link features.MbtFeatures#VPRO_NB_CHANNELS} elements for the feature value
      */
-    public ArrayList<Float> getFeature(int featureIndex) {
+    public ArrayList<Float> getFeature(MbtEEGFeatures.Feature feature) {
         ArrayList<Float> featureList = new ArrayList<>();
-        for (float[] feature : features) {
-            featureList.add(feature[featureIndex]);
+        for (float channelFeature  : features[feature.ordinal()]) {
+            featureList.add(channelFeature);
         }
         return featureList;
     }

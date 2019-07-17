@@ -3,65 +3,145 @@ package core.eeg.storage;
 
 public class MbtEEGFeatures {
 
-    private static final int DELTA_RATIO = 45;
-    private static final int DELTA_POWER = 46;
-    private static final int LOG_DELTA_POWER = 47;
-    private static final int NORMALIZED_DELTA_POWER = 48;
+    public enum Feature {
 
-    private static final int THETA_RATIO = 49;
-    private static final int THETA_POWER = 50;
-    private static final int LOG_THETA_POWER = 51;
-    private static final int NORMALIZED_THETA_POWER = 52;
+        MEDIAN,
+        MEAN,
+        VARIANCE,
+        VRMS,
+        VPP,
+        SKEWNESS,
+        KURTOSIS,
+        INTEGRATED_EEG,
+        MEAN_ABSOLUTE_VALUE,
+        SIMPLE_SQUARE_INTEGRAL,
+        V_ORDER_2_AND_3,
+        LOG_DETECTOR,
+        AVERAGE_AMPLITUDE_CHANGE,
+        DIFFERENCE_ABSOLUTE_STANDARD_DEVIATION,
+        NUMBER_OF_MAXIMA_AND_MINIMA,
+        MOBILITY_HJORTH_PARAMETER,
+        COMPLEXITY_HJORTH_PARAMETER,
+        ZERO_CROSSING_RATE,
+        ZERO_CROSSING_RATE_1ST_DERIVATIVE,
+        ZERO_CROSSING_RATE_2ND_DERIVATIVE,
+        VARIANCE_1ST_DERIVATIVE,
+        VARIANCE_2ND_DERIVATIVE,
+        NON_LINEAR_ENERGY,
 
-    private static final int ALPHA_RATIO = 53;
-    private static final int ALPHA_POWER = 54;
-    private static final int LOG_ALPHA_POWER = 55;
-    private static final int NORMALIZED_ALPHA_POWER = 56;
+        MAXIMUM_DELTA_FREQUENCY_BAND,
+        KURTOSIS_DELTA_FREQUENCY_BAND,
+        STANDARD_DEVIATION_DELTA_FREQUENCY_BAND,
+        SKEWNESS_DELTA_FREQUENCY_BAND,
+        MAXIMUM_THETA_FREQUENCY_BAND,
+        KURTOSIS_THETA_FREQUENCY_BAND,
+        STANDARD_DEVIATION_THETA_FREQUENCY_BAND,
+        SKEWNESS_THETA_FREQUENCY_BAND,
+        MAXIMUM_ALPHA_FREQUENCY_BAND,
+        KURTOSIS_ALPHA_FREQUENCY_BAND,
+        STANDARD_DEVIATION_ALPHA_FREQUENCY_BAND,
+        SKEWNESS_ALPHA_FREQUENCY_BAND,
+        MAXIMUM_BETA_FREQUENCY_BAND,
+        KURTOSIS_BETA_FREQUENCY_BAND,
+        STANDARD_DEVIATION_BETA_FREQUENCY_BAND,
+        SKEWNESS_BETA_FREQUENCY_BAND,
+        MAXIMUM_GAMMA_FREQUENCY_BAND,
+        KURTOSIS_GAMMA_FREQUENCY_BAND,
+        STANDARD_DEVIATION_GAMMA_FREQUENCY_BAND,
+        SKEWNESS_GAMMA_FREQUENCY_BAND,
 
-    private static final int BETA_RATIO = 57;
-    private static final int BETA_POWER = 58;
-    private static final int LOG_BETA_POWER = 59;
-    private static final int NORMALIZED_BETA_POWER = 60;
+        ZERO_PADDING,
+        ONE_SIDED_SPECTRUM,
 
-    private static final int GAMMA_RATIO = 61;
-    private static final int GAMMA_POWER = 62;
-    private static final int LOG_GAMMA_POWER = 63;
-    private static final int NORMALIZED_GAMMA_POWER = 64;
+        DELTA_RATIO,
+        DELTA_POWER,
+        LOG_DELTA_POWER,
+        NORMALIZED_DELTA_POWER,
+
+         THETA_RATIO,
+         THETA_POWER,
+         LOG_THETA_POWER,
+         NORMALIZED_THETA_POWER,
+
+         ALPHA_RATIO,
+         ALPHA_POWER,
+         LOG_ALPHA_POWER,
+         NORMALIZED_ALPHA_POWER,
+
+         BETA_RATIO,
+         BETA_POWER,
+         LOG_BETA_POWER,
+         NORMALIZED_BETA_POWER,
+
+        GAMMA_RATIO,
+        GAMMA_POWER,
+        LOG_GAMMA_POWER,
+        NORMALIZED_GAMMA_POWER,
+
+        SPECTRAL_EDGE_FREQUENCY_80,
+        SPECTRAL_EDGE_FREQUENCY_90,
+        SPECTRAL_EDGE_FREQUENCY_95,
+
+        FREQUENCY_FILTERED_BAND_ENERGIES,
+        RELATIVE_SPECTRAL_DIFFERENCE,
+        SN_RATIO,
+        POWER_SPECTRUM_MOMENTS,
+        MODIFIED_MEDIAN_FREQUENCY,
+        MODIFIED_MEAN_FREQUENCY,
+        SPECTRAL_ENTROPY
+    }
+
 
     public enum Frequency {
 
-        DELTA(DELTA_RATIO, DELTA_POWER, LOG_DELTA_POWER, NORMALIZED_DELTA_POWER),
-        THETA(THETA_RATIO, THETA_POWER, LOG_THETA_POWER, NORMALIZED_THETA_POWER),
-        ALPHA(ALPHA_RATIO, ALPHA_POWER, LOG_ALPHA_POWER, NORMALIZED_ALPHA_POWER),
-        BETA(BETA_RATIO, BETA_POWER, LOG_BETA_POWER, NORMALIZED_BETA_POWER),
-        GAMMA(GAMMA_RATIO, GAMMA_POWER, LOG_GAMMA_POWER, NORMALIZED_GAMMA_POWER);
+        DELTA(Feature.DELTA_RATIO, Feature.DELTA_POWER, Feature.LOG_DELTA_POWER, Feature.NORMALIZED_DELTA_POWER),
+        THETA(Feature.THETA_RATIO, Feature.THETA_POWER, Feature.LOG_THETA_POWER, Feature.NORMALIZED_THETA_POWER),
+        ALPHA(Feature.ALPHA_RATIO, Feature.ALPHA_POWER, Feature.LOG_ALPHA_POWER, Feature.NORMALIZED_ALPHA_POWER),
+        BETA(Feature.BETA_RATIO, Feature.BETA_POWER, Feature.LOG_BETA_POWER, Feature.NORMALIZED_BETA_POWER),
+        GAMMA(Feature.GAMMA_RATIO, Feature.GAMMA_POWER, Feature.LOG_GAMMA_POWER, Feature.NORMALIZED_GAMMA_POWER);
 
-        private int ratio;
-        private int power;
-        private int logPower;
-        private int normalizedPower;
+        private Feature ratio;
+        private Feature power;
+        private Feature logPower;
+        private Feature normalizedPower;
 
-        Frequency(int ratio, int power, int logPower, int normalizedPower) {
+        Frequency(Feature ratio, Feature power, Feature logPower, Feature normalizedPower) {
             this.ratio = ratio;
             this.power = power;
             this.logPower = logPower;
             this.normalizedPower = normalizedPower;
         }
 
-        public int getRatio() {
+        public Feature getRatio() {
             return ratio;
         }
 
-        public int getPower() {
+        public Feature getPower() {
             return power;
         }
 
-        public int getLogPower() {
+        public Feature getLogPower() {
             return logPower;
         }
 
-        public int getNormalizedPower() {
+        public Feature getNormalizedPower() {
             return normalizedPower;
+        }
+
+        public int getRatioIndex() {
+            return ratio.ordinal();
+        }
+
+        public int getPowerIndex() {
+            return power.ordinal();
+        }
+
+        public int getLogPowerIndex() {
+            return logPower.ordinal();
+        }
+
+        public int getNormalizedPowerIndex() {
+            return normalizedPower.ordinal();
         }
     }
 }

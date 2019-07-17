@@ -34,16 +34,17 @@ public final class MbtSynchronisationManager extends BaseModuleManager {
 
     /**
      * onEvent is called by the Event Bus when a ClientReadyEEGEvent event is posted
-     * This event is published by {@link MbtEEGManager}:
-     * this manager handles EEG data acquired by the headset
-     * Creates a new MbtEEGPacket instance when the raw buffer contains enough data
-     * @param event contains data transmitted by the publisher : here it contains the converted EEG data matrix, the status, the number of acquisition channels and the sampling rate
+     * This event is published by {@link MbtEEGManager} and is received here in the Synchronisation manager
+     * to stream the data over OSC
      */
     @Subscribe(threadMode = ThreadMode.MAIN, priority = 1)
     public void onEvent(@NonNull final ClientReadyEEGEvent event) {
-        MbtEEGPacket eegPacket = event.getEegPackets();
+        oscStreamer.execute(getPacketWithInvertedMatrix(event.getEegPackets()));
+    }
+
+    private MbtEEGPacket getPacketWithInvertedMatrix(MbtEEGPacket eegPacket){
         if(eegPacket != null && invertFloatMatrix(eegPacket.getChannelsData()) != null)
             eegPacket.setChannelsData(invertFloatMatrix(eegPacket.getChannelsData()));
-        oscStreamer.execute(eegPacket);
+        return eegPacket;
     }
 }

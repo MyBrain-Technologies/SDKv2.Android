@@ -4,30 +4,23 @@ import android.os.AsyncTask;
 
 import java.util.ArrayList;
 
+import core.eeg.storage.MbtEEGFeatures;
 import core.eeg.storage.MbtEEGPacket;
 
 
 public abstract class IStreamer<U> extends AsyncTask<MbtEEGPacket, Void, Void> {
 
-    static final String RAW_EEG_ADDRESS = "/raweeg";
-    static final String QUALITY_ADDRESS = "/quality";
+    static private final String ADDRESS_PREFIX = "/";
+    static final String RAW_EEG_ADDRESS = ADDRESS_PREFIX + "raweeg";
+    static final String QUALITY_ADDRESS = ADDRESS_PREFIX +"quality";
 
-    static private final String ALPHA_ADDRESS = "/alpha";
-    static private final String BETA_ADDRESS = "/beta";
-    static private final String DELTA_ADDRESS = "/delta";
-    static private final String GAMMA_ADDRESS = "/gamma";
-
-    static final String POWER_ADDRESS = "/power";
-    static final String LOG_POWER_ADDRESS = "/logpower";
-    static final String NORMALIZED_POWER_ADDRESS = "/normalizedpower";
-    static final String RATIO_ADDRESS = "/ratio";
 
     protected boolean streamRawEEG;
     protected boolean streamQualities;
 
-    protected int[] featuresToStream;
+    protected ArrayList<MbtEEGFeatures.Feature> featuresToStream;
 
-    public IStreamer(boolean streamRawEEG, boolean streamQualities, int[] featuresToStream) {
+    public IStreamer(boolean streamRawEEG, boolean streamQualities, ArrayList<MbtEEGFeatures.Feature> featuresToStream) {
         this.streamRawEEG = streamRawEEG;
         this.streamQualities = streamQualities;
         this.featuresToStream = featuresToStream;
@@ -43,7 +36,7 @@ public abstract class IStreamer<U> extends AsyncTask<MbtEEGPacket, Void, Void> {
             if(streamQualities & mbtEEGPackets.getQualities() != null)
                 streamQualities(mbtEEGPackets.getQualities());
 
-            if(featuresToStream != null && featuresToStream.length != 0)
+            if(featuresToStream != null && !featuresToStream.isEmpty())
                 streamFeatures(mbtEEGPackets, featuresToStream);
         }
         return null;
@@ -54,9 +47,9 @@ public abstract class IStreamer<U> extends AsyncTask<MbtEEGPacket, Void, Void> {
 
     }
 
-    private void streamFeatures(MbtEEGPacket eegPacket, int[] featuresToStream){
-        for (int feature : featuresToStream) {
-            stream(initStreamRequest(eegPacket.getFeature(feature), ));//todo address
+    private void streamFeatures(MbtEEGPacket eegPacket, ArrayList<MbtEEGFeatures.Feature> featuresToStream){
+        for (MbtEEGFeatures.Feature feature : featuresToStream) {
+            stream(initStreamRequest(eegPacket.getFeature(feature.ordinal()), ADDRESS_PREFIX + feature.name()));//todo address
         }
     }
 

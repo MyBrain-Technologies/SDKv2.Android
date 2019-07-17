@@ -4,6 +4,9 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
 import core.eeg.storage.MbtEEGFeatures;
 
 @Keep
@@ -16,9 +19,9 @@ public final class SynchronisationConfig {
     private boolean streamRawEEG;
     private boolean streamQualities;
 
-    private int[] featuresToStream;
+    private ArrayList<MbtEEGFeatures.Feature> featuresToStream;
 
-    public SynchronisationConfig(@NonNull String ipAddress, int port, boolean streamRawEEG, boolean streamQualities, int[] featuresToStream){
+    private SynchronisationConfig(@NonNull String ipAddress, int port, boolean streamRawEEG, boolean streamQualities, ArrayList<MbtEEGFeatures.Feature> featuresToStream){
 
         if(ipAddress == null || ipAddress.isEmpty() || port < 0)
             throw new IllegalArgumentException("Impossible to stream data to a null or empty IP address");
@@ -47,7 +50,7 @@ public final class SynchronisationConfig {
         return streamQualities;
     }
 
-    public int[] getFeaturesToStream() {
+    public ArrayList<MbtEEGFeatures.Feature> getFeaturesToStream() {
         return featuresToStream;
     }
 
@@ -65,7 +68,7 @@ public final class SynchronisationConfig {
         private boolean streamQualities = false;
 
 
-        private int[] featuresToStream;
+        private ArrayList<MbtEEGFeatures.Feature> featuresToStream = new ArrayList<>();
 
         public Builder() {
         }
@@ -87,12 +90,11 @@ public final class SynchronisationConfig {
          */
         public Builder streamFrequencyFeatures(MbtEEGFeatures.Frequency... frequenciesToStream){
             final int nbFeaturePerFrequency = 4;
-            featuresToStream = new int[frequenciesToStream.length*nbFeaturePerFrequency];
             for (int feature = 0; feature < frequenciesToStream.length*nbFeaturePerFrequency ; feature++) {
-                this.featuresToStream[feature] = frequenciesToStream[feature].getRatio();
-                this.featuresToStream[feature+1] = frequenciesToStream[feature].getPower();
-                this.featuresToStream[feature+2] = frequenciesToStream[feature].getLogPower();
-                this.featuresToStream[feature+3] = frequenciesToStream[feature].getNormalizedPower();
+                this.featuresToStream.add(frequenciesToStream[feature].getRatio());
+                this.featuresToStream.add(frequenciesToStream[feature].getPower());
+                this.featuresToStream.add(frequenciesToStream[feature].getLogPower());
+                this.featuresToStream.add(frequenciesToStream[feature].getNormalizedPower());
             }
             return this;
         }
@@ -102,17 +104,17 @@ public final class SynchronisationConfig {
          * @param featuresToStream
          * @return
          */
-        public Builder streamFeatures(int... featuresToStream){
-            this.featuresToStream = featuresToStream;
+        public Builder streamFeatures(MbtEEGFeatures.Feature... featuresToStream){
+            this.featuresToStream.addAll(Arrays.asList(featuresToStream));
             return this;
         }
         /**
          * Stream specific feature
-         * @param featuresToStream
+         * @param featureToStream
          * @return
          */
-        public Builder streamFeature(int featuresToStream){
-            this.featuresToStream = new int[]{featuresToStream};
+        public Builder streamFeature(MbtEEGFeatures.Feature featureToStream){
+            this.featuresToStream.add(featureToStream);
             return this;
         }
 
@@ -128,6 +130,8 @@ public final class SynchronisationConfig {
 
         @Nullable
         public SynchronisationConfig create(){
+            if(featuresToStream.isEmpty())
+                featuresToStream = null;
             return new SynchronisationConfig(ipAddress, port, streamRawEEG, streamQualities, featuresToStream);
         }
     }
