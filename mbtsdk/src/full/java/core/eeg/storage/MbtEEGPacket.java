@@ -143,6 +143,20 @@ public final class MbtEEGPacket {
         return features;
     }
 
+    /**
+     * Get one of the features available using its index
+     * @param featureIndex is the index of the feature
+     * @return a list of {@link features.MbtFeatures#MELOMIND_NB_CHANNELS} elements
+     * or {@link features.MbtFeatures#VPRO_NB_CHANNELS} elements for the feature value
+     */
+    public ArrayList<Float> getFeature(int featureIndex) {
+        ArrayList<Float> featureList = new ArrayList<>();
+        for (float[] feature : features) {
+            featureList.add(feature[featureIndex]);
+        }
+        return featureList;
+    }
+
     public void setFeatures(float[][] features) {
         this.features = features;
     }

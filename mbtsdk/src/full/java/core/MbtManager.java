@@ -31,7 +31,7 @@ import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindsQRDataBase;
 import core.eeg.MbtEEGManager;
-import core.osc.MbtStreamingManager;
+import core.synchronisation.MbtSynchronisationManager;
 import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
 import engine.clientevents.BluetoothError;
@@ -97,7 +97,7 @@ public class MbtManager{
         if(EEG_ENABLED)
             registerManager(new MbtEEGManager(mContext, MbtManager.this, BtProtocol.BLUETOOTH_LE)); //todo change protocol must not be initialized here : when connectBluetooth is called
         if(STREAMING_ENABLED)
-            registerManager(new MbtStreamingManager(mContext, MbtManager.this));
+            registerManager(new MbtSynchronisationManager(mContext, MbtManager.this));
     }
 
     /**

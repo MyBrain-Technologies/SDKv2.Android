@@ -25,9 +25,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 
+import config.SynchronisationConfig;
 import core.device.DCOffsets;
 import core.device.SaturationEvent;
 import core.bluetooth.BtState;
+import core.eeg.storage.MbtEEGFeatures;
 import core.eeg.storage.MbtEEGPacket;
 import engine.MbtClient;
 
@@ -251,6 +253,13 @@ DeviceActivity extends AppCompatActivity {
                     startStream(new StreamConfig.Builder(eegListener)
                             .setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)
                             .useQualities()
+                            .streamOverOSC(new SynchronisationConfig.Builder()
+                                    .port(8000)
+                                    .ipAddress("1.2.3.4")
+                                    .streamRawEEG()
+                                    .streamFeature(MbtEEGFeatures.Frequency.ALPHA.getPower())
+                                    .streamFrequencyFeatures(MbtEEGFeatures.Frequency.GAMMA, MbtEEGFeatures.Frequency.BETA)
+                                    .create())
                             .create());
                 } else { //streaming is in progress : stopping streaming
                     stopStream(); // set false to isStreaming et null to the eegListener

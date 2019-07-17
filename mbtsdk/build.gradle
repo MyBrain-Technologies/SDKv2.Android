@@ -86,7 +86,7 @@ dependencies {
     implementation 'com.android.support:appcompat-v7:28.0.0'
     implementation 'org.greenrobot:eventbus:3.1.1'
     implementation 'com.google.code.gson:gson:2.8.5'
-    compile 'com.illposed.osc:javaosc-core:0.3'
+    implementation 'com.illposed.osc:javaosc-core:0.3'
 
 
     doclava 'com.google.doclava:doclava:1.0.6'

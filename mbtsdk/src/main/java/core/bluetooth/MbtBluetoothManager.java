@@ -11,6 +11,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
@@ -25,7 +26,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 import config.MbtConfig;
-import config.OscConfig;
+import config.SynchronisationConfig;
 import core.BaseModuleManager;
 import core.MbtManager;
 import command.DeviceCommand;
@@ -51,7 +52,7 @@ import eventbus.events.BluetoothEEGEvent;
 import eventbus.events.ConfigEEGEvent;
 import eventbus.events.ConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
-import eventbus.events.OscEvent;
+import eventbus.events.SynchronisationEvent;
 import features.MbtDeviceType;
 import features.MbtFeatures;
 import utils.AsyncUtils;
@@ -828,7 +829,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * Initiates the acquisition of EEG data. This method chooses between the correct BtProtocol.
      * If there is already a streaming session in progress, nothing happens and the method returns silently.
      */
-    private void startStreamOperation(boolean enableDeviceStatusMonitoring, OscConfig oscConfig){
+    private void startStreamOperation(boolean enableDeviceStatusMonitoring,@Nullable SynchronisationConfig oscConfig){
         Log.d(TAG, "Bluetooth Manager starts streaming");
         if(!mbtBluetoothLE.isConnected()){
             notifyStreamStateChanged(IStreamable.StreamState.DISCONNECTED);
@@ -842,7 +843,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         }
 
         if(oscConfig != null)
-            EventBusManager.postEvent(new OscEvent.InitEvent(oscConfig));
+            EventBusManager.postEvent(new SynchronisationEvent.InitEvent(oscConfig));
 
         if(enableDeviceStatusMonitoring)
             mbtBluetoothLE.activateDeviceStatusMonitoring();

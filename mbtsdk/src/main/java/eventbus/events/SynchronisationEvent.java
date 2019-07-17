@@ -1,17 +1,19 @@
 package eventbus.events;
 
 import android.support.annotation.NonNull;
-import android.system.Os;
 
-import config.OscConfig;
-import core.eeg.storage.MbtEEGPacket;
+import config.SynchronisationConfig;
 
 /**
  * Event posted when a OSC stream is initialized
  *
  * @author Sophie Zecri on 24/05/2018
  */
-public class OscEvent { //Events are just POJO without any specific implementation
+public class SynchronisationEvent { //Events are just POJO without any specific implementation
+
+    public interface StreamingEvent{
+        void InitEvent();
+    }
 
     public static class StreamEvent {
 
@@ -24,16 +26,16 @@ public class OscEvent { //Events are just POJO without any specific implementati
      */
     public static class InitEvent { //Events are just POJO without any specific implementation
 
-        private OscConfig oscConfig;
+        private SynchronisationConfig oscConfig;
 
-        public InitEvent(@NonNull OscConfig oscConfig) {
+        public InitEvent(@NonNull SynchronisationConfig oscConfig) {
             this.oscConfig = oscConfig;
         }
 
         /**
          * Gets the ip address and port to OSC stream
          */
-        public OscConfig getOscConfig() {
+        public SynchronisationConfig getSynchronisationConfig() {
             return oscConfig;
         }
 

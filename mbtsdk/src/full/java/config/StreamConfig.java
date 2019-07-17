@@ -3,7 +3,6 @@ package config;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Pair;
 
 import java.util.ArrayList;
 
@@ -34,10 +33,10 @@ public final class StreamConfig {
 
     private ArrayList<DeviceCommand> deviceCommands;
 
-    private OscConfig oscConfig;
+    private SynchronisationConfig oscConfig;
 
     private StreamConfig(boolean computeQualities, EegListener<BaseError> eegListener, DeviceStatusListener<BaseError> deviceStatusListener,
-                         int notificationPeriod, DeviceStreamingCommands[] deviceCommands, OscConfig oscConfig){
+                         int notificationPeriod, DeviceStreamingCommands[] deviceCommands, SynchronisationConfig oscConfig){
         this.computeQualities = computeQualities;
         this.eegListener = eegListener;
         this.deviceStatusListener = deviceStatusListener;
@@ -72,7 +71,7 @@ public final class StreamConfig {
         return deviceCommands;
     }
 
-    public OscConfig getOscConfig() {
+    public SynchronisationConfig getOscConfig() {
         return oscConfig;
     }
 
@@ -92,7 +91,7 @@ public final class StreamConfig {
         this.deviceStatusListener = deviceStatusListener;
     }
 
-    public void setOscConfig(OscConfig oscConfig) {
+    public void setOscConfig(SynchronisationConfig oscConfig) {
         this.oscConfig = oscConfig;
     }
 
@@ -114,7 +113,7 @@ public final class StreamConfig {
 
         private DeviceStreamingCommands[] deviceCommands;
 
-        private OscConfig oscConfig;
+        private SynchronisationConfig oscConfig;
 
         /**
          * The eeg Listener is mandatory.
@@ -179,7 +178,7 @@ public final class StreamConfig {
         }
 
         @NonNull
-        public Builder streamRawDataOverOSC(@NonNull OscConfig oscConfig){
+        public Builder streamOverOSC(@NonNull SynchronisationConfig oscConfig){
             this.oscConfig = oscConfig;
             return this;
         }

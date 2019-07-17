@@ -101,7 +101,7 @@ public class HomeActivity extends AppCompatActivity{
     }
 
     private void initDevicePrefix() {
-        deviceNamePrefixSpinner = findViewById(R.id.deviceNamePrefix);
+        deviceNamePrefixSpinner = findViewById(R.id.devicePrefix);
         ArrayList<String> prefixList = new ArrayList<>();
         prefixList.add(MELOMIND_DEVICE_NAME_PREFIX);
         prefixList.add(VPRO_DEVICE_NAME_PREFIX);

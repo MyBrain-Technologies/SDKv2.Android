@@ -1,7 +1,7 @@
 package core.bluetooth.requests;
 
 
-import config.OscConfig;
+import config.SynchronisationConfig;
 
 /**
  * An event class when a stream request is being sent by the user.
@@ -11,9 +11,9 @@ public class StreamRequestEvent extends BluetoothRequests {
     private boolean isStart = false;
     private boolean monitorDeviceStatus = false;
     private boolean computeQualities = false;
-    private OscConfig oscConfig;
+    private SynchronisationConfig oscConfig;
 
-    public StreamRequestEvent(boolean isStartRequest, boolean computeQualities, boolean monitorDeviceStatus, OscConfig oscConfig){
+    public StreamRequestEvent(boolean isStartRequest, boolean computeQualities, boolean monitorDeviceStatus, SynchronisationConfig oscConfig){
         this.isStart = isStartRequest;
         this.monitorDeviceStatus = monitorDeviceStatus;
         this.computeQualities = computeQualities;
@@ -32,7 +32,7 @@ public class StreamRequestEvent extends BluetoothRequests {
         return computeQualities;
     }
 
-    public OscConfig getOscConfig() {
+    public SynchronisationConfig getOscConfig() {
         return oscConfig;
     }
 }
