@@ -16,6 +16,8 @@ import java.util.Arrays;
 import core.bluetooth.BtState;
 import core.device.model.DeviceInfo;
 import core.device.model.MelomindDevice;
+import core.device.oad.EventListener;
+import core.device.oad.OADEvent;
 import utils.CommandUtils;
 import utils.LogUtils;
 import utils.BitUtils;
@@ -68,6 +70,8 @@ final class MbtGattController extends BluetoothGattCallback {
     private BluetoothGattCharacteristic modelNumber = null;
 
     private final MbtBluetoothLE mbtBluetoothLE;
+
+    private EventListener.OADEventListener oadEventListener;
 
     MbtGattController(Context context, MbtBluetoothLE mbtBluetoothLE) {
         super();
@@ -310,13 +314,16 @@ final class MbtGattController extends BluetoothGattCallback {
                 notifyResponseReceived(mailboxEvent, response);
                 break;
 
-            case MBX_SET_ADS_CONFIG:
-            case MBX_SET_AUDIO_CONFIG:
-            case MBX_START_OTA_TXF:
-            case MBX_LEAD_OFF_EVT:
             case MBX_OTA_MODE_EVT:
             case MBX_OTA_IDX_RESET_EVT:
             case MBX_OTA_STATUS_EVT:
+                if(oadEventListener != null)
+                    oadEventListener.onOADEvent(OADEvent.getEventFromMailboxCommand(mailboxEvent), response);
+                break;
+
+            case MBX_SET_ADS_CONFIG:
+            case MBX_SET_AUDIO_CONFIG:
+            case MBX_LEAD_OFF_EVT:
             case MBX_BAD_EVT:
             default:
                 break;
@@ -350,4 +357,8 @@ final class MbtGattController extends BluetoothGattCallback {
                 || (!BitUtils.areByteEquals(CMD_CODE_CONNECT_IN_A2DP_IN_PROGRESS, response[0])//wait another response until timeout if the connection is not in progress
                     && !BitUtils.areByteEquals(CMD_CODE_CONNECT_IN_A2DP_LINKKEY_INVALID, response[0])); //wait another response until timeout if the linkkey invalid response is returned
      }
+
+    void setOadEventListener(EventListener.OADEventListener oadEventListener) {
+        this.oadEventListener = oadEventListener;
+    }
 }
