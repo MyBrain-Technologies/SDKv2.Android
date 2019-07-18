@@ -3,7 +3,6 @@ package core.device.oad;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.IntRange;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.io.FileNotFoundException;
@@ -20,7 +19,15 @@ import engine.clientevents.OADStateListener;
 import eventbus.EventBusManager;
 import utils.LogUtils;
 
-
+/**
+ * OAD Manager class is responsible for managing the OAD (Over the Air Download) update process.
+ * This process contains several steps that are handled one after another (no parallel tasks).
+ * Each of these steps are represented with a state machine so that we can know which step is the current step at any moment.
+ * This process uses Bluetooth to transfer a binary file that contains a firmware to the peripheral headset device.
+ * The peripheral headset device can then install the received firmware.
+ * As the whole file can not be sent in a single request, the OAD Manager prepares & chunks it into small packets that are sent one after another.
+ * It also communicates with the current firmware
+ */
 public final class OADManager implements EventListener.OADEventListener {
 
     private final static String TAG = OADManager.class.getName();
@@ -34,13 +41,60 @@ public final class OADManager implements EventListener.OADEventListener {
     static final int FILE_LENGTH_NB_BYTES = 4;
     static final int FIRMWARE_VERSION_NB_BYTES = 2;
 
+    /**
+     * Firmware version number of digit after split using {@link OADManager#FIRMWARE_VERSION_SPLITTER} splitter
+     */
     public static final int FIRMWARE_VERSION_LENGTH = 3;
     public static final String FIRMWARE_VERSION_SPLITTER = "\\.";
+
+    /**
+     * Key used to get the firmware version passed through the bundle passed by the {@link android.bluetooth.BluetoothManager}
+     * to the current OAD manager in order to execute the action that matchs the current state.
+     */
+    final static String FIRMWARE_VERSION = "FIRMWARE_VERSION";
+    /**
+     * Key used to get the validation status passed through the bundle passed by the {@link android.bluetooth.BluetoothManager}
+     * to the current OAD manager in order to execute the action that matchs the current state.
+     */
+    final static String VALIDATION_STATUS = "VALIDATION_STATUS";
+    /**
+     * Key used to get the readback status passed through the bundle passed by the {@link android.bluetooth.BluetoothManager}
+     * to the current OAD manager in order to execute the action that matchs the current state.
+     */
+    final static String READBACK_STATUS = "READBACK_STATUS";
+
+    /**
+     * Key used to get the reboot status passed through the bundle passed by the {@link android.bluetooth.BluetoothManager}
+     * to the current OAD manager in order to execute the action that matchs the current state.
+     */
+    final static String REBOOT_STATUS = "REBOOT_STATUS";
+
+    /**
+     * Key used to get the index of the lost packet passed through the bundle passed by the {@link android.bluetooth.BluetoothManager}
+     * to the current OAD manager in order to execute the action that matchs the current state.
+     */
+    final static String LOST_PACKET = "LOST_PACKET";
+
+    /**
+     * Key used to get the reconnection status passed through the bundle passed by the {@link android.bluetooth.BluetoothManager}
+     * to the current OAD manager in order to execute the action that matchs the current state.
+     */
+    final static String RECONNECTION_STATUS = "RECONNECTION_STATUS";
+
 
     private final Context context;
     private final MbtDeviceManager deviceManager;
 
+    /**
+     * Return the current state of the current OAD update process.
+     * Each step of the OAD update process is represented with a state machine
+     * so that we can know which step is the current step at any moment of the update process.
+     */
     private OADState currentState;
+
+    /**
+     * Listener used to notify the SDK client when the current OAD state changes or when the SDK raises an error.
+     */
     private OADStateListener stateListener;
 
     public OADManager(Context context, MbtDeviceManager deviceManager) {
@@ -49,11 +103,22 @@ public final class OADManager implements EventListener.OADEventListener {
 
     }
 
-    void switchToNextStep() {
-        notifyOADStateChanged(currentState.getNextState(), );
+    void switchToNextStep(@Nullable Bundle actionData) {
+        notifyOADStateChanged(getCurrentState().getNextState(), actionData);
     }
 
-    void notifyOADStateChanged(OADState state, @Nullable Object actionData) {
+    /**
+     * Return the current state of the current OAD update process.
+     * Each step of the OAD update process is represented with a state machine
+     * so that we can know which step is the current step at any moment of the update process.
+     */
+    private OADState getCurrentState(){
+        if(currentState == null)
+                currentState = OADState.INIT;
+        return currentState;
+    }
+
+    void notifyOADStateChanged(OADState state, @Nullable Bundle actionData) {
         currentState = state;
         if(currentState != null)
             currentState.executeAction(actionData);
@@ -180,75 +245,47 @@ public final class OADManager implements EventListener.OADEventListener {
         return null; //todo
     }
 
-    public OADState getCurrentState() {
-        return currentState;
-    }
-
+    /**
+     * Set a listener used to notify the SDK client when the current OAD state changes or when the SDK raises an error.
+     */
     public void setStateListener(OADStateListener stateListener) {
         this.stateListener = stateListener;
     }
 
+    /**
+     * Callback triggered when a message/response of the headset device
+     * related to the OAD update process
+     * is received by the Device unit Manager
+     */
     @Override
     public void onOADEvent(OADEvent oadEvent) {
-        switch (oadEvent){
-            case INIT:
 
-                break;
+        if(oadEvent.equals(OADEvent.LOST_PACKET)){
+                int packetIndex = oadEvent.getEventData().getInt();
+                sendOADPacket(packetIndex);
+        }else
+            switchToNextStep(oadEvent.getEventData());
 
-            case FIRMWARE_VALIDATION:
-                if(oadEvent.getAssociatedValue() instanceof Boolean){
-                    boolean isValidated = (boolean) oadEvent.getAssociatedValue();
-                    if(isValidated){
-                        transferOADFile();
-                    }
-                }
-                break;
+    }
 
-            case LOST_PACKET:
-                if(oadEvent.getAssociatedValue() instanceof Integer){
-                    int packetIndex = (int) oadEvent.getAssociatedValue();
-                    sendOADPacket(packetIndex);
-                }
-                break;
+    /**
+     * Callback triggered something went wrong during the OAD update process
+     */
+    @Override
+    public void onError(BaseError error, String additionalInfo) {
 
-            case CRC_READBACK:
-                if(oadEvent.getAssociatedValue() instanceof Boolean){
-                    boolean isTransferSuccess = (boolean) oadEvent.getAssociatedValue();
-                    if(isTransferSuccess){
-                        reboot();
-                    }
-                }
-                break;
-
-            case DISCONNECTED:
-                reconnect();
-                break;
-
-            case RECONNECTION_PERFORMED:
-                if(oadEvent.getAssociatedValue() instanceof Boolean){
-                    boolean isReconnectionSuccess = (boolean) oadEvent.getAssociatedValue();
-                    if(isReconnectionSuccess){
-                        verifyFirmwareVersion();
-                    }
-                }
-                break;
-
-            case UPDATE_COMPLETE:
-                deinit();
-                break;
-
-        }
     }
 
     private void deinit() {
         deviceManager.setOADEventListener(null);
     }
 
-    @Override
-    public void onError(BaseError error, String additionalInfo) {
-    }
-    
-    enum OADState implements BaseErrorEvent {
+
+    /**
+     * Each step of the OAD update process is represented with a state machine
+     * so that we can know which step is the current step at any moment of the update process.
+     */
+    public enum OADState implements BaseErrorEvent {
 
         /**
          * State triggered when the client requests an OAD firmware update.
@@ -258,8 +295,8 @@ public final class OADManager implements EventListener.OADEventListener {
         INIT(0){
             @Override
             public void executeAction(Bundle actionData) {
-                if(actionData.containsKey(FIRMWARE_VERSION)) {
-                    FirmwareVersion firmwareVersion = ((FirmwareVersion) actionData.get(FIRMWARE_VERSION));
+                if(getFirmwareVersion(actionData) != null) {
+                    FirmwareVersion firmwareVersion = ((FirmwareVersion) getFirmwareVersion(actionData));
                     oadManager.startOADupdate(firmwareVersion);
                 }else
                     onError(OADError.ERROR_INVALID_FIRMWARE_VERSION, null);
@@ -269,6 +306,11 @@ public final class OADManager implements EventListener.OADEventListener {
             public OADState getNextState() {
                 return FIRMWARE_VALIDATION;
             }
+
+            private FirmwareVersion getFirmwareVersion(Bundle actionData){
+                return (FirmwareVersion)getObjectFromBundleForKey(actionData,FIRMWARE_VERSION);
+            }
+            
         },
 
         /**
@@ -277,6 +319,7 @@ public final class OADManager implements EventListener.OADEventListener {
          * The SDK is then waiting for a return response that validate or invalidate the OAD request.
          */
         FIRMWARE_VALIDATION(2){
+
             @Override
             public void executeAction(Bundle actionData) {
                 oadManager.requestFirmwareValidation(oadContext.getFirmwareVersion(), oadContext.getNbBytesToSend());
@@ -293,9 +336,10 @@ public final class OADManager implements EventListener.OADEventListener {
          * to start the OAD packets transfer.
          */
         TRANSFERRING(5){
+
             @Override
             public void executeAction(Bundle actionData) {
-                if(actionData.containsKey(IS_VALIDATION_SUCCESS) && actionData.getBoolean(IS_VALIDATION_SUCCESS))
+                if(isValidationSuccess(actionData))
                     oadManager.transferOADFile();
                 else
                     onError(OADError.ERROR_FIRMWARE_REJECTED_UPDATE, null);
@@ -305,6 +349,11 @@ public final class OADManager implements EventListener.OADEventListener {
             public OADState getNextState() {
                 return AWAITING_DEVICE_READBACK;
             }
+
+            private boolean isValidationSuccess(Bundle actionData){
+                return bundleContainsSuccessForKey(actionData, VALIDATION_STATUS);
+            }
+            
         },
 
         /**
@@ -314,9 +363,10 @@ public final class OADManager implements EventListener.OADEventListener {
          * For example, it might return a failure state if any corruption occurred while transferring the binary file.
          */
         AWAITING_DEVICE_READBACK(105){
+
             @Override
             public void executeAction(Bundle actionData) {
-                if(actionData.containsKey(IS_READBACK_SUCCESS) && actionData.getBoolean(IS_READBACK_SUCCESS))
+                if(isReadbackSuccess(actionData))
                     oadManager.waitDeviceReadback();
                 else
                     onError(OADError.ERROR_UNCOMPLETE_UPDATE, null);
@@ -326,6 +376,11 @@ public final class OADManager implements EventListener.OADEventListener {
             public OADState getNextState() {
                 return REBOOTING;
             }
+
+            private boolean isReadbackSuccess(Bundle actionData){
+               return bundleContainsSuccessForKey(actionData,READBACK_STATUS);
+            }
+
         },
 
         /**
@@ -335,9 +390,10 @@ public final class OADManager implements EventListener.OADEventListener {
          * and clear the pairing keys of the updated headset device.
          */
         REBOOTING(110){
+
             @Override
             public void executeAction(Bundle actionData) {
-                if(actionData.containsKey(IS_REBOOT_SUCCESS) && actionData.getBoolean(IS_REBOOT_SUCCESS))
+                if(isRebootSuccess(actionData))
                     oadManager.reboot();
                 else
                     onError(BluetoothError.ERROR_REBOOT_FAILED, null);
@@ -348,6 +404,11 @@ public final class OADManager implements EventListener.OADEventListener {
             public OADState getNextState() {
                 return RECONNECTING;
             }
+
+            private boolean isRebootSuccess(Bundle actionData){
+                return bundleContainsSuccessForKey(actionData,REBOOT_STATUS);
+            }
+
         },
 
         /**
@@ -371,9 +432,11 @@ public final class OADManager implements EventListener.OADEventListener {
          * and compare it to the OAD file one.
          */
         VERIFYING_FIRMWARE_VERSION(117){
+
+
             @Override
             public void executeAction(Bundle actionData) {
-                if(actionData.containsKey(IS_RECONNECTION_SUCCESS) && actionData.getBoolean(IS_RECONNECTION_SUCCESS))
+                if(isReconnectionSuccess(actionData))
                     oadManager.verifyFirmwareVersion();
                 else
                     onError(OADError.ERROR_RECONNECT_FAILED, null);
@@ -383,6 +446,10 @@ public final class OADManager implements EventListener.OADEventListener {
             @Override
             public OADState getNextState() {
                 return COMPLETE;
+            }
+
+            private boolean isReconnectionSuccess(Bundle actionData){
+                return bundleContainsSuccessForKey(actionData,RECONNECTION_STATUS);
             }
         },
 
@@ -420,12 +487,6 @@ public final class OADManager implements EventListener.OADEventListener {
         private final int MINIMUM_INTERNAL_PROGRESS = 0;
         private final int MAXIMUM_INTERNAL_PROGRESS = 120;
 
-        private final static String FIRMWARE_VERSION = "FIRMWARE_VERSION";
-        private final static String IS_VALIDATION_SUCCESS = "IS_VALIDATION_SUCCESS";
-        private final static String IS_RECONNECTION_SUCCESS = "IS_RECONNECTION_SUCCESS";
-        private final static String IS_REBOOT_SUCCESS = "IS_REBOOT_SUCCESS";
-        private final static String IS_READBACK_SUCCESS = "IS_READBACK_SUCCESS";
-
         /**
          * Corresponding progress in percentage
          * A progress of 0 means that the transfer has not started yet.
@@ -439,35 +500,79 @@ public final class OADManager implements EventListener.OADEventListener {
             this.progress = progress;
         }
 
-        public abstract void executeAction(Bundle actionData);
+        /**
+         * (Method to override)
+         * Execute a specific action according to the current state
+         * Data can be passed in input to specify a
+         * @param actionData bundle that contains all the data necessary to perform the action
+         *                   Several parameters can be stored in the bundle.
+         *                   Null bundle can also be passed if the action doesn't need any data.
+         */
+        public abstract void executeAction(@Nullable Bundle actionData);
 
         /**
          * Return the next state according to the current state
-         * Return if the last step has been reached
-         * @return
+         * Return null if the last step has been reached
+         * @return the state that follows the current state in the OAD update process
          */
         public abstract OADState getNextState();
 
-        private boolean isLastState(){
-            return this.equals(COMPLETE)
-                    || this.ordinal() == OADState.values().length-1;
+        /**
+         * Return true is the current state is the last state of the OAD update process
+         * or has no step to perform after the current one.
+         * @return
+         */
+        private boolean isFinalState(){
+            return getNextState() == null;
         }
 
+        /**
+         * Return true if the input bundle contains a boolean value associated to the input key
+         * and if this boolean value is true.
+         * @param key the key associated to the value to get
+         * @return the value associated to the key
+         */
+        public boolean bundleContainsSuccessForKey(Bundle bundle, String key){
+            return bundle.containsKey(key) && bundle.getBoolean(key);
+        }
+
+        /**
+         * Return a value if the input bundle contains a String value associated to the input key
+         * @param key the key associated to the value to get
+         * @return the value associated to the key
+         */
+        public Object getObjectFromBundleForKey(Bundle bundle, String key){
+            return (bundle.containsKey(key) ?
+                    bundle.getParcelable(key) : null);
+        }
+
+        /**
+         * Set the OAD update progress according to the current state
+         * @param progress the OAD update progress in percent.
+         * A progress of 0 means that the transfer has not started yet.
+         * A progress of 100 means that the transfer is complete.
+         */
         public void setProgress(@IntRange(from = MINIMUM_INTERNAL_PROGRESS, to = MAXIMUM_INTERNAL_PROGRESS) int progress) {
             this.progress = progress;
         }
 
+        /**
+         * Get the OAD update progress according to the current state.
+         * @return the OAD update progress in percent.
+         * A progress of 0 means that the transfer has not started yet.
+         * A progress of 100 means that the transfer is complete.
+         */
         public int convertToProgress() {
             return progress * 100 / 120;
         }
 
-        public boolean triggersReset(){
-            return this.equals(ABORTED);
-        }
-
+        /**
+         * Callback triggered to notify the SDK client when the SDK raises an error.
+         */
         @Override
         public void onError(BaseError error, String additionalInfo) {
-            oadManager.stateListener.onError(error,additionalInfo);
+            if(oadManager != null && oadManager.stateListener != null)
+                oadManager.stateListener.onError(error,additionalInfo);
         }
     }
 

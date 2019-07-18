@@ -14,6 +14,7 @@ import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.ParcelUuid;
 import android.support.annotation.NonNull;
@@ -44,6 +45,7 @@ import core.device.model.DeviceInfo;
 import core.device.model.MelomindDevice;
 import core.device.model.MelomindsQRDataBase;
 import core.device.oad.EventListener;
+import core.device.oad.OADEvent;
 import engine.clientevents.BaseError;
 import engine.clientevents.BluetoothError;
 import engine.clientevents.ConnectionStateReceiver;
@@ -78,6 +80,8 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     private MbtAsyncWaitOperation asyncOperation = new MbtAsyncWaitOperation<Boolean>();
 
     private MbtAsyncWaitOperation asyncConfiguration = new MbtAsyncWaitOperation<>();
+
+    private EventListener.OADEventListener oadEventListener;
 
     /**
      * An internal event used to notify MbtBluetoothLE that A2DP has disconnected.
@@ -609,7 +613,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     }
 
     /**
-     * Callback called by the {@link MbtGattController gatt controller} when the connection state has changed.
+     * Callback triggered by the {@link MbtGattController} callback when the connection state has changed.
      * @param newState the new {@link BtState state}
      */
     @Override
@@ -620,6 +624,23 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
                 notifyStreamStateChanged(StreamState.DISCONNECTED);
             BroadcastUtils.unregisterReceiver(context, receiver);
         }
+    }
+
+    /**
+     * Callback triggered by the {@link MbtGattController} callback when an OAD event occurs
+     * @param oadEvent the {@link OADEvent} event that occurs
+     * @param eventData the data associated to the mailbox event detected
+     */
+    void notifyOADEvent(OADEvent oadEvent, byte[] eventData) {
+        Bundle eventDataAsBundle = new Bundle();
+        eventDataAsBundle.putByteArray(oadEvent.getKey(), eventData);
+        oadEvent.setEventData(eventDataAsBundle);
+        this.oadEventListener.onOADEvent(oadEvent);
+    }
+
+    void notifyOADEvent(byte mailboxEvent, byte[] eventData) {
+        OADEvent oadEvent = OADEvent.getEventFromMailboxCommand(mailboxEvent);
+        notifyOADEvent(oadEvent, eventData);
     }
 
     void notifyCommandResponseReceived(Object response) {
@@ -827,11 +848,14 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     }
 
     public void startOADUpdate(EventListener.OADEventListener oadEventListener){
-        mbtGattController.setOadEventListener(oadEventListener);
+        setOadEventListener(oadEventListener);
     }
 
     public void stopOADUpdate(){
-        mbtGattController.setOadEventListener(null);
+        setOadEventListener(null);
     }
 
+    void setOadEventListener(EventListener.OADEventListener oadEventListener) {
+        this.oadEventListener = oadEventListener;
+    }
 }

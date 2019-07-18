@@ -58,12 +58,6 @@ public abstract class MbtBluetooth implements IConnectable{
         mbtBluetoothManager.notifyDeviceInfoReceived(deviceInfo, deviceValue);
     }
 
-    void notifyOADEvent(OADEvent eventType, int value){
-//        if(this.oadEventListener != null){
-//            this.oadEventListener.onOadEvent(eventType, value);
-//        }
-    }
-
     /**
      * Set the current bluetooth connection state to the value given in parameter
      * and notify the bluetooth manager of this change.
