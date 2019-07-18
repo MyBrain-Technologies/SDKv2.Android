@@ -476,7 +476,7 @@ public class OADManagerTest {
      * if the device fail to perform a write characteristic operation.
      */
     @Test
-    public void transferOADFile_failureNotStarted(){
+    public void transferOADFile_failureSending(){
         MbtBluetoothManager bluetoothManager = Mockito.mock(MbtBluetoothManager.class);
 
         oadManager.setStateListener(new OADStateListener() {
@@ -554,7 +554,7 @@ public class OADManagerTest {
         oadManager.transferOADFile();
         assertEquals(oadManager.getCurrentState(), OADState.ABORTED);
 
-    }
+    } //todo not wait 60 minutes
 
     /**
      * Check that the SDK raises a {@link BluetoothError#} error

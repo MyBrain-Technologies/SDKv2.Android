@@ -6,6 +6,7 @@ import static command.DeviceCommandEvents.MBX_OTA_STATUS_EVT;
 
 /**
  * Created by Etienne on 14/10/2016.
+ * OAD Event lists all the possible events that can occur during an OAD firwmare update
  */
 
 public enum OADEvent {
@@ -52,7 +53,7 @@ public enum OADEvent {
     /**
      * Event triggered when the headset device has disconnected after sending the CRC readback
      */
-    REBOOT_PERFORMED,
+    DISCONNECTED,
 
     /**
      * Event triggered when the current headset device has been reconnected or has failed to reconnect.
