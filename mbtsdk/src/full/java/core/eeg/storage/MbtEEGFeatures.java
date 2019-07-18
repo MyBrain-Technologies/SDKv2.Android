@@ -1,8 +1,10 @@
 package core.eeg.storage;
 
+import android.support.annotation.Keep;
 
+@Keep
 public class MbtEEGFeatures {
-
+    @Keep
     public enum Feature {
 
         MEDIAN,

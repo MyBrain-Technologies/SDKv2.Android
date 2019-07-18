@@ -1,7 +1,5 @@
 package core.synchronisation;
 
-import android.util.Log;
-
 import com.illposed.osc.OSCMessage;
 import com.illposed.osc.OSCPortOut;
 
@@ -16,13 +14,17 @@ import utils.LogUtils;
 
 public class MbtOSCStreamer extends IStreamer<OSCMessage> {
 
-    static private OSCPortOut oscPortOut;
+    /**
+     * OSCPortOut is the class that sends OSC messages
+     * to a specific address and port.
+     */
+    private OSCPortOut oscOut;
 
     MbtOSCStreamer(SynchronisationConfig config) {
         super(config.streamRawEEG(), config.streamQualities(), config.getFeaturesToStream());
 
         try {
-            oscPortOut = new OSCPortOut(InetAddress.getByName(
+            oscOut = new OSCPortOut(InetAddress.getByName(
                     config.getIpAddress()),
                     config.getPort());
         } catch (SocketException | UnknownHostException e) {
@@ -34,7 +36,7 @@ public class MbtOSCStreamer extends IStreamer<OSCMessage> {
     protected void stream(OSCMessage message) {
         try { // Send the messages
             LogUtils.i("Stream", "Address: " + (message).getAddress() + " | Data: " + (message).getArguments());
-            oscPortOut.send((message));
+            oscOut.send((message));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -47,5 +49,18 @@ public class MbtOSCStreamer extends IStreamer<OSCMessage> {
             message.addArgument(argument);
         }
         return message;
+    }
+
+    @Override
+    protected void sendStartStreamNotification() {
+        //todo send boolean true
+        super.sendStartStreamNotification();
+    }
+
+    @Override
+    protected void sendStopStreamNotification() {
+        //todo send boolean false
+        oscOut = null;
+        super.sendStopStreamNotification();
     }
 }

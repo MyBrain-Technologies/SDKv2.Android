@@ -87,6 +87,8 @@ dependencies {
     implementation 'org.greenrobot:eventbus:3.1.1'
     implementation 'com.google.code.gson:gson:2.8.5'
     implementation 'com.illposed.osc:javaosc-core:0.3'
+    implementation 'net.java.dev.jna:jna:4.2.2'
+
 
 
     doclava 'com.google.doclava:doclava:1.0.6'

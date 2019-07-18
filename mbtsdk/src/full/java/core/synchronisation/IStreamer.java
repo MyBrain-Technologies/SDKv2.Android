@@ -15,15 +15,21 @@ public abstract class IStreamer<U> extends AsyncTask<MbtEEGPacket, Void, Void> {
     static final String QUALITY_ADDRESS = ADDRESS_PREFIX +"quality";
 
 
-    protected boolean streamRawEEG;
-    protected boolean streamQualities;
+    private boolean streamRawEEG;
+    private boolean streamQualities;
 
-    protected ArrayList<MbtEEGFeatures.Feature> featuresToStream;
+    protected boolean startStreamNotificationSent;
+    protected boolean stopStreamNotificationSent;
 
-    public IStreamer(boolean streamRawEEG, boolean streamQualities, ArrayList<MbtEEGFeatures.Feature> featuresToStream) {
+    private ArrayList<MbtEEGFeatures.Feature> featuresToStream;
+
+    IStreamer(boolean streamRawEEG, boolean streamQualities, ArrayList<MbtEEGFeatures.Feature> featuresToStream) {
         this.streamRawEEG = streamRawEEG;
         this.streamQualities = streamQualities;
         this.featuresToStream = featuresToStream;
+
+        this.startStreamNotificationSent = false;
+        this.stopStreamNotificationSent = false;
     }
 
     @Override
@@ -49,7 +55,7 @@ public abstract class IStreamer<U> extends AsyncTask<MbtEEGPacket, Void, Void> {
 
     private void streamFeatures(MbtEEGPacket eegPacket, ArrayList<MbtEEGFeatures.Feature> featuresToStream){
         for (MbtEEGFeatures.Feature feature : featuresToStream) {
-            stream(initStreamRequest(eegPacket.getFeature(feature.ordinal()), ADDRESS_PREFIX + feature.name()));//todo address
+            stream(initStreamRequest(eegPacket.getFeature(feature), ADDRESS_PREFIX + feature.name()));//todo address
         }
     }
 
@@ -67,7 +73,16 @@ public abstract class IStreamer<U> extends AsyncTask<MbtEEGPacket, Void, Void> {
 
     }
 
+    protected void sendStartStreamNotification(){
+        this.startStreamNotificationSent = true;
+    }
+
+    protected void sendStopStreamNotification(){
+        this.stopStreamNotificationSent = true;
+    }
+
     protected abstract void stream(U message);
 
     protected abstract U initStreamRequest(ArrayList<Float> dataToStream, String address);
+
 }
