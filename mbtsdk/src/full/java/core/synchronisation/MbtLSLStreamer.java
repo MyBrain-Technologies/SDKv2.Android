@@ -1,12 +1,16 @@
 package core.synchronisation;
 
+import org.apache.commons.lang.ArrayUtils;
+
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+
 import config.SynchronisationConfig;
 import utils.LogUtils;
 
 
-public class MbtLSLStreamer extends IStreamer<ArrayList<Float>> {
+public class MbtLSLStreamer extends IStreamer<float[]> {
 
     private LSL.StreamOutlet lslOut;
 
@@ -15,13 +19,13 @@ public class MbtLSLStreamer extends IStreamer<ArrayList<Float>> {
     }
 
     @Override
-    protected void stream(ArrayList<Float> message) {
+    protected void stream(float[] message) {
         lslOut.push_sample(message);
     }
 
-
     @Override
-    protected ArrayList<Float> initStreamRequest(ArrayList<Float> dataToStream, String address) {
+    protected float[] initStreamRequest(ArrayList<Float> dataToStream, String address) {
+
         LSL.StreamInfo info = new LSL.StreamInfo("Address",address,1, LSL.IRREGULAR_RATE, LSL.ChannelFormat.string,"myuid4563");
         try {
             lslOut = new LSL.StreamOutlet(info);
@@ -30,7 +34,7 @@ public class MbtLSLStreamer extends IStreamer<ArrayList<Float>> {
             return null;
         }
 
-        return dataToStream;
+        return ArrayUtils.toPrimitive(dataToStream.toArray(new Float[0]), 0.0F);;
     }
 
     @Override
