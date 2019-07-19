@@ -42,6 +42,7 @@ public final class BluetoothError extends BaseError {
     public static BluetoothError ERROR_WRITE_CHARACTERISTIC_OPERATION       = new BluetoothError( CODE_RANGE+28,  "Bluetooth characteristic write operation failed.");
     public static BluetoothError ERROR_REQUEST_OPERATION                    = new BluetoothError( CODE_RANGE+28,  "Bluetooth request operation failed.");
     public static BluetoothError ERROR_VALIDITY_CHARACTERISTIC_OPERATION    = new BluetoothError( CODE_RANGE+29,  "Error: failed to check service and characteristic validity.");
+    public static BluetoothError ERROR_REBOOT_FAILED                        = new BluetoothError(CODE_RANGE+30, "Headset device reboot failed or could not be completed within the permitted time.");
 
 
     private BluetoothError(int code, String exception){

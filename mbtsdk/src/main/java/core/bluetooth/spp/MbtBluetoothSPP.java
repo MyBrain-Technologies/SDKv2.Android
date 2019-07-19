@@ -29,6 +29,7 @@ import core.bluetooth.MbtBluetoothManager;
 
 import core.device.model.DeviceInfo;
 import core.device.model.MelomindDevice;
+import core.device.event.EventListener;
 import utils.AsyncUtils;
 import utils.LogUtils;
 
@@ -522,6 +523,12 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
 
     //todo
     public void sendCommand(CommandInterface.MbtCommand command) {
+    }
+    //todo
+    public void startOADUpdate(EventListener.OADEventListener oadEventListener){
+    }
+    //todo
+    public void stopOADUpdate(){
     }
 }
 

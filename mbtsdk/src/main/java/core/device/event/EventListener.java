@@ -1,8 +1,8 @@
-package core.device.oad;
+package core.device.event;
 
 import android.support.annotation.Keep;
-import android.support.annotation.Nullable;
 
+import core.device.event.OADEvent;
 import engine.clientevents.BaseError;
 import engine.clientevents.BaseErrorEvent;
 
@@ -19,9 +19,8 @@ public class EventListener{
          * Callback triggered when a message/response of the headset device
          * related to the OAD update process
          * is received by the Bluetooth unit
-         * @param object is an optional additional value that is associated to an event
          */
-        void onOADEvent(OADEvent oadEvent, @Nullable Object object);
+        void onOADEvent(OADEvent oadEvent);
     }
 
 

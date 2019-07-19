@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.content.Context;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -16,8 +17,8 @@ import java.util.Arrays;
 import core.bluetooth.BtState;
 import core.device.model.DeviceInfo;
 import core.device.model.MelomindDevice;
-import core.device.oad.EventListener;
-import core.device.oad.OADEvent;
+import core.device.event.EventListener;
+import core.device.event.OADEvent;
 import utils.CommandUtils;
 import utils.LogUtils;
 import utils.BitUtils;
@@ -71,8 +72,6 @@ final class MbtGattController extends BluetoothGattCallback {
 
     private final MbtBluetoothLE mbtBluetoothLE;
 
-    private EventListener.OADEventListener oadEventListener;
-
     MbtGattController(Context context, MbtBluetoothLE mbtBluetoothLE) {
         super();
         this.mbtBluetoothLE = mbtBluetoothLE;
@@ -114,8 +113,10 @@ final class MbtGattController extends BluetoothGattCallback {
             case BluetoothGatt.STATE_DISCONNECTED:
                 //if(isDownloadingFirmware) //todo OAD
                 //    refreshDeviceCache(gatt);// in this case the connection went well for a while, but just got lost
+                //mbtBluetoothLE.notifyOADEvent(OADEvent.DISCONNECTED_FOR_REBOOT, null);
                 LogUtils.e(TAG, "Gatt returned disconnected state");
                 gatt.close();
+                //todo dissociate connection in progress case, OAD in progress case, regular case
                 this.mbtBluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);
                 break;
             default:
@@ -317,8 +318,8 @@ final class MbtGattController extends BluetoothGattCallback {
             case MBX_OTA_MODE_EVT:
             case MBX_OTA_IDX_RESET_EVT:
             case MBX_OTA_STATUS_EVT:
-                if(oadEventListener != null)
-                    oadEventListener.onOADEvent(OADEvent.getEventFromMailboxCommand(mailboxEvent), response);
+                mbtBluetoothLE.notifyOADEvent(mailboxEvent, response);
+
                 break;
 
             case MBX_SET_ADS_CONFIG:
@@ -357,8 +358,4 @@ final class MbtGattController extends BluetoothGattCallback {
                 || (!BitUtils.areByteEquals(CMD_CODE_CONNECT_IN_A2DP_IN_PROGRESS, response[0])//wait another response until timeout if the connection is not in progress
                     && !BitUtils.areByteEquals(CMD_CODE_CONNECT_IN_A2DP_LINKKEY_INVALID, response[0])); //wait another response until timeout if the linkkey invalid response is returned
      }
-
-    void setOadEventListener(EventListener.OADEventListener oadEventListener) {
-        this.oadEventListener = oadEventListener;
-    }
 }

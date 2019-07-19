@@ -2,7 +2,7 @@ package core;
 
 import android.content.Context;
 
-import eventbus.EventBusManager;
+import eventbus.MbtEventBus;
 
 /**
  * Abstract class that represent a simple module manager.
@@ -18,7 +18,7 @@ public abstract class BaseModuleManager {
 
     protected BaseModuleManager(Context context){
         this.mContext = context;
-        EventBusManager.registerOrUnregister(true, this);
+        MbtEventBus.registerOrUnregister(true, this);
     }
 
 }

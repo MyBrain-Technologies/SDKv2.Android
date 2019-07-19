@@ -13,7 +13,7 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 
 import core.device.model.DeviceInfo;
-import core.device.oad.OADEvent;
+import core.device.event.OADEvent;
 
 import utils.LogUtils;
 import utils.MbtLock;
@@ -56,12 +56,6 @@ public abstract class MbtBluetooth implements IConnectable{
 
     public void notifyDeviceInfoReceived(@NonNull DeviceInfo deviceInfo, @NonNull String deviceValue){ // This method will be called when a DeviceInfoReceived is posted (fw or hw or serial number) by MbtBluetoothLE or MbtBluetoothSPP
         mbtBluetoothManager.notifyDeviceInfoReceived(deviceInfo, deviceValue);
-    }
-
-    void notifyOADEvent(OADEvent eventType, int value){
-//        if(this.oadEventListener != null){
-//            this.oadEventListener.onOadEvent(eventType, value);
-//        }
     }
 
     /**

@@ -30,6 +30,8 @@ import core.device.event.SaturationEvent;
 import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindsQRDataBase;
+import core.device.model.FirmwareVersion;
+import core.device.event.OADEvent;
 import core.eeg.MbtEEGManager;
 import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
@@ -41,7 +43,8 @@ import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.EegError;
 import engine.clientevents.EegListener;
 import engine.clientevents.HeadsetDeviceError;
-import eventbus.EventBusManager;
+import engine.clientevents.OADStateListener;
+import eventbus.MbtEventBus;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.ConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
@@ -77,6 +80,7 @@ public class MbtManager{
      * using custom callback interfaces.
      */
     private ConnectionStateListener<BaseError> connectionStateListener;
+    private OADStateListener oadStateListener;
     private EegListener<BaseError> eegListener;
     private DeviceBatteryListener<BaseError> deviceInfoListener;
     @Nullable
@@ -86,7 +90,7 @@ public class MbtManager{
         this.mContext = context;
         this.registeredModuleManagers = new HashSet<>();
 
-        EventBusManager.registerOrUnregister(true, this);
+        MbtEventBus.registerOrUnregister(true, this);
 
         if(DEVICE_ENABLED)
             registerManager(new MbtDeviceManager(mContext));
@@ -117,7 +121,7 @@ public class MbtManager{
         }else if(deviceQrCodeRequested != null && deviceNameRequested != null && !deviceNameRequested.equals(new MelomindsQRDataBase(mContext,  true).get(deviceQrCodeRequested))){
             this.connectionStateListener.onError(HeadsetDeviceError.ERROR_MATCHING, mContext.getString(R.string.aborted_connection));
         }else{
-            EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent(true, deviceNameRequested, deviceQrCodeRequested, deviceTypeRequested, mtu));
+            MbtEventBus.postEvent(new StartOrContinueConnectionRequestEvent(true, deviceNameRequested, deviceQrCodeRequested, deviceTypeRequested, mtu));
         }
     }
 
@@ -125,7 +129,7 @@ public class MbtManager{
      * Perform a Bluetooth disconnection.
      */
     public void disconnectBluetooth(boolean isAbortion){
-        EventBusManager.postEvent(new DisconnectRequestEvent(isAbortion));
+        MbtEventBus.postEvent(new DisconnectRequestEvent(isAbortion));
     }
 
     /**
@@ -134,7 +138,7 @@ public class MbtManager{
      */
     public void readBluetooth(@NonNull DeviceInfo deviceInfo, @NonNull DeviceBatteryListener<BaseError> listener){
         this.deviceInfoListener = listener;
-        EventBusManager.postEvent(new ReadRequestEvent(deviceInfo));
+        MbtEventBus.postEvent(new ReadRequestEvent(deviceInfo));
     }
 
     /**
@@ -147,7 +151,7 @@ public class MbtManager{
         for (DeviceCommand command : streamConfig.getDeviceCommands()) {
             sendCommand(command);
         }
-        EventBusManager.postEvent(
+        MbtEventBus.postEvent(
                 new StreamRequestEvent(true,
                         streamConfig.shouldComputeQualities(),
                         (deviceStatusListener != null)));
@@ -157,7 +161,7 @@ public class MbtManager{
      * Posts an event to stop the currently started stream session
      */
     public void stopStream(){
-        EventBusManager.postEvent(new StreamRequestEvent(false, false, false));
+        MbtEventBus.postEvent(new StreamRequestEvent(false, false, false));
     }
 
     /**
@@ -170,7 +174,7 @@ public class MbtManager{
      * @param command is the command to send
      */
     public void sendCommand(@NonNull CommandInterface.MbtCommand command) {
-       EventBusManager.postEvent(new CommandRequestEvent(command));
+       MbtEventBus.postEvent(new CommandRequestEvent(command));
     }
 
     /**
@@ -285,11 +289,11 @@ public class MbtManager{
         if (callback == null)
             return;
 
-        EventBusManager.postEvent(new DeviceEvents.GetDeviceEvent(), new EventBusManager.Callback<DeviceEvents.PostDeviceEvent>(){
+        MbtEventBus.postEvent(new DeviceEvents.GetDeviceEvent(), new MbtEventBus.Callback<DeviceEvents.PostDeviceEvent>(){
             @Override
             @Subscribe
             public Void onEventCallback(DeviceEvents.PostDeviceEvent object) {
-                EventBusManager.registerOrUnregister(false, this);
+                MbtEventBus.registerOrUnregister(false, this);
                 callback.onRequestComplete(object.getDevice());
                 return null;
             }
@@ -298,5 +302,17 @@ public class MbtManager{
 
     Set<BaseModuleManager> getRegisteredModuleManagers() {
         return registeredModuleManagers;
+    }
+
+    /**
+     * Perform a request to start an OAD firmware update.
+     * @param firmwareVersion is the firmware version to install on the connected headset device.
+     * @param stateListener is an optional (nullable) listener that notify the client when the OAD update progress & state change.
+     */
+    public void updateFirmware(FirmwareVersion firmwareVersion, OADStateListener<BaseError> stateListener) {
+        this.oadStateListener = stateListener;
+        OADEvent event = OADEvent.INIT;
+        event.setAssociatedValue(firmwareVersion);
+        MbtEventBus.postEvent(event);
     }
 }

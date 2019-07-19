@@ -19,6 +19,8 @@ public final class OADError extends BaseError{
     public static OADError ERROR_VALIDATION_FAILED             = new OADError(CODE_RANGE+5, "Firmware rejected the OAD update request.");
     public static OADError ERROR_WRONG_FIRMWARE_VERSION        = new OADError(CODE_RANGE+6, "Current firmware version does not match the update version");
     public static OADError ERROR_FIRMWARE_UPDATE_FAILED        = new OADError(CODE_RANGE+7, "Firmware update failed or could not be completed within the permitted time.");
+    public static OADError ERROR_FIRMWARE_REJECTED_UPDATE      = new OADError(CODE_RANGE+8, "Firmware rejected the binary file that holds the firmware requested for an OAD update .");
+    public static OADError ERROR_INVALID_FIRMWARE_VERSION      = new OADError(CODE_RANGE+9, "Firmware version requested is invalid.");
 
     private OADError(int code, String exception) {
         super(DOMAIN, code, exception);
