@@ -71,11 +71,11 @@ public final class OADManager {
      */
     public boolean init(String oadFilePath){
         this.packetEngine = new PacketCounter();
-        oadContext.setFilePath(oadFilePath);
+        oadContext.setOADfilePath(oadFilePath);
         try {
             byte[] content = OADExtractionUtils.extractFileContent(context.getAssets(), oadFilePath);
             String firmwareVersion = OADExtractionUtils.extractFirmwareVersion(content);
-            oadContext.setNbBytesToSend(content.length);
+            oadContext.setNbPacketsToSend(content.length);
             oadContext.setFirmwareVersion(firmwareVersion);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
