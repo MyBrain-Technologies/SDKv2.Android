@@ -74,11 +74,11 @@ public final class OADManager {
         oadContext.setOADfilePath(oadFilePath);
         try {
             byte[] content = OADExtractionUtils.extractFileContent(context.getAssets(), oadFilePath);
-            String firmwareVersion = OADExtractionUtils.extractFirmwareVersion(content);
+            FirmwareVersion firmwareVersion = new FirmwareVersion(OADExtractionUtils.extractFirmwareVersion(content));
             oadContext.setNbPacketsToSend(content.length);
             oadContext.setFirmwareVersion(firmwareVersion);
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            LogUtils.e(TAG, "OAD binary file extraction failed : "+e);
         }
         return true; //todo if valid/invalid true /false
     }

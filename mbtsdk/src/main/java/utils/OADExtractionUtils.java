@@ -18,7 +18,10 @@ public final class OADExtractionUtils {
     private final static String TAG = OADExtractionUtils.class.getName();;
 
     private static final int OAD_FW_VERSION_OFFSET = 0x27C;
-    static final int INDEX_FIRMWARE_VERSION = 4;
+    /**
+     * Number of bytes allocated in the OAD binary file to store the firmware version.
+     */
+    static final int FIRMWARE_VERSION_NB_BYTES = 4;
     private static final int FILE_CONTENT_SIZE = 256000;
 
     private static final String OAD_BINARY_FILES_DIRECTORY = "oad";
@@ -32,7 +35,7 @@ public final class OADExtractionUtils {
         ArrayList<FirmwareVersion> availableFirmwareVersions = new ArrayList<FirmwareVersion>();
         try {
             for (String oadBinaryFile : assetManager.list(OAD_BINARY_FILES_DIRECTORY)) {
-                FirmwareVersion firmwareVersion = extractFirmwareVersion(extractFileContent(assetManager,oadBinaryFile));
+                FirmwareVersion firmwareVersion = extractFirmwareVersion(assetManager,oadBinaryFile);
                 availableFirmwareVersions.add(firmwareVersion);
             }
         } catch (IOException e) {
@@ -43,6 +46,7 @@ public final class OADExtractionUtils {
 
     /**
      * Extract the content of an OAD binary file that holds the firmware
+     * @param assetManager is the assets where are stored the OAD binary files
      * @param filePath is the OAD binary file that holds the firmware
      * @return the content of the file as a byte array
      */
@@ -66,6 +70,16 @@ public final class OADExtractionUtils {
 
     /**
      * Extract the firmware version from an OAD binary file that holds the firmware
+     * @param assetManager is the assets where are stored the OAD binary files
+     * @param filePath is the OAD binary file that holds the firmware
+     * @return the firmware version as a String
+     */
+    public static final String extractFirmwareVersion(AssetManager assetManager, @NonNull final String filePath) throws FileNotFoundException {
+        return extractFirmwareVersion(extractFileContent(assetManager, filePath));
+    }
+
+    /**
+     * Extract the firmware version from the content of an OAD binary file that holds the firmware
      * @param content is the extracted content of the OAD binary file that holds the firmware
      * @return the firmware version as a String
      */
@@ -73,8 +87,8 @@ public final class OADExtractionUtils {
         if (content == null)
             return null;
 
-        byte[] tempFirmwareVersion = new byte[4];
-        System.arraycopy(content, OAD_FW_VERSION_OFFSET, tempFirmwareVersion, 0, INDEX_FIRMWARE_VERSION);
+        byte[] tempFirmwareVersion = new byte[FIRMWARE_VERSION_NB_BYTES];
+        System.arraycopy(content, OAD_FW_VERSION_OFFSET, tempFirmwareVersion, 0, FIRMWARE_VERSION_NB_BYTES);
         return new String(tempFirmwareVersion);
     }
 
