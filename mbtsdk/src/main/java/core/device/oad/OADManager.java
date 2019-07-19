@@ -16,12 +16,6 @@ public final class OADManager {
 
     private final static String TAG = OADManager.class.getName();
 
-    private final static String BINARY_HOOK = "mm-ota-";
-    private final static String BINARY_FORMAT = ".bin";
-    private final static String FWVERSION_REGEX = "_";
-
-    public final static String CURRENT_FW_VERSION = BINARY_HOOK + BuildConfig.FIRMWARE_VERSION + BINARY_FORMAT;
-
     public static final int NB_PACKETS_TO_SEND = 14223;
 
     static final int OAD_PACKET_SIZE = 18;

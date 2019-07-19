@@ -10,12 +10,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 
+import core.device.oad.OADManager;
+
 /**
  * Created by Vincent on 19/08/2015.
  */
 @Keep
 public final class OADExtractionUtils {
     private final static String TAG = OADExtractionUtils.class.getName();;
+
+    private final static String BINARY_HOOK = "mm-ota-";
+    private final static String BINARY_FORMAT = ".bin";
+    private final static String FIRMWARE_VERSION_REGEX = "_";
 
     private static final int OAD_FW_VERSION_OFFSET = 0x27C;
     /**
@@ -31,17 +37,17 @@ public final class OADExtractionUtils {
      * Extract the content of an OAD binary file that holds the firmware
      * @return the content of the file as a byte array
      */
-    public static final FirmwareVersion[] getAvailableFirmwareVersions(AssetManager assetManager) {
-        ArrayList<FirmwareVersion> availableFirmwareVersions = new ArrayList<FirmwareVersion>();
+    public static final String[] getAvailableFirmwareVersions(AssetManager assetManager) {
+        ArrayList<String> availableFirmwareVersions = new ArrayList<>();
         try {
             for (String oadBinaryFile : assetManager.list(OAD_BINARY_FILES_DIRECTORY)) {
-                FirmwareVersion firmwareVersion = extractFirmwareVersion(assetManager,oadBinaryFile);
+                String firmwareVersion = extractFirmwareVersion(assetManager,oadBinaryFile);
                 availableFirmwareVersions.add(firmwareVersion);
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return (FirmwareVersion[])availableFirmwareVersions.toArray();
+        return (String[])availableFirmwareVersions.toArray();
     }
 
     /**
@@ -51,7 +57,7 @@ public final class OADExtractionUtils {
      * @return the content of the file as a byte array
      */
     public static final byte[] extractFileContent(AssetManager assetManager, @NonNull final String filePath) throws FileNotFoundException {
-        if(filePath == null || filePath.isEmpty() || !fileExists(filePath))
+        if(filePath == null || filePath.isEmpty() || !fileExists(filePath) || !isValidFileFormat(filePath))
             throw new FileNotFoundException("File path/name incorrect : "+filePath);
 
         byte[] fileContent = new byte[FILE_CONTENT_SIZE];
@@ -66,6 +72,10 @@ public final class OADExtractionUtils {
         }
 
         return fileContent;
+    }
+
+    public static boolean isValidFileFormat(String filePath){
+        return filePath.endsWith(BINARY_FORMAT) && filePath.startsWith(BINARY_HOOK);
     }
 
     /**
