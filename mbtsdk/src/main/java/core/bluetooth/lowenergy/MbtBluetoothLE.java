@@ -43,6 +43,7 @@ import core.bluetooth.MbtBluetoothManager;
 import core.device.model.DeviceInfo;
 import core.device.model.MelomindDevice;
 import core.device.model.MelomindsQRDataBase;
+import core.device.oad.EventListener;
 import engine.clientevents.BaseError;
 import engine.clientevents.BluetoothError;
 import engine.clientevents.ConnectionStateReceiver;
@@ -825,5 +826,12 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         this.asyncOperation = asyncOperation;
     }
 
+    public void startOADUpdate(EventListener.OADEventListener oadEventListener){
+        mbtGattController.setOadEventListener(oadEventListener);
+    }
+
+    public void stopOADUpdate(){
+        mbtGattController.setOadEventListener(null);
+    }
 
 }
