@@ -20,6 +20,8 @@ public class FirmwareVersion {
      */
     private final VersionHelper firmwareVersionHelper;
 
+    private final String firmwareVersionAsString;
+
     /**
      * Constructor that build a {@link FirmwareVersion} instance
      * from a String type firmware version.
@@ -27,6 +29,7 @@ public class FirmwareVersion {
      */
     public FirmwareVersion(@NonNull String firmwareVersion) {
         this.firmwareVersionHelper = new VersionHelper(firmwareVersion);
+        this.firmwareVersionAsString = firmwareVersion;
     }
 
     /**
@@ -34,9 +37,7 @@ public class FirmwareVersion {
      * @return the Firmware version as a String
      */
     public String getFirmwareVersionAsString(){
-        return this.firmwareVersionHelper.getMainVersionAsString() +
-                this.firmwareVersionHelper.getMajorVersionAsString() +
-                this.firmwareVersionHelper.getMinorVersionAsString();
+        return firmwareVersionAsString
     }
 
     /**
