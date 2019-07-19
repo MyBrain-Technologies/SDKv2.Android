@@ -5,11 +5,12 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import core.device.model.MbtDevice;
+import eventbus.MbtEventBus;
 import features.MbtDeviceType;
 
 /**
  * This interface contains all required object classes to communicate with the DEVICE module using
- * the {@link eventbus.EventBusManager} bus.
+ * the {@link MbtEventBus} bus.
  */
 public interface DeviceEvents {
 

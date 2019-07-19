@@ -28,7 +28,7 @@ import engine.clientevents.BaseError;
 import engine.clientevents.BluetoothError;
 import engine.clientevents.OADError;
 import engine.clientevents.OADStateListener;
-import eventbus.EventBusManager;
+import eventbus.MbtEventBus;
 import utils.FileUtils;
 import utils.MbtAsyncWaitOperation;
 
@@ -37,7 +37,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith( PowerMockRunner.class )
-@PrepareForTest({EventBusManager.class, FileUtils.class})
+@PrepareForTest({MbtEventBus.class, FileUtils.class})
 public class OADManagerTest {
 
     private final String FILE_PATH = "anyString";
@@ -290,9 +290,9 @@ public class OADManagerTest {
         try {
             PowerMockito
                     .doAnswer((Answer<Void>) invocation -> {
-                        EventBusManager.postEvent(new DeviceEvents.OADValidationResponseEvent(false));
+                        MbtEventBus.postEvent(new DeviceEvents.OADValidationResponseEvent(false));
                         return null;})
-                    .when(EventBusManager.class, "postEvent", captor.capture());
+                    .when(MbtEventBus.class, "postEvent", captor.capture());
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -334,9 +334,9 @@ public class OADManagerTest {
         try {
             PowerMockito
                     .doAnswer((Answer<Void>) invocation -> {
-                        EventBusManager.postEvent(new DeviceEvents.OADValidationResponseEvent(true));
+                        MbtEventBus.postEvent(new DeviceEvents.OADValidationResponseEvent(true));
                         return null;})
-                    .when(EventBusManager.class, "postEvent", captor.capture());
+                    .when(MbtEventBus.class, "postEvent", captor.capture());
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -379,7 +379,7 @@ public class OADManagerTest {
         try {
             PowerMockito
                     .doNothing()
-                    .when(EventBusManager.class, "postEvent", captor.capture());
+                    .when(MbtEventBus.class, "postEvent", captor.capture());
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -427,7 +427,7 @@ public class OADManagerTest {
                         bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);
                         return null;
                     })
-                    .when(EventBusManager.class, "postEvent", captor.capture());
+                    .when(MbtEventBus.class, "postEvent", captor.capture());
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -501,7 +501,7 @@ public class OADManagerTest {
                         bluetoothManager.notifyResponseReceived(null, new DeviceCommands.ConnectAudio()); //todo create new mailbox command for OAD and replace connectaudio
                         return null;
                     })
-                    .when(EventBusManager.class, "postEvent", captor.capture());
+                    .when(MbtEventBus.class, "postEvent", captor.capture());
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -544,7 +544,7 @@ public class OADManagerTest {
         try {
             PowerMockito
                     .doNothing()
-                    .when(EventBusManager.class, "postEvent", captor.capture());
+                    .when(MbtEventBus.class, "postEvent", captor.capture());
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -589,7 +589,7 @@ public class OADManagerTest {
                         bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);
                         return null;
                     })
-                    .when(EventBusManager.class, "postEvent", captor.capture());
+                    .when(MbtEventBus.class, "postEvent", captor.capture());
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -635,7 +635,7 @@ public class OADManagerTest {
                         bluetoothLE.notifyOADPacketLost(100);
                         return null;
                     })
-                    .when(EventBusManager.class, "postEvent", captor.capture());
+                    .when(MbtEventBus.class, "postEvent", captor.capture());
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -679,7 +679,7 @@ public class OADManagerTest {
                         bluetoothLE.notifyOADPacketLost(-1);
                         return null;
                     })
-                    .when(EventBusManager.class, "postEvent", captor.capture());
+                    .when(MbtEventBus.class, "postEvent", captor.capture());
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -715,7 +715,7 @@ public class OADManagerTest {
     public void transferOADFile_success(){
         oadManager.init(FILE_PATH);
         oadManager.transferOADFile();
-        EventBusManager.postEvent(new DeviceEvents.OADReadbackEvent(true));
+        MbtEventBus.postEvent(new DeviceEvents.OADReadbackEvent(true));
 
         assertEquals(oadManager.getCurrentState(), OADState.REBOOTING);
 
@@ -729,7 +729,7 @@ public class OADManagerTest {
     public void transferOADFile_failureIncomplete(){
         oadManager.init(FILE_PATH);
         oadManager.transferOADFile();
-        EventBusManager.postEvent(new DeviceEvents.OADReadbackEvent(false));
+        MbtEventBus.postEvent(new DeviceEvents.OADReadbackEvent(false));
 
         assertEquals(oadManager.getCurrentState(), OADState.ABORTED);
 
@@ -760,7 +760,7 @@ public class OADManagerTest {
         });
         oadManager.init(FILE_PATH);
         oadManager.transferOADFile();
-        EventBusManager.postEvent(new DeviceEvents.OADReadbackEvent(true));
+        MbtEventBus.postEvent(new DeviceEvents.OADReadbackEvent(true));
         try {
             new MbtAsyncWaitOperation().waitOperationResult(OADState.REBOOTING.getMaximumDuration());
         } catch (InterruptedException e) {
@@ -822,7 +822,7 @@ public class OADManagerTest {
                         bluetoothLE.notifyConnectionStateChanged(BtState.SCAN_TIMEOUT);
                         return null;
                     })
-                    .when(EventBusManager.class, "postEvent", captor.capture());
+                    .when(MbtEventBus.class, "postEvent", captor.capture());
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -851,7 +851,7 @@ public class OADManagerTest {
                         bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
                         return null;
                     })
-                    .when(EventBusManager.class, "postEvent", captor.capture());
+                    .when(MbtEventBus.class, "postEvent", captor.capture());
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -890,7 +890,7 @@ public class OADManagerTest {
                         bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
                         return null;
                     })
-                    .when(EventBusManager.class, "postEvent", captor.capture());
+                    .when(MbtEventBus.class, "postEvent", captor.capture());
 
         } catch (Exception e) {
             e.printStackTrace();

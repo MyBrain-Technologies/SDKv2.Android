@@ -2,17 +2,19 @@ package core.device.oad;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 
 import java.io.FileNotFoundException;
 
 import command.OADCommands;
 import core.bluetooth.requests.CommandRequestEvent;
 import core.device.MbtDeviceManager;
+import core.device.event.EventListener;
+import core.device.event.OADEvent;
+import core.device.model.FirmwareVersion;
 import core.device.model.MbtDevice;
 import engine.clientevents.BaseError;
 import engine.clientevents.OADStateListener;
-import eventbus.EventBusManager;
+import eventbus.MbtEventBus;
 import utils.LogUtils;
 
 
@@ -29,8 +31,6 @@ public final class OADManager {
     static final int FILE_LENGTH_NB_BYTES = 4;
     static final int FIRMWARE_VERSION_NB_BYTES = 2;
 
-    public static final int FIRMWARE_VERSION_LENGTH = 3;
-    public static final String FIRMWARE_VERSION_SPLITTER = "\\.";
 
     private final Context context;
     private final MbtDeviceManager deviceManager;
@@ -166,7 +166,7 @@ public final class OADManager {
         OADCommands.RequestFirmwareValidation requestFirmwareValidation = new OADCommands.RequestFirmwareValidation(
                 firmwareVersion,
                 nbPacketToSend);
-        EventBusManager.postEvent(new CommandRequestEvent(requestFirmwareValidation));
+        MbtEventBus.postEvent(new CommandRequestEvent(requestFirmwareValidation));
     }
 
     public boolean transferOADFile(){

@@ -1,4 +1,4 @@
-package core.device.oad;
+package core.device.event;
 
 import static command.DeviceCommandEvents.MBX_OTA_IDX_RESET_EVT;
 import static command.DeviceCommandEvents.MBX_OTA_MODE_EVT;
