@@ -261,7 +261,7 @@ public final class OADManager implements EventListener.OADEventListener {
     public void onOADEvent(OADEvent oadEvent) {
 
         if(oadEvent.equals(OADEvent.LOST_PACKET)){
-                int packetIndex = oadEvent.getEventData().getInt();
+                int packetIndex = oadEvent.getEventData().getInt(oadEvent.getKey());
                 sendOADPacket(packetIndex);
         }else
             switchToNextStep(oadEvent.getEventData());
