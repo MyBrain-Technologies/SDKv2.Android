@@ -21,6 +21,26 @@ public final class OADExtractionUtils {
     static final int INDEX_FIRMWARE_VERSION = 4;
     private static final int FILE_CONTENT_SIZE = 256000;
 
+    private static final String OAD_BINARY_FILES_DIRECTORY = "oad";
+
+
+    /**
+     * Extract the content of an OAD binary file that holds the firmware
+     * @return the content of the file as a byte array
+     */
+    public static final FirmwareVersion[] getAvailableFirmwareVersions(AssetManager assetManager) {
+        ArrayList<FirmwareVersion> availableFirmwareVersions = new ArrayList<FirmwareVersion>();
+        try {
+            for (String oadBinaryFile : assetManager.list(OAD_BINARY_FILES_DIRECTORY)) {
+                FirmwareVersion firmwareVersion = extractFirmwareVersion(extractFileContent(assetManager,oadBinaryFile));
+                availableFirmwareVersions.add(firmwareVersion);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return (FirmwareVersion[])availableFirmwareVersions.toArray();
+    }
+
     /**
      * Extract the content of an OAD binary file that holds the firmware
      * @param filePath is the OAD binary file that holds the firmware
