@@ -309,7 +309,7 @@ public class MbtManager{
      * @param firmwareVersion is the firmware version to install on the connected headset device.
      * @param stateListener is an optional (nullable) listener that notify the client when the OAD update progress & state change.
      */
-    public void startOADUpdate(FirmwareVersion firmwareVersion, OADStateListener<BaseError> stateListener) {
+    public void updateFirmware(FirmwareVersion firmwareVersion, OADStateListener<BaseError> stateListener) {
         this.oadStateListener = stateListener;
         OADEvent event = OADEvent.INIT;
         event.setAssociatedValue(firmwareVersion);
