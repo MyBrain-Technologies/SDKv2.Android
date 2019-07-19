@@ -3,6 +3,7 @@ package core.device.event;
 import android.os.Bundle;
 
 import command.DeviceCommands;
+import core.device.oad.OADManager;
 
 import static command.DeviceCommandEvents.MBX_OTA_IDX_RESET_EVT;
 import static command.DeviceCommandEvents.MBX_OTA_MODE_EVT;
@@ -57,7 +58,7 @@ public enum OADEvent {
     /**
      * Event triggered when the headset device has disconnected after sending the CRC readback
      */
-    DISCONNECTED_FOR_REBOOT(OADManager.REBOOT_STATUS),
+    DISCONNECTED_FOR_REBOOT(),
 
     /**
      * Event triggered when the current headset device has been reconnected or has failed to reconnect.

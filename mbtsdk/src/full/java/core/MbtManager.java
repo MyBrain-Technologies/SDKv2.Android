@@ -2,6 +2,7 @@ package core;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
@@ -312,7 +313,9 @@ public class MbtManager{
     public void updateFirmware(FirmwareVersion firmwareVersion, OADStateListener<BaseError> stateListener) {
         this.oadStateListener = stateListener;
         OADEvent event = OADEvent.INIT;
-        event.setAssociatedValue(firmwareVersion);
+        Bundle eventData = new Bundle();
+        eventData.putString(event.getKey(), firmwareVersion.getFirmwareVersionAsString());
+        event.setEventData(eventData);
         MbtEventBus.postEvent(event);
     }
 }

@@ -31,7 +31,7 @@ public interface OADCommands {
         /**
          * The firmware version that will replace the current version installed on the headset device
          */
-        private String firmwareVersion;
+        private FirmwareVersion firmwareVersion;
 
         /**
          * The number of bytes of the binary file that holds the firmware to upload & install on the headset device
@@ -49,7 +49,7 @@ public interface OADCommands {
          * sent by the headset to the SDK once the command is received,
          * call the {@link RequestFirmwareValidation}(String serialNumber, {@linkCommandCallback<DeviceCommand, byte[]>)} constructor.
          */
-        public RequestFirmwareValidation(String firmwareVersion, short binaryFileLength) {
+        public RequestFirmwareValidation(FirmwareVersion firmwareVersion, short binaryFileLength) {
             super(DeviceCommandEvents.MBX_START_OTA_TXF);
                 this.firmwareVersion = firmwareVersion;
                 this.binaryFileLength = binaryFileLength;
@@ -71,7 +71,7 @@ public interface OADCommands {
          * call the {@link RequestFirmwareValidation}(String firmwareVersion, int binaryFileLength) constructor
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
-        public RequestFirmwareValidation(String firmwareVersion, short binaryFileLength, CommandInterface.CommandCallback<byte[]> commandCallback) {
+        public RequestFirmwareValidation(FirmwareVersion firmwareVersion, short binaryFileLength, CommandInterface.CommandCallback<byte[]> commandCallback) {
             super(DeviceCommandEvents.MBX_SET_SERIAL_NUMBER,
                     DeviceCommandEvents.MBX_SET_SERIAL_NUMBER_ADDITIONAL);
             this.firmwareVersion = firmwareVersion;
@@ -83,8 +83,7 @@ public interface OADCommands {
         @Override
         public boolean isValid() {
             return firmwareVersion != null
-                    && !firmwareVersion.isEmpty()
-                    && firmwareVersion.split(VersionHelper.VERSION_SPLITTER).length == VersionHelper.VERSION_LENGTH
+                    && !firmwareVersion.getFirmwareVersionAsString().isEmpty()
                     && binaryFileLength > 0;
         }
 
@@ -99,7 +98,7 @@ public interface OADCommands {
                 return null;
 
             ByteBuffer buffer = ByteBuffer.allocate(BINARY_FILE_LENGTH_NB_BYTES + FIRMWARE_VERSION_NB_BYTES);
-            buffer.put(firmwareVersion.getBytes());
+            buffer.put(firmwareVersion.getFirmwareVersionAsString().getBytes());
             buffer.putShort(binaryFileLength);
             return buffer.array();
         }

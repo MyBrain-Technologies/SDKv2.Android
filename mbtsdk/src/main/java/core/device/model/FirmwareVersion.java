@@ -2,6 +2,7 @@ package core.device.model;
 
 import android.support.annotation.NonNull;
 
+import utils.LogUtils;
 import utils.VersionHelper;
 
 /**
@@ -9,6 +10,8 @@ import utils.VersionHelper;
  * in order to facilitate the firmware version manipulation.
  */
 public class FirmwareVersion {
+
+    public final static String TAG = FirmwareVersion.class.getSimpleName();
 
     /**
      * Wrapper used to store the firmware version divided into three parts: main major and minor parts.
@@ -18,9 +21,9 @@ public class FirmwareVersion {
      * Z = minor part
      * Each Xs Ys and Zs are integer numbers.
      */
-    private final VersionHelper firmwareVersionHelper;
+    private VersionHelper firmwareVersionHelper;
 
-    private final String firmwareVersionAsString;
+    private String firmwareVersionAsString;
 
     /**
      * Constructor that build a {@link FirmwareVersion} instance
@@ -28,28 +31,29 @@ public class FirmwareVersion {
      * @param firmwareVersion is the String type firmware version to convert into a {@link FirmwareVersion} instance.
      */
     public FirmwareVersion(@NonNull String firmwareVersion) {
+        if (!VersionHelper.isVersionLengthValid(firmwareVersion)){
+            LogUtils.e(TAG, "Invalid version length : minimum number of digits is equal to " + VersionHelper.VERSION_LENGTH);
+            return;
+        }
         this.firmwareVersionHelper = new VersionHelper(firmwareVersion);
         this.firmwareVersionAsString = firmwareVersion;
     }
 
     /**
-     * Return the Firmware version as a String.
-     * @return the Firmware version as a String
+     * Return the version as a String.
+     * @return the version as a String
      */
     public String getFirmwareVersionAsString(){
-        return firmwareVersionAsString
+        return firmwareVersionAsString;
     }
 
     /**
-     * Return the firmware version as an integer array that contains {@link VersionHelper#VERSION_LENGTH} elements.
-     * @return the firmware version as an integer array hat contains {@link VersionHelper#VERSION_LENGTH} elements.
+     * Return true if the current firmware version is equal to the input firmware version, false otherwise.
+     * @return true if the current firmware version is equal to the input firmware version, false otherwise.
      */
-    public int[] getFirmwareVersionAsIntArray(){
-        return new int[]{
-                this.firmwareVersionHelper.getMainVersionAsNumber(),
-                this.firmwareVersionHelper.getMajorVersionAsNumber(),
-                this.firmwareVersionHelper.getMinorVersionAsNumber()
-        };
-
+    public boolean compareFirmwareVersion(FirmwareVersion firmwareVersion){
+        return this.equals(firmwareVersion);
     }
+
+
 }

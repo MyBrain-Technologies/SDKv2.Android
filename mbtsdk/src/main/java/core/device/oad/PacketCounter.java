@@ -6,19 +6,33 @@ package core.device.oad;
  * the current packets added to the final buffer,
  * and the total number of bytes
  */
-public class PacketCounter {
+class PacketCounter {
 
-        public int nbBytes = 0; // Number of bytes programmed
-        public short nbPacketSent = 0; // Number of packet sent
-        public short nbPacketToSend = 0; // Total number of packet to send
+    /**
+     * Size in bytes of each packet
+     */
+    private final int packetSize;
 
-        void reset(int fileLength) {
-            nbBytes = 0;
-            nbPacketSent = 0;
-            nbPacketToSend = (short) (
-                    (fileLength / OADManager.OAD_PACKET_SIZE)
-                            + ((fileLength % OADManager.OAD_PACKET_SIZE) == 0 ?
-                            0 : 1));
-        }
+    int nbBytes = 0; // Number of bytes programmed
+    short nbPacketSent = 0; // Number of packet sent
+    short nbPacketToSend = 0; // Total number of packet to send
+
+    PacketCounter(int packetSize, int fileLength) {
+        this.packetSize = packetSize;
+        this.reset(fileLength);
+    }
+
+    /**
+     * Reset the packet counter.
+     * @param fileLength the number of bytes to send
+     */
+    void reset(int fileLength) {
+        nbBytes = 0;
+        nbPacketSent = 0;
+        nbPacketToSend = (short) (
+                (fileLength / packetSize)
+                        + ((fileLength % packetSize) == 0 ?
+                        0 : 1));
+    }
 
 }
