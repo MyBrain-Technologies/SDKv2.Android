@@ -46,10 +46,12 @@ import core.device.DeviceEvents;
 import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindsQRDataBase;
+import core.device.event.EventListener;
+import core.device.event.OADEvent;
 import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
 import engine.clientevents.ConnectionStateReceiver;
-import eventbus.EventBusManager;
+import eventbus.MbtEventBus;
 import eventbus.events.BluetoothEEGEvent;
 import eventbus.events.ConfigEEGEvent;
 import eventbus.events.ConnectionStateEvent;
@@ -129,6 +131,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         }
     };
 
+    private EventListener.OADEventListener oadEventListener;
+
     /**
      * Constructor of the manager.
      * @param context the application context
@@ -142,7 +146,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         this.mbtBluetoothA2DP = new MbtBluetoothA2DP(context,this);
 
         //this.deviceAcquisition = new MbtDeviceAcquisition();
-        //EventBusManager.registerOrUnregister(true, this);// register MbtBluetoothManager as a subscriber for receiving event such as ClientReadyEEGEvent event (called after EEG raw data has been converted)
+        //MbtEventBus.registerOrUnregister(true, this);// register MbtBluetoothManager as a subscriber for receiving event such as ClientReadyEEGEvent event (called after EEG raw data has been converted)
 
         this.pendingRequests = new LinkedList<>();
 
@@ -158,7 +162,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * Notify the DeviceManager and the EEGManager that the headset returned its stored configuration
      */
     private void notifyDeviceConfigReceived(Byte[] returnedConfig) {
-        EventBusManager.postEvent(new ConfigEEGEvent(returnedConfig));
+        MbtEventBus.postEvent(new ConfigEEGEvent(returnedConfig));
     }
 
     /**
@@ -653,7 +657,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private void readBattery() {
         if(!mbtBluetoothLE.readBattery()){
             requestBeingProcessed = false;
-            EventBusManager.postEvent(new DeviceInfoEvent<>(DeviceInfo.BATTERY, null));
+            MbtEventBus.postEvent(new DeviceInfoEvent<>(DeviceInfo.BATTERY, null));
         }
     }
 
@@ -664,7 +668,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private void readFwVersion(){
         if(!mbtBluetoothLE.readFwVersion()){
             requestBeingProcessed = false;
-            EventBusManager.postEvent(new DeviceInfoEvent<>(DeviceInfo.FW_VERSION, null));
+            MbtEventBus.postEvent(new DeviceInfoEvent<>(DeviceInfo.FW_VERSION, null));
         }
     }
 
@@ -675,7 +679,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private void readHwVersion(){
         if(!mbtBluetoothLE.readHwVersion()){
             requestBeingProcessed = false;
-            EventBusManager.postEvent(new DeviceInfoEvent<>(DeviceInfo.HW_VERSION, null));
+            MbtEventBus.postEvent(new DeviceInfoEvent<>(DeviceInfo.HW_VERSION, null));
         }
     }
 
@@ -686,7 +690,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private void readSerialNumber(){
         if(!mbtBluetoothLE.readSerialNumber()){
             requestBeingProcessed = false;
-            EventBusManager.postEvent(new DeviceInfoEvent<>(DeviceInfo.SERIAL_NUMBER, null));
+            MbtEventBus.postEvent(new DeviceInfoEvent<>(DeviceInfo.SERIAL_NUMBER, null));
         }
     }
 
@@ -697,7 +701,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private void readModelNumber(){
         if(!mbtBluetoothLE.readModelNumber()){
             requestBeingProcessed = false;
-            EventBusManager.postEvent(new DeviceInfoEvent<>(DeviceInfo.MODEL_NUMBER, null));
+            MbtEventBus.postEvent(new DeviceInfoEvent<>(DeviceInfo.MODEL_NUMBER, null));
         }
     }
 
@@ -901,7 +905,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
         if(!mbtBluetoothLE.startStream()){
             requestBeingProcessed = false;
-            EventBusManager.postEvent(IStreamable.StreamState.FAILED);
+            MbtEventBus.postEvent(IStreamable.StreamState.FAILED);
         }
     }
 
@@ -918,7 +922,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         }
         if(!mbtBluetoothLE.stopStream()){
             requestBeingProcessed  = false;
-            EventBusManager.postEvent(IStreamable.StreamState.FAILED);
+            MbtEventBus.postEvent(IStreamable.StreamState.FAILED);
         }
     }
 
@@ -969,14 +973,14 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * @param data the raw EEG data array acquired by the headset and transmitted by Bluetooth to the application
      */
     public void handleDataAcquired(@NonNull final byte[] data){
-        EventBusManager.postEvent(new BluetoothEEGEvent(data, deviceTypeRequested)); //MbtEEGManager will convert data from raw packets to eeg values
+        MbtEventBus.postEvent(new BluetoothEEGEvent(data, deviceTypeRequested)); //MbtEEGManager will convert data from raw packets to eeg values
     }
 
     /**
      * Unregister the MbtBluetoothManager class from the bus to avoid memory leak
      */
     void deinit(){
-        EventBusManager.registerOrUnregister(false,this);
+        MbtEventBus.registerOrUnregister(false,this);
     }
 
     /**
@@ -995,7 +999,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         switch (newState){ //This event is sent to device module if registered
             case AUDIO_BT_DISCONNECTED:
                 mbtBluetoothA2DP.notifyConnectionStateChanged(newState, false);
-                EventBusManager.postEvent(new DeviceEvents.AudioDisconnectedDeviceEvent());
+                MbtEventBus.postEvent(new DeviceEvents.AudioDisconnectedDeviceEvent());
                 break;
             case AUDIO_BT_CONNECTION_SUCCESS:
                 mbtBluetoothA2DP.notifyConnectionStateChanged(newState,false);
@@ -1005,7 +1009,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                     if(((!isDataBluetoothConnected() || !mbtBluetoothLE.isCurrentDeviceNameEqual(bleDeviceName))) && MbtConfig.connectAudioIfDeviceCompatible()) {
                         connectBLEFromA2DP(bleDeviceName);
                     }
-                    EventBusManager.postEvent(new DeviceEvents.AudioConnectedDeviceEvent(mbtBluetoothA2DP.getConnectedDevice()));
+                    MbtEventBus.postEvent(new DeviceEvents.AudioConnectedDeviceEvent(mbtBluetoothA2DP.getConnectedDevice()));
                 }
                 break;
             case JACK_CABLE_CONNECTED:
@@ -1013,9 +1017,9 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                     asyncOperation.stopWaitingOperation(false);
                 break;
             case DEVICE_FOUND:
-                EventBusManager.postEvent(new DeviceEvents.FoundDeviceEvent(getCurrentDevice(), deviceTypeRequested));
+                MbtEventBus.postEvent(new DeviceEvents.FoundDeviceEvent(getCurrentDevice(), deviceTypeRequested));
                 if(mbtBluetoothA2DP.currentDevice != null)
-                    EventBusManager.postEvent(new DeviceEvents.AudioConnectedDeviceEvent(mbtBluetoothA2DP.currentDevice));
+                    MbtEventBus.postEvent(new DeviceEvents.AudioConnectedDeviceEvent(mbtBluetoothA2DP.currentDevice));
 
                 break;
             case SCAN_TIMEOUT:
@@ -1024,11 +1028,11 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             case DATA_BT_DISCONNECTED:
             case CONNECTION_FAILURE:
             case CONNECTION_INTERRUPTED:
-                EventBusManager.postEvent(new DeviceEvents.DisconnectedDeviceEvent());
+                MbtEventBus.postEvent(new DeviceEvents.DisconnectedDeviceEvent());
                 break;
         }
 
-        EventBusManager.postEvent(new ConnectionStateEvent(newState)); //This event is sent to MbtManager for user notifications
+        MbtEventBus.postEvent(new ConnectionStateEvent(newState)); //This event is sent to MbtManager for user notifications
     }
 
     /**
@@ -1040,7 +1044,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     void notifyDeviceInfoReceived(DeviceInfo deviceInfo, String deviceValue){
         Log.d(TAG," Device info returned by the headset "+deviceInfo+ " : "+deviceValue);
         requestBeingProcessed = false;
-        EventBusManager.postEvent(new DeviceInfoEvent<>(deviceInfo, deviceValue));
+        MbtEventBus.postEvent(new DeviceInfoEvent<>(deviceInfo, deviceValue));
     }
 
     /**
@@ -1050,19 +1054,19 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      */
     public void notifyStreamStateChanged(IStreamable.StreamState newStreamState) {
         requestBeingProcessed = false;
-        EventBusManager.postEvent(newStreamState);
+        MbtEventBus.postEvent(newStreamState);
     }
 
     public void notifyNewHeadsetStatus(BtProtocol protocol, @NonNull byte[] payload) {
-        EventBusManager.postEvent(new DeviceEvents.RawDeviceMeasure(payload));
+        MbtEventBus.postEvent(new DeviceEvents.RawDeviceMeasure(payload));
     }
 
     void requestCurrentConnectedDevice(final SimpleRequestCallback<MbtDevice> callback) {
-        EventBusManager.postEvent(new DeviceEvents.GetDeviceEvent(), new EventBusManager.Callback<DeviceEvents.PostDeviceEvent>(){
+        MbtEventBus.postEvent(new DeviceEvents.GetDeviceEvent(), new MbtEventBus.Callback<DeviceEvents.PostDeviceEvent>(){
             @Override
             @Subscribe
             public Void onEventCallback(DeviceEvents.PostDeviceEvent device) {
-                EventBusManager.registerOrUnregister(false,this);
+                MbtEventBus.registerOrUnregister(false,this);
                 callback.onRequestComplete(device.getDevice());
                 return null;
             }
@@ -1170,8 +1174,45 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 }catch (CancellationException | InterruptedException | ExecutionException | TimeoutException e) {
                     LogUtils.w(TAG, "Exception raised during disconnection "+e);
                 }
-                EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent(false, deviceNameRequested, deviceQrCodeRequested, deviceTypeRequested, mtu)); //current state should be IDLE
+                MbtEventBus.postEvent(new StartOrContinueConnectionRequestEvent(false, deviceNameRequested, deviceQrCodeRequested, deviceTypeRequested, mtu)); //current state should be IDLE
             }
         }
+    }
+
+    /**
+     * Handle an OAD event received in order to perform the associated Bluetooth task.
+     * During a firmware update he Bluetooth unit is responsible for communicating
+     * with the connected headset device to update :
+     * it sends requests to it and receives responses/messages from it.
+     * The Bluetooth unit is only used for data/message transmission during the OAD update process.
+     * The Device unit (especially its OAD subunit) is responsible for processing the information
+     *
+     * @param event the OAD event
+     */
+    @Subscribe
+    public void onOADEvent(OADEvent event){
+        if(event.equals(OADEvent.INIT))
+            startOADUpdate();
+        else if (oadEventListener != null)
+            oadEventListener.onOADEvent(event);
+    }
+
+    void startOADUpdate(){
+        oadEventListener = new EventListener.OADEventListener() {
+            @Override
+            public void onOADEvent(OADEvent oadEvent) {
+                MbtEventBus.postEvent(oadEvent);
+            }
+
+            @Override
+            public void onError(BaseError error, String additionalInfo) {
+
+            }
+        };
+
+        if(deviceTypeRequested.useLowEnergyProtocol())
+            mbtBluetoothLE.startOADUpdate(oadEventListener);
+        else
+            mbtBluetoothSPP.startOADUpdate(oadEventListener);
     }
 }

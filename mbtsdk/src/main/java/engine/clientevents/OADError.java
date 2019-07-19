@@ -18,7 +18,9 @@ public final class OADError extends BaseError{
     public static OADError ERROR_PREPARING_REQUEST_FAILED      = new OADError(CODE_RANGE+4, "Preparing OAD Transfer request failed.");
     public static OADError ERROR_UNCOMPLETE_UPDATE             = new OADError(CODE_RANGE+5, "OAD Transfer is not complete");
     public static OADError ERROR_WRONG_FIRMWARE_VERSION        = new OADError(CODE_RANGE+6, "Current firmware version does not match the update version");
-    public static OADError ERROR_FIRMWARE_UPGRADE_FAILED        = new OADError(CODE_RANGE+7, "Firmware upgrading failed or could not be completed within the permitted time.");
+    public static OADError ERROR_FIRMWARE_UPGRADE_FAILED       = new OADError(CODE_RANGE+7, "Firmware upgrading failed or could not be completed within the permitted time.");
+    public static OADError ERROR_FIRMWARE_REJECTED_UPDATE      = new OADError(CODE_RANGE+8, "Firmware rejected the binary file that holds the firmware requested for an OAD update .");
+    public static OADError ERROR_INVALID_FIRMWARE_VERSION      = new OADError(CODE_RANGE+9, "Firmware version requested is invalid.");
 
     private OADError(int code, String exception) {
         super(DOMAIN, code, exception);

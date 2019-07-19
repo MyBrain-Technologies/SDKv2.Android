@@ -202,7 +202,7 @@ public final class MbtEEGManager extends BaseModuleManager {
             LogUtils.i(TAG,"quality computation duration is " + (System.currentTimeMillis()-tsBefore));
             return new ArrayList<>(Arrays.asList(ArrayUtils.toObject(qualities)));
         }
-//        EventBusManager.postEvent(new QualityRequest(null, listedQualities));
+//        MbtEventBus.postEvent(new QualityRequest(null, listedQualities));
 //        //requestBeingProcessed  = false;
         return null;
     }

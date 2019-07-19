@@ -13,6 +13,17 @@ import android.util.Log;
  */
 public final class VersionHelper {
     public final static String TAG = VersionHelper.class.getSimpleName();
+    /**
+     * Regular expression used to split any firmware version given as a string .
+     */
+    public static final String VERSION_SPLITTER = "\\.";
+
+    /**
+     * Number of digits of any firmware version given
+     * as a string (split with {@link VersionHelper#VERSION_SPLITTER}
+     * or as an integer array.
+     */
+    public static final int VERSION_LENGTH = 3;
 
     private static final int HEADSET_STATUS_MIN_VERSION_MAIN = 1;
     private static final int HEADSET_STATUS_MIN_VERSION_MAJOR = 5;
@@ -47,8 +58,8 @@ public final class VersionHelper {
     private final String main;
 
     public VersionHelper(String version){
-        String[] deviceFwVersion = version.split("\\.");
-        if(deviceFwVersion.length < 3){
+        String[] deviceFwVersion = version.split(VERSION_SPLITTER);
+        if(deviceFwVersion.length < VERSION_LENGTH){
             main = null;
             major = null;
             minor = null;

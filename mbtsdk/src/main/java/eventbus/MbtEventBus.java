@@ -7,30 +7,30 @@ import org.greenrobot.eventbus.EventBus;
 
 
 /**
- * EventBusManager.java
+ * MbtEventBus.java
  * eventbus
  *
  * Created by Sophie ZECRI on 03/05/2018
  * Copyright (c) 2016 myBrain Technologies. All rights reserved.
- * EventBusManager is responsible for managing communication between the different packages by using a publisher/subscriber system
+ * MbtEventBus is responsible for managing communication between the different packages by using a publisher/subscriber system
  */
-public final class EventBusManager {
+public final class MbtEventBus {
 
     /**
      * Gets a Event Bus instance that will manage the events
      * Each instance is a separate scope in which events are delivered.
      */
     public static EventBus BUS = EventBus.getDefault();
-    private static final String TAG = EventBusManager.class.getSimpleName();
+    private static final String TAG = MbtEventBus.class.getSimpleName();
 
     /**
-     * EventBusManager contains all the methods for posting events, registering and unregistering subscribers
+     * MbtEventBus contains all the methods for posting events, registering and unregistering subscribers
      * It helps communication between the different packages
-     * Once an instance of EventBusManager is created, the publisher classes can post event to the Event Bus
+     * Once an instance of MbtEventBus is created, the publisher classes can post event to the Event Bus
      * If the current class is a subscriber class, it must register to the Bus for receiving Events.
-    private EventBusManager(){ } //empty constructor need to be called by publisher
+    private MbtEventBus(){ } //empty constructor need to be called by publisher
      */
-    private EventBusManager(Object subscriber) {} // non empty constructor for subscriber
+    private MbtEventBus(Object subscriber) {} // non empty constructor for subscriber
 
     /**
      * Registers or unregisters the given subscriber class to receive events from the Events Bus.
