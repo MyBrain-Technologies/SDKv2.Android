@@ -1,8 +1,8 @@
-package core.device.oad;
+package core.device.event;
 
 import android.support.annotation.Keep;
-import android.support.annotation.Nullable;
 
+import core.device.event.OADEvent;
 import engine.clientevents.BaseError;
 import engine.clientevents.BaseErrorEvent;
 

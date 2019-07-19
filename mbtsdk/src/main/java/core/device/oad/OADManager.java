@@ -3,20 +3,22 @@ package core.device.oad;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.IntRange;
-import android.support.annotation.Nullable;
 
 import java.io.FileNotFoundException;
 
 import command.OADCommands;
 import core.bluetooth.requests.CommandRequestEvent;
 import core.device.MbtDeviceManager;
+import core.device.event.EventListener;
+import core.device.event.OADEvent;
+import core.device.model.FirmwareVersion;
 import core.device.model.MbtDevice;
 import engine.clientevents.BaseError;
 import engine.clientevents.BaseErrorEvent;
 import engine.clientevents.BluetoothError;
 import engine.clientevents.OADError;
 import engine.clientevents.OADStateListener;
-import eventbus.EventBusManager;
+import eventbus.MbtEventBus;
 import utils.LogUtils;
 
 /**
@@ -41,11 +43,6 @@ public final class OADManager implements EventListener.OADEventListener {
     static final int FILE_LENGTH_NB_BYTES = 4;
     static final int FIRMWARE_VERSION_NB_BYTES = 2;
 
-    /**
-     * Firmware version number of digit after split using {@link OADManager#FIRMWARE_VERSION_SPLITTER} splitter
-     */
-    public static final int FIRMWARE_VERSION_LENGTH = 3;
-    public static final String FIRMWARE_VERSION_SPLITTER = "\\.";
 
     /**
      * Key used to get the firmware version passed through the bundle passed by the {@link android.bluetooth.BluetoothManager}
@@ -96,6 +93,7 @@ public final class OADManager implements EventListener.OADEventListener {
      * Listener used to notify the SDK client when the current OAD state changes or when the SDK raises an error.
      */
     private OADStateListener stateListener;
+    private EventListener.OADEventListener eventListener;
 
     public OADManager(Context context, MbtDeviceManager deviceManager) {
         this.context = context;
@@ -166,7 +164,7 @@ public final class OADManager implements EventListener.OADEventListener {
         OADCommands.RequestFirmwareValidation requestFirmwareValidation = new OADCommands.RequestFirmwareValidation(
                 firmwareVersion,
                 nbPacketToSend);
-        EventBusManager.postEvent(new CommandRequestEvent(requestFirmwareValidation));
+        MbtEventBus.postEvent(new CommandRequestEvent(requestFirmwareValidation));
     }
 
     public boolean transferOADFile(){

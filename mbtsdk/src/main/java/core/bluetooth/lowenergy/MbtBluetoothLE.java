@@ -44,7 +44,7 @@ import core.bluetooth.MbtBluetoothManager;
 import core.device.model.DeviceInfo;
 import core.device.model.MelomindDevice;
 import core.device.model.MelomindsQRDataBase;
-import core.device.oad.EventListener;
+import core.device.event.EventListener;
 import core.device.oad.OADEvent;
 import engine.clientevents.BaseError;
 import engine.clientevents.BluetoothError;

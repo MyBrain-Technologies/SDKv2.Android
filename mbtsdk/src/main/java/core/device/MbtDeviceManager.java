@@ -14,11 +14,11 @@ import core.device.model.MelomindDevice;
 import core.device.model.VProDevice;
 import core.device.event.DCOffsetEvent;
 import core.device.event.SaturationEvent;
-import core.device.oad.EventListener;
-import core.device.oad.OADEvent;
+import core.device.event.EventListener;
+import core.device.event.OADEvent;
 import core.device.oad.OADManager;
 import core.eeg.acquisition.MbtDataConversion;
-import eventbus.EventBusManager;
+import eventbus.MbtEventBus;
 import eventbus.events.ConfigEEGEvent;
 import eventbus.events.DeviceInfoEvent;
 import utils.LogUtils;
@@ -49,7 +49,7 @@ public class MbtDeviceManager extends BaseModuleManager{
             return;
 
         if(rawDeviceMeasure.getRawMeasure()[0] == 0x01)
-            EventBusManager.postEvent(new SaturationEvent(rawDeviceMeasure.getRawMeasure()[1]));
+            MbtEventBus.postEvent(new SaturationEvent(rawDeviceMeasure.getRawMeasure()[1]));
         else if (rawDeviceMeasure.getRawMeasure()[0] == 0x02){
             if(rawDeviceMeasure.getRawMeasure().length < 8)
                 return;
@@ -61,7 +61,7 @@ public class MbtDeviceManager extends BaseModuleManager{
             dcOffsets[1] = MbtDataConversion.convertRawDataToDcOffset(temp);
             System.arraycopy(rawDeviceMeasure.getRawMeasure(), 6, temp, 0, 2);
             dcOffsets[0] = MbtDataConversion.convertRawDataToDcOffset(temp);
-            EventBusManager.postEvent(new DCOffsetEvent(timestamp, dcOffsets));
+            MbtEventBus.postEvent(new DCOffsetEvent(timestamp, dcOffsets));
         }
     }
 
@@ -151,7 +151,7 @@ public class MbtDeviceManager extends BaseModuleManager{
 
     @Subscribe
     public void onGetDevice(DeviceEvents.GetDeviceEvent event){
-        EventBusManager.postEvent(new DeviceEvents.PostDeviceEvent(mCurrentConnectedDevice));
+        MbtEventBus.postEvent(new DeviceEvents.PostDeviceEvent(mCurrentConnectedDevice));
     }
 
     @Subscribe

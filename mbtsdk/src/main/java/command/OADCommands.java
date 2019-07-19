@@ -4,8 +4,10 @@ import android.support.annotation.Keep;
 
 import java.nio.ByteBuffer;
 
+import core.device.model.FirmwareVersion;
 import core.device.oad.OADManager;
 import engine.clientevents.BaseError;
+import utils.VersionHelper;
 
 /**
  * OAD Mailbox commands sent from the SDK to the headset
@@ -82,7 +84,7 @@ public interface OADCommands {
         public boolean isValid() {
             return firmwareVersion != null
                     && !firmwareVersion.isEmpty()
-                    && firmwareVersion.split(OADManager.FIRMWARE_VERSION_SPLITTER).length == OADManager.FIRMWARE_VERSION_LENGTH
+                    && firmwareVersion.split(VersionHelper.VERSION_SPLITTER).length == VersionHelper.VERSION_LENGTH
                     && binaryFileLength > 0;
         }
 

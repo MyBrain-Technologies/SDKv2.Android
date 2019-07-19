@@ -1,4 +1,4 @@
-package core.device.oad;
+package core.device.event;
 
 import android.os.Bundle;
 
