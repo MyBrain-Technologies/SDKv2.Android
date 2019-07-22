@@ -7,7 +7,6 @@ import java.nio.ByteBuffer;
 import core.device.model.FirmwareVersion;
 import core.device.oad.OADManager;
 import engine.clientevents.BaseError;
-import utils.VersionHelper;
 
 /**
  * OAD Mailbox commands sent from the SDK to the headset
@@ -34,9 +33,9 @@ public interface OADCommands {
         private FirmwareVersion firmwareVersion;
 
         /**
-         * The number of bytes of the binary file that holds the firmware to upload & install on the headset device
+         * The number of packets of the binary file that holds the firmware to upload & install on the headset device
          */
-        private short binaryFileLength;
+        private short binaryFileNbPackets;
 
         /**
          * Mailbox command sent from the SDK to the connected headset
@@ -44,15 +43,15 @@ public interface OADCommands {
          * The current firmware needs to know the firmware version and the binary file length,
          * and can accept or reject the OAD update.
          * @param firmwareVersion is the firmware version that will replace the current version installed on the headset device
-         * @param binaryFileLength is the number of bytes of the binary file that holds the firmware to upload & install on the headset device
+         * @param binaryFileNbPackets is the number of packets of the binary file that holds the firmware to upload & install on the headset device
          * If you're interested in getting the returned response,
          * sent by the headset to the SDK once the command is received,
          * call the {@link RequestFirmwareValidation}(String serialNumber, {@linkCommandCallback<DeviceCommand, byte[]>)} constructor.
          */
-        public RequestFirmwareValidation(FirmwareVersion firmwareVersion, short binaryFileLength) {
+        public RequestFirmwareValidation(FirmwareVersion firmwareVersion, short binaryFileNbPackets) {
             super(DeviceCommandEvents.MBX_START_OTA_TXF);
                 this.firmwareVersion = firmwareVersion;
-                this.binaryFileLength = binaryFileLength;
+                this.binaryFileNbPackets = binaryFileNbPackets;
                 init();
         }
 
@@ -62,20 +61,20 @@ public interface OADCommands {
          * The current firmware needs to know the firmware version and the binary file length,
          * and can accept or reject the OAD update.
          * @param firmwareVersion is the firmware version that will replace the current version installed on the headset device
-         * @param binaryFileLength is the number of bytes of the binary file that holds the firmware to upload & install on the headset device
+         * @param binaryFileNbPackets is the number of packets of the binary file that holds the firmware to upload & install on the headset device
          * @param commandCallback is a {@link CommandInterface.CommandCallback} object
          * that provides a callback for the returned raw response
          * sent by the headset to the SDK once the command is received.
          * This raw response is a byte array that has be to converted to be readable.
          * If you're not interested in getting the returned response,
-         * call the {@link RequestFirmwareValidation}(String firmwareVersion, int binaryFileLength) constructor
+         * call the {@link RequestFirmwareValidation}(String firmwareVersion, int binaryFileNbPackets) constructor
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
-        public RequestFirmwareValidation(FirmwareVersion firmwareVersion, short binaryFileLength, CommandInterface.CommandCallback<byte[]> commandCallback) {
+        public RequestFirmwareValidation(FirmwareVersion firmwareVersion, short binaryFileNbPackets, CommandInterface.CommandCallback<byte[]> commandCallback) {
             super(DeviceCommandEvents.MBX_SET_SERIAL_NUMBER,
                     DeviceCommandEvents.MBX_SET_SERIAL_NUMBER_ADDITIONAL);
             this.firmwareVersion = firmwareVersion;
-            this.binaryFileLength = binaryFileLength;
+            this.binaryFileNbPackets = binaryFileNbPackets;
             this.commandCallback = commandCallback;
             init();
         }
@@ -84,7 +83,7 @@ public interface OADCommands {
         public boolean isValid() {
             return firmwareVersion != null
                     && !firmwareVersion.getFirmwareVersionAsString().isEmpty()
-                    && binaryFileLength > 0;
+                    && binaryFileNbPackets == OADManager.EXPECTED_NB_PACKETS_BINARY_FILE;
         }
 
         @Override
@@ -99,7 +98,7 @@ public interface OADCommands {
 
             ByteBuffer buffer = ByteBuffer.allocate(BINARY_FILE_LENGTH_NB_BYTES + FIRMWARE_VERSION_NB_BYTES);
             buffer.put(firmwareVersion.getFirmwareVersionAsString().getBytes());
-            buffer.putShort(binaryFileLength);
+            buffer.putShort(binaryFileNbPackets);
             return buffer.array();
         }
     }

@@ -9,6 +9,7 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 import core.BaseModuleManager;
+import core.device.model.FirmwareVersion;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindDevice;
 import core.device.model.VProDevice;
@@ -18,6 +19,7 @@ import core.device.event.EventListener;
 import core.device.event.OADEvent;
 import core.device.oad.OADManager;
 import core.eeg.acquisition.MbtDataConversion;
+import engine.clientevents.BaseError;
 import eventbus.MbtEventBus;
 import eventbus.events.ConfigEEGEvent;
 import eventbus.events.DeviceInfoEvent;
@@ -26,13 +28,18 @@ import utils.LogUtils;
 import static features.MbtDeviceType.MELOMIND;
 
 
-public class MbtDeviceManager extends BaseModuleManager{
+public class MbtDeviceManager extends BaseModuleManager implements EventListener.OADEventListener {
 
     private static final String TAG = MbtDeviceManager.class.getSimpleName();
 
     private OADManager oadManager;
 
     private MbtDevice mCurrentConnectedDevice;
+
+    /**
+     * Listener used to receive a notification when an OAD event occurs
+     * @param <U> Error triggered if something went wrong during the firmware update
+     */
     private EventListener.OADEventListener oadEventListener;
 
     public MbtDeviceManager(Context context){
@@ -126,7 +133,7 @@ public class MbtDeviceManager extends BaseModuleManager{
                     break;
                 case FW_VERSION:
                     if(event.getInfo() != null)
-                        mCurrentConnectedDevice.setFirmwareVersion((String) event.getInfo());
+                        mCurrentConnectedDevice.setFirmwareVersion((FirmwareVersion) event.getInfo());
                     break;
                 case HW_VERSION:
                     if(event.getInfo() != null)
@@ -154,10 +161,26 @@ public class MbtDeviceManager extends BaseModuleManager{
         MbtEventBus.postEvent(new DeviceEvents.PostDeviceEvent(mCurrentConnectedDevice));
     }
 
+    /**
+     * Callback triggered when an OAD event
+     * is received by the Bluetooth unit
+     */
     @Subscribe
-    public void onOADEvent(OADEvent event){
+    public void onOADEventReceived(OADEvent event){
+        LogUtils.d(TAG, "on OAD event "+event.toString());
+        if(event.equals(OADEvent.INIT))
+            startOADUpdate();
+
         if (oadEventListener != null)
             oadEventListener.onOADEvent(event);
+    }
+
+    /**
+     * Initialize the OAD event listener
+     */
+    void startOADUpdate(){
+        this.setOADEventListener(oadManager);
+        this.oadManager.setOADEventPoster(this);
     }
 
     private boolean isFirmwareVersionUpToDate(){
@@ -167,4 +190,18 @@ public class MbtDeviceManager extends BaseModuleManager{
     public void setOADEventListener(EventListener.OADEventListener eventListener){
         this.oadEventListener = eventListener;
     }
+
+
+
+    /**
+     * Method triggered when an OAD event
+     * has to be sent to the Bluetooth unit
+     */
+    @Override
+    public void onOADEvent(OADEvent oadEvent) {
+        MbtEventBus.postEvent(oadEvent);
+    }
+
+    @Override
+    public void onError(BaseError error, String additionalInfo) { }
 }

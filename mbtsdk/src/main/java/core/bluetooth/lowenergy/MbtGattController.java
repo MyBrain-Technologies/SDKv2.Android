@@ -6,7 +6,6 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.content.Context;
-import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -17,8 +16,6 @@ import java.util.Arrays;
 import core.bluetooth.BtState;
 import core.device.model.DeviceInfo;
 import core.device.model.MelomindDevice;
-import core.device.event.EventListener;
-import core.device.event.OADEvent;
 import utils.CommandUtils;
 import utils.LogUtils;
 import utils.BitUtils;
@@ -113,7 +110,7 @@ final class MbtGattController extends BluetoothGattCallback {
             case BluetoothGatt.STATE_DISCONNECTED:
                 //if(isDownloadingFirmware) //todo OAD
                 //    refreshDeviceCache(gatt);// in this case the connection went well for a while, but just got lost
-                //mbtBluetoothLE.notifyOADEvent(OADEvent.DISCONNECTED_FOR_REBOOT, null);
+                //mbtBluetoothLE.notifyOADEventReceived(OADEvent.DISCONNECTED_FOR_REBOOT, null);
                 LogUtils.e(TAG, "Gatt returned disconnected state");
                 gatt.close();
                 //todo dissociate connection in progress case, OAD in progress case, regular case
@@ -300,7 +297,7 @@ final class MbtGattController extends BluetoothGattCallback {
         byte mailboxEvent = characteristic.getValue()[0];
 
         switch (mailboxEvent) {
-
+                //mailbox events received in response to a request sent by the SDK
             case MBX_CONNECT_IN_A2DP:
             case MBX_DISCONNECT_IN_A2DP:
             case MBX_SET_SERIAL_NUMBER: //this case occurs when a QR code or a serial number is sent to the headset through a writing operation);
@@ -312,14 +309,14 @@ final class MbtGattController extends BluetoothGattCallback {
             case MBX_GET_EEG_CONFIG:
             case MBX_P300_ENABLE:
             case MBX_DC_OFFSET_ENABLE:
+            case MBX_OTA_MODE_EVT:
                 notifyResponseReceived(mailboxEvent, response);
                 break;
 
-            case MBX_OTA_MODE_EVT:
-            case MBX_OTA_IDX_RESET_EVT:
+                //mailbox events received that are NOT in response to a request sent by the SDK
             case MBX_OTA_STATUS_EVT:
-                mbtBluetoothLE.notifyOADEvent(mailboxEvent, response);
-
+            case MBX_OTA_IDX_RESET_EVT:
+                mbtBluetoothLE.notifyOADEventReceived(mailboxEvent, response);
                 break;
 
             case MBX_SET_ADS_CONFIG:

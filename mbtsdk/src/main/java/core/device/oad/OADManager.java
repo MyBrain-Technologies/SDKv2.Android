@@ -12,6 +12,7 @@ import java.io.FileNotFoundException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
+import command.CommandInterface;
 import command.OADCommands;
 import core.bluetooth.requests.CommandRequestEvent;
 import core.device.MbtDeviceManager;
@@ -22,10 +23,9 @@ import core.device.model.MbtDevice;
 import engine.clientevents.BaseError;
 import engine.clientevents.BaseErrorEvent;
 import engine.clientevents.BluetoothError;
-import engine.clientevents.HeadsetDeviceError;
 import engine.clientevents.OADError;
 import engine.clientevents.OADStateListener;
-import eventbus.MbtEventBus;
+import utils.BitUtils;
 import utils.LogUtils;
 import utils.MbtAsyncWaitOperation;
 import utils.OADExtractionUtils;
@@ -44,15 +44,21 @@ public final class OADManager implements EventListener.OADEventListener {
 
     private final static String TAG = OADManager.class.getName();
 
-    static final int NB_BYTES_TO_SEND = 14223;
+    /**
+     * Expected number of packets of the OAD binary file (chunks of the file that hold the firmware to install) to send to the headset device
+     */
+    public static final int EXPECTED_NB_PACKETS_BINARY_FILE = 14223;
 
+    /**
+     * Size of a packet of the OAD binary file (chunks of the file that hold the firmware to install)
+     */
     private static final int OAD_PACKET_SIZE = 18;
 
     /**
      * Key used to get the firmware version passed through the bundle passed by the {@link android.bluetooth.BluetoothManager}
      * to the current OAD manager in order to execute the action that matchs the current state.
      */
-    public final static String FIRMWARE_VERSION = "FIRMWARE_VERSION";
+    private final static String FIRMWARE_VERSION = "FIRMWARE_VERSION";
     /**
      * Key used to get the validation status passed through the bundle passed by the {@link android.bluetooth.BluetoothManager}
      * to the current OAD manager in order to execute the action that matchs the current state.
@@ -80,6 +86,12 @@ public final class OADManager implements EventListener.OADEventListener {
     private final MbtDeviceManager deviceManager;
 
     /**
+     * Interface used to notify its listener when an OAD event occurs
+     * @param <U> Error triggered if something went wrong during the firmware update
+     */
+    private EventListener.OADEventListener oadEventPoster;
+
+    /**
      * Return the current state of the current OAD update process.
      * Each step of the OAD update process is represented with a state machine
      * so that we can know which step is the current step at any moment of the update process.
@@ -96,8 +108,6 @@ public final class OADManager implements EventListener.OADEventListener {
      */
     private PacketCounter packetCounter;
 
-    private EventListener.OADEventListener eventListener;
-
     private OADContext oadContext;
 
     MbtAsyncWaitOperation<Boolean> waiter;
@@ -109,7 +119,10 @@ public final class OADManager implements EventListener.OADEventListener {
     }
 
     private void switchToNextStep(@Nullable Bundle actionData) {
-        notifyOADStateChanged(getCurrentState().getNextState(), actionData);
+        LogUtils.d(TAG, "switch to next step ");
+        notifyOADStateChanged(getCurrentState() == null ?
+                OADState.INITIALIZING : getCurrentState().getNextState(),
+                actionData);
     }
 
     /**
@@ -118,12 +131,11 @@ public final class OADManager implements EventListener.OADEventListener {
      * so that we can know which step is the current step at any moment of the update process.
      */
     private OADState getCurrentState(){
-        if(currentState == null)
-                currentState = OADState.INITIALIZING;
         return currentState;
     }
 
     void notifyOADStateChanged(OADState state, @Nullable Bundle actionData) {
+        LogUtils.d(TAG, "OAD State changed : "+currentState +" > "+state);
         currentState = state;
         stateListener.onStateChanged(currentState);
         stateListener.onProgressPercentChanged(currentState.convertToProgress());
@@ -144,16 +156,14 @@ public final class OADManager implements EventListener.OADEventListener {
      * @param firmwareVersion is the firmware version to install
      * @return true if the
      */
-    public boolean init(FirmwareVersion firmwareVersion){
+    boolean init(FirmwareVersion firmwareVersion){
         LogUtils.d(TAG, "Initialize the OAD update for version "+firmwareVersion);
         String oadFilePath = OADExtractionUtils.getFileNameForFirmwareVersion(firmwareVersion.getFirmwareVersionAsString());
         oadContext.setOADfilePath(oadFilePath);
         try {
             byte[] content = OADExtractionUtils.extractFileContent(context.getAssets(), oadContext.getOADfilePath());
-
             Pair<Boolean, String> validityStatusAndReason = checkFileContentValidity(content);
             if(!validityStatusAndReason.first){
-                LogUtils.e(TAG, "OAD binary file extraction failed : "+validityStatusAndReason.second);
                 onError(OADError.ERROR_INIT_FAILED, validityStatusAndReason.second);
                 return false;
             }
@@ -162,10 +172,12 @@ public final class OADManager implements EventListener.OADEventListener {
             oadContext.setNbPacketsToSend(packetCounter.nbPacketToSend);
             oadContext.setFirmwareVersion(OADExtractionUtils.extractFirmwareVersionFromContent(content));
         } catch (FileNotFoundException e) {
-            LogUtils.e(TAG, "OAD binary file extraction failed : "+e);
+            onError(OADError.ERROR_INIT_FAILED, e.getMessage());
+            return false;
         }
         return true;
     }
+
 
     /**
      * Check that the OAD file content extracted is valid to start the OAD update
@@ -177,23 +189,51 @@ public final class OADManager implements EventListener.OADEventListener {
         if(fileContent == null)
             additionalErrorInfo = "Impossible to read the OAD binary file";
 
-        if(fileContent.length != NB_BYTES_TO_SEND)
-            additionalErrorInfo = "Expected length is " + NB_BYTES_TO_SEND + ", but found length was " + fileContent.length + ".";
+        if(fileContent.length != EXPECTED_NB_PACKETS_BINARY_FILE)
+            additionalErrorInfo = "Expected length is " + EXPECTED_NB_PACKETS_BINARY_FILE + ", but found length was " + fileContent.length + ".";
 
         return new Pair<>(additionalErrorInfo.isEmpty(), additionalErrorInfo);
     }
 
-    final void startOADupdate(FirmwareVersion firmwareVersion){
-        deviceManager.setOADEventListener(this);
+    private void startOADUpdate(FirmwareVersion firmwareVersion){
         init(firmwareVersion);
         switchToNextStep(null);
     }
 
-    void requestFirmwareValidation(int timeout, short nbPacketToSend, FirmwareVersion firmwareVersion){
+    void requestFirmwareValidation(short nbPacketToSend, FirmwareVersion firmwareVersion){
         OADCommands.RequestFirmwareValidation requestFirmwareValidation = new OADCommands.RequestFirmwareValidation(
                 firmwareVersion,
-                nbPacketToSend);
-        MbtEventBus.postEvent(new CommandRequestEvent(requestFirmwareValidation));
+                nbPacketToSend,
+                new CommandInterface.CommandCallback<byte[]>() { //callback that catch errors and messages of the peripheral headset device in response to the request
+                    @Override
+                    public void onError(CommandInterface.MbtCommand request, BaseError error, String additionalInfo) {
+                        OADManager.this.onError(error, "Firmware validation failed : "+additionalInfo);
+                    }
+
+                    @Override
+                    public void onRequestSent(CommandInterface.MbtCommand request) { }
+
+                    /**
+                     * Response sent by the headset device related to the firmware validation request.
+                     * The response is 0 if the current firmware rejects the firmware to install.
+                     * @param request is the firmware validation request
+                     * @param response is the response sent by the headset device related to the firmware validation request
+                     *                 the response received can be null if a timeout occurs
+                     */
+                    @Override
+                    public void onResponseReceived(CommandInterface.MbtCommand request, byte[] response) {
+                        boolean isValidationSuccess = !BitUtils.isZero(response[0]);
+                        OADEvent event = OADEvent.FIRMWARE_VALIDATION_RESPONSE.getEventWithData(isValidationSuccess);
+                        onOADEvent(event);
+                    }
+                });
+        OADEvent event = OADEvent.FIRMWARE_VALIDATION_REQUEST.getEventWithData(new CommandRequestEvent(requestFirmwareValidation));
+        if(oadEventPoster != null)
+            oadEventPoster.onOADEvent(event);
+    }
+
+    public void setOADEventPoster(EventListener.OADEventListener eventPoster){
+        this.oadEventPoster = eventPoster;
     }
 
     boolean transferOADFile(int timeout){
@@ -252,8 +292,9 @@ public final class OADManager implements EventListener.OADEventListener {
      * is received by the Device unit Manager
      */
     @Override
-    public void onOADEvent(OADEvent oadEvent) {
-        switchToNextStep(oadEvent.getEventData());
+    public void onOADEvent(OADEvent event) {
+        LogUtils.d(TAG, "on OAD event "+event.toString());
+        switchToNextStep(event.getEventData());
     }
 
     /**
@@ -261,11 +302,60 @@ public final class OADManager implements EventListener.OADEventListener {
      */
     @Override
     public void onError(BaseError error, String additionalInfo) {
-
+        LogUtils.e(TAG, "Error : "+error + (additionalInfo != null ? additionalInfo : ""));
     }
 
     private void deinit() {
         deviceManager.setOADEventListener(null);
+    }
+
+    /**
+     * Return true if the firmware version is equal to the last released version.
+     */
+    public boolean isFirmwareVersionUpToDate(FirmwareVersion firmwareVersion){
+        boolean isUpToDate = true;
+        String[] deviceFirmwareVersion = firmwareVersion.getFirmwareVersionAsString().split(VersionHelper.VERSION_SPLITTER);
+        String[] OADFileFirmwareVersion = getLastFirmwareVersion();
+
+        if(deviceFirmwareVersion.length < VersionHelper.VERSION_LENGTH || firmwareVersion.equals(MbtDevice.DEFAULT_FW_VERSION)){
+            LogUtils.e(TAG, "Firmware version is invalid");
+            return true;
+        }
+
+        //Compare it to latest binary file either from server or locally
+        if(OADFileFirmwareVersion == null){
+            LogUtils.e(TAG, "No binary file found");
+            return true;
+        }
+        if(OADFileFirmwareVersion.length > VersionHelper.VERSION_LENGTH){ //trimming initial array
+            String[] firmwareVersionToCopy = new String[VersionHelper.VERSION_LENGTH];
+            System.arraycopy(OADFileFirmwareVersion, 0, firmwareVersionToCopy, 0, firmwareVersionToCopy.length);
+            OADFileFirmwareVersion = firmwareVersionToCopy.clone();
+        }
+
+        for (String character : OADFileFirmwareVersion) {
+            if(character == null){
+                LogUtils.e(TAG, "error when parsing fw version");
+                return true;
+            }
+        }
+
+        for(int i = 0; i < deviceFirmwareVersion.length; i++){
+
+            if(Integer.parseInt(deviceFirmwareVersion[i]) > Integer.parseInt(OADFileFirmwareVersion[i])){ //device value is stricly superior to bin value so it's even more recent
+                break;
+            }else if(Integer.parseInt(deviceFirmwareVersion[i])< Integer.parseInt(OADFileFirmwareVersion[i])){ //device value is inferior to bin. update is necessary
+                isUpToDate = false;
+                LogUtils.i(TAG, "update is necessary");
+                break;
+            }
+        }
+
+        return isUpToDate;
+    }
+
+    private String[] getLastFirmwareVersion() {
+        return null; //todo
     }
 
     /**
@@ -282,10 +372,10 @@ public final class OADManager implements EventListener.OADEventListener {
         INITIALIZING(0){
             @Override
             public void executeAction(Bundle actionData) {
-                if(getFirmwareVersion(actionData) != null) {
-                    FirmwareVersion firmwareVersion = getFirmwareVersion(actionData);
-                    oadManager.startOADupdate(firmwareVersion);
-                }else
+                FirmwareVersion firmwareVersion = getFirmwareVersion(actionData);
+                if(firmwareVersion != null)
+                    oadManager.startOADUpdate(firmwareVersion);
+                else
                     onError(getError(), null);
             }
 
@@ -309,12 +399,11 @@ public final class OADManager implements EventListener.OADEventListener {
          * to be submitted for validation by the headset device that is out-of-date.
          * The SDK is then waiting for a return response that validate or invalidate the OAD request.
          */
-        INITIALIZED(2,10000){
+        INITIALIZED(2){
 
             @Override
             public void executeAction(Bundle actionData) {
                 oadManager.requestFirmwareValidation(
-                        this.getMaximumDuration(),
                         oadManager.oadContext.getNbPacketsToSend(),
                         oadManager.oadContext.getFirmwareVersion());
             }

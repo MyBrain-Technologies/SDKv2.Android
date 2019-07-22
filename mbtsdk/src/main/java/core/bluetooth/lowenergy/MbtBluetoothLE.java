@@ -41,11 +41,11 @@ import core.bluetooth.BtState;
 import core.bluetooth.IStreamable;
 import core.bluetooth.MbtBluetooth;
 import core.bluetooth.MbtBluetoothManager;
+import core.device.event.OADEvent;
 import core.device.model.DeviceInfo;
 import core.device.model.MelomindDevice;
 import core.device.model.MelomindsQRDataBase;
 import core.device.event.EventListener;
-import core.device.oad.OADEvent;
 import engine.clientevents.BaseError;
 import engine.clientevents.BluetoothError;
 import engine.clientevents.ConnectionStateReceiver;
@@ -627,20 +627,27 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     }
 
     /**
-     * Callback triggered by the {@link MbtGattController} callback when an OAD event occurs
+     * Callback triggered by the {@link MbtGattController} callback
+     * when an event -not related to a mailbox request sent by the SDK- occurs
      * @param oadEvent the {@link OADEvent} event that occurs
      * @param eventData the data associated to the mailbox event detected
      */
-    void notifyOADEvent(OADEvent oadEvent, byte[] eventData) {
+    void notifyOADEventReceived(OADEvent oadEvent, byte[] eventData) {
         Bundle eventDataAsBundle = new Bundle();
         eventDataAsBundle.putByteArray(oadEvent.getKey(), eventData);
         oadEvent.setEventData(eventDataAsBundle);
         this.oadEventListener.onOADEvent(oadEvent);
     }
 
-    void notifyOADEvent(byte mailboxEvent, byte[] eventData) {
+    /**
+     * Callback triggered by the {@link MbtGattController} callback
+     * when an event -not related to a mailbox request sent by the SDK- occurs
+     * @param mailboxEvent the event that occurs
+     * @param eventData the data associated to the mailbox event detected
+     */
+    void notifyOADEventReceived(byte mailboxEvent, byte[] eventData) {
         OADEvent oadEvent = OADEvent.getEventFromMailboxCommand(mailboxEvent);
-        notifyOADEvent(oadEvent, eventData);
+        notifyOADEventReceived(oadEvent, eventData);
     }
 
     void notifyCommandResponseReceived(Object response) {
@@ -673,12 +680,14 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * This method waits until the device has returned a response
      * related to the SDK request (blocking method).
      */
-    private Object waitResponseForCommand(){
+    private Object waitResponseForCommand(CommandInterface.MbtCommand command){
         Log.d(TAG, "Wait response of device command ");
             try {
                 return asyncConfiguration.waitOperationResult(11000);
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 LogUtils.e(TAG, "Device command response not received : "+e);
+                if(e instanceof TimeoutException)
+                    command.onError(BluetoothError.ERROR_TIMEOUT, "Device command sent but no response has been received.");
             }
         return null;
     }
@@ -721,7 +730,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
                     command.onRequestSent();
 
                     if (command.isResponseExpected()) {
-                        response = waitResponseForCommand();
+                        response = waitResponseForCommand(command);
                         command.onResponseReceived(response);
                     }
                 }

@@ -2,6 +2,8 @@ package core.device.event;
 
 import android.os.Bundle;
 
+import java.io.Serializable;
+
 import command.DeviceCommands;
 import core.device.oad.OADManager;
 
@@ -22,6 +24,8 @@ public enum OADEvent {
      */
     INIT(),
 
+    FIRMWARE_VALIDATION_REQUEST(OADManager.VALIDATION_STATUS),
+
     /**
      * Event triggered when the Bluetooth unit receives a response
      * to its OAD validation request from the headset device.
@@ -31,7 +35,8 @@ public enum OADEvent {
      *
      * This event is associated to a boolean value that is true if the headset device accepts the OAD update, false otherwise
      */
-    FIRMWARE_VALIDATION(MBX_OTA_MODE_EVT, OADManager.VALIDATION_STATUS),
+    FIRMWARE_VALIDATION_RESPONSE(OADManager.VALIDATION_STATUS),
+
 
 
     /**
@@ -52,7 +57,7 @@ public enum OADEvent {
      *                          - true if all the packets have been well transferred and no corruption occurred.
      *                          - false if all the packets have been well transferred and no corruption occurred
      */
-    CRC_READBACK(MBX_OTA_STATUS_EVT, OADManager.READBACK_STATUS),
+    CRC_READBACK(OADManager.READBACK_STATUS),
 
 
     /**
@@ -131,6 +136,13 @@ public enum OADEvent {
 
     public String getKey() {
         return key;
+    }
+
+    public OADEvent getEventWithData(Serializable eventData){
+        Bundle bundle = new Bundle();
+        bundle.putSerializable(key, eventData);
+        setEventData(bundle);
+        return this;
     }
 
     /**

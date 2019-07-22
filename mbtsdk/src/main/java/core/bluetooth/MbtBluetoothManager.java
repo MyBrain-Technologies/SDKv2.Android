@@ -131,7 +131,17 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         }
     };
 
+    /**
+     * Listener used to receive a notification when an OAD event occurs
+     * @param <U> Error triggered if something went wrong during the firmware update
+     */
     private EventListener.OADEventListener oadEventListener;
+
+    /**
+     * Interface used to notify its listener when an OAD event occurs
+     * @param <U> Error triggered if something went wrong during the firmware update
+     */
+    private EventListener.OADEventListener oadEventPoster;
 
     /**
      * Constructor of the manager.
@@ -1193,15 +1203,15 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     public void onOADEvent(OADEvent event){
         if(event.equals(OADEvent.INIT))
             startOADUpdate();
-        else if (oadEventListener != null)
-            oadEventListener.onOADEvent(event);
+        else if (oadEventPoster != null)
+            oadEventPoster.onOADEvent(event);
     }
 
     /**
      * Initialize the OAD event listener
      */
     void startOADUpdate(){
-        oadEventListener = new EventListener.OADEventListener() {
+        oadEventPoster = new EventListener.OADEventListener() {
             @Override
             public void onOADEvent(OADEvent oadEvent) {
                 MbtEventBus.postEvent(oadEvent); //post events to notify the device unit
@@ -1214,8 +1224,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         };
 
         if(deviceTypeRequested.useLowEnergyProtocol())
-            mbtBluetoothLE.startOADUpdate(oadEventListener);
+            mbtBluetoothLE.startOADUpdate(oadEventPoster);
         else
-            mbtBluetoothSPP.startOADUpdate(oadEventListener);
+            mbtBluetoothSPP.startOADUpdate(oadEventPoster);
     }
 }

@@ -176,8 +176,8 @@ public class OADManagerTest {
     /**
      * Check that the SDK OAD internal state is set to {@link OADState#INIT}
      * if the binary file is found & complete.
-     * Also check it returns a buffer of {@link OADManager#NB_BYTES_TO_SEND} elements
-     * of {@link OADManager#NB_BYTES_TO_SEND} byte each.
+     * Also check it returns a buffer of {@link OADManager#EXPECTED_NB_PACKETS_BINARY_FILE} elements
+     * of {@link OADManager#EXPECTED_NB_PACKETS_BINARY_FILE} byte each.
      */
     @Test
     public void init_valid(){
@@ -238,7 +238,7 @@ public class OADManagerTest {
         Mockito.doAnswer((Answer<Void>) invocation -> { //triggers a disconnection during the init method
             bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);
             return null;
-        }).when(packetEngine).reset(OADManager.NB_BYTES_TO_SEND);
+        }).when(packetEngine).reset(OADManager.EXPECTED_NB_PACKETS_BINARY_FILE);
         assertTrue(oadManager.init(FILE_PATH));
         assertEquals(oadManager.getCurrentState(), OADState.ABORTED);
 
@@ -252,7 +252,7 @@ public class OADManagerTest {
     public void requestFirmwareValidation_request(){
         oadManager.init(FILE_PATH);
 
-        assertTrue(oadManager.requestFirmwareValidation(OADManager.NB_BYTES_TO_SEND, FIRMWARE_VERSION_VALID));
+        assertTrue(oadManager.requestFirmwareValidation(OADManager.EXPECTED_NB_PACKETS_BINARY_FILE, FIRMWARE_VERSION_VALID));
 
         assertEquals(oadManager.getCurrentState(), OADState.FIRMWARE_VALIDATION);
 
@@ -343,7 +343,7 @@ public class OADManagerTest {
         }
         oadManager.init(FILE_PATH);
 
-        oadManager.requestFirmwareValidation(OADManager.NB_BYTES_TO_SEND, FIRMWARE_VERSION_VALID);
+        oadManager.requestFirmwareValidation(OADManager.EXPECTED_NB_PACKETS_BINARY_FILE, FIRMWARE_VERSION_VALID);
 
         assertEquals(oadManager.getCurrentState(), OADState.TRANSFERRING);
 
@@ -386,7 +386,7 @@ public class OADManagerTest {
         }
         oadManager.init(FILE_PATH);
 
-        oadManager.requestFirmwareValidation(OADManager.NB_BYTES_TO_SEND, FIRMWARE_VERSION_VALID);
+        oadManager.requestFirmwareValidation(OADManager.EXPECTED_NB_PACKETS_BINARY_FILE, FIRMWARE_VERSION_VALID);
 
         assertEquals(oadManager.getCurrentState(), OADState.ABORTED);
 
@@ -434,7 +434,7 @@ public class OADManagerTest {
         }
         oadManager.init(FILE_PATH);
 
-        oadManager.requestFirmwareValidation(OADManager.NB_BYTES_TO_SEND, FIRMWARE_VERSION_VALID);
+        oadManager.requestFirmwareValidation(OADManager.EXPECTED_NB_PACKETS_BINARY_FILE, FIRMWARE_VERSION_VALID);
 
         assertEquals(oadManager.getCurrentState(), OADState.ABORTED);
 
