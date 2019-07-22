@@ -17,21 +17,26 @@ class PacketCounter {
     short nbPacketSent = 0; // Number of packet sent
     short nbPacketToSend = 0; // Total number of packet to send
 
-    PacketCounter(int packetSize, int fileLength) {
+    /**
+     * Helper class to use for counting the number of packets sent during a transfer operation such as an OAD firmware update
+     * @param packetSize the size of a packet (number of bytes allocated for a single packet)
+     * @param nbBytesToSend the number of bytes to send
+     */
+    PacketCounter(int packetSize, int nbBytesToSend) {
         this.packetSize = packetSize;
-        this.reset(fileLength);
+        this.reset(nbBytesToSend);
     }
 
     /**
      * Reset the packet counter.
-     * @param fileLength the number of bytes to send
+     * @param nbBytesToSend the number of bytes to send
      */
-    void reset(int fileLength) {
+    void reset(int nbBytesToSend) {
         nbBytes = 0;
         nbPacketSent = 0;
         nbPacketToSend = (short) (
-                (fileLength / packetSize)
-                        + ((fileLength % packetSize) == 0 ?
+                (nbBytesToSend / packetSize)
+                        + ((nbBytesToSend % packetSize) == 0 ?
                         0 : 1));
     }
 

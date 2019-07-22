@@ -106,10 +106,9 @@ public final class OADManager implements EventListener.OADEventListener {
         this.context = context;
         this.deviceManager = deviceManager;
         this.oadContext = new OADContext();
-
     }
 
-    void switchToNextStep(@Nullable Bundle actionData) {
+    private void switchToNextStep(@Nullable Bundle actionData) {
         notifyOADStateChanged(getCurrentState().getNextState(), actionData);
     }
 
@@ -126,6 +125,9 @@ public final class OADManager implements EventListener.OADEventListener {
 
     void notifyOADStateChanged(OADState state, @Nullable Bundle actionData) {
         currentState = state;
+        stateListener.onStateChanged(currentState);
+        stateListener.onProgressPercentChanged(currentState.convertToProgress());
+
         if(currentState != null)
             currentState.executeAction(actionData);
     }
@@ -139,14 +141,15 @@ public final class OADManager implements EventListener.OADEventListener {
      * Extract from the binary file that holds the new firmware:
      * - the firmware version
      * - the number of OAD packets (chunks of binary file)
-     * @param oadFilePath is the path of the binary file that holds the new firmware
+     * @param firmwareVersion is the firmware version to install
      * @return true if the
      */
-    public boolean init(String oadFilePath){
-        LogUtils.d(TAG, "Initialize the OAD update.");
+    public boolean init(FirmwareVersion firmwareVersion){
+        LogUtils.d(TAG, "Initialize the OAD update for version "+firmwareVersion);
+        String oadFilePath = OADExtractionUtils.getFileNameForFirmwareVersion(firmwareVersion.getFirmwareVersionAsString());
         oadContext.setOADfilePath(oadFilePath);
         try {
-            byte[] content = OADExtractionUtils.extractFileContent(context.getAssets(), oadFilePath);
+            byte[] content = OADExtractionUtils.extractFileContent(context.getAssets(), oadContext.getOADfilePath());
 
             Pair<Boolean, String> validityStatusAndReason = checkFileContentValidity(content);
             if(!validityStatusAndReason.first){
@@ -182,9 +185,8 @@ public final class OADManager implements EventListener.OADEventListener {
 
     final void startOADupdate(FirmwareVersion firmwareVersion){
         deviceManager.setOADEventListener(this);
-
-        String oadFilePath = OADExtractionUtils.getFileNameForFirmwareVersion(firmwareVersion.getFirmwareVersionAsString());
-        init(oadFilePath);
+        init(firmwareVersion);
+        switchToNextStep(null);
     }
 
     void requestFirmwareValidation(int timeout, short nbPacketToSend, FirmwareVersion firmwareVersion){
@@ -240,7 +242,7 @@ public final class OADManager implements EventListener.OADEventListener {
     /**
      * Set a listener used to notify the SDK client when the current OAD state changes or when the SDK raises an error.
      */
-    public void setStateListener(OADStateListener stateListener) {
+    void setStateListener(OADStateListener stateListener) {
         this.stateListener = stateListener;
     }
 
@@ -275,7 +277,7 @@ public final class OADManager implements EventListener.OADEventListener {
         /**
          * State triggered when the client requests an OAD firmware update.
          * As the OAD binary file that holds the new firmware is too big to be sent in a single request,
-         * the file is chunked into small packets.
+         * the file is chucked into small packets.
          */
         INITIALIZING(0){
             @Override

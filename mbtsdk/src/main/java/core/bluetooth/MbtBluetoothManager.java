@@ -710,7 +710,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
             @Override
             public void onRequestComplete(MbtDevice device) { //Firmware version has been read during the previous step so we retrieve its value, as it has been stored in the Device Manager
-                boolean isBondingSupported = new VersionHelper(device.getFirmwareVersion()).isValidForFeature(VersionHelper.Feature.BLE_BONDING);
+                boolean isBondingSupported = new VersionHelper(device.getFirmwareVersionAsString()).isValidForFeature(VersionHelper.Feature.BLE_BONDING);
                 if (isBondingSupported) { //if firmware version bonding is higher than 1.6.7, the bonding is launched
                     try {
                         AsyncUtils.executeAsync(new Runnable() {
@@ -753,7 +753,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 LogUtils.d(TAG, "device "+device);
                 updateConnectionState(true);//current state is set to QR_CODE_SENDING
                 if (device.getSerialNumber() != null && device.getExternalName() != null && (device.getExternalName().equals(MbtFeatures.MELOMIND_DEVICE_NAME) || device.getExternalName().length() == MbtFeatures.DEVICE_QR_CODE_LENGTH-1) //send the QR code found in the database if the headset do not know its own QR code
-                        && new VersionHelper(device.getFirmwareVersion()).isValidForFeature(VersionHelper.Feature.REGISTER_EXTERNAL_NAME)) {
+                        && new VersionHelper(device.getFirmwareVersionAsString()).isValidForFeature(VersionHelper.Feature.REGISTER_EXTERNAL_NAME)) {
                     AsyncUtils.executeAsync(new Runnable() {
                         @Override
                         public void run() {
@@ -779,7 +779,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                         return;
                     if(!isRequestCompleted){
                         isRequestCompleted = true;
-                        boolean connectionFromBleAvailable = new VersionHelper(device.getFirmwareVersion()).isValidForFeature(VersionHelper.Feature.A2DP_FROM_HEADSET);
+                        boolean connectionFromBleAvailable = new VersionHelper(device.getFirmwareVersionAsString()).isValidForFeature(VersionHelper.Feature.A2DP_FROM_HEADSET);
                         try {
                             AsyncUtils.executeAsync(new Runnable() {
                                 @Override
@@ -1197,11 +1197,14 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             oadEventListener.onOADEvent(event);
     }
 
+    /**
+     * Initialize the OAD event listener
+     */
     void startOADUpdate(){
         oadEventListener = new EventListener.OADEventListener() {
             @Override
             public void onOADEvent(OADEvent oadEvent) {
-                MbtEventBus.postEvent(oadEvent);
+                MbtEventBus.postEvent(oadEvent); //post events to notify the device unit
             }
 
             @Override

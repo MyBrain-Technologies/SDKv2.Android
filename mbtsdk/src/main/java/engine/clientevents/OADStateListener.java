@@ -3,7 +3,7 @@ package engine.clientevents;
 import android.support.annotation.IntRange;
 import android.support.annotation.Keep;
 
-import core.device.oad.OADState;
+import core.device.oad.OADManager;
 
 /**
  * Listener used to receive a notification when the OAD update state changes during a firmware update
@@ -18,9 +18,9 @@ public interface OADStateListener<U extends BaseError> extends BaseErrorEvent<U>
     /**
      * Callback triggered when a new step of the OAD (Over the Air Download)
      * is completed during a firmware update.
-     * See {@link OADState} for all possible states
+     * See {@link OADManager.OADState} for all possible states
      */
-    void onStateChanged(OADState newState);
+    void onStateChanged(OADManager.OADState newState);
 
     /**
      * Callback triggered when the firmware transfer progress changes
