@@ -18,7 +18,7 @@ import java.util.concurrent.TimeoutException;
 
 import command.BluetoothCommands;
 import command.CommandInterface;
-import command.DeviceCommandEvents;
+import command.DeviceCommandEvent;
 import command.DeviceCommands;
 import config.MbtConfig;
 import core.bluetooth.BtState;
@@ -875,7 +875,7 @@ public class MbtBluetoothLETest {
     @Test
     public void startWriteOperation_GattInvalid() {
         bluetoothLE.gatt = null;
-        byte[] code = {DeviceCommandEvents.MBX_GET_EEG_CONFIG};
+        byte[] code = {DeviceCommandEvent.MBX_GET_EEG_CONFIG};
         assertFalse(bluetoothLE.startWriteOperation(SERVICE, CHARACTERISTIC_MAILBOX, code));
     }
 
@@ -884,7 +884,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void startWriteOperation_ServiceInvalid() {
-        byte[] code = {DeviceCommandEvents.MBX_GET_EEG_CONFIG};
+        byte[] code = {DeviceCommandEvent.MBX_GET_EEG_CONFIG};
         bluetoothLE.gatt = gatt;
         when(gatt.getService(SERVICE)).thenReturn(null);
 
@@ -896,7 +896,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void startWriteOperation_CharacteristicInvalid() {
-        byte[] code = {DeviceCommandEvents.MBX_GET_EEG_CONFIG};
+        byte[] code = {DeviceCommandEvent.MBX_GET_EEG_CONFIG};
         when(gatt.getService(SERVICE)).thenReturn(gattService);
         when(gattService.getUuid()).thenReturn(SERVICE);
         BluetoothGattCharacteristic characteristic = null;
@@ -910,7 +910,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void startWriteOperation_WriteCharacteristicInvalid() {
-        byte[] code = {DeviceCommandEvents.MBX_GET_EEG_CONFIG};
+        byte[] code = {DeviceCommandEvent.MBX_GET_EEG_CONFIG};
         when(gatt.getService(SERVICE)).thenReturn(gattService);
         when(gattService.getUuid()).thenReturn(SERVICE);
         when(gattService.getCharacteristic(CHARACTERISTIC_MAILBOX)).thenReturn(characteristic);
@@ -924,7 +924,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void startWriteOperation_Valid() {
-        byte[] code = {DeviceCommandEvents.MBX_GET_EEG_CONFIG};
+        byte[] code = {DeviceCommandEvent.MBX_GET_EEG_CONFIG};
         when(gatt.getService(SERVICE)).thenReturn(gattService);
         when(gattService.getUuid()).thenReturn(SERVICE);
         when(gattService.getCharacteristic(CHARACTERISTIC_MAILBOX)).thenReturn(characteristic);
@@ -1329,7 +1329,7 @@ public class MbtBluetoothLETest {
         final int timeout = 11000;
         command = Mockito.mock(BluetoothCommands.Mtu.class);
         bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED);
-        bluetoothLE.setAsyncConfiguration(asyncOperation); //if this setter is not called, the async configuration mock is not called
+        bluetoothLE.setWaiter(asyncOperation); //if this setter is not called, the async configuration mock is not called
         when(command.isValid()).thenReturn(true);
         when(command.serialize()).thenReturn(mtu);
         when(gatt.requestMtu(47)).thenReturn(true);

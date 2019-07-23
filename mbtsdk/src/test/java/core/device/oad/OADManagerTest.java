@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
+import command.DeviceCommandEvent;
 import command.DeviceCommands;
 import core.bluetooth.BtState;
 import core.bluetooth.MbtBluetoothManager;
@@ -261,8 +262,8 @@ public class OADManagerTest {
     /**
      * Check that the SDK raises the {@link OADError#ERROR_VALIDATION_FAILED} error
      * and that the OAD internal state is set to {@link OADState#ABORTED}
-     * if the headset device returns the code {@link command.DeviceCommandEvents#CMD_CODE_OTA_MODE_EVT_FAILED}
-     * for a {@link command.DeviceCommandEvents#MBX_OTA_MODE_EVT} event.
+     * if the headset device returns the code {@link DeviceCommandEvent#CMD_CODE_OTA_MODE_EVT_FAILED}
+     * for a {@link DeviceCommandEvent#MBX_OTA_MODE_EVT} event.
      */
     @Test
     public void requestFirmwareValidation_failureResponse(){
@@ -307,8 +308,8 @@ public class OADManagerTest {
 
     /**
      * Check that the OAD internal state is set to {@link OADState#TRANSFERRING}
-     * if the headset device returns the code {@link command.DeviceCommandEvents#CMD_CODE_OTA_MODE_EVT_SUCCESS}
-     * for a {@link command.DeviceCommandEvents#MBX_OTA_MODE_EVT} event.
+     * if the headset device returns the code {@link DeviceCommandEvent#CMD_CODE_OTA_MODE_EVT_SUCCESS}
+     * for a {@link DeviceCommandEvent#MBX_OTA_MODE_EVT} event.
      */
     @Test
     public void requestFirmwareValidation_SuccessResponse(){
@@ -353,7 +354,7 @@ public class OADManagerTest {
      * Check that the SDK raises the {@link OADError#ERROR_TIMEOUT_UPDATE} error
      * and that the OAD internal state is set to {@link OADState#ABORTED}
      * if the headset device does not return any response
-     * within the allocated time for a {@link command.DeviceCommandEvents#MBX_OTA_MODE_EVT} event.
+     * within the allocated time for a {@link DeviceCommandEvent#MBX_OTA_MODE_EVT} event.
      */
     @Test
     public void requestFirmwareValidation_timeout(){
@@ -606,7 +607,7 @@ public class OADManagerTest {
      * Check that the SDK resets the internal packet index
      * to the value received in the headset response
      * if the headset device returns a valid packet index
-     * for a {@link command.DeviceCommandEvents#MBX_OTA_IDX_RESET_EVT} event.
+     * for a {@link DeviceCommandEvent#MBX_OTA_IDX_RESET_EVT} event.
      */
     @Test
     public void transferOADFile_lostPacket_validIndex(){
@@ -651,7 +652,7 @@ public class OADManagerTest {
      * Check that the SDK raises an Out Of Bounds Exception and abort the OAD process
      * if the headset device notifies that a packet
      * with index beyond the size of the SDK buffer has been lost during transfer
-     * for a {@link command.DeviceCommandEvents#MBX_OTA_IDX_RESET_EVT} event.
+     * for a {@link DeviceCommandEvent#MBX_OTA_IDX_RESET_EVT} event.
      */
     @Test(expected = IndexOutOfBoundsException.class)
     public void transferOADFile_lostPacket_invalidIndex(){

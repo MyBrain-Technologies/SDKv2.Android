@@ -4,12 +4,10 @@ import android.os.Bundle;
 
 import java.io.Serializable;
 
-import command.DeviceCommands;
+import command.DeviceCommandEvent;
 import core.device.oad.OADManager;
 
-import static command.DeviceCommandEvents.MBX_OTA_IDX_RESET_EVT;
-import static command.DeviceCommandEvents.MBX_OTA_MODE_EVT;
-import static command.DeviceCommandEvents.MBX_OTA_STATUS_EVT;
+import static command.DeviceCommandEvent.MBX_OTA_IDX_RESET_EVT;
 
 /**
  * Created by Etienne on 14/10/2016.
@@ -37,7 +35,19 @@ public enum OADEvent {
      */
     FIRMWARE_VALIDATION_RESPONSE(OADManager.VALIDATION_STATUS),
 
+    /**
+     * Event triggered when the Bluetooth unit is informed
+     * that a sent packet has not been received by the headset device
+     *
+     * This event is associated with a integer "packet" value that is the OAD packet
+     */
+    TRANSFER_PACKET(OADManager.PACKET),
 
+    /**
+     * Event triggered when the Device unit is informed
+     * that a packet has been sent
+     */
+    PACKET_TRANSFERRED(),
 
     /**
      * Event triggered when the Bluetooth unit is informed
@@ -46,7 +56,6 @@ public enum OADEvent {
      * This event is associated with a integer "packetIndex" value that is the identifier of the packet,
      *                    that allow the SDK to resend the corresponding packet     */
     LOST_PACKET(MBX_OTA_IDX_RESET_EVT, OADManager.LOST_PACKET),
-
 
     /**
      * Event triggered when the current firmware has checked the CRC (Cyclic Redundancy Check)
@@ -83,7 +92,7 @@ public enum OADEvent {
      * Most OAD event (not all) are triggered by a mailbox response from the headset device
      * so we associate the corresponding mailbox identifier for these ones.
      */
-    private byte mailboxEvent;
+    private DeviceCommandEvent mailboxEvent;
 
 
     private String key;
@@ -99,7 +108,7 @@ public enum OADEvent {
         this.key = key;
     }
 
-    OADEvent(byte mailboxEvent, String key) {
+    OADEvent(DeviceCommandEvent mailboxEvent, String key) {
         this.mailboxEvent = mailboxEvent;
         this.key = key;
     }
@@ -119,10 +128,10 @@ public enum OADEvent {
     }
 
     /**
-     * Return the status as a boolean value
+     * Return the object
      * read from the bundle that contains all the values related to the current event
      */
-    public boolean getEventStatus() {
+    public boolean getEventDataAsBoolean() {
         return eventData.getBoolean(key);
     }
 
@@ -130,8 +139,32 @@ public enum OADEvent {
      * Return the object
      * read from the bundle that contains all the values related to the current event
      */
-    public Object getEventObject() {
-        return eventData.getParcelable(key);
+    public String getEventDataAsString() {
+        return eventData.getString(key);
+    }
+
+    /**
+     * Return the object
+     * read from the bundle that contains all the values related to the current event
+     */
+    public int getEventDataAsInteger() {
+        return eventData.getInt(key);
+    }
+
+    /**
+     * Return the object
+     * read from the bundle that contains all the values related to the current event
+     */
+    public byte[] getEventDataAsByteArray() {
+        return eventData.getByteArray(key);
+    }
+
+    /**
+     * Return the object
+     * read from the bundle that contains all the values related to the current event
+     */
+    public Serializable getEventDataAsSerializable() {
+        return eventData.getSerializable(key);
     }
 
     public String getKey() {
@@ -145,17 +178,45 @@ public enum OADEvent {
         return this;
     }
 
+    public OADEvent getEventWithData(byte[] eventData){
+        Bundle bundle = new Bundle();
+        bundle.putByteArray(key, eventData);
+        setEventData(bundle);
+        return this;
+    }
+
+    public OADEvent getEventWithData(Boolean eventData){
+        Bundle bundle = new Bundle();
+        bundle.putBoolean(key, eventData);
+        setEventData(bundle);
+        return this;
+    }
+
+    public OADEvent getEventWithData(String eventData){
+        Bundle bundle = new Bundle();
+        bundle.putString(key, eventData);
+        setEventData(bundle);
+        return this;
+    }
+
+    public OADEvent getEventWithData(int eventData){
+        Bundle bundle = new Bundle();
+        bundle.putInt(key, eventData);
+        setEventData(bundle);
+        return this;
+    }
+
     /**
      * Return the OAD event associated to the mailbox command passed in input
      * @param mailboxIdentifier the mailbox command identifier
-     *                          (All the mailbox command identifiers are listed in the {@link command.DeviceCommandEvents} class
+     *                          (All the mailbox command identifiers are listed in the {@link DeviceCommandEvent} class
      *                          or can be accessed through the getCode() getter available for any command class that extends {@link command.DeviceCommand}
      * @return the OAD event associated to the mailbox command
      */
-    public static OADEvent getEventFromMailboxCommand(int mailboxIdentifier){
+    public static OADEvent getEventFromMailboxCommand(DeviceCommandEvent mailboxIdentifier){
         OADEvent event = null;
         for (OADEvent value : OADEvent.values()){
-            if(value.mailboxEvent == mailboxIdentifier)
+            if(value.mailboxEvent.getIdentifierCode() == mailboxIdentifier.getIdentifierCode())
                 event = value;
         }
         return event;
