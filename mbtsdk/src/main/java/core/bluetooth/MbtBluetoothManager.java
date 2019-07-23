@@ -134,12 +134,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     };
 
     /**
-     * Listener used to receive a notification when an OAD event occurs
-     * @param <U> Error triggered if something went wrong during the firmware update
-     */
-    private EventListener.OADEventListener oadEventListener;
-
-    /**
      * Constructor of the manager.
      * @param context the application context
      */

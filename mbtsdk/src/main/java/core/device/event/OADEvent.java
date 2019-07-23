@@ -8,6 +8,7 @@ import command.DeviceCommandEvent;
 import core.device.oad.OADManager;
 
 import static command.DeviceCommandEvent.MBX_OTA_IDX_RESET_EVT;
+import static command.DeviceCommandEvent.MBX_OTA_STATUS_EVT;
 
 /**
  * Created by Etienne on 14/10/2016.
@@ -66,7 +67,7 @@ public enum OADEvent {
      *                          - true if all the packets have been well transferred and no corruption occurred.
      *                          - false if all the packets have been well transferred and no corruption occurred
      */
-    CRC_READBACK(OADManager.READBACK_STATUS),
+    CRC_READBACK(MBX_OTA_STATUS_EVT, OADManager.READBACK_STATUS),
 
 
     /**

@@ -21,7 +21,7 @@ public class BluetoothResponseEvent extends ResponseEvent<DeviceCommandEvent, Ob
 
     public boolean isMailboxEvent(){
         for (DeviceCommandEvent event : DeviceCommandEvent.values()) {
-            if(this.getEventIdentifier().getIdentifierCode() == event.getIdentifierCode())
+            if(this.getId().getIdentifierCode() == event.getIdentifierCode())
                 return true;
         }
         return false;

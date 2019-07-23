@@ -17,7 +17,6 @@ import java.util.concurrent.TimeoutException;
 import command.CommandInterface;
 import command.OADCommands;
 import core.bluetooth.requests.CommandRequestEvent;
-import core.device.MbtDeviceManager;
 import core.device.event.EventListener;
 import core.device.event.OADEvent;
 import core.device.model.FirmwareVersion;
@@ -103,13 +102,12 @@ public final class OADManager {
     public final static String RECONNECTION_STATUS = "RECONNECTION_STATUS";
 
     private final Context context;
-    private final MbtDeviceManager deviceManager;
 
     /**
      * Interface used to notify its listener when an OAD event occurs
      * <BaseError> Error triggered if something went wrong during the firmware update
      */
-    private EventListener.OADEventListener<BaseError> oadEventPoster;
+    private OADContract oadContract;
 
     /**
      * Return the current state of the current OAD update process.
@@ -132,10 +130,10 @@ public final class OADManager {
 
     MbtAsyncWaitOperation<Boolean> waiter;
 
-    public OADManager(Context context, MbtDeviceManager deviceManager) {
+    public OADManager(Context context, OADContract oadContract) {
         this.context = context;
-        this.deviceManager = deviceManager;
         this.oadContext = new OADContext();
+        this.oadContract = oadContract;
     }
 
     private void switchToNextStep(@Nullable Bundle actionData) {
@@ -228,7 +226,7 @@ public final class OADManager {
                 new CommandInterface.CommandCallback<byte[]>() { //callback that catch errors and messages of the peripheral headset device in response to the request
                     @Override
                     public void onError(CommandInterface.MbtCommand request, BaseError error, String additionalInfo) {
-                        OADManager.this.oadEventPoster.onError(error, "Firmware validation failed : "+additionalInfo);
+                       // OADManager.this.oadContract.onError(error, "Firmware validation failed : "+additionalInfo);
                     }
 
                     @Override
@@ -248,24 +246,8 @@ public final class OADManager {
                         onOADEvent(event);
                     }
                 });
-        OADEvent event = OADEvent.FIRMWARE_VALIDATION_REQUEST.setEventData(new CommandRequestEvent(requestFirmwareValidation));
-        if(oadEventPoster != null)
-            oadEventPoster.onOADEvent(event);
-    }
-
-    public void setOADEventPoster(EventListener.OADEventListener<BaseError> eventPoster){
-        this.oadEventPoster = new EventListener.OADEventListener<BaseError>() {
-            @Override
-            public void onOADEvent(OADEvent oadEvent) {
-                eventPoster.onOADEvent(oadEvent);
-            }
-
-            @Override
-            public void onError(BaseError error, String additionalInfo) {
-                eventPoster.onError(error, additionalInfo);
-                abort(error.toString());
-            }
-        };
+        if(oadContract != null)
+            oadContract.requestFirmwareValidation(requestFirmwareValidation);
     }
 
     /**
@@ -285,7 +267,7 @@ public final class OADManager {
                 switchToNextStep(null);
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             LogUtils.e(TAG, "OAD file transfer failed: "+e);
-            oadEventPoster.onError(OADError.ERROR_TRANSFER_FAILED, ""+e);
+            //oadContract.onError(OADError.ERROR_TRANSFER_FAILED, ""+e);
         }
     }
 
@@ -297,12 +279,12 @@ public final class OADManager {
         new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
             @Override
             public void run() {
-                OADCommands.SendPacket sendPacket = new OADCommands.SendPacket(
+                OADCommands.SendPacket sendPacket = new OADCommands.SendPacket( //todo check difference performance sans passer par BUS et avec , changer retour par bus
                         oadContext.getPacketsToSend().get(packetIndex),
                         new CommandInterface.SimpleCommandCallback(){ //callback that catch errors and messages of the peripheral headset device in response to the request
                             @Override
                             public void onError(CommandInterface.MbtCommand request, BaseError error, String additionalInfo) {
-                                OADManager.this.oadEventPoster.onError(error, "Send packet operation failed : "+additionalInfo);
+                                //OADManager.this.oadContract.onError(error, "Send packet operation failed : "+additionalInfo);
                                 waiter.stopWaitingOperation(false);
                             }
 
@@ -321,9 +303,8 @@ public final class OADManager {
                                     sendOADPacket(packetCounter.getIndexOfNextPacketToSend());
                             }
                         });
-                OADEvent event = OADEvent.TRANSFER_PACKET.setEventData(new CommandRequestEvent(sendPacket));
-                if(oadEventPoster != null)
-                    oadEventPoster.onOADEvent(event);
+                if(oadContract != null)
+                    oadContract.transferPacket(sendPacket);
             }
         },100);
     }
@@ -357,9 +338,9 @@ public final class OADManager {
      * @return true if the current firmware version is equal to the input firmware version, false otherwise.
      */
     boolean verifyFirmwareVersion(){
-        return oadContext.getFirmwareVersion()
+        return true/*oadContext.getFirmwareVersion() //todo
                 .compareFirmwareVersion(
-                        deviceManager.getmCurrentConnectedDevice().getFirmwareVersion());
+                        deviceManager.getmCurrentConnectedDevice().getFirmwareVersion())*/;
     }
 
     /**
@@ -376,7 +357,7 @@ public final class OADManager {
      */
     public void onOADEvent(OADEvent event) {
         LogUtils.d(TAG, "on OAD event "+event.toString());
-        if(oadEventPoster != null){
+        if(oadContract != null){
             if(event.equals(OADEvent.LOST_PACKET))
                 packetCounter.resetNbPacketsSent(event.getEventDataAsByteArray()); //Packet index is set back to the requested value
             else
@@ -505,7 +486,7 @@ public final class OADManager {
 
             @Override
             public OADState getNextState() {
-                return TRANSFERRING;
+                return TRANSFERRED;
             }
 
             @Override
@@ -515,28 +496,6 @@ public final class OADManager {
 
             private boolean isValidationSuccess(Bundle actionData){
                 return bundleContainsSuccessForKey(actionData, VALIDATION_STATUS);
-            }
-        },
-
-        /**
-         * State triggered once the transfer has started.
-         * Catch lost packets and resend them to the device headset.
-         */
-        TRANSFERRING(5){
-
-            @Override
-            public void executeAction(@Nullable Bundle actionData) {
-                int packetIndex = getPacketIndex(actionData);
-                oadManager.sendOADPacket(packetIndex);
-            }
-
-            @Override
-            public OADState getNextState() {
-                return TRANSFERRED;
-            }
-
-            private int getPacketIndex(Bundle actionData){
-                return (int)getObjectFromBundleForKey(actionData,LOST_PACKET);
             }
         },
 
