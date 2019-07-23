@@ -140,7 +140,7 @@ public final class OADManager {
 
     private void switchToNextStep(@Nullable Bundle actionData) {
         LogUtils.d(TAG, "switch to next step ");
-        notifyOADStateChanged(getCurrentState() == null ?
+        onOADStateChanged(getCurrentState() == null ?
                 OADState.INITIALIZING : getCurrentState().getNextState(),
                 actionData);
     }
@@ -154,7 +154,7 @@ public final class OADManager {
         return currentState;
     }
 
-    void notifyOADStateChanged(OADState state, @Nullable Bundle actionData) {
+    void onOADStateChanged(OADState state, @Nullable Bundle actionData) {
         LogUtils.d(TAG, "OAD State changed : "+currentState +" > "+state);
         currentState = state;
         stateListener.onStateChanged(currentState);
@@ -165,7 +165,7 @@ public final class OADManager {
     }
 
     void abort(String reason) {
-        notifyOADStateChanged(OADState.ABORTED, null);
+        onOADStateChanged(OADState.ABORTED, null);
     }
 
     /**

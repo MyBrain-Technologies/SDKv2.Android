@@ -251,7 +251,7 @@ final class MbtGattController extends BluetoothGattCallback {
         } else if (characteristic.getUuid().compareTo(MelomindCharacteristics.CHARAC_HEADSET_STATUS) == 0) {
             this.mbtBluetoothLE.notifyNewHeadsetStatus(characteristic.getValue());
         } else if (characteristic.getUuid().compareTo(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX) == 0) {
-            this.notifyMailboxEventReceived(characteristic);
+            this.onMailboxEventReceived(characteristic);
             mbtBluetoothLE.stopWaitingOperation(true);
         }
     }
@@ -291,8 +291,8 @@ final class MbtGattController extends BluetoothGattCallback {
      * Notifies that the connected headset returned a response after a characteristic writing operation
      * @param characteristic
      */
-    private void notifyMailboxEventReceived(BluetoothGattCharacteristic characteristic) {
-        Log.d(TAG, "Notify mailbox event received " + Arrays.toString(characteristic.getValue()));
+    private void onMailboxEventReceived(BluetoothGattCharacteristic characteristic) {
+        Log.d(TAG, "Mailbox event received " + Arrays.toString(characteristic.getValue()));
         byte[] response = CommandUtils.deserialize(characteristic.getValue());
         byte mailboxEvent = characteristic.getValue()[0];
         DeviceCommandEvent event = DeviceCommandEvent.getEventFromIdentifierCode(mailboxEvent);

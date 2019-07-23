@@ -182,7 +182,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             notifyDeviceResponseReceived(response, (DeviceCommand) command);
 
         else if (command instanceof BluetoothCommand)
-            notifyBluetoothResponseReceived(response, (BluetoothCommand) command);
+            onBluetoothResponseReceived(response, (BluetoothCommand) command);
 
         requestBeingProcessed = false;
     }
@@ -205,9 +205,9 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * Notify the Connection process handler if the MTU has been well changed
      * @param command is the corresponding type of bluetooth command
      */
-    private void notifyBluetoothResponseReceived(Object response, BluetoothCommand command) {
+    private void onBluetoothResponseReceived(Object response, BluetoothCommand command) {
         if(command instanceof BluetoothCommands.Mtu)
-            notifyMtuChanged(response == command.getData());
+            onMtuChanged(response == command.getData());
     }
 
     /**
@@ -846,7 +846,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         sendCommand(new BluetoothCommands.Mtu(mtu));
     }
 
-    private void notifyMtuChanged(boolean isSuccess){
+    private void onMtuChanged(boolean isSuccess){
         updateConnectionState(true); //current state is set to BT_PARAMETERS_CHANGED
         switchToNextConnectionStep();
     }

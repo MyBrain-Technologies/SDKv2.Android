@@ -644,16 +644,6 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     /**
      * Callback triggered by the {@link MbtGattController} callback
      * when an event -not related to a mailbox request sent by the SDK- occurs
-     * @param oadEvent the {@link OADEvent} event that occurs
-     * @param eventData the data associated to the mailbox event detected
-     */
-    void notifyEventReceived(OADEvent oadEvent, byte[] eventData) {
-
-    }
-
-    /**
-     * Callback triggered by the {@link MbtGattController} callback
-     * when an event -not related to a mailbox request sent by the SDK- occurs
      * @param mailboxEvent the event that occurs
      * @param eventData the data associated to the mailbox event detected
      */

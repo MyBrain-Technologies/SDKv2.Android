@@ -100,12 +100,6 @@ public abstract class MbtBluetooth implements IConnectable{
         }
     }
 
-    void notifyMailboxEvent(byte code, Object value){
-//        if(this.mailboxEventListener != null){
-//            this.mailboxEventListener.onMailBoxEvent(code, value);
-//        }
-    }
-
     protected void notifyBatteryReceived(int value){
         mbtBluetoothManager.notifyDeviceInfoReceived(DeviceInfo.BATTERY, String.valueOf(value));
     }
