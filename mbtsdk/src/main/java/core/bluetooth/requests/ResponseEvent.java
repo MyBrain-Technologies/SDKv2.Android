@@ -22,7 +22,7 @@ public abstract class ResponseEvent<K,V> {
         return eventData;
     }
 
-    public K getEvent() {
+    public K getEventIdentifier() {
         return eventData.first;
     }
 

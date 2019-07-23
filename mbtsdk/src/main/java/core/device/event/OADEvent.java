@@ -113,6 +113,14 @@ public enum OADEvent {
         this.key = key;
     }
 
+    public boolean isInitialEvent(){
+        return this.equals(INIT);
+    }
+
+    public boolean isFinalEvent(){
+        return this.equals(UPDATE_COMPLETE);
+    }
+
     /**
      * Set the bundle that stores values related to the current event associated keys
      */
@@ -155,6 +163,14 @@ public enum OADEvent {
      * Return the object
      * read from the bundle that contains all the values related to the current event
      */
+    public short getEventDataAsShort() {
+        return eventData.getShort(key);
+    }
+
+    /**
+     * Return the object
+     * read from the bundle that contains all the values related to the current event
+     */
     public byte[] getEventDataAsByteArray() {
         return eventData.getByteArray(key);
     }
@@ -171,37 +187,44 @@ public enum OADEvent {
         return key;
     }
 
-    public OADEvent getEventWithData(Serializable eventData){
+    public OADEvent setEventData(Serializable eventData){
         Bundle bundle = new Bundle();
         bundle.putSerializable(key, eventData);
         setEventData(bundle);
         return this;
     }
 
-    public OADEvent getEventWithData(byte[] eventData){
+    public OADEvent setEventData(byte[] eventData){
         Bundle bundle = new Bundle();
         bundle.putByteArray(key, eventData);
         setEventData(bundle);
         return this;
     }
 
-    public OADEvent getEventWithData(Boolean eventData){
+    public OADEvent setEventData(Boolean eventData){
         Bundle bundle = new Bundle();
         bundle.putBoolean(key, eventData);
         setEventData(bundle);
         return this;
     }
 
-    public OADEvent getEventWithData(String eventData){
+    public OADEvent setEventData(String eventData){
         Bundle bundle = new Bundle();
         bundle.putString(key, eventData);
         setEventData(bundle);
         return this;
     }
 
-    public OADEvent getEventWithData(int eventData){
+    public OADEvent setEventData(int eventData){
         Bundle bundle = new Bundle();
         bundle.putInt(key, eventData);
+        setEventData(bundle);
+        return this;
+    }
+
+    public OADEvent setEventData(short eventData){
+        Bundle bundle = new Bundle();
+        bundle.putShort(key, eventData);
         setEventData(bundle);
         return this;
     }

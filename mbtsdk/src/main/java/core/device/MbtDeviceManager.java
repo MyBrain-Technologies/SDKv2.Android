@@ -182,23 +182,22 @@ public class MbtDeviceManager extends BaseModuleManager implements EventListener
     public void onBluetoothEventReceived(BluetoothResponseEvent event){
         LogUtils.d(TAG, "on Bluetooth event "+event.toString());
         if(event.isMailboxEvent()){
-            OADEvent oadEvent = OADEvent.getEventFromMailboxCommand(event.getEvent());
-            onOADEventReceived(oadEvent);
+            OADEvent oadEvent = OADEvent
+                    .getEventFromMailboxCommand(event.getEventIdentifier())
+                    .setEventData((byte[]) event.getEventDataValue());
+            if(oadEvent.isInitialEvent() || oadEvent.isFinalEvent())
+                enableOrDisableNotificationForOADEvent(oadEvent.isInitialEvent());
+            this.oadManager.onOADEvent(oadEvent);
         }
-
     }
 
     /**
-     * Callback triggered when an OAD event
-     * is received by the Bluetooth unit
+     * Instanciate or reset the instance of {@link core.device.event.EventListener.OADEventListener}
+     * that allow the {@link OADManager} to notify its manager when an OAD event occurs
+     * @param enable must be set to true to make the {@link MbtDeviceManager} listen to OAD events
      */
-    private void onOADEventReceived(OADEvent event){
-        LogUtils.d(TAG, "on OAD event "+event.toString());
-        if(event.equals(OADEvent.INIT))
-            this.oadManager.setOADEventPoster(this);
-
-        this.oadManager.onOADEvent(event);
-
+    private void enableOrDisableNotificationForOADEvent(boolean enable){
+        this.oadManager.setOADEventPoster(enable ? this : null);
     }
 
     private boolean isFirmwareVersionUpToDate(){
@@ -207,7 +206,7 @@ public class MbtDeviceManager extends BaseModuleManager implements EventListener
 
     /**
      * Method triggered when an OAD event
-     * has to be sent to an external unit
+     * has to be sent to an external (Bluetooth) unit
      */
     @Override
     public void onOADEvent(OADEvent oadEvent) {

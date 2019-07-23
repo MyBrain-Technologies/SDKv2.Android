@@ -244,11 +244,11 @@ public final class OADManager {
                     @Override
                     public void onResponseReceived(CommandInterface.MbtCommand request, byte[] response) {
                         boolean isValidationSuccess = !BitUtils.isZero(response[0]);
-                        OADEvent event = OADEvent.FIRMWARE_VALIDATION_RESPONSE.getEventWithData(isValidationSuccess);
+                        OADEvent event = OADEvent.FIRMWARE_VALIDATION_RESPONSE.setEventData(isValidationSuccess);
                         onOADEvent(event);
                     }
                 });
-        OADEvent event = OADEvent.FIRMWARE_VALIDATION_REQUEST.getEventWithData(new CommandRequestEvent(requestFirmwareValidation));
+        OADEvent event = OADEvent.FIRMWARE_VALIDATION_REQUEST.setEventData(new CommandRequestEvent(requestFirmwareValidation));
         if(oadEventPoster != null)
             oadEventPoster.onOADEvent(event);
     }
@@ -321,7 +321,7 @@ public final class OADManager {
                                     sendOADPacket(packetCounter.getIndexOfNextPacketToSend());
                             }
                         });
-                OADEvent event = OADEvent.TRANSFER_PACKET.getEventWithData(new CommandRequestEvent(sendPacket));
+                OADEvent event = OADEvent.TRANSFER_PACKET.setEventData(new CommandRequestEvent(sendPacket));
                 if(oadEventPoster != null)
                     oadEventPoster.onOADEvent(event);
             }
@@ -377,8 +377,8 @@ public final class OADManager {
     public void onOADEvent(OADEvent event) {
         LogUtils.d(TAG, "on OAD event "+event.toString());
         if(oadEventPoster != null){
-            if(event.equals(OADEvent.PACKET_TRANSFERRED) && !packetCounter.areAllPacketsSent())
-                sendOADPacket(packetCounter.getIndexOfNextPacketToSend());
+            if(event.equals(OADEvent.LOST_PACKET))
+                packetCounter.resetNbPacketsSent(event.getEventDataAsByteArray()); //Packet index is set back to the requested value
             else
                 switchToNextStep(event.getEventData());
         }

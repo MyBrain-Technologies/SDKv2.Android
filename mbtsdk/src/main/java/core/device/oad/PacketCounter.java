@@ -1,5 +1,8 @@
 package core.device.oad;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
 /**
  * Engine class to use for any action where a buffer of byte packets is handled.
  * This class helps getting the number of packets,
@@ -35,10 +38,18 @@ public class PacketCounter {
                         0 : 1));
     }
 
-    public boolean areAllPacketsSent(){
+    /**
+     * Returns true if the number of packets sent is equal to the number of packet to send, false otherwise.
+     * @return true if the number of packets sent is equal to the number of packet to send, false otherwise.
+     */
+    boolean areAllPacketsSent(){
         return this.nbPacketSent == this.nbPacketToSend;
     }
 
+    /**
+     * Return the index of the next packet to send
+     * @return the index of the next packet to send
+     */
     short getIndexOfNextPacketToSend(){
         return nbPacketSent;
     }
@@ -59,8 +70,18 @@ public class PacketCounter {
         this.nbPacketToSend++;
     }
 
-    public void incrementNbPacketsSent() {
-        this.nbPacketToSend++;
+    void incrementNbPacketsSent() {
+        this.nbPacketSent++;
+    }
+
+    /**
+     * Packet index is set back to the requested value
+     * @param packetIndex is the new value to set to the number of packet sent
+     * @return the index of the next packet to send
+     */
+    short resetNbPacketsSent(byte[] packetIndex) {
+        short packetIndexAsShort = ByteBuffer.wrap(packetIndex).order(ByteOrder.LITTLE_ENDIAN).getShort();
+        return this.nbPacketSent = packetIndexAsShort;
     }
 
     public void incrementNbBytes(int incrementer) {
