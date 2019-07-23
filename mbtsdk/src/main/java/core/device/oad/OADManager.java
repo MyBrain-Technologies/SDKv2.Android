@@ -2,6 +2,8 @@ package core.device.oad;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.IntRange;
 import android.support.annotation.Nullable;
 import android.util.Pair;
@@ -40,7 +42,7 @@ import utils.VersionHelper;
  * As the whole file can not be sent in a single request, the OAD Manager prepares & chunks it into small packets that are sent one after another.
  * It also communicates with the current firmware
  */
-public final class OADManager implements EventListener.OADEventListener {
+public final class OADManager {
 
     private final static String TAG = OADManager.class.getName();
 
@@ -50,25 +52,43 @@ public final class OADManager implements EventListener.OADEventListener {
     public static final int EXPECTED_NB_PACKETS_BINARY_FILE = 14223;
 
     /**
-     * Size of a packet of the OAD binary file (chunks of the file that hold the firmware to install)
+     * Size of the index of a packet of the OAD binary file (chunks of the file that hold the firmware to install)
      */
-    private static final int OAD_PACKET_SIZE = 18;
+    public static final int OAD_INDEX_PACKET_SIZE = 2;
 
     /**
-     * Key used to get the firmware version passed through the bundle passed by the {@link android.bluetooth.BluetoothManager}
+     * Size of the content of a packet of the OAD binary file (chunks of the file that hold the firmware to install)
+     */
+    public static final int OAD_PAYLOAD_PACKET_SIZE = 18;
+
+    /**
+     * Size of a packet of the OAD binary file (chunks of the file that hold the firmware to install)
+     */
+    public static final int OAD_PACKET_SIZE = OAD_INDEX_PACKET_SIZE + OAD_PAYLOAD_PACKET_SIZE;
+
+    /**
+     * Key used to get the firmware version passed through the bundle given by the {@link android.bluetooth.BluetoothManager}
      * to the current OAD manager in order to execute the action that matchs the current state.
      */
     private final static String FIRMWARE_VERSION = "FIRMWARE_VERSION";
+
     /**
-     * Key used to get the validation status passed through the bundle passed by the {@link android.bluetooth.BluetoothManager}
+     * Key used to get the validation status passed through the bundle given by the {@link android.bluetooth.BluetoothManager}
      * to the current OAD manager in order to execute the action that matchs the current state.
      */
     public final static String VALIDATION_STATUS = "VALIDATION_STATUS";
+
     /**
-     * Key used to get the readback status passed through the bundle passed by the {@link android.bluetooth.BluetoothManager}
+     * Key used to get the readback status passed through the bundle given by the {@link android.bluetooth.BluetoothManager}
      * to the current OAD manager in order to execute the action that matchs the current state.
      */
     public final static String READBACK_STATUS = "READBACK_STATUS";
+
+    /**
+     * Key used to get the packet passed through the bundle given by the current OAD manager
+     * to the {@link android.bluetooth.BluetoothManager} in order to perform a write characterictic operation.
+     */
+    public final static String PACKET = "PACKET";
 
     /**
      * Key used to get the index of the lost packet passed through the bundle passed by the {@link android.bluetooth.BluetoothManager}
@@ -87,9 +107,9 @@ public final class OADManager implements EventListener.OADEventListener {
 
     /**
      * Interface used to notify its listener when an OAD event occurs
-     * @param <U> Error triggered if something went wrong during the firmware update
+     * <BaseError> Error triggered if something went wrong during the firmware update
      */
-    private EventListener.OADEventListener oadEventPoster;
+    private EventListener.OADEventListener<BaseError> oadEventPoster;
 
     /**
      * Return the current state of the current OAD update process.
@@ -164,15 +184,16 @@ public final class OADManager implements EventListener.OADEventListener {
             byte[] content = OADExtractionUtils.extractFileContent(context.getAssets(), oadContext.getOADfilePath());
             Pair<Boolean, String> validityStatusAndReason = checkFileContentValidity(content);
             if(!validityStatusAndReason.first){
-                onError(OADError.ERROR_INIT_FAILED, validityStatusAndReason.second);
+                stateListener.onError(OADError.ERROR_INIT_FAILED, validityStatusAndReason.second);
                 return false;
             }
 
-            packetCounter = new PacketCounter(OAD_PACKET_SIZE, content.length);
+            packetCounter = new PacketCounter(content.length, OAD_PACKET_SIZE);
             oadContext.setNbPacketsToSend(packetCounter.nbPacketToSend);
+            oadContext.setPacketsToSend(OADExtractionUtils.extractOADPackets(packetCounter, content));
             oadContext.setFirmwareVersion(OADExtractionUtils.extractFirmwareVersionFromContent(content));
         } catch (FileNotFoundException e) {
-            onError(OADError.ERROR_INIT_FAILED, e.getMessage());
+            stateListener.onError(OADError.ERROR_INIT_FAILED, e.getMessage());
             return false;
         }
         return true;
@@ -207,7 +228,7 @@ public final class OADManager implements EventListener.OADEventListener {
                 new CommandInterface.CommandCallback<byte[]>() { //callback that catch errors and messages of the peripheral headset device in response to the request
                     @Override
                     public void onError(CommandInterface.MbtCommand request, BaseError error, String additionalInfo) {
-                        OADManager.this.onError(error, "Firmware validation failed : "+additionalInfo);
+                        OADManager.this.oadEventPoster.onError(error, "Firmware validation failed : "+additionalInfo);
                     }
 
                     @Override
@@ -232,17 +253,79 @@ public final class OADManager implements EventListener.OADEventListener {
             oadEventPoster.onOADEvent(event);
     }
 
-    public void setOADEventPoster(EventListener.OADEventListener eventPoster){
-        this.oadEventPoster = eventPoster;
+    public void setOADEventPoster(EventListener.OADEventListener<BaseError> eventPoster){
+        this.oadEventPoster = new EventListener.OADEventListener<BaseError>() {
+            @Override
+            public void onOADEvent(OADEvent oadEvent) {
+                eventPoster.onOADEvent(oadEvent);
+            }
+
+            @Override
+            public void onError(BaseError error, String additionalInfo) {
+                eventPoster.onError(error, additionalInfo);
+                abort(error.toString());
+            }
+        };
     }
 
-    boolean transferOADFile(int timeout){
+    /**
+     *  The whole OAD binary file previously chucked in packets is sent to the current firmware
+     *  The packets are sent one after another using the WRITE_NO_RESPONSE capability.
+     *  This means that the firmware will not notify the client that the packet is correctly received.
+     * @param timeout maximum duration allocated to transfer all the OAD packets to the connected peripheral headsdet device.
+     * @return true if the transfer succeeded, false if it timed out or failed.
+     */
+    void transferOADFile(int timeout){
 
-        return true;//todo
+        sendOADPacket(packetCounter.getIndexOfNextPacketToSend());
+        try {
+            waiter = new MbtAsyncWaitOperation<>();
+            boolean isTransferSuccess = waiter.waitOperationResult(timeout);
+            if(isTransferSuccess)
+                switchToNextStep(null);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            LogUtils.e(TAG, "OAD file transfer failed: "+e);
+            oadEventPoster.onError(OADError.ERROR_TRANSFER_FAILED, ""+e);
+        }
     }
 
+    /**
+     * Send an OAD packet to the peripheral headset device a Bluetooth write characteristic operation.
+     * @param packetIndex is the index of the packet to send
+     */
     void sendOADPacket(int packetIndex) {
+        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                OADCommands.SendPacket sendPacket = new OADCommands.SendPacket(
+                        oadContext.getPacketsToSend().get(packetIndex),
+                        new CommandInterface.SimpleCommandCallback(){ //callback that catch errors and messages of the peripheral headset device in response to the request
+                            @Override
+                            public void onError(CommandInterface.MbtCommand request, BaseError error, String additionalInfo) {
+                                OADManager.this.oadEventPoster.onError(error, "Send packet operation failed : "+additionalInfo);
+                                waiter.stopWaitingOperation(false);
+                            }
 
+                            /**
+                             * Callback triggered when a sending packet operation has been performed.
+                             * @param request is the send packet request
+                             */
+                            @Override
+                            public void onRequestSent(CommandInterface.MbtCommand request) {
+                                packetCounter.incrementNbPacketsSent();
+                                currentState.incrementProgress();
+                                stateListener.onProgressPercentChanged(currentState.convertToProgress());
+                                if(packetCounter.areAllPacketsSent()) {
+                                    waiter.stopWaitingOperation(true);
+                                }else
+                                    sendOADPacket(packetCounter.getIndexOfNextPacketToSend());
+                            }
+                        });
+                OADEvent event = OADEvent.TRANSFER_PACKET.getEventWithData(new CommandRequestEvent(sendPacket));
+                if(oadEventPoster != null)
+                    oadEventPoster.onOADEvent(event);
+            }
+        },100);
     }
 
     boolean reboot(int timeout){
@@ -287,26 +370,18 @@ public final class OADManager implements EventListener.OADEventListener {
     }
 
     /**
-     * Callback triggered when a message/response of the headset device
+     * Method triggered when a message/response of the headset device
      * related to the OAD update process
      * is received by the Device unit Manager
      */
-    @Override
     public void onOADEvent(OADEvent event) {
         LogUtils.d(TAG, "on OAD event "+event.toString());
-        switchToNextStep(event.getEventData());
-    }
-
-    /**
-     * Callback triggered something went wrong during the OAD update process
-     */
-    @Override
-    public void onError(BaseError error, String additionalInfo) {
-        LogUtils.e(TAG, "Error : "+error + (additionalInfo != null ? additionalInfo : ""));
-    }
-
-    private void deinit() {
-        deviceManager.setOADEventListener(null);
+        if(oadEventPoster != null){
+            if(event.equals(OADEvent.PACKET_TRANSFERRED) && !packetCounter.areAllPacketsSent())
+                sendOADPacket(packetCounter.getIndexOfNextPacketToSend());
+            else
+                switchToNextStep(event.getEventData());
+        }
     }
 
     /**
@@ -706,6 +781,15 @@ public final class OADManager implements EventListener.OADEventListener {
         }
 
         /**
+         * Increment the OAD update progress
+         * A progress of 0 means that the transfer has not started yet.
+         * A progress of 100 means that the transfer is complete.
+         */
+        public int incrementProgress() {
+            return this.progress++;
+        }
+
+        /**
          * Get the OAD update progress according to the current state.
          * @return the OAD update progress in percent.
          * A progress of 0 means that the transfer has not started yet.
@@ -723,6 +807,9 @@ public final class OADManager implements EventListener.OADEventListener {
             if(oadManager != null && oadManager.stateListener != null)
                 oadManager.stateListener.onError(error,additionalInfo);
         }
+    }
+
+    private void deinit() {
     }
 
 }

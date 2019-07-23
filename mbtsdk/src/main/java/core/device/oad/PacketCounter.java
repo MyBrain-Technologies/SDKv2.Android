@@ -6,12 +6,7 @@ package core.device.oad;
  * the current packets added to the final buffer,
  * and the total number of bytes
  */
-class PacketCounter {
-
-    /**
-     * Size in bytes of each packet
-     */
-    private final int packetSize;
+public class PacketCounter {
 
     int nbBytes = 0; // Number of bytes programmed
     short nbPacketSent = 0; // Number of packet sent
@@ -22,16 +17,16 @@ class PacketCounter {
      * @param packetSize the size of a packet (number of bytes allocated for a single packet)
      * @param nbBytesToSend the number of bytes to send
      */
-    PacketCounter(int packetSize, int nbBytesToSend) {
-        this.packetSize = packetSize;
-        this.reset(nbBytesToSend);
+    PacketCounter(int nbBytesToSend, int packetSize) {
+        this.reset(nbBytesToSend, packetSize);
     }
 
     /**
      * Reset the packet counter.
      * @param nbBytesToSend the number of bytes to send
+     * @param packetSize Size in bytes of each packet
      */
-    void reset(int nbBytesToSend) {
+    public void reset(int nbBytesToSend, int packetSize) {
         nbBytes = 0;
         nbPacketSent = 0;
         nbPacketToSend = (short) (
@@ -40,4 +35,35 @@ class PacketCounter {
                         0 : 1));
     }
 
+    public boolean areAllPacketsSent(){
+        return this.nbPacketSent == this.nbPacketToSend;
+    }
+
+    short getIndexOfNextPacketToSend(){
+        return nbPacketSent;
+    }
+
+    public int getNbBytes() {
+        return nbBytes;
+    }
+
+    public short getNbPacketSent() {
+        return nbPacketSent;
+    }
+
+    public short getNbPacketToSend() {
+        return nbPacketToSend;
+    }
+
+    public void incrementNbPacketsToSend() {
+        this.nbPacketToSend++;
+    }
+
+    public void incrementNbPacketsSent() {
+        this.nbPacketToSend++;
+    }
+
+    public void incrementNbBytes(int incrementer) {
+        this.nbBytes += incrementer;
+    }
 }

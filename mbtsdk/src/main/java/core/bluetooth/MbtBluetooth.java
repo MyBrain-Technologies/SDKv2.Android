@@ -31,7 +31,13 @@ public abstract class MbtBluetooth implements IConnectable{
 
     private final static String TAG = MbtBluetooth.class.getName();
 
+    @NonNull
+    protected IStreamable.StreamState streamingState = IStreamable.StreamState.IDLE;
+
     private volatile BtState currentState = BtState.IDLE;
+
+    protected boolean isUpdating;
+
 
     @Nullable
     protected BluetoothAdapter bluetoothAdapter;

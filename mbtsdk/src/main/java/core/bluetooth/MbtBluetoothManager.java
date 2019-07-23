@@ -30,12 +30,14 @@ import command.BluetoothCommands;
 import command.CommandInterface;
 import command.DeviceCommand;
 
+import command.DeviceCommandEvent;
 import config.MbtConfig;
 import core.BaseModuleManager;
 import command.DeviceCommands;
 import command.DeviceStreamingCommands;
 import core.bluetooth.lowenergy.MbtBluetoothLE;
 import core.bluetooth.requests.BluetoothRequests;
+import eventbus.events.BluetoothResponseEvent;
 import core.bluetooth.requests.CommandRequestEvent;
 import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
 import core.bluetooth.requests.DisconnectRequestEvent;
@@ -138,12 +140,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private EventListener.OADEventListener oadEventListener;
 
     /**
-     * Interface used to notify its listener when an OAD event occurs
-     * @param <U> Error triggered if something went wrong during the firmware update
-     */
-    private EventListener.OADEventListener oadEventPoster;
-
-    /**
      * Constructor of the manager.
      * @param context the application context
      */
@@ -213,6 +209,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         if(command instanceof BluetoothCommands.Mtu)
             notifyMtuChanged(response == command.getData());
     }
+
     /**
      * This class is a specific thread that will handle all bluetooth operations. Bluetooth operations
      * are synchronous, meaning two or more operations can't be run simultaneously. This {@link HandlerThread}
@@ -1200,32 +1197,16 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * @param event the OAD event
      */
     @Subscribe
-    public void onOADEvent(OADEvent event){
-        if(event.equals(OADEvent.INIT))
-            startOADUpdate();
-        else if (oadEventPoster != null)
-            oadEventPoster.onOADEvent(event);
+    public void onExternalOADEventReceived(OADEvent event){
+
     }
 
+
     /**
-     * Initialize the OAD event listener
+     * Notify the event subscribers when a message/response of the headset device
+     * is received by the Bluetooth unit
      */
-    void startOADUpdate(){
-        oadEventPoster = new EventListener.OADEventListener() {
-            @Override
-            public void onOADEvent(OADEvent oadEvent) {
-                MbtEventBus.postEvent(oadEvent); //post events to notify the device unit
-            }
-
-            @Override
-            public void onError(BaseError error, String additionalInfo) {
-
-            }
-        };
-
-        if(deviceTypeRequested.useLowEnergyProtocol())
-            mbtBluetoothLE.startOADUpdate(oadEventPoster);
-        else
-            mbtBluetoothSPP.startOADUpdate(oadEventPoster);
+    public void notifyEventReceived(DeviceCommandEvent eventIdentifier, byte[] eventData) {
+        MbtEventBus.postEvent(new BluetoothResponseEvent(eventIdentifier, eventData)); //post event to notify the device unit when a bluetooth response is received
     }
 }

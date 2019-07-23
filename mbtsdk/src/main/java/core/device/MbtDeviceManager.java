@@ -9,6 +9,7 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 import core.BaseModuleManager;
+import eventbus.events.BluetoothResponseEvent;
 import core.device.model.FirmwareVersion;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindDevice;
@@ -27,20 +28,31 @@ import utils.LogUtils;
 
 import static features.MbtDeviceType.MELOMIND;
 
-
-public class MbtDeviceManager extends BaseModuleManager implements EventListener.OADEventListener {
+/**
+ * The Device unit deals with all the actions related to the Headset device (beside Bluetooth).
+ * It provides features that allow the client to upgrade the firmware version,
+ * or handle some signal features detected by the device such as the DC offset or the Saturation,
+ * and store some device information.
+ *
+ * For example, device information includes
+ * the firmware version installed,
+ * hardware version,
+ * serial number,
+ * model number,
+ * product name,
+ * audio device address,
+ * sampling rate,
+ * number or channels,
+ * locations of the ground(s), reference(s), and acquisition channels.
+ * It extends the OADEventListener interface to receive notifications when an OAD event occurs
+ */
+public class MbtDeviceManager extends BaseModuleManager implements EventListener.OADEventListener<BaseError> {
 
     private static final String TAG = MbtDeviceManager.class.getSimpleName();
 
     private OADManager oadManager;
 
     private MbtDevice mCurrentConnectedDevice;
-
-    /**
-     * Listener used to receive a notification when an OAD event occurs
-     * @param <U> Error triggered if something went wrong during the firmware update
-     */
-    private EventListener.OADEventListener oadEventListener;
 
     public MbtDeviceManager(Context context){
         super(context);
@@ -163,43 +175,43 @@ public class MbtDeviceManager extends BaseModuleManager implements EventListener
 
     /**
      * Callback triggered when an OAD event
+     *
      * is received by the Bluetooth unit
      */
     @Subscribe
-    public void onOADEventReceived(OADEvent event){
-        LogUtils.d(TAG, "on OAD event "+event.toString());
-        if(event.equals(OADEvent.INIT))
-            startOADUpdate();
+    public void onBluetoothEventReceived(BluetoothResponseEvent event){
+        LogUtils.d(TAG, "on Bluetooth event "+event.toString());
+        if(event.isMailboxEvent()){
+            OADEvent oadEvent = OADEvent.getEventFromMailboxCommand(event.getEvent());
+            onOADEventReceived(oadEvent);
+        }
 
-        if (oadEventListener != null)
-            oadEventListener.onOADEvent(event);
     }
 
     /**
-     * Initialize the OAD event listener
+     * Callback triggered when an OAD event
+     * is received by the Bluetooth unit
      */
-    void startOADUpdate(){
-        this.setOADEventListener(oadManager);
-        this.oadManager.setOADEventPoster(this);
+    private void onOADEventReceived(OADEvent event){
+        LogUtils.d(TAG, "on OAD event "+event.toString());
+        if(event.equals(OADEvent.INIT))
+            this.oadManager.setOADEventPoster(this);
+
+        this.oadManager.onOADEvent(event);
+
     }
 
     private boolean isFirmwareVersionUpToDate(){
         return oadManager.isFirmwareVersionUpToDate(mCurrentConnectedDevice.getFirmwareVersion());
     }
 
-    public void setOADEventListener(EventListener.OADEventListener eventListener){
-        this.oadEventListener = eventListener;
-    }
-
-
-
     /**
      * Method triggered when an OAD event
-     * has to be sent to the Bluetooth unit
+     * has to be sent to an external unit
      */
     @Override
     public void onOADEvent(OADEvent oadEvent) {
-        MbtEventBus.postEvent(oadEvent);
+        MbtEventBus.postEvent(oadEvent.getEventDataAsSerializable());
     }
 
     @Override
