@@ -142,7 +142,7 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
 
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
+    @Subscribe
     public void onConnectionStateChanged(ConnectionStateEvent connectionStateEvent) {
         if(connectionStateEvent.getNewState().equals(BtState.CONNECTED_AND_READY))
                 if(oadManager != null)
@@ -213,7 +213,7 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
      *
      * is received by the Bluetooth unit
      */
-    @Subscribe(threadMode = ThreadMode.MAIN, priority = 1)
+    @Subscribe(priority = 1)
     public void onBluetoothEventReceived(BluetoothResponseEvent event){
         LogUtils.d(TAG, "on Bluetooth event "+event.toString());
         if(event.isDeviceCommandEvent()){

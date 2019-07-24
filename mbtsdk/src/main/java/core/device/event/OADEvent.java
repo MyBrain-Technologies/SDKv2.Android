@@ -38,7 +38,7 @@ public enum OADEvent {
      * Event triggered when the Device unit is informed
      * that a packet has been sent
      */
-    PACKET_TRANSFERRED(DeviceCommandEvent.GATT_OTA_STATUS_TRANSFER),
+    PACKET_TRANSFERRED(DeviceCommandEvent.OTA_STATUS_TRANSFER),
 
     /**
      * Event triggered when the Bluetooth unit is informed

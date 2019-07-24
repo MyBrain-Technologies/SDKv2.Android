@@ -14,7 +14,7 @@ public enum DeviceCommandEvent {
     MBX_START_OTA_TXF((byte)0x03),           // Used by appli to request an OTA update (provides software major and minor in payload)
     MBX_OTA_IDX_RESET_EVT((byte)0x06),       // Notifies appli that we request a packet Idx reset
     MBX_OTA_STATUS_EVT((byte)0x07),   // Notifies appli with the status of the OTA transfer.
-    GATT_OTA_STATUS_TRANSFER((byte)-1),   // Notifies SDK when an OAD packet has been transferred.
+    OTA_STATUS_TRANSFER((byte)-1),   // Notifies SDK when an OAD packet has been transferred.
 
     MBX_OTA_MODE_EVT((byte)0x05,
         new HashMap<String, Byte>() {{
