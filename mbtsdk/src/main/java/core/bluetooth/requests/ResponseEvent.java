@@ -22,11 +22,11 @@ public abstract class ResponseEvent<K,V> {
         return eventData;
     }
 
-    public K getEvent() {
+    public K getId() {
         return eventData.first;
     }
 
-    public V getEventDataValue() {
+    public V getDataValue() {
         return eventData.second;
     }
 

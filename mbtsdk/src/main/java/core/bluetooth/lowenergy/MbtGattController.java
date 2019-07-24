@@ -110,8 +110,8 @@ final class MbtGattController extends BluetoothGattCallback {
                 break;
             case BluetoothGatt.STATE_DISCONNECTED:
                 //if(isDownloadingFirmware) //todo OAD
-                //    refreshDeviceCache(gatt);// in this case the connection went well for a while, but just got lost
-                //mbtBluetoothLE.notifyEventReceived(OADEvent.DISCONNECTED_FOR_REBOOT, null);
+                //    clearMobileDeviceCache(gatt);// in this case the connection went well for a while, but just got lost
+                //mbtBluetoothLE.notifyEventReceived(, null);
                 LogUtils.e(TAG, "Gatt returned disconnected state");
                 gatt.close();
                 //todo dissociate connection in progress case, OAD in progress case, regular case
@@ -238,7 +238,7 @@ final class MbtGattController extends BluetoothGattCallback {
     public void onCharacteristicWrite(BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, int status) {
         super.onCharacteristicWrite(gatt, characteristic, status);
         Log.d(TAG, "on Characteristic Write value: "+(characteristic.getValue() == null ? characteristic.getValue() : Arrays.toString(characteristic.getValue())) );
-        mbtBluetoothLE.stopWaitingOperation(status == BluetoothGatt.GATT_SUCCESS);
+        mbtBluetoothLE.stopWaitingOperation(BitUtils.booleanToBit(status == BluetoothGatt.GATT_SUCCESS));
     }
 
     @Override
