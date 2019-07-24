@@ -1,11 +1,6 @@
 package core.device.event;
 
-import android.os.Bundle;
-
-import java.io.Serializable;
-
 import command.DeviceCommandEvent;
-import core.device.oad.OADManager;
 
 /**
  * Created by Etienne on 14/10/2016.
@@ -18,9 +13,7 @@ public enum OADEvent {
      * Event triggered when the client request an OAD update.
      * Initialize the OAD process.
      */
-    INIT(OADManager.FIRMWARE_VERSION),
-
-    FIRMWARE_VALIDATION_REQUEST(OADManager.VALIDATION_STATUS),
+    INIT(),
 
     /**
      * Event triggered when the Bluetooth unit receives a response
@@ -31,7 +24,7 @@ public enum OADEvent {
      *
      * This event is associated to a boolean value that is true if the headset device accepts the OAD update, false otherwise
      */
-    FIRMWARE_VALIDATION_RESPONSE(OADManager.VALIDATION_STATUS),
+    FIRMWARE_VALIDATION_RESPONSE(DeviceCommandEvent.MBX_OTA_MODE_EVT),
 
     /**
      * Event triggered when the Bluetooth unit is informed
@@ -39,7 +32,7 @@ public enum OADEvent {
      *
      * This event is associated with a integer "packet" value that is the OAD packet
      */
-    TRANSFER_PACKET(OADManager.PACKET),
+    TRANSFER_PACKET(),
 
     /**
      * Event triggered when the Device unit is informed
@@ -53,7 +46,7 @@ public enum OADEvent {
      *
      * This event is associated with a integer "packetIndex" value that is the identifier of the packet,
      *                    that allow the SDK to resend the corresponding packet     */
-    LOST_PACKET(DeviceCommandEvent.MBX_OTA_IDX_RESET_EVT, OADManager.LOST_PACKET),
+    LOST_PACKET(DeviceCommandEvent.MBX_OTA_IDX_RESET_EVT),
 
     /**
      * Event triggered when the current firmware has checked the CRC (Cyclic Redundancy Check)
@@ -64,7 +57,7 @@ public enum OADEvent {
      *                          - true if all the packets have been well transferred and no corruption occurred.
      *                          - false if all the packets have been well transferred and no corruption occurred
      */
-    CRC_READBACK(DeviceCommandEvent.MBX_OTA_STATUS_EVT, OADManager.READBACK_STATUS),
+    CRC_READBACK(DeviceCommandEvent.MBX_OTA_STATUS_EVT),
 
     /**
      * Event triggered when the headset device has disconnected after sending the CRC readback
@@ -83,12 +76,7 @@ public enum OADEvent {
      *                          - true if the connection succeeded.
      *                          - false if the connection failed.
      */
-    RECONNECTION_PERFORMED(OADManager.RECONNECTION_STATUS),
-
-    /**
-     * Event triggered when the OAD firmware update is complete and succeeded.
-     */
-    UPDATE_COMPLETE();
+    RECONNECTION_PERFORMED();
 
     /**
      * Most OAD event (not all) are triggered by a mailbox response from the headset device
@@ -97,23 +85,13 @@ public enum OADEvent {
     private DeviceCommandEvent mailboxEvent;
 
 
-    private String key;
-
     /**
      * Bundle that stores data/informations related to the current event associated keys
      */
-    private Bundle eventData;
+    private Object eventData;
 
     OADEvent() { }
 
-    OADEvent(String key) {
-        this.key = key;
-    }
-
-    OADEvent(DeviceCommandEvent mailboxEvent, String key) {
-        this.mailboxEvent = mailboxEvent;
-        this.key = key;
-    }
 
     OADEvent(DeviceCommandEvent mailboxEvent) {
         this.mailboxEvent = mailboxEvent;
@@ -123,21 +101,18 @@ public enum OADEvent {
         return this.equals(INIT);
     }
 
-    public boolean isFinalEvent(){
-        return this.equals(UPDATE_COMPLETE);
-    }
-
     /**
      * Set the bundle that stores values related to the current event associated keys
      */
-    public void setEventData(Bundle eventData) {
-        this.eventData = eventData;
+    public OADEvent setEventData(Object eventData) {
+         this.eventData = eventData;
+         return this;
     }
 
     /**
      * Return the bundle that stores values related to the current event associated keys
      */
-    public Bundle getEventData() {
+    public Object getEventData() {
         return eventData;
     }
 
@@ -146,7 +121,7 @@ public enum OADEvent {
      * read from the bundle that contains all the values related to the current event
      */
     public boolean getEventDataAsBoolean() {
-        return eventData.getBoolean(key);
+        return (boolean)eventData;
     }
 
     /**
@@ -154,7 +129,7 @@ public enum OADEvent {
      * read from the bundle that contains all the values related to the current event
      */
     public String getEventDataAsString() {
-        return eventData.getString(key);
+        return eventData.toString();
     }
 
     /**
@@ -162,7 +137,7 @@ public enum OADEvent {
      * read from the bundle that contains all the values related to the current event
      */
     public int getEventDataAsInteger() {
-        return eventData.getInt(key);
+        return (int)eventData;
     }
 
     /**
@@ -170,7 +145,7 @@ public enum OADEvent {
      * read from the bundle that contains all the values related to the current event
      */
     public short getEventDataAsShort() {
-        return eventData.getShort(key);
+        return (short)eventData;
     }
 
     /**
@@ -178,61 +153,7 @@ public enum OADEvent {
      * read from the bundle that contains all the values related to the current event
      */
     public byte[] getEventDataAsByteArray() {
-        return eventData.getByteArray(key);
-    }
-
-    /**
-     * Return the object
-     * read from the bundle that contains all the values related to the current event
-     */
-    public Serializable getEventDataAsSerializable() {
-        return eventData.getSerializable(key);
-    }
-
-    public String getKey() {
-        return key;
-    }
-
-    public OADEvent setEventData(Serializable eventData){
-        Bundle bundle = new Bundle();
-        bundle.putSerializable(key, eventData);
-        setEventData(bundle);
-        return this;
-    }
-
-    public OADEvent setEventData(byte[] eventData){
-        Bundle bundle = new Bundle();
-        bundle.putByteArray(key, eventData);
-        setEventData(bundle);
-        return this;
-    }
-
-    public OADEvent setEventData(Boolean eventData){
-        Bundle bundle = new Bundle();
-        bundle.putBoolean(key, eventData);
-        setEventData(bundle);
-        return this;
-    }
-
-    public OADEvent setEventData(String eventData){
-        Bundle bundle = new Bundle();
-        bundle.putString(key, eventData);
-        setEventData(bundle);
-        return this;
-    }
-
-    public OADEvent setEventData(int eventData){
-        Bundle bundle = new Bundle();
-        bundle.putInt(key, eventData);
-        setEventData(bundle);
-        return this;
-    }
-
-    public OADEvent setEventData(short eventData){
-        Bundle bundle = new Bundle();
-        bundle.putShort(key, eventData);
-        setEventData(bundle);
-        return this;
+        return (byte[])eventData;
     }
 
     /**

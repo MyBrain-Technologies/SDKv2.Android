@@ -7,19 +7,12 @@ import android.util.Log;
 
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
-
-import java.sql.Connection;
-
 import command.OADCommands;
 import config.ConnectionConfig;
 import core.BaseModuleManager;
-import core.bluetooth.BtState;
 import core.bluetooth.requests.CommandRequestEvent;
 import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
 import core.device.oad.OADContract;
-import engine.clientevents.BaseError;
-import engine.clientevents.BluetoothError;
-import engine.clientevents.BluetoothStateListener;
 import eventbus.events.BluetoothResponseEvent;
 import core.device.model.FirmwareVersion;
 import core.device.model.MbtDevice;
@@ -34,7 +27,6 @@ import eventbus.MbtEventBus;
 import eventbus.events.ConfigEEGEvent;
 import eventbus.events.DeviceInfoEvent;
 import eventbus.events.FirmwareUpdateClientEvent;
-import eventbus.events.ReconnectionReadyEvent;
 import eventbus.events.ClearBluetoothEvent;
 import utils.LogUtils;
 
@@ -115,12 +107,17 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
     @Subscribe
     public void onNewDeviceDisconnected(DeviceEvents.DisconnectedDeviceEvent deviceEvent) {
         if (oadManager != null){
-            if(oadManager.getCurrentState().equals(OADManager.OADState.AWAITING_DEVICE_REBOOT))
-                oadManager.onOADEvent(OADEvent.DISCONNECTED_FOR_REBOOT);
-            else if(oadManager.getCurrentState().equals(OADManager.OADState.RECONNECTING))
-                oadManager.onOADEvent(OADEvent.RECONNECTION_PERFORMED.setEventData(false));
-            else
-                oadManager.onOADEvent(OADEvent.DISCONNECTED);
+            switch (oadManager.getCurrentState()){
+                case AWAITING_DEVICE_REBOOT:
+                    oadManager.onOADEvent(OADEvent.DISCONNECTED_FOR_REBOOT);
+                    break;
+                case RECONNECTING:
+                    oadManager.onOADEvent(OADEvent.RECONNECTION_PERFORMED.setEventData(false));
+                    break;
+                default:
+                    oadManager.onOADEvent(OADEvent.DISCONNECTED);
+                    break;
+            }
         }else
             setmCurrentConnectedDevice(null);
     }
@@ -200,11 +197,8 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
 
     @Subscribe
     public void onOADEvent(OADEvent event) {
-        if (event.isInitialEvent()){
+        if (oadManager == null)
             this.oadManager = new OADManager(mContext, this, event.getEventData());
-        }else if(event.isFinalEvent()){
-            this.oadManager = null;
-        }
     }
 
     /**
@@ -212,13 +206,13 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
      *
      * is received by the Bluetooth unit
      */
-    @Subscribe
+    @Subscribe(threadMode = ThreadMode.MAIN, priority = 1)
     public void onBluetoothEventReceived(BluetoothResponseEvent event){
         LogUtils.d(TAG, "on Bluetooth event "+event.toString());
         if(event.isDeviceCommandEvent()){
             OADEvent oadEvent = OADEvent
                     .getEventFromMailboxCommand(event.getId())
-                    .setEventData((byte[]) event.getDataValue());
+                    .setEventData(event.getDataValue());
 
             this.oadManager.onOADEvent(oadEvent);
         }
@@ -227,7 +221,7 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
 
     @Override
     public void stopOADUpdate() {
-
+        this.oadManager = null;
     }
 
     @Override
@@ -236,8 +230,8 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
     }
 
     @Override
-    public void transferPacket(OADCommands.SendPacket sendPacket) {
-        MbtEventBus.postEvent(new CommandRequestEvent(sendPacket));
+    public void transferPacket(byte[] packetToSend) {
+        MbtEventBus.postEvent(new CommandRequestEvent(new OADCommands.SendPacket(packetToSend)));
     }
 
     @Override
@@ -246,7 +240,7 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
     }
 
     @Override
-    public void resetCacheAndKeys() {
+    public void clearBluetooth() {
         MbtEventBus.postEvent(new ClearBluetoothEvent());
     }
 

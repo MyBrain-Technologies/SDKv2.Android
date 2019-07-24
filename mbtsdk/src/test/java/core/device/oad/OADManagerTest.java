@@ -132,7 +132,7 @@ public class OADManagerTest {
      */
     @Test
     public void notifyOADStateChanged_Aborted(){
-        oadManager.abort(null);
+        oadManager.abort();
         assertEquals(OADState.ABORTED,oadManager.getCurrentState());
     }
 
@@ -771,14 +771,14 @@ public class OADManagerTest {
         } catch (TimeoutException e) {
             e.printStackTrace();
         }
-        //resetCacheAndKeys might be called when a disconnected state is triggered so here we don't need to do anything
+        //clearBluetooth might be called when a disconnected state is triggered so here we don't need to do anything
         assertEquals(oadManager.getCurrentState(), OADState.ABORTED);
 
     }
 
     /**
      * Check that the OAD internal state is set to {@link OADState#RECONNECTING}
-     * once the resetCacheAndKeys has been performed.
+     * once the clearBluetooth has been performed.
      */
     @Test
     public void reconnect_started(){

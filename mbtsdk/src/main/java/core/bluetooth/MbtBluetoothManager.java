@@ -193,7 +193,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 notifyDeviceInfoReceived(DeviceInfo.MODEL_NUMBER, new String((byte[]) response));
 
             }else if(command instanceof OADCommands.SendPacket) {
-                notifyEventReceived(null, (byte[]) response);
+                notifyEventReceived(command.getIdentifier(), (byte[]) response);
             }
         }
     }
@@ -1204,6 +1204,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * is received by the Bluetooth unit
      */
     public void notifyEventReceived(DeviceCommandEvent eventIdentifier, byte[] eventData) {
-        MbtEventBus.postEvent(new BluetoothResponseEvent(eventIdentifier, eventData)); //post event to notify the device unit when a bluetooth response is received
+        MbtEventBus.postEvent(new BluetoothResponseEvent(eventIdentifier, eventData));
     }
 }
