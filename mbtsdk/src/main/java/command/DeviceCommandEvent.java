@@ -4,7 +4,7 @@ import java.util.HashMap;
 
 /**
  * A class that contains all currently used device commands (mailbox & other commands) codes.
- * One code has one specific functionnality.
+ * One code has one specific functionality.
  */
 public enum DeviceCommandEvent {
 
@@ -14,10 +14,14 @@ public enum DeviceCommandEvent {
     MBX_START_OTA_TXF((byte)0x03),           // Used by appli to request an OTA update (provides software major and minor in payload)
     MBX_OTA_IDX_RESET_EVT((byte)0x06),       // Notifies appli that we request a packet Idx reset
     MBX_OTA_STATUS_EVT((byte)0x07),   // Notifies appli with the status of the OTA transfer.
+    GATT_OTA_STATUS_TRANSFER((byte)-1),   // Notifies SDK when an OAD packet has been transferred.
 
-    MBX_OTA_MODE_EVT((byte)0x05),            // Notifies appli that we switched to OTA mode
-    CMD_CODE_OTA_MODE_EVT_FAILED((byte)0x00), //1
-    CMD_CODE_OTA_MODE_EVT_SUCCESS((byte)0xFF), //-1
+    MBX_OTA_MODE_EVT((byte)0x05,
+        new HashMap<String, Byte>() {{
+            put(CMD_CODE_OTA_MODE_EVT_FAILED, ((byte)0x00));
+            put(CMD_CODE_OTA_MODE_EVT_SUCCESS, ((byte)0xFF));
+        }}
+    ),
 
     /**
      * Event codes related to Device System Events
@@ -99,6 +103,9 @@ public enum DeviceCommandEvent {
     public static final String CMD_CODE_DISCONNECT_IN_A2DP_FAILED = "CMD_CODE_DISCONNECT_IN_A2DP_FAILED";
     public static final String CMD_CODE_DISCONNECT_IN_A2DP_SUCCESS = "CMD_CODE_DISCONNECT_IN_A2DP_SUCCESS";
 
+    public static final String CMD_CODE_OTA_MODE_EVT_FAILED = "CMD_CODE_OTA_MODE_EVT_FAILED";
+    public static final String CMD_CODE_OTA_MODE_EVT_SUCCESS = "CMD_CODE_OTA_MODE_EVT_SUCCESS";
+
     /**
      * Unique identifier of the event.
      */
@@ -122,10 +129,16 @@ public enum DeviceCommandEvent {
         this.responseCodesMap = responseCodesMap;
     }
 
+    DeviceCommandEvent(byte identifierCode, HashMap<String, Byte> responseCodesMap) {
+        this.identifierCode = identifierCode;
+        this.responseCodesMap = responseCodesMap;
+    }
+
     DeviceCommandEvent(byte identifierCode, byte... additionalCodes) {
         this.identifierCode = identifierCode;
         this.additionalCodes = additionalCodes;
     }
+
 
     DeviceCommandEvent(byte identifierCode) {
         this.identifierCode = identifierCode;

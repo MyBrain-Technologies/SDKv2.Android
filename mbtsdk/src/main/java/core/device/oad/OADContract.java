@@ -3,27 +3,52 @@ package core.device.oad;
 import android.support.annotation.Keep;
 
 import command.OADCommands;
+import core.device.model.FirmwareVersion;
+import eventbus.events.FirmwareUpdateClientEvent;
 
 /**
-     * Contract used to receive a notification when an OAD event occurs
+ * Contract used to perform an action in the contracter class when an OAD event occurs
+ */
+@Keep
+public interface OADContract {
+
+    /**
+     * Method to call when the OAD update process need to get the firmware validation of the new firmware
      */
-    @Keep
-    public interface OADContract {
+    void requestFirmwareValidation(OADCommands.RequestFirmwareValidation requestFirmwareValidation);
 
-        /**
-         * Callback triggered when the OAD update process need to be started
-         */
-        void startOADUpdate();
+    /**
+     * Method to call when the OAD update process need to send an OAD binary file packet to the current firmware
+     * @param packetToSend the OAD packet to send
+     */
+    void transferPacket(byte[] packetToSend);
 
-        /**
-         * Callback triggered when the OAD update process need to be started
-         */
-        void stopOADUpdate();
+    /**
+     * Method to call when the OAD update process state and/or progress changes,
+     * or when the SDK raises an error.
+     * @param event the OAD packet to send
+     */
+    void notifyClient(FirmwareUpdateClientEvent event);
 
-        /**
-         * Callback triggered when the OAD update process need to be started
-         */
-        void requestFirmwareValidation(OADCommands.RequestFirmwareValidation requestFirmwareValidation);
+    /**
+     * Method to call when the OAD update process need to clear the mobile device bluetooth
+     */
+    void clearBluetooth();
 
-        void transferPacket(OADCommands.SendPacket sendPacket);
+    /**
+     * Method to call when the OAD update process need to reconnect the updated headset device.
+     */
+    void reconnect();
+
+    /**
+     * Method to call when the OAD update process need to get the firmware validation of the new firmware.
+     * Return true if the current firmware version is equal to the input firmware version, false otherwise.
+     * @return true if the current firmware version is equal to the input firmware version, false otherwise.
+     */
+    boolean compareFirmwareVersion(FirmwareVersion firmwareVersionExpected);
+
+    /**
+     * Method to call when the OAD update process is over.
+     */
+    void stopOADUpdate();
 }
