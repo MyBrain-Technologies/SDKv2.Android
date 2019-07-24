@@ -111,7 +111,7 @@ final class MbtGattController extends BluetoothGattCallback {
             case BluetoothGatt.STATE_DISCONNECTED:
                 //if(isDownloadingFirmware) //todo OAD
                 //    refreshDeviceCache(gatt);// in this case the connection went well for a while, but just got lost
-                //mbtBluetoothLE.notifyEventReceived(OADEvent.DISCONNECTED_FOR_REBOOT, null);
+                //mbtBluetoothLE.notifyEventReceived(, null);
                 LogUtils.e(TAG, "Gatt returned disconnected state");
                 gatt.close();
                 //todo dissociate connection in progress case, OAD in progress case, regular case

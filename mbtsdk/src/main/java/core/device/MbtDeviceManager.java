@@ -22,7 +22,6 @@ import core.device.event.SaturationEvent;
 import core.device.event.OADEvent;
 import core.device.oad.OADManager;
 import core.eeg.acquisition.MbtDataConversion;
-import engine.clientevents.BaseError;
 import eventbus.MbtEventBus;
 import eventbus.events.ConfigEEGEvent;
 import eventbus.events.DeviceInfoEvent;

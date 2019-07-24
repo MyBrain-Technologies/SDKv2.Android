@@ -16,8 +16,6 @@ import java.util.concurrent.TimeoutException;
 
 import command.CommandInterface;
 import command.OADCommands;
-import core.bluetooth.requests.CommandRequestEvent;
-import core.device.event.EventListener;
 import core.device.event.OADEvent;
 import core.device.model.FirmwareVersion;
 import core.device.model.MbtDevice;
@@ -105,7 +103,6 @@ public final class OADManager {
 
     /**
      * Interface used to notify its listener when an OAD event occurs
-     * <BaseError> Error triggered if something went wrong during the firmware update
      */
     private OADContract oadContract;
 

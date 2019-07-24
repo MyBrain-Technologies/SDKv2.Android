@@ -1192,7 +1192,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      */
     @Subscribe
     public void onExternalOADEventReceived(OADEvent event){
-
+    //todo attention init event from mbtmanager received here
     }
 
 

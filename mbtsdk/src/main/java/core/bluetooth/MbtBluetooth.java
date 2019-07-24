@@ -13,7 +13,6 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 
 import core.device.model.DeviceInfo;
-import core.device.event.OADEvent;
 
 import utils.LogUtils;
 import utils.MbtLock;
