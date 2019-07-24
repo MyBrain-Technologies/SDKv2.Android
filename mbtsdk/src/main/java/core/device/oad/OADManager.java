@@ -3,9 +3,7 @@ package core.device.oad;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
-import android.support.annotation.IntRange;
 import android.support.annotation.Nullable;
-import android.util.Pair;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -17,10 +15,8 @@ import command.OADCommands;
 import core.device.event.OADEvent;
 import core.device.model.FirmwareVersion;
 import engine.clientevents.BaseError;
-import engine.clientevents.BluetoothError;
 import engine.clientevents.OADError;
 import eventbus.events.FirmwareUpdateClientEvent;
-import utils.BitUtils;
 import utils.LogUtils;
 import utils.MbtAsyncWaitOperation;
 import utils.OADExtractionUtils;
@@ -78,7 +74,7 @@ public final class OADManager {
 
     private OADContext oadContext;
 
-    MbtAsyncWaitOperation<Boolean> lock;
+    private MbtAsyncWaitOperation<Boolean> lock;
 
     public OADManager(Context context, OADContract oadContract, Object initData) {
         this.context = context;
@@ -122,7 +118,6 @@ public final class OADManager {
      * - the firmware version
      * - the number of OAD packets (chunks of binary file)
      * @param firmwareVersion is the firmware version to install
-     * @return true if the
      */
     void init(FirmwareVersion firmwareVersion){
         LogUtils.d(TAG, "Initialize the OAD update for version "+firmwareVersion);
@@ -285,7 +280,7 @@ public final class OADManager {
      * Returns the OAD context
      * @return the OAD context
      */
-    public OADContext getOADContext() {
+    OADContext getOADContext() {
         return oadContext;
     }
 
@@ -293,7 +288,7 @@ public final class OADManager {
      * Return the OAD contract
      * @return the OAD contract
      */
-    public OADContract getOADContract() {
+    OADContract getOADContract() {
         return oadContract;
     }
 }
