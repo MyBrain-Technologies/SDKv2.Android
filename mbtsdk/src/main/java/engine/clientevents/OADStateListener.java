@@ -3,7 +3,7 @@ package engine.clientevents;
 import android.support.annotation.IntRange;
 import android.support.annotation.Keep;
 
-import core.device.oad.OADState;
+import core.device.oad.OADManager;
 
 /**
  * Listener used to receive a notification when the OAD update state changes during a firmware update

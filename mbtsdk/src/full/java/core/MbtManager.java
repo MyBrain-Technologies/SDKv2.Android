@@ -2,7 +2,6 @@ package core;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
@@ -49,6 +48,7 @@ import eventbus.MbtEventBus;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.ConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
+import eventbus.events.FirmwareUpdateClientEvent;
 import features.MbtDeviceType;
 import features.MbtFeatures;
 import mbtsdk.com.mybraintech.mbtsdk.R;
@@ -81,6 +81,10 @@ public class MbtManager{
      * using custom callback interfaces.
      */
     private ConnectionStateListener<BaseError> connectionStateListener;
+
+    /**
+     * Listener used to notify the SDK client when the current OAD state changes or when the SDK raises an error.
+     */
     private OADStateListener oadStateListener;
     private EegListener<BaseError> eegListener;
     private DeviceBatteryListener<BaseError> deviceInfoListener;
@@ -142,6 +146,21 @@ public class MbtManager{
         MbtEventBus.postEvent(new ReadRequestEvent(deviceInfo));
     }
 
+    public void requestCurrentConnectedDevice(@NonNull final SimpleRequestCallback<MbtDevice> callback) {
+        if (callback == null)
+            return;
+
+        MbtEventBus.postEvent(new DeviceEvents.GetDeviceEvent(), new MbtEventBus.Callback<DeviceEvents.PostDeviceEvent>(){
+            @Override
+            @Subscribe
+            public Void onEventCallback(DeviceEvents.PostDeviceEvent object) {
+                MbtEventBus.registerOrUnregister(false, this);
+                callback.onRequestComplete(object.getDevice());
+                return null;
+            }
+        });
+    }
+
     /**
      * Posts an event to initiate a stream session.
      */
@@ -176,6 +195,33 @@ public class MbtManager{
      */
     public void sendCommand(@NonNull CommandInterface.MbtCommand command) {
        MbtEventBus.postEvent(new CommandRequestEvent(command));
+    }
+
+    /**
+     * Perform a request to start an OAD firmware update.
+     * @param firmwareVersion is the firmware version to install on the connected headset device.
+     * @param stateListener is an optional (nullable) listener that notify the client when the OAD update progress & state change.
+     */
+    public void updateFirmware(FirmwareVersion firmwareVersion, OADStateListener<BaseError> stateListener) {
+        this.oadStateListener = stateListener;
+        OADEvent event = OADEvent.INIT.setEventData(firmwareVersion.getFirmwareVersionAsString());
+        MbtEventBus.postEvent(event);
+    }
+
+    /**
+     * Sets an extended {@link BroadcastReceiver} to the connectionStateListener value
+     * @param connectionStateListener the new {@link BluetoothStateListener}. Set it to null if you want to reset the listener
+     */
+    public void setConnectionStateListener(ConnectionStateListener<BaseError> connectionStateListener) {
+        this.connectionStateListener = connectionStateListener;
+    }
+
+    /**
+     * Sets the {@link EegListener} to the connectionStateListener value
+     * @param EEGListener the new {@link EegListener}. Set it to null if you want to reset the listener
+     */
+    public void setEEGListener(EegListener<BaseError> EEGListener) {
+        this.eegListener = EEGListener;
     }
 
     /**
@@ -271,51 +317,23 @@ public class MbtManager{
     }
 
     /**
-     * Sets an extended {@link BroadcastReceiver} to the connectionStateListener value
-     * @param connectionStateListener the new {@link BluetoothStateListener}. Set it to null if you want to reset the listener
+     * onFirmwareUpdateEvent is called by the Event Bus when a FirmwareUpdateClientEvent event is posted
+     * This event is published by {@link MbtDeviceManager}:
+     * this manager handles the OAD firmware update
+     * @param event contains data transmitted by the publisher : here it contains the new OAD update state or the error that occured if the SDK raised an error.
      */
-    public void setConnectionStateListener(ConnectionStateListener<BaseError> connectionStateListener) {
-        this.connectionStateListener = connectionStateListener;
-    }
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onFirmwareUpdateEvent(@NonNull final FirmwareUpdateClientEvent event) { //warning : do not remove this attribute (consider unsused by the IDE, but actually used)
+        if (this.oadStateListener != null) {
+            if (event.getError() != null)
+                oadStateListener.onError(event.getError(), event.getAdditionalInfo());
 
-    /**
-     * Sets the {@link EegListener} to the connectionStateListener value
-     * @param EEGListener the new {@link EegListener}. Set it to null if you want to reset the listener
-     */
-    public void setEEGListener(EegListener<BaseError> EEGListener) {
-        this.eegListener = EEGListener;
-    }
+            else {
+                if(event.getOadState() != null)
+                    oadStateListener.onStateChanged(event.getOadState());
 
-    public void requestCurrentConnectedDevice(@NonNull final SimpleRequestCallback<MbtDevice> callback) {
-        if (callback == null)
-            return;
-
-        MbtEventBus.postEvent(new DeviceEvents.GetDeviceEvent(), new MbtEventBus.Callback<DeviceEvents.PostDeviceEvent>(){
-            @Override
-            @Subscribe
-            public Void onEventCallback(DeviceEvents.PostDeviceEvent object) {
-                MbtEventBus.registerOrUnregister(false, this);
-                callback.onRequestComplete(object.getDevice());
-                return null;
+                oadStateListener.onProgressPercentChanged(event.getOadProgress());
             }
-        });
-    }
-
-    Set<BaseModuleManager> getRegisteredModuleManagers() {
-        return registeredModuleManagers;
-    }
-
-    /**
-     * Perform a request to start an OAD firmware update.
-     * @param firmwareVersion is the firmware version to install on the connected headset device.
-     * @param stateListener is an optional (nullable) listener that notify the client when the OAD update progress & state change.
-     */
-    public void updateFirmware(FirmwareVersion firmwareVersion, OADStateListener<BaseError> stateListener) {
-        this.oadStateListener = stateListener;
-        OADEvent event = OADEvent.INIT;
-        Bundle eventData = new Bundle();
-        eventData.putString(event.getKey(), firmwareVersion.getFirmwareVersionAsString());
-        event.setEventData(eventData);
-        MbtEventBus.postEvent(event);
+        }
     }
 }

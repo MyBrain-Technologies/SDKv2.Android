@@ -82,6 +82,14 @@ public abstract class MbtDevice {
     public FirmwareVersion getFirmwareVersion() {
         return this.firmwareVersion;
     }
+    /**
+     * Gets the version of the firmware
+     * @return the version of the firmware
+     */
+    @NonNull
+    public String getFirmwareVersionAsString() {
+        return this.firmwareVersion.getFirmwareVersionAsString();
+    }
 
     /**
      * Gets the commercial name of the device/headset - type of hardware
