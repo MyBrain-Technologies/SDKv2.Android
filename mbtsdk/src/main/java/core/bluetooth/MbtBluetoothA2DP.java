@@ -225,7 +225,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                     public void onRequestComplete(MbtDevice device) {
                         if(device == null)
                             return;
-                        if(new VersionHelper(device.getFirmwareVersion()).isFwValidForFeature(VersionHelper.FWFeature.A2DP_FROM_HEADSET)){
+                        if(new VersionHelper(device.getFirmwareVersionAsString()).isValidForFeature(VersionHelper.Feature.A2DP_FROM_HEADSET)){
                             mbtBluetoothManager.disconnectA2DPFromBLE();
                             try {
                                 asyncDisconnection.waitOperationResult(MbtConfig.getBluetoothA2DpConnectionTimeout());

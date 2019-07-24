@@ -154,7 +154,7 @@ public enum BtState {
     /**
      * Failed to replace the current firmware installed with a new one. This failure trigger a disconnection.
      */
-    UPGRADING_FAILURE(OADError.ERROR_FIRMWARE_UPGRADE_FAILED),
+    UPGRADING_FAILURE(OADError.ERROR_FIRMWARE_UPDATE_FAILED),
 
     /**
      * When connection is being disconnected

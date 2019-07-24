@@ -23,6 +23,8 @@ public final class OADError extends BaseError{
     public static OADError ERROR_INVALID_FIRMWARE_VERSION      = new OADError(CODE_RANGE+9, "Firmware version requested is invalid.");
     public static OADError ERROR_UNCOMPLETE_UPDATE             = new OADError(CODE_RANGE+10, "OAD Transfer is not complete");
     public static OADError ERROR_TRANSFER_FAILED               = new OADError(CODE_RANGE+11, "OAD Transfer failed : corruption might occurred while transferring the binary file.");
+    public static OADError ERROR_LOST_CONNECTION               = new OADError( CODE_RANGE+12,  "Lost Headset connection.");
+
 
     private OADError(int code, String exception) {
         super(DOMAIN, code, exception);

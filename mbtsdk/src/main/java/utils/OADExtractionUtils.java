@@ -10,6 +10,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 
+import core.device.oad.OADManager;
+import core.device.oad.PacketCounter;
+
 /**
  * Created by Vincent on 19/08/2015.
  */
@@ -106,12 +109,17 @@ public final class OADExtractionUtils {
         return filename.startsWith(BINARY_FILE_HOOK) && filename.endsWith(BINARY_FILE_FORMAT);
     }
 
+    /**
+     * Returns the fle name of the OAD binary file that match the firmware version given in input
+     * @param firmwareVersion the firmware version
+     * @return the fle name of the OAD binary file that match the firmware version given in input
+     */
     public static String getFileNameForFirmwareVersion(String firmwareVersion){
         return BINARY_FILE_HOOK + firmwareVersion + BINARY_FILE_FORMAT;
     }
 
     /**
-     * Extract the firmware version from the name of an OAD binary file that holds the firmware
+     * Extracts the firmware version from the name of an OAD binary file that holds the firmware
      * @param filename is the OAD binary file that holds the firmware
      * @return the firmware version as a String
      */
@@ -126,17 +134,7 @@ public final class OADExtractionUtils {
     }
 
     /**
-     * Extract the firmware version from an OAD binary file that holds the firmware
-     * @param assetManager is the assets where are stored the OAD binary files
-     * @param filePath is the OAD binary file that holds the firmware
-     * @return the firmware version as a String
-     */
-    public static final String extractFirmwareVersionFromContent(AssetManager assetManager, @NonNull final String filePath) throws FileNotFoundException {
-        return extractFirmwareVersionFromContent(extractFileContent(assetManager, filePath));
-    }
-
-    /**
-     * Extract the firmware version from the content of an OAD binary file that holds the firmware
+     * Extracts the firmware version from the content of an OAD binary file that holds the firmware
      * @param content is the extracted content of the OAD binary file that holds the firmware
      * @return the firmware version as a String
      */
@@ -149,14 +147,42 @@ public final class OADExtractionUtils {
         return new String(tempFirmwareVersion);
     }
 
-    public static final ArrayList<byte[]> extractOADPackets(@NonNull final byte[] content){
+    /**
+     * Chunks the OAD binary file content into small packets and stores them into a list
+     * It also adds the correct block index at the beginning of each block
+     */
+    public static final ArrayList<byte[]> extractOADPackets(PacketCounter packetCounter, @NonNull final byte[] content){
         if (content == null)
             return null;
 
         ArrayList<byte[]> packetsToSend = new ArrayList<>();
-        //todo
-        return packetsToSend;
 
+            while(packetCounter.getNbPacketSent() < packetCounter.getNbPacketToSend()){
+
+                byte[] packet = new byte[OADManager.OAD_PACKET_SIZE];
+                packet[0] = ConversionUtils.loUint16(packetCounter.getNbPacketSent());
+                packet[1] = ConversionUtils.hiUint16(packetCounter.getNbPacketSent());
+                if(packetCounter.getNbBytes() + OADManager.OAD_PAYLOAD_PACKET_SIZE > content.length){
+                    int remainder = content.length - packetCounter.getNbBytes();
+                    System.arraycopy(content, packetCounter.getNbBytes(), packet, OADManager.OAD_INDEX_PACKET_SIZE, remainder);
+                    for(int i = remainder + OADManager.OAD_INDEX_PACKET_SIZE; i < OADManager.OAD_PACKET_SIZE; i++){
+                        packet[i] = (byte)0xFF;
+                    }
+                }else{
+                    System.arraycopy(content, packetCounter.getNbBytes(),
+                            packet, OADManager.OAD_INDEX_PACKET_SIZE,  OADManager.OAD_PAYLOAD_PACKET_SIZE);
+                }
+
+                packetCounter.incrementNbPacketsToSend();
+                packetCounter.incrementNbBytes(OADManager.OAD_PAYLOAD_PACKET_SIZE);
+                packetsToSend.add(packet);
+            }
+            Log.i(TAG, "List of OAD packets ready");
+
+            //Resetting packet counter for the oad session
+            packetCounter.reset(content.length, OADManager.OAD_PACKET_SIZE);
+
+        return packetsToSend;
     }
 
     private static boolean fileExists(String filePath){

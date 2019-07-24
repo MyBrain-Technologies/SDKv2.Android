@@ -14,10 +14,10 @@ import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.ParcelUuid;
 import android.support.annotation.NonNull;
+import android.support.annotation.VisibleForTesting;
 import android.util.Log;
 
 
@@ -34,18 +34,17 @@ import command.BluetoothCommands;
 import command.CommandInterface;
 import command.DeviceCommand;
 
-import command.DeviceCommandEvents;
+import command.DeviceCommandEvent;
+import command.OADCommands;
 import config.MbtConfig;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.BtState;
 import core.bluetooth.IStreamable;
 import core.bluetooth.MbtBluetooth;
 import core.bluetooth.MbtBluetoothManager;
-import core.device.event.OADEvent;
 import core.device.model.DeviceInfo;
 import core.device.model.MelomindDevice;
 import core.device.model.MelomindsQRDataBase;
-import core.device.event.EventListener;
 import engine.clientevents.BaseError;
 import engine.clientevents.BluetoothError;
 import engine.clientevents.ConnectionStateReceiver;
@@ -55,9 +54,10 @@ import utils.LogUtils;
 import utils.BitUtils;
 import utils.MbtAsyncWaitOperation;
 
-import static command.DeviceCommandEvents.CMD_CODE_CONNECT_IN_A2DP_FAILED_ALREADY_CONNECTED;
-import static command.DeviceCommandEvents.CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED;
-import static command.DeviceCommandEvents.CMD_CODE_CONNECT_IN_A2DP_SUCCESS;
+import static command.DeviceCommandEvent.CMD_CODE_CONNECT_IN_A2DP_FAILED_ALREADY_CONNECTED;
+import static command.DeviceCommandEvent.CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED;
+import static command.DeviceCommandEvent.CMD_CODE_CONNECT_IN_A2DP_SUCCESS;
+import static command.DeviceCommandEvent.MBX_CONNECT_IN_A2DP;
 
 /**
  *
@@ -73,22 +73,18 @@ import static command.DeviceCommandEvents.CMD_CODE_CONNECT_IN_A2DP_SUCCESS;
 public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     private static final String TAG = MbtBluetoothLE.class.getSimpleName();
 
+    private final static boolean START = true;
+    private final static boolean STOP = false;
+
     private final static String CONNECT_GATT_METHOD = "connectGatt";
     private final static String REMOVE_BOND_METHOD = "removeBond";
     private final static String REFRESH_METHOD = "refresh";
 
-    private MbtAsyncWaitOperation asyncOperation = new MbtAsyncWaitOperation<Boolean>();
-
-    private MbtAsyncWaitOperation asyncConfiguration = new MbtAsyncWaitOperation<>();
-
-    private EventListener.OADEventListener oadEventListener;
+    private MbtAsyncWaitOperation lock = new MbtAsyncWaitOperation<>();
 
     /**
      * An internal event used to notify MbtBluetoothLE that A2DP has disconnected.
      */
-
-    @NonNull
-    private StreamState streamingState = StreamState.IDLE;
 
     private MbtGattController mbtGattController;
 
@@ -120,6 +116,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             }
         }
     };
+
     /**
      * public constructor that will instanciate this class. It also instanciate a new
      * {@link MbtGattController MbtGattController} instance
@@ -146,32 +143,8 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      */
     @Override
     public synchronized boolean startStream() {
-        if(isStreaming())
-            return true;
-
-        if (!checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_EEG))
-            return false;
-
-        //Adding small sleep to "free" bluetooth
-        try {
-            Thread.sleep(50);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        return enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG));
+        return switchStream(START);
     }
-
-    /**
-     * Enable notifications on HeadsetStatus characteristic in order to have the saturation and DC Offset values
-     */
-    public boolean activateDeviceStatusMonitoring(){
-        if (!checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_EEG))
-            return false;
-
-        return enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_HEADSET_STATUS));
-    }
-
 
     /**
      * This method sends a request to the headset to <strong><code>STOP</code></strong>
@@ -186,13 +159,49 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      */
     @Override
     public boolean stopStream() {
-        if(!isStreaming())
+        return switchStream(STOP);
+    }
+
+    /**
+     * This method sends a request to the headset to <strong><code>START</code></strong> or <strong><code>STOP</code></strong>
+     * the EEG raw data acquisition process and
+     * <strong><code>ENABLES</code></strong> or <strong><code>DISABLED</code></strong>
+     * Bluetooth Low Energy notification to receive the raw data.
+     * If there is already a streaming session started or stopped, nothing happens and true is returned.
+     *
+     * @return              <code>true</code> if request has been sent correctly
+     *                      <code>false</code> on immediate error
+     */
+    private boolean switchStream(boolean isStart) {
+        if(isStreaming() == isStart)
             return true;
 
-        if(!checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_EEG))
+        if (!checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT,
+                MelomindCharacteristics.CHARAC_MEASUREMENT_EEG))
             return false;
 
-        return enableOrDisableNotificationsOnCharacteristic(false, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG));
+        try {
+            Thread.sleep(50); //Adding small sleep to "free" bluetooth
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        return enableOrDisableNotificationsOnCharacteristic(isStart,
+                gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT)
+                        .getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG));
+    }
+
+    /**
+     * Enable notifications on HeadsetStatus characteristic in order to have the saturation and DC Offset values
+     */
+    public boolean activateDeviceStatusMonitoring(){
+        if (!checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT,
+                MelomindCharacteristics.CHARAC_MEASUREMENT_EEG))
+            return false;
+
+        return enableOrDisableNotificationsOnCharacteristic(true,
+                gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT)
+                        .getCharacteristic(MelomindCharacteristics.CHARAC_HEADSET_STATUS));
     }
 
     /**
@@ -255,9 +264,13 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         }
 
         LogUtils.i(TAG, "Now enabling remote notification for characteristic: " + characteristic.getUuid());
-        if (!notificationDescriptor.setValue(enableNotification ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE : BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)) {
+        if (!notificationDescriptor.setValue(enableNotification ?
+                BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE :
+                BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)) {
             final StringBuilder sb = new StringBuilder();
-            for (final byte value : enableNotification ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE : BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE) {
+            for (final byte value : enableNotification ?
+                    BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE :
+                    BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE) {
                 sb.append(value);
                 sb.append(';');
             }
@@ -283,7 +296,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
                 "enable notification... now waiting for confirmation from headset.");
 
         try {
-            asyncOperation.waitOperationResult(MbtConfig.getBluetoothA2DpConnectionTimeout());
+            lock.waitOperationResult(MbtConfig.getBluetoothA2DpConnectionTimeout());
             return true;
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             LogUtils.d(TAG,"Enabling notification failed : "+e);
@@ -345,6 +358,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         if(!getCurrentState().equals(BtState.DEVICE_FOUND) && !getCurrentState().equals(BtState.DATA_BT_CONNECTING))
             currentDevice = null;
     }
+
 
 
     /**
@@ -629,44 +643,30 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     /**
      * Callback triggered by the {@link MbtGattController} callback
      * when an event -not related to a mailbox request sent by the SDK- occurs
-     * @param oadEvent the {@link OADEvent} event that occurs
-     * @param eventData the data associated to the mailbox event detected
-     */
-    void notifyOADEventReceived(OADEvent oadEvent, byte[] eventData) {
-        Bundle eventDataAsBundle = new Bundle();
-        eventDataAsBundle.putByteArray(oadEvent.getKey(), eventData);
-        oadEvent.setEventData(eventDataAsBundle);
-        this.oadEventListener.onOADEvent(oadEvent);
-    }
-
-    /**
-     * Callback triggered by the {@link MbtGattController} callback
-     * when an event -not related to a mailbox request sent by the SDK- occurs
      * @param mailboxEvent the event that occurs
      * @param eventData the data associated to the mailbox event detected
      */
-    void notifyOADEventReceived(byte mailboxEvent, byte[] eventData) {
-        OADEvent oadEvent = OADEvent.getEventFromMailboxCommand(mailboxEvent);
-        notifyOADEventReceived(oadEvent, eventData);
+    void notifyEventReceived(DeviceCommandEvent mailboxEvent, byte[] eventData) {
+        mbtBluetoothManager.notifyEventReceived(mailboxEvent, eventData);
     }
 
-    void notifyCommandResponseReceived(Object response) {
-        asyncConfiguration.stopWaitingOperation(response);
+    void stopWaitingOperation(Object response) {
+        lock.stopWaitingOperation(response);
     }
 
-    void notifyConnectionResponseReceived(byte mailboxEvent, byte mailboxResponse) {
+    void notifyConnectionResponseReceived(DeviceCommandEvent mailboxEvent, byte mailboxResponse) {
         if (!mbtGattController.isConnectionMailboxEvent(mailboxEvent)){
             LogUtils.e(TAG, "Error : received response is not related to Bluetooth connection");
             return;
         }
-        LogUtils.i(TAG, "Received response for " + (mailboxEvent == DeviceCommandEvents.MBX_CONNECT_IN_A2DP ? "connection" : "disconnection" + " : " + mailboxResponse));
+        LogUtils.i(TAG, "Received response for " + (mailboxEvent == DeviceCommandEvent.MBX_CONNECT_IN_A2DP ? "connection" : "disconnection" + " : " + mailboxResponse));
 
-        if(mailboxEvent == DeviceCommandEvents.MBX_CONNECT_IN_A2DP){
-            if(BitUtils.areByteEquals(CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED, mailboxResponse))
+        if(mailboxEvent == DeviceCommandEvent.MBX_CONNECT_IN_A2DP){
+            if(BitUtils.areByteEquals(MBX_CONNECT_IN_A2DP.getResponseCodeForKey(CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED), mailboxResponse))
                 mbtBluetoothManager.notifyConnectionStateChanged(BtState.JACK_CABLE_CONNECTED);
 
-            else if(BitUtils.areByteEquals(CMD_CODE_CONNECT_IN_A2DP_SUCCESS, mailboxResponse)
-                || BitUtils.areByteEquals(CMD_CODE_CONNECT_IN_A2DP_FAILED_ALREADY_CONNECTED, mailboxResponse))
+            else if(BitUtils.areByteEquals(MBX_CONNECT_IN_A2DP.getResponseCodeForKey(CMD_CODE_CONNECT_IN_A2DP_SUCCESS), mailboxResponse)
+                || BitUtils.areByteEquals(MBX_CONNECT_IN_A2DP.getResponseCodeForKey(CMD_CODE_CONNECT_IN_A2DP_FAILED_ALREADY_CONNECTED), mailboxResponse))
                 mbtBluetoothManager.notifyConnectionStateChanged(BtState.AUDIO_BT_CONNECTION_SUCCESS);
         }else
             mbtBluetoothManager.notifyConnectionStateChanged(BtState.AUDIO_BT_DISCONNECTED);
@@ -683,7 +683,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     private Object waitResponseForCommand(CommandInterface.MbtCommand command){
         Log.d(TAG, "Wait response of device command ");
             try {
-                return asyncConfiguration.waitOperationResult(11000);
+                return lock.waitOperationResult(11000);
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 LogUtils.e(TAG, "Device command response not received : "+e);
                 if(e instanceof TimeoutException)
@@ -709,7 +709,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         Object response = null;
 
         if (!isConnectedDeviceReadyForCommand()){ //error returned if no headset is connected
-            LogUtils.w(TAG, "Command not sent : "+command);
+            LogUtils.e(TAG, "Command not sent : "+command);
             command.onError(BluetoothError.ERROR_NOT_CONNECTED, null);
         } else { //any command is not sent if no device is connected
             if (command.isValid()){//any invalid command is not sent : validity criteria are defined in each Bluetooth implemented class , the onError callback is triggered in the constructor of the command object
@@ -746,7 +746,11 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             return changeMTU(((Integer)command.serialize()));
 
         else if(command instanceof DeviceCommand)
-            return writeCharacteristic((byte[])command.serialize(), MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX);
+            return writeCharacteristic((byte[])command.serialize(),
+                    MelomindCharacteristics.SERVICE_MEASUREMENT,
+                    command instanceof OADCommands ?
+                            MelomindCharacteristics.CHARAC_MEASUREMENT_OAD_PACKETS_TRANSFER :
+                            MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX);
 
         return false;
     }
@@ -773,12 +777,11 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         return this.gatt.requestMtu(newMTU);
     }
 
-    private boolean writeCharacteristic(@NonNull byte[] buffer, UUID characteristic) {
+    private boolean writeCharacteristic(@NonNull byte[] buffer, UUID service, UUID characteristic) {
         Log.d(TAG, "write characteristic "+ Arrays.toString(buffer));
         if (buffer.length == 0)
             return false;
 
-        UUID service = MelomindCharacteristics.SERVICE_MEASUREMENT;
         if(!isNotificationEnabledOnCharacteristic(service, characteristic)){
             enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(service).getCharacteristic(characteristic));
         }
@@ -834,7 +837,15 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             super.notifyBatteryReceived(value);
     }
 
-    private boolean refreshDeviceCache(BluetoothGatt gatt) {
+    /**
+     * This method uses reflexion to get the refresh hidden method from BluetoothGatt class. Is is used
+     * to clean up the cache that Android system uses when connecting to a known BluetoothGatt peripheral.
+     * It is recommanded to use it right after updating the firmware, especially when the bluetooth
+     * characteristics have been updated.
+     * @return true if method invocation worked, false otherwise
+     */
+    @Override
+    public boolean clearMobileDeviceCache() {
         try {
             Method localMethod = gatt.getClass().getMethod(REFRESH_METHOD);
             if (localMethod != null)
@@ -845,26 +856,8 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         return false;
     }
 
-    void stopWaitingOperation() {
-        asyncOperation.stopWaitingOperation(false);
-    }
-
-    void setAsyncConfiguration(MbtAsyncWaitOperation asyncConfiguration) {
-        this.asyncConfiguration = asyncConfiguration;
-    }
-    void setAsyncOperation(MbtAsyncWaitOperation asyncOperation) {
-        this.asyncOperation = asyncOperation;
-    }
-
-    public void startOADUpdate(EventListener.OADEventListener oadEventListener){
-        setOadEventListener(oadEventListener);
-    }
-
-    public void stopOADUpdate(){
-        setOadEventListener(null);
-    }
-
-    void setOadEventListener(EventListener.OADEventListener oadEventListener) {
-        this.oadEventListener = oadEventListener;
+    @VisibleForTesting
+    void setLock(MbtAsyncWaitOperation lock) {
+        this.lock = lock;
     }
 }

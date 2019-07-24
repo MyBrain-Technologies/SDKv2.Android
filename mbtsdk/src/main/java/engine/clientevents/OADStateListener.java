@@ -18,9 +18,9 @@ public interface OADStateListener<U extends BaseError> extends BaseErrorEvent<U>
     /**
      * Callback triggered when a new step of the OAD (Over the Air Download)
      * is completed during a firmware update.
-     * See {@link OADManager.OADState} for all possible states
+     * See {@link OADState} for all possible states
      */
-    void onStateChanged(OADManager.OADState newState);
+    void onStateChanged(OADState newState);
 
     /**
      * Callback triggered when the firmware transfer progress changes
