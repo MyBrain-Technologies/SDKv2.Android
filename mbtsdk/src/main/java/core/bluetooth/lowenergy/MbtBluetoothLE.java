@@ -42,7 +42,6 @@ import core.bluetooth.BtState;
 import core.bluetooth.IStreamable;
 import core.bluetooth.MbtBluetooth;
 import core.bluetooth.MbtBluetoothManager;
-import core.device.event.OADEvent;
 import core.device.model.DeviceInfo;
 import core.device.model.MelomindDevice;
 import core.device.model.MelomindsQRDataBase;
@@ -81,7 +80,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     private final static String REMOVE_BOND_METHOD = "removeBond";
     private final static String REFRESH_METHOD = "refresh";
 
-    private MbtAsyncWaitOperation waiter = new MbtAsyncWaitOperation<>();
+    private MbtAsyncWaitOperation lock = new MbtAsyncWaitOperation<>();
 
     /**
      * An internal event used to notify MbtBluetoothLE that A2DP has disconnected.
@@ -297,7 +296,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
                 "enable notification... now waiting for confirmation from headset.");
 
         try {
-            waiter.waitOperationResult(MbtConfig.getBluetoothA2DpConnectionTimeout());
+            lock.waitOperationResult(MbtConfig.getBluetoothA2DpConnectionTimeout());
             return true;
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             LogUtils.d(TAG,"Enabling notification failed : "+e);
@@ -644,16 +643,6 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     /**
      * Callback triggered by the {@link MbtGattController} callback
      * when an event -not related to a mailbox request sent by the SDK- occurs
-     * @param oadEvent the {@link OADEvent} event that occurs
-     * @param eventData the data associated to the mailbox event detected
-     */
-    void notifyEventReceived(OADEvent oadEvent, byte[] eventData) {
-
-    }
-
-    /**
-     * Callback triggered by the {@link MbtGattController} callback
-     * when an event -not related to a mailbox request sent by the SDK- occurs
      * @param mailboxEvent the event that occurs
      * @param eventData the data associated to the mailbox event detected
      */
@@ -662,7 +651,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     }
 
     void stopWaitingOperation(Object response) {
-        waiter.stopWaitingOperation(response);
+        lock.stopWaitingOperation(response);
     }
 
     void notifyConnectionResponseReceived(DeviceCommandEvent mailboxEvent, byte mailboxResponse) {
@@ -694,7 +683,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     private Object waitResponseForCommand(CommandInterface.MbtCommand command){
         Log.d(TAG, "Wait response of device command ");
             try {
-                return waiter.waitOperationResult(11000);
+                return lock.waitOperationResult(11000);
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 LogUtils.e(TAG, "Device command response not received : "+e);
                 if(e instanceof TimeoutException)
@@ -848,7 +837,15 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             super.notifyBatteryReceived(value);
     }
 
-    private boolean refreshDeviceCache(BluetoothGatt gatt) {
+    /**
+     * This method uses reflexion to get the refresh hidden method from BluetoothGatt class. Is is used
+     * to clean up the cache that Android system uses when connecting to a known BluetoothGatt peripheral.
+     * It is recommanded to use it right after updating the firmware, especially when the bluetooth
+     * characteristics have been updated.
+     * @return true if method invocation worked, false otherwise
+     */
+    @Override
+    public boolean clearMobileDeviceCache() {
         try {
             Method localMethod = gatt.getClass().getMethod(REFRESH_METHOD);
             if (localMethod != null)
@@ -860,7 +857,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     }
 
     @VisibleForTesting
-    void setWaiter(MbtAsyncWaitOperation waiter) {
-        this.waiter = waiter;
+    void setLock(MbtAsyncWaitOperation lock) {
+        this.lock = lock;
     }
 }

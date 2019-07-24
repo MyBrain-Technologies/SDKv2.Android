@@ -110,8 +110,8 @@ final class MbtGattController extends BluetoothGattCallback {
                 break;
             case BluetoothGatt.STATE_DISCONNECTED:
                 //if(isDownloadingFirmware) //todo OAD
-                //    refreshDeviceCache(gatt);// in this case the connection went well for a while, but just got lost
-                //mbtBluetoothLE.notifyEventReceived(OADEvent.DISCONNECTED_FOR_REBOOT, null);
+                //    clearMobileDeviceCache(gatt);// in this case the connection went well for a while, but just got lost
+                //mbtBluetoothLE.notifyEventReceived(, null);
                 LogUtils.e(TAG, "Gatt returned disconnected state");
                 gatt.close();
                 //todo dissociate connection in progress case, OAD in progress case, regular case
@@ -238,7 +238,7 @@ final class MbtGattController extends BluetoothGattCallback {
     public void onCharacteristicWrite(BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, int status) {
         super.onCharacteristicWrite(gatt, characteristic, status);
         Log.d(TAG, "on Characteristic Write value: "+(characteristic.getValue() == null ? characteristic.getValue() : Arrays.toString(characteristic.getValue())) );
-        mbtBluetoothLE.stopWaitingOperation(status == BluetoothGatt.GATT_SUCCESS);
+        mbtBluetoothLE.stopWaitingOperation(BitUtils.booleanToBit(status == BluetoothGatt.GATT_SUCCESS));
     }
 
     @Override
@@ -251,7 +251,7 @@ final class MbtGattController extends BluetoothGattCallback {
         } else if (characteristic.getUuid().compareTo(MelomindCharacteristics.CHARAC_HEADSET_STATUS) == 0) {
             this.mbtBluetoothLE.notifyNewHeadsetStatus(characteristic.getValue());
         } else if (characteristic.getUuid().compareTo(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX) == 0) {
-            this.notifyMailboxEventReceived(characteristic);
+            this.onMailboxEventReceived(characteristic);
             mbtBluetoothLE.stopWaitingOperation(true);
         }
     }
@@ -291,8 +291,8 @@ final class MbtGattController extends BluetoothGattCallback {
      * Notifies that the connected headset returned a response after a characteristic writing operation
      * @param characteristic
      */
-    private void notifyMailboxEventReceived(BluetoothGattCharacteristic characteristic) {
-        Log.d(TAG, "Notify mailbox event received " + Arrays.toString(characteristic.getValue()));
+    private void onMailboxEventReceived(BluetoothGattCharacteristic characteristic) {
+        Log.d(TAG, "Mailbox event received " + Arrays.toString(characteristic.getValue()));
         byte[] response = CommandUtils.deserialize(characteristic.getValue());
         byte mailboxEvent = characteristic.getValue()[0];
         DeviceCommandEvent event = DeviceCommandEvent.getEventFromIdentifierCode(mailboxEvent);

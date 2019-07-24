@@ -524,11 +524,5 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
     //todo
     public void sendCommand(CommandInterface.MbtCommand command) {
     }
-    //todo
-    public void startOADUpdate(EventListener.OADEventListener oadEventPoster){
-    }
-    //todo
-    public void stopOADUpdate(){
-    }
 }
 

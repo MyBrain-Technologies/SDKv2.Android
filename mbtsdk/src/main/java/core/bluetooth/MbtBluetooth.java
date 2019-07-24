@@ -13,7 +13,6 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 
 import core.device.model.DeviceInfo;
-import core.device.event.OADEvent;
 
 import utils.LogUtils;
 import utils.MbtLock;
@@ -100,12 +99,6 @@ public abstract class MbtBluetooth implements IConnectable{
         }
     }
 
-    void notifyMailboxEvent(byte code, Object value){
-//        if(this.mailboxEventListener != null){
-//            this.mailboxEventListener.onMailBoxEvent(code, value);
-//        }
-    }
-
     protected void notifyBatteryReceived(int value){
         mbtBluetoothManager.notifyDeviceInfoReceived(DeviceInfo.BATTERY, String.valueOf(value));
     }
@@ -167,4 +160,23 @@ public abstract class MbtBluetooth implements IConnectable{
             this.currentState = currentState;
         }
     }
+
+    public void resetMobileDeviceBluetoothAdapter() {
+        bluetoothAdapter.disable();
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        bluetoothAdapter.enable();
+    }
+
+    /**
+     * This method is used to clean up the cache that Android system uses
+     * when connecting to a known Bluetooth peripheral.
+     * It is recommanded to use it right after updating the firmware, especially when the bluetooth
+     * characteristics have been updated.
+     * @return true if the refresh worked, false otherwise
+     */
+    public abstract boolean clearMobileDeviceCache();
 }
