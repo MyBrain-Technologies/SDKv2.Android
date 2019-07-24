@@ -771,21 +771,21 @@ public class OADManagerTest {
         } catch (TimeoutException e) {
             e.printStackTrace();
         }
-        //reboot might be called when a disconnected state is triggered so here we don't need to do anything
+        //resetCacheAndKeys might be called when a disconnected state is triggered so here we don't need to do anything
         assertEquals(oadManager.getCurrentState(), OADState.ABORTED);
 
     }
 
     /**
      * Check that the OAD internal state is set to {@link OADState#RECONNECTING}
-     * once the reboot has been performed.
+     * once the resetCacheAndKeys has been performed.
      */
     @Test
     public void reconnect_started(){
         oadManager.init(FILE_PATH);
         oadManager.transferOADFile();
 
-        oadManager.reboot();
+        oadManager.resetCacheAndKeys();
 
         assertEquals(oadManager.getCurrentState(), OADState.RECONNECTING);
     }
@@ -798,7 +798,7 @@ public class OADManagerTest {
     public void reconnect_success(){
         oadManager.init(FILE_PATH);
         oadManager.transferOADFile();
-        oadManager.reboot();
+        oadManager.resetCacheAndKeys();
 
         oadManager.reconnect();
 
@@ -814,7 +814,7 @@ public class OADManagerTest {
     public void reconnect_failure(){
         oadManager.init(FILE_PATH);
         oadManager.transferOADFile();
-        oadManager.reboot();
+        oadManager.resetCacheAndKeys();
         MbtBluetoothLE bluetoothLE = Mockito.mock(MbtBluetoothLE.class);
         ArgumentCaptor<StartOrContinueConnectionRequestEvent> captor = ArgumentCaptor.forClass(StartOrContinueConnectionRequestEvent.class);
         try {
@@ -842,7 +842,7 @@ public class OADManagerTest {
     public void verifyingFirmwareVersion_success(){
         oadManager.init(FILE_PATH);
         oadManager.transferOADFile();
-        oadManager.reboot();
+        oadManager.resetCacheAndKeys();
         OADManager oadManager = Mockito.mock(OADManager.class);
         MbtBluetoothLE bluetoothLE = Mockito.mock(MbtBluetoothLE.class);
         ArgumentCaptor<StartOrContinueConnectionRequestEvent> captor = ArgumentCaptor.forClass(StartOrContinueConnectionRequestEvent.class);
@@ -881,7 +881,7 @@ public class OADManagerTest {
     public void verifyingFirmwareVersion_failure(){
         oadManager.init(FILE_PATH);
         oadManager.transferOADFile();
-        oadManager.reboot();
+        oadManager.resetCacheAndKeys();
         OADManager oadManager = Mockito.mock(OADManager.class);
         MbtBluetoothLE bluetoothLE = Mockito.mock(MbtBluetoothLE.class);
         ArgumentCaptor<StartOrContinueConnectionRequestEvent> captor = ArgumentCaptor.forClass(StartOrContinueConnectionRequestEvent.class);

@@ -48,6 +48,7 @@ import eventbus.MbtEventBus;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.ConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
+import eventbus.events.FirmwareUpdateClientEvent;
 import features.MbtDeviceType;
 import features.MbtFeatures;
 import mbtsdk.com.mybraintech.mbtsdk.R;
@@ -80,6 +81,10 @@ public class MbtManager{
      * using custom callback interfaces.
      */
     private ConnectionStateListener<BaseError> connectionStateListener;
+
+    /**
+     * Listener used to notify the SDK client when the current OAD state changes or when the SDK raises an error.
+     */
     private OADStateListener oadStateListener;
     private EegListener<BaseError> eegListener;
     private DeviceBatteryListener<BaseError> deviceInfoListener;
@@ -313,5 +318,26 @@ public class MbtManager{
         this.oadStateListener = stateListener;
         OADEvent event = OADEvent.INIT.setEventData(firmwareVersion.getFirmwareVersionAsString());
         MbtEventBus.postEvent(event);
+    }
+
+    /**
+     * onFirmwareUpdateEvent is called by the Event Bus when a FirmwareUpdateClientEvent event is posted
+     * This event is published by {@link MbtDeviceManager}:
+     * this manager handles the OAD firmware update
+     * @param event contains data transmitted by the publisher : here it contains the new OAD update state or the error that occured if the SDK raised an error.
+     */
+    @Subscribe(threadMode = ThreadMode.MAIN, priority = 1)
+    public void onFirmwareUpdateEvent(@NonNull final FirmwareUpdateClientEvent event) { //warning : do not remove this attribute (consider unsused by the IDE, but actually used)
+        if (this.oadStateListener != null) {
+            if (event.getError() != null)
+                oadStateListener.onError(event.getError(), event.getAdditionalInfo());
+
+            else {
+                if(event.getOadState() != null)
+                    oadStateListener.onStateChanged(event.getOadState());
+
+                oadStateListener.onProgressPercentChanged(event.getOadProgress());
+            }
+        }
     }
 }

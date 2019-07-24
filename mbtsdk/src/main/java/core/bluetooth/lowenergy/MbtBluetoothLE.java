@@ -837,7 +837,15 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             super.notifyBatteryReceived(value);
     }
 
-    private boolean refreshDeviceCache(BluetoothGatt gatt) {
+    /**
+     * This method uses reflexion to get the refresh hidden method from BluetoothGatt class. Is is used
+     * to clean up the cache that Android system uses when connecting to a known BluetoothGatt peripheral.
+     * It is recommanded to use it right after updating the firmware, especially when the bluetooth
+     * characteristics have been updated.
+     * @return true if method invocation worked, false otherwise
+     */
+    @Override
+    public boolean clearMobileDeviceCache() {
         try {
             Method localMethod = gatt.getClass().getMethod(REFRESH_METHOD);
             if (localMethod != null)

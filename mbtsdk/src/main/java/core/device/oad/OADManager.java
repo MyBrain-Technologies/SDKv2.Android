@@ -14,7 +14,6 @@ import java.io.FileNotFoundException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
-import command.CommandInterface;
 import command.OADCommands;
 import core.device.event.OADEvent;
 import core.device.model.FirmwareVersion;
@@ -23,7 +22,7 @@ import engine.clientevents.BaseError;
 import engine.clientevents.BaseErrorEvent;
 import engine.clientevents.BluetoothError;
 import engine.clientevents.OADError;
-import engine.clientevents.OADStateListener;
+import eventbus.events.FirmwareUpdateClientEvent;
 import utils.BitUtils;
 import utils.LogUtils;
 import utils.MbtAsyncWaitOperation;
@@ -67,7 +66,7 @@ public final class OADManager {
      * Key used to get the firmware version passed through the bundle given by the {@link android.bluetooth.BluetoothManager}
      * to the current OAD manager in order to execute the action that matchs the current state.
      */
-    private final static String FIRMWARE_VERSION = "FIRMWARE_VERSION";
+    public final static String FIRMWARE_VERSION = "FIRMWARE_VERSION";
 
     /**
      * Key used to get the validation status passed through the bundle given by the {@link android.bluetooth.BluetoothManager}
@@ -112,12 +111,6 @@ public final class OADManager {
      * so that we can know which step is the current step at any moment of the update process.
      */
     private OADState currentState;
-
-    /**
-     * Listener used to notify the SDK client when the current OAD state changes or when the SDK raises an error.
-     */
-    private OADStateListener stateListener;
-
     /**
      * Packet counter that is incremented at every sent OAD packet (chunk of file that holds the firmware to install)
      */
@@ -127,17 +120,17 @@ public final class OADManager {
 
     MbtAsyncWaitOperation<Boolean> waiter;
 
-    public OADManager(Context context, OADContract oadContract) {
+    public OADManager(Context context, OADContract oadContract, Bundle initData) {
         this.context = context;
         this.oadContext = new OADContext();
         this.oadContract = oadContract;
+        this.currentState = null;
+        onOADStateChanged(OADState.INITIALIZING, initData);
     }
 
     private void switchToNextStep(@Nullable Bundle actionData) {
-        LogUtils.d(TAG, "switch to next step ");
-        onOADStateChanged(getCurrentState() == null ?
-                OADState.INITIALIZING : getCurrentState().getNextState(),
-                actionData);
+        LogUtils.d(TAG, "Switch to next step");
+        onOADStateChanged(getCurrentState().nextState(), actionData);
     }
 
     /**
@@ -145,16 +138,14 @@ public final class OADManager {
      * Each step of the OAD update process is represented with a state machine
      * so that we can know which step is the current step at any moment of the update process.
      */
-    private OADState getCurrentState(){
+    public OADState getCurrentState(){
         return currentState;
     }
 
     void onOADStateChanged(OADState state, @Nullable Bundle actionData) {
         LogUtils.d(TAG, "OAD State changed : "+currentState +" > "+state);
         currentState = state;
-        stateListener.onStateChanged(currentState);
-        stateListener.onProgressPercentChanged(currentState.convertToProgress());
-
+        oadContract.notifyClient(new FirmwareUpdateClientEvent(currentState));
         if(currentState != null)
             currentState.executeAction(actionData);
     }
@@ -171,16 +162,16 @@ public final class OADManager {
      * @param firmwareVersion is the firmware version to install
      * @return true if the
      */
-    boolean init(FirmwareVersion firmwareVersion){
+    void init(FirmwareVersion firmwareVersion){
         LogUtils.d(TAG, "Initialize the OAD update for version "+firmwareVersion);
         String oadFilePath = OADExtractionUtils.getFileNameForFirmwareVersion(firmwareVersion.getFirmwareVersionAsString());
         oadContext.setOADfilePath(oadFilePath);
         try {
             byte[] content = OADExtractionUtils.extractFileContent(context.getAssets(), oadContext.getOADfilePath());
-            Pair<Boolean, String> validityStatusAndReason = checkFileContentValidity(content);
-            if(!validityStatusAndReason.first){
-                stateListener.onError(OADError.ERROR_INIT_FAILED, validityStatusAndReason.second);
-                return false;
+            Pair<Boolean, String> validityStatusAndError = checkFileContentValidity(content);
+            if(!validityStatusAndError.first){
+                onError(OADError.ERROR_INIT_FAILED, validityStatusAndError.second);
+                return;
             }
 
             packetCounter = new PacketCounter(content.length, OAD_PACKET_SIZE);
@@ -188,12 +179,21 @@ public final class OADManager {
             oadContext.setPacketsToSend(OADExtractionUtils.extractOADPackets(packetCounter, content));
             oadContext.setFirmwareVersion(OADExtractionUtils.extractFirmwareVersionFromContent(content));
         } catch (FileNotFoundException e) {
-            stateListener.onError(OADError.ERROR_INIT_FAILED, e.getMessage());
-            return false;
+            onError(OADError.ERROR_INIT_FAILED, e.getMessage());
+            return;
         }
-        return true;
+        switchToNextStep(null);
     }
 
+    private void onProgressChanged(){
+        currentState.incrementProgress();
+        oadContract.notifyClient(new FirmwareUpdateClientEvent(currentState.convertToProgress()));
+    }
+
+    private void onError(BaseError error, String additionalInfo){
+        oadContract.notifyClient(new FirmwareUpdateClientEvent(error, additionalInfo));
+        abort(error.toString());
+    }
 
     /**
      * Check that the OAD file content extracted is valid to start the OAD update
@@ -211,38 +211,10 @@ public final class OADManager {
         return new Pair<>(additionalErrorInfo.isEmpty(), additionalErrorInfo);
     }
 
-    private void startOADUpdate(FirmwareVersion firmwareVersion){
-        init(firmwareVersion);
-        switchToNextStep(null);
-    }
-
     void requestFirmwareValidation(short nbPacketToSend, FirmwareVersion firmwareVersion){
         OADCommands.RequestFirmwareValidation requestFirmwareValidation = new OADCommands.RequestFirmwareValidation(
                 firmwareVersion,
-                nbPacketToSend,
-                new CommandInterface.CommandCallback<byte[]>() { //callback that catch errors and messages of the peripheral headset device in response to the request
-                    @Override
-                    public void onError(CommandInterface.MbtCommand request, BaseError error, String additionalInfo) {
-                       // OADManager.this.oadContract.onError(error, "Firmware validation failed : "+additionalInfo);
-                    }
-
-                    @Override
-                    public void onRequestSent(CommandInterface.MbtCommand request) { }
-
-                    /**
-                     * Response sent by the headset device related to the firmware validation request.
-                     * The response is 0 if the current firmware rejects the firmware to install.
-                     * @param request is the firmware validation request
-                     * @param response is the response sent by the headset device related to the firmware validation request
-                     *                 the response received can be null if a timeout occurs
-                     */
-                    @Override
-                    public void onResponseReceived(CommandInterface.MbtCommand request, byte[] response) {
-                        boolean isValidationSuccess = !BitUtils.isZero(response[0]);
-                        OADEvent event = OADEvent.FIRMWARE_VALIDATION_RESPONSE.setEventData(isValidationSuccess);
-                        onOADEvent(event);
-                    }
-                });
+                nbPacketToSend);
         if(oadContract != null)
             oadContract.requestFirmwareValidation(requestFirmwareValidation);
     }
@@ -255,17 +227,13 @@ public final class OADManager {
      * @return true if the transfer succeeded, false if it timed out or failed.
      */
     void transferOADFile(int timeout){
-
         sendOADPacket(packetCounter.getIndexOfNextPacketToSend());
-        try {
-            waiter = new MbtAsyncWaitOperation<>();
-            boolean isTransferSuccess = waiter.waitOperationResult(timeout);
+
+            boolean isTransferSuccess = waitUntilTimeout(timeout);
             if(isTransferSuccess)
                 switchToNextStep(null);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            LogUtils.e(TAG, "OAD file transfer failed: "+e);
-            //oadContract.onError(OADError.ERROR_TRANSFER_FAILED, ""+e);
-        }
+            else
+                onError(OADError.ERROR_TIMEOUT_UPDATE, "Transfer timed out.");
     }
 
     /**
@@ -276,75 +244,42 @@ public final class OADManager {
         new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
             @Override
             public void run() {
-                OADCommands.SendPacket sendPacket = new OADCommands.SendPacket( //todo check difference performance sans passer par BUS et avec , changer retour par bus
-                        oadContext.getPacketsToSend().get(packetIndex),
-                        new CommandInterface.SimpleCommandCallback(){ //callback that catch errors and messages of the peripheral headset device in response to the request
-                            @Override
-                            public void onError(CommandInterface.MbtCommand request, BaseError error, String additionalInfo) {
-                                //OADManager.this.oadContract.onError(error, "Send packet operation failed : "+additionalInfo);
-                                waiter.stopWaitingOperation(false);
-                            }
+                OADCommands.SendPacket sendPacket = new OADCommands.SendPacket(
+                        oadContext.getPacketsToSend().get(packetIndex));
 
-                            /**
-                             * Callback triggered when a sending packet operation has been performed.
-                             * @param request is the send packet request
-                             */
-                            @Override
-                            public void onRequestSent(CommandInterface.MbtCommand request) {
-                                packetCounter.incrementNbPacketsSent();
-                                currentState.incrementProgress();
-                                stateListener.onProgressPercentChanged(currentState.convertToProgress());
-                                if(packetCounter.areAllPacketsSent()) {
-                                    waiter.stopWaitingOperation(true);
-                                }else
-                                    sendOADPacket(packetCounter.getIndexOfNextPacketToSend());
-                            }
-                        });
                 if(oadContract != null)
                     oadContract.transferPacket(sendPacket);
             }
         },100);
     }
 
-    boolean reboot(int timeout){
-
-        return true;//todo
+    /**
+     * Method triggered when an OAD packet has been well sent in Bluetooth to the peripheral headset device.
+     */
+    private void onOADPacketSent(){
+        packetCounter.incrementNbPacketsSent();
+        onProgressChanged();
+        if(packetCounter.areAllPacketsSent()) {
+            stopWaiting(true);
+        }else
+            sendOADPacket(packetCounter.getIndexOfNextPacketToSend());
     }
 
-    boolean startWaiting(int timeout){
+    /**
+     * Wait an OAD event to be triggered until timeout
+     */
+    boolean waitUntilTimeout(int timeout){
         try {
             waiter = new MbtAsyncWaitOperation<>();
             return waiter.waitOperationResult(timeout);
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            e.printStackTrace();
+            LogUtils.e(TAG,""+e);
         }
         return false;
     }
 
     void stopWaiting(boolean isSuccess){
         waiter.stopWaitingOperation(isSuccess);
-    }
-
-    boolean reconnect(){
-
-        return true;//todo
-    }
-
-    /**
-     * Return true if the current firmware version is equal to the input firmware version, false otherwise.
-     * @return true if the current firmware version is equal to the input firmware version, false otherwise.
-     */
-    boolean verifyFirmwareVersion(){
-        return true/*oadContext.getFirmwareVersion() //todo
-                .compareFirmwareVersion(
-                        deviceManager.getmCurrentConnectedDevice().getFirmwareVersion())*/;
-    }
-
-    /**
-     * Set a listener used to notify the SDK client when the current OAD state changes or when the SDK raises an error.
-     */
-    void setStateListener(OADStateListener stateListener) {
-        this.stateListener = stateListener;
     }
 
     /**
@@ -355,62 +290,28 @@ public final class OADManager {
     public void onOADEvent(OADEvent event) {
         LogUtils.d(TAG, "on OAD event "+event.toString());
         if(oadContract != null){
-            if(event.equals(OADEvent.LOST_PACKET))
-                packetCounter.resetNbPacketsSent(event.getEventDataAsByteArray()); //Packet index is set back to the requested value
-            else
-                switchToNextStep(event.getEventData());
-        }
-    }
+            switch (event){
+                case LOST_PACKET:
+                    packetCounter.resetNbPacketsSent(event.getEventDataAsByteArray()); //Packet index is set back to the requested value
+                    break;
 
-    /**
-     * Return true if the firmware version is equal to the last released version.
-     */
-    public boolean isFirmwareVersionUpToDate(FirmwareVersion firmwareVersion){
-        boolean isUpToDate = true;
-        String[] deviceFirmwareVersion = firmwareVersion.getFirmwareVersionAsString().split(VersionHelper.VERSION_SPLITTER);
-        String[] OADFileFirmwareVersion = getLastFirmwareVersion();
+                case DISCONNECTED:
+                    abort("Headset device disconnected");
+                    break;
 
-        if(deviceFirmwareVersion.length < VersionHelper.VERSION_LENGTH || firmwareVersion.equals(MbtDevice.DEFAULT_FW_VERSION)){
-            LogUtils.e(TAG, "Firmware version is invalid");
-            return true;
-        }
+                    case PACKET_TRANSFERRED:
+                    onOADPacketSent();
+                    break;
 
-        //Compare it to latest binary file either from server or locally
-        if(OADFileFirmwareVersion == null){
-            LogUtils.e(TAG, "No binary file found");
-            return true;
-        }
-        if(OADFileFirmwareVersion.length > VersionHelper.VERSION_LENGTH){ //trimming initial array
-            String[] firmwareVersionToCopy = new String[VersionHelper.VERSION_LENGTH];
-            System.arraycopy(OADFileFirmwareVersion, 0, firmwareVersionToCopy, 0, firmwareVersionToCopy.length);
-            OADFileFirmwareVersion = firmwareVersionToCopy.clone();
-        }
+                default:
+                    if(waiter.isWaiting())
+                        stopWaiting(true);
 
-        for (String character : OADFileFirmwareVersion) {
-            if(character == null){
-                LogUtils.e(TAG, "error when parsing fw version");
-                return true;
+                    switchToNextStep(event.getEventData());
+                    break;
             }
         }
-
-        for(int i = 0; i < deviceFirmwareVersion.length; i++){
-
-            if(Integer.parseInt(deviceFirmwareVersion[i]) > Integer.parseInt(OADFileFirmwareVersion[i])){ //device value is stricly superior to bin value so it's even more recent
-                break;
-            }else if(Integer.parseInt(deviceFirmwareVersion[i])< Integer.parseInt(OADFileFirmwareVersion[i])){ //device value is inferior to bin. update is necessary
-                isUpToDate = false;
-                LogUtils.i(TAG, "update is necessary");
-                break;
-            }
-        }
-
-        return isUpToDate;
     }
-
-    private String[] getLastFirmwareVersion() {
-        return null; //todo
-    }
-
     /**
      * Each step of the OAD update process is represented with a state machine
      * so that we can know which step is the current step at any moment of the update process.
@@ -423,17 +324,18 @@ public final class OADManager {
          * the file is chucked into small packets.
          */
         INITIALIZING(0){
+
             @Override
             public void executeAction(Bundle actionData) {
                 FirmwareVersion firmwareVersion = getFirmwareVersion(actionData);
                 if(firmwareVersion != null)
-                    oadManager.startOADUpdate(firmwareVersion);
+                    oadManager.init(firmwareVersion);
                 else
                     onError(getError(), null);
             }
 
             @Override
-            public OADState getNextState() {
+            public OADState nextState() {
                 return INITIALIZED;
             }
 
@@ -443,7 +345,7 @@ public final class OADManager {
             }
 
             private FirmwareVersion getFirmwareVersion(Bundle actionData){
-                return (FirmwareVersion)getObjectFromBundleForKey(actionData,FIRMWARE_VERSION);
+                return new FirmwareVersion(actionData.getString(FIRMWARE_VERSION));
             }
         },
 
@@ -462,7 +364,7 @@ public final class OADManager {
             }
 
             @Override
-            public OADState getNextState() {
+            public OADState nextState() {
                 return READY_TO_TRANSFER;
             }
         },
@@ -482,7 +384,7 @@ public final class OADManager {
             }
 
             @Override
-            public OADState getNextState() {
+            public OADState nextState() {
                 return TRANSFERRED;
             }
 
@@ -492,7 +394,7 @@ public final class OADManager {
             }
 
             private boolean isValidationSuccess(Bundle actionData){
-                return bundleContainsSuccessForKey(actionData, VALIDATION_STATUS);
+                return bundleContainsSuccessForKey(actionData,VALIDATION_STATUS);
             }
         },
 
@@ -506,11 +408,13 @@ public final class OADManager {
 
             @Override
             public void executeAction(Bundle actionData) {
-                oadManager.startWaiting(this.getMaximumDuration());
+                boolean isSuccess = oadManager.waitUntilTimeout(this.getMaximumDuration());
+                if(!isSuccess)
+                    onError(OADError.ERROR_TIMEOUT_UPDATE, "Readback timed out.");
             }
 
             @Override
-            public OADState getNextState() {
+            public OADState nextState() {
                 return AWAITING_DEVICE_REBOOT;
             }
         },
@@ -525,14 +429,16 @@ public final class OADManager {
 
             @Override
             public void executeAction(Bundle actionData) {
-                if(isReadbackSuccess(actionData))
-                    oadManager.startWaiting(this.getMaximumDuration());
-                else
+                if(isReadbackSuccess(actionData)) {
+                    boolean isSuccess = oadManager.waitUntilTimeout(this.getMaximumDuration());
+                    if(!isSuccess)
+                        onError(OADError.ERROR_TIMEOUT_UPDATE, "Reboot timed out.");
+                }else
                     onError(getError(), null);
             }
 
             @Override
-            public OADState getNextState() {
+            public OADState nextState() {
                 return READY_TO_RECONNECT;
             }
 
@@ -555,11 +461,11 @@ public final class OADManager {
 
             @Override
             public void executeAction(Bundle actionData) {
-                oadManager.reboot(this.getMaximumDuration());
+                oadManager.oadContract.resetCacheAndKeys();
             }
 
             @Override
-            public OADState getNextState() {
+            public OADState nextState() {
                 return RECONNECTING;
             }
 
@@ -572,15 +478,16 @@ public final class OADManager {
         /**
          * State triggered when the SDK is reconnecting the updated headset device.
          */
-        RECONNECTING(115){
+        RECONNECTING(115, 20000){
             @Override
             public void executeAction(Bundle actionData) {
-                oadManager.reconnect();
+                oadManager.oadContract.reconnect();
+                oadManager.waitUntilTimeout(this.getMaximumDuration());
             }
 
             @Override
-            public OADState getNextState() {
-                return RECONNECTION_DONE;
+            public OADState nextState() {
+                return RECONNECTED;
             }
         },
 
@@ -589,27 +496,22 @@ public final class OADManager {
          * The SDK checks that update has succeeded by reading the current firmware version
          * and compare it to the OAD file one.
          */
-        RECONNECTION_DONE(117){
+        RECONNECTED(117){
             @Override
             public void executeAction(Bundle actionData) {
-                if(isReconnectionSuccess(actionData))
-                    oadManager.verifyFirmwareVersion();
-                else
-                    onError(getError(), null);
+                boolean isEqual = oadManager.oadContract.compareFirmwareVersion(oadManager.oadContext.getFirmwareVersion());
+                if(isEqual)
+                    oadManager.switchToNextStep(null);
             }
 
             @Override
-            public OADState getNextState() {
+            public OADState nextState() {
                 return COMPLETED;
             }
 
             @Override
             public BaseError getError() {
                 return OADError.ERROR_RECONNECT_FAILED;
-            }
-
-            private boolean isReconnectionSuccess(Bundle actionData){
-                return bundleContainsSuccessForKey(actionData,RECONNECTION_STATUS);
             }
         },
 
@@ -630,7 +532,7 @@ public final class OADManager {
         ABORTED(0){
             @Override
             public void executeAction(Bundle actionData) {
-
+                oadManager.abort(actionData.toString());
             }
         };
 
@@ -676,7 +578,7 @@ public final class OADManager {
          * Return null if the last step has been reached
          * @return the state that follows the current state in the OAD update process
          */
-        public OADState getNextState(){
+        public OADState nextState(){
             return null;
         }
 
@@ -703,7 +605,7 @@ public final class OADManager {
          * @return
          */
         private boolean isFinalState(){
-            return getNextState() == null;
+            return nextState() == null;
         }
 
         /**
@@ -713,7 +615,7 @@ public final class OADManager {
          * @return the value associated to the key
          */
         public boolean bundleContainsSuccessForKey(Bundle bundle, String key){
-            return bundle.containsKey(key) && bundle.getBoolean(key);
+            return bundle.containsKey(key) && !BitUtils.isZero(bundle.getByteArray(key)[0]);
         }
 
         /**
@@ -760,8 +662,8 @@ public final class OADManager {
          */
         @Override
         public void onError(BaseError error, String additionalInfo) {
-            if(oadManager != null && oadManager.stateListener != null)
-                oadManager.stateListener.onError(error,additionalInfo);
+            if(oadManager != null && oadManager.oadContract != null)
+                oadManager.onError(error,additionalInfo);
         }
     }
 

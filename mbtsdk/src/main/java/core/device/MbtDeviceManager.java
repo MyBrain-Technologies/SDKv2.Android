@@ -8,10 +8,18 @@ import android.util.Log;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
+import java.sql.Connection;
+
 import command.OADCommands;
+import config.ConnectionConfig;
 import core.BaseModuleManager;
+import core.bluetooth.BtState;
 import core.bluetooth.requests.CommandRequestEvent;
+import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
 import core.device.oad.OADContract;
+import engine.clientevents.BaseError;
+import engine.clientevents.BluetoothError;
+import engine.clientevents.BluetoothStateListener;
 import eventbus.events.BluetoothResponseEvent;
 import core.device.model.FirmwareVersion;
 import core.device.model.MbtDevice;
@@ -25,6 +33,9 @@ import core.eeg.acquisition.MbtDataConversion;
 import eventbus.MbtEventBus;
 import eventbus.events.ConfigEEGEvent;
 import eventbus.events.DeviceInfoEvent;
+import eventbus.events.FirmwareUpdateClientEvent;
+import eventbus.events.ReconnectionReadyEvent;
+import eventbus.events.ClearBluetoothEvent;
 import utils.LogUtils;
 
 import static features.MbtDeviceType.MELOMIND;
@@ -103,7 +114,15 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
 
     @Subscribe
     public void onNewDeviceDisconnected(DeviceEvents.DisconnectedDeviceEvent deviceEvent) {
-        setmCurrentConnectedDevice(null);
+        if (oadManager != null){
+            if(oadManager.getCurrentState().equals(OADManager.OADState.AWAITING_DEVICE_REBOOT))
+                oadManager.onOADEvent(OADEvent.DISCONNECTED_FOR_REBOOT);
+            else if(oadManager.getCurrentState().equals(OADManager.OADState.RECONNECTING))
+                oadManager.onOADEvent(OADEvent.RECONNECTION_PERFORMED.setEventData(false));
+            else
+                oadManager.onOADEvent(OADEvent.DISCONNECTED);
+        }else
+            setmCurrentConnectedDevice(null);
     }
 
     @Subscribe
@@ -114,13 +133,18 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
 
     @Subscribe
     public void onNewDeviceConnected(DeviceEvents.FoundDeviceEvent deviceEvent) {
+        if(oadManager != null)
+            oadManager.onOADEvent(OADEvent
+                    .RECONNECTION_PERFORMED
+                    .setEventData(true));
 
         MbtDevice device = null;
-        if(deviceEvent.getDevice() != null){
+        if (deviceEvent.getDevice() != null) {
             device = deviceEvent.getDeviceType().equals(MELOMIND) ?
                     new MelomindDevice(deviceEvent.getDevice()) : new VProDevice(deviceEvent.getDevice());
         }
         setmCurrentConnectedDevice(device);
+
     }
 
     @Subscribe
@@ -175,10 +199,10 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
     }
 
     @Subscribe
-    public void onOADEvent(OADEvent event){
-        if(event.isInitialEvent())
-            this.oadManager = new OADManager(mContext, this);
-        else if(event.isFinalEvent()){
+    public void onOADEvent(OADEvent event) {
+        if (event.isInitialEvent()){
+            this.oadManager = new OADManager(mContext, this, event.getEventData());
+        }else if(event.isFinalEvent()){
             this.oadManager = null;
         }
     }
@@ -191,7 +215,7 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
     @Subscribe
     public void onBluetoothEventReceived(BluetoothResponseEvent event){
         LogUtils.d(TAG, "on Bluetooth event "+event.toString());
-        if(event.isMailboxEvent()){
+        if(event.isDeviceCommandEvent()){
             OADEvent oadEvent = OADEvent
                     .getEventFromMailboxCommand(event.getId())
                     .setEventData((byte[]) event.getDataValue());
@@ -200,17 +224,13 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
         }
     }
 
-    @Override
-    public void startOADUpdate() {
-
-    }
 
     @Override
     public void stopOADUpdate() {
 
     }
 
-    @Override //todo
+    @Override
     public void requestFirmwareValidation(OADCommands.RequestFirmwareValidation requestFirmwareValidation) {
         MbtEventBus.postEvent(new CommandRequestEvent(requestFirmwareValidation));
     }
@@ -220,7 +240,34 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
         MbtEventBus.postEvent(new CommandRequestEvent(sendPacket));
     }
 
-    private boolean isFirmwareVersionUpToDate(){
-        return oadManager.isFirmwareVersionUpToDate(mCurrentConnectedDevice.getFirmwareVersion());
+    @Override
+    public void notifyClient(FirmwareUpdateClientEvent event) {
+        MbtEventBus.postEvent(event);
     }
+
+    @Override
+    public void resetCacheAndKeys() {
+        MbtEventBus.postEvent(new ClearBluetoothEvent());
+    }
+
+    @Override
+    public void reconnect() {
+        ConnectionConfig connectionConfig = new ConnectionConfig.Builder(null)
+                .deviceName(mCurrentConnectedDevice.getProductName())
+                .deviceQrCode(mCurrentConnectedDevice.getExternalName())
+                .create();
+
+        MbtEventBus.postEvent(new StartOrContinueConnectionRequestEvent(true,
+                connectionConfig.getDeviceName(),
+                connectionConfig.getDeviceQrCode(),
+                connectionConfig.getDeviceType(),
+                connectionConfig.getMtu()
+             ));
+    }
+
+    @Override
+    public boolean compareFirmwareVersion(FirmwareVersion firmwareVersionExpected) {
+        return mCurrentConnectedDevice.getFirmwareVersion().equals(firmwareVersionExpected);
+    }
+
 }

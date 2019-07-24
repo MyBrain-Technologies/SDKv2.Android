@@ -31,6 +31,7 @@ import command.CommandInterface;
 import command.DeviceCommand;
 
 import command.DeviceCommandEvent;
+import command.OADCommands;
 import config.MbtConfig;
 import core.BaseModuleManager;
 import command.DeviceCommands;
@@ -48,8 +49,6 @@ import core.device.DeviceEvents;
 import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindsQRDataBase;
-import core.device.event.EventListener;
-import core.device.event.OADEvent;
 import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
 import engine.clientevents.ConnectionStateReceiver;
@@ -58,6 +57,7 @@ import eventbus.events.BluetoothEEGEvent;
 import eventbus.events.ConfigEEGEvent;
 import eventbus.events.ConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
+import eventbus.events.ClearBluetoothEvent;
 import features.MbtDeviceType;
 import features.MbtFeatures;
 import utils.AsyncUtils;
@@ -191,6 +191,9 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
             }else if(command instanceof DeviceCommands.UpdateExternalName) {
                 notifyDeviceInfoReceived(DeviceInfo.MODEL_NUMBER, new String((byte[]) response));
+
+            }else if(command instanceof OADCommands.SendPacket) {
+                notifyEventReceived(null, (byte[]) response);
             }
         }
     }
@@ -1181,20 +1184,20 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     }
 
     /**
-     * Handle an OAD event received in order to perform the associated Bluetooth task.
-     * During a firmware update he Bluetooth unit is responsible for communicating
-     * with the connected headset device to update :
-     * it sends requests to it and receives responses/messages from it.
-     * The Bluetooth unit is only used for data/message transmission during the OAD update process.
-     * The Device unit (especially its OAD subunit) is responsible for processing the information
-     *
-     * @param event the OAD event
+     * Handle a request of an external unit to enable and disable the mobile device bluetooth
+     * and reset the pairing keys of the previously connected device.
+     * @param event the reset event that holds the name of the device previously connected
      */
     @Subscribe
-    public void onExternalOADEventReceived(OADEvent event){
-    //todo attention init event from mbtmanager received here
+    public void onClearBluetooth(ClearBluetoothEvent event) {
+        if (deviceTypeRequested.useLowEnergyProtocol()) {
+            mbtBluetoothLE.resetMobileDeviceBluetooth();
+            mbtBluetoothLE.clearMobileDeviceCache();
+        } else {
+            mbtBluetoothSPP.resetMobileDeviceBluetooth();
+            mbtBluetoothLE.clearMobileDeviceCache();
+        }
     }
-
 
     /**
      * Notify the event subscribers when a message/response of the headset device

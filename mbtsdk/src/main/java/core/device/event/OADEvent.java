@@ -7,9 +7,6 @@ import java.io.Serializable;
 import command.DeviceCommandEvent;
 import core.device.oad.OADManager;
 
-import static command.DeviceCommandEvent.MBX_OTA_IDX_RESET_EVT;
-import static command.DeviceCommandEvent.MBX_OTA_STATUS_EVT;
-
 /**
  * Created by Etienne on 14/10/2016.
  * OAD Event lists all the possible events that can occur during an OAD firwmare update
@@ -21,7 +18,7 @@ public enum OADEvent {
      * Event triggered when the client request an OAD update.
      * Initialize the OAD process.
      */
-    INIT(),
+    INIT(OADManager.FIRMWARE_VERSION),
 
     FIRMWARE_VALIDATION_REQUEST(OADManager.VALIDATION_STATUS),
 
@@ -48,7 +45,7 @@ public enum OADEvent {
      * Event triggered when the Device unit is informed
      * that a packet has been sent
      */
-    PACKET_TRANSFERRED(),
+    PACKET_TRANSFERRED(DeviceCommandEvent.GATT_OTA_STATUS_TRANSFER),
 
     /**
      * Event triggered when the Bluetooth unit is informed
@@ -56,7 +53,7 @@ public enum OADEvent {
      *
      * This event is associated with a integer "packetIndex" value that is the identifier of the packet,
      *                    that allow the SDK to resend the corresponding packet     */
-    LOST_PACKET(MBX_OTA_IDX_RESET_EVT, OADManager.LOST_PACKET),
+    LOST_PACKET(DeviceCommandEvent.MBX_OTA_IDX_RESET_EVT, OADManager.LOST_PACKET),
 
     /**
      * Event triggered when the current firmware has checked the CRC (Cyclic Redundancy Check)
@@ -67,13 +64,17 @@ public enum OADEvent {
      *                          - true if all the packets have been well transferred and no corruption occurred.
      *                          - false if all the packets have been well transferred and no corruption occurred
      */
-    CRC_READBACK(MBX_OTA_STATUS_EVT, OADManager.READBACK_STATUS),
-
+    CRC_READBACK(DeviceCommandEvent.MBX_OTA_STATUS_EVT, OADManager.READBACK_STATUS),
 
     /**
      * Event triggered when the headset device has disconnected after sending the CRC readback
      */
     DISCONNECTED_FOR_REBOOT(),
+
+    /**
+     * Event triggered when the headset device has disconnected while it was not expected
+     */
+    DISCONNECTED(),
 
     /**
      * Event triggered when the current headset device has been reconnected or has failed to reconnect.
@@ -105,13 +106,17 @@ public enum OADEvent {
 
     OADEvent() { }
 
-    OADEvent( String key) {
+    OADEvent(String key) {
         this.key = key;
     }
 
     OADEvent(DeviceCommandEvent mailboxEvent, String key) {
         this.mailboxEvent = mailboxEvent;
         this.key = key;
+    }
+
+    OADEvent(DeviceCommandEvent mailboxEvent) {
+        this.mailboxEvent = mailboxEvent;
     }
 
     public boolean isInitialEvent(){
