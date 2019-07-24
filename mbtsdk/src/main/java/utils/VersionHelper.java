@@ -12,7 +12,9 @@ import android.util.Log;
  * Each Xs Ys and Zs are numbers
  */
 public final class VersionHelper {
+
     public final static String TAG = VersionHelper.class.getSimpleName();
+
     /**
      * Regular expression used to split any firmware version given as a string .
      */
@@ -58,18 +60,17 @@ public final class VersionHelper {
     private final String main;
 
     public VersionHelper(String version){
-        String[] deviceFwVersion = version.split(VERSION_SPLITTER);
-        if(deviceFwVersion.length < VERSION_LENGTH){
+        if(isVersionLengthValid(version)){
             main = null;
             major = null;
             minor = null;
             return;
         }
 
-
-        main = deviceFwVersion[0];
-        major = deviceFwVersion[1];
-        minor = deviceFwVersion[2];
+        String[] versionAsStringArray = convertVersionToStringArray(version);
+        main = versionAsStringArray[0];
+        major = versionAsStringArray[1];
+        minor = versionAsStringArray[2];
     }
 
     public String getMainVersionAsString(){
@@ -189,6 +190,45 @@ public final class VersionHelper {
         return getMinorVersionAsNumber() >= featureMinorVersion;
     }
 
+    /**
+     * Returns true if the version given in input contains at least {@link VersionHelper#VERSION_LENGTH} digits.
+     * False otherwise.
+     * @param version the version to check
+     * @return true if the version given in input contains at least {@link VersionHelper#VERSION_LENGTH} digits.
+     */
+    public static boolean isVersionLengthValid(String version){
+        return version.split(VersionHelper.VERSION_SPLITTER).length >= VersionHelper.VERSION_LENGTH;
+    }
+
+    /**
+     * Return the input version as a String array that contains {@link VersionHelper#VERSION_LENGTH} elements.
+     * @return the input version as a String array hat contains {@link VersionHelper#VERSION_LENGTH} elements.
+     */
+    static String[] convertVersionToStringArray(String version){
+        return version.split(VersionHelper.VERSION_SPLITTER);
+    }
+
+    /**
+     * Return the current version as an integer array that contains {@link VersionHelper#VERSION_LENGTH} elements.
+     * @return the current version as an integer array hat contains {@link VersionHelper#VERSION_LENGTH} elements.
+     */
+    public int[] getVersionAsIntArray(){
+        return new int[]{
+                this.getMainVersionAsNumber(),
+                this.getMajorVersionAsNumber(),
+                this.getMinorVersionAsNumber()};
+    }
+
+    /**
+     * Return the current version as an integer array that contains {@link VersionHelper#VERSION_LENGTH} elements.
+     * @return the current version as an integer array hat contains {@link VersionHelper#VERSION_LENGTH} elements.
+     */
+    public String[] convertVersionToStringArray(){
+        return new String[]{
+                this.main,
+                this.major,
+                this.minor};
+    }
 
     public enum Feature {
         HEADSET_STATUS,

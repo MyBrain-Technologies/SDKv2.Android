@@ -45,10 +45,10 @@ public final class MbtJsonUtils {
 //                jsonWriter.value(deviceInfo.getHardwareVersion());
 //
 //            jsonWriter.name("firmwareVersion");
-//            if (deviceInfo.getFirmwareVersion() == null)
+//            if (deviceInfo.getFirmwareVersionAsString() == null)
 //                jsonWriter.value("");
 //            else
-//                jsonWriter.value(deviceInfo.getFirmwareVersion());
+//                jsonWriter.value(deviceInfo.getFirmwareVersionAsString());
 //
 //            jsonWriter.name("uniqueDeviceIdentifier");
 //            if (deviceInfo.getSerialNumber() == null)

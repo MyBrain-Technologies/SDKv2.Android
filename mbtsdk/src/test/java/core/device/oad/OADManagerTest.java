@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
+import command.DeviceCommandEvent;
 import command.DeviceCommands;
 import core.bluetooth.BtState;
 import core.bluetooth.MbtBluetoothManager;
@@ -24,6 +25,7 @@ import core.bluetooth.lowenergy.MbtBluetoothLE;
 import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
 import core.device.DeviceEvents;
 import core.device.MbtDeviceManager;
+import core.device.model.FirmwareVersion;
 import engine.clientevents.BaseError;
 import engine.clientevents.BluetoothError;
 import engine.clientevents.OADError;
@@ -40,14 +42,14 @@ import static org.junit.Assert.assertTrue;
 @PrepareForTest({MbtEventBus.class, FileUtils.class})
 public class OADManagerTest {
 
-    private final String FILE_PATH = "anyString";
-    private final String FIRMWARE_VERSION_VALID = "1.7.4";
-    private final String FIRMWARE_VERSION_INVALID_LOWER = "1.0.0";
-    private final String FIRMWARE_VERSION_INVALID_LENGTH = "1.0";
+    private final FirmwareVersion FIRMWARE_VERSION_VALID = new FirmwareVersion("1.7.4");
+    private final FirmwareVersion FIRMWARE_VERSION_INVALID_LENGTH = new FirmwareVersion("1.7");
+    private final FirmwareVersion FIRMWARE_VERSION_INVALID_LOWER = new FirmwareVersion("1.0.0");
     private final int BINARY_FILE_LENGTH_INVALID = 5;
+    private static final int FILE_BUFFER_SIZE = 256000;
 
-    private static byte[] completeExtractedFile = new byte[OADManager.INT];
-    private static byte[] incompleteExtractedFile = new byte[OADManager.INT -1];
+    private static byte[] completeExtractedFile = new byte[FILE_BUFFER_SIZE];
+    private static byte[] incompleteExtractedFile = new byte[FILE_BUFFER_SIZE -1];
     private static final byte byteValue = 0x01;
 
     private OADManager oadManager;
@@ -56,34 +58,7 @@ public class OADManagerTest {
     public void setUp() {
         Arrays.fill(completeExtractedFile, byteValue);
         Arrays.fill(incompleteExtractedFile, byteValue);
-        oadManager = new OADManager(Mockito.mock(Context.class), Mockito.mock(MbtDeviceManager.class));
-    }
-
-    /**
-     * Check that the isFirmwareVersionUpToDate method returns false
-     * if the firmware is not valid (one digit is missing).
-     */
-    @Test
-    public void isFirmwareVersionUpToDate_false_wrongLength(){
-        assertFalse(oadManager.isFirmwareVersionUpToDate(FIRMWARE_VERSION_INVALID_LENGTH));
-    }
-
-    /**
-     * Check that the isFirmwareVersionUpToDate method returns false
-     * if the firmware is not up-to-date.
-     */
-    @Test
-    public void isFirmwareVersionUpToDate_false_lowerVersion(){
-        assertFalse(oadManager.isFirmwareVersionUpToDate(FIRMWARE_VERSION_INVALID_LOWER));
-    }
-
-    /**
-     * Check that the OAD internal state is set to {@link OADState#COMPLETE}
-     * if the firmware is up-to-date.
-     */
-    @Test
-    public void isFirmwareVersionUpToDate_true(){
-        assertTrue(oadManager.isFirmwareVersionUpToDate(FIRMWARE_VERSION_VALID));
+        oadManager = new OADManager(Mockito.mock(Context.class), Mockito.mock(MbtDeviceManager.class), null);
     }
 
     /**
@@ -93,34 +68,17 @@ public class OADManagerTest {
      */
     @Test(expected = FileNotFoundException.class)
     public void init_invalid_fileNotFound(){
-        oadManager.setStateListener(new OADStateListener() {
-            @Override
-            public void onStateChanged(OADState newState) {
-                assertEquals(newState,OADState.ABORTED);
-            }
-
-            @Override
-            public void onProgressPercentChanged(int progress) {
-                assertEquals(progress, 0);
-            }
-
-            @Override
-            public void onError(BaseError error, String additionalInfo) {
-                assertEquals(error, OADError.ERROR_INIT_FAILED);
-            }
-        });
-
-        PowerMockito.spy(FileUtils.class);
+       PowerMockito.spy(FileUtils.class);
 
         try { //mock the result returned by the extractFile method
-            PowerMockito.doThrow(new FileNotFoundException("File path/name incorrect : "+FILE_PATH))
+            PowerMockito.doThrow(new FileNotFoundException("File path/name incorrect "))
                     .when(FileUtils.class, "extractFile", Mockito.anyString());
 
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        assertFalse(oadManager.init(FILE_PATH));
+        oadManager.init(FIRMWARE_VERSION_VALID);
         assertEquals(oadManager.getCurrentState(), OADState.ABORTED);
 
     }
@@ -131,7 +89,7 @@ public class OADManagerTest {
      */
     @Test
     public void notifyOADStateChanged_Aborted(){
-        oadManager.abort(null);
+        oadManager.abort();
         assertEquals(OADState.ABORTED,oadManager.getCurrentState());
     }
 
@@ -142,22 +100,7 @@ public class OADManagerTest {
      */
     @Test
     public void init_invalid_fileIncomplete(){
-        oadManager.setStateListener(new OADStateListener() {
-            @Override
-            public void onStateChanged(OADState newState) {
-                assertEquals(newState,OADState.ABORTED);
-            }
 
-            @Override
-            public void onProgressPercentChanged(int progress) {
-                assertEquals(progress, 0);
-            }
-
-            @Override
-            public void onError(BaseError error, String additionalInfo) {
-                assertEquals(error, OADError.ERROR_INIT_FAILED);
-            }
-        });
         PowerMockito.spy(FileUtils.class);
 
         try {
@@ -168,34 +111,20 @@ public class OADManagerTest {
             e.printStackTrace();
         }
 
-        assertFalse(oadManager.init(FILE_PATH));
+        oadManager.init(FIRMWARE_VERSION_VALID);
 
         assertEquals(oadManager.getCurrentState(), OADState.ABORTED);
     }
 
     /**
-     * Check that the SDK OAD internal state is set to {@link OADState#INIT}
+     * Check that the SDK OAD internal state is {@link OADState#INITIALIZED}
      * if the binary file is found & complete.
-     * Also check it returns a buffer of {@link OADManager#NB_PACKETS_TO_SEND} elements
-     * of {@link OADManager#NB_PACKETS_TO_SEND} byte each.
+     * Also check it returns a buffer of {@link OADManager#EXPECTED_NB_PACKETS_BINARY_FILE} elements
+     * of {@link OADManager#EXPECTED_NB_PACKETS_BINARY_FILE} byte each.
      */
     @Test
     public void init_valid(){
-        oadManager.setStateListener(new OADStateListener() {
-            @Override
-            public void onStateChanged(OADState newState) {
-                assertEquals(newState,OADState.INIT);
-            }
 
-            @Override
-            public void onProgressPercentChanged(int progress) {
-                assertEquals(progress, OADState.INIT.convertToProgress());
-            }
-
-            @Override
-            public void onError(BaseError error, String additionalInfo) {
-            }
-        });
         try {
             PowerMockito.doReturn(completeExtractedFile)
                     .when(FileUtils.class, "extractFile", Mockito.anyString());
@@ -203,8 +132,8 @@ public class OADManagerTest {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        assertTrue(oadManager.init(FILE_PATH));
-        assertEquals(oadManager.getCurrentState(), OADState.INIT);
+        oadManager.init(FIRMWARE_VERSION_VALID);
+        assertEquals(oadManager.getCurrentState(), OADState.INITIALIZED);
 
     }
 
@@ -219,133 +148,80 @@ public class OADManagerTest {
         MbtBluetoothLE bluetoothLE = Mockito.mock(MbtBluetoothLE.class);
         PacketCounter packetEngine = Mockito.mock(PacketCounter.class);
 
-        oadManager.setStateListener(new OADStateListener() {
-            @Override
-            public void onStateChanged(OADState newState) {
-                assertEquals(newState,OADState.ABORTED);
-            }
-
-            @Override
-            public void onProgressPercentChanged(int progress) {
-                assertEquals(progress, OADState.INIT.convertToProgress());
-            }
-
-            @Override
-            public void onError(BaseError error, String additionalInfo) {
-                assertEquals(error, BluetoothError.ERROR_NOT_CONNECTED);
-            }
-        });
         Mockito.doAnswer((Answer<Void>) invocation -> { //triggers a disconnection during the init method
             bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);
             return null;
-        }).when(packetEngine).reset(OADManager.NB_PACKETS_TO_SEND);
-        assertTrue(oadManager.init(FILE_PATH));
+        }).when(packetEngine).reset(OADManager.EXPECTED_NB_PACKETS_BINARY_FILE, OADManager.OAD_PACKET_SIZE);
+        oadManager.init(FIRMWARE_VERSION_VALID);
         assertEquals(oadManager.getCurrentState(), OADState.ABORTED);
 
     }
 
     /**
-     * Check that the OAD internal state is set to {@link OADState#FIRMWARE_VALIDATION}
+     * Check that the OAD internal state is set to {@link OADState#INITIALIZED}
      * once the OAD validation request is sent
      */
     @Test
     public void requestFirmwareValidation_request(){
-        oadManager.init(FILE_PATH);
+        oadManager.init(FIRMWARE_VERSION_VALID);
 
-        assertTrue(oadManager.requestFirmwareValidation(OADManager.NB_PACKETS_TO_SEND, FIRMWARE_VERSION_VALID));
+        oadManager.requestFirmwareValidation(OADManager.EXPECTED_NB_PACKETS_BINARY_FILE, FIRMWARE_VERSION_VALID);
 
-        assertEquals(oadManager.getCurrentState(), OADState.FIRMWARE_VALIDATION);
+        assertEquals(oadManager.getCurrentState(), OADState.INITIALIZED);
 
     }
 
     /**
      * Check that the SDK raises the {@link OADError#ERROR_VALIDATION_FAILED} error
      * and that the OAD internal state is set to {@link OADState#ABORTED}
-     * if the headset device returns the code {@link command.DeviceCommandEvents#CMD_CODE_OTA_MODE_EVT_FAILED}
-     * for a {@link command.DeviceCommandEvents#MBX_OTA_MODE_EVT} event.
+     * if the headset device returns the code {@link DeviceCommandEvent#CMD_CODE_OTA_MODE_EVT_FAILED}
+     * for a {@link DeviceCommandEvent#MBX_OTA_MODE_EVT} event.
      */
     @Test
     public void requestFirmwareValidation_failureResponse(){
 
-        oadManager.setStateListener(new OADStateListener() {
-            @Override
-            public void onStateChanged(OADState newState) {
-                assertEquals(newState, OADState.ABORTED);
-            }
-
-            @Override
-            public void onProgressPercentChanged(int progress) {
-                assertEquals(progress, OADState.INIT.convertToProgress());
-
-            }
-
-            @Override
-            public void onError(BaseError error, String additionalInfo) {
-                assertEquals(error, OADError.ERROR_VALIDATION_FAILED);
-            }
-        });
-
-        ArgumentCaptor<DeviceEvents.OADValidationRequestEvent> captor = ArgumentCaptor.forClass(DeviceEvents.OADValidationRequestEvent.class);
 
         try {
             PowerMockito
                     .doAnswer((Answer<Void>) invocation -> {
-                        MbtEventBus.postEvent(new DeviceEvents.OADValidationResponseEvent(false));
                         return null;})
                     .when(MbtEventBus.class, "postEvent", captor.capture());
 
         } catch (Exception e) {
             e.printStackTrace();
         }
-        oadManager.init(FILE_PATH);
+        oadManager.init(FIRMWARE_VERSION_VALID) ;
 
-        oadManager.requestFirmwareValidation(BINARY_FILE_LENGTH_INVALID, FIRMWARE_VERSION_INVALID_LOWER);
+        oadManager.requestFirmwareValidation(OADManager.EXPECTED_NB_PACKETS_BINARY_FILE, FIRMWARE_VERSION_INVALID_LOWER);
 
         assertEquals(oadManager.getCurrentState(), OADState.ABORTED);
 
     }
 
     /**
-     * Check that the OAD internal state is set to {@link OADState#TRANSFERRING}
-     * if the headset device returns the code {@link command.DeviceCommandEvents#CMD_CODE_OTA_MODE_EVT_SUCCESS}
-     * for a {@link command.DeviceCommandEvents#MBX_OTA_MODE_EVT} event.
+     * Check that the OAD internal state is set to {@link OADState#READY_TO_TRANSFER}
+     * if the headset device returns the code {@link DeviceCommandEvent#CMD_CODE_OTA_MODE_EVT_SUCCESS}
+     * for a {@link DeviceCommandEvent#MBX_OTA_MODE_EVT} event.
      */
     @Test
     public void requestFirmwareValidation_SuccessResponse(){
 
-        oadManager.setStateListener(new OADStateListener() {
-            @Override
-            public void onStateChanged(OADState newState) {
-                assertEquals(newState,OADState.TRANSFERRING);
-            }
 
-            @Override
-            public void onProgressPercentChanged(int progress) {
-
-            }
-
-            @Override
-            public void onError(BaseError error, String additionalInfo) {
-            }
-        });
-
-        ArgumentCaptor<DeviceEvents.OADValidationRequestEvent> captor = ArgumentCaptor.forClass(DeviceEvents.OADValidationRequestEvent.class);
 
         try {
             PowerMockito
                     .doAnswer((Answer<Void>) invocation -> {
-                        MbtEventBus.postEvent(new DeviceEvents.OADValidationResponseEvent(true));
                         return null;})
                     .when(MbtEventBus.class, "postEvent", captor.capture());
 
         } catch (Exception e) {
             e.printStackTrace();
         }
-        oadManager.init(FILE_PATH);
+        oadManager.init(FIRMWARE_VERSION_VALID) ;
 
-        oadManager.requestFirmwareValidation(OADManager.NB_PACKETS_TO_SEND, FIRMWARE_VERSION_VALID);
+        oadManager.requestFirmwareValidation(OADManager.EXPECTED_NB_PACKETS_BINARY_FILE, FIRMWARE_VERSION_VALID);
 
-        assertEquals(oadManager.getCurrentState(), OADState.TRANSFERRING);
+        assertEquals(oadManager.getCurrentState(), OADState.INITIALIZED);
 
     }
 
@@ -353,27 +229,11 @@ public class OADManagerTest {
      * Check that the SDK raises the {@link OADError#ERROR_TIMEOUT_UPDATE} error
      * and that the OAD internal state is set to {@link OADState#ABORTED}
      * if the headset device does not return any response
-     * within the allocated time for a {@link command.DeviceCommandEvents#MBX_OTA_MODE_EVT} event.
+     * within the allocated time for a {@link DeviceCommandEvent#MBX_OTA_MODE_EVT} event.
      */
     @Test
     public void requestFirmwareValidation_timeout(){
-        oadManager.setStateListener(new OADStateListener() {
-            @Override
-            public void onStateChanged(OADState newState) {
-                assertEquals(newState,OADState.ABORTED);
-            }
-
-            @Override
-            public void onProgressPercentChanged(int progress) {
-
-            }
-
-            @Override
-            public void onError(BaseError error, String additionalInfo) {
-                assertEquals(error, OADError.ERROR_TIMEOUT_UPDATE);
-            }
-        });
-
+     
         ArgumentCaptor<DeviceEvents.OADValidationRequestEvent> captor = ArgumentCaptor.forClass(DeviceEvents.OADValidationRequestEvent.class);
 
         try {
@@ -384,9 +244,9 @@ public class OADManagerTest {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        oadManager.init(FILE_PATH);
+        oadManager.init(FIRMWARE_VERSION_VALID) ;
 
-        oadManager.requestFirmwareValidation(OADManager.NB_PACKETS_TO_SEND, FIRMWARE_VERSION_VALID);
+        oadManager.requestFirmwareValidation(OADManager.EXPECTED_NB_PACKETS_BINARY_FILE, FIRMWARE_VERSION_VALID);
 
         assertEquals(oadManager.getCurrentState(), OADState.ABORTED);
 
@@ -402,22 +262,6 @@ public class OADManagerTest {
     public void requestFirmwareValidation_disconnection(){
         MbtBluetoothLE bluetoothLE = Mockito.mock(MbtBluetoothLE.class);
 
-        oadManager.setStateListener(new OADStateListener() {
-            @Override
-            public void onStateChanged(OADState newState) {
-                assertEquals(newState,OADState.ABORTED);
-            }
-
-            @Override
-            public void onProgressPercentChanged(int progress) {
-
-            }
-
-            @Override
-            public void onError(BaseError error, String additionalInfo) {
-                assertEquals(error, BluetoothError.ERROR_NOT_CONNECTED);
-            }
-        });
 
         ArgumentCaptor<DeviceEvents.OADValidationRequestEvent> captor = ArgumentCaptor.forClass(DeviceEvents.OADValidationRequestEvent.class);
 
@@ -432,41 +276,27 @@ public class OADManagerTest {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        oadManager.init(FILE_PATH);
+        oadManager.init(FIRMWARE_VERSION_VALID) ;
 
-        oadManager.requestFirmwareValidation(OADManager.NB_PACKETS_TO_SEND, FIRMWARE_VERSION_VALID);
+        oadManager.requestFirmwareValidation(OADManager.EXPECTED_NB_PACKETS_BINARY_FILE, FIRMWARE_VERSION_VALID);
 
         assertEquals(oadManager.getCurrentState(), OADState.ABORTED);
 
     }
 
     /**
-     * Check that the OAD internal state is set to {@link OADState#AWAITING_DEVICE_READBACK}
+     * Check that the OAD internal state is set to {@link OADState#AWAITING_DEVICE_REBOOT}
      * if the SDK has performed the OAD packets transfer.
      */
     @Test
     public void transferOADFile_started(){
-        oadManager.setStateListener(new OADStateListener() {
-            @Override
-            public void onStateChanged(OADState newState) {
-                assertEquals(newState, OADState.AWAITING_DEVICE_READBACK);
-            }
+     
 
-            @Override
-            public void onProgressPercentChanged(int progress) {
-
-            }
-
-            @Override
-            public void onError(BaseError error, String additionalInfo) {
-            }
-        });
-
-        oadManager.init(FILE_PATH);
+        oadManager.init(FIRMWARE_VERSION_VALID) ;
 
         oadManager.transferOADFile();
 
-        assertEquals(oadManager.getCurrentState(), OADState.AWAITING_DEVICE_READBACK);
+        assertEquals(oadManager.getCurrentState(), OADState.AWAITING_DEVICE_REBOOT);
 
     }
 
@@ -479,21 +309,6 @@ public class OADManagerTest {
     public void transferOADFile_failureSending(){
         MbtBluetoothManager bluetoothManager = Mockito.mock(MbtBluetoothManager.class);
 
-        oadManager.setStateListener(new OADStateListener() {
-            @Override
-            public void onStateChanged(OADState newState) {
-                assertEquals(newState, OADState.ABORTED);
-            }
-
-            @Override
-            public void onProgressPercentChanged(int progress) {
-
-            }
-
-            @Override
-            public void onError(BaseError error, String additionalInfo) {
-            }
-        });
         ArgumentCaptor<DeviceEvents.OADTransferEvent> captor = ArgumentCaptor.forClass(DeviceEvents.OADTransferEvent.class);
         try {
             PowerMockito
@@ -506,7 +321,7 @@ public class OADManagerTest {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        oadManager.init(FILE_PATH);
+        oadManager.init(FIRMWARE_VERSION_VALID) ;
 
         oadManager.transferOADFile();
 
@@ -522,23 +337,7 @@ public class OADManagerTest {
      */
     @Test
     public void transferOADFile_timeout(){
-        oadManager.setStateListener(new OADStateListener() {
-            @Override
-            public void onStateChanged(OADState newState) {
-                assertEquals(newState, OADState.ABORTED);
-            }
-
-            @Override
-            public void onProgressPercentChanged(int progress) {
-
-            }
-
-            @Override
-            public void onError(BaseError error, String additionalInfo) {
-                assertEquals(error, OADError.ERROR_TIMEOUT_UPDATE);
-
-            }
-        });
+      
         ArgumentCaptor<DeviceEvents.OADTransferEvent> captor = ArgumentCaptor.forClass(DeviceEvents.OADTransferEvent.class);
 
         try {
@@ -549,7 +348,7 @@ public class OADManagerTest {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        oadManager.init(FILE_PATH);
+        oadManager.init(FIRMWARE_VERSION_VALID) ;
 
         oadManager.transferOADFile();
         assertEquals(oadManager.getCurrentState(), OADState.ABORTED);
@@ -564,22 +363,7 @@ public class OADManagerTest {
      */
     @Test
     public void transferOADFile_disconnection(){
-        oadManager.setStateListener(new OADStateListener() {
-            @Override
-            public void onStateChanged(OADState newState) {
-
-            }
-
-            @Override
-            public void onProgressPercentChanged(int progress) {
-
-            }
-
-            @Override
-            public void onError(BaseError error, String additionalInfo) {
-                assertEquals(error, BluetoothError.ERROR_NOT_CONNECTED);
-            }
-        });
+     
         ArgumentCaptor<DeviceEvents.OADTransferEvent> captor = ArgumentCaptor.forClass(DeviceEvents.OADTransferEvent.class);
 
         MbtBluetoothLE bluetoothLE = Mockito.mock(MbtBluetoothLE.class);
@@ -595,7 +379,7 @@ public class OADManagerTest {
             e.printStackTrace();
         }
 
-        oadManager.init(FILE_PATH);
+        oadManager.init(FIRMWARE_VERSION_VALID) ;
 
         oadManager.transferOADFile();
         assertEquals(oadManager.getCurrentState(), OADState.ABORTED);
@@ -606,26 +390,11 @@ public class OADManagerTest {
      * Check that the SDK resets the internal packet index
      * to the value received in the headset response
      * if the headset device returns a valid packet index
-     * for a {@link command.DeviceCommandEvents#MBX_OTA_IDX_RESET_EVT} event.
+     * for a {@link DeviceCommandEvent#MBX_OTA_IDX_RESET_EVT} event.
      */
     @Test
     public void transferOADFile_lostPacket_validIndex(){
-        oadManager.setStateListener(new OADStateListener() {
-            @Override
-            public void onStateChanged(OADState newState) {
-
-            }
-
-            @Override
-            public void onProgressPercentChanged(int progress) {
-
-            }
-
-            @Override
-            public void onError(BaseError error, String additionalInfo) {
-                assertEquals(error, BluetoothError.ERROR_NOT_CONNECTED);
-            }
-        });
+       
         ArgumentCaptor<DeviceEvents.OADTransferEvent> captor = ArgumentCaptor.forClass(DeviceEvents.OADTransferEvent.class);
 
         MbtBluetoothLE bluetoothLE = Mockito.mock(MbtBluetoothLE.class);
@@ -641,36 +410,21 @@ public class OADManagerTest {
             e.printStackTrace();
         }
 
-        oadManager.init(FILE_PATH);
+        oadManager.init(FIRMWARE_VERSION_VALID);
 
         oadManager.transferOADFile();
-        assertEquals(oadManager.getCurrentState(), OADState.TRANSFERRING);
+        assertEquals(oadManager.getCurrentState(), OADState.READY_TO_TRANSFER);
     }
 
     /**
      * Check that the SDK raises an Out Of Bounds Exception and abort the OAD process
      * if the headset device notifies that a packet
      * with index beyond the size of the SDK buffer has been lost during transfer
-     * for a {@link command.DeviceCommandEvents#MBX_OTA_IDX_RESET_EVT} event.
+     * for a {@link DeviceCommandEvent#MBX_OTA_IDX_RESET_EVT} event.
      */
     @Test(expected = IndexOutOfBoundsException.class)
     public void transferOADFile_lostPacket_invalidIndex(){
-        oadManager.setStateListener(new OADStateListener() {
-            @Override
-            public void onStateChanged(OADState newState) {
 
-            }
-
-            @Override
-            public void onProgressPercentChanged(int progress) {
-
-            }
-
-            @Override
-            public void onError(BaseError error, String additionalInfo) {
-                assertEquals(error, BluetoothError.ERROR_NOT_CONNECTED);
-            }
-        });
         ArgumentCaptor<DeviceEvents.OADTransferEvent> captor = ArgumentCaptor.forClass(DeviceEvents.OADTransferEvent.class);
         MbtBluetoothLE bluetoothLE = Mockito.mock(MbtBluetoothLE.class);
         try {
@@ -685,39 +439,39 @@ public class OADManagerTest {
             e.printStackTrace();
         }
 
-        oadManager.init(FILE_PATH);
+        oadManager.init(FIRMWARE_VERSION_VALID) ;
 
         oadManager.transferOADFile();
-        assertEquals(oadManager.getCurrentState(), OADState.TRANSFERRING);
+        assertEquals(oadManager.getCurrentState(), OADState.AWAITING_DEVICE_REBOOT);
     }
 
     /**
-     * Check that the OAD internal state is set to {@link OADState#COMPLETE}
+     * Check that the OAD internal state is set to {@link OADState#COMPLETED}
      * if all the OAD packets has been sent.
      */
     @Test
     public void transferOADFile_complete(){
 
-        oadManager.init(FILE_PATH);
+        oadManager.init(FIRMWARE_VERSION_VALID) ;
 
         oadManager.transferOADFile();
 
-        assertEquals(oadManager.packetEngine.nbPacketSent, oadManager.packetEngine.nbPacketToSend);
-        assertEquals(oadManager.getCurrentState(), OADState.COMPLETE);
+        assertEquals(oadManager.packetCounter.nbPacketSent, oadManager.packetCounter.nbPacketToSend);
+        assertEquals(oadManager.getCurrentState(), OADState.COMPLETED);
 
     }
 
     /**
-     * Check that the OAD internal state is set to {@link OADState#REBOOTING}
+     * Check that the OAD internal state is set to {@link OADState#AWAITING_DEVICE_REBOOT}
      * if the headset device returns a success readback response.
      */
     @Test
     public void transferOADFile_success(){
-        oadManager.init(FILE_PATH);
+        oadManager.init(FIRMWARE_VERSION_VALID) ;
         oadManager.transferOADFile();
         MbtEventBus.postEvent(new DeviceEvents.OADReadbackEvent(true));
 
-        assertEquals(oadManager.getCurrentState(), OADState.REBOOTING);
+        assertEquals(oadManager.getCurrentState(), OADState.TRANSFERRED);
 
     }
 
@@ -727,7 +481,7 @@ public class OADManagerTest {
      */
     @Test
     public void transferOADFile_failureIncomplete(){
-        oadManager.init(FILE_PATH);
+        oadManager.init(FIRMWARE_VERSION_VALID) ;
         oadManager.transferOADFile();
         MbtEventBus.postEvent(new DeviceEvents.OADReadbackEvent(false));
 
@@ -737,28 +491,13 @@ public class OADManagerTest {
 
     /**
      * Check that the OAD internal state is set to {@link OADState#ABORTED}
-     * if the {@link OADState#REBOOTING} state is triggered
+     * if the {@link OADState#READY_TO_RECONNECT} state is triggered
      * and the headset failed to disconnect within the allocated time.
      */
     @Test
     public void reboot_timeout(){
-        oadManager.setStateListener(new OADStateListener() {
-            @Override
-            public void onStateChanged(OADState newState) {
 
-            }
-
-            @Override
-            public void onProgressPercentChanged(int progress) {
-
-            }
-
-            @Override
-            public void onError(BaseError error, String additionalInfo) {
-                assertEquals(error, OADError.ERROR_TIMEOUT_UPDATE);
-            }
-        });
-        oadManager.init(FILE_PATH);
+        oadManager.init(FIRMWARE_VERSION_VALID) ;
         oadManager.transferOADFile();
         MbtEventBus.postEvent(new DeviceEvents.OADReadbackEvent(true));
         try {
@@ -770,38 +509,38 @@ public class OADManagerTest {
         } catch (TimeoutException e) {
             e.printStackTrace();
         }
-        //reboot might be called when a disconnected state is triggered so here we don't need to do anything
+        //clearBluetooth might be called when a disconnected state is triggered so here we don't need to do anything
         assertEquals(oadManager.getCurrentState(), OADState.ABORTED);
 
     }
 
     /**
      * Check that the OAD internal state is set to {@link OADState#RECONNECTING}
-     * once the reboot has been performed.
+     * once the clearBluetooth has been performed.
      */
     @Test
     public void reconnect_started(){
-        oadManager.init(FILE_PATH);
+        oadManager.init(FIRMWARE_VERSION_VALID) ;
         oadManager.transferOADFile();
 
-        oadManager.reboot();
+        oadManager.resetCacheAndKeys();
 
         assertEquals(oadManager.getCurrentState(), OADState.RECONNECTING);
     }
 
     /**
-     * Check that the OAD internal state is set to {@link OADState#VERIFYING_FIRMWARE_VERSION}
+     * Check that the OAD internal state is set to {@link OADState#INITIALIZED}
      * once the headset device is reconnected.
      */
     @Test
     public void reconnect_success(){
-        oadManager.init(FILE_PATH);
+        oadManager.init(FIRMWARE_VERSION_VALID) ;
         oadManager.transferOADFile();
-        oadManager.reboot();
+        oadManager.resetCacheAndKeys();
 
         oadManager.reconnect();
 
-        assertEquals(oadManager.getCurrentState(), OADState.VERIFYING_FIRMWARE_VERSION);
+        assertEquals(oadManager.getCurrentState(), OADState.INITIALIZED);
     }
 
     /**
@@ -811,9 +550,9 @@ public class OADManagerTest {
      */
     @Test
     public void reconnect_failure(){
-        oadManager.init(FILE_PATH);
+        oadManager.init(FIRMWARE_VERSION_VALID) ;
         oadManager.transferOADFile();
-        oadManager.reboot();
+        oadManager.resetCacheAndKeys();
         MbtBluetoothLE bluetoothLE = Mockito.mock(MbtBluetoothLE.class);
         ArgumentCaptor<StartOrContinueConnectionRequestEvent> captor = ArgumentCaptor.forClass(StartOrContinueConnectionRequestEvent.class);
         try {
@@ -834,14 +573,14 @@ public class OADManagerTest {
     }
 
     /**
-     * Check that the OAD internal state is set to {@link OADState#COMPLETE}
+     * Check that the OAD internal state is set to {@link OADState#COMPLETED}
      * if the SDK receives a firmware version equal to the last released version.
      */
     @Test
     public void verifyingFirmwareVersion_success(){
-        oadManager.init(FILE_PATH);
+        oadManager.init(FIRMWARE_VERSION_VALID) ;
         oadManager.transferOADFile();
-        oadManager.reboot();
+        oadManager.resetCacheAndKeys();
         OADManager oadManager = Mockito.mock(OADManager.class);
         MbtBluetoothLE bluetoothLE = Mockito.mock(MbtBluetoothLE.class);
         ArgumentCaptor<StartOrContinueConnectionRequestEvent> captor = ArgumentCaptor.forClass(StartOrContinueConnectionRequestEvent.class);
@@ -869,7 +608,7 @@ public class OADManagerTest {
 
         oadManager.verifyFirmwareVersion();
 
-        assertEquals(oadManager.getCurrentState(), OADState.COMPLETE);
+        assertEquals(oadManager.getCurrentState(), OADState.COMPLETED);
     }
 
     /**
@@ -878,9 +617,9 @@ public class OADManagerTest {
      */
     @Test
     public void verifyingFirmwareVersion_failure(){
-        oadManager.init(FILE_PATH);
+        oadManager.init(FIRMWARE_VERSION_VALID) ;
         oadManager.transferOADFile();
-        oadManager.reboot();
+        oadManager.resetCacheAndKeys();
         OADManager oadManager = Mockito.mock(OADManager.class);
         MbtBluetoothLE bluetoothLE = Mockito.mock(MbtBluetoothLE.class);
         ArgumentCaptor<StartOrContinueConnectionRequestEvent> captor = ArgumentCaptor.forClass(StartOrContinueConnectionRequestEvent.class);
