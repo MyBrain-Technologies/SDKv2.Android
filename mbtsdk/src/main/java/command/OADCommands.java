@@ -123,7 +123,7 @@ public interface OADCommands {
          * call the {@link SendPacket}(byte[] packetToSend, {@linkCommandCallback<DeviceCommand, byte[]>)} constructor.
          */
         public SendPacket(byte[] packetToSend) {
-            super(null);
+            super(DeviceCommandEvent.GATT_OTA_STATUS_TRANSFER);
                 this.packetToSend = packetToSend;
                 init();
         }

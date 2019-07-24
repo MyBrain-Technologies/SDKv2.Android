@@ -40,10 +40,8 @@ public abstract class DeviceCommand <T, U extends BaseError> extends CommandInte
      * Return the unique identifier of the command
      * @return the unique identifier of the command
      */
-    public byte getCode() {
-        return (commandEvent != null ?
-                commandEvent.getIdentifierCode() :
-                null);
+    public DeviceCommandEvent getIdentifier() {
+        return commandEvent;
     }
 
     /**
