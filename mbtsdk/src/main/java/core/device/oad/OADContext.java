@@ -1,6 +1,9 @@
 package core.device.oad;
 
 import org.apache.commons.lang.StringUtils;
+
+import java.util.ArrayList;
+
 import core.device.model.FirmwareVersion;
 
 /**
@@ -25,6 +28,12 @@ class OADContext {
      * the file is chunked into small packets.
      */
     private short nbPacketsToSend = 0;
+
+    /**
+     * List of OAD packets that holds chunks of the OAD
+     * binary file that holds the firmware to install on the connected headset device.
+     */
+    private ArrayList<byte[]> packetsToSend;
 
     /**
      * Empty constructor that create a new instance of the {@link OADContext} object.
@@ -82,5 +91,21 @@ class OADContext {
      */
     void setNbPacketsToSend(short nbPacketToSend) {
         this.nbPacketsToSend = nbPacketToSend;
+    }
+
+    /**
+     * Returns the list of OAD packets that holds chunks of the OAD
+     * binary file that holds the firmware to install on the connected headset device.
+     */
+    public ArrayList<byte[]> getPacketsToSend() {
+        return packetsToSend;
+    }
+
+    /**
+     * Set the list of OAD packets that holds chunks of the OAD
+     * binary file that holds the firmware to install on the connected headset device.
+     */
+    public void setPacketsToSend(ArrayList<byte[]> packetsToSend) {
+        this.packetsToSend = packetsToSend;
     }
 }

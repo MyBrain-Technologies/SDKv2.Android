@@ -1,13 +1,6 @@
 package core.device.event;
 
-import android.os.Bundle;
-
-import command.DeviceCommands;
-import core.device.oad.OADManager;
-
-import static command.DeviceCommandEvents.MBX_OTA_IDX_RESET_EVT;
-import static command.DeviceCommandEvents.MBX_OTA_MODE_EVT;
-import static command.DeviceCommandEvents.MBX_OTA_STATUS_EVT;
+import command.DeviceCommandEvent;
 
 /**
  * Created by Etienne on 14/10/2016.
@@ -31,8 +24,21 @@ public enum OADEvent {
      *
      * This event is associated to a boolean value that is true if the headset device accepts the OAD update, false otherwise
      */
-    FIRMWARE_VALIDATION(MBX_OTA_MODE_EVT, OADManager.VALIDATION_STATUS),
+    FIRMWARE_VALIDATION_RESPONSE(DeviceCommandEvent.MBX_OTA_MODE_EVT),
 
+    /**
+     * Event triggered when the Bluetooth unit is informed
+     * that a sent packet has not been received by the headset device
+     *
+     * This event is associated with a integer "packet" value that is the OAD packet
+     */
+    TRANSFER_PACKET(),
+
+    /**
+     * Event triggered when the Device unit is informed
+     * that a packet has been sent
+     */
+    PACKET_TRANSFERRED(DeviceCommandEvent.GATT_OTA_STATUS_TRANSFER),
 
     /**
      * Event triggered when the Bluetooth unit is informed
@@ -40,8 +46,7 @@ public enum OADEvent {
      *
      * This event is associated with a integer "packetIndex" value that is the identifier of the packet,
      *                    that allow the SDK to resend the corresponding packet     */
-    LOST_PACKET(MBX_OTA_IDX_RESET_EVT, OADManager.LOST_PACKET),
-
+    LOST_PACKET(DeviceCommandEvent.MBX_OTA_IDX_RESET_EVT),
 
     /**
      * Event triggered when the current firmware has checked the CRC (Cyclic Redundancy Check)
@@ -52,13 +57,17 @@ public enum OADEvent {
      *                          - true if all the packets have been well transferred and no corruption occurred.
      *                          - false if all the packets have been well transferred and no corruption occurred
      */
-    CRC_READBACK(MBX_OTA_STATUS_EVT, OADManager.READBACK_STATUS),
-
+    CRC_READBACK(DeviceCommandEvent.MBX_OTA_STATUS_EVT),
 
     /**
      * Event triggered when the headset device has disconnected after sending the CRC readback
      */
     DISCONNECTED_FOR_REBOOT(),
+
+    /**
+     * Event triggered when the headset device has disconnected while it was not expected
+     */
+    DISCONNECTED(),
 
     /**
      * Event triggered when the current headset device has been reconnected or has failed to reconnect.
@@ -67,83 +76,97 @@ public enum OADEvent {
      *                          - true if the connection succeeded.
      *                          - false if the connection failed.
      */
-    RECONNECTION_PERFORMED(OADManager.RECONNECTION_STATUS),
-
-    /**
-     * Event triggered when the OAD firmware update is complete and succeeded.
-     */
-    UPDATE_COMPLETE();
+    RECONNECTION_PERFORMED();
 
     /**
      * Most OAD event (not all) are triggered by a mailbox response from the headset device
      * so we associate the corresponding mailbox identifier for these ones.
      */
-    private byte mailboxEvent;
+    private DeviceCommandEvent mailboxEvent;
 
-
-    private String key;
 
     /**
      * Bundle that stores data/informations related to the current event associated keys
      */
-    private Bundle eventData;
+    private Object eventData;
 
     OADEvent() { }
 
-    OADEvent( String key) {
-        this.key = key;
+
+    OADEvent(DeviceCommandEvent mailboxEvent) {
+        this.mailboxEvent = mailboxEvent;
     }
 
-    OADEvent(byte mailboxEvent, String key) {
-        this.mailboxEvent = mailboxEvent;
-        this.key = key;
+    public boolean isInitialEvent(){
+        return this.equals(INIT);
     }
 
     /**
      * Set the bundle that stores values related to the current event associated keys
      */
-    public void setEventData(Bundle eventData) {
-        this.eventData = eventData;
+    public OADEvent setEventData(Object eventData) {
+         this.eventData = eventData;
+         return this;
     }
 
     /**
      * Return the bundle that stores values related to the current event associated keys
      */
-    public Bundle getEventData() {
+    public Object getEventData() {
         return eventData;
-    }
-
-    /**
-     * Return the status as a boolean value
-     * read from the bundle that contains all the values related to the current event
-     */
-    public boolean getEventStatus() {
-        return eventData.getBoolean(key);
     }
 
     /**
      * Return the object
      * read from the bundle that contains all the values related to the current event
      */
-    public Object getEventObject() {
-        return eventData.getParcelable(key);
+    public boolean getEventDataAsBoolean() {
+        return (boolean)eventData;
     }
 
-    public String getKey() {
-        return key;
+    /**
+     * Return the object
+     * read from the bundle that contains all the values related to the current event
+     */
+    public String getEventDataAsString() {
+        return eventData.toString();
+    }
+
+    /**
+     * Return the object
+     * read from the bundle that contains all the values related to the current event
+     */
+    public int getEventDataAsInteger() {
+        return (int)eventData;
+    }
+
+    /**
+     * Return the object
+     * read from the bundle that contains all the values related to the current event
+     */
+    public short getEventDataAsShort() {
+        return (short)eventData;
+    }
+
+    /**
+     * Return the object
+     * read from the bundle that contains all the values related to the current event
+     */
+    public byte[] getEventDataAsByteArray() {
+        return (byte[])eventData;
     }
 
     /**
      * Return the OAD event associated to the mailbox command passed in input
      * @param mailboxIdentifier the mailbox command identifier
-     *                          (All the mailbox command identifiers are listed in the {@link command.DeviceCommandEvents} class
+     *                          (All the mailbox command identifiers are listed in the {@link DeviceCommandEvent} class
      *                          or can be accessed through the getCode() getter available for any command class that extends {@link command.DeviceCommand}
      * @return the OAD event associated to the mailbox command
      */
-    public static OADEvent getEventFromMailboxCommand(int mailboxIdentifier){
+    public static OADEvent getEventFromMailboxCommand(DeviceCommandEvent mailboxIdentifier){
         OADEvent event = null;
         for (OADEvent value : OADEvent.values()){
-            if(value.mailboxEvent == mailboxIdentifier)
+            if(value.mailboxEvent.getIdentifierCode() == mailboxIdentifier.getIdentifierCode())
                 event = value;
         }
         return event;

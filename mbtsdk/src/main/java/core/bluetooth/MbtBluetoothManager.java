@@ -30,12 +30,15 @@ import command.BluetoothCommands;
 import command.CommandInterface;
 import command.DeviceCommand;
 
+import command.DeviceCommandEvent;
+import command.OADCommands;
 import config.MbtConfig;
 import core.BaseModuleManager;
 import command.DeviceCommands;
 import command.DeviceStreamingCommands;
 import core.bluetooth.lowenergy.MbtBluetoothLE;
 import core.bluetooth.requests.BluetoothRequests;
+import eventbus.events.BluetoothResponseEvent;
 import core.bluetooth.requests.CommandRequestEvent;
 import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
 import core.bluetooth.requests.DisconnectRequestEvent;
@@ -46,8 +49,6 @@ import core.device.DeviceEvents;
 import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindsQRDataBase;
-import core.device.event.EventListener;
-import core.device.event.OADEvent;
 import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
 import engine.clientevents.ConnectionStateReceiver;
@@ -56,6 +57,7 @@ import eventbus.events.BluetoothEEGEvent;
 import eventbus.events.ConfigEEGEvent;
 import eventbus.events.ConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
+import eventbus.events.ResetBluetoothEvent;
 import features.MbtDeviceType;
 import features.MbtFeatures;
 import utils.AsyncUtils;
@@ -131,8 +133,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         }
     };
 
-    private EventListener.OADEventListener oadEventListener;
-
     /**
      * Constructor of the manager.
      * @param context the application context
@@ -176,7 +176,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             notifyDeviceResponseReceived(response, (DeviceCommand) command);
 
         else if (command instanceof BluetoothCommand)
-            notifyBluetoothResponseReceived(response, (BluetoothCommand) command);
+            onBluetoothResponseReceived(response, (BluetoothCommand) command);
 
         requestBeingProcessed = false;
     }
@@ -191,6 +191,9 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
             }else if(command instanceof DeviceCommands.UpdateExternalName) {
                 notifyDeviceInfoReceived(DeviceInfo.MODEL_NUMBER, new String((byte[]) response));
+
+            }else if(command instanceof OADCommands.SendPacket) {
+                notifyEventReceived(command.getIdentifier(), (byte[]) response);
             }
         }
     }
@@ -199,10 +202,11 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * Notify the Connection process handler if the MTU has been well changed
      * @param command is the corresponding type of bluetooth command
      */
-    private void notifyBluetoothResponseReceived(Object response, BluetoothCommand command) {
+    private void onBluetoothResponseReceived(Object response, BluetoothCommand command) {
         if(command instanceof BluetoothCommands.Mtu)
-            notifyMtuChanged(response == command.getData());
+            onMtuChanged(response == command.getData());
     }
+
     /**
      * This class is a specific thread that will handle all bluetooth operations. Bluetooth operations
      * are synchronous, meaning two or more operations can't be run simultaneously. This {@link HandlerThread}
@@ -710,7 +714,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
             @Override
             public void onRequestComplete(MbtDevice device) { //Firmware version has been read during the previous step so we retrieve its value, as it has been stored in the Device Manager
-                boolean isBondingSupported = new VersionHelper(device.getFirmwareVersion()).isValidForFeature(VersionHelper.Feature.BLE_BONDING);
+                boolean isBondingSupported = new VersionHelper(device.getFirmwareVersionAsString()).isValidForFeature(VersionHelper.Feature.BLE_BONDING);
                 if (isBondingSupported) { //if firmware version bonding is higher than 1.6.7, the bonding is launched
                     try {
                         AsyncUtils.executeAsync(new Runnable() {
@@ -753,7 +757,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 LogUtils.d(TAG, "device "+device);
                 updateConnectionState(true);//current state is set to QR_CODE_SENDING
                 if (device.getSerialNumber() != null && device.getExternalName() != null && (device.getExternalName().equals(MbtFeatures.MELOMIND_DEVICE_NAME) || device.getExternalName().length() == MbtFeatures.DEVICE_QR_CODE_LENGTH-1) //send the QR code found in the database if the headset do not know its own QR code
-                        && new VersionHelper(device.getFirmwareVersion()).isValidForFeature(VersionHelper.Feature.REGISTER_EXTERNAL_NAME)) {
+                        && new VersionHelper(device.getFirmwareVersionAsString()).isValidForFeature(VersionHelper.Feature.REGISTER_EXTERNAL_NAME)) {
                     AsyncUtils.executeAsync(new Runnable() {
                         @Override
                         public void run() {
@@ -779,7 +783,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                         return;
                     if(!isRequestCompleted){
                         isRequestCompleted = true;
-                        boolean connectionFromBleAvailable = new VersionHelper(device.getFirmwareVersion()).isValidForFeature(VersionHelper.Feature.A2DP_FROM_HEADSET);
+                        boolean connectionFromBleAvailable = new VersionHelper(device.getFirmwareVersionAsString()).isValidForFeature(VersionHelper.Feature.A2DP_FROM_HEADSET);
                         try {
                             AsyncUtils.executeAsync(new Runnable() {
                                 @Override
@@ -839,7 +843,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         sendCommand(new BluetoothCommands.Mtu(mtu));
     }
 
-    private void notifyMtuChanged(boolean isSuccess){
+    private void onMtuChanged(boolean isSuccess){
         updateConnectionState(true); //current state is set to BT_PARAMETERS_CHANGED
         switchToNextConnectionStep();
     }
@@ -1180,39 +1184,26 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     }
 
     /**
-     * Handle an OAD event received in order to perform the associated Bluetooth task.
-     * During a firmware update he Bluetooth unit is responsible for communicating
-     * with the connected headset device to update :
-     * it sends requests to it and receives responses/messages from it.
-     * The Bluetooth unit is only used for data/message transmission during the OAD update process.
-     * The Device unit (especially its OAD subunit) is responsible for processing the information
-     *
-     * @param event the OAD event
+     * Handle a request of an external unit to enable and disable the mobile device bluetooth
+     * and reset the pairing keys of the previously connected device.
+     * @param event the reset event that holds the name of the device previously connected
      */
     @Subscribe
-    public void onOADEvent(OADEvent event){
-        if(event.equals(OADEvent.INIT))
-            startOADUpdate();
-        else if (oadEventListener != null)
-            oadEventListener.onOADEvent(event);
+    public void onResetBluetooth(ResetBluetoothEvent event) {
+        if (deviceTypeRequested.useLowEnergyProtocol()) {
+            mbtBluetoothLE.resetMobileDeviceBluetoothAdapter();
+            mbtBluetoothLE.clearMobileDeviceCache();
+        } else {
+            mbtBluetoothSPP.resetMobileDeviceBluetoothAdapter();
+            mbtBluetoothSPP.clearMobileDeviceCache();
+        }
     }
 
-    void startOADUpdate(){
-        oadEventListener = new EventListener.OADEventListener() {
-            @Override
-            public void onOADEvent(OADEvent oadEvent) {
-                MbtEventBus.postEvent(oadEvent);
-            }
-
-            @Override
-            public void onError(BaseError error, String additionalInfo) {
-
-            }
-        };
-
-        if(deviceTypeRequested.useLowEnergyProtocol())
-            mbtBluetoothLE.startOADUpdate(oadEventListener);
-        else
-            mbtBluetoothSPP.startOADUpdate(oadEventListener);
+    /**
+     * Notify the event subscribers when a message/response of the headset device
+     * is received by the Bluetooth unit
+     */
+    public void notifyEventReceived(DeviceCommandEvent eventIdentifier, byte[] eventData) {
+        MbtEventBus.postEvent(new BluetoothResponseEvent(eventIdentifier, eventData));
     }
 }
