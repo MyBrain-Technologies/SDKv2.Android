@@ -57,7 +57,7 @@ import eventbus.events.BluetoothEEGEvent;
 import eventbus.events.ConfigEEGEvent;
 import eventbus.events.ConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
-import eventbus.events.ClearBluetoothEvent;
+import eventbus.events.ResetBluetoothEvent;
 import features.MbtDeviceType;
 import features.MbtFeatures;
 import utils.AsyncUtils;
@@ -1189,13 +1189,13 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * @param event the reset event that holds the name of the device previously connected
      */
     @Subscribe
-    public void onClearBluetooth(ClearBluetoothEvent event) {
+    public void onResetBluetooth(ResetBluetoothEvent event) {
         if (deviceTypeRequested.useLowEnergyProtocol()) {
-            mbtBluetoothLE.resetMobileDeviceBluetooth();
+            mbtBluetoothLE.resetMobileDeviceBluetoothAdapter();
             mbtBluetoothLE.clearMobileDeviceCache();
         } else {
-            mbtBluetoothSPP.resetMobileDeviceBluetooth();
-            mbtBluetoothLE.clearMobileDeviceCache();
+            mbtBluetoothSPP.resetMobileDeviceBluetoothAdapter();
+            mbtBluetoothSPP.clearMobileDeviceCache();
         }
     }
 

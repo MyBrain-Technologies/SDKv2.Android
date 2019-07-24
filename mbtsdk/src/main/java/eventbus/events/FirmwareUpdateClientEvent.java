@@ -2,7 +2,7 @@ package eventbus.events;
 
 import android.util.Pair;
 
-import core.device.oad.OADManager;
+import core.device.oad.OADState;
 import engine.clientevents.BaseError;
 
 /**
@@ -15,14 +15,14 @@ public class FirmwareUpdateClientEvent {
     private final static int UNDEFINED = -1;
 
     private Pair<BaseError, String> errorAndAdditionalInfo;
-    private OADManager.OADState oadState;
+    private OADState oadState;
     private int oadProgress = UNDEFINED;
 
     public FirmwareUpdateClientEvent(BaseError error, String additionalInfo) {
         this.errorAndAdditionalInfo = new Pair<>(error, additionalInfo);
     }
 
-    public FirmwareUpdateClientEvent(OADManager.OADState oadState) {
+    public FirmwareUpdateClientEvent(OADState oadState) {
         this.oadState = oadState;
         this.oadProgress = oadState.convertToProgress();
     }
@@ -39,7 +39,7 @@ public class FirmwareUpdateClientEvent {
         return errorAndAdditionalInfo.second;
     }
 
-    public OADManager.OADState getOadState() {
+    public OADState getOadState() {
         return oadState;
     }
 

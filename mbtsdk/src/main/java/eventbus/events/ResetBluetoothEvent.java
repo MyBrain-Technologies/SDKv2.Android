@@ -4,4 +4,4 @@ package eventbus.events;
  *
  * @author Sophie Zecri on 24/07/2019
  */
-public class ClearBluetoothEvent {}
+public class ResetBluetoothEvent {}

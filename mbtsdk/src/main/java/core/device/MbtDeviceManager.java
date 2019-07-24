@@ -10,6 +10,7 @@ import org.greenrobot.eventbus.ThreadMode;
 import command.OADCommands;
 import config.ConnectionConfig;
 import core.BaseModuleManager;
+import core.bluetooth.BtState;
 import core.bluetooth.requests.CommandRequestEvent;
 import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
 import core.device.oad.OADContract;
@@ -25,9 +26,10 @@ import core.device.oad.OADManager;
 import core.eeg.acquisition.MbtDataConversion;
 import eventbus.MbtEventBus;
 import eventbus.events.ConfigEEGEvent;
+import eventbus.events.ConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
 import eventbus.events.FirmwareUpdateClientEvent;
-import eventbus.events.ClearBluetoothEvent;
+import eventbus.events.ResetBluetoothEvent;
 import utils.LogUtils;
 
 import static features.MbtDeviceType.MELOMIND;
@@ -130,10 +132,6 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
 
     @Subscribe
     public void onNewDeviceConnected(DeviceEvents.FoundDeviceEvent deviceEvent) {
-        if(oadManager != null)
-            oadManager.onOADEvent(OADEvent
-                    .RECONNECTION_PERFORMED
-                    .setEventData(true));
 
         MbtDevice device = null;
         if (deviceEvent.getDevice() != null) {
@@ -142,6 +140,15 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
         }
         setmCurrentConnectedDevice(device);
 
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onConnectionStateChanged(ConnectionStateEvent connectionStateEvent) {
+        if(connectionStateEvent.getNewState().equals(BtState.CONNECTED_AND_READY))
+                if(oadManager != null)
+                    oadManager.onOADEvent(OADEvent
+                            .RECONNECTION_PERFORMED
+                            .setEventData(true));
     }
 
     @Subscribe
@@ -241,7 +248,7 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
 
     @Override
     public void clearBluetooth() {
-        MbtEventBus.postEvent(new ClearBluetoothEvent());
+        MbtEventBus.postEvent(new ResetBluetoothEvent());
     }
 
     @Override

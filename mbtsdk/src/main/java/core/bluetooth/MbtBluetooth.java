@@ -161,7 +161,7 @@ public abstract class MbtBluetooth implements IConnectable{
         }
     }
 
-    public void resetMobileDeviceBluetooth() {
+    public void resetMobileDeviceBluetoothAdapter() {
         bluetoothAdapter.disable();
         try {
             Thread.sleep(500);
