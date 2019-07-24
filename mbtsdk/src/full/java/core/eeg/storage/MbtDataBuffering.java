@@ -56,7 +56,7 @@ public class MbtDataBuffering {
         pendingRawData.addAll(data);
 
         if(pendingRawData.size() >= MbtFeatures.DEFAULT_MAX_PENDING_RAW_DATA_BUFFER_SIZE){
-            notifyPendingRawDataBufferFull();
+            onPendingRawDataBufferFull();
             resetPendingBuffer();
         }
     }
@@ -66,7 +66,7 @@ public class MbtDataBuffering {
      * allowed size. It notifies EEG manager that the buffer is ready to be converted into consolidated EEG
      */
     @SuppressWarnings("unchecked")
-    private void notifyPendingRawDataBufferFull() {
+    private void onPendingRawDataBufferFull() {
         final ArrayList<RawEEGSample> rawEEGtoConvert = (ArrayList<RawEEGSample>) pendingRawData.clone(); //the pending raw data is stored in toDecodeBytes to be converted in readable EEG values
         eegManager.convertToEEG(rawEEGtoConvert);
 

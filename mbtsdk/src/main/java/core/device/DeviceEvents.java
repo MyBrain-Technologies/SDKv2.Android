@@ -99,19 +99,4 @@ public interface DeviceEvents {
         }
     }
 
-    /**
-     * Event that returns the headset's response after the SDK has sent a command to it using Mailbox or other characteristic writing methods
-     */
-    class RawDeviceResponseEvent {
-        private byte[] rawResponse;
-
-        public RawDeviceResponseEvent(byte[] rawResponse){
-            this.rawResponse = rawResponse;
-        }
-
-        public byte[] getRawResponse() {
-            return rawResponse;
-        }
-    }
-
 }
