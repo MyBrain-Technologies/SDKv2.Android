@@ -31,7 +31,7 @@ public final class MbtFeatures{
     public final static int DEFAULT_SAMPLE_PER_PACKET = 4;
     public static int DEFAULT_SAMPLE_PER_NOTIF = DEFAULT_SAMPLE_PER_PACKET;
 
-    public final static int DEFAULT_EEG_PACKET_LENGTH = 250;
+    public final static int DEFAULT_EEG_PACKET_LENGTH = DEFAULT_SAMPLE_RATE;
 
     public final static int DEFAULT_CLIENT_PACKET_SIZE = 250;
     public final static int DEFAULT_CLIENT_NOTIFICATION_PERIOD = 1000;

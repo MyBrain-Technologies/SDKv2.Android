@@ -61,6 +61,8 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
     private OutputStream writer;
     private long bytesReceived = 0;
 
+    private boolean isStreaming = false;
+
     private MessageStatus currentStatus;
 
     private Timer keepAliveTimer;
@@ -228,7 +230,10 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
         else {
             if (sendData(msg)) {
                 LogUtils.i(TAG,"Successfully requested to start stream");
+
                 sendKeepAlive(true);
+                notifyStreamStateChanged(StreamState.STARTED);
+                isStreaming = true;
                 return true;
             }
             else {
@@ -476,6 +481,8 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
             if (sendData(msg)) {
                 LogUtils.i(TAG,"Successfully requested to stop stream");
                 sendKeepAlive(false);
+                isStreaming = false;
+                notifyStreamStateChanged(StreamState.STOPPED);
                 return true;
             }
             else {
@@ -485,14 +492,10 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
         }
     }
 
-    @Override
-    public void notifyStreamStateChanged(StreamState streamState) {
-
-    }
 
     @Override
     public boolean isStreaming() {
-        return false;
+        return isStreaming;
     }
 
 
@@ -528,7 +531,15 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
     public void sendCommand(CommandInterface.MbtCommand command) {
     }
 
-
+    /**
+     * Whenever there is a new stream state, this method is called to notify the bluetooth manager about it.
+     * @param newStreamState the new stream state based on {@link StreamState the StreamState enum}
+     */
+    @Override
+    public void notifyStreamStateChanged(StreamState newStreamState) {
+        LogUtils.i(TAG, "new streamstate with state " + newStreamState.toString());
+        super.mbtBluetoothManager.notifyStreamStateChanged(newStreamState);
+    }
 
 }
 

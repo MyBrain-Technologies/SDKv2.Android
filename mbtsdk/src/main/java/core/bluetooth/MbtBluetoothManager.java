@@ -264,7 +264,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 if (((StreamRequestEvent) request).isStart()) {
                     startStreamOperation(((StreamRequestEvent) request).shouldMonitorDeviceStatus(), deviceTypeRequested.getProtocol());
                 }else {
-                    stopStreamOperation();
+                    stopStreamOperation(deviceTypeRequested.useLowEnergyProtocol() ? mbtBluetoothLE : mbtBluetoothSPP);
                 }
 
             } else if (request instanceof CommandRequestEvent) {
@@ -917,13 +917,13 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * Initiates the acquisition of EEG data from the correct BtProtocol
      * If there is no streaming session in progress, nothing happens and the method returns silently.
      */
-    private void stopStreamOperation(){
+    private void stopStreamOperation(IStreamable streamable){
         Log.d(TAG, "Bluetooth Manager stops streaming");
-        if(!mbtBluetoothLE.isStreaming()) {
+        if(!streamable.isStreaming()) {
             requestBeingProcessed = false;
             return;
         }
-        if(!mbtBluetoothLE.stopStream()){
+        if(!streamable.stopStream()){
             requestBeingProcessed  = false;
             EventBusManager.postEvent(IStreamable.StreamState.FAILED);
         }
