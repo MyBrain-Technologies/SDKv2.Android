@@ -35,11 +35,6 @@ public final class OADManager {
 
     private final static String TAG = OADManager.class.getName();
 
-    /**
-     * Expected number of packets of the OAD binary file (chunks of the file that hold the firmware to install) to send to the headset device
-     */
-    public static final short EXPECTED_NB_PACKETS_BINARY_FILE = 14223;
-
     private final Context context;
 
     /**
@@ -128,8 +123,8 @@ public final class OADManager {
             }
             oadContext.setPacketsToSend(oadPackets);
 
-            String firmwareVersionFromContent = OADExtractionUtils.extractFirmwareVersionFromContent(content);
-            if(firmwareVersionFromContent == null || firmwareVersionFromContent.isEmpty()){
+            byte[] firmwareVersionFromContent = OADExtractionUtils.extractFirmwareVersionFromContent(content);
+            if(firmwareVersionFromContent == null || firmwareVersionFromContent.length == 0){
                 onError(OADError.ERROR_INIT_FAILED, "Impossible to extract the firmware version from content of OAD binary file.");
                 return;
             }

@@ -20,7 +20,7 @@ class OADContext {
     /**
      * Version of the firmware to install on the connected headset device.
      */
-    private FirmwareVersion firmwareVersion = null;
+    private byte[] firmwareVersion = null;
 
     /**
      * Number of packets to send to the connected headset device during the firmware binary file transfer.
@@ -50,7 +50,7 @@ class OADContext {
     /**
      * Return the version of the firmware to install on the connected headset device.
      */
-    public FirmwareVersion getFirmwareVersion() {
+    public byte[] getFirmwareVersion() {
         return firmwareVersion;
     }
 
@@ -73,15 +73,8 @@ class OADContext {
     /**
      * Set the version of the firmware to install on the connected headset device.
      */
-    public void setFirmwareVersion(FirmwareVersion firmwareVersion) {
+    public void setFirmwareVersion(byte[] firmwareVersion) {
         this.firmwareVersion = firmwareVersion;
-    }
-
-    /**
-     * Set the version of the firmware to install on the connected headset device.
-     */
-    public void setFirmwareVersion(String firmwareVersion) {
-        this.firmwareVersion = new FirmwareVersion(firmwareVersion);
     }
 
     /**

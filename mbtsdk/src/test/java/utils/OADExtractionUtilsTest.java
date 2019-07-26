@@ -16,6 +16,7 @@ import core.device.oad.OADManager;
 
 import static org.junit.Assert.*;
 import static utils.OADExtractionUtils.EXPECTED_NB_BYTES_BINARY_FILE;
+import static utils.OADExtractionUtils.OAD_PACKET_SIZE;
 import static utils.OADExtractionUtils.OAD_PAYLOAD_PACKET_SIZE;
 
 public class OADExtractionUtilsTest {
@@ -200,18 +201,10 @@ public class OADExtractionUtilsTest {
     public void extractOADPackets_valid(){
 
         byte[] content = new byte[EXPECTED_NB_BYTES_BINARY_FILE];
-        for(int i = 0; i< EXPECTED_NB_BYTES_BINARY_FILE; i++){
-            content[i] = (byte)1;
-        }
-        ArrayList<byte[]> expectedOADPackets =  new ArrayList<>();
-        byte[] packet = new byte[OAD_PAYLOAD_PACKET_SIZE];
-        Arrays.fill(packet, (byte)1);
-        for (int j = 0 ; j < OADManager.EXPECTED_NB_PACKETS_BINARY_FILE; j++){
-            expectedOADPackets.add(packet);
-        }
+        Arrays.fill(content, (byte)1);
 
         ArrayList<byte[]> computedOADPackets = OADExtractionUtils.extractOADPackets(content);
-        assertEquals("Expected size "+expectedOADPackets.size()+ " | Computed size "+computedOADPackets.size() ,computedOADPackets, expectedOADPackets);
+        assertEquals("Expected size "+OADManager.EXPECTED_NB_PACKETS_BINARY_FILE+ " | Computed size "+computedOADPackets.size() ,computedOADPackets.size(), OADManager.EXPECTED_NB_PACKETS_BINARY_FILE);
 
     }
     /**

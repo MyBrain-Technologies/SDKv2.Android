@@ -4,9 +4,12 @@ import android.support.annotation.Keep;
 
 import java.nio.ByteBuffer;
 
-import core.device.model.FirmwareVersion;
 import core.device.oad.OADManager;
 import engine.clientevents.BaseError;
+import utils.OADExtractionUtils;
+
+import static utils.OADExtractionUtils.NB_PACKETS_NB_BYTES;
+import static utils.OADExtractionUtils.FIRMWARE_VERSION_NB_BYTES;
 
 /**
  * OAD Mailbox commands sent from the SDK to the headset
@@ -24,13 +27,10 @@ public interface OADCommands {
     @Keep
     class RequestFirmwareValidation extends DeviceCommand<byte[], BaseError> {
 
-        private final int FIRMWARE_VERSION_NB_BYTES = 2;
-        private final int BINARY_FILE_LENGTH_NB_BYTES = 2;
-
         /**
          * The firmware version that will replace the current version installed on the headset device
          */
-        private FirmwareVersion firmwareVersion;
+        private byte[] firmwareVersion;
 
         /**
          * The number of packets of the binary file that holds the firmware to upload & install on the headset device
@@ -48,7 +48,7 @@ public interface OADCommands {
          * sent by the headset to the SDK once the command is received,
          * call the {@link RequestFirmwareValidation}(FirmwareVersion firmwareVersion, short binaryFileNbPackets, {@linkCommandCallback<DeviceCommand, byte[]>)} constructor.
          */
-        public RequestFirmwareValidation(FirmwareVersion firmwareVersion, short binaryFileNbPackets) {
+        public RequestFirmwareValidation(byte[] firmwareVersion, short binaryFileNbPackets) {
             super(DeviceCommandEvent.MBX_START_OTA_TXF);
                 this.firmwareVersion = firmwareVersion;
                 this.binaryFileNbPackets = binaryFileNbPackets;
@@ -70,7 +70,7 @@ public interface OADCommands {
          * call the {@link RequestFirmwareValidation}(String firmwareVersion, int binaryFileNbPackets) constructor
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
-        public RequestFirmwareValidation(FirmwareVersion firmwareVersion, short binaryFileNbPackets, CommandInterface.CommandCallback<byte[]> commandCallback) {
+        public RequestFirmwareValidation(byte[] firmwareVersion, short binaryFileNbPackets, CommandInterface.CommandCallback<byte[]> commandCallback) {
             super(DeviceCommandEvent.MBX_SET_SERIAL_NUMBER);
             this.firmwareVersion = firmwareVersion;
             this.binaryFileNbPackets = binaryFileNbPackets;
@@ -81,8 +81,8 @@ public interface OADCommands {
         @Override
         public boolean isValid() {
             return firmwareVersion != null
-                    && !firmwareVersion.getFirmwareVersionAsString().isEmpty()
-                    && binaryFileNbPackets == OADManager.EXPECTED_NB_PACKETS_BINARY_FILE;
+                    && firmwareVersion.length != 0
+                    && binaryFileNbPackets == OADExtractionUtils.EXPECTED_NB_PACKETS_BINARY_FILE;
         }
 
         @Override
@@ -95,8 +95,8 @@ public interface OADCommands {
             if(firmwareVersion == null)
                 return null;
 
-            ByteBuffer buffer = ByteBuffer.allocate(BINARY_FILE_LENGTH_NB_BYTES + FIRMWARE_VERSION_NB_BYTES);
-            buffer.put(firmwareVersion.getFirmwareVersionAsString().getBytes());
+            ByteBuffer buffer = ByteBuffer.allocate(NB_PACKETS_NB_BYTES + FIRMWARE_VERSION_NB_BYTES);
+            buffer.put(firmwareVersion);
             buffer.putShort(binaryFileNbPackets);
             return buffer.array();
         }

@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 
-import core.device.oad.OADManager;
 import core.device.oad.PacketCounter;
 
 /**
@@ -50,10 +49,21 @@ public final class OADExtractionUtils {
      * Offset to take into account when you read the firmware version from the content of the OAD binary file.
      */
     static final int FIRMWARE_VERSION_OFFSET = 0x27C;
+
     /**
      * Number of bytes allocated in the OAD binary file to store the firmware version.
      */
-    private static final int FIRMWARE_VERSION_NB_BYTES = 4;
+    public static final int FIRMWARE_VERSION_NB_BYTES = 2;
+
+    /**
+     * Number of bytes allocated for the number of packet to send to the current firmware
+     */
+    public static final int NB_PACKETS_NB_BYTES = 2;
+
+    /**
+     * Expected number of packets of the OAD binary file (chunks of the file that hold the firmware to install) to send to the headset device
+     */
+    public static final short EXPECTED_NB_PACKETS_BINARY_FILE = 14223;
 
     /**
      * Size of the index of a packet of the OAD binary file (chunks of the file that hold the firmware to install)
@@ -159,13 +169,13 @@ public final class OADExtractionUtils {
      * @param content is the extracted content of the OAD binary file that holds the firmware
      * @return the firmware version as a String
      */
-    public static final String extractFirmwareVersionFromContent(@NonNull final byte[] content){
+    public static final byte[] extractFirmwareVersionFromContent(@NonNull final byte[] content){
         if (content == null || content.length < FIRMWARE_VERSION_OFFSET + FIRMWARE_VERSION_NB_BYTES)
             return null;
 
         byte[] firmwareVersionExtracted = new byte[FIRMWARE_VERSION_NB_BYTES];
         System.arraycopy(content, FIRMWARE_VERSION_OFFSET, firmwareVersionExtracted, 0, FIRMWARE_VERSION_NB_BYTES);
-        return new String(firmwareVersionExtracted);
+        return firmwareVersionExtracted;
     }
 
     /**
@@ -176,17 +186,20 @@ public final class OADExtractionUtils {
         if (content == null)
             return null;
 
-        PacketCounter packetCounter = new PacketCounter(OAD_PACKET_SIZE, content.length);
+        PacketCounter packetCounter = new PacketCounter(OAD_PAYLOAD_PACKET_SIZE, content.length);
         ArrayList<byte[]> packetsToSend = new ArrayList<>();
 
             while(packetCounter.getNbPacketCounted() < packetCounter.getTotalNbPackets()){
 
-                byte[] packet = new byte[OAD_PACKET_SIZE];
+                byte[] packet = new byte[OAD_PACKET_SIZE]; //a packet is 2+18 bytes long
+                //first 2 bytes are the index
                 packet[0] = ConversionUtils.loUint16(packetCounter.getNbPacketCounted());
                 packet[1] = ConversionUtils.hiUint16(packetCounter.getNbPacketCounted());
+                //18 following bytes are the payload
                 if(packetCounter.getTotalNbBytes() + OAD_PAYLOAD_PACKET_SIZE > content.length){
                     int remainder = content.length - packetCounter.getTotalNbBytes();
-                    System.arraycopy(content, packetCounter.getTotalNbBytes(), packet, OAD_INDEX_PACKET_SIZE, remainder);
+                    System.arraycopy(content, packetCounter.getTotalNbBytes(),
+                            packet, OAD_INDEX_PACKET_SIZE, remainder);
                     for(int i = remainder + OAD_INDEX_PACKET_SIZE; i < OAD_PACKET_SIZE; i++){
                         packet[i] = (byte)0xFF;
                     }
@@ -203,6 +216,7 @@ public final class OADExtractionUtils {
 
         return packetsToSend;
     }
+
 
     private static boolean fileExistsInAssets(@NonNull AssetManager assetManager, String filePath){
         try {
