@@ -7,6 +7,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -37,8 +38,6 @@ import engine.clientevents.EegListener;
 import features.MbtDeviceType;
 import features.MbtFeatures;
 import utils.LogUtils;
-
-import static utils.MatrixUtils.invertFloatMatrix;
 
 public class
 DeviceActivity extends AppCompatActivity {
@@ -116,17 +115,18 @@ DeviceActivity extends AppCompatActivity {
 
             @Override
             public void onNewPackets(@NonNull final MbtEEGPacket mbtEEGPackets) {
-                if (invertFloatMatrix(mbtEEGPackets.getChannelsData()) != null)
-                    mbtEEGPackets.setChannelsData(invertFloatMatrix(mbtEEGPackets.getChannelsData()));
-
-                if (isStreaming) {
-                    if (eegGraph != null) {
-                        addEegDataToGraph(mbtEEGPackets);
-
-                        channel1Quality.setText(getString(R.string.channel_1_qc) + ((mbtEEGPackets.getQualities() != null && mbtEEGPackets.getQualities().get(0) != null) ? mbtEEGPackets.getQualities().get(0) : " -- "));
-                        channel2Quality.setText(getString(R.string.channel_2_qc) + ((mbtEEGPackets.getQualities() != null && mbtEEGPackets.getQualities().get(1) != null) ? mbtEEGPackets.getQualities().get(1) : " -- "));
-                    }
-                }
+                Log.i(TAG, "onNewPackets");
+//                if (invertFloatMatrix(mbtEEGPackets.getChannelsData()) != null)
+//                    mbtEEGPackets.setChannelsData(invertFloatMatrix(mbtEEGPackets.getChannelsData()));
+//
+//                if (isStreaming) {
+//                    if (eegGraph != null) {
+//                        addEegDataToGraph(mbtEEGPackets);
+//
+//                        channel1Quality.setText(getString(R.string.channel_1_qc) + ((mbtEEGPackets.getQualities() != null && mbtEEGPackets.getQualities().get(0) != null) ? mbtEEGPackets.getQualities().get(0) : " -- "));
+//                        channel2Quality.setText(getString(R.string.channel_2_qc) + ((mbtEEGPackets.getQualities() != null && mbtEEGPackets.getQualities().get(1) != null) ? mbtEEGPackets.getQualities().get(1) : " -- "));
+//                    }
+//                }
             }
         };
     }
@@ -246,14 +246,16 @@ DeviceActivity extends AppCompatActivity {
                 if (!isStreaming) { //streaming is not in progress : starting streaming
                         startStream(new StreamConfig.Builder(eegListener)
                             .setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)
-                            .useQualities()
-                            .configureAcquisitionFromDeviceCommand()
-                            .create());
+//                            .useQualities()
+//                            .configureAcquisitionFromDeviceCommand(
+//                                    new DeviceStreamingCommands.DcOffset(false),
+//                                    new DeviceStreamingCommands.Triggers(false),
+//                                    (DeviceStreamingCommands) new DeviceStreamingCommands.EegConfig(null))
+                            .createFor(MbtDeviceType.VPRO));
                 } else { //streaming is in progress : stopping streaming
                     stopStream(); // set false to isStreaming et null to the eegListener
                 }
                 updateStreaming(); //update the UI text in both case according to the new value of isStreaming
-
             }
         });
     }

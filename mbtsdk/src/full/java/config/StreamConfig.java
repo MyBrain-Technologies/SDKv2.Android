@@ -5,7 +5,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import command.DeviceCommand;
 import command.DeviceStreamingCommands;
@@ -13,6 +12,7 @@ import core.eeg.storage.MbtEEGPacket;
 import engine.clientevents.BaseError;
 import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.EegListener;
+import features.MbtDeviceType;
 import features.MbtFeatures;
 
 /**
@@ -37,18 +37,20 @@ public final class StreamConfig {
      * or get values stored by the headset
      * or ask the headset to perform an action.
      */
-    private ArrayList<DeviceCommand> deviceCommands = new ArrayList<>(
-            Arrays.asList(
-                new DeviceStreamingCommands.DcOffset(false),
-                new DeviceStreamingCommands.Triggers(false)
-            ));
+    private ArrayList<DeviceCommand> deviceCommands = new ArrayList<>();
 
-    private StreamConfig(boolean computeQualities, EegListener<BaseError> eegListener, DeviceStatusListener<BaseError> deviceStatusListener, int notificationPeriod, DeviceStreamingCommands[] deviceCommands){
+    private MbtDeviceType deviceType;
+
+    private StreamConfig(boolean computeQualities, EegListener<BaseError> eegListener,
+                         DeviceStatusListener<BaseError> deviceStatusListener,
+                         int notificationPeriod,
+                         DeviceStreamingCommands[] deviceCommands,
+                         MbtDeviceType deviceType){
         this.computeQualities = computeQualities;
         this.eegListener = eegListener;
         this.deviceStatusListener = deviceStatusListener;
         this.notificationPeriod = notificationPeriod;
-
+        this.deviceType = deviceType;
         if(deviceCommands != null && deviceCommands.length > 0) {
             for (DeviceStreamingCommands deviceCommand : deviceCommands) {
                 if(deviceCommand != null){
@@ -60,7 +62,6 @@ public final class StreamConfig {
                 }
             }
         }
-        this.deviceCommands.add(new DeviceStreamingCommands.EegConfig(null));
     }
 
     /**
@@ -113,6 +114,10 @@ public final class StreamConfig {
         this.deviceStatusListener = deviceStatusListener;
     }
 
+    public MbtDeviceType getDeviceType() {
+        return deviceType;
+    }
+
     /**
      * Builder class to ease construction of the {@link StreamConfig} instance.
      */
@@ -140,6 +145,8 @@ public final class StreamConfig {
          * or ask the headset to perform an action.
          */
         private DeviceStreamingCommands[] deviceCommands;
+
+
 
         /**
          * The EEG Listener is mandatory to receive the EEG stream from the headset to the SDK.
@@ -204,8 +211,8 @@ public final class StreamConfig {
         }
 
         @Nullable
-        public StreamConfig create(){
-            return new StreamConfig(this.computeQualities, this.eegListener, this.deviceStatusListener, this.notificationPeriod, this.deviceCommands);
+        public StreamConfig createFor(MbtDeviceType deviceType){
+            return new StreamConfig(this.computeQualities, this.eegListener, this.deviceStatusListener, this.notificationPeriod, this.deviceCommands, deviceType);
         }
     }
 

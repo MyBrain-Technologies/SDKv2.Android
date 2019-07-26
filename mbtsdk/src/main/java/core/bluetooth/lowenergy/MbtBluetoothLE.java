@@ -19,7 +19,6 @@ import android.os.ParcelUuid;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -32,7 +31,6 @@ import java.util.concurrent.TimeoutException;
 import command.BluetoothCommands;
 import command.CommandInterface;
 import command.DeviceCommand;
-
 import command.DeviceCommandEvents;
 import config.MbtConfig;
 import core.bluetooth.BtProtocol;
@@ -47,9 +45,9 @@ import engine.clientevents.BaseError;
 import engine.clientevents.BluetoothError;
 import engine.clientevents.ConnectionStateReceiver;
 import features.MbtFeatures;
+import utils.BitUtils;
 import utils.BroadcastUtils;
 import utils.LogUtils;
-import utils.BitUtils;
 import utils.MbtAsyncWaitOperation;
 
 import static command.DeviceCommandEvents.CMD_CODE_CONNECT_IN_A2DP_FAILED_ALREADY_CONNECTED;
@@ -710,6 +708,11 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         mbtBluetoothManager.notifyResponseReceived(response, command);//return null response to the client if request has not been sent
     }
 
+    /**
+     *
+     * @param command
+     * @return
+     */
     private boolean sendRequestData(CommandInterface.MbtCommand command){
         if(command instanceof BluetoothCommands.Mtu)
             return changeMTU(((Integer)command.serialize()));

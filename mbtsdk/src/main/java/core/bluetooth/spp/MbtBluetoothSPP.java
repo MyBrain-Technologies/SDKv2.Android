@@ -347,7 +347,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
                         if(b == FRAME_HEADER){
                             currentStatus = STATE_LENGTH;
                         }else if(b != 0){
-                            LogUtils.e(TAG, "Byte b = " + b);
+                            //LogUtils.e(TAG, "Byte b = " + b);
                         }
                         break;
 

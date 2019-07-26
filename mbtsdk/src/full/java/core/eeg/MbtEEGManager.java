@@ -18,18 +18,18 @@ import core.bluetooth.IStreamable;
 import core.bluetooth.requests.StreamRequestEvent;
 import core.device.model.MbtDevice;
 import core.eeg.acquisition.MbtDataAcquisition;
+import core.eeg.acquisition.MbtDataConversion;
 import core.eeg.signalprocessing.ContextSP;
 import core.eeg.signalprocessing.MBTCalibrationParameters;
 import core.eeg.signalprocessing.MBTComputeRelaxIndex;
 import core.eeg.signalprocessing.MBTComputeStatistics;
-import core.eeg.storage.MbtEEGPacket;
 import core.eeg.signalprocessing.MBTSignalQualityChecker;
-import core.eeg.acquisition.MbtDataConversion;
 import core.eeg.storage.MbtDataBuffering;
+import core.eeg.storage.MbtEEGPacket;
 import core.eeg.storage.RawEEGSample;
 import eventbus.EventBusManager;
-import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.BluetoothEEGEvent;
+import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.ConfigEEGEvent;
 import features.MbtFeatures;
 import mbtsdk.com.mybraintech.mbtsdk.BuildConfig;
@@ -68,19 +68,14 @@ public final class MbtEEGManager extends BaseModuleManager {
 //    private MbtEEGManager.RequestThread requestThread;
 //    private Handler requestHandler;
 
-    public MbtEEGManager(@NonNull Context context, @NonNull BtProtocol protocol) {
+    public MbtEEGManager(@NonNull Context context) {
         super(context);
-        this.protocol = protocol;
-        this.dataAcquisition = new MbtDataAcquisition(this, protocol);
         this.dataBuffering = new MbtDataBuffering(this);
         try {
             System.loadLibrary(ContextSP.LIBRARY_NAME + BuildConfig.USE_ALGO_VERSION);
         } catch (final UnsatisfiedLinkError e) {
             e.printStackTrace();
         }
-//        requestThread = new MbtEEGManager.RequestThread("requestThread", Thread.MAX_PRIORITY);
-//        requestThread.start();
-//        requestHandler = new Handler(requestThread.getLooper());
     }
 
     /**
@@ -277,9 +272,14 @@ public final class MbtEEGManager extends BaseModuleManager {
 
     @Subscribe
     public void onStreamStartedOrStopped(StreamRequestEvent event){
-        if(event.isStart() && event.shouldComputeQualities()){
-            hasQualities = true;
-            initQualityChecker();
+        if(event.isStart()){
+            this.dataAcquisition = new MbtDataAcquisition(this, event.getBtProtocol());
+            this.dataBuffering = new MbtDataBuffering(this);
+            if(event.shouldComputeQualities()){
+                hasQualities = true;
+                initQualityChecker();
+            }
+
         }
         else if(!event.isStart() && event.shouldComputeQualities())
             deinitQualityChecker();
@@ -293,50 +293,6 @@ public final class MbtEEGManager extends BaseModuleManager {
         resetBuffers(internalConfig.getNbPackets(), internalConfig.getStatusBytes(), internalConfig.getGainValue());
     }
 
-//    /**
-//     * Add the new {@link EegRequests} to the handler thread that will execute tasks one after another
-//     * This method must return quickly in order not to block the thread.
-//     * @param request the new {@link EegRequests } to execute
-//     */
-//    @Subscribe(threadMode = ThreadMode.ASYNC)
-//    public void onNewEegRequest(final EegRequests request){
-//        LogUtils.i(TAG, "onNewEEGRequest");
-//
-//            requestHandler.post(new Runnable() {
-//                @Override
-//                public void run() {
-//                    requestThread.parseRequest(request);
-//                }
-//            });
-//    }
-
-//    private class RequestThread extends HandlerThread {
-//        RequestThread(String name) {
-//            super(name);
-//        }
-//
-//        RequestThread(String name, int priority) {
-//            super(name, priority);
-//        }
-//
-//        @Override
-//        protected void onLooperPrepared() {
-//            super.onLooperPrepared();
-//        }
-//
-//        /**
-//         * Checks the subclass type of {@link EegRequests} and handles the correct method/action to perform.
-//         *
-//         * @param request the {@link EegRequests} request to execute.
-//         */
-//        void parseRequest(EegRequests request) {
-//            LogUtils.i(TAG, "parsing new request");
-//            requestBeingProcessed = true;
-//            if(request instanceof QualityRequest){
-//                computeEEGSignalQuality(((QualityRequest) request).testGetEegMatrix());
-//            }
-//        }
-//    }
 
     public void setTestConsolidatedEEG(ArrayList<ArrayList<Float>> consolidatedEEG) {
         this.consolidatedEEG = consolidatedEEG;

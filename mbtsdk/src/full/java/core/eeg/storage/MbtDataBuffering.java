@@ -39,10 +39,10 @@ public class MbtDataBuffering {
 
 
 
-    public MbtDataBuffering(@NonNull MbtEEGManager eegManagerController) {
-        eegManager = eegManagerController;
-        pendingRawData = new ArrayList<>();
-        mbtEEGPacketsBuffer = new MbtEEGPacket();
+    public MbtDataBuffering(@NonNull MbtEEGManager eegManager) {
+        this.eegManager = eegManager;
+        this.pendingRawData = new ArrayList<>();
+        this.mbtEEGPacketsBuffer = new MbtEEGPacket();
     }
 
     /**

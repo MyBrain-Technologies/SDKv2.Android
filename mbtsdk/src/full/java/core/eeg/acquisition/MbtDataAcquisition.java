@@ -2,7 +2,6 @@ package core.eeg.acquisition;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,9 +43,9 @@ public class MbtDataAcquisition {
 
     private BtProtocol protocol;
 
-    public MbtDataAcquisition(@NonNull MbtEEGManager eegManagerController, @NonNull BtProtocol bluetoothProtocol) {
+    public MbtDataAcquisition(@NonNull MbtEEGManager eegManager, @NonNull BtProtocol bluetoothProtocol) {
         this.protocol = bluetoothProtocol;
-        this.eegManager = eegManagerController;
+        this.eegManager = eegManager;
     }
 
     /**
@@ -63,7 +62,7 @@ public class MbtDataAcquisition {
             return;
 
         //1st step : check index
-        final int currentIndex = (data[0] & 0xff) << 8 | (data[1] & 0xff); //index bytes are the 2 first bytes for BLE only
+        final int currentIndex = (data[protocol == BLUETOOTH_LE ? 0 : 1] & 0xff) << 8 | (data[protocol == BLUETOOTH_LE ? 1 : 2] & 0xff); //index bytes are the 2 first bytes for BLE only
 
         if(previousIndex == -1){
             previousIndex = currentIndex -1;
@@ -73,7 +72,7 @@ public class MbtDataAcquisition {
 
         //2nd step : Create interpolation packets if packet loss
         if(indexDifference != 1){
-            LogUtils.e(TAG, "diff is " + indexDifference);
+            LogUtils.e(TAG, "diff is " + indexDifference +" . Current index : " + currentIndex + " previousIndex : " + previousIndex);
             for (int i = 0; i < indexDifference; i++) {
                 fillSingleDataEEGList(true, data);
             }

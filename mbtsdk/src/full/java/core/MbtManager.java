@@ -14,7 +14,6 @@ import java.util.Set;
 import command.CommandInterface;
 import command.DeviceCommand;
 import config.StreamConfig;
-import core.bluetooth.BtProtocol;
 import core.bluetooth.IStreamable;
 import core.bluetooth.MbtBluetoothManager;
 import core.bluetooth.requests.CommandRequestEvent;
@@ -92,7 +91,7 @@ public class MbtManager{
         if(BLUETOOTH_ENABLED)
             registerManager(new MbtBluetoothManager(mContext));
         if(EEG_ENABLED)
-            registerManager(new MbtEEGManager(mContext, BtProtocol.BLUETOOTH_LE)); //todo change protocol must not be initialized here : when connectBluetooth is called
+            registerManager(new MbtEEGManager(mContext)); //todo change protocol must not be initialized here : when connectBluetooth is called
     }
 
     /**
@@ -150,14 +149,15 @@ public class MbtManager{
         EventBusManager.postEvent(
                 new StreamRequestEvent(true,
                         streamConfig.shouldComputeQualities(),
-                        (deviceStatusListener != null)));
+                        deviceStatusListener != null,
+                        streamConfig.getDeviceType().getProtocol()));
     }
 
     /**
      * Posts an event to stop the currently started stream session
      */
     public void stopStream(){
-        EventBusManager.postEvent(new StreamRequestEvent(false, false, false));
+        EventBusManager.postEvent(new StreamRequestEvent(false, false, false, null));
     }
 
     /**
