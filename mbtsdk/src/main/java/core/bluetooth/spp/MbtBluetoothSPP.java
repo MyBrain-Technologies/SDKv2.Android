@@ -78,6 +78,40 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
         this.deviceAddress = deviceAddress;
     }
 
+    private BroadcastReceiver scanReceiver = new BroadcastReceiver() {
+        public final void onReceive(@NonNull final Context context, @NonNull final Intent intent) {
+            final String action = intent.getAction();
+            if(action == null)
+                return;
+            switch (action) {
+                case BluetoothDevice.ACTION_FOUND:
+                    final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                    final String deviceNameFound = device.getName();
+                    if (TextUtils.isEmpty(deviceNameFound)) {
+                        LogUtils.w(TAG, "Found device with no name. MAC address is -> " + device.getAddress());
+                        return;
+                    }
+
+                    LogUtils.i(TAG, String.format("Discovery Scan -> device detected " +
+                            "with name '%s' and MAC address '%s' ", deviceNameFound, device.getAddress()));
+                    if (mbtBluetoothManager.getDeviceNameRequested() != null
+                            && (deviceNameFound.equals(mbtBluetoothManager.getDeviceNameRequested()) || deviceNameFound.contains(mbtBluetoothManager.getDeviceNameRequested()))) {
+                        LogUtils.i(TAG, "Device " + mbtBluetoothManager.getDeviceNameRequested() +" found. Cancelling discovery & connecting");
+                        currentDevice = device;
+                        bluetoothAdapter.cancelDiscovery();
+                        mbtBluetoothManager.updateConnectionState(true); //current state is set to DEVICE_FOUND and future is completed
+
+                    }
+                    break;
+                case BluetoothAdapter.ACTION_DISCOVERY_FINISHED:
+                    bluetoothAdapter.startDiscovery();
+
+                    break;
+            }
+
+        }
+    };
+
 
     @Nullable
     public boolean startScanDiscovery() {
@@ -89,40 +123,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
         LogUtils.i(TAG, "Starting Classic Bluetooth Discovery Scan");
         final IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
-        context.registerReceiver(new BroadcastReceiver() {
-            public final void onReceive(@NonNull final Context context, @NonNull final Intent intent) {
-                final String action = intent.getAction();
-                if(action == null)
-                    return;
-                switch (action) {
-                    case BluetoothDevice.ACTION_FOUND:
-                        final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                        final String deviceNameFound = device.getName();
-                        if (TextUtils.isEmpty(deviceNameFound)) {
-                            LogUtils.w(TAG, "Found device with no name. MAC address is -> " + device.getAddress());
-                            return;
-                        }
-
-                        LogUtils.i(TAG, String.format("Discovery Scan -> device detected " +
-                                "with name '%s' and MAC address '%s' ", deviceNameFound, device.getAddress()));
-                        if (mbtBluetoothManager.getDeviceNameRequested() != null
-                                && (deviceNameFound.equals(mbtBluetoothManager.getDeviceNameRequested()) || deviceNameFound.contains(mbtBluetoothManager.getDeviceNameRequested()))) {
-                            LogUtils.i(TAG, "Device " + mbtBluetoothManager.getDeviceNameRequested() +" found. Cancelling discovery & connecting");
-                            currentDevice = device;
-                            bluetoothAdapter.cancelDiscovery();
-                            context.unregisterReceiver(this);
-                            mbtBluetoothManager.updateConnectionState(true); //current state is set to DEVICE_FOUND and future is completed
-
-                        }
-                        break;
-                    case BluetoothAdapter.ACTION_DISCOVERY_FINISHED:
-                        if (getCurrentState().equals(BtState.DISCOVERING_SERVICES)) // restarting discovery while still waiting
-                            bluetoothAdapter.startDiscovery();
-                        break;
-                }
-
-            }
-        }, filter);
+        context.registerReceiver(scanReceiver, filter);
         isScanStarted = bluetoothAdapter.startDiscovery();
         LogUtils.i(TAG, "Scan started.");
         if(isScanStarted && getCurrentState().equals(BtState.READY_FOR_BLUETOOTH_OPERATION)){
@@ -134,6 +135,8 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
     public void stopScanDiscovery() {
         if(bluetoothAdapter != null && bluetoothAdapter.isDiscovering())
             bluetoothAdapter.cancelDiscovery();
+        context.unregisterReceiver(scanReceiver);
+
     }
 
     @Override
@@ -492,6 +495,8 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
         return false;
     }
 
+
+
     /**
      * Ask to get the battery level
      * @param start is true for starting the battery timer and false for cancelling the battery timer
@@ -522,5 +527,8 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
     //todo
     public void sendCommand(CommandInterface.MbtCommand command) {
     }
+
+
+
 }
 

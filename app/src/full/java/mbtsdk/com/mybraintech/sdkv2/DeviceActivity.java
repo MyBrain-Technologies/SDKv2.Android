@@ -7,7 +7,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -21,21 +20,19 @@ import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 
 import java.util.ArrayList;
-
 import java.util.Arrays;
 import java.util.Objects;
 
+import config.StreamConfig;
+import core.bluetooth.BtState;
 import core.device.DCOffsets;
 import core.device.SaturationEvent;
-import core.bluetooth.BtState;
 import core.eeg.storage.MbtEEGPacket;
 import engine.MbtClient;
-
-import config.StreamConfig;
 import engine.clientevents.BaseError;
-import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.BluetoothStateListener;
 import engine.clientevents.DeviceBatteryListener;
+import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.EegListener;
 import features.MbtDeviceType;
 import features.MbtFeatures;
@@ -250,7 +247,7 @@ DeviceActivity extends AppCompatActivity {
                         startStream(new StreamConfig.Builder(eegListener)
                             .setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)
                             .useQualities()
-                                .configureAcquisitionFromDeviceCommand(null, null)
+                            .configureAcquisitionFromDeviceCommand()
                             .create());
                 } else { //streaming is in progress : stopping streaming
                     stopStream(); // set false to isStreaming et null to the eegListener

@@ -262,7 +262,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
             } else if (request instanceof StreamRequestEvent) {
                 if (((StreamRequestEvent) request).isStart()) {
-                    startStreamOperation(((StreamRequestEvent) request).shouldMonitorDeviceStatus());
+                    startStreamOperation(((StreamRequestEvent) request).shouldMonitorDeviceStatus(), deviceTypeRequested.getProtocol());
                 }else {
                     stopStreamOperation();
                 }
@@ -886,23 +886,27 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * Initiates the acquisition of EEG data. This method chooses between the correct BtProtocol.
      * If there is already a streaming session in progress, nothing happens and the method returns silently.
      */
-    private void startStreamOperation(boolean enableDeviceStatusMonitoring){
+    private void startStreamOperation(boolean enableDeviceStatusMonitoring, BtProtocol protocol){
         Log.d(TAG, "Bluetooth Manager starts streaming");
-        if(!mbtBluetoothLE.isConnected()){
+
+        MbtBluetooth agent = protocol == BLUETOOTH_LE ? mbtBluetoothLE : mbtBluetoothSPP;
+        IStreamable streamable = protocol == BLUETOOTH_LE ? mbtBluetoothLE : mbtBluetoothSPP;
+
+        if(!agent.isConnected()){
             notifyStreamStateChanged(IStreamable.StreamState.DISCONNECTED);
             requestBeingProcessed = false;
             return;
         }
 
-        if(mbtBluetoothLE.isStreaming()){
+        if(streamable.isStreaming()){
             requestBeingProcessed = false;
             return;
         }
 
-        if(enableDeviceStatusMonitoring)
+        if(enableDeviceStatusMonitoring && protocol == BLUETOOTH_LE)
             mbtBluetoothLE.activateDeviceStatusMonitoring();
 
-        if(!mbtBluetoothLE.startStream()){
+        if(!streamable.startStream()){
             requestBeingProcessed = false;
             EventBusManager.postEvent(IStreamable.StreamState.FAILED);
         }

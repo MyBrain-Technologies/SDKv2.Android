@@ -7,7 +7,6 @@ import android.support.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-
 import command.DeviceCommand;
 import command.DeviceStreamingCommands;
 import core.eeg.storage.MbtEEGPacket;
@@ -53,7 +52,7 @@ public final class StreamConfig {
         if(deviceCommands != null && deviceCommands.length > 0) {
             for (DeviceStreamingCommands deviceCommand : deviceCommands) {
                 if(deviceCommand != null){
-                    int index = commandAlreadyRegisteredAtIndex(deviceCommand);
+                    int index = getRegisteredCommandIndex(deviceCommand);
                     if(index != -1) //if a command with the same type is already in the list, it is replaced (input can be different)
                         this.deviceCommands.set(index, (DeviceCommand) deviceCommand);
                     else
@@ -70,7 +69,7 @@ public final class StreamConfig {
      * @param deviceCommand
      * @return
      */
-    private int commandAlreadyRegisteredAtIndex(DeviceStreamingCommands deviceCommand){
+    private int getRegisteredCommandIndex(DeviceStreamingCommands deviceCommand){
         for (DeviceCommand registeredCommand : deviceCommands) {
                 if(registeredCommand.getClass() == deviceCommand.getClass())
                 return deviceCommands.indexOf(registeredCommand);
