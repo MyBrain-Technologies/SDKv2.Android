@@ -4,14 +4,12 @@ import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.Nullable;
-
-import org.apache.commons.lang.StringUtils;
-
+import android.support.annotation.VisibleForTesting;
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
-import command.OADCommands;
 import core.device.event.OADEvent;
 import core.device.model.FirmwareVersion;
 import engine.clientevents.BaseError;
@@ -20,6 +18,9 @@ import eventbus.events.FirmwareUpdateClientEvent;
 import utils.LogUtils;
 import utils.MbtAsyncWaitOperation;
 import utils.OADExtractionUtils;
+
+import static utils.OADExtractionUtils.EXPECTED_NB_BYTES_BINARY_FILE;
+import static utils.OADExtractionUtils.OAD_PACKET_SIZE;
 
 /**
  * OAD Manager class is responsible for managing the OAD (Over the Air Download) update process.
@@ -38,21 +39,6 @@ public final class OADManager {
      * Expected number of packets of the OAD binary file (chunks of the file that hold the firmware to install) to send to the headset device
      */
     public static final short EXPECTED_NB_PACKETS_BINARY_FILE = 14223;
-
-    /**
-     * Size of the index of a packet of the OAD binary file (chunks of the file that hold the firmware to install)
-     */
-    public static final int OAD_INDEX_PACKET_SIZE = 2;
-
-    /**
-     * Size of the content of a packet of the OAD binary file (chunks of the file that hold the firmware to install)
-     */
-    public static final int OAD_PAYLOAD_PACKET_SIZE = 18;
-
-    /**
-     * Size of a packet of the OAD binary file (chunks of the file that hold the firmware to install)
-     */
-    public static final int OAD_PACKET_SIZE = OAD_INDEX_PACKET_SIZE + OAD_PAYLOAD_PACKET_SIZE;
 
     private final Context context;
 
@@ -121,49 +107,38 @@ public final class OADManager {
      */
     void init(FirmwareVersion firmwareVersion){
         LogUtils.d(TAG, "Initialize the OAD update for version "+firmwareVersion);
-        String oadFilePath = OADExtractionUtils.getFileNameForFirmwareVersion(firmwareVersion.getFirmwareVersionAsString());
-        oadContext.setOADfilePath(oadFilePath);
+        oadContext.setOADfileName(OADExtractionUtils.getFileNameForFirmwareVersion(firmwareVersion.getFirmwareVersionAsString()));
         try {
-            byte[] content = OADExtractionUtils.extractFileContent(context.getAssets(), oadContext.getOADfilePath());
-            String invalidityReason = checkFileContentValidity(content);
-            if(!invalidityReason.isEmpty()){
-                onError(OADError.ERROR_INIT_FAILED, invalidityReason);
+            byte[] content = OADExtractionUtils.extractFileContent(context.getAssets(), oadContext.getOADfileName());
+            //Check that the OAD file content extracted is valid to start the OAD update
+            if(content == null) {
+                onError(OADError.ERROR_INIT_FAILED, "Impossible to read the OAD binary file.");
+                return;
+            } else if(content.length != EXPECTED_NB_BYTES_BINARY_FILE){
+                onError(OADError.ERROR_INIT_FAILED,"Expected length is " + EXPECTED_NB_BYTES_BINARY_FILE + ", but found length was " + content.length + ".");
                 return;
             }
 
-            packetCounter = new PacketCounter(content.length, OAD_PACKET_SIZE);
-            oadContext.setNbPacketsToSend(packetCounter.nbPacketToSend);
-            oadContext.setPacketsToSend(OADExtractionUtils.extractOADPackets(packetCounter, content));
-            oadContext.setFirmwareVersion(OADExtractionUtils.extractFirmwareVersionFromContent(content));
+            packetCounter = new PacketCounter(OAD_PACKET_SIZE, content.length);
+
+            ArrayList<byte[]> oadPackets = OADExtractionUtils.extractOADPackets(content);
+            if(oadPackets == null || oadPackets.isEmpty()){
+                onError(OADError.ERROR_INIT_FAILED, "Impossible to extract the OAD packets");
+                return;
+            }
+            oadContext.setPacketsToSend(oadPackets);
+
+            String firmwareVersionFromContent = OADExtractionUtils.extractFirmwareVersionFromContent(content);
+            if(firmwareVersionFromContent == null || firmwareVersionFromContent.isEmpty()){
+                onError(OADError.ERROR_INIT_FAILED, "Impossible to extract the firmware version from content of OAD binary file.");
+                return;
+            }
+            oadContext.setFirmwareVersion(firmwareVersionFromContent);
         } catch (FileNotFoundException e) {
             onError(OADError.ERROR_INIT_FAILED, e.getMessage());
             return;
         }
         switchToNextStep(null);
-    }
-
-    /**
-     * Check that the OAD file content extracted is valid to start the OAD update
-     * @param fileContent the OAD file content to check
-     * @return a String message that holds an invalidity reason if the status is invalid
-     */
-    private String checkFileContentValidity(byte[] fileContent){
-        String additionalErrorInfo = StringUtils.EMPTY;
-        if(fileContent == null)
-            additionalErrorInfo = "Impossible to read the OAD binary file";
-
-        if(fileContent.length != EXPECTED_NB_PACKETS_BINARY_FILE)
-            additionalErrorInfo = "Expected length is " + EXPECTED_NB_PACKETS_BINARY_FILE + ", but found length was " + fileContent.length + ".";
-
-        return additionalErrorInfo;
-    }
-
-    void requestFirmwareValidation(short nbPacketToSend, FirmwareVersion firmwareVersion){
-        OADCommands.RequestFirmwareValidation requestFirmwareValidation = new OADCommands.RequestFirmwareValidation(
-                firmwareVersion,
-                nbPacketToSend);
-        if(oadContract != null)
-            oadContract.requestFirmwareValidation(requestFirmwareValidation);
     }
 
     /**
@@ -201,9 +176,9 @@ public final class OADManager {
      * Method triggered when an OAD packet has been well sent in Bluetooth to the peripheral headset device.
      */
     private void onOADPacketSent(){
-        packetCounter.incrementNbPacketsSent();
+        packetCounter.incrementNbPacketsCounted();
         onProgressChanged();
-        if(packetCounter.areAllPacketsSent()) {
+        if(packetCounter.areAllPacketsCounted()) {
             stopWaiting(true);
         }else
             sendOADPacket(packetCounter.getIndexOfNextPacketToSend());
@@ -239,7 +214,7 @@ public final class OADManager {
         LogUtils.d(TAG, "on OAD event "+event.toString());
         switch (event){
             case LOST_PACKET:
-                packetCounter.resetNbPacketsSent(event.getEventDataAsByteArray()); //Packet index is set back to the requested value
+                packetCounter.setNbPacketsCounted(event.getEventDataAsByteArray()); //Packet index is set back to the requested value
                 break;
 
             case DISCONNECTED:
@@ -290,5 +265,10 @@ public final class OADManager {
      */
     OADContract getOADContract() {
         return oadContract;
+    }
+
+    @VisibleForTesting
+    PacketCounter getPacketCounter() {
+        return packetCounter;
     }
 }

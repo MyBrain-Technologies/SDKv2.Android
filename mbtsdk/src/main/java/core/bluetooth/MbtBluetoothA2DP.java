@@ -396,6 +396,11 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
         }
     }
 
+    @Override
+    public boolean clearMobileDeviceCache() {
+        return false;
+    }
+
     boolean isPairedDevice(BluetoothDevice device){
         return (bluetoothAdapter != null && bluetoothAdapter.getBondedDevices().contains(device));
     }

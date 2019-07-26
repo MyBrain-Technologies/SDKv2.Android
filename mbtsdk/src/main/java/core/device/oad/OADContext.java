@@ -15,7 +15,7 @@ class OADContext {
     /**
      * Path of the binary file that holds the firmware to install on the connected headset device.
      */
-    private String OADfilePath = StringUtils.EMPTY;
+    private String OADfileName = StringUtils.EMPTY;
 
     /**
      * Version of the firmware to install on the connected headset device.
@@ -43,8 +43,8 @@ class OADContext {
     /**
      * Return the path of the binary file that holds the firmware to install on the connected headset device.
      */
-    public String getOADfilePath() {
-        return OADfilePath;
+    String getOADfileName() {
+        return OADfileName;
     }
 
     /**
@@ -66,8 +66,8 @@ class OADContext {
     /**
      * Set the path of the binary file that holds the firmware to install on the connected headset device.
      */
-    void setOADfilePath(String OADfilePath) {
-        this.OADfilePath = OADfilePath;
+    void setOADfileName(String OADfilePath) {
+        this.OADfileName = OADfilePath;
     }
 
     /**
@@ -97,7 +97,7 @@ class OADContext {
      * Returns the list of OAD packets that holds chunks of the OAD
      * binary file that holds the firmware to install on the connected headset device.
      */
-    public ArrayList<byte[]> getPacketsToSend() {
+    ArrayList<byte[]> getPacketsToSend() {
         return packetsToSend;
     }
 
@@ -105,7 +105,8 @@ class OADContext {
      * Set the list of OAD packets that holds chunks of the OAD
      * binary file that holds the firmware to install on the connected headset device.
      */
-    public void setPacketsToSend(ArrayList<byte[]> packetsToSend) {
+    void setPacketsToSend(ArrayList<byte[]> packetsToSend) {
         this.packetsToSend = packetsToSend;
+        this.nbPacketsToSend = (short) packetsToSend.size();
     }
 }

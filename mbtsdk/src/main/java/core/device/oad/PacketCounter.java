@@ -4,37 +4,43 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 /**
- * Engine class to use for any action where a buffer of byte packets is handled.
+ * Counter class to use for any action where a buffer of byte packets is handled.
  * This class helps getting the number of packets,
  * the current packets added to the final buffer,
  * and the total number of bytes
  */
 public class PacketCounter {
 
-    int nbBytes = 0; // Number of bytes programmed
-    short nbPacketSent = 0; // Number of packet sent
-    short nbPacketToSend = 0; // Total number of packet to send
+    int totalNbBytes = 0; // Number of bytes of the whole set of packet
+    short nbPacketCounted = 0; // Number of packet counted
+    short totalNbPackets = 0; // Total number of packet to count
 
     /**
      * Helper class to use for counting the number of packets sent during a transfer operation such as an OAD firmware update
      * @param packetSize the size of a packet (number of bytes allocated for a single packet)
-     * @param nbBytesToSend the number of bytes to send
+     * @param totalNbBytes the number of bytes to send
      */
-    PacketCounter(int nbBytesToSend, int packetSize) {
-        this.reset(nbBytesToSend, packetSize);
+    public PacketCounter(int packetSize, int totalNbBytes) {
+        setTotalNbPackets(totalNbBytes, packetSize);
     }
 
     /**
-     * Reset the packet counter.
-     * @param nbBytesToSend the number of bytes to send
+     * Reset the current position of the packet counter.
+     */
+    public void reset() {
+        totalNbBytes = 0;
+        nbPacketCounted = 0;
+    }
+
+    /**
+     * Set the current position of the packet counter.
+     * @param totalNbBytes the number of bytes to send
      * @param packetSize Size in bytes of each packet
      */
-    public void reset(int nbBytesToSend, int packetSize) {
-        nbBytes = 0;
-        nbPacketSent = 0;
-        nbPacketToSend = (short) (
-                (nbBytesToSend / packetSize)
-                        + ((nbBytesToSend % packetSize) == 0 ?
+    private short setTotalNbPackets(int totalNbBytes, int packetSize){
+        return totalNbPackets = (short) (
+                (totalNbBytes / packetSize)
+                        + ((totalNbBytes % packetSize) == 0 ?
                         0 : 1));
     }
 
@@ -42,8 +48,8 @@ public class PacketCounter {
      * Returns true if the number of packets sent is equal to the number of packet to send, false otherwise.
      * @return true if the number of packets sent is equal to the number of packet to send, false otherwise.
      */
-    boolean areAllPacketsSent(){
-        return this.nbPacketSent == this.nbPacketToSend;
+    boolean areAllPacketsCounted(){
+        return this.nbPacketCounted == this.totalNbPackets;
     }
 
     /**
@@ -51,27 +57,27 @@ public class PacketCounter {
      * @return the index of the next packet to send
      */
     short getIndexOfNextPacketToSend(){
-        return nbPacketSent;
+        return nbPacketCounted;
     }
 
-    public int getNbBytes() {
-        return nbBytes;
+    public int getTotalNbBytes() {
+        return totalNbBytes;
     }
 
-    public short getNbPacketSent() {
-        return nbPacketSent;
+    public short getNbPacketCounted() {
+        return nbPacketCounted;
     }
 
-    public short getNbPacketToSend() {
-        return nbPacketToSend;
+    public short getTotalNbPackets() {
+        return totalNbPackets;
     }
 
-    public void incrementNbPacketsToSend() {
-        this.nbPacketToSend++;
+    public void incrementTotalNbPackets() {
+        this.totalNbPackets++;
     }
 
-    void incrementNbPacketsSent() {
-        this.nbPacketSent++;
+    void incrementNbPacketsCounted() {
+        this.nbPacketCounted++;
     }
 
     /**
@@ -79,12 +85,16 @@ public class PacketCounter {
      * @param packetIndex is the new value to set to the number of packet sent
      * @return the index of the next packet to send
      */
-    short resetNbPacketsSent(byte[] packetIndex) {
+    short setNbPacketsCounted(byte[] packetIndex) {
         short packetIndexAsShort = ByteBuffer.wrap(packetIndex).order(ByteOrder.LITTLE_ENDIAN).getShort();
-        return this.nbPacketSent = packetIndexAsShort;
+        return this.nbPacketCounted = packetIndexAsShort;
     }
 
-    public void incrementNbBytes(int incrementer) {
-        this.nbBytes += incrementer;
+    public void incrementTotalNbBytes(int incrementer) {
+        this.totalNbBytes += incrementer;
+    }
+
+    public void incrementNbPacketCounted() {
+        this.nbPacketCounted ++;
     }
 }

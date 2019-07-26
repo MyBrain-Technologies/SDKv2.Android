@@ -41,7 +41,11 @@ import utils.BitUtils;
             }
 
             private FirmwareVersion getFirmwareVersion(Object actionData){
-                return new FirmwareVersion(actionData.toString());
+                if(actionData instanceof String)
+                    return new FirmwareVersion((String)actionData);
+                else if (actionData instanceof FirmwareVersion)
+                    return (FirmwareVersion) actionData;
+                return null;
             }
         },
 

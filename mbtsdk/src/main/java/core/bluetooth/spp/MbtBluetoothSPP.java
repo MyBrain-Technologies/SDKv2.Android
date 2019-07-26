@@ -74,6 +74,11 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
         this.bluetoothAdapter = (manager!=null) ? manager.getAdapter() : null;
     }
 
+    @Override
+    public boolean clearMobileDeviceCache() {
+        return false;
+    }
+
     public MbtBluetoothSPP(@NonNull final Context context, @NonNull final String deviceAddress,@NonNull MbtBluetoothManager mbtBluetoothManager) {
         super(context, mbtBluetoothManager);
         final BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);

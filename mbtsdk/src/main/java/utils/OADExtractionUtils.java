@@ -37,18 +37,38 @@ public final class OADExtractionUtils {
     private final static String FIRMWARE_VERSION_REGEX = "_";
 
     /**
+     * Regular expression used in the version helper for file name to separate each digit of the firmware version number.
+     */
+    private final static String FIRMWARE_VERSION_HELPER_REGEX = VersionHelper.VERSION_SPLITTER.replace("\\","");
+
+    /**
+     * Expected number of bytes of the OAD binary file (chunks of the file that hold the firmware to install) to send to the headset device
+     */
+    public static final int EXPECTED_NB_BYTES_BINARY_FILE = 256000;
+
+    /**
      * Offset to take into account when you read the firmware version from the content of the OAD binary file.
      */
-    private static final int FIRMWARE_VERSION_OFFSET = 0x27C;
+    static final int FIRMWARE_VERSION_OFFSET = 0x27C;
     /**
      * Number of bytes allocated in the OAD binary file to store the firmware version.
      */
     private static final int FIRMWARE_VERSION_NB_BYTES = 4;
 
     /**
-     * Number of bytes of the OAD file content.
+     * Size of the index of a packet of the OAD binary file (chunks of the file that hold the firmware to install)
      */
-    private static final int BINARY_FILE_CONTENT_SIZE = 256000;
+    public static final int OAD_INDEX_PACKET_SIZE = 2;
+
+    /**
+     * Size of the content of a packet of the OAD binary file (chunks of the file that hold the firmware to install)
+     */
+    public static final int OAD_PAYLOAD_PACKET_SIZE = 18;
+
+    /**
+     * Size of a packet of the OAD binary file (chunks of the file that hold the firmware to install)
+     */
+    public static final int OAD_PACKET_SIZE = OAD_INDEX_PACKET_SIZE + OAD_PAYLOAD_PACKET_SIZE;
 
     /**
      * All the OAD binary files are located in a specific subdirectory of the assets directory
@@ -79,18 +99,19 @@ public final class OADExtractionUtils {
      * @return the content of the file as a byte array
      */
     public static final byte[] extractFileContent(AssetManager assetManager, @NonNull final String filePath) throws FileNotFoundException {
-        if(filePath == null || filePath.isEmpty() || !fileExists(filePath))
+        if(filePath == null || filePath.isEmpty() || !fileExistsInAssets(assetManager, filePath))
             throw new FileNotFoundException("File path/name incorrect : "+filePath);
 
         if(!isValidFileFormat(filePath))
             throw new IllegalArgumentException("File name is invalid : it must starts with "+BINARY_FILE_HOOK+ " and ends with "+BINARY_FILE_FORMAT);
 
-        byte[] fileContent = new byte[BINARY_FILE_CONTENT_SIZE];
+        byte[] fileContent = new byte[EXPECTED_NB_BYTES_BINARY_FILE];
         try {
             // Read the file raw into a buffer
-            InputStream stream = assetManager.open(filePath);
+            InputStream stream = assetManager.open(BINARY_FILES_DIRECTORY + "/" + filePath);
             stream.read(fileContent, 0, fileContent.length);
             stream.close();
+
         } catch (IOException|NullPointerException e) {
             Log.e(TAG, "File open failed: " + filePath + "\n");
             return null;
@@ -115,7 +136,7 @@ public final class OADExtractionUtils {
      * @return the fle name of the OAD binary file that match the firmware version given in input
      */
     public static String getFileNameForFirmwareVersion(String firmwareVersion){
-        return BINARY_FILE_HOOK + firmwareVersion + BINARY_FILE_FORMAT;
+        return BINARY_FILE_HOOK + firmwareVersion.replace(FIRMWARE_VERSION_HELPER_REGEX, FIRMWARE_VERSION_REGEX) + BINARY_FILE_FORMAT;
     }
 
     /**
@@ -124,13 +145,13 @@ public final class OADExtractionUtils {
      * @return the firmware version as a String
      */
     public static final String extractFirmwareVersionFromFileName(@NonNull final String filename) {
-        if(filename == null && filename.isEmpty() && !isValidFileFormat(filename))
+        if(filename == null || filename.isEmpty() || !isValidFileFormat(filename))
                 return null;
 
         return filename
                 .replace(BINARY_FILE_HOOK,"") //remove the "mm-ota-" prefix
                 .replace(BINARY_FILE_FORMAT,"") //remove the ".bin" format
-                .replace(FIRMWARE_VERSION_REGEX, VersionHelper.VERSION_SPLITTER); //replace the "_" digit splitter with a "." splitter
+                .replace(FIRMWARE_VERSION_REGEX, FIRMWARE_VERSION_HELPER_REGEX); //replace the "_" digit splitter with a "." splitter
     }
 
     /**
@@ -139,54 +160,59 @@ public final class OADExtractionUtils {
      * @return the firmware version as a String
      */
     public static final String extractFirmwareVersionFromContent(@NonNull final byte[] content){
-        if (content == null)
+        if (content == null || content.length < FIRMWARE_VERSION_OFFSET + FIRMWARE_VERSION_NB_BYTES)
             return null;
 
-        byte[] tempFirmwareVersion = new byte[FIRMWARE_VERSION_NB_BYTES];
-        System.arraycopy(content, FIRMWARE_VERSION_OFFSET, tempFirmwareVersion, 0, FIRMWARE_VERSION_NB_BYTES);
-        return new String(tempFirmwareVersion);
+        byte[] firmwareVersionExtracted = new byte[FIRMWARE_VERSION_NB_BYTES];
+        System.arraycopy(content, FIRMWARE_VERSION_OFFSET, firmwareVersionExtracted, 0, FIRMWARE_VERSION_NB_BYTES);
+        return new String(firmwareVersionExtracted);
     }
 
     /**
      * Chunks the OAD binary file content into small packets and stores them into a list
      * It also adds the correct block index at the beginning of each block
      */
-    public static final ArrayList<byte[]> extractOADPackets(PacketCounter packetCounter, @NonNull final byte[] content){
+    public static final ArrayList<byte[]> extractOADPackets(@NonNull final byte[] content){
         if (content == null)
             return null;
 
+        PacketCounter packetCounter = new PacketCounter(OAD_PACKET_SIZE, content.length);
         ArrayList<byte[]> packetsToSend = new ArrayList<>();
 
-            while(packetCounter.getNbPacketSent() < packetCounter.getNbPacketToSend()){
+            while(packetCounter.getNbPacketCounted() < packetCounter.getTotalNbPackets()){
 
-                byte[] packet = new byte[OADManager.OAD_PACKET_SIZE];
-                packet[0] = ConversionUtils.loUint16(packetCounter.getNbPacketSent());
-                packet[1] = ConversionUtils.hiUint16(packetCounter.getNbPacketSent());
-                if(packetCounter.getNbBytes() + OADManager.OAD_PAYLOAD_PACKET_SIZE > content.length){
-                    int remainder = content.length - packetCounter.getNbBytes();
-                    System.arraycopy(content, packetCounter.getNbBytes(), packet, OADManager.OAD_INDEX_PACKET_SIZE, remainder);
-                    for(int i = remainder + OADManager.OAD_INDEX_PACKET_SIZE; i < OADManager.OAD_PACKET_SIZE; i++){
+                byte[] packet = new byte[OAD_PACKET_SIZE];
+                packet[0] = ConversionUtils.loUint16(packetCounter.getNbPacketCounted());
+                packet[1] = ConversionUtils.hiUint16(packetCounter.getNbPacketCounted());
+                if(packetCounter.getTotalNbBytes() + OAD_PAYLOAD_PACKET_SIZE > content.length){
+                    int remainder = content.length - packetCounter.getTotalNbBytes();
+                    System.arraycopy(content, packetCounter.getTotalNbBytes(), packet, OAD_INDEX_PACKET_SIZE, remainder);
+                    for(int i = remainder + OAD_INDEX_PACKET_SIZE; i < OAD_PACKET_SIZE; i++){
                         packet[i] = (byte)0xFF;
                     }
-                }else{
-                    System.arraycopy(content, packetCounter.getNbBytes(),
-                            packet, OADManager.OAD_INDEX_PACKET_SIZE,  OADManager.OAD_PAYLOAD_PACKET_SIZE);
-                }
+                }else
+                    System.arraycopy(content, packetCounter.getTotalNbBytes(),
+                            packet, OAD_INDEX_PACKET_SIZE,  OAD_PAYLOAD_PACKET_SIZE);
 
-                packetCounter.incrementNbPacketsToSend();
-                packetCounter.incrementNbBytes(OADManager.OAD_PAYLOAD_PACKET_SIZE);
+                packetCounter.incrementNbPacketCounted();
+                packetCounter.incrementTotalNbBytes(OAD_PAYLOAD_PACKET_SIZE);
                 packetsToSend.add(packet);
             }
             Log.i(TAG, "List of OAD packets ready");
 
-            //Resetting packet counter for the oad session
-            packetCounter.reset(content.length, OADManager.OAD_PACKET_SIZE);
 
         return packetsToSend;
     }
 
-    private static boolean fileExists(String filePath){
-        //todo
-        return true;
+    private static boolean fileExistsInAssets(@NonNull AssetManager assetManager, String filePath){
+        try {
+            for (String file :  assetManager.list(BINARY_FILES_DIRECTORY)){
+                if(file.equals(filePath))
+                    return true;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 }
