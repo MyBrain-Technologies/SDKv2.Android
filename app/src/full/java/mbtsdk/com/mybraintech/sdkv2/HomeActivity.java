@@ -10,7 +10,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
-
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -23,14 +22,13 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import core.bluetooth.BtState;
 import config.ConnectionConfig;
+import core.bluetooth.BtState;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindDevice;
 import engine.MbtClient;
 import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
-
 import engine.clientevents.BluetoothStateListener;
 import features.MbtDeviceType;
 import features.MbtFeatures;
@@ -305,11 +303,11 @@ public class HomeActivity extends AppCompatActivity{
         deviceNamePrefixSpinner = findViewById(R.id.deviceNamePrefix);
         prefixNameList = new ArrayList<>();
         prefixNameList.add(MELOMIND_DEVICE_NAME_PREFIX);
+        prefixNameList.add(VPRO_DEVICE_NAME_PREFIX);
         prefixNameArrayAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, prefixNameList);
 
         prefixNameArrayAdapter.setDropDownViewResource(R.layout.spinner_item);
         deviceNamePrefixSpinner.setAdapter(prefixNameArrayAdapter);
-        deviceNamePrefixSpinner.setSelection(prefixNameArrayAdapter.getPosition(MELOMIND_DEVICE_NAME_PREFIX));
     }
 
     /**
@@ -406,7 +404,7 @@ public class HomeActivity extends AppCompatActivity{
     private void startScan() {
         isErrorRaised = false;
         ConnectionConfig.Builder builder = new ConnectionConfig.Builder(bluetoothStateListener)
-                .deviceName(((deviceName != null) && (deviceName.equals(MELOMIND_DEVICE_NAME_PREFIX) || deviceName.equals(VPRO_DEVICE_NAME_PREFIX))) ? //if no name has been entered by the user, the default device name is the headset prefix
+                .deviceName(((deviceName != null) && deviceName.equals(MELOMIND_DEVICE_NAME_PREFIX)) ? //if no name has been entered by the user, the default device name is the headset prefix
                         null : deviceName ) //null is given in parameters if no name has been entered by the user
                 .deviceQrCode(((deviceQrCode != null) && (deviceQrCode.equals(QR_CODE_NAME_PREFIX)) ) ? //if no QR code has been entered by the user, the default device name is the headset prefix
                         null : deviceQrCode )

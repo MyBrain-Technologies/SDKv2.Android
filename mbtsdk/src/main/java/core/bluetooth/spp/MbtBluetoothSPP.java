@@ -26,9 +26,7 @@ import core.bluetooth.BtState;
 import core.bluetooth.IStreamable;
 import core.bluetooth.MbtBluetooth;
 import core.bluetooth.MbtBluetoothManager;
-
 import core.device.model.DeviceInfo;
-import core.device.model.MelomindDevice;
 import utils.AsyncUtils;
 import utils.LogUtils;
 
@@ -102,13 +100,13 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
                         final String deviceNameFound = device.getName();
                         if (TextUtils.isEmpty(deviceNameFound)) {
                             LogUtils.w(TAG, "Found device with no name. MAC address is -> " + device.getAddress());
-                            notifyConnectionStateChanged(BtState.SCAN_FAILURE);
                             return;
                         }
 
                         LogUtils.i(TAG, String.format("Discovery Scan -> device detected " +
                                 "with name '%s' and MAC address '%s' ", deviceNameFound, device.getAddress()));
-                        if (mbtBluetoothManager.getDeviceNameRequested() != null && MelomindDevice.hasMelomindName(device) && (deviceNameFound.equals(mbtBluetoothManager.getDeviceNameRequested()) || deviceNameFound.contains(mbtBluetoothManager.getDeviceNameRequested()))) {
+                        if (mbtBluetoothManager.getDeviceNameRequested() != null
+                                && (deviceNameFound.equals(mbtBluetoothManager.getDeviceNameRequested()) || deviceNameFound.contains(mbtBluetoothManager.getDeviceNameRequested()))) {
                             LogUtils.i(TAG, "Device " + mbtBluetoothManager.getDeviceNameRequested() +" found. Cancelling discovery & connecting");
                             bluetoothAdapter.cancelDiscovery();
                             context.unregisterReceiver(this);
@@ -413,28 +411,28 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
                             int level = b;
                             counter = 0;
                             currentStatus = STATE_IDLE;
-                            int pourcent = -1;
+                            int percent = -1;
                             switch(level) {
                                 case 0:
-                                    pourcent = 0;
+                                    percent = 0;
                                     break;
                                 case 1:
-                                    pourcent = 15;
+                                    percent = 15;
                                     break;
                                 case 2:
-                                    pourcent = 30;
+                                    percent = 30;
                                     break;
                                 case 3:
-                                    pourcent = 50;
+                                    percent = 50;
                                     break;
                                 case 4:
-                                    pourcent = 65;
+                                    percent = 65;
                                     break;
                                 case 5:
-                                    pourcent = 85;
+                                    percent = 85;
                                     break;
                                 case 6:
-                                    pourcent = 100;
+                                    percent = 100;
                                     break;
                                 default:
                                     break;

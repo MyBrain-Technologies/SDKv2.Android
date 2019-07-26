@@ -13,16 +13,15 @@ import java.util.Set;
 
 import command.CommandInterface;
 import command.DeviceCommand;
-
 import config.StreamConfig;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.IStreamable;
-import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
-import core.bluetooth.requests.DisconnectRequestEvent;
 import core.bluetooth.MbtBluetoothManager;
-import core.bluetooth.requests.ReadRequestEvent;
-import core.bluetooth.requests.StreamRequestEvent;
 import core.bluetooth.requests.CommandRequestEvent;
+import core.bluetooth.requests.DisconnectRequestEvent;
+import core.bluetooth.requests.ReadRequestEvent;
+import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
+import core.bluetooth.requests.StreamRequestEvent;
 import core.device.DCOffsets;
 import core.device.DeviceEvents;
 import core.device.MbtDeviceManager;
@@ -34,8 +33,8 @@ import core.eeg.MbtEEGManager;
 import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
 import engine.clientevents.BluetoothError;
-import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.BluetoothStateListener;
+import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.DeviceBatteryListener;
 import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.EegError;
@@ -110,6 +109,7 @@ public class MbtManager{
      */
     public void connectBluetooth(@NonNull ConnectionStateListener<BaseError> connectionStateListener, String deviceNameRequested, String deviceQrCodeRequested, MbtDeviceType deviceTypeRequested, int mtu){
         this.connectionStateListener = connectionStateListener;
+
         if(deviceNameRequested != null && (!deviceNameRequested.startsWith(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX) && !deviceNameRequested.startsWith(MbtFeatures.VPRO_DEVICE_NAME_PREFIX) )){
             this.connectionStateListener.onError(HeadsetDeviceError.ERROR_PREFIX," "+ (deviceTypeRequested.equals(MbtDeviceType.MELOMIND) ? MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX : MbtFeatures.VPRO_DEVICE_NAME_PREFIX));
         }else if(deviceQrCodeRequested != null && (!deviceQrCodeRequested.startsWith(MbtFeatures.QR_CODE_NAME_PREFIX))){

@@ -29,17 +29,16 @@ import command.BluetoothCommand;
 import command.BluetoothCommands;
 import command.CommandInterface;
 import command.DeviceCommand;
-
-import config.MbtConfig;
-import core.BaseModuleManager;
 import command.DeviceCommands;
 import command.DeviceStreamingCommands;
+import config.MbtConfig;
+import core.BaseModuleManager;
 import core.bluetooth.lowenergy.MbtBluetoothLE;
 import core.bluetooth.requests.BluetoothRequests;
 import core.bluetooth.requests.CommandRequestEvent;
-import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
 import core.bluetooth.requests.DisconnectRequestEvent;
 import core.bluetooth.requests.ReadRequestEvent;
+import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
 import core.bluetooth.requests.StreamRequestEvent;
 import core.bluetooth.spp.MbtBluetoothSPP;
 import core.device.DeviceEvents;
@@ -237,11 +236,15 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 mtu = ((StartOrContinueConnectionRequestEvent)request).getMtu();
 
                 if (deviceQrCodeRequested != null){
-                    if(deviceNameRequested == null) //if a QR code has been specified but no device name
-                        deviceNameRequested = new MelomindsQRDataBase(mContext, true).get(deviceQrCodeRequested); //retrieve the BLE name from the QR code database
-                    if(deviceQrCodeRequested.startsWith(MelomindsQRDataBase.QR_PREFIX) && deviceQrCodeRequested.length() == MelomindsQRDataBase.QR_LENGTH-1)  //if QR code contains only 9 digits
+                    //if a QR code has been specified but no device name
+                    if(deviceNameRequested == null)
+                        //retrieve the BLE name from the QR code database
+                        deviceNameRequested = new MelomindsQRDataBase(mContext, true).get(deviceQrCodeRequested);
+                    //if QR code contains only 9 digits
+                    if(deviceQrCodeRequested.startsWith(MelomindsQRDataBase.QR_PREFIX) && deviceQrCodeRequested.length() == MelomindsQRDataBase.QR_LENGTH-1)
                         deviceQrCodeRequested = deviceQrCodeRequested.concat(MelomindsQRDataBase.QR_SUFFIX); //homogenization with the 10 digits QR code by adding a dot at the end
-                }else if(deviceNameRequested != null) //if a device name has been specified but no QR code
+                //if a device name has been specified but no QR code
+                }else if(deviceNameRequested != null)
                     deviceQrCodeRequested = new MelomindsQRDataBase(mContext, false).get(deviceNameRequested);  //retrieve the QR code from BLE name using QR code database
 
                 deviceTypeRequested = ((StartOrContinueConnectionRequestEvent) request).getTypeOfDeviceRequested();
@@ -488,9 +491,9 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      */
     private void stopScan(){
         asyncOperation.stopWaitingOperation(CANCEL);
-        if (deviceTypeRequested.useLowEnergyProtocol() && ContextCompat.checkSelfPermission(mContext,
+        if (deviceTypeRequested.useLowEnergyProtocol() && (ContextCompat.checkSelfPermission(mContext,
                 Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(mContext,
-                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED))
             mbtBluetoothLE.stopLowEnergyScan();
         else
             mbtBluetoothSPP.stopScanDiscovery();

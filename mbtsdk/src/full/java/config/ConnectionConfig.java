@@ -5,7 +5,6 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import command.BluetoothCommand;
 import command.BluetoothCommands;
 import engine.clientevents.BaseError;
 import engine.clientevents.ConnectionStateListener;
@@ -107,7 +106,10 @@ public final class ConnectionConfig {
      * - null (looking for any device, no matter its QR code)
      * - or not null and its length matchs the expected length
      */
-    public boolean isDeviceNameValid(){
+    public boolean isDeviceNameValid(MbtDeviceType type){
+        if(type == MbtDeviceType.VPRO)
+            return true; //TODO
+
         return deviceName == null || deviceName.length() == MbtFeatures.DEVICE_NAME_LENGTH;
     }
 

@@ -10,7 +10,6 @@ import core.bluetooth.BtProtocol;
 import core.device.model.MelomindsQRDataBase;
 
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
-import static core.bluetooth.BtProtocol.BLUETOOTH_SPP;
 import static features.MbtDeviceType.MELOMIND;
 
 
@@ -54,7 +53,7 @@ public final class MbtFeatures{
     public static final String QR_CODE_NAME_PREFIX = MelomindsQRDataBase.QR_PREFIX;
     public static final String VPRO_DEVICE_NAME_PREFIX = "VPro";
 
-    public final static int DEVICE_NAME_LENGTH = MbtFeatures.A2DP_DEVICE_NAME_PREFIX_LEGACY.length() + 10;
+    public final static int DEVICE_NAME_LENGTH = MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX.length() + 10;
     public final static int DEVICE_QR_CODE_LENGTH = MbtFeatures.QR_CODE_NAME_PREFIX.length() + 8;
 
     public static final String MELOMIND_DEVICE_NAME = "melomind";

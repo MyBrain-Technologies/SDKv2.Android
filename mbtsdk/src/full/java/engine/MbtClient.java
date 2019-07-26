@@ -6,14 +6,13 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-
 import command.CommandInterface;
+import command.DeviceCommands;
+import config.ConnectionConfig;
 import config.MbtConfig;
 import config.StreamConfig;
-import config.ConnectionConfig;
 import core.MbtManager;
 import core.bluetooth.BtState;
-import command.DeviceCommands;
 import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
 import core.eeg.storage.MbtEEGPacket;
@@ -23,9 +22,8 @@ import engine.clientevents.ConfigError;
 import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.DeviceBatteryListener;
 import engine.clientevents.EegListener;
-import engine.clientevents.HeadsetDeviceError;
-import features.MbtFeatures;
 import features.MbtDeviceType;
+import features.MbtFeatures;
 
 /**
  * Created by Etienne on 08/02/2018.
@@ -93,7 +91,7 @@ public final class MbtClient {
         MbtConfig.setBluetoothScanTimeout(config.getMaxScanDuration());
         MbtConfig.setConnectAudioIfDeviceCompatible(config.useAudio());
 
-        if(!config.isDeviceNameValid()) {
+        if(!config.isDeviceNameValid(config.getDeviceType())) {
             config.getConnectionStateListener().onError(ConfigError.ERROR_INVALID_PARAMS, " Device name must start with the " + MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX + " and contain 10 digits ");
             return;
         }
@@ -108,10 +106,10 @@ public final class MbtClient {
             return;
         }
 
-        if(config.getDeviceType() == MbtDeviceType.VPRO){
-            config.getConnectionStateListener().onError(HeadsetDeviceError.ERROR_VPRO_INCOMPATIBLE,null);
-            return;
-        }
+//        if(config.getDeviceType() == MbtDeviceType.VPRO){
+//            config.getConnectionStateListener().onError(HeadsetDeviceError.ERROR_VPRO_INCOMPATIBLE,null);
+//            return;
+//        }
 
         if(!config.isMtuValid()){
             config.getConnectionStateListener().onError(ConfigError.ERROR_INVALID_PARAMS,"MTU must be included between 23 and 121");
