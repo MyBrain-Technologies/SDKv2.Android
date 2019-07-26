@@ -59,7 +59,7 @@ import utils.BitUtils;
             @Override
             public void executeAction(core.device.oad.OADManager oadManager, Object actionData) {
                 OADCommands.RequestFirmwareValidation requestFirmwareValidation = new OADCommands.RequestFirmwareValidation(
-                        oadManager.getOADContext().getFirmwareVersion(),
+                        oadManager.getOADContext().getFirmwareVersionAsByteArray(),
                         oadManager.getOADContext().getNbPacketsToSend());
                 oadManager.getOADContract().requestFirmwareValidation(requestFirmwareValidation);
             }

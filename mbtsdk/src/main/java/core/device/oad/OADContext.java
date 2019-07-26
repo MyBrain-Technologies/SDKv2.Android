@@ -50,8 +50,15 @@ class OADContext {
     /**
      * Return the version of the firmware to install on the connected headset device.
      */
-    public byte[] getFirmwareVersion() {
+    public byte[] getFirmwareVersionAsByteArray() {
         return firmwareVersion;
+    }
+
+    /**
+     * Return the version of the firmware to install on the connected headset device.
+     */
+    public FirmwareVersion getFirmwareVersion() {
+        return new FirmwareVersion(new String(firmwareVersion));
     }
 
     /**

@@ -5,10 +5,14 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import org.apache.commons.lang.ArrayUtils;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import core.device.oad.PacketCounter;
 
@@ -89,7 +93,10 @@ public final class OADExtractionUtils {
      * Extract the content of an OAD binary file that holds the firmware
      * @return the content of the file as a byte array
      */
-    public static final String[] getAvailableFirmwareVersions(AssetManager assetManager) {
+    public static final String[] getAvailableFirmwareVersions(@NonNull AssetManager assetManager) {
+        if(assetManager == null)
+            return null;
+
         ArrayList<String> availableFirmwareVersions = new ArrayList<>();
         try {
             for (String oadBinaryFileName : assetManager.list(BINARY_FILES_DIRECTORY)) {
@@ -99,7 +106,11 @@ public final class OADExtractionUtils {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return (String[])availableFirmwareVersions.toArray();
+        String[] availableFirmwareVersionsAsArray = new String[availableFirmwareVersions.size()];
+        for(int i = 0; i < availableFirmwareVersions.size() ; i ++){
+            availableFirmwareVersionsAsArray[i] = availableFirmwareVersions.get(i);
+        }
+        return availableFirmwareVersionsAsArray;
     }
 
     /**
@@ -173,9 +184,11 @@ public final class OADExtractionUtils {
         if (content == null || content.length < FIRMWARE_VERSION_OFFSET + FIRMWARE_VERSION_NB_BYTES)
             return null;
 
-        byte[] firmwareVersionExtracted = new byte[FIRMWARE_VERSION_NB_BYTES];
-        System.arraycopy(content, FIRMWARE_VERSION_OFFSET, firmwareVersionExtracted, 0, FIRMWARE_VERSION_NB_BYTES);
-        return firmwareVersionExtracted;
+        ByteBuffer firmwareVersionExtracted = ByteBuffer.allocate(FIRMWARE_VERSION_NB_BYTES);
+        for(int byteIndex = 0; byteIndex < NB_PACKETS_NB_BYTES; byteIndex++ ){
+            firmwareVersionExtracted.put(content[FIRMWARE_VERSION_OFFSET + byteIndex]);
+        }
+        return firmwareVersionExtracted.array();
     }
 
     /**

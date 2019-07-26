@@ -26,12 +26,12 @@ import engine.clientevents.OADError;
 import eventbus.MbtEventBus;
 import utils.OADExtractionUtils;
 
-import static core.device.oad.OADManager.EXPECTED_NB_PACKETS_BINARY_FILE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static utils.OADExtractionUtils.EXPECTED_NB_BYTES_BINARY_FILE;
+import static utils.OADExtractionUtils.EXPECTED_NB_PACKETS_BINARY_FILE;
 import static utils.OADExtractionUtils.OAD_PACKET_SIZE;
 
 @RunWith( PowerMockRunner.class )
@@ -141,8 +141,8 @@ public class OADManagerTest {
     /**
      * Check that the SDK OAD internal state is {@link OADState#INITIALIZED}
      * if the binary file is found & complete.
-     * Also check it returns a buffer of {@link OADManager#EXPECTED_NB_PACKETS_BINARY_FILE} elements
-     * of {@link OADManager#EXPECTED_NB_PACKETS_BINARY_FILE} byte each.
+     * Also check it returns a buffer of {@link OADExtractionUtils#EXPECTED_NB_PACKETS_BINARY_FILE} elements
+     * of {@link OADExtractionUtils#EXPECTED_NB_PACKETS_BINARY_FILE} byte each.
      */
     @Test
     public void init_valid(){
@@ -157,7 +157,6 @@ public class OADManagerTest {
         oadManager.init(FIRMWARE_VERSION_VALID);
         assertEquals(oadManager.getCurrentState(), OADState.INITIALIZED);
         assertEquals(oadManager.getPacketCounter().totalNbPackets, EXPECTED_NB_PACKETS_BINARY_FILE);
-
     }
 
     /**
