@@ -108,6 +108,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
                         if (mbtBluetoothManager.getDeviceNameRequested() != null
                                 && (deviceNameFound.equals(mbtBluetoothManager.getDeviceNameRequested()) || deviceNameFound.contains(mbtBluetoothManager.getDeviceNameRequested()))) {
                             LogUtils.i(TAG, "Device " + mbtBluetoothManager.getDeviceNameRequested() +" found. Cancelling discovery & connecting");
+                            currentDevice = device;
                             bluetoothAdapter.cancelDiscovery();
                             context.unregisterReceiver(this);
                             mbtBluetoothManager.updateConnectionState(true); //current state is set to DEVICE_FOUND and future is completed

@@ -520,7 +520,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         }finally {
             asyncOperation.stopWaitingOperation(CANCEL);
         }
-        if(!getCurrentState().equals(BtState.DATA_BT_CONNECTION_SUCCESS) && !getCurrentState().equals(BtState.IDLE))
+        if(!getCurrentState().equals(BtState.CONNECTED_AND_READY) && !getCurrentState().equals(BtState.DATA_BT_CONNECTION_SUCCESS) && !getCurrentState().equals(BtState.IDLE))
             updateConnectionState(BtState.CONNECTION_FAILURE);
         switchToNextConnectionStep();
     }
