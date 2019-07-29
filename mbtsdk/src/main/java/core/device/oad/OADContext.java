@@ -15,19 +15,12 @@ class OADContext {
     /**
      * Path of the binary file that holds the firmware to install on the connected headset device.
      */
-    private String OADfileName = StringUtils.EMPTY;
+    private String OADfilepath = StringUtils.EMPTY;
 
     /**
      * Version of the firmware to install on the connected headset device.
      */
     private byte[] firmwareVersion = null;
-
-    /**
-     * Number of packets to send to the connected headset device during the firmware binary file transfer.
-     * As the OAD binary file that holds the new firmware is too big to be sent in a single request,
-     * the file is chunked into small packets.
-     */
-    private short nbPacketsToSend = 0;
 
     /**
      * List of OAD packets that holds chunks of the OAD
@@ -43,8 +36,8 @@ class OADContext {
     /**
      * Return the path of the binary file that holds the firmware to install on the connected headset device.
      */
-    String getOADfileName() {
-        return OADfileName;
+    String getOADfilepath() {
+        return OADfilepath;
     }
 
     /**
@@ -67,14 +60,14 @@ class OADContext {
      * the file is chunked into small packets.
      */
     short getNbPacketsToSend() {
-        return nbPacketsToSend;
+        return (short) packetsToSend.size();
     }
 
     /**
      * Set the path of the binary file that holds the firmware to install on the connected headset device.
      */
-    void setOADfileName(String OADfilePath) {
-        this.OADfileName = OADfilePath;
+    void setOADfilepath(String OADfilepath) {
+        this.OADfilepath = OADfilepath;
     }
 
     /**
@@ -82,15 +75,6 @@ class OADContext {
      */
     public void setFirmwareVersion(byte[] firmwareVersion) {
         this.firmwareVersion = firmwareVersion;
-    }
-
-    /**
-     * Set the number of packets to send to the connected headset device during the firmware binary file transfer.
-     * As the OAD binary file that holds the new firmware is too big to be sent in a single request,
-     * the file is chunked into small packets.
-     */
-    void setNbPacketsToSend(short nbPacketToSend) {
-        this.nbPacketsToSend = nbPacketToSend;
     }
 
     /**
@@ -107,6 +91,5 @@ class OADContext {
      */
     void setPacketsToSend(ArrayList<byte[]> packetsToSend) {
         this.packetsToSend = packetsToSend;
-        this.nbPacketsToSend = (short) packetsToSend.size();
     }
 }

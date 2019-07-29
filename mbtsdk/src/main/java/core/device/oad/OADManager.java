@@ -3,9 +3,12 @@ package core.device.oad;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
-import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -48,19 +51,35 @@ public final class OADManager {
      * so that we can know which step is the current step at any moment of the update process.
      */
     private OADState currentState;
+
     /**
      * Packet counter that is incremented at every sent OAD packet (chunk of file that holds the firmware to install)
      */
     private PacketCounter packetCounter;
 
+    /**
+     * Context of an OAD update that stores values related to the firmware to install.
+     */
     private OADContext oadContext;
 
+    /**
+     * Object that waits and blocks the current thread until the {@link MbtAsyncWaitOperation#stopWaitingOperation(Object)}} method is called
+     */
     private MbtAsyncWaitOperation<Boolean> lock;
 
-    public OADManager(Context context, OADContract oadContract, Object initData) {
+    public OADManager(@NonNull Context context, @NonNull OADContract oadContract) {
+        if(oadContract == null || context == null)
+            throw new IllegalArgumentException("Impossible to initialize the OAD Manager : one of the provided arguments is null.");
+
         this.context = context;
         this.oadContext = new OADContext();
         this.oadContract = oadContract;
+    }
+
+    /**
+     * Method to call when the OAD update process can be started.
+     */
+    public void startOADUpdate(Object initData){
         onOADStateChanged(OADState.INITIALIZING, initData);
     }
 
@@ -102,19 +121,19 @@ public final class OADManager {
      */
     void init(FirmwareVersion firmwareVersion){
         LogUtils.d(TAG, "Initialize the OAD update for version "+firmwareVersion);
-        oadContext.setOADfileName(OADExtractionUtils.getFileNameForFirmwareVersion(firmwareVersion.getFirmwareVersionAsString()));
+        oadContext.setOADfilepath(OADExtractionUtils.getFilePathForFirmwareVersion(firmwareVersion.getFirmwareVersionAsString()));
         try {
-            byte[] content = OADExtractionUtils.extractFileContent(context.getAssets(), oadContext.getOADfileName());
-            //Check that the OAD file content extracted is valid to start the OAD update
-            if(content == null) {
+            byte[] content = OADExtractionUtils.extractFileContent(context.getAssets().open(oadContext.getOADfilepath()));
+
+            if (content == null) {//Check that the OAD file content extracted is valid to start the OAD update
                 onError(OADError.ERROR_INIT_FAILED, "Impossible to read the OAD binary file.");
                 return;
-            } else if(content.length != EXPECTED_NB_BYTES_BINARY_FILE){
-                onError(OADError.ERROR_INIT_FAILED,"Expected length is " + EXPECTED_NB_BYTES_BINARY_FILE + ", but found length was " + content.length + ".");
+            } else if (content.length != EXPECTED_NB_BYTES_BINARY_FILE) {
+                onError(OADError.ERROR_INIT_FAILED, "Expected length is " + EXPECTED_NB_BYTES_BINARY_FILE + ", but found length was " + content.length + ".");
                 return;
             }
 
-            packetCounter = new PacketCounter(OAD_PACKET_SIZE, content.length);
+            packetCounter = new PacketCounter(OADExtractionUtils.getTotalNbPackets(OAD_PACKET_SIZE, content.length));
 
             ArrayList<byte[]> oadPackets = OADExtractionUtils.extractOADPackets(content);
             if(oadPackets == null || oadPackets.isEmpty()){
@@ -129,28 +148,20 @@ public final class OADManager {
                 return;
             }
             oadContext.setFirmwareVersion(firmwareVersionFromContent);
-        } catch (FileNotFoundException e) {
+            switchToNextStep(null);
+        } catch (IOException e) {
             onError(OADError.ERROR_INIT_FAILED, e.getMessage());
-            return;
         }
-        switchToNextStep(null);
     }
 
     /**
      *  The whole OAD binary file previously chucked in packets is sent to the current firmware
      *  The packets are sent one after another using the WRITE_NO_RESPONSE capability.
      *  This means that the firmware will not notify the client that the packet is correctly received.
-     * @param timeout maximum duration allocated to transfer all the OAD packets to the connected peripheral headsdet device.
      */
-    void transferOADFile(int timeout){
-        sendOADPacket(packetCounter.getIndexOfNextPacketToSend());
+    void transferOADFile(){
+        sendOADPacket(packetCounter.getIndexOfNextPacket());
         switchToNextStep(null);
-
-            boolean isTransferSuccess = waitUntilTimeout(timeout);
-            if(isTransferSuccess)
-                switchToNextStep(null);
-            else
-                onError(OADError.ERROR_TIMEOUT_UPDATE, "Transfer timed out.");
     }
 
     /**
@@ -171,12 +182,11 @@ public final class OADManager {
      * Method triggered when an OAD packet has been well sent in Bluetooth to the peripheral headset device.
      */
     private void onOADPacketSent(){
-        packetCounter.incrementNbPacketsCounted();
         onProgressChanged();
         if(packetCounter.areAllPacketsCounted()) {
             stopWaiting(true);
         }else
-            sendOADPacket(packetCounter.getIndexOfNextPacketToSend());
+            sendOADPacket(packetCounter.getIndexOfNextPacket());
     }
 
     /**
@@ -185,7 +195,9 @@ public final class OADManager {
     boolean waitUntilTimeout(int timeout){
         try {
             lock = new MbtAsyncWaitOperation<>();
-            return lock.waitOperationResult(timeout);
+            Boolean result = lock.waitOperationResult(timeout);
+            return result != null ? result : false;
+
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             LogUtils.e(TAG,""+e);
         }
@@ -209,7 +221,8 @@ public final class OADManager {
         LogUtils.d(TAG, "on OAD event "+event.toString());
         switch (event){
             case LOST_PACKET:
-                packetCounter.setNbPacketsCounted(event.getEventDataAsByteArray()); //Packet index is set back to the requested value
+                short index = ByteBuffer.wrap(event.getEventDataAsByteArray()).order(ByteOrder.LITTLE_ENDIAN).getShort();
+                packetCounter.resetTo(index); //Packet index is set back to the requested value
                 break;
 
             case DISCONNECTED:
@@ -221,13 +234,16 @@ public final class OADManager {
                 break;
 
             default:
-                if(lock.isWaiting())
+                if(lock != null && lock.isWaiting())
                     stopWaiting(true);
                 switchToNextStep(event.getEventData());
                 break;
         }
     }
 
+    /**
+     * Increment the current OAD update progress and notify the client of this change
+     */
     private void onProgressChanged(){
         currentState.incrementProgress();
         oadContract.notifyClient(new FirmwareUpdateClientEvent(currentState.convertToProgress()));
@@ -265,5 +281,30 @@ public final class OADManager {
     @VisibleForTesting
     PacketCounter getPacketCounter() {
         return packetCounter;
+    }
+
+    @VisibleForTesting
+    void setOADContract(OADContract oadContract) {
+        this.oadContract = oadContract;
+    }
+
+    @VisibleForTesting
+    void setPacketCounter(PacketCounter packetCounter) {
+        this.packetCounter = packetCounter;
+    }
+
+    @VisibleForTesting
+    void setOADState(OADState state) {
+        this.currentState = state;
+    }
+
+    @VisibleForTesting
+    void setOADContext(OADContext oadContext) {
+        this.oadContext = oadContext;
+    }
+
+    @VisibleForTesting
+    MbtAsyncWaitOperation getLock() {
+        return this.lock;
     }
 }

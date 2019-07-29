@@ -32,11 +32,11 @@ public class FirmwareUpdateClientEvent {
     }
 
     public BaseError getError() {
-        return errorAndAdditionalInfo.first;
+        return errorAndAdditionalInfo != null ? errorAndAdditionalInfo.first : null;
     }
 
     public String getAdditionalInfo() {
-        return errorAndAdditionalInfo.second;
+        return errorAndAdditionalInfo != null ? errorAndAdditionalInfo.second : null;
     }
 
     public OADState getOadState() {
@@ -45,5 +45,14 @@ public class FirmwareUpdateClientEvent {
 
     public int getOadProgress() {
         return oadProgress;
+    }
+
+    @Override
+    public String toString() {
+        return "FirmwareUpdateClientEvent{" +
+                "errorAndAdditionalInfo=" + errorAndAdditionalInfo +
+                ", oadState=" + oadState +
+                ", oadProgress=" + oadProgress +
+                '}';
     }
 }

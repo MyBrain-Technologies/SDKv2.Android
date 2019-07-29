@@ -4,11 +4,11 @@ import android.support.annotation.Nullable;
 
 import command.OADCommands;
 import core.device.model.FirmwareVersion;
-import engine.clientevents.BaseError;
 import engine.clientevents.OADError;
 import utils.BitUtils;
+import utils.OADExtractionUtils;
 
-    /**
+/**
      * Each step of the OAD update process is represented with a state machine
      * so that we can know which step is the current step at any moment of the update process.
      */
@@ -22,22 +22,17 @@ import utils.BitUtils;
         INITIALIZING(0){
 
             @Override
-            public void executeAction(core.device.oad.OADManager oadManager, Object actionData) {
+            public void executeAction(OADManager oadManager, Object actionData) {
                 FirmwareVersion firmwareVersion = getFirmwareVersion(actionData);
                 if(firmwareVersion != null)
                     oadManager.init(firmwareVersion);
                 else
-                    oadManager.onError(getError(), null);
+                    oadManager.onError(OADError.ERROR_INVALID_FIRMWARE_VERSION, null);
             }
 
             @Override
             public OADState nextState() {
                 return INITIALIZED;
-            }
-
-            @Override
-            public BaseError getError() {
-                return OADError.ERROR_INVALID_FIRMWARE_VERSION;
             }
 
             private FirmwareVersion getFirmwareVersion(Object actionData){
@@ -54,14 +49,17 @@ import utils.BitUtils;
          * to be submitted for validation by the headset device that is out-of-date.
          * The SDK is then waiting for a return response that validate or invalidate the OAD request.
          */
-        INITIALIZED(2){
+        INITIALIZED(2, 10000){
 
             @Override
-            public void executeAction(core.device.oad.OADManager oadManager, Object actionData) {
+            public void executeAction(OADManager oadManager, Object actionData) {
                 OADCommands.RequestFirmwareValidation requestFirmwareValidation = new OADCommands.RequestFirmwareValidation(
                         oadManager.getOADContext().getFirmwareVersionAsByteArray(),
                         oadManager.getOADContext().getNbPacketsToSend());
                 oadManager.getOADContract().requestFirmwareValidation(requestFirmwareValidation);
+                boolean isSuccess = oadManager.waitUntilTimeout(getMaximumDuration());
+                if(!isSuccess)
+                    oadManager.onError(OADError.ERROR_TIMEOUT_UPDATE, "Validation timed out.");
             }
 
             @Override
@@ -74,24 +72,19 @@ import utils.BitUtils;
          * State triggered once the out-of-date headset device has validated the OAD request
          * to start the OAD packets transfer.
          */
-        READY_TO_TRANSFER(2, 60000){
+        READY_TO_TRANSFER(2){
 
             @Override
-            public void executeAction(core.device.oad.OADManager oadManager, Object actionData) {
+            public void executeAction(OADManager oadManager, Object actionData) {
                 if(isValidationSuccess(actionData))
-                    oadManager.transferOADFile(this.getMaximumDuration());
+                    oadManager.transferOADFile();
                 else
-                    oadManager.onError(getError(), null);
+                    oadManager.onError(OADError.ERROR_FIRMWARE_REJECTED_UPDATE, null);
             }
 
             @Override
             public OADState nextState() {
                 return TRANSFERRING;
-            }
-
-            @Override
-            public BaseError getError() {
-                return OADError.ERROR_FIRMWARE_REJECTED_UPDATE;
             }
 
             private boolean isValidationSuccess(Object actionData){
@@ -102,16 +95,21 @@ import utils.BitUtils;
         /**
          * State triggered once the transfer is started
          */
-        TRANSFERRING(110){
+        TRANSFERRING(110, 60000){
 
             @Override
-            public void executeAction(core.device.oad.OADManager oadManager, Object actionData) { }
+            public void executeAction(OADManager oadManager, Object actionData) {
+                boolean isTransferSuccess = oadManager.waitUntilTimeout(this.getMaximumDuration());
+                if(isTransferSuccess)
+                    oadManager.switchToNextStep(null);
+                else
+                    oadManager.onError(OADError.ERROR_TIMEOUT_UPDATE, "Transfer timed out.");
+            }
 
             @Override
             public OADState nextState() {
                 return TRANSFERRED;
             }
-
         },
 
         /**
@@ -123,10 +121,10 @@ import utils.BitUtils;
         TRANSFERRED(110, 10000){
 
             @Override
-            public void executeAction(core.device.oad.OADManager oadManager, Object actionData) {
+            public void executeAction(OADManager oadManager, Object actionData) {
                 boolean isSuccess = oadManager.waitUntilTimeout(this.getMaximumDuration());
                 if(!isSuccess)
-                    oadManager.onError(getError(), "Readback timed out.");
+                    oadManager.onError(OADError.ERROR_TIMEOUT_UPDATE, "Readback timed out.");
             }
 
             @Override
@@ -134,10 +132,6 @@ import utils.BitUtils;
                 return AWAITING_DEVICE_REBOOT;
             }
 
-            @Override
-            public BaseError getError() {
-                return OADError.ERROR_TIMEOUT_UPDATE;
-            }
         },
 
         /**
@@ -147,23 +141,18 @@ import utils.BitUtils;
         AWAITING_DEVICE_REBOOT(110,20000){
 
             @Override
-            public void executeAction(core.device.oad.OADManager oadManager, Object actionData) {
+            public void executeAction(OADManager oadManager, Object actionData) {
                 if(isReadbackSuccess(actionData)) {
                     boolean isSuccess = oadManager.waitUntilTimeout(this.getMaximumDuration());
                     if(!isSuccess)
-                        oadManager.onError(getError(), "Reboot timed out.");
+                        oadManager.onError(OADError.ERROR_TIMEOUT_UPDATE, "Reboot timed out.");
                 }else
-                    oadManager.onError(getError(), null);
+                    oadManager.onError(OADError.ERROR_TRANSFER_FAILED, null);
             }
 
             @Override
             public OADState nextState() {
                 return READY_TO_RECONNECT;
-            }
-
-            @Override
-            public BaseError getError() {
-                return OADError.ERROR_TRANSFER_FAILED;
             }
 
             private boolean isReadbackSuccess(Object actionData){
@@ -179,7 +168,7 @@ import utils.BitUtils;
         READY_TO_RECONNECT(110){
 
             @Override
-            public void executeAction(core.device.oad.OADManager oadManager, Object actionData) {
+            public void executeAction(OADManager oadManager, Object actionData) {
                 oadManager.getOADContract().clearBluetooth();
                 oadManager.switchToNextStep(null);
             }
@@ -195,7 +184,7 @@ import utils.BitUtils;
          */
         RECONNECTING(115, 20000){
             @Override
-            public void executeAction(core.device.oad.OADManager oadManager, Object actionData) {
+            public void executeAction(OADManager oadManager, Object actionData) {
                 oadManager.getOADContract().reconnect();
                 oadManager.waitUntilTimeout(this.getMaximumDuration());
             }
@@ -213,25 +202,22 @@ import utils.BitUtils;
          */
         RECONNECTION_PERFORMED(117){
             @Override
-            public void executeAction(core.device.oad.OADManager oadManager, Object actionData) {
+            public void executeAction(OADManager oadManager, Object actionData) {
                 if(isReconnectionSuccess(actionData)){
-                    boolean isEqual = oadManager.getOADContract().compareFirmwareVersion(oadManager.getOADContext().getFirmwareVersion());
+                    boolean isEqual = oadManager.getOADContract()
+                            .compareFirmwareVersion( new FirmwareVersion(
+                                    OADExtractionUtils.extractFirmwareVersionFromFileName(oadManager.getOADContext().getOADfilepath())));
                     if(isEqual)
                         oadManager.switchToNextStep(null);
                     else
                         oadManager.onError(OADError.ERROR_WRONG_FIRMWARE_VERSION, null);
                 }else
-                    oadManager.onError(getError(), null);
+                    oadManager.onError(OADError.ERROR_RECONNECT_FAILED, null);
             }
 
             @Override
             public OADState nextState() {
                 return COMPLETED;
-            }
-
-            @Override
-            public BaseError getError() {
-                return OADError.ERROR_RECONNECT_FAILED;
             }
 
             private boolean isReconnectionSuccess(Object actionData){
@@ -244,7 +230,7 @@ import utils.BitUtils;
          */
         COMPLETED(120){
             @Override
-            public void executeAction(core.device.oad.OADManager oadManager, Object actionData) {
+            public void executeAction(OADManager oadManager, Object actionData) {
                 oadManager.getOADContract().stopOADUpdate();
             }
         },
@@ -255,7 +241,7 @@ import utils.BitUtils;
          */
         ABORTED(0){
             @Override
-            public void executeAction(core.device.oad.OADManager oadManager, Object actionData) {
+            public void executeAction(OADManager oadManager, Object actionData) {
                 oadManager.getOADContract().stopOADUpdate();
             }
         };
@@ -293,7 +279,7 @@ import utils.BitUtils;
          *                   Several parameters can be stored in the bundle.
          *                   Null bundle can also be passed if the action doesn't need any data.
          */
-        public abstract void executeAction(core.device.oad.OADManager oadManager, @Nullable Object actionData);
+        public abstract void executeAction(OADManager oadManager, @Nullable Object actionData);
 
         /**
          * Return the next state according to the current state
@@ -301,15 +287,6 @@ import utils.BitUtils;
          * @return the state that follows the current state in the OAD update process
          */
         public OADState nextState(){
-            return null;
-        }
-
-        /**
-         * Return the error to raise in case the current state encountered a problem.
-         * Return null if no error is raisable
-         * @return the error to raise in case the current state encountered a problem.
-         */
-        public BaseError getError(){
             return null;
         }
 
