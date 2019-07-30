@@ -7,6 +7,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -27,6 +28,8 @@ import java.util.Objects;
 import core.device.event.DCOffsetEvent;
 import core.device.event.SaturationEvent;
 import core.bluetooth.BtState;
+import core.device.model.FirmwareVersion;
+import core.device.oad.OADState;
 import core.eeg.storage.MbtEEGPacket;
 import engine.MbtClient;
 
@@ -36,6 +39,7 @@ import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.BluetoothStateListener;
 import engine.clientevents.DeviceBatteryListener;
 import engine.clientevents.EegListener;
+import engine.clientevents.OADStateListener;
 import features.MbtDeviceType;
 import features.MbtFeatures;
 import utils.LogUtils;
@@ -199,9 +203,28 @@ DeviceActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 //returnOnPreviousActivity();
-                if (isStreaming)
-                    stopStream();
-                sdkClient.disconnectBluetooth();
+//                if (isStreaming)
+//                    stopStream();
+//                sdkClient.disconnectBluetooth();
+                sdkClient.updateFirmware(new FirmwareVersion("1.7.1"), new OADStateListener<BaseError>() {
+                    @Override
+                    public void onStateChanged(OADState newState) {
+                        Log.d(TAG," on state changed "+newState);
+
+                    }
+
+                    @Override
+                    public void onProgressPercentChanged(int progress) {
+                        Log.d(TAG," on progress "+progress);
+
+                    }
+
+                    @Override
+                    public void onError(BaseError error, String additionalInfo) {
+                        Log.d(TAG," on Error "+error.toString()+ " additionnalInfo "+additionalInfo);
+
+                    }
+                });
             }
         });
     }

@@ -93,22 +93,6 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
         }
     }
 
-
-    public MbtDevice getmCurrentConnectedDevice() {
-        return mCurrentConnectedDevice;
-    }
-
-    private void setAudioConnectedDeviceAddress(String audioDeviceAddress) {
-        Log.d(TAG,"new connected audio device address stored "+audioDeviceAddress);
-        if(mCurrentConnectedDevice != null)
-            this.mCurrentConnectedDevice.setAudioDeviceAddress(audioDeviceAddress);
-    }
-
-    private void setmCurrentConnectedDevice(MbtDevice mCurrentConnectedDevice) {
-        Log.d(TAG,"new connected device stored "+mCurrentConnectedDevice);
-        this.mCurrentConnectedDevice = mCurrentConnectedDevice;
-    }
-
     @Subscribe
     public void onNewDeviceAudioDisconnected(DeviceEvents.AudioDisconnectedDeviceEvent deviceEvent) {
         if(getmCurrentConnectedDevice() != null)
@@ -138,45 +122,10 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
         }
     }
 
-    private void onDeviceFound(BluetoothDevice foundDevice, MbtDeviceType deviceType) {
-        MbtDevice device = null;
-        if (foundDevice != null) {
-            device = deviceType.equals(MELOMIND) ?
-                    new MelomindDevice(foundDevice) :
-                    new VProDevice(foundDevice);
-        }
-        setmCurrentConnectedDevice(device);
-    }
-
-    private void onDeviceReconnected(boolean isReconnectionSuccess) {
-        if(oadManager != null && oadManager.getCurrentState().equals(OADState.RECONNECTING))
-            oadManager.onOADEvent(OADEvent.RECONNECTION_PERFORMED
-                    .setEventData(isReconnectionSuccess));
-    }
-
-    private void onNoDeviceConnected() {
-        if (oadManager != null){
-            switch (oadManager.getCurrentState()){
-                case AWAITING_DEVICE_REBOOT: //reboot success
-                    oadManager.onOADEvent(OADEvent.DISCONNECTED_FOR_REBOOT);
-                    break;
-                case RECONNECTING: //reconnection failed
-                    onDeviceReconnected(false);
-                    setmCurrentConnectedDevice(null);
-                    break;
-                default: //unexpected disconnection
-                    oadManager.onOADEvent(OADEvent.DISCONNECTED);
-                    setmCurrentConnectedDevice(null);
-                    break;
-            }
-        }else
-            setmCurrentConnectedDevice(null);
-    }
-
     @Subscribe
     public void onNewAudioDeviceConnected(DeviceEvents.AudioConnectedDeviceEvent deviceEvent) {
-            setAudioConnectedDeviceAddress( (deviceEvent.getDevice() != null) ?
-                    deviceEvent.getDevice().getAddress() : null);
+        setAudioConnectedDeviceAddress( (deviceEvent.getDevice() != null) ?
+                deviceEvent.getDevice().getAddress() : null);
     }
 
     @Subscribe
@@ -218,17 +167,16 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
         }
     }
 
-
     @Subscribe
     public void onGetDevice(DeviceEvents.GetDeviceEvent event){
         MbtEventBus.postEvent(new DeviceEvents.PostDeviceEvent(mCurrentConnectedDevice));
     }
 
     @Subscribe
-    void onOADEvent(OADEvent event) {
-        if (oadManager == null && event.equals(OADEvent.INIT)) {
+    void onOADEvent(DeviceEvents.StartOADUpdate event) {
+        if (oadManager == null && mCurrentConnectedDevice != null) {
             this.oadManager = new OADManager(mContext, this);
-            this.oadManager.startOADUpdate(event.getEventData());
+            this.oadManager.startOADUpdate(event.getFirmwareVersion());
         }
     }
 
@@ -247,6 +195,56 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
 
             this.oadManager.onOADEvent(oadEvent);
         }
+    }
+
+    public MbtDevice getmCurrentConnectedDevice() {
+        return mCurrentConnectedDevice;
+    }
+
+    private void setAudioConnectedDeviceAddress(String audioDeviceAddress) {
+        Log.d(TAG,"new connected audio device address stored "+audioDeviceAddress);
+        if(mCurrentConnectedDevice != null)
+            this.mCurrentConnectedDevice.setAudioDeviceAddress(audioDeviceAddress);
+    }
+
+    private void setmCurrentConnectedDevice(MbtDevice mCurrentConnectedDevice) {
+        Log.d(TAG,"new connected device stored "+mCurrentConnectedDevice);
+        this.mCurrentConnectedDevice = mCurrentConnectedDevice;
+    }
+
+    private void onDeviceFound(BluetoothDevice foundDevice, MbtDeviceType deviceType) {
+        MbtDevice device = null;
+        if (foundDevice != null) {
+            device = deviceType.equals(MELOMIND) ?
+                    new MelomindDevice(foundDevice) :
+                    new VProDevice(foundDevice);
+        }
+        setmCurrentConnectedDevice(device);
+    }
+
+    private void onDeviceReconnected(boolean isReconnectionSuccess) {
+        if(oadManager != null && oadManager.getCurrentState().equals(OADState.RECONNECTING))
+            oadManager.onOADEvent(OADEvent.RECONNECTION_PERFORMED
+                    .setEventData(isReconnectionSuccess));
+    }
+
+    private void onNoDeviceConnected() {
+        if (oadManager != null){
+            switch (oadManager.getCurrentState()){
+                case AWAITING_DEVICE_REBOOT: //reboot success
+                    oadManager.onOADEvent(OADEvent.DISCONNECTED_FOR_REBOOT);
+                    break;
+                case RECONNECTING: //reconnection failed
+                    onDeviceReconnected(false);
+                    setmCurrentConnectedDevice(null);
+                    break;
+                default: //unexpected disconnection
+                    oadManager.onOADEvent(OADEvent.DISCONNECTED);
+                    setmCurrentConnectedDevice(null);
+                    break;
+            }
+        }else
+            setmCurrentConnectedDevice(null);
     }
 
     @Override

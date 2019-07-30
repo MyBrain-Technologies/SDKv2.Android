@@ -204,7 +204,7 @@ public class MbtManager{
      */
     public void updateFirmware(FirmwareVersion firmwareVersion, OADStateListener<BaseError> stateListener) {
         this.oadStateListener = stateListener;
-        OADEvent event = OADEvent.INIT.setEventData(firmwareVersion.getFirmwareVersionAsString());
+        DeviceEvents.StartOADUpdate event = new DeviceEvents.StartOADUpdate(firmwareVersion);
         MbtEventBus.postEvent(event);
     }
 
