@@ -42,30 +42,6 @@ public interface DeviceEvents {
         }
     }
 
-
-    class FoundDeviceEvent {
-        @Nullable
-        private final BluetoothDevice device;
-
-        private final MbtDeviceType deviceType;
-
-        public FoundDeviceEvent(@Nullable BluetoothDevice device, MbtDeviceType deviceType){
-            this.device = device;
-            this.deviceType = deviceType;
-        }
-
-        @Nullable
-        public BluetoothDevice getDevice() {
-            return device;
-        }
-
-        MbtDeviceType getDeviceType() {
-            return deviceType;
-        }
-    }
-
-    class DisconnectedDeviceEvent {    }
-
     class AudioDisconnectedDeviceEvent {    }
 
     class AudioConnectedDeviceEvent {

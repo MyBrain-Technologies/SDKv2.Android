@@ -186,7 +186,9 @@ import utils.OADExtractionUtils;
             @Override
             public void executeAction(OADManager oadManager, Object actionData) {
                 oadManager.getOADContract().reconnect();
-                oadManager.waitUntilTimeout(this.getMaximumDuration());
+                boolean isSuccess = oadManager.waitUntilTimeout(this.getMaximumDuration());
+                if(!isSuccess)
+                    oadManager.onError(OADError.ERROR_TIMEOUT_UPDATE, "Reconnection timed out.");
             }
 
             @Override

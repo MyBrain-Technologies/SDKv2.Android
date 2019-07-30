@@ -24,7 +24,7 @@ public class OADExtractionUtilsTest {
      * if the binary file is not found
      */
     @Test(expected = FileNotFoundException.class)
-    public void extractFileContent_invalid_fileNotFound() throws FileNotFoundException {
+    public void extractFileContent_invalid_fileNotFound() throws IOException {
         OADExtractionUtils.extractFileContent(null);
     }
 
@@ -33,7 +33,7 @@ public class OADExtractionUtilsTest {
      * if the binary file is found
      */
     @Test
-    public void extractFileContent_valid_readSuccess() throws FileNotFoundException {
+    public void extractFileContent_valid_readSuccess() throws IOException {
         byte[] content = OADExtractionUtils.extractFileContent(
         this.getClass().getClassLoader().getResourceAsStream("oad/mm-ota-1_6_2.bin"));
 
@@ -46,7 +46,7 @@ public class OADExtractionUtilsTest {
      * if the binary file is found but the file reading fails
      */
     @Test(expected = FileNotFoundException.class)
-    public void extractFileContent_valid_readFailure() throws FileNotFoundException {
+    public void extractFileContent_valid_readFailure() throws IOException {
         assertNull(OADExtractionUtils.extractFileContent(
                 this.getClass().getClassLoader().getResourceAsStream("mm-ota-1_6_2.bin")));
     }

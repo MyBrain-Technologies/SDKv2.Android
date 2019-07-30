@@ -67,7 +67,7 @@ public final class OADExtractionUtils {
     /**
      * Number of bytes allocated for the number of packet to send to the current firmware
      */
-    public static final int NB_PACKETS_NB_BYTES = 2;
+    public static final int FILE_LENGTH_NB_BYTES = 2;
 
     /**
      * Expected number of packets of the OAD binary file (chunks of the file that hold the firmware to install) to send to the headset device
@@ -118,20 +118,14 @@ public final class OADExtractionUtils {
      * @param inputStream is the input stream that read the OAD binary file to extract
      * @return the content of the file as a byte array
      */
-    public static final byte[] extractFileContent(@NonNull final InputStream inputStream) throws FileNotFoundException {
+    public static final byte[] extractFileContent(@NonNull final InputStream inputStream) throws IOException {
         if(inputStream == null)
             throw new FileNotFoundException("File path/name incorrect : "+inputStream);
 
         byte[] fileContent = new byte[EXPECTED_NB_BYTES_BINARY_FILE];
-        try {
             // Read the file raw into a buffer
             inputStream.read(fileContent, 0, fileContent.length);
             inputStream.close();
-
-        } catch (IOException|NullPointerException e) {
-            Log.e(TAG, "File open failed: " + inputStream.toString() + "\n");
-            return null;
-        }
 
         return fileContent;
     }
@@ -180,7 +174,7 @@ public final class OADExtractionUtils {
             return null;
 
         ByteBuffer firmwareVersionExtracted = ByteBuffer.allocate(FIRMWARE_VERSION_NB_BYTES);
-        for(int byteIndex = 0; byteIndex < NB_PACKETS_NB_BYTES; byteIndex++ ){
+        for(int byteIndex = 0; byteIndex < FIRMWARE_VERSION_NB_BYTES; byteIndex++ ){
             firmwareVersionExtracted.put(content[FIRMWARE_VERSION_OFFSET + byteIndex]);
         }
         return firmwareVersionExtracted.array();

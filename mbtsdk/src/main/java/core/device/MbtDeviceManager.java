@@ -1,5 +1,6 @@
 package core.device;
 
+import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.VisibleForTesting;
@@ -15,6 +16,7 @@ import core.bluetooth.BtState;
 import core.bluetooth.requests.CommandRequestEvent;
 import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
 import core.device.oad.OADContract;
+import core.device.oad.OADState;
 import eventbus.events.BluetoothResponseEvent;
 import core.device.model.FirmwareVersion;
 import core.device.model.MbtDevice;
@@ -31,6 +33,7 @@ import eventbus.events.ConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
 import eventbus.events.FirmwareUpdateClientEvent;
 import eventbus.events.ResetBluetoothEvent;
+import features.MbtDeviceType;
 import utils.LogUtils;
 
 import static features.MbtDeviceType.MELOMIND;
@@ -108,48 +111,67 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
     }
 
     @Subscribe
-    public void onNewDeviceDisconnected(DeviceEvents.DisconnectedDeviceEvent deviceEvent) {
-        if (oadManager != null){
-            switch (oadManager.getCurrentState()){
-                case AWAITING_DEVICE_REBOOT:
-                    oadManager.onOADEvent(OADEvent.DISCONNECTED_FOR_REBOOT);
-                    break;
-                case RECONNECTING:
-                    oadManager.onOADEvent(OADEvent.RECONNECTION_PERFORMED.setEventData(false));
-                    break;
-                default:
-                    oadManager.onOADEvent(OADEvent.DISCONNECTED);
-                    break;
-            }
-        }else
-            setmCurrentConnectedDevice(null);
-    }
-
-    @Subscribe
     public void onNewDeviceAudioDisconnected(DeviceEvents.AudioDisconnectedDeviceEvent deviceEvent) {
         if(getmCurrentConnectedDevice() != null)
             getmCurrentConnectedDevice().setAudioDeviceAddress(null);
     }
 
     @Subscribe
-    public void onNewDeviceConnected(DeviceEvents.FoundDeviceEvent deviceEvent) {
+    public void onConnectionStateChanged(ConnectionStateEvent connectionStateEvent) {
+        switch (connectionStateEvent.getNewState()){
 
-        MbtDevice device = null;
-        if (deviceEvent.getDevice() != null) {
-            device = deviceEvent.getDeviceType().equals(MELOMIND) ?
-                    new MelomindDevice(deviceEvent.getDevice()) : new VProDevice(deviceEvent.getDevice());
+            case SCAN_TIMEOUT:
+            case SCAN_FAILURE:
+            case SCAN_INTERRUPTED:
+            case DATA_BT_DISCONNECTED:
+            case CONNECTION_FAILURE:
+            case CONNECTION_INTERRUPTED:
+                onDeviceDisconnected();
+            break;
+
+            case CONNECTED_AND_READY:
+                onDeviceReconnected(true);
+                break;
+
+            case DEVICE_FOUND:
+                onDeviceFound(connectionStateEvent.getDevice(), connectionStateEvent.getDeviceType());
+            break;
         }
-        setmCurrentConnectedDevice(device);
-
     }
 
-    @Subscribe
-    public void onConnectionStateChanged(ConnectionStateEvent connectionStateEvent) {
-        if(connectionStateEvent.getNewState().equals(BtState.CONNECTED_AND_READY))
-                if(oadManager != null)
-                    oadManager.onOADEvent(OADEvent
-                            .RECONNECTION_PERFORMED
-                            .setEventData(true));
+    private void onDeviceFound(BluetoothDevice foundDevice, MbtDeviceType deviceType) {
+        MbtDevice device = null;
+        if (foundDevice != null) {
+            device = deviceType.equals(MELOMIND) ?
+                    new MelomindDevice(foundDevice) :
+                    new VProDevice(foundDevice);
+        }
+        setmCurrentConnectedDevice(device);
+    }
+
+    private void onDeviceReconnected(boolean isReconnectionSuccess) {
+        if(oadManager != null && oadManager.getCurrentState().equals(OADState.RECONNECTING))
+            oadManager.onOADEvent(OADEvent.RECONNECTION_PERFORMED
+                    .setEventData(isReconnectionSuccess));
+    }
+
+    private void onDeviceDisconnected() {
+        if (oadManager != null){
+            switch (oadManager.getCurrentState()){
+                case AWAITING_DEVICE_REBOOT: //reboot success
+                    oadManager.onOADEvent(OADEvent.DISCONNECTED_FOR_REBOOT);
+                    break;
+                case RECONNECTING: //reconnection failed
+                    onDeviceReconnected(false);
+                    setmCurrentConnectedDevice(null);
+                    break;
+                default: //unexpected disconnection
+                    oadManager.onOADEvent(OADEvent.DISCONNECTED);
+                    setmCurrentConnectedDevice(null);
+                    break;
+            }
+        }else
+            setmCurrentConnectedDevice(null);
     }
 
     @Subscribe

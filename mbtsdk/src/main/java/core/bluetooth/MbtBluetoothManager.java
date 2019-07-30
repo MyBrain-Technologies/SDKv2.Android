@@ -1005,6 +1005,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 mbtBluetoothA2DP.notifyConnectionStateChanged(newState, false);
                 MbtEventBus.postEvent(new DeviceEvents.AudioDisconnectedDeviceEvent());
                 break;
+
             case AUDIO_BT_CONNECTION_SUCCESS:
                 mbtBluetoothA2DP.notifyConnectionStateChanged(newState,false);
                 asyncOperation.stopWaitingOperation(false);
@@ -1016,27 +1017,19 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                     MbtEventBus.postEvent(new DeviceEvents.AudioConnectedDeviceEvent(mbtBluetoothA2DP.getConnectedDevice()));
                 }
                 break;
+
             case JACK_CABLE_CONNECTED:
                 if(asyncOperation.isWaiting())
                     asyncOperation.stopWaitingOperation(false);
                 break;
+
             case DEVICE_FOUND:
-                MbtEventBus.postEvent(new DeviceEvents.FoundDeviceEvent(getCurrentDevice(), deviceTypeRequested));
                 if(mbtBluetoothA2DP.currentDevice != null)
                     MbtEventBus.postEvent(new DeviceEvents.AudioConnectedDeviceEvent(mbtBluetoothA2DP.currentDevice));
-
-                break;
-            case SCAN_TIMEOUT:
-            case SCAN_FAILURE:
-            case SCAN_INTERRUPTED:
-            case DATA_BT_DISCONNECTED:
-            case CONNECTION_FAILURE:
-            case CONNECTION_INTERRUPTED:
-                MbtEventBus.postEvent(new DeviceEvents.DisconnectedDeviceEvent());
                 break;
         }
 
-        MbtEventBus.postEvent(new ConnectionStateEvent(newState)); //This event is sent to MbtManager for user notifications
+        MbtEventBus.postEvent(new ConnectionStateEvent(newState, getCurrentDevice(), deviceTypeRequested)); //This event is sent to MbtManager for user notifications and to MbtDeviceManager
     }
 
     /**

@@ -4,11 +4,10 @@ import android.support.annotation.Keep;
 
 import java.nio.ByteBuffer;
 
-import core.device.oad.OADManager;
 import engine.clientevents.BaseError;
 import utils.OADExtractionUtils;
 
-import static utils.OADExtractionUtils.NB_PACKETS_NB_BYTES;
+import static utils.OADExtractionUtils.FILE_LENGTH_NB_BYTES;
 import static utils.OADExtractionUtils.FIRMWARE_VERSION_NB_BYTES;
 
 /**
@@ -27,6 +26,8 @@ public interface OADCommands {
     @Keep
     class RequestFirmwareValidation extends DeviceCommand<byte[], BaseError> {
 
+        private static final int MSB_INDEX = 2;
+        private static final int LSB_INDEX = 3;
         /**
          * The firmware version that will replace the current version installed on the headset device
          */
@@ -81,7 +82,7 @@ public interface OADCommands {
         @Override
         public boolean isValid() {
             return firmwareVersion != null
-                    && firmwareVersion.length != 0
+                    && firmwareVersion.length == FIRMWARE_VERSION_NB_BYTES
                     && binaryFileNbPackets == OADExtractionUtils.EXPECTED_NB_PACKETS_BINARY_FILE;
         }
 
@@ -92,12 +93,17 @@ public interface OADCommands {
 
         @Override
         public byte[] getData() {
-            if(firmwareVersion == null)
+            if(!isValid())
                 return null;
 
-            ByteBuffer buffer = ByteBuffer.allocate(NB_PACKETS_NB_BYTES + FIRMWARE_VERSION_NB_BYTES);
+            ByteBuffer buffer = ByteBuffer.allocate(FIRMWARE_VERSION_NB_BYTES + FILE_LENGTH_NB_BYTES);
             buffer.put(firmwareVersion);
             buffer.putShort(binaryFileNbPackets);
+            byte[] data = buffer.array();
+            //Reversing LSB and MSB
+            byte temp = data[LSB_INDEX];
+            data[LSB_INDEX] = data[MSB_INDEX];
+            data[MSB_INDEX] = temp;
             return buffer.array();
         }
     }
