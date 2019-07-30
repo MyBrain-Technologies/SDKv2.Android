@@ -100,9 +100,10 @@ public final class OADManager {
     void onOADStateChanged(OADState state, @Nullable Object actionData) {
         LogUtils.d(TAG, "OAD State changed : "+currentState +" > "+state);
         currentState = state;
-        oadContract.notifyClient(new FirmwareUpdateClientEvent(currentState));
-        if(currentState != null)
+        if(currentState != null) {
+            oadContract.notifyClient(new FirmwareUpdateClientEvent(currentState));
             currentState.executeAction(this, actionData);
+        }
     }
 
     /**
@@ -221,8 +222,12 @@ public final class OADManager {
         LogUtils.d(TAG, "on OAD event "+event.toString());
         switch (event){
             case LOST_PACKET:
-                short index = ByteBuffer.wrap(event.getEventDataAsByteArray()).order(ByteOrder.LITTLE_ENDIAN).getShort();
-                packetCounter.resetTo(index); //Packet index is set back to the requested value
+                try {
+                    short index = ByteBuffer.wrap(event.getEventDataAsByteArray()).order(ByteOrder.LITTLE_ENDIAN).getShort();
+                    packetCounter.resetTo(index); //Packet index is set back to the requested value
+                }catch (Exception e) {
+                    LogUtils.e(TAG, "Exception due to invalid reset index: " + e);
+                }
                 break;
 
             case DISCONNECTED:
@@ -306,5 +311,10 @@ public final class OADManager {
     @VisibleForTesting
     MbtAsyncWaitOperation getLock() {
         return this.lock;
+    }
+
+    @VisibleForTesting
+    public void setLock(MbtAsyncWaitOperation<Boolean> lock) {
+        this.lock = lock;
     }
 }

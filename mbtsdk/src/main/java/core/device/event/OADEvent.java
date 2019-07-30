@@ -166,9 +166,12 @@ public enum OADEvent {
     public static OADEvent getEventFromMailboxCommand(DeviceCommandEvent mailboxIdentifier){
         OADEvent event = null;
         for (OADEvent value : OADEvent.values()){
-            if(value.mailboxEvent.getIdentifierCode() == mailboxIdentifier.getIdentifierCode())
+            if(value.mailboxEvent != null && value.mailboxEvent.getIdentifierCode() == mailboxIdentifier.getIdentifierCode())
                 event = value;
         }
         return event;
     }
-}
+
+    public DeviceCommandEvent getMailboxEvent() {
+        return mailboxEvent;
+    }}

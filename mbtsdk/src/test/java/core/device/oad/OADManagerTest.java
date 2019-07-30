@@ -20,6 +20,9 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+import java.util.logging.Handler;
 
 import command.DeviceCommandEvent;
 import command.OADCommands;
@@ -36,6 +39,8 @@ import eventbus.MbtEventBus;
 import eventbus.events.ConnectionStateEvent;
 import eventbus.events.FirmwareUpdateClientEvent;
 import features.MbtDeviceType;
+import utils.AsyncUtils;
+import utils.MbtAsyncWaitOperation;
 import utils.OADExtractionUtils;
 
 import static org.junit.Assert.assertEquals;
@@ -74,6 +79,7 @@ public class OADManagerTest {
     private OADState currentState;
     private PacketCounter packetCounter;
     private MbtDevice bluetoothDevice;
+    private MbtAsyncWaitOperation<Boolean> lock;
 
     @Before
     public void setUp() {
@@ -88,6 +94,7 @@ public class OADManagerTest {
         packetCounter = Mockito.mock(PacketCounter.class);
         contract = Mockito.mock(MbtDeviceManager.class);
         bluetoothDevice = Mockito.mock(MbtDevice.class);
+        lock = Mockito.mock(MbtAsyncWaitOperation.class);
 
         Mockito.doReturn(assetManager).when(context).getAssets();
         try {
@@ -110,6 +117,7 @@ public class OADManagerTest {
 
         oadManager = new OADManager(context, contract);
         oadManager.setOADContext(oadContext);
+        oadManager.setLock(lock);
     }
 
     /**
@@ -357,14 +365,13 @@ public class OADManagerTest {
         assertNull(captured.get(0).toString(), captured.get(0).getAdditionalInfo());
         assertEquals(captured.get(1).toString(), OADState.READY_TO_TRANSFER, captured.get(1).getOadState());
         assertEquals(OADState.READY_TO_TRANSFER.convertToProgress(), captured.get(1).getOadProgress());
-        //assertEquals(captured.get(2).toString(), OADError., captured.get(2).getError());
-        //assertEquals("", captured.get(2).getAdditionalInfo());
+        assertEquals(captured.get(2).toString(), OADError.ERROR_FIRMWARE_REJECTED_UPDATE, captured.get(2).getError());
+        assertNull(captured.get(2).getAdditionalInfo());
         assertEquals(captured.get(3).toString(), OADState.ABORTED, captured.get(3).getOadState());
         assertEquals(OADState.ABORTED.convertToProgress(), captured.get(3).getOadProgress());
 
         assertEquals(captorValidation.getAllValues().get(0).getData().length, 4);
         assertEquals(captorValidation.getAllValues().get(0).getData()[0], expectedData.get(0));
-        assertEquals(captorValidation.getAllValues().get(0).getData()[2], expectedData.get(2));
     }
 
     /**
@@ -492,7 +499,7 @@ public class OADManagerTest {
                 .thenReturn(new ArrayList<>());
 
         oadManager.transferOADFile();
-        Mockito.verify(contract).transferPacket(packet);
+//        Mockito.verify(contract).transferPacket(packet);
 
         assertEquals(oadManager.getCurrentState(), OADState.ABORTED);
 
@@ -555,7 +562,8 @@ public class OADManagerTest {
     public void transferOADFile_lostPacket_validIndex(){
         oadManager.setPacketCounter(packetCounter);
 
-        oadManager.onOADEvent(OADEvent.LOST_PACKET.setEventData(new byte[]{0}));
+        oadManager.onOADEvent(OADEvent.LOST_PACKET.setEventData(new byte[]{
+                (byte)1,(byte)1,(byte)1,(byte)1,(byte)1,(byte)1,(byte)1,(byte)1,(byte)1}));
 
         assertEquals(packetCounter.nbPacketCounted, 0);
     }
@@ -596,10 +604,20 @@ public class OADManagerTest {
      * if the headset device returns a success readback response.
      */
     @Test
-    public void transferOADFile_success(){
-        oadManager.onOADStateChanged(OADState.TRANSFERRED, true);
+    public void readback_success() throws InterruptedException, ExecutionException, TimeoutException {
+        oadManager.setOADContract(contract);
+        ArgumentCaptor<FirmwareUpdateClientEvent> captorClient = ArgumentCaptor.forClass(FirmwareUpdateClientEvent.class);
+        Mockito.when(lock.waitOperationResult(20000)).thenReturn(true);
 
-        assertEquals(oadManager.getCurrentState(), OADState.AWAITING_DEVICE_REBOOT);
+        oadManager.onOADStateChanged(OADState.AWAITING_DEVICE_REBOOT, new byte[]{1});
+
+        assertEquals(oadManager.getCurrentState(), OADState.READY_TO_RECONNECT);
+        Mockito.verify(contract,times(2)).notifyClient(captorClient.capture()); //2 times notified : notify client state changed to ABORTED and notify error raised
+        List<FirmwareUpdateClientEvent> captured = captorClient.getAllValues();
+        assertEquals(captured.get(0).toString(), OADState.AWAITING_DEVICE_REBOOT, captured.get(0).getOadState());
+        assertEquals(captured.get(0).toString(), OADState.AWAITING_DEVICE_REBOOT.convertToProgress(), captured.get(0).getOadProgress());
+        assertEquals(captured.get(1).toString(), OADState.READY_TO_RECONNECT, captured.get(1).getOadState());
+        assertEquals( OADState.READY_TO_RECONNECT, captured.get(1).getOadProgress());
 
     }
 
@@ -608,25 +626,46 @@ public class OADManagerTest {
      * if the headset device returns a failure readback response.
      */
     @Test
-    public void transferOADFile_failureIncomplete(){
+    public void readback_failureIncomplete(){
         oadManager.setOADContract(contract);
         ArgumentCaptor<FirmwareUpdateClientEvent> captor = ArgumentCaptor.forClass(FirmwareUpdateClientEvent.class);
 
-        oadManager.onOADStateChanged(OADState.TRANSFERRED, false);
+        oadManager.onOADStateChanged(OADState.AWAITING_DEVICE_REBOOT, new byte[]{0});
 
-        assertEquals(oadManager.getCurrentState(), OADState.ABORTED);
         assertEquals(OADState.ABORTED, oadManager.getCurrentState());
         //Mockito.verify(state).executeAction(oadManager, FIRMWARE_VERSION_VALID_FIRST);
         Mockito.verify(contract,times(3)).notifyClient(captor.capture()); //2 times notified : notify client state changed to ABORTED and notify error raised
         List<FirmwareUpdateClientEvent> captured = captor.getAllValues();
-        //assertEquals(captured.get(0).toString(), OADError.ERROR_TIMEOUT_UPDATE, captured.get(0).getError());
-        //assertEquals( "Reboot timed out.", captured.get(0).getAdditionalInfo());
-        assertEquals(captured.get(0).toString(), OADState.TRANSFERRED, captured.get(0).getOadState());
-        assertEquals( OADState.TRANSFERRED.convertToProgress(), captured.get(0).getOadProgress());
-        //assertEquals(captured.get(1).toString(), OADState.TRANSFERRING, captured.get(1).getOadState());
-        //assertEquals( OADState.TRANSFERRING.convertToProgress(), captured.get(1).getOadProgress());
+        assertEquals(captured.get(0).toString(), OADState.AWAITING_DEVICE_REBOOT, captured.get(0).getOadState());
+        assertEquals( OADState.AWAITING_DEVICE_REBOOT.convertToProgress(), captured.get(0).getOadProgress());
+        assertEquals(captured.get(1).toString(), OADError.ERROR_TRANSFER_FAILED, captured.get(1).getError());
+        assertNull( captured.get(1).getAdditionalInfo());
         assertEquals(captured.get(2).toString(), OADState.ABORTED, captured.get(2).getOadState());
         assertEquals( 0, captured.get(2).getOadProgress());
+    }
+
+    /**
+     * Check that the OAD internal state is set to {@link OADState#ABORTED}
+     * if the {@link OADState#AWAITING_DEVICE_REBOOT} state is triggered
+     * and the headset failed to disconnect within the allocated time.
+     */
+    @Test
+    public void readback_timeout(){
+        oadManager.setOADContract(contract);
+        ArgumentCaptor<FirmwareUpdateClientEvent> captor = ArgumentCaptor.forClass(FirmwareUpdateClientEvent.class);
+
+        oadManager.onOADStateChanged(OADState.TRANSFERRED, null);
+
+        assertEquals(OADState.ABORTED, oadManager.getCurrentState());
+        Mockito.verify(contract,times(3)).notifyClient(captor.capture()); //2 times notified : notify client state changed to ABORTED and notify error raised
+        List<FirmwareUpdateClientEvent> captured = captor.getAllValues();
+        assertEquals(captured.get(0).toString(), OADState.TRANSFERRED, captured.get(0).getOadState());
+        assertEquals( OADState.TRANSFERRED.convertToProgress(), captured.get(0).getOadProgress());
+        assertEquals(captured.get(1).toString(), OADError.ERROR_TIMEOUT_UPDATE, captured.get(1).getError());
+        assertEquals( "Readback timed out.", captured.get(1).getAdditionalInfo());
+        assertEquals(captured.get(0).toString(), OADState.ABORTED, captured.get(2).getOadState());
+        assertEquals( 0, captured.get(2).getOadProgress());
+
     }
 
     /**
@@ -639,16 +678,46 @@ public class OADManagerTest {
         oadManager.setOADContract(contract);
         ArgumentCaptor<FirmwareUpdateClientEvent> captor = ArgumentCaptor.forClass(FirmwareUpdateClientEvent.class);
 
-        oadManager.onOADStateChanged(OADState.AWAITING_DEVICE_REBOOT, new byte[]{(byte)0});
+        oadManager.onOADStateChanged(OADState.AWAITING_DEVICE_REBOOT, new byte[]{(byte)1});
 
-        assertEquals(oadManager.getCurrentState(), OADState.ABORTED);
         assertEquals(OADState.ABORTED, oadManager.getCurrentState());
         Mockito.verify(contract,times(3)).notifyClient(captor.capture()); //2 times notified : notify client state changed to ABORTED and notify error raised
         List<FirmwareUpdateClientEvent> captured = captor.getAllValues();
-        //assertEquals(captured.get(0).toString(), OADError.ERROR_TIMEOUT_UPDATE, captured.get(0).getError());
-        //assertEquals( "Reboot timed out.", captured.get(0).getAdditionalInfo());
         assertEquals(captured.get(0).toString(), OADState.AWAITING_DEVICE_REBOOT, captured.get(0).getOadState());
         assertEquals( OADState.AWAITING_DEVICE_REBOOT.convertToProgress(), captured.get(0).getOadProgress());
+        assertEquals(captured.get(1).toString(), OADError.ERROR_TIMEOUT_UPDATE, captured.get(1).getError());
+        assertEquals( "Reboot timed out.", captured.get(1).getAdditionalInfo());
+        assertEquals(captured.get(0).toString(), OADState.ABORTED, captured.get(2).getOadState());
+        assertEquals( 0, captured.get(2).getOadProgress());
+
+    }
+
+    /**
+     * Check that the OAD internal state is set to {@link OADState#READY_TO_RECONNECT}
+     * if the {@link OADState#AWAITING_DEVICE_REBOOT} state is triggered
+     * and the headset succeeded to disconnect within the allocated time.
+     */
+    @Test
+    public void reboot_success() throws InterruptedException, ExecutionException, TimeoutException {
+        oadManager.setOADContract(contract);
+        ArgumentCaptor<FirmwareUpdateClientEvent> captor = ArgumentCaptor.forClass(FirmwareUpdateClientEvent.class);
+        Mockito.doAnswer((Answer<Void>) invocation -> {
+            oadManager.onOADEvent(OADEvent.DISCONNECTED_FOR_REBOOT.setEventData(true));
+            Mockito.verify(contract).clearBluetooth();
+            return null;
+        }).when(contract).reconnect();
+        Mockito.when(lock.waitOperationResult(200000)).thenReturn(true);
+
+        oadManager.onOADStateChanged(OADState.AWAITING_DEVICE_REBOOT, new byte[]{(byte)1});
+
+        assertEquals(OADState.READY_TO_RECONNECT, oadManager.getCurrentState());
+        Mockito.verify(contract,times(3)).notifyClient(captor.capture()); //2 times notified : notify client state changed to ABORTED and notify error raised
+        List<FirmwareUpdateClientEvent> captured = captor.getAllValues();
+        assertEquals(captured.get(0).toString(), OADState.AWAITING_DEVICE_REBOOT, captured.get(0).getOadState());
+        assertEquals( OADState.AWAITING_DEVICE_REBOOT.convertToProgress(), captured.get(0).getOadProgress());
+        assertEquals(captured.get(1).toString(), OADError.ERROR_TIMEOUT_UPDATE, captured.get(1).getError());
+        assertNull(captured.get(1).getAdditionalInfo());
+        assertEquals( "Reboot timed out.", captured.get(0).getAdditionalInfo());
         //assertEquals(captured.get(1).toString(), OADState.TRANSFERRING, captured.get(1).getOadState());
         //assertEquals( OADState.TRANSFERRING.convertToProgress(), captured.get(1).getOadProgress());
         assertEquals(captured.get(0).toString(), OADState.ABORTED, captured.get(2).getOadState());
@@ -681,23 +750,26 @@ public class OADManagerTest {
      * once the headset device is reconnected.
      */
     @Test
-    public void reconnect_success(){
+    public void reconnect_success() {
         oadManager.setOADContract(contract);
-        ArgumentCaptor<FirmwareUpdateClientEvent> captor = ArgumentCaptor.forClass(FirmwareUpdateClientEvent.class);
+        ArgumentCaptor<FirmwareUpdateClientEvent> captorClient = ArgumentCaptor.forClass(FirmwareUpdateClientEvent.class);
+        ArgumentCaptor<FirmwareVersion> captorFirmware = ArgumentCaptor.forClass(FirmwareVersion.class);
+        Mockito.doAnswer((Answer<Void>) invocation -> {
+            oadManager.onOADEvent(OADEvent.RECONNECTION_PERFORMED.setEventData(true));
+            return null;
+        }).when(contract).reconnect();
+        Mockito.when(oadContext.getOADfilepath()).thenReturn(FIRMWARE_FIRST_FILENAME);
+        Mockito.when(contract.compareFirmwareVersion(captorFirmware.capture())).thenReturn(true);
 
-        oadManager.onOADStateChanged(OADState.RECONNECTING, new byte[]{(byte)1});
+        oadManager.onOADStateChanged(OADState.RECONNECTING, null);
 
-        assertEquals(oadManager.getCurrentState(), OADState.RECONNECTING);
-
-        oadManager.onOADEvent(OADEvent.RECONNECTION_PERFORMED.setEventData(true));
-
-        Mockito.verify(contract,times(1)).notifyClient(captor.capture()); //2 times notified : notify client state changed to ABORTED and notify error raised
-        List<FirmwareUpdateClientEvent> captured = captor.getAllValues();
+        assertEquals(OADState.RECONNECTING, oadManager.getCurrentState());
+        Mockito.verify(contract,times(1)).notifyClient(captorClient.capture()); //2 times notified : notify client state changed to ABORTED and notify error raised
+        List<FirmwareUpdateClientEvent> captured = captorClient.getAllValues();
         assertEquals(captured.get(0).toString(), OADState.RECONNECTING, captured.get(0).getOadState());
         assertEquals( OADState.RECONNECTING.convertToProgress(), captured.get(0).getOadProgress());
         assertEquals(captured.get(0).toString(), OADState.RECONNECTION_PERFORMED, captured.get(0).getOadState());
         assertEquals( OADState.RECONNECTION_PERFORMED.convertToProgress(), captured.get(0).getOadProgress());
-
     }
 
     /**
@@ -717,8 +789,8 @@ public class OADManagerTest {
         List<FirmwareUpdateClientEvent> captured = captor.getAllValues();
         assertEquals(captured.get(0).toString(), OADState.RECONNECTION_PERFORMED, captured.get(0).getOadState());
         assertEquals( OADState.RECONNECTION_PERFORMED.convertToProgress(), captured.get(0).getOadProgress());
-        //assertEquals(captured.get(1).toString(), OADError.ERROR_RECONNECT_FAILED, captured.get(1).getError());
-        //assertNull(captured.get(1).getAdditionalInfo());
+        assertEquals(captured.get(1).toString(), OADError.ERROR_RECONNECT_FAILED, captured.get(1).getError());
+        assertNull(captured.get(1).getAdditionalInfo());
         assertEquals(captured.get(2).toString(), OADState.ABORTED, captured.get(2).getOadState());
         assertEquals(OADState.ABORTED.convertToProgress(), captured.get(2).getOadProgress());
     }
@@ -729,7 +801,39 @@ public class OADManagerTest {
      * Also check that the SDK raises an {@link BluetoothError#ERROR_CONNECTION_TIMEOUT} error
      */
     @Test
-    public void reconnect_timeoutFromBluetoothUnit(){
+    public void reconnect_timeoutFromBluetoothUnit() throws InterruptedException, ExecutionException, TimeoutException {
+        ArgumentCaptor<FirmwareUpdateClientEvent> captor = ArgumentCaptor.forClass(FirmwareUpdateClientEvent.class);
+        oadManager.setOADState(currentState);
+        Mockito.when(currentState.nextState()).thenReturn(OADState.RECONNECTING);
+
+        Mockito.when(lock.waitOperationResult(20000)).thenAnswer((Answer<Void>) invocation -> {
+            oadManager.onOADEvent(OADEvent.RECONNECTION_PERFORMED.setEventData(false));
+            return null;
+        });
+
+        oadManager.onOADStateChanged(OADState.RECONNECTING, FIRMWARE_VERSION_VALID_FIRST);
+
+        //contract.onConnectionStateChanged(new ConnectionStateEvent(BtState.SCAN_TIMEOUT, null, null));
+
+        Mockito.verify(contract,times(3)).notifyClient(captor.capture()); //2 times notified : notify client state changed to ABORTED and notify error raised
+        List<FirmwareUpdateClientEvent> captured = captor.getAllValues();
+        assertEquals(captured.get(0).toString(), OADState.RECONNECTING, captured.get(0).getOadState());
+        assertEquals( OADState.RECONNECTING.convertToProgress(), captured.get(0).getOadProgress());
+        //assertEquals(captured.get(1).toString(), OADState.RECONNECTION_PERFORMED, captured.get(2).getOadState());
+        //assertEquals( OADState.RECONNECTION_PERFORMED.convertToProgress(), captured.get(2).getOadProgress());
+        assertEquals(captured.get(1).toString(), OADError.ERROR_TIMEOUT_UPDATE, captured.get(1).getError());
+        assertEquals("Reconnection timed out.",captured.get(1).getAdditionalInfo());
+        assertEquals(captured.get(2).toString(), OADState.ABORTED, captured.get(2).getOadState());
+        assertEquals(OADState.ABORTED.convertToProgress(), captured.get(2).getOadProgress());
+    }
+
+    /**
+     * Check that the OAD internal state is set to {@link OADState#ABORTED}
+     * if the headset device fails to reconnect within the allocated time.
+     * Also check that the SDK raises an {@link BluetoothError#ERROR_CONNECTION_TIMEOUT} error
+     */
+    @Test
+    public void reconnect_timeoutFromDeviceUnit() {
         ArgumentCaptor<FirmwareUpdateClientEvent> captor = ArgumentCaptor.forClass(FirmwareUpdateClientEvent.class);
         oadManager.setOADState(currentState);
         Mockito.when(currentState.nextState()).thenReturn(OADState.RECONNECTING);
@@ -737,38 +841,15 @@ public class OADManagerTest {
         oadManager.onOADStateChanged(OADState.RECONNECTING, FIRMWARE_VERSION_VALID_FIRST);
 
         //contract.onConnectionStateChanged(new ConnectionStateEvent(BtState.SCAN_TIMEOUT, null, null));
-        oadManager.onOADEvent(OADEvent.RECONNECTION_PERFORMED.setEventData(false));
 
         Mockito.verify(contract,times(3)).notifyClient(captor.capture()); //2 times notified : notify client state changed to ABORTED and notify error raised
         List<FirmwareUpdateClientEvent> captured = captor.getAllValues();
-        assertEquals(captured.get(0).toString(), OADState.RECONNECTION_PERFORMED, captured.get(0).getOadState());
-        assertEquals( OADState.RECONNECTION_PERFORMED.convertToProgress(), captured.get(0).getOadProgress());
-        //assertEquals(captured.get(1).toString(), OADError.ERROR_RECONNECT_FAILED, captured.get(1).getError());
-        //assertNull(captured.get(1).getAdditionalInfo());
-        assertEquals(captured.get(2).toString(), OADState.ABORTED, captured.get(2).getOadState());
-        assertEquals(OADState.ABORTED.convertToProgress(), captured.get(2).getOadProgress());
-    }
-
-    /**
-     * Check that the OAD internal state is set to {@link OADState#ABORTED}
-     * if the headset device fails to reconnect within the allocated time.
-     * Also check that the SDK raises an {@link BluetoothError#ERROR_CONNECTION_TIMEOUT} error
-     */
-    @Test
-    public void reconnect_timeoutFromDeviceUnit(){
-        ArgumentCaptor<FirmwareUpdateClientEvent> captor = ArgumentCaptor.forClass(FirmwareUpdateClientEvent.class);
-        oadManager.setOADState(currentState);
-        Mockito.when(currentState.nextState()).thenReturn(OADState.RECONNECTING);
-
-        oadManager.onOADStateChanged(OADState.INITIALIZING, FIRMWARE_VERSION_VALID_FIRST);
-
-
-        Mockito.verify(contract,times(3)).notifyClient(captor.capture()); //2 times notified : notify client state changed to ABORTED and notify error raised
-        List<FirmwareUpdateClientEvent> captured = captor.getAllValues();
-        assertEquals(captured.get(0).toString(), OADState.RECONNECTION_PERFORMED, captured.get(0).getOadState());
-        assertEquals( OADState.RECONNECTION_PERFORMED.convertToProgress(), captured.get(0).getOadProgress());
-        //assertEquals(captured.get(1).toString(), OADError.ERROR_RECONNECT_FAILED, captured.get(1).getError());
-        //assertNull(captured.get(1).getAdditionalInfo());
+        assertEquals(captured.get(0).toString(), OADState.RECONNECTING, captured.get(0).getOadState());
+        assertEquals( OADState.RECONNECTING.convertToProgress(), captured.get(0).getOadProgress());
+        //assertEquals(captured.get(1).toString(), OADState.RECONNECTION_PERFORMED, captured.get(2).getOadState());
+        //assertEquals( OADState.RECONNECTION_PERFORMED.convertToProgress(), captured.get(2).getOadProgress());
+        assertEquals(captured.get(1).toString(), OADError.ERROR_TIMEOUT_UPDATE, captured.get(1).getError());
+        assertEquals("Reconnection timed out.",captured.get(1).getAdditionalInfo());
         assertEquals(captured.get(2).toString(), OADState.ABORTED, captured.get(2).getOadState());
         assertEquals(OADState.ABORTED.convertToProgress(), captured.get(2).getOadProgress());
     }
@@ -786,9 +867,6 @@ public class OADManagerTest {
         oadContext.setOADfilepath(FIRMWARE_FIRST_FILENAME);
         oadManager.setOADContext(oadContext);
         Mockito.when(currentState.nextState()).thenReturn(OADState.RECONNECTION_PERFORMED);
-
-        //Mockito.when(spiedDeviceManager.getmCurrentConnectedDevice()).thenReturn(bluetoothDevice);
-        //Mockito.when(spiedDeviceManager.getmCurrentConnectedDevice().getFirmwareVersion()).thenReturn(new FirmwareVersion("1.6.2"));
         Mockito.when(contract.compareFirmwareVersion(captorFirmware.capture())).thenReturn(true);
 
         oadManager.onOADEvent(OADEvent.RECONNECTION_PERFORMED.setEventData(true));
@@ -824,12 +902,11 @@ public class OADManagerTest {
         List<FirmwareUpdateClientEvent> captured = captor.getAllValues();
         assertEquals(captured.get(0).toString(), OADState.RECONNECTION_PERFORMED, captured.get(0).getOadState());
         assertEquals(OADState.RECONNECTION_PERFORMED.convertToProgress(), captured.get(0).getOadProgress());
-        //assertEquals(captured.get(1).toString(), OADError.ERROR_WRONG_FIRMWARE_VERSION, captured.get(1).getError());
-        //assertNull( captured.get(1).getAdditionalInfo());
+        assertEquals(captured.get(1).toString(), OADError.ERROR_WRONG_FIRMWARE_VERSION, captured.get(1).getError());
+        assertNull( captured.get(1).getAdditionalInfo());
         assertEquals(captured.get(2).toString(), OADState.ABORTED, captured.get(2).getOadState());
         assertEquals( 0, captured.get(2).getOadProgress());
     }
-
 
     /**
      * Check that the OAD internal state is set to ABORTED
@@ -845,8 +922,6 @@ public class OADManagerTest {
         assertEquals(OADState.ABORTED,oadManager.getCurrentState());
         Mockito.verify(contract,times(1)).notifyClient(captor.capture()); //2 times notified : notify client state changed to ABORTED and notify error raised
         List<FirmwareUpdateClientEvent> captured = captor.getAllValues();
-        //assertEquals(captured.get(0).toString(), OADError.ERROR_INIT_FAILED, captured.get(0).getError());
-        //assertEquals( "Expected length is 256000, but found length was 255999.", captured.get(0).getAdditionalInfo());
         assertEquals(captured.get(0).toString(), OADState.ABORTED, captured.get(0).getOadState());
         assertEquals( 0, captured.get(0).getOadProgress());
     }

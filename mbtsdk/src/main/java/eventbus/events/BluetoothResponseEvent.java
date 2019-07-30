@@ -21,7 +21,7 @@ public class BluetoothResponseEvent extends ResponseEvent<DeviceCommandEvent, Ob
 
     public boolean isDeviceCommandEvent(){
         for (DeviceCommandEvent event : DeviceCommandEvent.values()) {
-            if(this.getId().getIdentifierCode() == event.getIdentifierCode())
+            if(this.getId()!= null && this.getId().getIdentifierCode() == event.getIdentifierCode())
                 return true;
         }
         return false;

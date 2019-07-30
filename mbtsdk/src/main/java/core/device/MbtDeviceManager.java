@@ -12,7 +12,6 @@ import org.greenrobot.eventbus.ThreadMode;
 import command.OADCommands;
 import config.ConnectionConfig;
 import core.BaseModuleManager;
-import core.bluetooth.BtState;
 import core.bluetooth.requests.CommandRequestEvent;
 import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
 import core.device.oad.OADContract;
@@ -126,7 +125,7 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
             case DATA_BT_DISCONNECTED:
             case CONNECTION_FAILURE:
             case CONNECTION_INTERRUPTED:
-                onDeviceDisconnected();
+                onNoDeviceConnected();
             break;
 
             case CONNECTED_AND_READY:
@@ -155,7 +154,7 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
                     .setEventData(isReconnectionSuccess));
     }
 
-    private void onDeviceDisconnected() {
+    private void onNoDeviceConnected() {
         if (oadManager != null){
             switch (oadManager.getCurrentState()){
                 case AWAITING_DEVICE_REBOOT: //reboot success
@@ -226,8 +225,8 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
     }
 
     @Subscribe
-    public void onOADEvent(OADEvent event) {
-        if (oadManager == null) {
+    void onOADEvent(OADEvent event) {
+        if (oadManager == null && event.equals(OADEvent.INIT)) {
             this.oadManager = new OADManager(mContext, this);
             this.oadManager.startOADUpdate(event.getEventData());
         }
@@ -248,12 +247,6 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
 
             this.oadManager.onOADEvent(oadEvent);
         }
-    }
-
-
-    @Override
-    public void stopOADUpdate() {
-        this.oadManager = null;
     }
 
     @Override
@@ -293,7 +286,21 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
 
     @Override
     public boolean compareFirmwareVersion(FirmwareVersion firmwareVersionExpected) {
-        return mCurrentConnectedDevice.getFirmwareVersion().equals(firmwareVersionExpected);
+        return mCurrentConnectedDevice.getFirmwareVersionAsString().equals(firmwareVersionExpected.getFirmwareVersionAsString());
     }
 
+    @Override
+    public void stopOADUpdate() {
+        this.oadManager = null;
+    }
+
+    @VisibleForTesting
+    public OADManager getOadManager() {
+        return oadManager;
+    }
+
+    @VisibleForTesting
+    public void setOadManager(OADManager oadManager) {
+        this.oadManager = oadManager;
+    }
 }
