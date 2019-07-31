@@ -46,7 +46,7 @@ public class PacketCounter {
      * @return true if the number of packets sent is equal to the number of packet to send, false otherwise.
      */
     boolean areAllPacketsCounted(){
-        return this.nbPacketCounted == this.totalNbPackets;
+        return this.nbPacketCounted == this.totalNbPackets-1;
     }
 
     /**

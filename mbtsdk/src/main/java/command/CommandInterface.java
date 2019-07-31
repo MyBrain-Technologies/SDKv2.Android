@@ -115,7 +115,7 @@ public interface CommandInterface<E extends BaseError> extends BaseErrorEvent<E>
         }
 
         public boolean isResponseExpected() {
-            return this.commandCallback instanceof CommandCallback;
+            return (this.commandCallback instanceof CommandCallback);
         }
 
         /**

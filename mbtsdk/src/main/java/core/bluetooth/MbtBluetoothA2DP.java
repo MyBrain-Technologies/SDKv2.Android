@@ -370,6 +370,7 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
                     }else //Here, either the A2DP connection has dropped or a new A2DP device is connecting.
                         notifyConnectionStateChanged(BtState.AUDIO_BT_DISCONNECTED);
 
+
                     connectedA2DpDevices = getA2DPConnectedDevices(); //In any case, it is mandatory to updated our local connected A2DP list
                 }
             }

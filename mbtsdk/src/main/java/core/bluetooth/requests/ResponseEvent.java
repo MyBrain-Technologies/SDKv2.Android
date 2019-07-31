@@ -33,4 +33,11 @@ public abstract class ResponseEvent<K,V> {
     public void setEventData(Pair<K, V> eventData) {
         this.eventData = eventData;
     }
+
+    @Override
+    public String toString() {
+        return "ResponseEvent{" +
+                "eventData=" + eventData +
+                '}';
+    }
 }

@@ -92,6 +92,12 @@ public interface OADCommands {
         }
 
         @Override
+        public void onResponseReceived(Object response) {
+            this.setCommandEvent(DeviceCommandEvent.MBX_OTA_MODE_EVT);
+            super.onResponseReceived(response);
+        }
+
+        @Override
         public byte[] getData() {
             if(!isValid())
                 return null;
@@ -131,6 +137,13 @@ public interface OADCommands {
         public SendPacket(byte[] packetToSend) {
             super(DeviceCommandEvent.OTA_STATUS_TRANSFER);
                 this.packetToSend = packetToSend;
+                this.commandCallback = new CommandInterface.SimpleCommandCallback() {
+                    @Override
+                    public void onError(CommandInterface.MbtCommand request, BaseError error, String additionalInfo) { }
+
+                    @Override
+                    public void onRequestSent(CommandInterface.MbtCommand request) { }
+                };
                 init();
         }
 
@@ -147,7 +160,7 @@ public interface OADCommands {
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
         public SendPacket(byte[] packetToSend, CommandInterface.SimpleCommandCallback commandCallback) {
-            super(null);
+            super(DeviceCommandEvent.OTA_STATUS_TRANSFER);
             this.packetToSend = packetToSend;
             this.commandCallback = commandCallback;
             init();

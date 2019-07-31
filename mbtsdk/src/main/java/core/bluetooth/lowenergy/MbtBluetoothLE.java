@@ -81,7 +81,6 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     private final static String REFRESH_METHOD = "refresh";
 
     private MbtAsyncWaitOperation lock = new MbtAsyncWaitOperation<>();
-    private boolean unlockAtMailboxEventReception = false;
 
     /**
      * An internal event used to notify MbtBluetoothLE that A2DP has disconnected.
@@ -523,7 +522,6 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @return immediatly false on error, true otherwise
      */
    synchronized boolean startWriteOperation(@NonNull UUID service, @NonNull UUID characteristic, byte[] payload){
-       LogUtils.d(TAG, "start write operation");
         if(!checkServiceAndCharacteristicValidity(service, characteristic)) {
             LogUtils.e(TAG, "Error: failed to check service and characteristic validity" + characteristic.toString());
             return false;
@@ -531,12 +529,13 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 
         //Send buffer
         this.gatt.getService(service).getCharacteristic(characteristic).setValue(payload);
-        if (!this.gatt.writeCharacteristic(gatt.getService(service).getCharacteristic(characteristic))) { //the mbtgattcontroller onCharacteristicWrite callback is invoked, reporting the result of the operation.
+       LogUtils.d(TAG, "write "+ Arrays.toString(gatt.getService(service).getCharacteristic(characteristic).getValue()));
+       if (!this.gatt.writeCharacteristic(gatt.getService(service).getCharacteristic(characteristic))) { //the mbtgattcontroller onCharacteristicWrite callback is invoked, reporting the result of the operation.
             LogUtils.e(TAG, "Error: failed to write characteristic " + characteristic.toString());
             return false;
         }
 
-        return true;
+       return true;
     }
 
 
@@ -628,13 +627,39 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     }
 
     /**
+     * Close gatt if the current state is connected & ready or upgrading
+     * @param gatt
+     */
+    void onStateDisconnected(@NonNull BluetoothGatt gatt) {
+        if(gatt != null && getCurrentState().ordinal() >= BtState.CONNECTED_AND_READY.ordinal())
+            gatt.close();
+
+        notifyConnectionStateChanged(
+                BtState.DATA_BT_DISCONNECTED);
+    }
+
+    void onStateConnecting() {
+        if (getCurrentState().equals(BtState.DEVICE_FOUND))
+            this.updateConnectionState(false);//current state is set to DATA_BT_CONNECTING
+    }
+
+    void onStateConnected() {
+        if (getCurrentState().equals(BtState.DATA_BT_CONNECTING) || getCurrentState().equals(BtState.SCAN_STARTED))
+            updateConnectionState(true);//current state is set to DATA_BT_CONNECTION_SUCCESS and future is completed
+        else if(getCurrentState().equals(BtState.IDLE) || getCurrentState().equals(BtState.UPGRADING))
+            this.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
+    }
+
+    /**
      * Callback triggered by the {@link MbtGattController} callback when the connection state has changed.
      * @param newState the new {@link BtState state}
      */
     @Override
+
     public void notifyConnectionStateChanged(@NonNull BtState newState) {
         super.notifyConnectionStateChanged(newState);
-        if(newState.equals(BtState.DATA_BT_DISCONNECTED)) {
+
+        if (newState.equals(BtState.DATA_BT_DISCONNECTED)) {
             if (isStreaming())
                 notifyStreamStateChanged(StreamState.DISCONNECTED);
             BroadcastUtils.unregisterReceiver(context, receiver);
@@ -653,9 +678,9 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     }
 
     void stopWaitingOperation(Object response) {
-        LogUtils.d(TAG, "Response received " + response);
-        if(!unlockAtMailboxEventReception)
+        if(lock.isWaiting())
             lock.stopWaitingOperation(response);
+
     }
 
     void notifyConnectionResponseReceived(DeviceCommandEvent mailboxEvent, byte mailboxResponse) {
@@ -685,7 +710,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * related to the SDK request (blocking method).
      */
     private Object waitResponseForCommand(CommandInterface.MbtCommand command){
-        Log.d(TAG, "Wait response of device command ");
+        Log.d(TAG, "Wait response of device command "+command);
             try {
                 return lock.waitOperationResult(11000);
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
@@ -717,13 +742,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             command.onError(BluetoothError.ERROR_NOT_CONNECTED, null);
         } else { //any command is not sent if no device is connected
             if (command.isValid()){//any invalid command is not sent : validity criteria are defined in each Bluetooth implemented class , the onError callback is triggered in the constructor of the command object
-                LogUtils.i(TAG, "Send command : "+command);
-                try {
-                    Thread.sleep(200);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-
+                LogUtils.d(TAG, "Valid command : "+command);
                 boolean requestSent = sendRequestData(command);
 
                 if(!requestSent) {
@@ -734,7 +753,6 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
                     command.onRequestSent();
 
                     if (command.isResponseExpected()) {
-                        unlockAtMailboxEventReception = !(command instanceof OADCommands.SendPacket);
                         response = waitResponseForCommand(command);
                         command.onResponseReceived(response);
                     }
@@ -753,9 +771,10 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         else if(command instanceof DeviceCommand)
             return writeCharacteristic((byte[])command.serialize(),
                     MelomindCharacteristics.SERVICE_MEASUREMENT,
-                    command instanceof OADCommands ?
+                    command instanceof OADCommands.SendPacket ?
                             MelomindCharacteristics.CHARAC_MEASUREMENT_OAD_PACKETS_TRANSFER :
-                            MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX);
+                            MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX,
+                    !(command instanceof OADCommands.SendPacket));
 
         return false;
     }
@@ -782,12 +801,12 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         return this.gatt.requestMtu(newMTU);
     }
 
-    private boolean writeCharacteristic(@NonNull byte[] buffer, UUID service, UUID characteristic) {
-        Log.d(TAG, "write characteristic "+ Arrays.toString(buffer));
+    private boolean writeCharacteristic(@NonNull byte[] buffer, UUID service, UUID characteristic, boolean enableNotification) {
+        Log.d(TAG, "write characteristic "+characteristic+ " for service "+service);
         if (buffer.length == 0)
             return false;
 
-        if(!isNotificationEnabledOnCharacteristic(service, characteristic)){
+        if(!isNotificationEnabledOnCharacteristic(service, characteristic) && enableNotification){
             enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(service).getCharacteristic(characteristic));
         }
 

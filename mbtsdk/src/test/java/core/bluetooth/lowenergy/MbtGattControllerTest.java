@@ -67,7 +67,7 @@ public class MbtGattControllerTest {
 
         gattController.onCharacteristicChanged(gatt, characteristic);
 
-        Mockito.verify(mbtBluetoothLE).stopWaitingOperation(true);
+        Mockito.verify(mbtBluetoothLE).stopWaitingOperation(true,true);
     }
 
     /**

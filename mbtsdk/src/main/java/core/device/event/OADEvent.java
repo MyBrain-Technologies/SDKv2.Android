@@ -90,6 +90,8 @@ public enum OADEvent {
      */
     private Object eventData;
 
+    private static final String TAG = OADEvent.class.getSimpleName();
+
     OADEvent() { }
 
 
@@ -164,12 +166,11 @@ public enum OADEvent {
      * @return the OAD event associated to the mailbox command
      */
     public static OADEvent getEventFromMailboxCommand(DeviceCommandEvent mailboxIdentifier){
-        OADEvent event = null;
-        for (OADEvent value : OADEvent.values()){
-            if(value.mailboxEvent != null && value.mailboxEvent.getIdentifierCode() == mailboxIdentifier.getIdentifierCode())
-                event = value;
+        for (OADEvent event : OADEvent.values()){
+            if(event.mailboxEvent != null && event.mailboxEvent.getIdentifierCode() == mailboxIdentifier.getIdentifierCode())
+                return event;
         }
-        return event;
+        return null;
     }
 
     public DeviceCommandEvent getMailboxEvent() {

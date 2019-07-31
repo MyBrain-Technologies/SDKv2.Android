@@ -7,6 +7,7 @@ import core.device.model.FirmwareVersion;
 import engine.clientevents.OADError;
 import utils.AsyncUtils;
 import utils.BitUtils;
+import utils.LogUtils;
 import utils.OADExtractionUtils;
 
 /**
@@ -50,7 +51,7 @@ import utils.OADExtractionUtils;
          * to be submitted for validation by the headset device that is out-of-date.
          * The SDK is then waiting for a return response that validate or invalidate the OAD request.
          */
-        INITIALIZED(2, 12000){//2 sec added to take into account delay induced by the important number of intermediaries involved in the OAD update process
+        INITIALIZED(2, 13000){//2 sec added to take into account delay induced by the important number of intermediaries involved in the OAD update process
 
             @Override
             public void executeAction(OADManager oadManager, Object actionData) {
@@ -82,6 +83,7 @@ import utils.OADExtractionUtils;
 
             @Override
             public void executeAction(OADManager oadManager, Object actionData) {
+                LogUtils.d("Execute action", "for state "+READY_TO_TRANSFER);
                 if(isValidationSuccess(actionData))
                     oadManager.transferOADFile();
                 else
@@ -101,15 +103,21 @@ import utils.OADExtractionUtils;
         /**
          * State triggered once the transfer is started
          */
-        TRANSFERRING(110, 60000){
+        TRANSFERRING(110, 600000){
 
             @Override
             public void executeAction(OADManager oadManager, Object actionData) {
-                boolean isTransferSuccess = oadManager.waitUntilTimeout(this.getMaximumDuration());
-                if(isTransferSuccess)
-                    oadManager.switchToNextStep(null);
-                else
-                    oadManager.onError(OADError.ERROR_TIMEOUT_UPDATE, "Transfer timed out.");
+                LogUtils.d("Execute action", "for state "+TRANSFERRING);
+                AsyncUtils.executeAsync(new Runnable() {
+                    @Override
+                    public void run() {
+                        boolean isTransferSuccess = oadManager.waitUntilTimeout(getMaximumDuration());
+                        if(isTransferSuccess)
+                            oadManager.switchToNextStep(null);
+                        else
+                            oadManager.onError(OADError.ERROR_TIMEOUT_UPDATE, "Transfer timed out.");
+                    }
+                });
             }
 
             @Override
@@ -128,6 +136,8 @@ import utils.OADExtractionUtils;
 
             @Override
             public void executeAction(OADManager oadManager, Object actionData) {
+                LogUtils.d("Execute action", "for state "+TRANSFERRED);
+
                 boolean isSuccess = oadManager.waitUntilTimeout(this.getMaximumDuration());
                 if(!isSuccess)
                     oadManager.onError(OADError.ERROR_TIMEOUT_UPDATE, "Readback timed out.");
@@ -148,6 +158,8 @@ import utils.OADExtractionUtils;
 
             @Override
             public void executeAction(OADManager oadManager, Object actionData) {
+                LogUtils.d("Execute action", "for state "+AWAITING_DEVICE_REBOOT);
+
                 if(isReadbackSuccess(actionData)) {
                     boolean isSuccess = oadManager.waitUntilTimeout(this.getMaximumDuration());
                     if(!isSuccess)
@@ -175,6 +187,8 @@ import utils.OADExtractionUtils;
 
             @Override
             public void executeAction(OADManager oadManager, Object actionData) {
+                LogUtils.d("Execute action", "for state "+READY_TO_RECONNECT);
+
                 oadManager.getOADContract().clearBluetooth();
                 oadManager.switchToNextStep(null);
             }
@@ -191,6 +205,8 @@ import utils.OADExtractionUtils;
         RECONNECTING(115, 20000){
             @Override
             public void executeAction(OADManager oadManager, Object actionData) {
+                LogUtils.d("Execute action", "for state "+RECONNECTING);
+
                 AsyncUtils.executeAsync(new Runnable() {
                     @Override
                     public void run() {
@@ -216,6 +232,8 @@ import utils.OADExtractionUtils;
         RECONNECTION_PERFORMED(117){
             @Override
             public void executeAction(OADManager oadManager, Object actionData) {
+                LogUtils.d("Execute action", "for state "+RECONNECTION_PERFORMED);
+
                 if(isReconnectionSuccess(actionData)){
                     boolean isEqual = oadManager.getOADContract()
                             .compareFirmwareVersion( new FirmwareVersion(

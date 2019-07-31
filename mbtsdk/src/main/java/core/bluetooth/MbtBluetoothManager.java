@@ -194,6 +194,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 notifyDeviceInfoReceived(DeviceInfo.MODEL_NUMBER, new String((byte[]) response));
 
             }else if(command instanceof OADCommands) {
+                updateConnectionState(BtState.UPGRADING);
+                mbtBluetoothA2DP.setCurrentState(BtState.UPGRADING);
                 notifyEventReceived(command.getIdentifier(), response);
             }
         }
@@ -234,6 +236,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
          * @param request the {@link BluetoothRequests} request to execute.
          */
         void parseRequest(BluetoothRequests request) {
+
             //BluetoothRequests request = pendingRequests.remove();
             //disconnect request doesn't need to be in "queue" as it is top priority
             while (requestBeingProcessed);
@@ -789,7 +792,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                             AsyncUtils.executeAsync(new Runnable() {
                                 @Override
                                 public void run() {
-                                    if (isDataBluetoothConnected() && connectionFromBleAvailable)   //A2DP cannot be connected from BLE if BLE connection state is not CONNECTED_AND_READY or CONNECTED
+                                    if (connectionFromBleAvailable)   //A2DP cannot be connected from BLE if BLE connection state is not CONNECTED_AND_READY or CONNECTED
                                         sendCommand(new DeviceCommands.ConnectAudio());
                                     else {// if connectA2DPFromBLE failed or is not supported by the headset firmware version
                                         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P || mbtBluetoothA2DP.isPairedDevice(getCurrentDevice()))
@@ -856,7 +859,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      */
     @Subscribe(threadMode = ThreadMode.ASYNC)
     public void onNewBluetoothRequest(final BluetoothRequests request){
-        LogUtils.d(TAG,"onNewBluetoothRequest"+request.toString());
+        LogUtils.d(TAG,"onNewBluetoothRequest "+request.toString());
         //Specific case: disconnection has main priority so we don't add it to queue
         if(request instanceof DisconnectRequestEvent && ((DisconnectRequestEvent) request).isInterrupted())
             cancelPendingConnection(((DisconnectRequestEvent) request).isInterrupted());
@@ -1199,7 +1202,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * is received by the Bluetooth unit
      */
     public void notifyEventReceived(DeviceCommandEvent eventIdentifier, Object eventData) {
-        LogUtils.i(TAG, "Received response from device : "+ eventData);
-        MbtEventBus.postEvent(new BluetoothResponseEvent(eventIdentifier, eventData));
+        if(getCurrentState().equals(BtState.UPGRADING))
+            MbtEventBus.postEvent(new BluetoothResponseEvent(eventIdentifier, eventData));
     }
 }

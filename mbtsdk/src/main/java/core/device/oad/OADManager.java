@@ -6,10 +6,13 @@ import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
+import android.util.Log;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -18,12 +21,14 @@ import core.device.model.FirmwareVersion;
 import engine.clientevents.BaseError;
 import engine.clientevents.OADError;
 import eventbus.events.FirmwareUpdateClientEvent;
+import utils.AsyncUtils;
 import utils.LogUtils;
 import utils.MbtAsyncWaitOperation;
 import utils.OADExtractionUtils;
 
 import static utils.OADExtractionUtils.EXPECTED_NB_BYTES_BINARY_FILE;
 import static utils.OADExtractionUtils.OAD_PACKET_SIZE;
+import static utils.OADExtractionUtils.OAD_PAYLOAD_PACKET_SIZE;
 
 /**
  * OAD Manager class is responsible for managing the OAD (Over the Air Download) update process.
@@ -134,7 +139,7 @@ public final class OADManager {
                 return;
             }
 
-            packetCounter = new PacketCounter(OADExtractionUtils.getTotalNbPackets(OAD_PACKET_SIZE, content.length));
+            packetCounter = new PacketCounter(OADExtractionUtils.getTotalNbPackets(OAD_PAYLOAD_PACKET_SIZE, content.length));
 
             ArrayList<byte[]> oadPackets = OADExtractionUtils.extractOADPackets(content);
             if(oadPackets == null || oadPackets.isEmpty()){
@@ -161,6 +166,7 @@ public final class OADManager {
      *  This means that the firmware will not notify the client that the packet is correctly received.
      */
     void transferOADFile(){
+        Log.d(TAG, "Transfer starts");
         sendOADPacket(packetCounter.getIndexOfNextPacket());
         switchToNextStep(null);
     }
@@ -170,13 +176,15 @@ public final class OADManager {
      * @param packetIndex is the index of the packet to send
      */
     private void sendOADPacket(int packetIndex) {
+        Log.d(TAG, "Transfer packet "+packetIndex);
+
         new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
             @Override
             public void run() {
                 if(oadContract != null)
                     oadContract.transferPacket(oadContext.getPacketsToSend().get(packetIndex));
             }
-        },100);
+        },2);
     }
 
     /**
@@ -185,6 +193,7 @@ public final class OADManager {
     private void onOADPacketSent(){
         onProgressChanged();
         if(packetCounter.areAllPacketsCounted()) {
+            LogUtils.d(TAG, "Last packet sent");
             stopWaiting(true);
         }else
             sendOADPacket(packetCounter.getIndexOfNextPacket());
@@ -210,6 +219,7 @@ public final class OADManager {
      * @param isSuccess is the status/response provided by the stopWaiting caller
      */
     private void stopWaiting(boolean isSuccess){
+        LogUtils.d(TAG, "stop waiting");
         lock.stopWaitingOperation(isSuccess);
     }
 
@@ -222,11 +232,13 @@ public final class OADManager {
         LogUtils.d(TAG, "on OAD event "+event.toString());
         switch (event){
             case LOST_PACKET:
-                try {
-                    short index = ByteBuffer.wrap(event.getEventDataAsByteArray()).order(ByteOrder.LITTLE_ENDIAN).getShort();
-                    packetCounter.resetTo(index); //Packet index is set back to the requested value
-                }catch (Exception e) {
-                    LogUtils.e(TAG, "Exception due to invalid reset index: " + e);
+                if(currentState.equals(OADState.TRANSFERRING)) {
+                    try {
+                        short index = ByteBuffer.wrap(event.getEventDataAsByteArray()).order(ByteOrder.LITTLE_ENDIAN).getShort();
+                        packetCounter.resetTo(index); //Packet index is set back to the requested value
+                    } catch (Exception e) {
+                        LogUtils.e(TAG, "Exception due to invalid reset index: " + e);
+                    }
                 }
                 break;
 
@@ -235,7 +247,8 @@ public final class OADManager {
                 break;
 
                 case PACKET_TRANSFERRED:
-                onOADPacketSent();
+                if(currentState.equals(OADState.TRANSFERRING))
+                    onOADPacketSent();
                 break;
 
             default:

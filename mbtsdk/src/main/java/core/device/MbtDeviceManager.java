@@ -33,6 +33,7 @@ import eventbus.events.DeviceInfoEvent;
 import eventbus.events.FirmwareUpdateClientEvent;
 import eventbus.events.ResetBluetoothEvent;
 import features.MbtDeviceType;
+import utils.AsyncUtils;
 import utils.LogUtils;
 
 import static features.MbtDeviceType.MELOMIND;
@@ -187,8 +188,8 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
      */
     @Subscribe(priority = 1)
     public void onBluetoothEventReceived(BluetoothResponseEvent event){
-        LogUtils.d(TAG, "on Bluetooth event "+event.toString());
-        if(event.isDeviceCommandEvent()){
+        LogUtils.d(TAG, "on Bluetooth event "+(event.getId()!= null ? event.getId().getIdentifierCode() : "unknown"));
+        if(oadManager != null && event.isDeviceCommandEvent()){
             OADEvent oadEvent = OADEvent
                     .getEventFromMailboxCommand(event.getId())
                     .setEventData(event.getDataValue());
@@ -259,7 +260,12 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
 
     @Override
     public void notifyClient(FirmwareUpdateClientEvent event) {
-        MbtEventBus.postEvent(event);
+        AsyncUtils.executeAsync(new Runnable() {
+            @Override
+            public void run() {
+                MbtEventBus.postEvent(event);
+            }
+        });
     }
 
     @Override
