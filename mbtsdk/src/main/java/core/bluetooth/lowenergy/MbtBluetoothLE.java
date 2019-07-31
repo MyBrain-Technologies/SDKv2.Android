@@ -81,6 +81,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     private final static String REFRESH_METHOD = "refresh";
 
     private MbtAsyncWaitOperation lock = new MbtAsyncWaitOperation<>();
+    private boolean unlockAtMailboxEventReception = false;
 
     /**
      * An internal event used to notify MbtBluetoothLE that A2DP has disconnected.
@@ -647,11 +648,14 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @param eventData the data associated to the mailbox event detected
      */
     void notifyEventReceived(DeviceCommandEvent mailboxEvent, byte[] eventData) {
+        LogUtils.d(TAG, "Event received " + Arrays.toString(eventData));
         mbtBluetoothManager.notifyEventReceived(mailboxEvent, eventData);
     }
 
     void stopWaitingOperation(Object response) {
-        lock.stopWaitingOperation(response);
+        LogUtils.d(TAG, "Response received " + response);
+        if(!unlockAtMailboxEventReception)
+            lock.stopWaitingOperation(response);
     }
 
     void notifyConnectionResponseReceived(DeviceCommandEvent mailboxEvent, byte mailboxResponse) {
@@ -730,6 +734,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
                     command.onRequestSent();
 
                     if (command.isResponseExpected()) {
+                        unlockAtMailboxEventReception = !(command instanceof OADCommands.SendPacket);
                         response = waitResponseForCommand(command);
                         command.onResponseReceived(response);
                     }

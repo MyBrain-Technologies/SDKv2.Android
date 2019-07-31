@@ -322,7 +322,7 @@ public class MbtManager{
      * this manager handles the OAD firmware update
      * @param event contains data transmitted by the publisher : here it contains the new OAD update state or the error that occured if the SDK raised an error.
      */
-    @Subscribe(threadMode = ThreadMode.MAIN)
+    @Subscribe(threadMode = ThreadMode.MAIN, priority = 1)
     public void onFirmwareUpdateEvent(@NonNull final FirmwareUpdateClientEvent event) { //warning : do not remove this attribute (consider unsused by the IDE, but actually used)
         if (this.oadStateListener != null) {
             if (event.getError() != null)

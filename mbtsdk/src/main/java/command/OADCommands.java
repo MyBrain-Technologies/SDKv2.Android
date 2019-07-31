@@ -24,7 +24,7 @@ public interface OADCommands {
      * and can accept or reject the OAD update.
      */
     @Keep
-    class RequestFirmwareValidation extends DeviceCommand<byte[], BaseError> {
+    class RequestFirmwareValidation extends DeviceCommand<byte[], BaseError> implements OADCommands {
 
         private static final int MSB_INDEX = 2;
         private static final int LSB_INDEX = 3;
@@ -113,7 +113,7 @@ public interface OADCommands {
      * in order to send in Bluetooth an OAD packet to the current firmware.
      */
     @Keep
-    class SendPacket extends DeviceCommand<byte[], BaseError> {
+    class SendPacket extends DeviceCommand<byte[], BaseError> implements OADCommands{
 
         /**
          * The packet to send to the connected peripheral headset device in Bluetooth
@@ -143,7 +143,7 @@ public interface OADCommands {
          * sent by the headset to the SDK once the command is received.
          * This raw response is a byte array that has be to converted to be readable.
          * If you're not interested in getting the returned response,
-         * call the {@link RequestFirmwareValidation}(String firmwareVersion, int binaryFileNbPackets) constructor
+         * call the {@link SendPacket}(String firmwareVersion, int binaryFileNbPackets) constructor
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
         public SendPacket(byte[] packetToSend, CommandInterface.SimpleCommandCallback commandCallback) {

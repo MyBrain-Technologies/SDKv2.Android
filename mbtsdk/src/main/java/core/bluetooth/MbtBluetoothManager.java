@@ -19,6 +19,7 @@ import org.apache.commons.lang.ArrayUtils;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.CancellationException;
@@ -192,8 +193,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             }else if(command instanceof DeviceCommands.UpdateExternalName) {
                 notifyDeviceInfoReceived(DeviceInfo.MODEL_NUMBER, new String((byte[]) response));
 
-            }else if(command instanceof OADCommands.SendPacket) {
-                notifyEventReceived(command.getIdentifier(), (byte[]) response);
+            }else if(command instanceof OADCommands) {
+                notifyEventReceived(command.getIdentifier(), response);
             }
         }
     }
@@ -855,6 +856,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      */
     @Subscribe(threadMode = ThreadMode.ASYNC)
     public void onNewBluetoothRequest(final BluetoothRequests request){
+        LogUtils.d(TAG,"onNewBluetoothRequest"+request.toString());
         //Specific case: disconnection has main priority so we don't add it to queue
         if(request instanceof DisconnectRequestEvent && ((DisconnectRequestEvent) request).isInterrupted())
             cancelPendingConnection(((DisconnectRequestEvent) request).isInterrupted());
@@ -1196,7 +1198,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * Notify the event subscribers when a message/response of the headset device
      * is received by the Bluetooth unit
      */
-    public void notifyEventReceived(DeviceCommandEvent eventIdentifier, byte[] eventData) {
+    public void notifyEventReceived(DeviceCommandEvent eventIdentifier, Object eventData) {
+        LogUtils.i(TAG, "Received response from device : "+ eventData);
         MbtEventBus.postEvent(new BluetoothResponseEvent(eventIdentifier, eventData));
     }
 }

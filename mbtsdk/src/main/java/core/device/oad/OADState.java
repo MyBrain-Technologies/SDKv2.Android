@@ -5,6 +5,7 @@ import android.support.annotation.Nullable;
 import command.OADCommands;
 import core.device.model.FirmwareVersion;
 import engine.clientevents.OADError;
+import utils.AsyncUtils;
 import utils.BitUtils;
 import utils.OADExtractionUtils;
 
@@ -49,14 +50,19 @@ import utils.OADExtractionUtils;
          * to be submitted for validation by the headset device that is out-of-date.
          * The SDK is then waiting for a return response that validate or invalidate the OAD request.
          */
-        INITIALIZED(2, 10000){
+        INITIALIZED(2, 12000){//2 sec added to take into account delay induced by the important number of intermediaries involved in the OAD update process
 
             @Override
             public void executeAction(OADManager oadManager, Object actionData) {
                 OADCommands.RequestFirmwareValidation requestFirmwareValidation = new OADCommands.RequestFirmwareValidation(
                         oadManager.getOADContext().getFirmwareVersionAsByteArray(),
                         oadManager.getOADContext().getNbPacketsToSend());
-                oadManager.getOADContract().requestFirmwareValidation(requestFirmwareValidation);
+                AsyncUtils.executeAsync(new Runnable() {
+                    @Override
+                    public void run() {
+                        oadManager.getOADContract().requestFirmwareValidation(requestFirmwareValidation);
+                    }
+                });
                 boolean isSuccess = oadManager.waitUntilTimeout(getMaximumDuration());
                 if(!isSuccess)
                     oadManager.onError(OADError.ERROR_TIMEOUT_UPDATE, "Validation timed out.");
@@ -118,7 +124,7 @@ import utils.OADExtractionUtils;
          * The SDK is then waiting that the headset device returns a success or failure transfer state.
          * For example, it might return a failure state if any corruption occurred while transferring the binary file.
          */
-        TRANSFERRED(110, 10000){
+        TRANSFERRED(110, 12000){
 
             @Override
             public void executeAction(OADManager oadManager, Object actionData) {
@@ -185,7 +191,12 @@ import utils.OADExtractionUtils;
         RECONNECTING(115, 20000){
             @Override
             public void executeAction(OADManager oadManager, Object actionData) {
-                oadManager.getOADContract().reconnect();
+                AsyncUtils.executeAsync(new Runnable() {
+                    @Override
+                    public void run() {
+                        oadManager.getOADContract().reconnect();
+                    }
+                });
                 boolean isSuccess = oadManager.waitUntilTimeout(this.getMaximumDuration());
                 if(!isSuccess)
                     oadManager.onError(OADError.ERROR_TIMEOUT_UPDATE, "Reconnection timed out.");

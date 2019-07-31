@@ -5,6 +5,8 @@ import android.util.Log;
 
 import org.greenrobot.eventbus.EventBus;
 
+import utils.LogUtils;
+
 
 /**
  * MbtEventBus.java
@@ -55,6 +57,7 @@ public final class MbtEventBus {
     public static void postEvent(Object event){
         if(event == null)
             return;
+        LogUtils.d(TAG,"post event "+event.toString());
         BUS.post(event);
     }
 

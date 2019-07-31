@@ -145,7 +145,7 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
                     break;
                 case FW_VERSION:
                     if(event.getInfo() != null)
-                        mCurrentConnectedDevice.setFirmwareVersion((FirmwareVersion) event.getInfo());
+                        mCurrentConnectedDevice.setFirmwareVersion(new FirmwareVersion((String)event.getInfo()));
                     break;
                 case HW_VERSION:
                     if(event.getInfo() != null)
@@ -173,7 +173,7 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
     }
 
     @Subscribe
-    void onOADEvent(DeviceEvents.StartOADUpdate event) {
+    public void onStartOADUpdate(DeviceEvents.StartOADUpdate event) {
         if (oadManager == null && mCurrentConnectedDevice != null) {
             this.oadManager = new OADManager(mContext, this);
             this.oadManager.startOADUpdate(event.getFirmwareVersion());

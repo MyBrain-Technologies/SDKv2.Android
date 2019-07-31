@@ -4,6 +4,7 @@ import android.util.Pair;
 
 import command.DeviceCommandEvent;
 import core.bluetooth.requests.ResponseEvent;
+import core.device.event.OADEvent;
 
 /**
  * Event class that holds a response received by the Bluetooth SDK unit, that need to be transferred to an other unit.
@@ -20,11 +21,7 @@ public class BluetoothResponseEvent extends ResponseEvent<DeviceCommandEvent, Ob
     }
 
     public boolean isDeviceCommandEvent(){
-        for (DeviceCommandEvent event : DeviceCommandEvent.values()) {
-            if(this.getId()!= null && this.getId().getIdentifierCode() == event.getIdentifierCode())
-                return true;
-        }
-        return false;
+        return OADEvent.getEventFromMailboxCommand(this.getId()) != null;
     }
     
 }
