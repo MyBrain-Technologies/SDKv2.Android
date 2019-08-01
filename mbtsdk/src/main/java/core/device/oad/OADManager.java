@@ -21,6 +21,7 @@ import engine.clientevents.BaseError;
 import engine.clientevents.OADError;
 import eventbus.events.FirmwareUpdateClientEvent;
 import utils.AsyncUtils;
+import utils.BitUtils;
 import utils.LogUtils;
 import utils.MbtAsyncWaitOperation;
 import utils.OADExtractionUtils;
@@ -105,14 +106,15 @@ public final class OADManager {
      * Change the current state, execute the associated action, and notify the client of this change
      * @param state the new state
      * @param actionData the associated data
+     * Throws null pointer exception if the state is null
      */
-    void onOADStateChanged(OADState state, @Nullable Object actionData) {
+    void onOADStateChanged(@NonNull OADState state, @Nullable Object actionData) {
         LogUtils.d(TAG, "OAD State changed : "+currentState +" > "+state);
+
         currentState = state;
-        if(currentState != null) {
-            oadContract.notifyClient(new FirmwareUpdateClientEvent(currentState));
-            currentState.executeAction(this, actionData);
-        }
+        oadContract.notifyClient(new FirmwareUpdateClientEvent(currentState));
+        currentState.executeAction(this, actionData);
+
     }
 
     /**
@@ -252,7 +254,10 @@ public final class OADManager {
 
             case PACKET_TRANSFERRED:
             if(currentState.equals(OADState.TRANSFERRING))
-                onOADPacketSent();
+                if(BitUtils.isZero(event.getEventDataAsByteArray()[0]))
+                    sendOADPacket(packetCounter.getCurrentPacketIndex());
+                else
+                    onOADPacketSent();
             break;
 
             default:

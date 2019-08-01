@@ -9,7 +9,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import command.DeviceCommandEvent;
-import command.OADCommands;
 import core.bluetooth.BtState;
 import core.device.event.OADEvent;
 import core.device.model.DeviceInfo;
@@ -137,7 +136,7 @@ public class MbtDeviceManagerTest {
         Mockito.when(bluetoothDevice.getName()).thenReturn("name");
         deviceManager.onConnectionStateChanged(new ConnectionStateEvent(BtState.DEVICE_FOUND, bluetoothDevice, MbtDeviceType.MELOMIND));
         deviceManager.onDeviceInfoEvent(new DeviceInfoEvent(DeviceInfo.FW_VERSION, new FirmwareVersion("1.7.1") ));
-        assertTrue(deviceManager.compareFirmwareVersion(new FirmwareVersion("1.7.1")));
+        assertTrue(deviceManager.verifyFirmwareVersion(new FirmwareVersion("1.7.1")));
     }
 
     @Test
@@ -147,6 +146,6 @@ public class MbtDeviceManagerTest {
         Mockito.when(bluetoothDevice.getName()).thenReturn("name");
         deviceManager.onDeviceInfoEvent(new DeviceInfoEvent(DeviceInfo.FW_VERSION, new FirmwareVersion("1.7.2") ));
         deviceManager.onConnectionStateChanged(new ConnectionStateEvent(BtState.DEVICE_FOUND, bluetoothDevice, MbtDeviceType.MELOMIND));
-        assertFalse(deviceManager.compareFirmwareVersion(new FirmwareVersion("1.7.1")));
+        assertFalse(deviceManager.verifyFirmwareVersion(new FirmwareVersion("1.7.1")));
     }
 }

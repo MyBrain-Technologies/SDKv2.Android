@@ -51,8 +51,8 @@ public class FirmwareVersion {
      * Return true if the current firmware version is equal to the input firmware version, false otherwise.
      * @return true if the current firmware version is equal to the input firmware version, false otherwise.
      */
-    public boolean compareFirmwareVersion(FirmwareVersion firmwareVersion){
-        return this.equals(firmwareVersion);
+    public boolean equals(FirmwareVersion firmwareVersion) {
+        return this.getFirmwareVersionAsString().equals(firmwareVersion.firmwareVersionAsString);
     }
 
 

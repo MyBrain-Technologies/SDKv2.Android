@@ -45,7 +45,7 @@ public interface OADContract {
      * Return true if the current firmware version is equal to the input firmware version, false otherwise.
      * @return true if the current firmware version is equal to the input firmware version, false otherwise.
      */
-    boolean compareFirmwareVersion(FirmwareVersion firmwareVersionExpected);
+    boolean verifyFirmwareVersion(FirmwareVersion firmwareVersionExpected);
 
     /**
      * Method to call when the OAD update process is over.

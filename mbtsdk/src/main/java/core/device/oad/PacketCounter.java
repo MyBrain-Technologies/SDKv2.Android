@@ -53,6 +53,14 @@ public class PacketCounter {
      * Return the index of the next packet to send
      * @return the index of the next packet to send
      */
+    public short getCurrentPacketIndex(){
+        return nbPacketCounted;
+    }
+
+    /**
+     * Return the index of the next packet to send
+     * @return the index of the next packet to send
+     */
     public short getIndexOfNextPacket(){
         return ++nbPacketCounted;
     }
