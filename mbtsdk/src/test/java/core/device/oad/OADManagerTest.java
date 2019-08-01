@@ -1,6 +1,5 @@
 package core.device.oad;
 
-import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.res.AssetManager;
 
@@ -22,13 +21,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
-import java.util.logging.Handler;
 
 import command.DeviceCommandEvent;
 import command.OADCommands;
 import core.bluetooth.BtState;
 import core.bluetooth.lowenergy.MbtBluetoothLE;
-import core.device.DeviceEvents;
 import core.device.MbtDeviceManager;
 import core.device.event.OADEvent;
 import core.device.model.FirmwareVersion;
@@ -36,9 +33,7 @@ import core.device.model.MbtDevice;
 import engine.clientevents.BluetoothError;
 import engine.clientevents.OADError;
 import eventbus.MbtEventBus;
-import eventbus.events.ConnectionStateEvent;
 import eventbus.events.FirmwareUpdateClientEvent;
-import features.MbtDeviceType;
 import utils.AsyncUtils;
 import utils.MbtAsyncWaitOperation;
 import utils.OADExtractionUtils;
@@ -49,7 +44,7 @@ import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 import static utils.OADExtractionUtils.EXPECTED_NB_BYTES_BINARY_FILE;
-import static utils.OADExtractionUtils.EXPECTED_NB_PACKETS_BINARY_FILE;
+import static utils.OADExtractionUtils.EXPECTED_NB_PACKETS;
 import static utils.OADExtractionUtils.FILE_LENGTH_NB_BYTES;
 import static utils.OADExtractionUtils.FIRMWARE_VERSION_NB_BYTES;
 import static utils.OADExtractionUtils.OAD_PACKET_SIZE;
@@ -215,8 +210,8 @@ public class OADManagerTest {
     /**
      * Check that the SDK OAD internal state is {@link OADState#INITIALIZED}
      * if the binary file is found & complete.
-     * Also check it returns a buffer of {@link OADExtractionUtils#EXPECTED_NB_PACKETS_BINARY_FILE} elements
-     * of {@link OADExtractionUtils#EXPECTED_NB_PACKETS_BINARY_FILE} byte each.
+     * Also check it returns a buffer of {@link OADExtractionUtils#EXPECTED_NB_PACKETS} elements
+     * of {@link OADExtractionUtils#EXPECTED_NB_PACKETS} byte each.
      */
     @Test
     public void init_valid() throws Exception {
@@ -235,7 +230,7 @@ public class OADManagerTest {
                 oadManager.init(FIRMWARE_VERSION_VALID_FIRST);
                 assertEquals(oadManager.getCurrentState(), OADState.INITIALIZED);
                 assertNotNull(oadManager.getOADContext().getOADfilepath(),FIRMWARE_FIRST_FILENAME);
-                assertEquals(oadManager.getOADContext().getPacketsToSend().size(),EXPECTED_NB_PACKETS_BINARY_FILE);
+                assertEquals(oadManager.getOADContext().getPacketsToSend().size(), EXPECTED_NB_PACKETS);
                 assertEquals(oadManager.getOADContext().getFirmwareVersionAsByteArray().length,FIRMWARE_VERSION_NB_BYTES);
                 assertEquals(oadManager.getOADContext().getNbPacketsToSend(),FILE_LENGTH_NB_BYTES); //todo 2 or 4 ?
                 for (byte[] packet : oadManager.getOADContext().getPacketsToSend()){
@@ -281,7 +276,7 @@ public class OADManagerTest {
                 assertEquals(OADState.INITIALIZED, oadManager.getCurrentState());
                 assertEquals(oadManager.getCurrentState(), OADState.INITIALIZED);
                 assertNotNull(oadManager.getOADContext().getOADfilepath(), FIRMWARE_FIRST_FILENAME);
-                assertEquals(oadManager.getOADContext().getPacketsToSend().size(), EXPECTED_NB_PACKETS_BINARY_FILE);
+                assertEquals(oadManager.getOADContext().getPacketsToSend().size(), EXPECTED_NB_PACKETS);
 
                 Mockito.verify(contract, times(2)).notifyClient(captor.capture());
 
@@ -343,14 +338,14 @@ public class OADManagerTest {
         Mockito.when(oadContext.getFirmwareVersionAsByteArray())
                 .thenReturn(new byte[]{1,0});
         Mockito.when(oadContext.getNbPacketsToSend())
-                .thenReturn(EXPECTED_NB_PACKETS_BINARY_FILE);
+                .thenReturn(EXPECTED_NB_PACKETS);
 
         ArgumentCaptor<OADCommands.RequestFirmwareValidation> captorValidation = ArgumentCaptor.forClass(OADCommands.RequestFirmwareValidation.class);
         ArgumentCaptor<FirmwareUpdateClientEvent> captorClient = ArgumentCaptor.forClass(FirmwareUpdateClientEvent.class);
 
         ByteBuffer expectedData = ByteBuffer.allocate(4);
         expectedData.put(new byte[]{1,0});
-        expectedData.putShort(EXPECTED_NB_PACKETS_BINARY_FILE);
+        expectedData.putShort(EXPECTED_NB_PACKETS);
         expectedData.array();
 
         try {
@@ -394,7 +389,7 @@ public class OADManagerTest {
         Mockito.when(oadContext.getFirmwareVersionAsByteArray())
                 .thenReturn(new byte[]{1,0});
         Mockito.when(oadContext.getNbPacketsToSend())
-                .thenReturn(EXPECTED_NB_PACKETS_BINARY_FILE);
+                .thenReturn(EXPECTED_NB_PACKETS);
 
         ArgumentCaptor<OADCommands.RequestFirmwareValidation> captorValidation = ArgumentCaptor.forClass(OADCommands.RequestFirmwareValidation.class);
         oadManager.setOADState(currentState);
@@ -435,7 +430,7 @@ public class OADManagerTest {
         Mockito.when(oadContext.getFirmwareVersionAsByteArray())
                 .thenReturn(new byte[]{1,0});
         Mockito.when(oadContext.getNbPacketsToSend())
-                .thenReturn(EXPECTED_NB_PACKETS_BINARY_FILE);
+                .thenReturn(EXPECTED_NB_PACKETS);
 
         oadManager.onOADStateChanged(OADState.INITIALIZED, null);
 
@@ -477,7 +472,7 @@ public class OADManagerTest {
         ArrayList<byte[]> packetList = new ArrayList<>();
         byte[] packet = new byte[OAD_PACKET_SIZE];
         Arrays.fill(packet, (byte)1);
-        for (int i = 0 ; i < EXPECTED_NB_PACKETS_BINARY_FILE; i++){
+        for (int i = 0; i < EXPECTED_NB_PACKETS; i++){
             packetList.add(packet);
         }
         oadManager.setPacketCounter(packetCounter);
@@ -507,7 +502,7 @@ public class OADManagerTest {
         ArrayList<byte[]> packetList = new ArrayList<>();
         byte[] packet = new byte[OAD_PACKET_SIZE];
         Arrays.fill(packet, (byte)1);
-        for (int i = 0 ; i < EXPECTED_NB_PACKETS_BINARY_FILE; i++){
+        for (int i = 0; i < EXPECTED_NB_PACKETS; i++){
             packetList.add(packet);
         }
         oadManager.setPacketCounter(packetCounter);
@@ -793,7 +788,7 @@ public class OADManagerTest {
             return null;
         }).when(contract).reconnect();
         Mockito.when(oadContext.getOADfilepath()).thenReturn(FIRMWARE_FIRST_FILENAME);
-        Mockito.when(contract.compareFirmwareVersion(captorFirmware.capture())).thenReturn(true);
+        Mockito.when(contract.verifyFirmwareVersion(captorFirmware.capture())).thenReturn(true);
         AsyncUtils.executeAsync(new Runnable() {
             @Override
             public void run() {
@@ -905,7 +900,7 @@ public class OADManagerTest {
         oadContext.setOADfilepath(FIRMWARE_FIRST_FILENAME);
         oadManager.setOADContext(oadContext);
         Mockito.when(currentState.nextState()).thenReturn(OADState.RECONNECTION_PERFORMED);
-        Mockito.when(contract.compareFirmwareVersion(captorFirmware.capture())).thenReturn(true);
+        Mockito.when(contract.verifyFirmwareVersion(captorFirmware.capture())).thenReturn(true);
 
         oadManager.onOADEvent(OADEvent.RECONNECTION_PERFORMED.setEventData(true));
         Mockito.verify(contract,times(2)).notifyClient(captorClient.capture()); //3 times notified : notify client state changed to ABORTED and notify error raised
@@ -930,7 +925,7 @@ public class OADManagerTest {
         oadContext.setOADfilepath(FIRMWARE_FIRST_FILENAME);
         oadManager.setOADContext(oadContext);
         Mockito.when(currentState.nextState()).thenReturn(OADState.RECONNECTION_PERFORMED);
-        Mockito.when(contract.compareFirmwareVersion(new FirmwareVersion("1.6.2"))).thenReturn(false);
+        Mockito.when(contract.verifyFirmwareVersion(new FirmwareVersion("1.6.2"))).thenReturn(false);
 
         oadManager.onOADEvent(OADEvent.RECONNECTION_PERFORMED.setEventData(true));
 

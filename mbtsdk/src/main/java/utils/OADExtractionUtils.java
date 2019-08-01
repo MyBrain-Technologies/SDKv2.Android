@@ -72,7 +72,7 @@ public final class OADExtractionUtils {
     /**
      * Expected number of packets of the OAD binary file (chunks of the file that hold the firmware to install) to send to the headset device
      */
-    public static final short EXPECTED_NB_PACKETS_BINARY_FILE = 14223;
+    public static final short EXPECTED_NB_PACKETS = 14223;
 
     /**
      * Size of the index of a packet of the OAD binary file (chunks of the file that hold the firmware to install)

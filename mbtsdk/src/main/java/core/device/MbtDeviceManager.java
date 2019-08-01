@@ -2,8 +2,6 @@ package core.device;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
-import android.os.Handler;
-import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.VisibleForTesting;
 import android.util.Log;
@@ -117,7 +115,7 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
             break;
 
             case CONNECTED_AND_READY:
-                onDeviceReconnected(true);
+                onDeviceConnected(true);
                 break;
 
             case DEVICE_FOUND:
@@ -226,7 +224,7 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
         setmCurrentConnectedDevice(device);
     }
 
-    private void onDeviceReconnected(boolean isReconnectionSuccess) {
+    private void onDeviceConnected(boolean isReconnectionSuccess) {
         if(oadManager != null && oadManager.getCurrentState().equals(OADState.RECONNECTING))
             oadManager.onOADEvent(OADEvent.RECONNECTION_PERFORMED
                     .setEventData(isReconnectionSuccess));
@@ -239,7 +237,7 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
                     oadManager.onOADEvent(OADEvent.DISCONNECTED_FOR_REBOOT);
                     break;
                 case RECONNECTING: //reconnection failed
-                    onDeviceReconnected(false);
+                    onDeviceConnected(false);
                     setmCurrentConnectedDevice(null);
                     break;
                 default: //unexpected disconnection
@@ -258,27 +256,17 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
 
     @Override
     public void transferPacket(byte[] packetToSend) {
-        MbtEventBus.postEvent(new CommandRequestEvent(new OADCommands.SendPacket(packetToSend)));
+        MbtEventBus.postEvent(new CommandRequestEvent(new OADCommands.TransferPacket(packetToSend)));
     }
 
     @Override
     public void notifyClient(FirmwareUpdateClientEvent event) {
-        AsyncUtils.executeAsync(new Runnable() {
-            @Override
-            public void run() {
-                MbtEventBus.postEvent(event);
-            }
-        });
+        MbtEventBus.postEvent(event);
     }
 
     @Override
     public void clearBluetooth() {
-        AsyncUtils.executeAsync(new Runnable() {
-            @Override
-            public void run() {
-                MbtEventBus.postEvent(new ResetBluetoothEvent());
-            }
-        });
+        MbtEventBus.postEvent(new ResetBluetoothEvent());
     }
 
     @Override
@@ -299,8 +287,8 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
     }
 
     @Override
-    public boolean compareFirmwareVersion(FirmwareVersion firmwareVersionExpected) {
-        return mCurrentConnectedDevice.getFirmwareVersionAsString().equals(firmwareVersionExpected.getFirmwareVersionAsString());
+    public boolean verifyFirmwareVersion(FirmwareVersion firmwareVersionExpected) {
+        return mCurrentConnectedDevice.getFirmwareVersion().equals(firmwareVersionExpected);
     }
 
     @Override

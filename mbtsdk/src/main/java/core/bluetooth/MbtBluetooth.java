@@ -176,12 +176,4 @@ public abstract class MbtBluetooth implements IConnectable{
        return enableBluetoothOnDevice();
     }
 
-    /**
-     * This method is used to clean up the cache that Android system uses
-     * when connecting to a known Bluetooth peripheral.
-     * It is recommanded to use it right after updating the firmware, especially when the bluetooth
-     * characteristics have been updated.
-     * @return true if the refresh worked, false otherwise
-     */
-    public abstract boolean clearMobileDeviceCache();
 }

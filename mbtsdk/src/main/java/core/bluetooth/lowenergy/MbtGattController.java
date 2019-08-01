@@ -103,7 +103,7 @@ final class MbtGattController extends BluetoothGattCallback {
                 break;
 
             case BluetoothGatt.STATE_DISCONNECTING:
-                mbtBluetoothLE.notifyConnectionStateChanged(BtState.DISCONNECTING);
+                this.mbtBluetoothLE.onStateDisconnecting();
                 break;
 
             case BluetoothGatt.STATE_DISCONNECTED:

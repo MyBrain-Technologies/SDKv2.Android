@@ -637,6 +637,10 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);
     }
 
+    void onStateDisconnecting() {
+        notifyConnectionStateChanged(BtState.DISCONNECTING);
+    }
+
     void onStateConnecting() {
         if (getCurrentState().equals(BtState.DEVICE_FOUND))
             this.updateConnectionState(false);//current state is set to DATA_BT_CONNECTING
@@ -770,10 +774,10 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         else if(command instanceof DeviceCommand)
             return writeCharacteristic((byte[])command.serialize(),
                     MelomindCharacteristics.SERVICE_MEASUREMENT,
-                    command instanceof OADCommands.SendPacket ?
+                    command instanceof OADCommands.TransferPacket ?
                             MelomindCharacteristics.CHARAC_MEASUREMENT_OAD_PACKETS_TRANSFER :
                             MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX,
-                    !(command instanceof OADCommands.SendPacket));
+                    !(command instanceof OADCommands.TransferPacket));
 
         return false;
     }
@@ -867,7 +871,6 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * characteristics have been updated.
      * @return true if method invocation worked, false otherwise
      */
-    @Override
     public boolean clearMobileDeviceCache() {
         LogUtils.d(TAG, "Clear the cache");
         try {

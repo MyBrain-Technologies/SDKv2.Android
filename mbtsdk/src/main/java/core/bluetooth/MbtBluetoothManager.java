@@ -1190,10 +1190,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             mbtBluetoothLE.resetMobileDeviceBluetoothAdapter();
             mbtBluetoothLE.clearMobileDeviceCache();
             mbtBluetoothLE.unpairDevice(getCurrentDevice());
-        } else {
-            mbtBluetoothSPP.resetMobileDeviceBluetoothAdapter();
-            mbtBluetoothSPP.clearMobileDeviceCache();
-            mbtBluetoothLE.unpairDevice(getCurrentDevice());
         }
         MbtEventBus.postEvent(new BluetoothResponseEvent(DeviceCommandEvent.OTA_BLUETOOTH_RESET, null));
     }
@@ -1203,7 +1199,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * is received by the Bluetooth unit
      */
     public void notifyEventReceived(DeviceCommandEvent eventIdentifier, Object eventData) {
-        if(getCurrentState().equals(BtState.UPGRADING))
-            MbtEventBus.postEvent(new BluetoothResponseEvent(eventIdentifier, eventData));
+        MbtEventBus.postEvent(new BluetoothResponseEvent(eventIdentifier, eventData));
     }
 }

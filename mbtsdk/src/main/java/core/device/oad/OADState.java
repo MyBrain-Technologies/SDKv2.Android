@@ -233,7 +233,7 @@ import utils.OADExtractionUtils;
 
                 if(isReconnectionSuccess(actionData)){
                     boolean isEqual = oadManager.getOADContract()
-                            .compareFirmwareVersion( new FirmwareVersion(
+                            .verifyFirmwareVersion( new FirmwareVersion(
                                     OADExtractionUtils.extractFirmwareVersionFromFileName(oadManager.getOADContext().getOADfilepath())));
                     if(isEqual)
                         oadManager.switchToNextStep(null);
@@ -342,7 +342,7 @@ import utils.OADExtractionUtils;
          * A progress of 100 means that the transfer is complete.
          */
         public void incrementProgress() {
-            this.progress += (100f / OADExtractionUtils.EXPECTED_NB_PACKETS_BINARY_FILE);
+            this.progress += (100f / OADExtractionUtils.EXPECTED_NB_PACKETS);
         }
 
         /**

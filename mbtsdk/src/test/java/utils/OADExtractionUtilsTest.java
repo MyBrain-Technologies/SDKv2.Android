@@ -14,7 +14,7 @@ import java.util.Arrays;
 
 import static org.junit.Assert.*;
 import static utils.OADExtractionUtils.EXPECTED_NB_BYTES_BINARY_FILE;
-import static utils.OADExtractionUtils.EXPECTED_NB_PACKETS_BINARY_FILE;
+import static utils.OADExtractionUtils.EXPECTED_NB_PACKETS;
 import static utils.OADExtractionUtils.OAD_PACKET_SIZE;
 
 public class OADExtractionUtilsTest {
@@ -183,16 +183,16 @@ public class OADExtractionUtilsTest {
 
         ArrayList<byte[]> computedOADPackets = OADExtractionUtils.extractOADPackets(content);
 
-        assertEquals("Expected size "+EXPECTED_NB_PACKETS_BINARY_FILE+ " | Computed size "+computedOADPackets.size() ,computedOADPackets.size(), EXPECTED_NB_PACKETS_BINARY_FILE);
+        assertEquals("Expected size "+ EXPECTED_NB_PACKETS + " | Computed size "+computedOADPackets.size() ,computedOADPackets.size(), EXPECTED_NB_PACKETS);
         assertEquals(computedOADPackets.get(0)[0], 0);
         assertEquals(computedOADPackets.get(0)[1], 0);
-        assertEquals(computedOADPackets.get(EXPECTED_NB_PACKETS_BINARY_FILE-1)[0], (byte)142);
-        assertEquals(computedOADPackets.get(EXPECTED_NB_PACKETS_BINARY_FILE-1)[1], (byte)55);
+        assertEquals(computedOADPackets.get(EXPECTED_NB_PACKETS -1)[0], (byte)142);
+        assertEquals(computedOADPackets.get(EXPECTED_NB_PACKETS -1)[1], (byte)55);
         for (byte[] packet : computedOADPackets){
             assertEquals(packet.length, OAD_PACKET_SIZE);
         }
         assertEquals(computedOADPackets.get(0)[2],1);
-        assertEquals(computedOADPackets.get(EXPECTED_NB_PACKETS_BINARY_FILE-1)[OAD_PACKET_SIZE-1],(byte)0xFF); //remainer of Euclidian division is not 0 so the last byte is 0xFF
+        assertEquals(computedOADPackets.get(EXPECTED_NB_PACKETS -1)[OAD_PACKET_SIZE-1],(byte)0xFF); //remainer of Euclidian division is not 0 so the last byte is 0xFF
 
         //content 250 014 bytes long (multiple of 18)
         content = new byte[EXPECTED_NB_BYTES_BINARY_FILE+14];
@@ -200,16 +200,16 @@ public class OADExtractionUtilsTest {
 
         computedOADPackets = OADExtractionUtils.extractOADPackets(content);
 
-        assertEquals("Expected size "+EXPECTED_NB_PACKETS_BINARY_FILE+ " | Computed size "+computedOADPackets.size() ,computedOADPackets.size(), EXPECTED_NB_PACKETS_BINARY_FILE);
+        assertEquals("Expected size "+ EXPECTED_NB_PACKETS + " | Computed size "+computedOADPackets.size() ,computedOADPackets.size(), EXPECTED_NB_PACKETS);
         assertEquals(computedOADPackets.get(0)[0], 0);
         assertEquals(computedOADPackets.get(0)[1], 0);
-        assertEquals(computedOADPackets.get(EXPECTED_NB_PACKETS_BINARY_FILE-1)[0], (byte)142);
-        assertEquals(computedOADPackets.get(EXPECTED_NB_PACKETS_BINARY_FILE-1)[1], (byte)55);
+        assertEquals(computedOADPackets.get(EXPECTED_NB_PACKETS -1)[0], (byte)142);
+        assertEquals(computedOADPackets.get(EXPECTED_NB_PACKETS -1)[1], (byte)55);
         for (byte[] packet : computedOADPackets){
             assertEquals(packet.length, OAD_PACKET_SIZE);
         }
         assertEquals(computedOADPackets.get(0)[2],1);
-        assertEquals(computedOADPackets.get(EXPECTED_NB_PACKETS_BINARY_FILE-1)[OAD_PACKET_SIZE-1],1); //remainer of Euclidian division is not 0 so the last byte is 0xFF
+        assertEquals(computedOADPackets.get(EXPECTED_NB_PACKETS -1)[OAD_PACKET_SIZE-1],1); //remainer of Euclidian division is not 0 so the last byte is 0xFF
     }
 
     /**
