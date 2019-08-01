@@ -57,7 +57,6 @@ public final class MbtEventBus {
     public static void postEvent(Object event){
         if(event == null)
             return;
-        LogUtils.d(TAG,"post event "+event.toString());
         BUS.post(event);
     }
 

@@ -76,14 +76,16 @@ public enum OADEvent {
      *                          - true if the connection succeeded.
      *                          - false if the connection failed.
      */
-    RECONNECTION_PERFORMED();
+    RECONNECTION_PERFORMED(),
+
+    BLUETOOTH_CLEARED(DeviceCommandEvent.OTA_BLUETOOTH_RESET);
+
 
     /**
      * Most OAD event (not all) are triggered by a mailbox response from the headset device
      * so we associate the corresponding mailbox identifier for these ones.
      */
     private DeviceCommandEvent mailboxEvent;
-
 
     /**
      * Bundle that stores data/informations related to the current event associated keys
@@ -94,13 +96,8 @@ public enum OADEvent {
 
     OADEvent() { }
 
-
     OADEvent(DeviceCommandEvent mailboxEvent) {
         this.mailboxEvent = mailboxEvent;
-    }
-
-    public boolean isInitialEvent(){
-        return this.equals(INIT);
     }
 
     /**

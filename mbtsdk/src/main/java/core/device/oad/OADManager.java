@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -27,7 +26,6 @@ import utils.MbtAsyncWaitOperation;
 import utils.OADExtractionUtils;
 
 import static utils.OADExtractionUtils.EXPECTED_NB_BYTES_BINARY_FILE;
-import static utils.OADExtractionUtils.OAD_PACKET_SIZE;
 import static utils.OADExtractionUtils.OAD_PAYLOAD_PACKET_SIZE;
 
 /**
@@ -72,13 +70,19 @@ public final class OADManager {
      */
     private MbtAsyncWaitOperation<Boolean> lock;
 
-    public OADManager(@NonNull Context context, @NonNull OADContract oadContract) {
+    /**
+     * Boolean flag used to know if the audio has to be reconnected in Bluetooth after the reboot step
+     */
+    private boolean reconnectAudio;
+
+    public OADManager(@NonNull Context context, @NonNull OADContract oadContract, boolean reconnectAudio) {
         if(oadContract == null || context == null)
             throw new IllegalArgumentException("Impossible to initialize the OAD Manager : one of the provided arguments is null.");
 
         this.context = context;
         this.oadContext = new OADContext();
         this.oadContract = oadContract;
+        this.reconnectAudio = reconnectAudio;
     }
 
     /**
@@ -246,10 +250,10 @@ public final class OADManager {
                 onError(OADError.ERROR_LOST_CONNECTION, null);
                 break;
 
-                case PACKET_TRANSFERRED:
-                if(currentState.equals(OADState.TRANSFERRING))
-                    onOADPacketSent();
-                break;
+            case PACKET_TRANSFERRED:
+            if(currentState.equals(OADState.TRANSFERRING))
+                onOADPacketSent();
+            break;
 
             default:
                 if(lock != null && lock.isWaiting())
@@ -267,10 +271,29 @@ public final class OADManager {
         oadContract.notifyClient(new FirmwareUpdateClientEvent(currentState.convertToProgress()));
     }
 
+    /**
+     * Raise an error and abort the OAD update
+     */
     void onError(BaseError error, String additionalInfo){
         oadContract.notifyClient(new FirmwareUpdateClientEvent(error, additionalInfo));
         abort();
     }
+
+    /**
+     * Reconnect the updated headset device in Bluetooth
+     */
+    void reconnect(int timeout){
+        AsyncUtils.executeAsync(new Runnable() {
+            @Override
+            public void run() {
+                oadContract.reconnect(reconnectAudio);
+            }
+        });
+        boolean isSuccess = waitUntilTimeout(timeout);
+        if(!isSuccess)
+            onError(OADError.ERROR_TIMEOUT_UPDATE, "Reconnection timed out.");
+    }
+
     /**
      * Return the current state of the current OAD update process.
      * Each step of the OAD update process is represented with a state machine
@@ -327,7 +350,7 @@ public final class OADManager {
     }
 
     @VisibleForTesting
-    public void setLock(MbtAsyncWaitOperation<Boolean> lock) {
+    void setLock(MbtAsyncWaitOperation<Boolean> lock) {
         this.lock = lock;
     }
 }

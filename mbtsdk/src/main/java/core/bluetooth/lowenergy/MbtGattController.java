@@ -232,7 +232,7 @@ final class MbtGattController extends BluetoothGattCallback {
     @Override
     public void onCharacteristicWrite(BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, int status) {
         super.onCharacteristicWrite(gatt, characteristic, status);
-        Log.d(TAG, "on Characteristic Write value: "+(characteristic.getValue() == null ? characteristic.getValue() : Arrays.toString(characteristic.getValue())) );
+        //Log.d(TAG, "on Characteristic Write value: "+(characteristic.getValue() == null ? characteristic.getValue() : Arrays.toString(characteristic.getValue())) );
         mbtBluetoothLE.notifyEventReceived(DeviceCommandEvent.OTA_STATUS_TRANSFER,
                 new byte[]{BitUtils.booleanToBit(status == BluetoothGatt.GATT_SUCCESS)});
     }

@@ -634,8 +634,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         if(gatt != null && getCurrentState().ordinal() >= BtState.CONNECTED_AND_READY.ordinal())
             gatt.close();
 
-        notifyConnectionStateChanged(
-                BtState.DATA_BT_DISCONNECTED);
+        notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);
     }
 
     void onStateConnecting() {
@@ -870,12 +869,13 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      */
     @Override
     public boolean clearMobileDeviceCache() {
+        LogUtils.d(TAG, "Clear the cache");
         try {
             Method localMethod = gatt.getClass().getMethod(REFRESH_METHOD);
             if (localMethod != null)
                 return (boolean) (Boolean) localMethod.invoke(gatt);
         } catch (Exception localException) {
-            Log.e(TAG, "An exception occured while refreshing device");
+            Log.e(TAG, "An exception occurred while refreshing device");
         }
         return false;
     }

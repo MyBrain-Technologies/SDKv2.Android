@@ -10,6 +10,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -79,12 +80,13 @@ DeviceActivity extends AppCompatActivity {
     private boolean isConnected = false;
     private boolean isStreaming = false;
 
-
     private BluetoothStateListener bluetoothStateListener;
     private DeviceStatusListener<BaseError> deviceStatusListener;
     private DeviceBatteryListener deviceInfoListener;
 
     private EegListener<BaseError> eegListener;
+
+    private ProgressBar progressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -198,6 +200,8 @@ DeviceActivity extends AppCompatActivity {
     }
 
     private void initDisconnectButton() {
+        progressBar = findViewById(R.id.progress);
+        progressBar.setProgress(0);
         disconnectButton = findViewById(R.id.disconnectButton);
         disconnectButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -206,23 +210,19 @@ DeviceActivity extends AppCompatActivity {
 //                if (isStreaming)
 //                    stopStream();
 //                sdkClient.disconnectBluetooth();
+
                 sdkClient.updateFirmware(new FirmwareVersion("1.7.1"), new OADStateListener<BaseError>() {
                     @Override
-                    public void onStateChanged(OADState newState) {
-                        Log.d(TAG," on state changed "+newState);
-
-                    }
+                    public void onStateChanged(OADState newState) { }
 
                     @Override
                     public void onProgressPercentChanged(int progress) {
-                        Log.d(TAG," on progress "+progress);
-
+                        progressBar.setProgress(progress);
                     }
 
                     @Override
                     public void onError(BaseError error, String additionalInfo) {
-                        Log.d(TAG," on Error "+error.toString()+ " additionnalInfo "+additionalInfo);
-
+                        notifyUser(error.getMessage());
                     }
                 });
             }

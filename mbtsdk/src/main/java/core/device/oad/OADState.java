@@ -103,7 +103,7 @@ import utils.OADExtractionUtils;
         /**
          * State triggered once the transfer is started
          */
-        TRANSFERRING(110, 600000){
+        TRANSFERRING(2, 600000){
 
             @Override
             public void executeAction(OADManager oadManager, Object actionData) {
@@ -137,10 +137,14 @@ import utils.OADExtractionUtils;
             @Override
             public void executeAction(OADManager oadManager, Object actionData) {
                 LogUtils.d("Execute action", "for state "+TRANSFERRED);
-
-                boolean isSuccess = oadManager.waitUntilTimeout(this.getMaximumDuration());
-                if(!isSuccess)
-                    oadManager.onError(OADError.ERROR_TIMEOUT_UPDATE, "Readback timed out.");
+                AsyncUtils.executeAsync(new Runnable() {
+                    @Override
+                    public void run() {
+                        boolean isSuccess = oadManager.waitUntilTimeout(getMaximumDuration());
+                        if (!isSuccess)
+                            oadManager.onError(OADError.ERROR_TIMEOUT_UPDATE, "Readback timed out.");
+                    }
+                });
             }
 
             @Override
@@ -154,18 +158,22 @@ import utils.OADExtractionUtils;
          * State triggered when the SDK has received a success transfer response from the headset device
          * and when it detects that the previously connected headset device is disconnected.
          */
-        AWAITING_DEVICE_REBOOT(110,20000){
+        AWAITING_DEVICE_REBOOT(111,20000){
 
             @Override
             public void executeAction(OADManager oadManager, Object actionData) {
-                LogUtils.d("Execute action", "for state "+AWAITING_DEVICE_REBOOT);
-
-                if(isReadbackSuccess(actionData)) {
-                    boolean isSuccess = oadManager.waitUntilTimeout(this.getMaximumDuration());
-                    if(!isSuccess)
-                        oadManager.onError(OADError.ERROR_TIMEOUT_UPDATE, "Reboot timed out.");
-                }else
-                    oadManager.onError(OADError.ERROR_TRANSFER_FAILED, null);
+                LogUtils.d("Execute action", "for state " + AWAITING_DEVICE_REBOOT);
+                AsyncUtils.executeAsync(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (isReadbackSuccess(actionData)) {
+                            boolean isSuccess = oadManager.waitUntilTimeout(getMaximumDuration());
+                            if (!isSuccess)
+                                oadManager.onError(OADError.ERROR_TIMEOUT_UPDATE, "Reboot timed out.");
+                        } else
+                            oadManager.onError(OADError.ERROR_TRANSFER_FAILED, null);
+                    }
+                });
             }
 
             @Override
@@ -183,14 +191,12 @@ import utils.OADExtractionUtils;
          * The SDK needs to reset the mobile device Bluetooth (disable then enable)
          * and clear the pairing keys of the updated headset device.
          */
-        READY_TO_RECONNECT(110){
+        READY_TO_RECONNECT(112){
 
             @Override
             public void executeAction(OADManager oadManager, Object actionData) {
                 LogUtils.d("Execute action", "for state "+READY_TO_RECONNECT);
-
                 oadManager.getOADContract().clearBluetooth();
-                oadManager.switchToNextStep(null);
             }
 
             @Override
@@ -206,16 +212,7 @@ import utils.OADExtractionUtils;
             @Override
             public void executeAction(OADManager oadManager, Object actionData) {
                 LogUtils.d("Execute action", "for state "+RECONNECTING);
-
-                AsyncUtils.executeAsync(new Runnable() {
-                    @Override
-                    public void run() {
-                        oadManager.getOADContract().reconnect();
-                    }
-                });
-                boolean isSuccess = oadManager.waitUntilTimeout(this.getMaximumDuration());
-                if(!isSuccess)
-                    oadManager.onError(OADError.ERROR_TIMEOUT_UPDATE, "Reconnection timed out.");
+                oadManager.reconnect(getMaximumDuration());
             }
 
             @Override
@@ -285,7 +282,7 @@ import utils.OADExtractionUtils;
          * A progress of 0 means that the transfer has not started yet.
          * A progress of 100 means that the transfer is complete.
          */
-        private int progress;
+        private float progress;
 
         /**
          * Maximum amount of time to allocate for the state.
@@ -344,8 +341,8 @@ import utils.OADExtractionUtils;
          * A progress of 0 means that the transfer has not started yet.
          * A progress of 100 means that the transfer is complete.
          */
-        public int incrementProgress() {
-            return this.progress++;
+        public void incrementProgress() {
+            this.progress += (100f / OADExtractionUtils.EXPECTED_NB_PACKETS_BINARY_FILE);
         }
 
         /**
@@ -355,7 +352,7 @@ import utils.OADExtractionUtils;
          * A progress of 100 means that the transfer is complete.
          */
         public int convertToProgress() {
-            return progress * 100 / 120;
+            return (int)progress * 100 / 120;
         }
     }
 

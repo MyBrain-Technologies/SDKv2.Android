@@ -2,6 +2,8 @@ package core.device;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.VisibleForTesting;
 import android.util.Log;
@@ -11,6 +13,7 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 import command.OADCommands;
 import config.ConnectionConfig;
+import config.MbtConfig;
 import core.BaseModuleManager;
 import core.bluetooth.requests.CommandRequestEvent;
 import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
@@ -176,7 +179,7 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
     @Subscribe
     public void onStartOADUpdate(DeviceEvents.StartOADUpdate event) {
         if (oadManager == null && mCurrentConnectedDevice != null) {
-            this.oadManager = new OADManager(mContext, this);
+            this.oadManager = new OADManager(mContext, this, getmCurrentConnectedDevice().getAudioDeviceAddress() != null);
             this.oadManager.startOADUpdate(event.getFirmwareVersion());
         }
     }
@@ -198,7 +201,7 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
         }
     }
 
-    public MbtDevice getmCurrentConnectedDevice() {
+    MbtDevice getmCurrentConnectedDevice() {
         return mCurrentConnectedDevice;
     }
 
@@ -270,22 +273,29 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
 
     @Override
     public void clearBluetooth() {
-        MbtEventBus.postEvent(new ResetBluetoothEvent());
+        AsyncUtils.executeAsync(new Runnable() {
+            @Override
+            public void run() {
+                MbtEventBus.postEvent(new ResetBluetoothEvent());
+            }
+        });
     }
 
     @Override
-    public void reconnect() {
+    public void reconnect(boolean reconnectAudio) {
         ConnectionConfig connectionConfig = new ConnectionConfig.Builder(null)
                 .deviceName(mCurrentConnectedDevice.getProductName())
                 .deviceQrCode(mCurrentConnectedDevice.getExternalName())
                 .create();
 
+        MbtConfig.setConnectAudioIfDeviceCompatible(reconnectAudio);
+
         MbtEventBus.postEvent(new StartOrContinueConnectionRequestEvent(true,
                 connectionConfig.getDeviceName(),
                 connectionConfig.getDeviceQrCode(),
                 connectionConfig.getDeviceType(),
-                connectionConfig.getMtu()
-             ));
+                connectionConfig.getMtu()));
+
     }
 
     @Override
@@ -299,12 +309,12 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
     }
 
     @VisibleForTesting
-    public OADManager getOadManager() {
+    OADManager getOadManager() {
         return oadManager;
     }
 
     @VisibleForTesting
-    public void setOadManager(OADManager oadManager) {
+    void setOadManager(OADManager oadManager) {
         this.oadManager = oadManager;
     }
 }

@@ -171,8 +171,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * @param command is the corresponding type of command
      */
     public void notifyResponseReceived(Object response, CommandInterface.MbtCommand command) {
-        LogUtils.i(TAG, "Received response from device : "+ response);
-
         if(command instanceof DeviceCommand)
             notifyDeviceResponseReceived(response, (DeviceCommand) command);
 
@@ -296,6 +294,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             if(isClientUserRequest)
                 isConnectionInterrupted = false;
             if(!isConnectionInterrupted){
+                LogUtils.d(TAG, "State is "+getCurrentState());
                 switch (getCurrentState()){
                     case IDLE:
                     case DATA_BT_DISCONNECTED:
@@ -437,7 +436,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private void getReadyForBluetoothOperation(){
         connectionRetryCounter = 0;
         //Request sent to the BUS in order to get device from the device manager : the BUS should return a null object if it's the first connection, or return a non null object if the user requests connection whereas a headset is already connected
-        LogUtils.i(TAG, "Checking Bluetooth Prerequisites and initialize");
+        LogUtils.i(TAG, "Checking Bluetooth Prerequisites and initialize ");
         requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
             @Override
             public void onRequestComplete(MbtDevice device) { //when the BUS has returned the device object
@@ -859,7 +858,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      */
     @Subscribe(threadMode = ThreadMode.ASYNC)
     public void onNewBluetoothRequest(final BluetoothRequests request){
-        LogUtils.d(TAG,"onNewBluetoothRequest "+request.toString());
         //Specific case: disconnection has main priority so we don't add it to queue
         if(request instanceof DisconnectRequestEvent && ((DisconnectRequestEvent) request).isInterrupted())
             cancelPendingConnection(((DisconnectRequestEvent) request).isInterrupted());
@@ -1191,10 +1189,13 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         if (deviceTypeRequested.useLowEnergyProtocol()) {
             mbtBluetoothLE.resetMobileDeviceBluetoothAdapter();
             mbtBluetoothLE.clearMobileDeviceCache();
+            mbtBluetoothLE.unpairDevice(getCurrentDevice());
         } else {
             mbtBluetoothSPP.resetMobileDeviceBluetoothAdapter();
             mbtBluetoothSPP.clearMobileDeviceCache();
+            mbtBluetoothLE.unpairDevice(getCurrentDevice());
         }
+        MbtEventBus.postEvent(new BluetoothResponseEvent(DeviceCommandEvent.OTA_BLUETOOTH_RESET, null));
     }
 
     /**

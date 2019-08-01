@@ -147,7 +147,6 @@ public abstract class MbtBluetooth implements IConnectable{
         this.bluetoothAdapter.enable();
         Boolean b = lock.waitAndGetResult(5000);
         if(b == null){
-            Log.e(TAG, "impossible to enable BT adapter");
             return false;
         }
         return b;
@@ -161,14 +160,20 @@ public abstract class MbtBluetooth implements IConnectable{
         }
     }
 
-    public void resetMobileDeviceBluetoothAdapter() {
+    /**
+     * Disable then enable the bluetooth adapter
+     */
+    public boolean resetMobileDeviceBluetoothAdapter() {
+        LogUtils.d(TAG, "Reset Bluetooth adapter");
+
         bluetoothAdapter.disable();
         try {
             Thread.sleep(500);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        bluetoothAdapter.enable();
+
+       return enableBluetoothOnDevice();
     }
 
     /**
