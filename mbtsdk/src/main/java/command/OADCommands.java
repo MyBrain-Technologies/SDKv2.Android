@@ -132,12 +132,12 @@ public interface OADCommands {
          * @param packetToTransfer The packet to transfer to the connected peripheral headset device in Bluetooth
          * If you're interested in getting the returned response,
          * sent by the headset to the SDK once the command is received,
-         * call the {@link TransferPacket}(byte[] packetToTransfer, {@linkCommandCallback<DeviceCommand, byte[]>)} constructor.
+         * call the {@link TransferPacket}(byte[] packetToTransfer, {@link  CommandInterface.SimpleCommandCallback<DeviceCommand, byte[]>)} constructor.
          */
         public TransferPacket(byte[] packetToTransfer) {
             super(DeviceCommandEvent.OTA_STATUS_TRANSFER);
                 this.packetToTransfer = packetToTransfer;
-                init();
+                init(false);
         }
 
         /**
