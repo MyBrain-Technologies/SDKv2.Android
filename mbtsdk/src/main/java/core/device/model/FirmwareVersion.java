@@ -55,5 +55,8 @@ public class FirmwareVersion {
         return this.getFirmwareVersionAsString().equals(firmwareVersion.firmwareVersionAsString);
     }
 
-
+    @Override
+    public String toString() {
+        return "FirmwareVersion{" + firmwareVersionAsString + '}';
+    }
 }

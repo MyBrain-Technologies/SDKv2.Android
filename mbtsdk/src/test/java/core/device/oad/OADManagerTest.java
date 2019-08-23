@@ -110,7 +110,7 @@ public class OADManagerTest {
 //            e.printStackTrace();
 //        }
 
-        oadManager = new OADManager(context, contract);
+        oadManager = new OADManager(context, contract, false);
         oadManager.setOADContext(oadContext);
         oadManager.setLock(lock);
     }
@@ -726,7 +726,7 @@ public class OADManagerTest {
             oadManager.onOADEvent(OADEvent.DISCONNECTED_FOR_REBOOT.setEventData(true));
             Mockito.verify(contract).clearBluetooth();
             return null;
-        }).when(contract).reconnect();
+        }).when(contract).reconnect(false);
         Mockito.when(lock.waitOperationResult(200000)).thenReturn(true);
         AsyncUtils.executeAsync(new Runnable() {
             @Override
@@ -786,7 +786,7 @@ public class OADManagerTest {
         Mockito.doAnswer((Answer<Void>) invocation -> {
             oadManager.onOADEvent(OADEvent.RECONNECTION_PERFORMED.setEventData(true));
             return null;
-        }).when(contract).reconnect();
+        }).when(contract).reconnect(false);
         Mockito.when(oadContext.getOADfilepath()).thenReturn(FIRMWARE_FIRST_FILENAME);
         Mockito.when(contract.verifyFirmwareVersion(captorFirmware.capture())).thenReturn(true);
         AsyncUtils.executeAsync(new Runnable() {

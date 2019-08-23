@@ -109,7 +109,8 @@ public final class OADManager {
      * Throws null pointer exception if the state is null
      */
     void onOADStateChanged(@NonNull OADState state, @Nullable Object actionData) {
-        LogUtils.d(TAG, "OAD State changed : "+currentState +" > "+state);
+        LogUtils.d(TAG, "OAD State changed : "+currentState +
+                "("+(currentState != null ? currentState.convertToProgress() : null)+ ") > "+state + "(" +state.convertToProgress() +")");
 
         currentState = state;
         oadContract.notifyClient(new FirmwareUpdateClientEvent(currentState));

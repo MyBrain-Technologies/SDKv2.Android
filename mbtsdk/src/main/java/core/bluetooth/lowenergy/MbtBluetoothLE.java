@@ -676,7 +676,6 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @param eventData the data associated to the mailbox event detected
      */
     void notifyEventReceived(DeviceCommandEvent mailboxEvent, byte[] eventData) {
-        LogUtils.d(TAG, "Event received " + Arrays.toString(eventData));
         mbtBluetoothManager.notifyEventReceived(mailboxEvent, eventData);
     }
 
