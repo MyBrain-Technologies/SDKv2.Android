@@ -2,6 +2,8 @@ package utils;
 
 import android.util.Log;
 
+import java.util.Arrays;
+
 /**
  * Created by Etienne on 2/26/2018.
  * This class wraps the fw version into three parts: main major and minor.
@@ -60,7 +62,7 @@ public final class VersionHelper {
     private final String main;
 
     public VersionHelper(String version){
-        if(isVersionLengthValid(version)){
+        if(!isVersionLengthValid(version)){
             main = null;
             major = null;
             minor = null;
@@ -71,6 +73,7 @@ public final class VersionHelper {
         main = versionAsStringArray[0];
         major = versionAsStringArray[1];
         minor = versionAsStringArray[2];
+
     }
 
     public String getMainVersionAsString(){

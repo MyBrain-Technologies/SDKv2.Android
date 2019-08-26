@@ -45,6 +45,13 @@ public abstract class DeviceCommand <T, U extends BaseError> extends CommandInte
     }
 
     /**
+     * Change the unique identifier of the command
+     */
+    public void setCommandEvent(DeviceCommandEvent commandEvent) {
+        this.commandEvent = commandEvent;
+    }
+
+    /**
      * Allocate a buffer that bundle all the data to send to the headset
      * for the write characteristic operation
      */

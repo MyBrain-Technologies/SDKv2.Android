@@ -5,6 +5,8 @@ import android.util.Log;
 
 import org.greenrobot.eventbus.EventBus;
 
+import utils.LogUtils;
+
 
 /**
  * MbtEventBus.java

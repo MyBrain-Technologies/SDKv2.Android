@@ -11,6 +11,8 @@ import core.bluetooth.BtProtocol;
 import core.eeg.MbtEEGManager;
 import core.eeg.storage.RawEEGSample;
 import features.MbtDeviceType;
+import utils.BitUtils;
+import utils.ConversionUtils;
 import utils.LogUtils;
 
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;

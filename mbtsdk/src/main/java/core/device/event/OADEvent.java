@@ -38,7 +38,7 @@ public enum OADEvent {
      * Event triggered when the Device unit is informed
      * that a packet has been sent
      */
-    PACKET_TRANSFERRED(DeviceCommandEvent.GATT_OTA_STATUS_TRANSFER),
+    PACKET_TRANSFERRED(DeviceCommandEvent.OTA_STATUS_TRANSFER),
 
     /**
      * Event triggered when the Bluetooth unit is informed
@@ -76,7 +76,10 @@ public enum OADEvent {
      *                          - true if the connection succeeded.
      *                          - false if the connection failed.
      */
-    RECONNECTION_PERFORMED();
+    RECONNECTION_PERFORMED(),
+
+    BLUETOOTH_CLEARED(DeviceCommandEvent.OTA_BLUETOOTH_RESET);
+
 
     /**
      * Most OAD event (not all) are triggered by a mailbox response from the headset device
@@ -84,21 +87,17 @@ public enum OADEvent {
      */
     private DeviceCommandEvent mailboxEvent;
 
-
     /**
      * Bundle that stores data/informations related to the current event associated keys
      */
     private Object eventData;
 
-    OADEvent() { }
+    private static final String TAG = OADEvent.class.getSimpleName();
 
+    OADEvent() { }
 
     OADEvent(DeviceCommandEvent mailboxEvent) {
         this.mailboxEvent = mailboxEvent;
-    }
-
-    public boolean isInitialEvent(){
-        return this.equals(INIT);
     }
 
     /**
@@ -164,11 +163,13 @@ public enum OADEvent {
      * @return the OAD event associated to the mailbox command
      */
     public static OADEvent getEventFromMailboxCommand(DeviceCommandEvent mailboxIdentifier){
-        OADEvent event = null;
-        for (OADEvent value : OADEvent.values()){
-            if(value.mailboxEvent.getIdentifierCode() == mailboxIdentifier.getIdentifierCode())
-                event = value;
+        for (OADEvent event : OADEvent.values()){
+            if(event.mailboxEvent != null && event.mailboxEvent.getIdentifierCode() == mailboxIdentifier.getIdentifierCode())
+                return event;
         }
-        return event;
+        return null;
     }
-}
+
+    public DeviceCommandEvent getMailboxEvent() {
+        return mailboxEvent;
+    }}

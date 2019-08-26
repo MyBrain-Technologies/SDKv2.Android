@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothDevice;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import core.device.model.FirmwareVersion;
 import core.device.model.MbtDevice;
 import eventbus.MbtEventBus;
 import features.MbtDeviceType;
@@ -42,30 +43,6 @@ public interface DeviceEvents {
         }
     }
 
-
-    class FoundDeviceEvent {
-        @Nullable
-        private final BluetoothDevice device;
-
-        private final MbtDeviceType deviceType;
-
-        public FoundDeviceEvent(@Nullable BluetoothDevice device, MbtDeviceType deviceType){
-            this.device = device;
-            this.deviceType = deviceType;
-        }
-
-        @Nullable
-        public BluetoothDevice getDevice() {
-            return device;
-        }
-
-        MbtDeviceType getDeviceType() {
-            return deviceType;
-        }
-    }
-
-    class DisconnectedDeviceEvent {    }
-
     class AudioDisconnectedDeviceEvent {    }
 
     class AudioConnectedDeviceEvent {
@@ -99,4 +76,15 @@ public interface DeviceEvents {
         }
     }
 
+    class StartOADUpdate {
+        private FirmwareVersion firmwareVersion;
+
+        public StartOADUpdate(FirmwareVersion firmwareVersion) {
+            this.firmwareVersion = firmwareVersion;
+        }
+
+        public FirmwareVersion getFirmwareVersion() {
+            return firmwareVersion;
+        }
+    }
 }

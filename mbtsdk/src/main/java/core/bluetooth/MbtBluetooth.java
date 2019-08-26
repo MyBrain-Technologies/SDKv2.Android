@@ -79,7 +79,7 @@ public abstract class MbtBluetooth implements IConnectable{
 
             if(currentState.isResettableState(previousState)) {  //if a disconnection occurred
                 resetCurrentState();//reset the current connection state to IDLE
-                if(this instanceof MbtBluetoothA2DP)
+                if(this instanceof MbtBluetoothA2DP && !currentState.equals(BtState.UPGRADING))
                     mbtBluetoothManager.disconnectAllBluetooth(false); //audio has failed to connect : we disconnect BLE
             }if(currentState.isDisconnectableState())  //if a failure occurred
                 disconnect(); //disconnect if a headset is connected
@@ -147,7 +147,6 @@ public abstract class MbtBluetooth implements IConnectable{
         this.bluetoothAdapter.enable();
         Boolean b = lock.waitAndGetResult(5000);
         if(b == null){
-            Log.e(TAG, "impossible to enable BT adapter");
             return false;
         }
         return b;
@@ -161,22 +160,20 @@ public abstract class MbtBluetooth implements IConnectable{
         }
     }
 
-    public void resetMobileDeviceBluetoothAdapter() {
+    /**
+     * Disable then enable the bluetooth adapter
+     */
+    public boolean resetMobileDeviceBluetoothAdapter() {
+        LogUtils.d(TAG, "Reset Bluetooth adapter");
+
         bluetoothAdapter.disable();
         try {
             Thread.sleep(500);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        bluetoothAdapter.enable();
+
+       return enableBluetoothOnDevice();
     }
 
-    /**
-     * This method is used to clean up the cache that Android system uses
-     * when connecting to a known Bluetooth peripheral.
-     * It is recommanded to use it right after updating the firmware, especially when the bluetooth
-     * characteristics have been updated.
-     * @return true if the refresh worked, false otherwise
-     */
-    public abstract boolean clearMobileDeviceCache();
 }

@@ -1,7 +1,9 @@
 package core.device;
 
+import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.support.annotation.VisibleForTesting;
 import android.util.Log;
 
 
@@ -9,11 +11,12 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 import command.OADCommands;
 import config.ConnectionConfig;
+import config.MbtConfig;
 import core.BaseModuleManager;
-import core.bluetooth.BtState;
 import core.bluetooth.requests.CommandRequestEvent;
 import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
 import core.device.oad.OADContract;
+import core.device.oad.OADState;
 import eventbus.events.BluetoothResponseEvent;
 import core.device.model.FirmwareVersion;
 import core.device.model.MbtDevice;
@@ -30,6 +33,7 @@ import eventbus.events.ConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
 import eventbus.events.FirmwareUpdateClientEvent;
 import eventbus.events.ResetBluetoothEvent;
+import features.MbtDeviceType;
 import utils.LogUtils;
 
 import static features.MbtDeviceType.MELOMIND;
@@ -90,40 +94,6 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
         }
     }
 
-
-    public MbtDevice getmCurrentConnectedDevice() {
-        return mCurrentConnectedDevice;
-    }
-
-    private void setAudioConnectedDeviceAddress(String audioDeviceAddress) {
-        Log.d(TAG,"new connected audio device address stored "+audioDeviceAddress);
-        if(mCurrentConnectedDevice != null)
-            this.mCurrentConnectedDevice.setAudioDeviceAddress(audioDeviceAddress);
-    }
-
-    private void setmCurrentConnectedDevice(MbtDevice mCurrentConnectedDevice) {
-        Log.d(TAG,"new connected device stored "+mCurrentConnectedDevice);
-        this.mCurrentConnectedDevice = mCurrentConnectedDevice;
-    }
-
-    @Subscribe
-    public void onNewDeviceDisconnected(DeviceEvents.DisconnectedDeviceEvent deviceEvent) {
-        if (oadManager != null){
-            switch (oadManager.getCurrentState()){
-                case AWAITING_DEVICE_REBOOT:
-                    oadManager.onOADEvent(OADEvent.DISCONNECTED_FOR_REBOOT);
-                    break;
-                case RECONNECTING:
-                    oadManager.onOADEvent(OADEvent.RECONNECTION_PERFORMED.setEventData(false));
-                    break;
-                default:
-                    oadManager.onOADEvent(OADEvent.DISCONNECTED);
-                    break;
-            }
-        }else
-            setmCurrentConnectedDevice(null);
-    }
-
     @Subscribe
     public void onNewDeviceAudioDisconnected(DeviceEvents.AudioDisconnectedDeviceEvent deviceEvent) {
         if(getmCurrentConnectedDevice() != null)
@@ -131,30 +101,32 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
     }
 
     @Subscribe
-    public void onNewDeviceConnected(DeviceEvents.FoundDeviceEvent deviceEvent) {
-
-        MbtDevice device = null;
-        if (deviceEvent.getDevice() != null) {
-            device = deviceEvent.getDeviceType().equals(MELOMIND) ?
-                    new MelomindDevice(deviceEvent.getDevice()) : new VProDevice(deviceEvent.getDevice());
-        }
-        setmCurrentConnectedDevice(device);
-
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onConnectionStateChanged(ConnectionStateEvent connectionStateEvent) {
-        if(connectionStateEvent.getNewState().equals(BtState.CONNECTED_AND_READY))
-                if(oadManager != null)
-                    oadManager.onOADEvent(OADEvent
-                            .RECONNECTION_PERFORMED
-                            .setEventData(true));
+        switch (connectionStateEvent.getNewState()){
+
+            case SCAN_TIMEOUT:
+            case SCAN_FAILURE:
+            case SCAN_INTERRUPTED:
+            case DATA_BT_DISCONNECTED:
+            case CONNECTION_FAILURE:
+            case CONNECTION_INTERRUPTED:
+                onDeviceDisconnected();
+            break;
+
+            case CONNECTED_AND_READY:
+                onDeviceConnected(true);
+                break;
+
+            case DEVICE_FOUND:
+                onDeviceFound(connectionStateEvent.getDevice(), connectionStateEvent.getDeviceType());
+            break;
+        }
     }
 
     @Subscribe
     public void onNewAudioDeviceConnected(DeviceEvents.AudioConnectedDeviceEvent deviceEvent) {
-            setAudioConnectedDeviceAddress( (deviceEvent.getDevice() != null) ?
-                    deviceEvent.getDevice().getAddress() : null);
+        setAudioConnectedDeviceAddress( (deviceEvent.getDevice() != null) ?
+                deviceEvent.getDevice().getAddress() : null);
     }
 
     @Subscribe
@@ -174,7 +146,7 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
                     break;
                 case FW_VERSION:
                     if(event.getInfo() != null)
-                        mCurrentConnectedDevice.setFirmwareVersion((FirmwareVersion) event.getInfo());
+                        mCurrentConnectedDevice.setFirmwareVersion(new FirmwareVersion((String)event.getInfo()));
                     break;
                 case HW_VERSION:
                     if(event.getInfo() != null)
@@ -196,16 +168,17 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
         }
     }
 
-
     @Subscribe
     public void onGetDevice(DeviceEvents.GetDeviceEvent event){
         MbtEventBus.postEvent(new DeviceEvents.PostDeviceEvent(mCurrentConnectedDevice));
     }
 
     @Subscribe
-    public void onOADEvent(OADEvent event) {
-        if (oadManager == null)
-            this.oadManager = new OADManager(mContext, this, event.getEventData());
+    public void onStartOADUpdate(DeviceEvents.StartOADUpdate event) {
+        if (oadManager == null && mCurrentConnectedDevice != null) {
+            this.oadManager = new OADManager(mContext, this, getmCurrentConnectedDevice().getAudioDeviceAddress() != null);
+            this.oadManager.startOADUpdate(event.getFirmwareVersion());
+        }
     }
 
     /**
@@ -213,10 +186,9 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
      *
      * is received by the Bluetooth unit
      */
-    @Subscribe(threadMode = ThreadMode.MAIN, priority = 1)
+    @Subscribe(threadMode = ThreadMode.ASYNC, priority = 1)
     public void onBluetoothEventReceived(BluetoothResponseEvent event){
-        LogUtils.d(TAG, "on Bluetooth event "+event.toString());
-        if(event.isDeviceCommandEvent()){
+        if(oadManager != null && event.isDeviceCommandEvent()){
             OADEvent oadEvent = OADEvent
                     .getEventFromMailboxCommand(event.getId())
                     .setEventData(event.getDataValue());
@@ -225,10 +197,54 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
         }
     }
 
+    MbtDevice getmCurrentConnectedDevice() {
+        return mCurrentConnectedDevice;
+    }
 
-    @Override
-    public void stopOADUpdate() {
-        this.oadManager = null;
+    private void setAudioConnectedDeviceAddress(String audioDeviceAddress) {
+        Log.d(TAG,"new connected audio device address stored "+audioDeviceAddress);
+        if(mCurrentConnectedDevice != null)
+            this.mCurrentConnectedDevice.setAudioDeviceAddress(audioDeviceAddress);
+    }
+
+    private void setmCurrentConnectedDevice(MbtDevice mCurrentConnectedDevice) {
+        Log.d(TAG,"new connected device stored "+mCurrentConnectedDevice);
+        this.mCurrentConnectedDevice = mCurrentConnectedDevice;
+    }
+
+    private void onDeviceFound(BluetoothDevice foundDevice, MbtDeviceType deviceType) {
+        MbtDevice device = null;
+        if (foundDevice != null) {
+            device = deviceType.equals(MELOMIND) ?
+                    new MelomindDevice(foundDevice) :
+                    new VProDevice(foundDevice);
+        }
+        setmCurrentConnectedDevice(device);
+    }
+
+    private void onDeviceConnected(boolean isReconnectionSuccess) {
+        if(oadManager != null && oadManager.getCurrentState().equals(OADState.RECONNECTING))
+            oadManager.onOADEvent(OADEvent.RECONNECTION_PERFORMED
+                    .setEventData(isReconnectionSuccess));
+    }
+
+    private void onDeviceDisconnected() {
+        if (oadManager != null){
+            switch (oadManager.getCurrentState()){
+                case AWAITING_DEVICE_REBOOT: //reboot success
+                    oadManager.onOADEvent(OADEvent.DISCONNECTED_FOR_REBOOT);
+                    break;
+                case RECONNECTING: //reconnection failed
+                    onDeviceConnected(false);
+                    setmCurrentConnectedDevice(null);
+                    break;
+                default: //unexpected disconnection
+                    oadManager.onOADEvent(OADEvent.DISCONNECTED);
+                    setmCurrentConnectedDevice(null);
+                    break;
+            }
+        }else
+            setmCurrentConnectedDevice(null);
     }
 
     @Override
@@ -238,7 +254,7 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
 
     @Override
     public void transferPacket(byte[] packetToSend) {
-        MbtEventBus.postEvent(new CommandRequestEvent(new OADCommands.SendPacket(packetToSend)));
+        MbtEventBus.postEvent(new CommandRequestEvent(new OADCommands.TransferPacket(packetToSend)));
     }
 
     @Override
@@ -252,23 +268,39 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
     }
 
     @Override
-    public void reconnect() {
+    public void reconnect(boolean reconnectAudio) {
         ConnectionConfig connectionConfig = new ConnectionConfig.Builder(null)
                 .deviceName(mCurrentConnectedDevice.getProductName())
                 .deviceQrCode(mCurrentConnectedDevice.getExternalName())
                 .create();
 
+        MbtConfig.setConnectAudioIfDeviceCompatible(reconnectAudio);
+
         MbtEventBus.postEvent(new StartOrContinueConnectionRequestEvent(true,
                 connectionConfig.getDeviceName(),
                 connectionConfig.getDeviceQrCode(),
                 connectionConfig.getDeviceType(),
-                connectionConfig.getMtu()
-             ));
+                connectionConfig.getMtu()));
+
     }
 
     @Override
-    public boolean compareFirmwareVersion(FirmwareVersion firmwareVersionExpected) {
+    public boolean verifyFirmwareVersion(FirmwareVersion firmwareVersionExpected) {
         return mCurrentConnectedDevice.getFirmwareVersion().equals(firmwareVersionExpected);
     }
 
+    @Override
+    public void stopOADUpdate() {
+        this.oadManager = null;
+    }
+
+    @VisibleForTesting
+    OADManager getOadManager() {
+        return oadManager;
+    }
+
+    @VisibleForTesting
+    void setOadManager(OADManager oadManager) {
+        this.oadManager = oadManager;
+    }
 }

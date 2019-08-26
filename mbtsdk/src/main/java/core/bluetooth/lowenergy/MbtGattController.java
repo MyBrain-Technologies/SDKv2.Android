@@ -95,28 +95,22 @@ final class MbtGattController extends BluetoothGattCallback {
         String msg = "Current state was "+ mbtBluetoothLE.getCurrentState()+" but Connection state change : " + (newState == 2 ? "connected " : " code is "+newState);
         switch (newState) {
             case BluetoothGatt.STATE_CONNECTING:
-                if (mbtBluetoothLE.getCurrentState().equals(BtState.DEVICE_FOUND))
-                    this.mbtBluetoothLE.updateConnectionState(false);//current state is set to DATA_BT_CONNECTING
+                mbtBluetoothLE.onStateConnecting();
                 break;
+
             case BluetoothGatt.STATE_CONNECTED:
-                if (mbtBluetoothLE.getCurrentState().equals(BtState.DATA_BT_CONNECTING) || mbtBluetoothLE.getCurrentState().equals(BtState.SCAN_STARTED))
-                    this.mbtBluetoothLE.updateConnectionState(true);//current state is set to DATA_BT_CONNECTION_SUCCESS and future is completed
-                else if(mbtBluetoothLE.getCurrentState().equals(BtState.IDLE))
-                    this.mbtBluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
-                    break;
+                mbtBluetoothLE.onStateConnected();
+                break;
 
             case BluetoothGatt.STATE_DISCONNECTING:
-                this.mbtBluetoothLE.notifyConnectionStateChanged(BtState.DISCONNECTING);
+                this.mbtBluetoothLE.onStateDisconnecting();
                 break;
+
             case BluetoothGatt.STATE_DISCONNECTED:
-                //if(isDownloadingFirmware) //todo OAD
-                //    clearMobileDeviceCache(gatt);// in this case the connection went well for a while, but just got lost
-                //mbtBluetoothLE.notifyEventReceived(, null);
                 LogUtils.e(TAG, "Gatt returned disconnected state");
-                gatt.close();
-                //todo dissociate connection in progress case, OAD in progress case, regular case
-                this.mbtBluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);
+                this.mbtBluetoothLE.onStateDisconnected(gatt);
                 break;
+
             default:
                 this.mbtBluetoothLE.notifyConnectionStateChanged(BtState.INTERNAL_FAILURE);
                 gatt.close();
@@ -124,6 +118,7 @@ final class MbtGattController extends BluetoothGattCallback {
         }
         LogUtils.d("", msg);
     }
+
 
     /**
      * Callback invoked when the list of remote services, characteristics and descriptors
@@ -237,14 +232,15 @@ final class MbtGattController extends BluetoothGattCallback {
     @Override
     public void onCharacteristicWrite(BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, int status) {
         super.onCharacteristicWrite(gatt, characteristic, status);
-        Log.d(TAG, "on Characteristic Write value: "+(characteristic.getValue() == null ? characteristic.getValue() : Arrays.toString(characteristic.getValue())) );
-        mbtBluetoothLE.stopWaitingOperation(BitUtils.booleanToBit(status == BluetoothGatt.GATT_SUCCESS));
+        //Log.d(TAG, "on Characteristic Write value: "+(characteristic.getValue() == null ? characteristic.getValue() : Arrays.toString(characteristic.getValue())) );
+        mbtBluetoothLE.notifyEventReceived(DeviceCommandEvent.OTA_STATUS_TRANSFER,
+                new byte[]{BitUtils.booleanToBit(status == BluetoothGatt.GATT_SUCCESS)});
     }
 
     @Override
     public void onCharacteristicChanged(BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic) {
         super.onCharacteristicChanged(gatt, characteristic);
-        Log.d(TAG, "on Characteristic Changed value: "+(characteristic.getValue() == null ? characteristic.getValue() : Arrays.toString(characteristic.getValue())) );
+        //Log.d(TAG, "on Characteristic Changed value: "+(characteristic.getValue() == null ? characteristic.getValue() : Arrays.toString(characteristic.getValue())) );
 
         if (characteristic.getUuid().compareTo(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG) == 0) {
             this.mbtBluetoothLE.notifyNewDataAcquired(characteristic.getValue());
@@ -252,7 +248,7 @@ final class MbtGattController extends BluetoothGattCallback {
             this.mbtBluetoothLE.notifyNewHeadsetStatus(characteristic.getValue());
         } else if (characteristic.getUuid().compareTo(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX) == 0) {
             this.onMailboxEventReceived(characteristic);
-            mbtBluetoothLE.stopWaitingOperation(true);
+            //mbtBluetoothLE.stopWaitingOperation(true, false);
         }
     }
 
@@ -284,7 +280,8 @@ final class MbtGattController extends BluetoothGattCallback {
     @Override
     public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
         super.onMtuChanged(gatt, mtu, status);
-        mbtBluetoothLE.stopWaitingOperation(mtu);
+        mbtBluetoothLE.stopWaitingOperation(mtu
+        );
     }
 
     /**
@@ -292,7 +289,7 @@ final class MbtGattController extends BluetoothGattCallback {
      * @param characteristic
      */
     private void onMailboxEventReceived(BluetoothGattCharacteristic characteristic) {
-        Log.d(TAG, "Mailbox event received " + Arrays.toString(characteristic.getValue()));
+        //Log.d(TAG, "Mailbox event received " + Arrays.toString(characteristic.getValue()));
         byte[] response = CommandUtils.deserialize(characteristic.getValue());
         byte mailboxEvent = characteristic.getValue()[0];
         DeviceCommandEvent event = DeviceCommandEvent.getEventFromIdentifierCode(mailboxEvent);

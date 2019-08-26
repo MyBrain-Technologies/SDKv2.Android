@@ -4,6 +4,7 @@ import android.support.annotation.IntRange;
 import android.support.annotation.Keep;
 
 import core.device.oad.OADManager;
+import core.device.oad.OADState;
 
 /**
  * Listener used to receive a notification when the OAD update state changes during a firmware update
