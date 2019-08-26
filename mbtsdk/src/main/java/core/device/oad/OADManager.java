@@ -289,12 +289,8 @@ public final class OADManager {
      * Reconnect the updated headset device in Bluetooth
      */
     void reconnect(int timeout){
-        AsyncUtils.executeAsync(new Runnable() {
-            @Override
-            public void run() {
-                oadContract.reconnect(reconnectAudio);
-            }
-        });
+        oadContract.reconnect(reconnectAudio);
+
         boolean isSuccess = waitUntilTimeout(timeout);
         if(!isSuccess)
             onError(OADError.ERROR_TIMEOUT_UPDATE, "Reconnection timed out.");
