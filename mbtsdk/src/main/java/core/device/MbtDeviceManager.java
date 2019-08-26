@@ -110,7 +110,7 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
             case DATA_BT_DISCONNECTED:
             case CONNECTION_FAILURE:
             case CONNECTION_INTERRUPTED:
-                onNoDeviceConnected();
+                onDeviceDisconnected();
             break;
 
             case CONNECTED_AND_READY:
@@ -228,7 +228,7 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
                     .setEventData(isReconnectionSuccess));
     }
 
-    private void onNoDeviceConnected() {
+    private void onDeviceDisconnected() {
         if (oadManager != null){
             switch (oadManager.getCurrentState()){
                 case AWAITING_DEVICE_REBOOT: //reboot success

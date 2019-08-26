@@ -1,7 +1,5 @@
 package eventbus.events;
 
-import android.util.Pair;
-
 import command.DeviceCommandEvent;
 import core.bluetooth.requests.ResponseEvent;
 import core.device.event.OADEvent;
@@ -17,7 +15,7 @@ import core.device.event.OADEvent;
 public class BluetoothResponseEvent extends ResponseEvent<DeviceCommandEvent, Object> {
 
     public BluetoothResponseEvent(DeviceCommandEvent eventDataKey, Object eventDataValue) {
-        super(new Pair<>(eventDataKey, eventDataValue));
+        super(eventDataKey, eventDataValue);
     }
 
     public boolean isDeviceCommandEvent(){

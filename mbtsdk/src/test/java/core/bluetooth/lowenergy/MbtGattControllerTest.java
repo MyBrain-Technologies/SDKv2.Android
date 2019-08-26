@@ -12,8 +12,6 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.UUID;
 
 
@@ -26,7 +24,8 @@ import static java.util.UUID.fromString;
 @PrepareForTest(MbtGattController.class)
 public class MbtGattControllerTest {
 
-    private final byte[] MAILBOX_RAW_RESPONSE = new byte[]{0,10,1,2,3,4,5};
+    private final byte[] MAILBOX_RAW_RESPONSE_5 = new byte[]{5,10,1,2,3,4,5};
+    private final byte[] MAILBOX_RAW_RESPONSE_0 = new byte[]{0,10,1,2,3,4,5};
     private final byte[] MAILBOX_RESPONSE = new byte[]{10,1,2,3,4,5};
     private final byte[] IN_PROGRESS_RESPONSE = new byte[]{1,1,2,3,4,5};
 
@@ -62,12 +61,12 @@ public class MbtGattControllerTest {
     @Test
     public void onCharacteristicChanged_MailboxCommandReceived(){
         Mockito.when(characteristic.getUuid()).thenReturn(CHARACTERISTIC_MAILBOX);
-        Mockito.when(characteristic.getValue()).thenReturn(MAILBOX_RAW_RESPONSE);
+        Mockito.when(characteristic.getValue()).thenReturn(MAILBOX_RAW_RESPONSE_5);
         PowerMockito.spy(CommandUtils.class);
 
         gattController.onCharacteristicChanged(gatt, characteristic);
 
-        Mockito.verify(mbtBluetoothLE).stopWaitingOperation(true,true);
+        Mockito.verify(mbtBluetoothLE).stopWaitingOperation(MAILBOX_RESPONSE);
     }
 
     /**

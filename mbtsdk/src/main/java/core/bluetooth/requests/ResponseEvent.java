@@ -1,7 +1,5 @@
 package core.bluetooth.requests;
 
-import android.util.Pair;
-
 /**
  * Base class for events that holds a response received by a SDK unit, that need to be transferred to an other unit.
  * These events are sent using {@link org.greenrobot.eventbus.EventBus} framework.
@@ -12,32 +10,32 @@ import android.util.Pair;
  */
 public abstract class ResponseEvent<K,V> {
 
-    private Pair<K,V> eventData;
+    private K eventDataKey;
+    private V eventDataValue;
 
-    public ResponseEvent(Pair<K, V> eventData) {
-        this.eventData = eventData;
-    }
-
-    public Pair<K, V> getEventData() {
-        return eventData;
+    public ResponseEvent(K eventDataKey, V eventDataValue) {
+        this.eventDataKey = eventDataKey;
+        this.eventDataValue = eventDataValue;
     }
 
     public K getId() {
-        return eventData.first;
+        return eventDataKey;
     }
 
     public V getDataValue() {
-        return eventData.second;
+        return eventDataValue;
     }
 
-    public void setEventData(Pair<K, V> eventData) {
-        this.eventData = eventData;
+    public void setEventData(K eventDataKey, V eventDataValue) {
+        this.eventDataKey = eventDataKey;
+        this.eventDataValue = eventDataValue;
     }
 
     @Override
     public String toString() {
         return "ResponseEvent{" +
-                "eventData=" + eventData +
+                "eventDataKey=" + eventDataKey +
+                "eventDataValue=" + eventDataValue +
                 '}';
     }
 }
