@@ -249,7 +249,7 @@ public enum OADState {
     /**
      * State triggered when the SDK is reconnecting the updated headset device.
      */
-    RECONNECTING(20000){
+    RECONNECTING(23000){
         @Override
         public void executeAction(OADManager oadManager, Object actionData) {
             super.executeAction(oadManager, actionData);
