@@ -1,5 +1,6 @@
 package core.device.model;
 
+import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 
 import utils.LogUtils;
@@ -9,6 +10,7 @@ import utils.VersionHelper;
  * Firmware version model that stores all the digits of the firmware version
  * in order to facilitate the firmware version manipulation.
  */
+@Keep
 public class FirmwareVersion {
 
     public final static String TAG = FirmwareVersion.class.getSimpleName();
@@ -28,10 +30,25 @@ public class FirmwareVersion {
     /**
      * Constructor that build a {@link FirmwareVersion} instance
      * from a String type firmware version.
+     * Default splitter used is a dot
      * @param firmwareVersion is the String type firmware version to convert into a {@link FirmwareVersion} instance.
      */
     public FirmwareVersion(@NonNull String firmwareVersion) {
         if (!VersionHelper.isVersionLengthValid(firmwareVersion)){
+            LogUtils.e(TAG, "Invalid version length : minimum number of digits is equal to " + VersionHelper.VERSION_LENGTH);
+            return;
+        }
+        this.firmwareVersionHelper = new VersionHelper(firmwareVersion);
+        this.firmwareVersionAsString = firmwareVersion;
+    }
+
+    /**
+     * Constructor that build a {@link FirmwareVersion} instance
+     * from a String type firmware version.
+     * @param firmwareVersion is the String type firmware version to convert into a {@link FirmwareVersion} instance.
+     */
+    public FirmwareVersion(@NonNull String firmwareVersion, String splitter) {
+        if (!VersionHelper.isVersionLengthValid(firmwareVersion, splitter)){
             LogUtils.e(TAG, "Invalid version length : minimum number of digits is equal to " + VersionHelper.VERSION_LENGTH);
             return;
         }

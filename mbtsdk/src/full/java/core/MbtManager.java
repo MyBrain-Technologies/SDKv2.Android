@@ -31,7 +31,6 @@ import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindsQRDataBase;
 import core.device.model.FirmwareVersion;
-import core.device.event.OADEvent;
 import core.eeg.MbtEEGManager;
 import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;

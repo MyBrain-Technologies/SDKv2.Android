@@ -204,6 +204,16 @@ public final class VersionHelper {
     }
 
     /**
+     * Returns true if the version given in input contains at least {@link VersionHelper#VERSION_LENGTH} digits.
+     * False otherwise.
+     * @param version the version to check
+     * @return true if the version given in input contains at least {@link VersionHelper#VERSION_LENGTH} digits.
+     */
+    public static boolean isVersionLengthValid(String version, String splitter){
+        return version.split(splitter).length >= VersionHelper.VERSION_LENGTH;
+    }
+
+    /**
      * Return the input version as a String array that contains {@link VersionHelper#VERSION_LENGTH} elements.
      * @return the input version as a String array hat contains {@link VersionHelper#VERSION_LENGTH} elements.
      */

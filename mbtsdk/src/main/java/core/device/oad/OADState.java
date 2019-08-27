@@ -1,7 +1,7 @@
 package core.device.oad;
 import android.support.annotation.IntRange;
+import android.support.annotation.Keep;
 import android.support.annotation.Nullable;
-import android.util.Log;
 
 import command.OADCommands;
 import core.device.model.FirmwareVersion;
@@ -15,6 +15,7 @@ import utils.OADExtractionUtils;
  * Each step of the OAD update process is represented with a state machine
  * so that we can know which step is the current step at any moment of the update process.
  */
+@Keep
 public enum OADState {
 
     /**
