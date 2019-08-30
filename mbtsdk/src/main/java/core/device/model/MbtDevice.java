@@ -61,6 +61,8 @@ public abstract class MbtDevice {
 
     int nbChannels;
 
+    int eegPacketLength;
+
     List<MbtAcquisitionLocations> acquisitionLocations;
     List<MbtAcquisitionLocations> referencesLocations;
     List<MbtAcquisitionLocations> groundsLocation;
@@ -168,6 +170,10 @@ public abstract class MbtDevice {
         return audioDeviceAddress;
     }
 
+    public int getEegPacketLength() {
+        return eegPacketLength;
+    }
+
     public void setAudioDeviceAddress(String audioDeviceAddress) {
         this.audioDeviceAddress = audioDeviceAddress;
     }
@@ -208,6 +214,8 @@ public abstract class MbtDevice {
         public byte getNbPackets() {
             return nbPackets;
         }
+
+
 
 
         @Override
