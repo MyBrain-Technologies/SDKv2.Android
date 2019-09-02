@@ -1,20 +1,25 @@
 package utils;
 
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.JsonWriter;
 import android.util.Log;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import core.device.model.MbtDevice;
 import core.eeg.storage.MbtEEGPacket;
+import core.recording.Comment;
 import features.MbtAcquisitionLocations;
-import model.Comment;
 import model.MbtRecording;
 import model.RecordInfo;
 
@@ -30,10 +35,12 @@ public final class MbtJsonUtils {
     private final static String TAG = MbtJsonUtils.class.getName();
 
     @Nullable
-    public static final String serializeEEGData(@NonNull final MbtDevice device,
-                                                @NonNull final MbtRecording recording,
-                                                @NonNull final int totalRecordingNb,
-                                                @NonNull final ArrayList<Comment> comments) {
+    public static final String serializeRecording(@NonNull final MbtDevice device,
+                                                  @NonNull final MbtRecording recording,
+                                                  @NonNull final int totalRecordingNb,
+                                                  @NonNull final ArrayList<Comment> comments,
+                                                  @Nullable final Bundle recordingParams,
+                                                  @NonNull final String ownerId) {
 
         if (recording.getNbPackets() == 0)
             throw new IllegalArgumentException("No recording");
@@ -46,6 +53,16 @@ public final class MbtJsonUtils {
             // BEGINNING OF MAIN JSON OBJECT
             jsonWriter.name("uuidJsonFile");
             jsonWriter.value(UUID.randomUUID().toString());
+
+            jsonWriter.name("ownerId");
+            jsonWriter.value(ownerId);
+
+            if(recordingParams != null && recordingParams.getString("riAlgo") != null){
+                jsonWriter.name("riAlgo");
+                jsonWriter.value(recordingParams.getString("riAlgo"));
+            }
+
+            jsonWriter.endObject();
 
             jsonWriter.name("header");
             jsonWriter.beginObject();   // beginning of "header"   object
@@ -183,6 +200,27 @@ public final class MbtJsonUtils {
             }
             jsonWriter.endArray(); // end of       "statusData"       array
 
+            //Using JSONObject wrapper in order to automatically serialize in JSON the recordingParameters and then reinject it in the stringWriter
+            if(recordingParams == null){
+                jsonWriter.name("recordingParameters");
+                jsonWriter.nullValue();
+            }
+            else{
+                JSONObject json = new JSONObject();
+                Set<String> mKeys = recordingParams.keySet();
+                for (String mKey : mKeys) {
+                    try {
+                        json.put(mKey, JSONObject.wrap(recordingParams.get(mKey)));
+                    } catch(JSONException e) {
+                        //Handle exception here
+                        Log.e(TAG, "Impossible to serialize bundle element with key " + mKey);
+                    }
+                }
+                stringWriter.append(",");
+                stringWriter.append("\"").append("recordingParameters").append("\"").append(":");
+                stringWriter.append(json.toString());
+            }
+
             jsonWriter.endObject();     // end of       "recording"    object
 
             // END OF OF MAIN JSON OBJECT
@@ -196,8 +234,8 @@ public final class MbtJsonUtils {
     }
 
 
-    public static MbtRecording convertEEGPacketListToRecordings(@NonNull RecordInfo recordInfo, @NonNull long timestamp, @NonNull List<MbtEEGPacket> MbtEEGPacketArrayList, @NonNull boolean hasStatus){
-        return new MbtRecording(recordInfo, timestamp, MbtEEGPacketArrayList, hasStatus);
+    public static MbtRecording convertEEGPacketListToRecordings(@NonNull RecordInfo recordInfo, @NonNull long timestamp, @NonNull List<MbtEEGPacket> eegPackets, @NonNull boolean hasStatus){
+        return new MbtRecording(recordInfo, timestamp, eegPackets, hasStatus);
     }
 
 }
