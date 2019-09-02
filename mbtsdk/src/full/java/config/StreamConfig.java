@@ -11,6 +11,7 @@ import java.util.Arrays;
 import command.DeviceCommand;
 import command.DeviceStreamingCommands;
 import core.eeg.storage.MbtEEGPacket;
+import core.recording.Comment;
 import engine.clientevents.BaseError;
 import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.EegListener;
@@ -32,6 +33,8 @@ public final class StreamConfig {
 
     private boolean computeQualities;
 
+    private RecordConfig recordConfig;
+
     /**
      * Optional list of commands sent to the headset in order to
      * configure a parameter,
@@ -44,11 +47,12 @@ public final class StreamConfig {
                 new DeviceStreamingCommands.Triggers(false)
             ));
 
-    private StreamConfig(boolean computeQualities, EegListener<BaseError> eegListener, DeviceStatusListener<BaseError> deviceStatusListener, int notificationPeriod, DeviceStreamingCommands[] deviceCommands){
+    private StreamConfig(boolean computeQualities, EegListener<BaseError> eegListener, DeviceStatusListener<BaseError> deviceStatusListener, int notificationPeriod, DeviceStreamingCommands[] deviceCommands, RecordConfig recordConfig){
         this.computeQualities = computeQualities;
         this.eegListener = eegListener;
         this.deviceStatusListener = deviceStatusListener;
         this.notificationPeriod = notificationPeriod;
+        this.recordConfig = recordConfig;
 
         if(deviceCommands != null && deviceCommands.length > 0) {
             for (DeviceStreamingCommands deviceCommand : deviceCommands) {
@@ -98,6 +102,10 @@ public final class StreamConfig {
         return deviceCommands;
     }
 
+    public RecordConfig getRecordConfig() {
+        return recordConfig;
+    }
+
     public void setNotificationPeriod(int notificationPeriod) {
         this.notificationPeriod = notificationPeriod;
     }
@@ -134,6 +142,9 @@ public final class StreamConfig {
 
         private boolean computeQualities = false;
 
+        private RecordConfig recordConfig;
+
+
         /**
          * Optional set of commands sent to the headset in order to
          * configure a parameter,
@@ -161,6 +172,15 @@ public final class StreamConfig {
          */
         public Builder useQualities(){
             this.computeQualities = true;
+            return this;
+        }
+
+        /**
+         * Records the data acquired by a myBrain Technologies headset in a JSON file
+         * @return the builder instance
+         */
+        public Builder recordDataAsJson(RecordConfig recordConfig){
+            this.recordConfig = recordConfig;
             return this;
         }
 
@@ -206,7 +226,7 @@ public final class StreamConfig {
 
         @Nullable
         public StreamConfig create(){
-            return new StreamConfig(this.computeQualities, this.eegListener, this.deviceStatusListener, this.notificationPeriod, this.deviceCommands);
+            return new StreamConfig(this.computeQualities, this.eegListener, this.deviceStatusListener, this.notificationPeriod, this.deviceCommands, this.recordConfig);
         }
     }
 

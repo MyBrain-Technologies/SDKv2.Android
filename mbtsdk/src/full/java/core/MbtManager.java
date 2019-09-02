@@ -150,14 +150,15 @@ public class MbtManager{
         EventBusManager.postEvent(
                 new StreamRequestEvent(true,
                         streamConfig.shouldComputeQualities(),
-                        (deviceStatusListener != null)));
+                        (deviceStatusListener != null),
+                        streamConfig.getRecordConfig()));
     }
 
     /**
      * Posts an event to stop the currently started stream session
      */
     public void stopStream(){
-        EventBusManager.postEvent(new StreamRequestEvent(false, false, false));
+        EventBusManager.postEvent(new StreamRequestEvent(false, false, false, null));
     }
 
     /**
