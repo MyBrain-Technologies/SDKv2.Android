@@ -132,5 +132,7 @@ fabric.properties
 
 !/gradle/wrapper/gradle-wrapper.jar
 
+*.idea
+/mbtsdk/.cxx
 
 # End of https://www.gitignore.io/api/androidstudio

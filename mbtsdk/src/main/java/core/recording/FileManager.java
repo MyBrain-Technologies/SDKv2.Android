@@ -30,8 +30,11 @@ import core.device.model.MbtDevice;
 import core.eeg.storage.MbtEEGPacket;
 import model.MbtRecording;
 import model.RecordInfo;
+import utils.AsyncUtils;
 import utils.LogUtils;
 import utils.MbtJsonUtils;
+
+import static utils.MbtJsonUtils.RECORDING_NUMBER_KEY;
 
 public final class FileManager {
     private static final String TAG = FileManager.class.getName();
@@ -39,10 +42,10 @@ public final class FileManager {
     private final static String FILENAME_SPLITTER = "-";
     private final static String FOLDER_SEPARATOR = "/";
     private final static String DEFAULT_CONDITION = "--";
-    private final static String DEFAULT_SUBJECT = "--";
+    private final static String DEFAULT_SUBJECT = "anonymous";
     private final static String DATE_FORMAT_PATTERN = "yyyy-MM-dd_HH:mm:ss.SSS";
     private final static String FILE_FORMAT = ".json";
-    private final static String RECORDING_FOLDER = "MBT";
+    private final static String RECORDING_FOLDER = "recording";
 
     /**
      * Create a new file name according to the name standardization decided by MBT.
@@ -81,8 +84,8 @@ public final class FileManager {
      * @return the absolute path of the folder created
      */
     public static String createFolder(@NonNull final Context context,
-                                  @Nullable String folder,
-                                  boolean useExternalStorage)
+                                      @Nullable String folder,
+                                      boolean useExternalStorage)
     {
         File parent = new File(
                 (useExternalStorage && ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE)
@@ -94,8 +97,7 @@ public final class FileManager {
 
         boolean parentExists = (parent.exists() || parent.mkdir());
 
-        return (parentExists ?
-                parent.getAbsolutePath() : null);
+        return (parentExists ? parent.getAbsolutePath() : null);
     }
 
     /**
@@ -106,10 +108,10 @@ public final class FileManager {
      * @return
      */
     static File createFile(@NonNull final Context context,
-                                     @Nullable String folder,
-                                     @NonNull String filename,
-                                  boolean useExternalStorage)
-   {
+                           @Nullable String folder,
+                           @NonNull String filename,
+                           boolean useExternalStorage)
+    {
         String absolutePath = createFolder(context, folder, useExternalStorage);
         if (absolutePath == null){
             Log.e(TAG, "Impossible to create the folder: "+folder);
@@ -118,15 +120,15 @@ public final class FileManager {
 
         File file = new File(absolutePath, filename + FILE_FORMAT);
 
-       try {
-           if(file.exists())
-               file.delete();
+        try {
+            if(file.exists())
+                file.delete();
 
-           return (file.createNewFile() ? file : null);
-       } catch (IOException e) {
-           Log.e(TAG,"Failed to create file");
-           return null;
-       }
+            return (file.createNewFile() ? file : null);
+        } catch (IOException e) {
+            Log.e(TAG,"Failed to create file");
+            return null;
+        }
     }
 
     /**
@@ -181,17 +183,21 @@ public final class FileManager {
 
     /**
      * Updates all current records in the map with
-     * @param savedRecordings
+     * @param savedRecordings is the map that contains all the JSON previously created on the app
      */
-    public static void updateJSONWithCurrentRecordNb(Map<String, String> savedRecordings) {
+    static void updateJSONWithCurrentRecordNb(Map<String, String> savedRecordings) {
         final Map<String, Long> savedMap = new HashMap<>();
         Map tmp = new HashMap(savedRecordings);
         tmp.keySet().removeAll(savedMap.keySet());
         savedMap.putAll(tmp);
-
-        for (String filepath : savedRecordings.keySet()) {
-            readJsonAsStreamAndUpdateRecordNb(filepath, savedRecordings.size());
-        }
+        AsyncUtils.executeAsync(new Runnable() {
+            @Override
+            public void run() {
+                for (String filepath : savedMap.keySet()) {
+                    readJsonAsStreamAndUpdateRecordNb(filepath, savedMap.size());
+                }
+            }
+        });
     }
 
     /**
@@ -201,7 +207,8 @@ public final class FileManager {
      */
     public static synchronized void readJsonAsStreamAndUpdateRecordNb(String filename, int recordingNb) {
         char[] input = new char[2000];
-        final String recordStringHook = "\"recordingNb\":\"0x";
+        //final String recordStringHook = "\"recordingNb\":\"0x";
+        final String recordStringHook = RECORDING_NUMBER_KEY+"\":\""+MbtJsonUtils.RECORDING_NUMBER_PREFIX;
         boolean replaced = false;
         File file = new File(filename);
         try {

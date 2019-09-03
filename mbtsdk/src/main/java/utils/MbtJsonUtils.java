@@ -32,7 +32,47 @@ import model.RecordInfo;
  */
 
 public final class MbtJsonUtils {
+
     private final static String TAG = MbtJsonUtils.class.getName();
+
+    private final static String UUID_KEY = "uuidJsonFile";
+
+    private final static String OWNER_ID_KEY = "ownerId";
+
+    private final static String RI_ALGO_KEY = "riAlgo";
+
+    private final static String HEADER_KEY = "header";
+        private final static String DEVICE_INFO_KEY = "deviceInfo";
+        private final static String PRODUCT_NAME_KEY = "productName";
+        private final static String HW_VERSION_KEY = "hardwareVersion";
+        private final static String FW_VERSION_KEY = "firmwareVersion";
+        private final static String SERIAL_NUMBER_KEY = "uniqueDeviceIdentifier";
+        public final static String RECORDING_NUMBER_KEY = "recordingNb";
+        public final static String RECORDING_NUMBER_PREFIX = "0x";
+        private final static String COMMENTS_KEY = "comments";
+        private final static String COMMENT_DATE_KEY = "date";
+        private final static String COMMENT_VALUE_KEY = "comment";
+        private final static String EEG_PACKET_LENGTH_KEY = "eegPacketLength";
+        private final static String SAMP_RATE_KEY = "sampRate";
+        private final static String NB_CHANNELS_KEY = "nbChannels";
+        private final static String ACQUISITION_LOCATION_KEY = "acquisitionLocation";
+        private final static String REFERENCES_LOCATION_KEY = "referencesLocation";
+        private final static String GROUND_LOCATION_KEY =  "groundsLocation";
+
+    private final static String RECORDING_KEY = "recording";
+        private final static String RECORD_ID_KEY = "recordID";
+        private final static String RECORDING_TYPE_KEY = "recordingType";
+        private final static String RECORD_TYPE_KEY = "recordType";
+        private final static String SP_ALGO_VERSION_KEY = "spVersion";
+        private final static String SOURCE_KEY = "source";
+        private final static String DATA_TYPE_KEY = "dataType";
+        private final static String RECORDING_TIME_KEY = "recordingTime";
+        private final static String NB_PACKETS_KEY = "nbPackets";
+        private final static String FIRST_PACKET_ID_KEY = "firstPacketId";
+        private final static String QUALITIES_KEY = "qualities";
+        private final static String CHANNEL_DATA_KEY = "channelData";
+        private final static String STATUS_DATA_KEY = "statusData";
+        private final static String RECORDING_PARAMS_KEY = "recordingParameters";
 
     @Nullable
     public static final String serializeRecording(@NonNull final MbtDevice device,
@@ -51,41 +91,41 @@ public final class MbtJsonUtils {
 
             jsonWriter.beginObject();
             // BEGINNING OF MAIN JSON OBJECT
-            jsonWriter.name("uuidJsonFile");
+            jsonWriter.name(UUID_KEY);
             jsonWriter.value(UUID.randomUUID().toString());
 
-            jsonWriter.name("ownerId");
+            jsonWriter.name(OWNER_ID_KEY);
             jsonWriter.value(ownerId);
 
-            if(recordingParams != null && recordingParams.getString("riAlgo") != null){
-                jsonWriter.name("riAlgo");
-                jsonWriter.value(recordingParams.getString("riAlgo"));
+            if(recordingParams != null && recordingParams.getString(RI_ALGO_KEY) != null){
+                jsonWriter.name(RI_ALGO_KEY);
+                jsonWriter.value(recordingParams.getString(RI_ALGO_KEY));
             }
 
             jsonWriter.endObject();
 
-            jsonWriter.name("header");
+            jsonWriter.name(HEADER_KEY);
             jsonWriter.beginObject();   // beginning of "header"   object
 
-            jsonWriter.name("deviceInfo");
+            jsonWriter.name(DEVICE_INFO_KEY);
             jsonWriter.beginObject();   // beginning of "deviceInfo"        object
 
-            jsonWriter.name("productName");
+            jsonWriter.name(PRODUCT_NAME_KEY);
             jsonWriter.value(device.getProductName());
 
-            jsonWriter.name("hardwareVersion");
+            jsonWriter.name(HW_VERSION_KEY);
             if (device.getHardwareVersion() == null)
                 jsonWriter.value("");
             else
                 jsonWriter.value(device.getHardwareVersion());
 
-            jsonWriter.name("firmwareVersion");
+            jsonWriter.name(FW_VERSION_KEY);
             if (device.getFirmwareVersion() == null)
                 jsonWriter.value("");
             else
                 jsonWriter.value(device.getFirmwareVersion());
 
-            jsonWriter.name("uniqueDeviceIdentifier");
+            jsonWriter.name(SERIAL_NUMBER_KEY);
             if (device.getSerialNumber() == null)
                 jsonWriter.value("");
             else
@@ -93,42 +133,42 @@ public final class MbtJsonUtils {
 
             jsonWriter.endObject();     // end of       "deviceInfo"        object
 
-            jsonWriter.name("recordingNb");
-            jsonWriter.value("0x"+ String.format("%02X",totalRecordingNb));
+            jsonWriter.name(RECORDING_NUMBER_KEY);
+            jsonWriter.value(RECORDING_NUMBER_PREFIX+ String.format("%02X",totalRecordingNb));
 
-            jsonWriter.name("comments");
+            jsonWriter.name(COMMENTS_KEY);
             jsonWriter.beginArray();
             if(!comments.isEmpty()){
                 for (Comment comment : comments) {
                     jsonWriter.beginObject();
-                    jsonWriter.name("date");
+                    jsonWriter.name(COMMENT_DATE_KEY);
                     jsonWriter.value(comment.getTimestamp());
-                    jsonWriter.name("comment");
+                    jsonWriter.name(COMMENT_VALUE_KEY);
                     jsonWriter.value(comment.getComment());
                     jsonWriter.endObject();
                 }
             }
             jsonWriter.endArray();
 
-            jsonWriter.name("eegPacketLength");
+            jsonWriter.name(EEG_PACKET_LENGTH_KEY);
             jsonWriter.value(device.getEegPacketLength());
-            jsonWriter.name("sampRate");
+            jsonWriter.name(SAMP_RATE_KEY);
             jsonWriter.value(device.getSampRate());
-            jsonWriter.name("nbChannels");
+            jsonWriter.name(NB_CHANNELS_KEY);
             jsonWriter.value(device.getNbChannels());
-            jsonWriter.name("acquisitionLocation");
+            jsonWriter.name(ACQUISITION_LOCATION_KEY);
             jsonWriter.beginArray();
             for (final MbtAcquisitionLocations local : device.getAcquisitionLocations()) {
                 jsonWriter.value(local.toString());
             }
             jsonWriter.endArray();
-            jsonWriter.name("referencesLocation");
+            jsonWriter.name(REFERENCES_LOCATION_KEY);
             jsonWriter.beginArray();
             for (final MbtAcquisitionLocations local : device.getReferencesLocations()) {
                 jsonWriter.value(local.toString());
             }
             jsonWriter.endArray();
-            jsonWriter.name("groundsLocation");
+            jsonWriter.name(GROUND_LOCATION_KEY);
             jsonWriter.beginArray();
             for (final MbtAcquisitionLocations local : device.getGroundsLocation()) {
                 jsonWriter.value(local.toString());
@@ -137,34 +177,34 @@ public final class MbtJsonUtils {
 
             jsonWriter.endObject();     // end of       "header"   object
 
-            jsonWriter.name("recording");
+            jsonWriter.name(RECORDING_KEY);
             jsonWriter.beginObject();   // beginning of "recording"    object
 
-            jsonWriter.name("recordID");
+            jsonWriter.name(RECORD_ID_KEY);
             jsonWriter.value(recording.getRecordInfos().getRecordId());
 
-            jsonWriter.name("recordingType");
+            jsonWriter.name(RECORDING_TYPE_KEY);
             jsonWriter.beginObject();
 
-            jsonWriter.name("recordType");
+            jsonWriter.name(RECORD_TYPE_KEY);
             jsonWriter.value(recording.getRecordInfos().getRecordingType().getRecordType().toString());
-            jsonWriter.name("spVersion");
+            jsonWriter.name(SP_ALGO_VERSION_KEY);
             jsonWriter.value(recording.getRecordInfos().getRecordingType().getSPVersion());
-            jsonWriter.name("source");
+            jsonWriter.name(SOURCE_KEY);
             jsonWriter.value(recording.getRecordInfos().getRecordingType().getSource().toString());
-            jsonWriter.name("dataType");
+            jsonWriter.name(DATA_TYPE_KEY);
             jsonWriter.value(recording.getRecordInfos().getRecordingType().getExerciseType().toString());
             jsonWriter.endObject();
 
-            jsonWriter.name("recordingTime");
+            jsonWriter.name(RECORDING_TIME_KEY);
             jsonWriter.value(recording.getRecordingTime());
 
-            jsonWriter.name("nbPackets");
+            jsonWriter.name(NB_PACKETS_KEY);
             jsonWriter.value(recording.getNbPackets());
-            jsonWriter.name("firstPacketId");
+            jsonWriter.name(FIRST_PACKET_ID_KEY);
             jsonWriter.value(recording.getFirstPacketsId());
 
-            jsonWriter.name("qualities");
+            jsonWriter.name(QUALITIES_KEY);
             jsonWriter.beginArray();    // beginning of "qualities"         array
             for (int it = 0 ; it < recording.getQualities().size() ; it ++) {
 
@@ -178,7 +218,7 @@ public final class MbtJsonUtils {
             }
             jsonWriter.endArray();      // end of       "qualities"         array
 
-            jsonWriter.name("channelData");
+            jsonWriter.name(CHANNEL_DATA_KEY);
             jsonWriter.beginArray();    // beginning of "channelData"       array
 
             for (ArrayList<Float> floats : recording.getEegData()) {
@@ -191,7 +231,7 @@ public final class MbtJsonUtils {
 
             jsonWriter.endArray();      // end of       "channelData"       array
 
-            jsonWriter.name("statusData"); // beginning of "statusData"       array
+            jsonWriter.name(STATUS_DATA_KEY); // beginning of "statusData"       array
             jsonWriter.beginArray();
             if(recording.getStatus() != null){
                 for (Float status : recording.getStatus()) {
@@ -202,7 +242,7 @@ public final class MbtJsonUtils {
 
             //Using JSONObject wrapper in order to automatically serialize in JSON the recordingParameters and then reinject it in the stringWriter
             if(recordingParams == null){
-                jsonWriter.name("recordingParameters");
+                jsonWriter.name(RECORDING_PARAMS_KEY);
                 jsonWriter.nullValue();
             }
             else{
@@ -217,7 +257,7 @@ public final class MbtJsonUtils {
                     }
                 }
                 stringWriter.append(",");
-                stringWriter.append("\"").append("recordingParameters").append("\"").append(":");
+                stringWriter.append("\"").append(RECORDING_PARAMS_KEY).append("\"").append(":");
                 stringWriter.append(json.toString());
             }
 

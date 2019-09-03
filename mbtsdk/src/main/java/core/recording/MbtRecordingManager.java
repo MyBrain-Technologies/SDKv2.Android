@@ -19,7 +19,6 @@ import core.eeg.signalprocessing.ContextSP;
 import core.eeg.storage.MbtEEGPacket;
 import eventbus.EventBusManager;
 import eventbus.events.ClientReadyEEGEvent;
-import utils.AsyncUtils;
 
 /**
  * Created by Etienne on 08/02/2018.
@@ -61,6 +60,9 @@ public final class MbtRecordingManager extends BaseModuleManager {
 
     }
 
+    /**
+     * Save the EEG packets and associated data on a JSON file
+     */
     private void saveRecording() {
         if(recordConfig != null){
 
@@ -78,16 +80,6 @@ public final class MbtRecordingManager extends BaseModuleManager {
                                     recordConfig.getSubjectId(),
                                     recordConfig.getCondition()));
 
-                        //Check if map is empty or not
-                        if(!savedRecordings.isEmpty()){
-                            AsyncUtils.executeAsync(new Runnable() {
-                                @Override
-                                public void run() {
-                                    FileManager.updateJSONWithCurrentRecordNb(savedRecordings);
-                                }
-                            });
-                        }
-
                         File file = FileManager.createFile(mContext,
                                 recordConfig.getFolder(),
                                 recordConfig.getFilename(),
@@ -104,8 +96,12 @@ public final class MbtRecordingManager extends BaseModuleManager {
                                 recordConfig.getRecordingParameters(),
                                 recordConfig.getRecordInfo().setSPVersion(ContextSP.SP_VERSION),
                                 savedRecordings.size(),
-                                recordConfig.getComments(),
+                                recordConfig.getHeaderComments(),
                                 recordConfig.getTimestamp());
+
+                        //Check if Recordings map is empty or not to update the number of recording in each recording JSON file
+                        if(!savedRecordings.isEmpty())
+                            FileManager.updateJSONWithCurrentRecordNb(savedRecordings);
                     }
                     return null;
                 }

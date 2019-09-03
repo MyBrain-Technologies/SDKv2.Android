@@ -4,8 +4,8 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 
 import core.recording.metadata.MelomindExerciceSource;
-import core.recording.metadata.RecordType;
 import core.recording.metadata.MelomindExerciseType;
+import core.recording.metadata.RecordType;
 
 /**
  * Created by manon on 19/10/16.
@@ -52,21 +52,19 @@ public class RecordInfo {
         return this;
     }
 
-
     /**
      * Inner class for recording type.
      */
     public class RecordingType{
-
         private RecordType recordType;
         private String spVersion;
         private MelomindExerciceSource source;
         private MelomindExerciseType exerciseType;
 
-
-
         public RecordingType(){
-
+            this.exerciseType = MelomindExerciseType.DEFAULT;
+            this.source = MelomindExerciceSource.DEFAULT;
+            this.recordType = RecordType.RAWDATA;
         }
 
         public RecordingType(@NonNull RecordType recordType, @NonNull String spVersion, @NonNull MelomindExerciceSource dataSource, @NonNull MelomindExerciseType exerciseType){

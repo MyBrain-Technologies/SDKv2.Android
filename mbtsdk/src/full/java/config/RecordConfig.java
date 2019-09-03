@@ -1,8 +1,8 @@
 package config;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.Keep;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
@@ -29,7 +29,7 @@ public final class RecordConfig {
 
     private String subjectId;
 
-    private ArrayList<Comment> comments;
+    private ArrayList<Comment> headerComments;
 
     private boolean useExternalStorage;
 
@@ -50,7 +50,7 @@ public final class RecordConfig {
         this.timestamp = timestamp;
         this.useExternalStorage = useExternalStorage;
         this.recordInfo = recordInfo;
-        this.comments = comments;
+        this.headerComments = comments;
         this.condition = condition;
         this.projectName = projectName;
         this.recordingParameters = recordingParameters;
@@ -72,8 +72,8 @@ public final class RecordConfig {
         return subjectId;
     }
 
-    public ArrayList<Comment> getComments() {
-        return comments;
+    public ArrayList<Comment> getHeaderComments() {
+        return headerComments;
     }
 
     public boolean useExternalStorage() {
@@ -108,23 +108,19 @@ public final class RecordConfig {
 
         private String folder = "";
         private long timestamp;
-        private String projectName = "";
+        private String projectName;
         private String subjectID = "";
         private String condition = "";
         private String filename;
-        private ArrayList<Comment> comments;
+        private ArrayList<Comment> headerComments;
         private boolean useExternalStorage = false;
         private RecordInfo recordInfo;
         private Bundle recordingParameters;
 
-        public Builder(){
-            timestamp = System.currentTimeMillis();
-        }
-
-        public Builder filePathAndName(@Nullable String folder,@NonNull String filename){
-            this.folder = folder;
-            this.filename = filename;
-            return this;
+        public Builder(Context context){
+            this.timestamp = System.currentTimeMillis();
+            this.projectName = context.getApplicationInfo().name;
+            this.recordInfo = new RecordInfo(UUID.randomUUID().toString());
         }
 
         public Builder folder(@Nullable String folder){
@@ -136,13 +132,16 @@ public final class RecordConfig {
             return this;
         }
 
-        public Builder comments(@Nullable ArrayList<Comment> comments) {
-            this.comments = comments;
+        public Builder headerComments(@Nullable ArrayList<Comment> comments) {
+            this.headerComments = comments;
             return this;
         }
 
-        public Builder comment(@Nullable Comment... comment) {
-            this.comments = new ArrayList<>(Arrays.asList(comment));
+        public Builder headerComment(@Nullable Comment... comment) {
+            if(this.headerComments == null)
+                this.headerComments = new ArrayList<>(Arrays.asList(comment));
+            else
+                this.headerComments.addAll(Arrays.asList(comment));
             return this;
         }
 
@@ -176,13 +175,24 @@ public final class RecordConfig {
             return this;
         }
 
-        public Builder recordInfo(RecordType recordType, MelomindExerciceSource source, MelomindExerciseType dataType) {
-            this.recordInfo = new RecordInfo(UUID.randomUUID().toString());
+        public Builder exerciceTyoe(MelomindExerciseType exerciseType) {
+            if(this.recordInfo == null)
+                this.recordInfo = new RecordInfo(UUID.randomUUID().toString());
+            this.recordInfo.getRecordingType().setExerciseType(exerciseType);
             return this;
         }
 
-        public Builder recordInfo(RecordType recordType) {
-            this.recordInfo = new RecordInfo(UUID.randomUUID().toString());
+        public Builder source(MelomindExerciceSource source) {
+            if(this.recordInfo == null)
+                this.recordInfo = new RecordInfo(UUID.randomUUID().toString());
+            this.recordInfo.getRecordingType().setSource(source);
+            return this;
+        }
+
+        public Builder recordType(RecordType recordType) {
+            if(this.recordInfo == null)
+                this.recordInfo = new RecordInfo(UUID.randomUUID().toString());
+            this.recordInfo.getRecordingType().setRecordType(recordType);
             return this;
         }
 
@@ -194,7 +204,7 @@ public final class RecordConfig {
 
         @Nullable
         public RecordConfig create(){
-            return new RecordConfig(folder, filename, subjectID, recordInfo, condition, projectName, useExternalStorage, timestamp, comments, recordingParameters);
+            return new RecordConfig(folder, filename, subjectID, recordInfo, condition, projectName, useExternalStorage, timestamp, headerComments, recordingParameters);
         }
     }
 
