@@ -529,7 +529,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 
         //Send buffer
         this.gatt.getService(service).getCharacteristic(characteristic).setValue(payload);
-       LogUtils.d(TAG, "write "+ Arrays.toString(gatt.getService(service).getCharacteristic(characteristic).getValue()));
+       //Log.d(TAG, "write "+ Arrays.toString(gatt.getService(service).getCharacteristic(characteristic).getValue()));
        if (!this.gatt.writeCharacteristic(gatt.getService(service).getCharacteristic(characteristic))) { //the mbtgattcontroller onCharacteristicWrite callback is invoked, reporting the result of the operation.
             LogUtils.e(TAG, "Error: failed to write characteristic " + characteristic.toString());
             return false;
@@ -737,6 +737,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * sent by the headset to the SDK once the command is received.
      */
     public void sendCommand(CommandInterface.MbtCommand command){
+
         Object response = null;
 
         if (!isConnectedDeviceReadyForCommand()){ //error returned if no headset is connected
@@ -804,7 +805,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     }
 
     private boolean writeCharacteristic(@NonNull byte[] buffer, UUID service, UUID characteristic, boolean enableNotification) {
-        Log.d(TAG, "write characteristic "+characteristic+ " for service "+service);
+        //Log.d(TAG, "write characteristic "+characteristic+ " for service "+service);
         if (buffer.length == 0)
             return false;
 
@@ -815,8 +816,9 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         if (!startWriteOperation(service, characteristic, buffer)){
             LogUtils.e(TAG, "Failed to send the command the the headset");
             return false;
-        }else
-            LogUtils.d(TAG, "Command sent to the headset");
+        }
+//        else
+//            LogUtils.d(TAG, "Command sent to the headset");
         return true;
     }
 

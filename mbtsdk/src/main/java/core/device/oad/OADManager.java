@@ -183,15 +183,10 @@ public final class OADManager {
      * @param packetIndex is the index of the packet to send
      */
     private void sendOADPacket(int packetIndex) {
-        Log.d(TAG, "Transfer packet "+packetIndex);
+        LogUtils.d(TAG, "Transfer packet "+packetIndex);
 
-        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                if(oadContract != null)
-                    oadContract.transferPacket(oadContext.getPacketsToSend().get(packetIndex));
-            }
-        },2);
+        if(oadContract != null)
+            oadContract.transferPacket(oadContext.getPacketsToSend().get(packetIndex));
     }
 
     /**
