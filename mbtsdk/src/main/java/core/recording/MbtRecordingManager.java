@@ -26,7 +26,16 @@ import eventbus.events.ClientReadyEEGEvent;
 
 public final class MbtRecordingManager extends BaseModuleManager {
 
+    /**
+     * Recording configuration is all the data required to store the EEG packets in a JSON file.
+     * The JSON file content and file name can be defined using this object.
+     */
     private RecordConfig recordConfig;
+
+    /**
+     * Temporary buffer of EEG packets recorded.
+     * This EEG packets are stored in a JSON file
+     */
     private ArrayList<MbtEEGPacket> eegPackets;
 
     /**

@@ -3,7 +3,7 @@ package model;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 
-import core.recording.metadata.MelomindExerciceSource;
+import core.recording.metadata.MelomindExerciseSource;
 import core.recording.metadata.MelomindExerciseType;
 import core.recording.metadata.RecordType;
 
@@ -58,16 +58,16 @@ public class RecordInfo {
     public class RecordingType{
         private RecordType recordType;
         private String spVersion;
-        private MelomindExerciceSource source;
+        private MelomindExerciseSource source;
         private MelomindExerciseType exerciseType;
 
         public RecordingType(){
             this.exerciseType = MelomindExerciseType.DEFAULT;
-            this.source = MelomindExerciceSource.DEFAULT;
+            this.source = MelomindExerciseSource.DEFAULT;
             this.recordType = RecordType.RAWDATA;
         }
 
-        public RecordingType(@NonNull RecordType recordType, @NonNull String spVersion, @NonNull MelomindExerciceSource dataSource, @NonNull MelomindExerciseType exerciseType){
+        public RecordingType(@NonNull RecordType recordType, @NonNull String spVersion, @NonNull MelomindExerciseSource dataSource, @NonNull MelomindExerciseType exerciseType){
             this.exerciseType = exerciseType;
             this.source = dataSource;
             this.spVersion = spVersion;
@@ -90,11 +90,11 @@ public class RecordInfo {
             this.spVersion = SPVersion;
         }
 
-        public MelomindExerciceSource getSource() {
+        public MelomindExerciseSource getSource() {
             return source;
         }
 
-        public void setSource(MelomindExerciceSource source) {
+        public void setSource(MelomindExerciseSource source) {
             this.source = source;
         }
 

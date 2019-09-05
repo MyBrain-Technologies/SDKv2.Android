@@ -3,7 +3,7 @@ package core.recording.metadata;
 /**
  * Source of EEG acquisition
  */
-public enum MelomindExerciceSource {
+public enum MelomindExerciseSource {
     /**
      * Explain that the source of EEG is a free session of melomind application
      */

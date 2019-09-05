@@ -10,7 +10,7 @@ import java.util.Arrays;
 import java.util.UUID;
 
 import core.recording.Comment;
-import core.recording.metadata.MelomindExerciceSource;
+import core.recording.metadata.MelomindExerciseSource;
 import core.recording.metadata.RecordType;
 import core.recording.metadata.MelomindExerciseType;
 import model.RecordInfo;
@@ -61,6 +61,10 @@ public final class RecordConfig {
      */
     private String projectName;
 
+    /**
+     * Additional information that provide more details of the recording condition
+     * Default value is "--".
+     */
     private String condition;
 
     ///CONFIG RELATED TO THE NAME & CONTENT OF THE JSON FILE
@@ -79,10 +83,23 @@ public final class RecordConfig {
 
     ///CONFIG RELATED TO THE CONTENT OF THE JSON FILE
 
+    /**
+     * Optional Additional information stored in the header of the JSON file.
+     */
     private ArrayList<Comment> headerComments;
 
+    /**
+     * Record information that holds the type & source of the EEG data, and the used signal processing algorithms version.
+     * Default values are :
+     * {@link RecordType#RAWDATA} for the record type
+     * {@link MelomindExerciseType#DEFAULT} for the exercice type
+     * {@link MelomindExerciseSource#DEFAULT} for the source
+     */
     private RecordInfo recordInfo;
 
+    /**
+     * Recording parameters are additional optional data stored in the body of the JSON file.
+     */
     private Bundle recordingParameters;
 
     private RecordConfig(String folder,
@@ -152,6 +169,9 @@ public final class RecordConfig {
         return subjectId;
     }
 
+    /**
+     * Optional Additional information stored in the header of the JSON file.
+     */
     public ArrayList<Comment> getHeaderComments() {
         return headerComments;
     }
@@ -164,6 +184,13 @@ public final class RecordConfig {
         return timestamp;
     }
 
+    /**
+     * Record information that holds the type & source of the EEG data, and the used signal processing algorithms version.
+     * Default values are :
+     * {@link RecordType#RAWDATA} for the record type
+     * {@link MelomindExerciseType#DEFAULT} for the exercice type
+     * {@link MelomindExerciseSource#DEFAULT} for the source
+     */
     public RecordInfo getRecordInfo() {
         return recordInfo;
     }
@@ -176,10 +203,17 @@ public final class RecordConfig {
         return projectName;
     }
 
+    /**
+     * Additional information that provide more details of the recording condition
+     * Default value is "--".
+     */
     public String getCondition() {
         return condition;
     }
 
+    /**
+     * Recording parameters are additional optional data stored in the body of the JSON file.
+     */
     public Bundle getRecordingParameters() {
         return recordingParameters;
     }
@@ -229,10 +263,27 @@ public final class RecordConfig {
          * Default value is anonymous.
          */
         private String subjectID = "anonymous";
+        /**
+         * Additional information that provide more details of the recording condition
+         * Default value is "--".
+         */
         private String condition = "--";
 
+        /**
+         * Optional Additional information stored in the header of the JSON file.
+         */
         private ArrayList<Comment> headerComments;
+        /**
+         * Record information that holds the type & source of the EEG data, and the used signal processing algorithms version.
+         * Default values are :
+         * {@link RecordType#RAWDATA} for the record type
+         * {@link MelomindExerciseType#DEFAULT} for the exercice type
+         * {@link MelomindExerciseSource#DEFAULT} for the source
+         */
         private RecordInfo recordInfo;
+        /**
+         * Recording parameters are additional optional data stored in the body of the JSON file.
+         */
         private Bundle recordingParameters;
 
         public Builder(Context context){
@@ -265,11 +316,17 @@ public final class RecordConfig {
             return this;
         }
 
+        /**
+         * Optional Additional information stored in the header of the JSON file.
+         */
         public Builder headerComments(@Nullable ArrayList<Comment> comments) {
             this.headerComments = comments;
             return this;
         }
 
+        /**
+         * Optional Additional information stored in the header of the JSON file.
+         */
         public Builder headerComment(@Nullable Comment... comment) {
             if(this.headerComments == null)
                 this.headerComments = new ArrayList<>(Arrays.asList(comment));
@@ -278,6 +335,10 @@ public final class RecordConfig {
             return this;
         }
 
+        /**
+         * Additional information that provide more details of the recording condition
+         * Default value is "--".
+         */
         public Builder condition(@Nullable String condition) {
             this.condition = condition;
             return this;
@@ -332,6 +393,10 @@ public final class RecordConfig {
             return this;
         }
 
+        /**
+         * Exercise type is the Melomind type of neurofeedback exercise
+         * Default value is {@link MelomindExerciseType#DEFAULT}.
+         */
         public Builder exerciceType(MelomindExerciseType exerciseType) {
             if(this.recordInfo == null)
                 this.recordInfo = new RecordInfo(UUID.randomUUID().toString());
@@ -339,13 +404,21 @@ public final class RecordConfig {
             return this;
         }
 
-        public Builder source(MelomindExerciceSource source) {
+        /**
+         * Source is the Melomind type of program exercise
+         * Default value is {@link MelomindExerciseSource#DEFAULT}.
+         */
+        public Builder source(MelomindExerciseSource source) {
             if(this.recordInfo == null)
                 this.recordInfo = new RecordInfo(UUID.randomUUID().toString());
             this.recordInfo.getRecordingType().setSource(source);
             return this;
         }
 
+        /**
+         * Record type is the type of task performed by the subject who's EEG is recorded
+         * Default value is {@link RecordType#RAWDATA}.
+         */
         public Builder recordType(RecordType recordType) {
             if(this.recordInfo == null)
                 this.recordInfo = new RecordInfo(UUID.randomUUID().toString());
@@ -353,6 +426,9 @@ public final class RecordConfig {
             return this;
         }
 
+        /**
+         * Recording parameters are additional optional data stored in the body of the JSON file.
+         */
         public Builder bodyParameters(@Nullable Bundle recordingParameters){
             this.recordingParameters = recordingParameters;
             return this;

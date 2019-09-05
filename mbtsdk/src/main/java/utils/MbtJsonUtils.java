@@ -136,9 +136,10 @@ public final class MbtJsonUtils {
             jsonWriter.name(RECORDING_NUMBER_KEY);
             jsonWriter.value(RECORDING_NUMBER_PREFIX+ String.format("%02X",totalRecordingNb));
 
-            jsonWriter.name(COMMENTS_KEY);
-            jsonWriter.beginArray();
-            if(!comments.isEmpty()){
+
+            if(comments != null && !comments.isEmpty()){
+                jsonWriter.name(COMMENTS_KEY);
+                jsonWriter.beginArray();
                 for (Comment comment : comments) {
                     jsonWriter.beginObject();
                     jsonWriter.name(COMMENT_DATE_KEY);
@@ -147,8 +148,8 @@ public final class MbtJsonUtils {
                     jsonWriter.value(comment.getComment());
                     jsonWriter.endObject();
                 }
+                jsonWriter.endArray();
             }
-            jsonWriter.endArray();
 
             jsonWriter.name(EEG_PACKET_LENGTH_KEY);
             jsonWriter.value(device.getEegPacketLength());
