@@ -16,34 +16,86 @@ import core.recording.metadata.MelomindExerciseType;
 import model.RecordInfo;
 
 /**
- * This class aims at configuring the stream process. It contains user configurable
- * parameters to specify how the streaming is going to be.
+ * Recording configuration is all the data required to store the EEG packets in a JSON file.
+ * The JSON file content and file name can be defined using this object.
  * <p>Use the {@link Builder} class to instanciate this.</p>
  */
 @Keep
 public final class RecordConfig {
 
+    //CONFIG RELATED TO THE LOCATION OF THE JSON FILE
+
+    /**
+     * Path of the folder where the JSON file that contains the recording can be stored
+     * Default folder used is the root folder.
+     */
     private String folder;
+
+    /**
+     * Boolean flag used to define if the JSON file has to be stored in the folder external to the application folder.
+     * An external folder is located at the root of your Android device internal storage.
+     * An internal folder is located in the Internal storage>Android>data folder.
+     * Default value is false.
+     */
+    private boolean useExternalStorage;
+
+
+    //CONFIG RELATED TO THE NAME OF THE JSON FILE
+
+    /**
+     * Name of the JSON file (format excluded) where the recording is stored.
+     * Default name looks like yyyy-MM-dd_HH:mm:ss.SSS-projectname-devicename-subjectid-condition
+     * Where :
+     * yyyy-MM-dd_HH:mm:ss.SSS is the recording starting timestamp
+     * devicename is the name of the EEG headset used to acquire the EEG
+     * projectname is your application name defined in the Manifest file for the attribute android:name
+     * subjectid is the identifier of the person who's EEG is recorded with the headset
+     * condition is an additional information that provide more details of the recording condition
+     */
 
     private String filename;
 
-    private String subjectId;
-
-    private ArrayList<Comment> headerComments;
-
-    private boolean useExternalStorage;
-
-    private long timestamp;
-
-    private RecordInfo recordInfo;
+    /**
+     * Name of your Android application
+     * Default value is the name defined in your Manifest file for the attribute android:name
+     */
+    private String projectName;
 
     private String condition;
 
-    private String projectName;
+    ///CONFIG RELATED TO THE NAME & CONTENT OF THE JSON FILE
+
+    /**
+     * Identifier of the person who's EEG is recorded.
+     * Default value is anonymous.
+     */
+    private String subjectId;
+
+    /**
+     * Starting date and time of the recording
+     * formatted as the following example: "yyyy-MM-dd_HH:mm:ss.SSS".
+     */
+    private long timestamp;
+
+    ///CONFIG RELATED TO THE CONTENT OF THE JSON FILE
+
+    private ArrayList<Comment> headerComments;
+
+    private RecordInfo recordInfo;
 
     private Bundle recordingParameters;
 
-    private RecordConfig(String folder, String filename, String subjectId, RecordInfo recordInfo, String condition, String projectName, boolean useExternalStorage, long timestamp, ArrayList<Comment> comments, Bundle recordingParameters){
+    private RecordConfig(String folder,
+                         String filename,
+                         String subjectId,
+                         RecordInfo recordInfo,
+                         String condition,
+                         String projectName,
+                         boolean useExternalStorage,
+                         long timestamp,
+                         ArrayList<Comment> comments,
+                         Bundle recordingParameters){
+
         this.folder = folder;
         this.filename = filename;
         this.subjectId = subjectId;
@@ -56,10 +108,24 @@ public final class RecordConfig {
         this.recordingParameters = recordingParameters;
     }
 
+    /**
+     * Path of the folder where the JSON file that contains the recording can be stored.
+     * Default folder used is the root folder.
+     */
     public String getFolder() {
         return folder;
     }
 
+    /**
+     * Name of the JSON file (format excluded) where the recording is stored.
+     * Default name looks like yyyy-MM-dd_HH:mm:ss.SSS-projectname-devicename-subjectid-condition
+     * Where :
+     * yyyy-MM-dd_HH:mm:ss.SSS is the recording starting timestamp
+     * devicename is the name of the EEG headset used to acquire the EEG
+     * projectname is your application name defined in the Manifest file for the attribute android:name
+     * subjectid is the identifier of the person who's EEG is recorded with the headset
+     * condition is an additional information that provide more details of the recording condition
+     */
     public String getFilename() {
         return filename;
     }
@@ -68,6 +134,20 @@ public final class RecordConfig {
         this.filename = filename;
     }
 
+    /**
+     * Boolean flag used to define if the JSON file has to be stored in the folder external to the application folder.
+     * An external folder is located at the root of your Android device internal storage.
+     * An internal folder is located in the Internal storage>Android>data folder.
+     * Default value is false.
+     */
+    public boolean useExternalStorage() {
+        return useExternalStorage;
+    }
+
+    /**
+     * Return the identifier of the person who's EEG is recorded.
+     * Default value is anonymous.
+     */
     public String getSubjectId() {
         return subjectId;
     }
@@ -76,10 +156,10 @@ public final class RecordConfig {
         return headerComments;
     }
 
-    public boolean useExternalStorage() {
-        return useExternalStorage;
-    }
-
+    /**
+     * Starting date and time of the recording
+     * formatted as the following example: "yyyy-MM-dd_HH:mm:ss.SSS".
+     */
     public long getTimestamp() {
         return timestamp;
     }
@@ -88,6 +168,10 @@ public final class RecordConfig {
         return recordInfo;
     }
 
+    /**
+     * Name of your Android application
+     * Default value is the name defined in your Manifest file for the attribute android:name
+     */
     public String getProjectName() {
         return projectName;
     }
@@ -106,14 +190,48 @@ public final class RecordConfig {
     @Keep
     public static class Builder{
 
+        /**
+         * Path of the folder where the JSON file that contains the recording can be stored
+         * Default folder used is the root folder.
+         */
         private String folder = "";
-        private long timestamp;
-        private String projectName;
-        private String subjectID = "";
-        private String condition = "";
+        /**
+         * Name of the JSON file (format excluded) where the recording is stored.
+         * Default name looks like yyyy-MM-dd_HH:mm:ss.SSS-projectname-devicename-subjectid-condition
+         * Where :
+         * yyyy-MM-dd_HH:mm:ss.SSS is the recording starting timestamp
+         * devicename is the name of the EEG headset used to acquire the EEG
+         * projectname is your application name defined in the Manifest file for the attribute android:name
+         * subjectid is the identifier of the person who's EEG is recorded with the headset
+         * condition is an additional information that provide more details of the recording condition
+         */
         private String filename;
-        private ArrayList<Comment> headerComments;
+        /**
+         * Boolean flag used to define if the JSON file has to be stored in the folder external to the application folder.
+         * An external folder is located at the root of your Android device internal storage.
+         * An internal folder is located in the Internal storage>Android>data folder.
+         * Default value is false.
+         */
         private boolean useExternalStorage = false;
+        /**
+         * Starting date and time of the recording
+         * formatted as the following example: "yyyy-MM-dd_HH:mm:ss.SSS".
+         */
+        private long timestamp;
+        /**
+         * Name of your Android application
+         * Default value is the name defined in your Manifest file for the attribute android:name
+         */
+        private String projectName;
+
+        /**
+         * Identifier of the person who's EEG is recorded.
+         * Default value is anonymous.
+         */
+        private String subjectID = "anonymous";
+        private String condition = "--";
+
+        private ArrayList<Comment> headerComments;
         private RecordInfo recordInfo;
         private Bundle recordingParameters;
 
@@ -123,10 +241,25 @@ public final class RecordConfig {
             this.recordInfo = new RecordInfo(UUID.randomUUID().toString());
         }
 
+        /**
+         * Path of the folder where the JSON file can be stored.
+         * Default folder used is the root folder.
+         */
         public Builder folder(@Nullable String folder){
             this.folder = folder;
             return this;
         }
+
+        /**
+         * Name of the JSON file (format excluded) where the recording is stored.
+         * Default name looks like yyyy-MM-dd_HH:mm:ss.SSS-projectname-devicename-subjectid-condition
+         * Where :
+         * yyyy-MM-dd_HH:mm:ss.SSS is the recording starting timestamp
+         * devicename is the name of the EEG headset used to acquire the EEG
+         * projectname is your application name defined in the Manifest file for the attribute android:name
+         * subjectid is the identifier of the person who's EEG is recorded with the headset
+         * condition is an additional information that provide more details of the recording condition
+         */
         public Builder filename(@Nullable String filename){
             this.filename = filename;
             return this;
@@ -150,32 +283,56 @@ public final class RecordConfig {
             return this;
         }
 
+        /**
+         * Identifier of the person who's EEG is recorded.
+         * Default value is anonymous.
+         */
         public Builder subjectID(@Nullable String subjectID) {
             this.subjectID = subjectID;
             return this;
         }
 
+        /**
+         * Define that the JSON file has to be stored in the folder external to the application folder.
+         * An external folder is located at the root of your Android device internal storage.
+         * An internal folder is located in the Internal storage>Android>data folder.
+         * Default folder used is the internal folder.
+         */
         public Builder useExternalStorage() {
             this.useExternalStorage = true;
             return this;
         }
 
+        /**
+         * Define that the JSON file has to be stored in the internal application folder.
+         * An external folder is located at the root of your Android device internal storage.
+         * An internal folder is located in the Internal storage>Android>data folder.
+         * Default folder used is the internal folder.
+         */
         public Builder useInternalStorage() {
             this.useExternalStorage = false;
             return this;
         }
 
+        /**
+         * Starting date and time of the recording
+         * formatted as the following example: "yyyy-MM-dd_HH:mm:ss.SSS".
+         */
         public Builder timestamp(long timestamp) {
             this.timestamp = timestamp;
             return this;
         }
 
+        /**
+         * Name of your Android application
+         * Default value is the name defined in your Manifest file for the attribute android:name
+         */
         public Builder projectName(String projectName) {
             this.projectName = projectName;
             return this;
         }
 
-        public Builder exerciceTyoe(MelomindExerciseType exerciseType) {
+        public Builder exerciceType(MelomindExerciseType exerciseType) {
             if(this.recordInfo == null)
                 this.recordInfo = new RecordInfo(UUID.randomUUID().toString());
             this.recordInfo.getRecordingType().setExerciseType(exerciseType);
@@ -196,7 +353,7 @@ public final class RecordConfig {
             return this;
         }
 
-        public Builder parameters(@Nullable Bundle recordingParameters){
+        public Builder bodyParameters(@Nullable Bundle recordingParameters){
             this.recordingParameters = recordingParameters;
             return this;
         }
@@ -204,7 +361,17 @@ public final class RecordConfig {
 
         @Nullable
         public RecordConfig create(){
-            return new RecordConfig(folder, filename, subjectID, recordInfo, condition, projectName, useExternalStorage, timestamp, headerComments, recordingParameters);
+            return new RecordConfig(
+                    folder,
+                    filename,
+                    subjectID,
+                    recordInfo,
+                    condition,
+                    projectName,
+                    useExternalStorage,
+                    timestamp,
+                    headerComments,
+                    recordingParameters);
         }
     }
 

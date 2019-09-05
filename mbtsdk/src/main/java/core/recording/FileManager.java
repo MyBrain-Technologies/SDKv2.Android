@@ -41,8 +41,6 @@ public final class FileManager {
 
     private final static String FILENAME_SPLITTER = "-";
     private final static String FOLDER_SEPARATOR = "/";
-    private final static String DEFAULT_CONDITION = "--";
-    private final static String DEFAULT_SUBJECT = "anonymous";
     private final static String DATE_FORMAT_PATTERN = "yyyy-MM-dd_HH:mm:ss.SSS";
     private final static String FILE_FORMAT = ".json";
     private final static String RECORDING_FOLDER = "recording";
@@ -71,9 +69,9 @@ public final class FileManager {
                 FILENAME_SPLITTER +
                 deviceName +
                 FILENAME_SPLITTER +
-                (subjectID != null ? subjectID : DEFAULT_SUBJECT) +
+                subjectID +
                 FILENAME_SPLITTER +
-                (condition != null ? condition : DEFAULT_CONDITION);
+                condition;
     }
 
     /**

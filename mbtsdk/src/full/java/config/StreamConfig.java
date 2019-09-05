@@ -33,6 +33,11 @@ public final class StreamConfig {
 
     private boolean computeQualities;
 
+    /**
+     * Recording configuration is all the data required to store the EEG packets in a JSON file.
+     * Default values are used if a non null empty {@link RecordConfig} is given in parameter
+     * of the {@link Builder#recordDataAsJson(RecordConfig)} method
+     */
     private RecordConfig recordConfig;
 
     /**
@@ -47,7 +52,13 @@ public final class StreamConfig {
                 new DeviceStreamingCommands.Triggers(false)
             ));
 
-    private StreamConfig(boolean computeQualities, EegListener<BaseError> eegListener, DeviceStatusListener<BaseError> deviceStatusListener, int notificationPeriod, DeviceStreamingCommands[] deviceCommands, RecordConfig recordConfig){
+    private StreamConfig(boolean computeQualities,
+                         EegListener<BaseError> eegListener,
+                         DeviceStatusListener<BaseError> deviceStatusListener,
+                         int notificationPeriod,
+                         DeviceStreamingCommands[] deviceCommands,
+                         RecordConfig recordConfig){
+
         this.computeQualities = computeQualities;
         this.eegListener = eegListener;
         this.deviceStatusListener = deviceStatusListener;
@@ -102,6 +113,11 @@ public final class StreamConfig {
         return deviceCommands;
     }
 
+    /**
+     * Return the recording configuration that holds all the data required to store the EEG packets in a JSON file.
+     * Default values are used if a non null empty {@link RecordConfig} is given in parameter
+     * of the {@link Builder#recordDataAsJson(RecordConfig)} method
+     */
     public RecordConfig getRecordConfig() {
         return recordConfig;
     }
@@ -142,6 +158,12 @@ public final class StreamConfig {
 
         private boolean computeQualities = false;
 
+        /**
+         * Recording configuration is all the data required to store the EEG packets in a JSON file.
+         * Default values are used if a non null empty {@link RecordConfig} is given in parameter
+         * of the {@link Builder#recordDataAsJson(RecordConfig)} method
+         */
+        @Nullable
         private RecordConfig recordConfig;
 
 
@@ -177,9 +199,14 @@ public final class StreamConfig {
 
         /**
          * Records the data acquired by a myBrain Technologies headset in a JSON file
+         * Recording configuration is all the data required to store the EEG packets in a JSON file.
+         * Default values are used if non null empty {@link RecordConfig} is given in parameter
+         * of the {@link Builder#recordDataAsJson(RecordConfig)} method.
+         * No recording (JSON file) can be created if a null {@link RecordConfig} is given in parameter
+         * of the {@link Builder#recordDataAsJson(RecordConfig)} method.
          * @return the builder instance
          */
-        public Builder recordDataAsJson(RecordConfig recordConfig){
+        public Builder recordDataAsJson(@NonNull RecordConfig recordConfig){
             this.recordConfig = recordConfig;
             return this;
         }
@@ -226,7 +253,13 @@ public final class StreamConfig {
 
         @Nullable
         public StreamConfig create(){
-            return new StreamConfig(this.computeQualities, this.eegListener, this.deviceStatusListener, this.notificationPeriod, this.deviceCommands, this.recordConfig);
+            return new StreamConfig(
+                    this.computeQualities,
+                    this.eegListener,
+                    this.deviceStatusListener,
+                    this.notificationPeriod,
+                    this.deviceCommands,
+                    this.recordConfig);
         }
     }
 
@@ -235,9 +268,11 @@ public final class StreamConfig {
      * @return true is the configuration is correct, false otherwise
      */
     public boolean isConfigCorrect() {
-        if(this.notificationPeriod <  (this.computeQualities ? MbtFeatures.MIN_CLIENT_NOTIFICATION_PERIOD_WITH_QUALITIES_IN_MILLIS : MbtFeatures.MIN_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS))
+        if(this.notificationPeriod <  (this.computeQualities ?
+                MbtFeatures.MIN_CLIENT_NOTIFICATION_PERIOD_WITH_QUALITIES_IN_MILLIS : MbtFeatures.MIN_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS))
             return false;
-        else if(notificationPeriod >  (this.computeQualities ? MbtFeatures.MAX_CLIENT_NOTIFICATION_PERIOD_WITH_QUALITIES_IN_MILLIS : MbtFeatures.MAX_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS))
+        else if(notificationPeriod >  (this.computeQualities ?
+                MbtFeatures.MAX_CLIENT_NOTIFICATION_PERIOD_WITH_QUALITIES_IN_MILLIS : MbtFeatures.MAX_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS))
             return false;
 
         return true;
