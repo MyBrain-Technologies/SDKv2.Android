@@ -70,7 +70,7 @@ public interface DeviceCommands {
 
         @Override
         public String getInvalidityError() {
-            return "You are not allowed to provide a null or empty serial number in the "+this.getClass().getSimpleName()+ " contructor.";
+            return "You are not allowed to provide a null or empty serial number in the "+this.getClass().getSimpleName()+ " constructor.";
         }
 
         @Override
@@ -141,7 +141,7 @@ public interface DeviceCommands {
 
         @Override
         public String getInvalidityError() {
-            return "You are not allowed to provide a null or empty external name in the "+this.getClass().getSimpleName()+ " contructor.";
+            return "You are not allowed to provide a null or empty external name in the "+this.getClass().getSimpleName()+ " constructor.";
         }
 
         @Override
@@ -208,7 +208,7 @@ public interface DeviceCommands {
 
         @Override
         public String getInvalidityError() {
-            return "You are not allowed to provide a null or empty product name in the "+this.getClass().getSimpleName()+ " contructor.";
+            return "You are not allowed to provide a null or empty product name in the "+this.getClass().getSimpleName()+ " constructor.";
         }
 
         @Override
@@ -260,7 +260,7 @@ public interface DeviceCommands {
 
         @Override
         public String getInvalidityError() {
-            return "You are not allowed to provide a null CommandCallback instance in the "+this.getClass().getSimpleName()+ " contructor.";
+            return "You are not allowed to provide a null CommandCallback instance in the "+this.getClass().getSimpleName()+ " constructor.";
         }
 
         @Override

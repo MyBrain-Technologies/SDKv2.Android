@@ -69,7 +69,7 @@ public interface DeviceStreamingCommands {
 
         @Override
         public String getInvalidityError() {
-            return "You are not allowed to provide a null FilterConfig instance in the "+this.getClass().getSimpleName()+ " contructor.";
+            return "You are not allowed to provide a null FilterConfig instance in the "+this.getClass().getSimpleName()+ " constructor.";
         }
 
         @Override
@@ -132,7 +132,7 @@ public interface DeviceStreamingCommands {
 
         @Override
         public String getInvalidityError() {
-            return "You are not allowed to provide a null FilterConfig instance in the "+this.getClass().getSimpleName()+ " contructor.";
+            return "You are not allowed to provide a null FilterConfig instance in the "+this.getClass().getSimpleName()+ " constructor.";
         }
 
         @Override
@@ -197,7 +197,7 @@ public interface DeviceStreamingCommands {
 
         @Override
         public String getInvalidityError() {
-            return "You are not allowed to provide a null AmpGainConfig instance in the "+this.getClass().getSimpleName()+ " contructor.";
+            return "You are not allowed to provide a null AmpGainConfig instance in the "+this.getClass().getSimpleName()+ " constructor.";
         }
 
         @Override
@@ -385,7 +385,7 @@ public interface DeviceStreamingCommands {
 
         @Override
         public String getInvalidityError() {
-            return "You are not allowed to provide a null CommandCallback instance in the "+this.getClass().getSimpleName()+ " contructor.";
+            return "You are not allowed to provide a null CommandCallback instance in the "+this.getClass().getSimpleName()+ " constructor.";
         }
 
         @Override

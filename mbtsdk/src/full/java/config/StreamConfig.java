@@ -264,10 +264,10 @@ public final class StreamConfig {
     }
 
     /**
-     * Checks if the configuration parameters are correct
+     * Checks if the notification configuration parameters are correct
      * @return true is the configuration is correct, false otherwise
      */
-    public boolean isConfigCorrect() {
+    public boolean isNotificationConfigCorrect() {
         if(this.notificationPeriod <  (this.computeQualities ?
                 MbtFeatures.MIN_CLIENT_NOTIFICATION_PERIOD_WITH_QUALITIES_IN_MILLIS : MbtFeatures.MIN_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS))
             return false;
@@ -276,6 +276,19 @@ public final class StreamConfig {
             return false;
 
         return true;
+    }
+
+    /**
+     * Checks if the record configuration parameters are correct
+     * @return true is the configuration is correct, false otherwise
+     */
+    public boolean isRecordConfigCorrect() {
+        return recordConfig == null ||
+                (recordConfig.getFilename() != null
+                || (recordConfig.getProjectName() != null
+                    && recordConfig.getRecordInfo() != null
+                    && recordConfig.getSubjectId() != null
+                    && recordConfig.getCondition() != null));
     }
 
 }

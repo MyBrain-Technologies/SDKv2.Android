@@ -286,7 +286,7 @@ public enum BtState {
     private BaseError associatedError;
 
     /**
-     * This contructor is used for the states that are not considered as a failure state (more explanation are available on the description of the associatedError variable)
+     * This constructor is used for the states that are not considered as a failure state (more explanation are available on the description of the associatedError variable)
      * It is included between 0 and the value of BtState.CONNECTED_AND_READY.ordinal(),
      * which returns the ordinal of this enumeration constant (its position in its enum declaration, where the initial constant is assigned an ordinal of zero).
      * For example, the IDLE state is the initial state so its order value is 0.
@@ -294,7 +294,7 @@ public enum BtState {
     BtState() { }
 
     /**
-     * This contructor is used for the states that are considered as a failure state
+     * This constructor is used for the states that are considered as a failure state
      * @param error is the Error to return to the SDK user
      */
     BtState(@Nullable BaseError error) {

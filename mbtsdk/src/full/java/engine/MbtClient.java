@@ -157,11 +157,14 @@ public final class MbtClient {
      */
     @SuppressWarnings("unchecked")
     public void startStream(@NonNull StreamConfig streamConfig){
-        if(!streamConfig.isConfigCorrect())
+        if(!streamConfig.isNotificationConfigCorrect())
             streamConfig.getEegListener().onError(ConfigError.ERROR_INVALID_PARAMS, streamConfig.shouldComputeQualities() ?
                     ConfigError.NOTIFICATION_PERIOD_RANGE_QUALITIES : ConfigError.NOTIFICATION_PERIOD_RANGE);
         else
             MbtConfig.setEegBufferLengthClientNotif((streamConfig.getNotificationPeriod()* MbtFeatures.DEFAULT_SAMPLE_RATE)/1000);
+
+        if(streamConfig.getRecordConfig() != null && !streamConfig.isRecordConfigCorrect())
+            streamConfig.getEegListener().onError(ConfigError.ERROR_INVALID_PARAMS, ConfigError.MISSING_RECORDING_CONFIG);
 
         mbtManager.startStream(streamConfig);
     }
