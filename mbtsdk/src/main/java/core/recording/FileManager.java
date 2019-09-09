@@ -141,19 +141,21 @@ public final class FileManager {
                                   @NonNull File file,
                                   @NonNull String subjectId,
                                   @NonNull MbtDevice device,
-                                  @Nullable List<MbtEEGPacket> eegPackets,
+                                  @NonNull List<MbtEEGPacket> eegPackets,
                                   @Nullable Bundle recordingParams,
                                   @NonNull final RecordInfo recordInfo,
                                   @NonNull final int totalRecordingInSession,
                                   @NonNull ArrayList<Comment> comments,
                                   @NonNull long timestamp){
         if(file == null) {
-            LogUtils.e(TAG, "Error: Null file");
+            LogUtils.e(TAG, "Error: storing failed. Null file");
             return null;
         }
 
         try (final FileWriter fw = new FileWriter(file)) {
-            MbtRecording recording = MbtJsonUtils.convertEEGPacketListToRecordings(recordInfo, timestamp, eegPackets, device.getInternalConfig().getStatusBytes() > 0);
+            MbtRecording recording = MbtJsonUtils.convertEEGPacketsToRecording(device.getNbChannels(), recordInfo, timestamp, eegPackets, device.getInternalConfig().getStatusBytes() > 0);
+            LogUtils.e(TAG, "New recording created : "+recording.toString());
+
             String json = MbtJsonUtils.serializeRecording(device, recording, totalRecordingInSession, comments, recordingParams, subjectId);
             fw.append(json);
             fw.close();
@@ -172,7 +174,7 @@ public final class FileManager {
                     });
 
         } catch (IOException e) {
-            Log.e("writeJsonFile", "Exception catch " + e.getMessage());
+            Log.e("Error: storing failed.", "Exception catch " + e.getMessage());
             return null;
         }
 
@@ -184,6 +186,8 @@ public final class FileManager {
      * @param savedRecordings is the map that contains all the JSON previously created on the app
      */
     static void updateJSONWithCurrentRecordNb(Map<String, String> savedRecordings) {
+        LogUtils.d(TAG,"Updating JSON files record number: "+savedRecordings.size());
+
         final Map<String, Long> savedMap = new HashMap<>();
         Map tmp = new HashMap(savedRecordings);
         tmp.keySet().removeAll(savedMap.keySet());
@@ -204,6 +208,8 @@ public final class FileManager {
      * @param recordingNb the new recording number to write
      */
     public static synchronized void readJsonAsStreamAndUpdateRecordNb(String filename, int recordingNb) {
+        LogUtils.d(TAG,"Opening JSON file "+filename);
+
         char[] input = new char[2000];
         //final String recordStringHook = "\"recordingNb\":\"0x";
         final String recordStringHook = RECORDING_NUMBER_KEY+"\":\""+MbtJsonUtils.RECORDING_NUMBER_PREFIX;
@@ -224,7 +230,8 @@ public final class FileManager {
                     Log.i(TAG, "recordingNb found at pos " + (pos + recordStringHook.length()));
                     String oldValue = inputAsString.substring(pos + recordStringHook.length(), pos + recordStringHook.length() + 2);
                     String newValue = String.format("%02X", recordingNb);
-                    Log.d(TAG, "old value is " + oldValue + " new value is " + newValue);
+                    LogUtils.d(TAG,"Replacing recording number "+oldValue + " to "+newValue);
+
                     String updatedInputAsString = inputAsString.replace(recordStringHook+oldValue,recordStringHook + newValue);
                     Log.d(TAG, "s2 is " + updatedInputAsString);
                     bufferedReader.close();

@@ -17,14 +17,18 @@ import core.device.DeviceEvents;
 import core.eeg.MbtEEGManager;
 import core.eeg.signalprocessing.ContextSP;
 import core.eeg.storage.MbtEEGPacket;
+import engine.clientevents.RecordingError;
 import eventbus.EventBusManager;
 import eventbus.events.ClientReadyEEGEvent;
+import utils.LogUtils;
 
 /**
  * Created by Etienne on 08/02/2018.
  */
 
 public final class MbtRecordingManager extends BaseModuleManager {
+
+    private static String TAG = MbtRecordingManager.class.getName();
 
     /**
      * Recording configuration is all the data required to store the EEG packets in a JSON file.
@@ -55,7 +59,8 @@ public final class MbtRecordingManager extends BaseModuleManager {
     @Subscribe
     public void onStreamRequest(final StreamRequestEvent request) {
         if (request.isStart()) { //start streaming
-            if (request.recordDataAsJson()){
+            if (request.recordData()){
+                LogUtils.d(TAG," Start recording "+recordConfig.toString());
                 recordConfig = request.getRecordConfig();
                 savedRecordings = new HashMap<>();
                 eegPackets = new ArrayList<>();
@@ -74,6 +79,7 @@ public final class MbtRecordingManager extends BaseModuleManager {
      */
     private void saveRecording() {
         if(recordConfig != null){
+            LogUtils.d(TAG," Saving buffer of "+eegPackets.size()+ " packets.");
 
             EventBusManager.postEvent(new DeviceEvents.GetDeviceEvent(), new EventBusManager.Callback<DeviceEvents.PostDeviceEvent>(){
                 @Override
@@ -89,15 +95,18 @@ public final class MbtRecordingManager extends BaseModuleManager {
                                     recordConfig.getSubjectId(),
                                     recordConfig.getCondition()));
 
+                        LogUtils.d(TAG,"JSON(Folder: "+recordConfig.getFolder()+" Filename: "+recordConfig.getFilename()+")"+" External storage: "+recordConfig.useExternalStorage()+")");
+
                         File file = FileManager.createFile(mContext,
                                 recordConfig.getFolder(),
                                 recordConfig.getFilename(),
                                 recordConfig.useExternalStorage());
                         if(file == null){
+                            LogUtils.e(TAG, RecordingError.ERROR_CREATE.getMessage());
                             //onError(RecordingError.ERROR_CREATE, "Null file");
                             return null;
                         }
-                        FileManager.storeDataInFile(mContext,
+                        String recordingPath = FileManager.storeDataInFile(mContext,
                                 file,
                                 recordConfig.getSubjectId(),
                                 device.getDevice(),
@@ -108,9 +117,14 @@ public final class MbtRecordingManager extends BaseModuleManager {
                                 recordConfig.getHeaderComments(),
                                 recordConfig.getTimestamp());
 
-                        //Check if Recordings map is empty or not to update the number of recording in each recording JSON file
-                        if(!savedRecordings.isEmpty())
-                            FileManager.updateJSONWithCurrentRecordNb(savedRecordings);
+                        LogUtils.d(TAG,"Recording stored in file: "+recordingPath);
+
+                        if(recordingPath != null) {
+                            savedRecordings.put(recordingPath, recordConfig.getRecordInfo().getRecordId());
+                            //Check if Recordings map is empty or not to update the number of recording in each recording JSON file
+                            if (savedRecordings.size() > 1)
+                                FileManager.updateJSONWithCurrentRecordNb(savedRecordings);
+                        }
                     }
                     return null;
                 }

@@ -288,7 +288,7 @@ public final class RecordConfig {
 
         public Builder(Context context){
             this.timestamp = System.currentTimeMillis();
-            this.projectName = context.getApplicationInfo().name;
+            this.projectName = context.getString(context.getApplicationInfo().labelRes);
             this.recordInfo = new RecordInfo(UUID.randomUUID().toString());
         }
 
@@ -451,4 +451,19 @@ public final class RecordConfig {
         }
     }
 
+    @Override
+    public String toString() {
+        return "RecordConfig{" +
+                "folder='" + folder + '\'' +
+                ", useExternalStorage=" + useExternalStorage +
+                ", filename='" + filename + '\'' +
+                ", projectName='" + projectName + '\'' +
+                ", condition='" + condition + '\'' +
+                ", subjectId='" + subjectId + '\'' +
+                ", timestamp=" + timestamp +
+                ", headerComments=" + headerComments +
+                ", recordInfo=" + recordInfo +
+                ", recordingParameters=" + recordingParameters +
+                '}';
+    }
 }

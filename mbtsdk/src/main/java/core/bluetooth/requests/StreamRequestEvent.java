@@ -32,7 +32,7 @@ public class StreamRequestEvent extends BluetoothRequests {
         return computeQualities;
     }
 
-    public boolean recordDataAsJson() {
+    public boolean recordData() {
         return recordConfig != null;
     }
 

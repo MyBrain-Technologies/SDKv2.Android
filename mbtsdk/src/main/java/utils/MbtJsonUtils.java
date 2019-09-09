@@ -275,8 +275,12 @@ public final class MbtJsonUtils {
     }
 
 
-    public static MbtRecording convertEEGPacketListToRecordings(@NonNull RecordInfo recordInfo, @NonNull long timestamp, @NonNull List<MbtEEGPacket> eegPackets, @NonNull boolean hasStatus){
-        return new MbtRecording(recordInfo, timestamp, eegPackets, hasStatus);
+    public static MbtRecording convertEEGPacketsToRecording(@NonNull int nbChannels,
+                                                            @NonNull RecordInfo recordInfo,
+                                                            @NonNull long timestamp,
+                                                            @NonNull List<MbtEEGPacket> eegPackets,
+                                                            @NonNull boolean hasStatus){
+        return new MbtRecording(nbChannels, recordInfo, timestamp, eegPackets, hasStatus);
     }
 
 }
