@@ -263,7 +263,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         }
 
         try {
-            Thread.sleep(50);
+            Thread.sleep(1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -281,7 +281,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             asyncOperation.waitOperationResult(MbtConfig.getBluetoothA2DpConnectionTimeout());
             return true;
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            LogUtils.d(TAG,"Enabling notification failed : "+e);
+            LogUtils.e(TAG,"Enabling notification failed : "+e);
             return false;
         }
     }
@@ -630,14 +630,14 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             LogUtils.e(TAG, "Error : received response is not related to Bluetooth connection");
             return;
         }
-        LogUtils.i(TAG, "Received response for " + (mailboxEvent == DeviceCommandEvents.MBX_CONNECT_IN_A2DP ? "connection" : "disconnection" + " : " + mailboxResponse));
+        LogUtils.i(TAG, "Received response for " + (mailboxEvent == DeviceCommandEvents.MBX_CONNECT_IN_A2DP ? "connection" : "disconnection") + " : " + mailboxResponse);
 
         if(mailboxEvent == DeviceCommandEvents.MBX_CONNECT_IN_A2DP){
             if(BitUtils.areByteEquals(CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED, mailboxResponse))
                 mbtBluetoothManager.notifyConnectionStateChanged(BtState.JACK_CABLE_CONNECTED);
 
             else if(BitUtils.areByteEquals(CMD_CODE_CONNECT_IN_A2DP_SUCCESS, mailboxResponse)
-                || BitUtils.areByteEquals(CMD_CODE_CONNECT_IN_A2DP_FAILED_ALREADY_CONNECTED, mailboxResponse))
+                /*|| BitUtils.areByteEquals(CMD_CODE_CONNECT_IN_A2DP_FAILED_ALREADY_CONNECTED, mailboxResponse)*/)
                 mbtBluetoothManager.notifyConnectionStateChanged(BtState.AUDIO_BT_CONNECTION_SUCCESS);
         }else
             mbtBluetoothManager.notifyConnectionStateChanged(BtState.AUDIO_BT_DISCONNECTED);

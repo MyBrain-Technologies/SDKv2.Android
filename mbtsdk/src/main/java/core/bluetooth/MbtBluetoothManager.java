@@ -319,7 +319,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                         break;
                     case BT_PARAMETERS_CHANGED:
                         startSendingExternalName();
-                       break;
+                        break;
                         case CONNECTED:
                         startConnectionForAudioStreaming();
                         break;
@@ -738,6 +738,12 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 updateConnectionState(BtState.BONDING_FAILURE);
         }
 
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
         switchToNextConnectionStep();
     }
 
@@ -806,7 +812,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 if (connectionRetryCounter < MAX_CONNECTION_RETRY) {
                     connectionRetryCounter++;
                     try {
-                        Thread.sleep(50);
+                        Thread.sleep(200);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -814,12 +820,14 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 } else {
                     connectionRetryCounter = 0;
                     mbtBluetoothA2DP.notifyConnectionStateChanged(BtState.CONNECTION_FAILURE); //at this point : current state should be AUDIO_CONNECTED if audio connection succeeded
+                    mbtBluetoothLE.notifyConnectionStateChanged(BtState.CONNECTION_FAILURE);
                 }
             }
 
         }
         if(isConnected())
             updateConnectionState(true); //BLE and audio (if SDK user requested it) are connected so the client is notified that the device is fully connected
+
         requestBeingProcessed = false;
 
         LogUtils.i(TAG, "connection completed");
