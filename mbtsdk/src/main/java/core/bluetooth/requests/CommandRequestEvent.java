@@ -1,6 +1,8 @@
 package core.bluetooth.requests;
 
 
+import java.io.Serializable;
+
 import command.CommandInterface.MbtCommand;
 
 /**
@@ -9,7 +11,7 @@ import command.CommandInterface.MbtCommand;
  *  or get values stored by the headset
  *  or ask the headset to perform an action. .
  */
-public class CommandRequestEvent extends BluetoothRequests{
+public class CommandRequestEvent extends BluetoothRequests implements Serializable {
 
     /**
      * Mailbox command sent from the SDK to the headset

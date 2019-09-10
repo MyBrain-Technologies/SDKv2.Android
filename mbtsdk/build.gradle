@@ -7,8 +7,8 @@ android {
     defaultConfig {
         minSdkVersion 22
         targetSdkVersion 28
-        versionCode 6
-        versionName '2.0.5'
+        versionCode 9
+        versionName '2.1.0'
         flavorDimensions "default"
         testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'
     }
@@ -25,22 +25,26 @@ android {
             buildConfigField "boolean", "EEG_ENABLED", "true"
             buildConfigField "boolean", "BLUETOOTH_ENABLED", "true"
             buildConfigField "boolean", "DEVICE_ENABLED", "true"
+            buildConfigField "String", "FIRMWARE_VERSION", "\"1_7_4\""
         }
         staging {
             buildConfigField "boolean", "EEG_ENABLED", "true"
             buildConfigField "boolean", "BLUETOOTH_ENABLED", "true"
             buildConfigField "boolean", "DEVICE_ENABLED", "true"
+            buildConfigField "String", "FIRMWARE_VERSION", "\"1_7_4\""
         }
         debug {
             buildConfigField "boolean", "EEG_ENABLED", "true"
             buildConfigField "boolean", "BLUETOOTH_ENABLED", "true"
             buildConfigField "boolean", "DEVICE_ENABLED", "true"
+            buildConfigField "String", "FIRMWARE_VERSION", "\"1_7_4\""
         }
         unitTests {
             initWith (buildTypes.debug)
             buildConfigField "boolean", "EEG_ENABLED", "false"
             buildConfigField "boolean", "BLUETOOTH_ENABLED", "true"
             buildConfigField "boolean", "DEVICE_ENABLED", "false"
+            buildConfigField "String", "FIRMWARE_VERSION", "\"1_7_4\""
         }
     }
 
@@ -99,16 +103,19 @@ project.afterEvaluate {
     publishing {
         publications {
             full(MavenPublication) {
-                def libName = "lib_full_release_${android.defaultConfig.versionName}.aar"
-                //Select the library name here
-
                 groupId 'mybraintech.com'
                 artifactId 'sdk-full'
                 version android.defaultConfig.versionName
 
                 artifact(fullSourcesJar)
                 artifact(fullJavadocJar)
-                artifact("$buildDir/outputs/aar/${libName}")
+
+                //android.buildTypes.all { buildType ->//Select the library name here
+                    def libName = "lib_full_release_${android.defaultConfig.versionName}.aar"
+                    artifact("$buildDir/outputs/aar/${libName}")
+                //}
+
+
                 //we can force send to nexus the version we want by changing the aar name
                 pom.withXml {
                     def dependenciesNode = asNode().appendNode('dependencies')
@@ -126,18 +133,18 @@ project.afterEvaluate {
             }
 
             lite(MavenPublication) {
-                def libName = "lib_lite_release_${android.defaultConfig.versionName}.aar"
-                //Select the library name here
-
                 groupId 'mybraintech.com'
                 artifactId 'sdk-lite'
                 version android.defaultConfig.versionName
 
-                afterEvaluate {
-                    artifact(liteSourcesJar)
-                    artifact(liteJavadocJar)
-                }
-                artifact("$buildDir/outputs/aar/${libName}")
+                artifact(liteSourcesJar)
+                artifact(liteJavadocJar)
+
+                //android.buildTypes.all { buildType ->//Select the library name here
+                    def libName = "lib_lite_release_${android.defaultConfig.versionName}.aar"
+                    artifact("$buildDir/outputs/aar/${libName}")
+                //}
+
                 //we can force send to nexus the version we want by changing the aar name
                 pom.withXml {
                     def dependenciesNode = asNode().appendNode('dependencies')
@@ -170,7 +177,7 @@ project.afterEvaluate {
 
 //Task to generate sources into Jar file
 task liteSourcesJar(type: Jar) {
-    classifier = 'sources'
+    archiveClassifier.set('sources')
     from android.sourceSets.main.java.srcDirs
     from (android.sourceSets.lite.java.srcDirs){
         exclude('core')
@@ -179,7 +186,7 @@ task liteSourcesJar(type: Jar) {
 }
 
 task fullSourcesJar(type: Jar) {
-    classifier = 'sources'
+    archiveClassifier.set('sources')
     from android.sourceSets.main.java.srcDirs
     from android.sourceSets.full.java.srcDirs
 }
@@ -204,13 +211,13 @@ task fullJavadoc(type: Javadoc) {
 
 //Task to generate javadoc as Jar file from html task
 task liteJavadocJar(type: Jar, dependsOn: liteJavadoc) {
-    classifier = 'javadoc'
+    archiveClassifier.set('javadoc')
     from liteJavadoc.destinationDir
 }
 
 //Task to generate javadoc as Jar file from html task
 task fullJavadocJar(type: Jar, dependsOn: fullJavadoc) {
-    classifier = 'javadoc'
+    archiveClassifier.set('javadoc')
     from fullJavadoc.destinationDir
 }
 

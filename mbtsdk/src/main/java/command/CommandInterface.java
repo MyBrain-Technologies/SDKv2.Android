@@ -97,7 +97,7 @@ public interface CommandInterface<E extends BaseError> extends BaseErrorEvent<E>
         }
 
         public void onError(E error, String additionalInfo) {
-            Log.d(TAG, "Command not sent " + error.toString());
+            Log.d(TAG, "Error: " + error.toString());
             if (commandCallback != null)
                 commandCallback.onError(this, error, additionalInfo);
         }
@@ -115,7 +115,7 @@ public interface CommandInterface<E extends BaseError> extends BaseErrorEvent<E>
         }
 
         public boolean isResponseExpected() {
-            return this.commandCallback instanceof CommandCallback;
+            return (this.commandCallback instanceof CommandCallback);
         }
 
         /**

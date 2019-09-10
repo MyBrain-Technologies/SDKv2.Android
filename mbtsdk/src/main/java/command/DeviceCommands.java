@@ -36,8 +36,7 @@ public interface DeviceCommands {
          * call the {@link UpdateSerialNumber}(String serialNumber, {@linkCommandCallback<DeviceCommand, byte[]>)} constructor.
          */
         public UpdateSerialNumber(String serialNumber) {
-            super(DeviceCommandEvents.MBX_SET_SERIAL_NUMBER,
-                    DeviceCommandEvents.MBX_SET_SERIAL_NUMBER_ADDITIONAL);
+            super(DeviceCommandEvent.MBX_SET_SERIAL_NUMBER);
             this.serialNumber = serialNumber;
             init();
         }
@@ -56,8 +55,7 @@ public interface DeviceCommands {
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
         public UpdateSerialNumber(String serialNumber, CommandInterface.CommandCallback<byte[]> commandCallback) {
-            super(DeviceCommandEvents.MBX_SET_SERIAL_NUMBER,
-                    DeviceCommandEvents.MBX_SET_SERIAL_NUMBER_ADDITIONAL);
+            super(DeviceCommandEvent.MBX_SET_SERIAL_NUMBER);
             this.serialNumber = serialNumber;
             this.commandCallback = commandCallback;
             init();
@@ -107,8 +105,7 @@ public interface DeviceCommands {
          * @param externalName the new external name value to set
          */
         public UpdateExternalName(String externalName) {
-            super(DeviceCommandEvents.MBX_SET_EXTERNAL_NAME,
-                    DeviceCommandEvents.MBX_SET_EXTERNAL_NAME_ADDITIONAL);
+            super(DeviceCommandEvent.MBX_SET_EXTERNAL_NAME);
             this.externalName = externalName;
             init();
         }
@@ -127,8 +124,7 @@ public interface DeviceCommands {
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
         public UpdateExternalName(String externalName, CommandInterface.CommandCallback<byte[]> commandCallback) {
-            super(DeviceCommandEvents.MBX_SET_EXTERNAL_NAME,
-                    DeviceCommandEvents.MBX_SET_EXTERNAL_NAME_ADDITIONAL);
+            super(DeviceCommandEvent.MBX_SET_EXTERNAL_NAME);
             this.commandCallback = commandCallback;
             this.externalName = externalName;
             init();
@@ -176,7 +172,7 @@ public interface DeviceCommands {
          * @param productName is the new product name value to set
          */
         public UpdateProductName(String productName) {
-            super(DeviceCommandEvents.MBX_SET_PRODUCT_NAME);
+            super(DeviceCommandEvent.MBX_SET_PRODUCT_NAME);
             this.productName = productName;
             init();
         }
@@ -195,7 +191,7 @@ public interface DeviceCommands {
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
         public UpdateProductName(String productName, CommandInterface.CommandCallback<byte[]> commandCallback) {
-            super(DeviceCommandEvents.MBX_SET_PRODUCT_NAME);
+            super(DeviceCommandEvent.MBX_SET_PRODUCT_NAME);
             this.commandCallback = commandCallback;
             this.productName = productName;
             init();
@@ -248,7 +244,7 @@ public interface DeviceCommands {
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
         public GetSystemStatus(CommandInterface.CommandCallback<byte[]> commandCallback) {
-            super(DeviceCommandEvents.MBX_SYS_GET_STATUS);
+            super(DeviceCommandEvent.MBX_SYS_GET_STATUS);
             this.commandCallback = commandCallback;
             init(); //must be called after the commandCallback initialisation : isValid will return false otherwise
         }
@@ -285,8 +281,7 @@ public interface DeviceCommands {
          * No response is returned by the headset if the command succeeds.
          */
         public Reboot() {
-            super(DeviceCommandEvents.MBX_SYS_REBOOT_EVT,
-                    DeviceCommandEvents.MBX_SYS_REBOOT_EVT_ADDITIONAL);
+            super(DeviceCommandEvent.MBX_SYS_REBOOT_EVT);
 
             init(false);
         }
@@ -298,8 +293,7 @@ public interface DeviceCommands {
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
         public Reboot(CommandInterface.ICommandCallback commandCallback) {
-            super(DeviceCommandEvents.MBX_SYS_REBOOT_EVT,
-                    DeviceCommandEvents.MBX_SYS_REBOOT_EVT_ADDITIONAL);
+            super(DeviceCommandEvent.MBX_SYS_REBOOT_EVT);
             this.commandCallback = commandCallback;
             init(false);
         }
@@ -341,8 +335,7 @@ public interface DeviceCommands {
          * call the {@link ConnectAudio}({@link CommandInterface.CommandCallback}<DeviceCommand, byte[]> commandCallback) constructor
          */
         public ConnectAudio() {
-            super(DeviceCommandEvents.MBX_CONNECT_IN_A2DP,
-                    DeviceCommandEvents.MBX_CONNECT_IN_A2DP_ADDITIONAL);
+            super(DeviceCommandEvent.MBX_CONNECT_IN_A2DP);
             init();
         }
 
@@ -360,8 +353,7 @@ public interface DeviceCommands {
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
         public ConnectAudio(CommandInterface.CommandCallback<byte[]> commandCallback) {
-            super(DeviceCommandEvents.MBX_CONNECT_IN_A2DP,
-                    DeviceCommandEvents.MBX_CONNECT_IN_A2DP_ADDITIONAL);
+            super(DeviceCommandEvent.MBX_CONNECT_IN_A2DP);
             this.commandCallback = commandCallback;
             init();
         }
@@ -402,8 +394,7 @@ public interface DeviceCommands {
          * call the {@link DisconnectAudio}({@link CommandInterface.CommandCallback}<DeviceCommand, byte[]> commandCallback) constructor
          */
         public DisconnectAudio() {
-            super(DeviceCommandEvents.MBX_DISCONNECT_IN_A2DP,
-                    DeviceCommandEvents.MBX_DISCONNECT_IN_A2DP_ADDITIONAL);
+            super(DeviceCommandEvent.MBX_DISCONNECT_IN_A2DP);
             init();
         }
 
@@ -421,8 +412,7 @@ public interface DeviceCommands {
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
         public DisconnectAudio(CommandInterface.CommandCallback<byte[]> commandCallback) {
-            super(DeviceCommandEvents.MBX_DISCONNECT_IN_A2DP,
-                    DeviceCommandEvents.MBX_DISCONNECT_IN_A2DP_ADDITIONAL);
+            super(DeviceCommandEvent.MBX_DISCONNECT_IN_A2DP);
             this.commandCallback = commandCallback;
             init();
         }

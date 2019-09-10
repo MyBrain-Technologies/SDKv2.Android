@@ -11,6 +11,8 @@ import core.bluetooth.BtProtocol;
 import core.eeg.MbtEEGManager;
 import core.eeg.storage.RawEEGSample;
 import features.MbtDeviceType;
+import utils.BitUtils;
+import utils.ConversionUtils;
 import utils.LogUtils;
 
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
@@ -112,21 +114,6 @@ public class MbtDataAcquisition {
         }
     }
 
-
-    /**
-     * Returns 1 if the bit is set, otherwise returns 0
-     * to fill the status data array
-     *
-     * @param tempStatus is the current byte to set
-     * @param bit        is the index of the current byte
-     * @return 1 to fill the status data array if the bit is set, otherwise returns 0
-     */
-    private static Float isBitSet(byte tempStatus, int bit) {
-        return ((tempStatus & (1 << bit)) != 0) ? 1f : 0f;
-    }
-
-
-
     /**
      * Fills the status data list corresponding to the EEG data array.
      * If the frames are consecutive, the status data list contains only 2 values : 0 or 1.
@@ -138,7 +125,12 @@ public class MbtDataAcquisition {
     private Float generateStatusData(int count) {
         if (protocol == BLUETOOTH_LE && singleRawEEGList != null) {
 
-            return statusDataBytes == null ? Float.NaN : (isBitSet(count < 8 ? statusDataBytes[0] : statusDataBytes[1], count));
+            return statusDataBytes == null ?
+                    Float.NaN :
+                    (ConversionUtils.booleanToFloat(
+                            BitUtils.isBitSet(count < 8 ? // return 1f to fill the status data array if the bit is set, otherwise returns 0f
+                                            statusDataBytes[0] : statusDataBytes[1],
+                                    (byte) 1, count)));
         }
         return Float.NaN; //TODO handle SPP
     }

@@ -23,13 +23,7 @@ public abstract class DeviceCommand <T, U extends BaseError> extends CommandInte
      * Unique identifier of the command.
      * This code is sent to the headset in the write characteristic operation.
      */
-    private byte identifierCode;
-
-    /**
-     * Optional additional code associated to the identifier code
-     * to add security and avoid requests sent by hackers
-     */
-    private /*T*/byte[] additionalCodes;
+    private DeviceCommandEvent commandEvent;
 
     /**
      * Buffer that hold the identifier code,
@@ -38,21 +32,23 @@ public abstract class DeviceCommand <T, U extends BaseError> extends CommandInte
      */
     private ByteBuffer rawDataBuffer;
 
-    DeviceCommand(byte mailboxCode) {
-        this.identifierCode = mailboxCode;
-    }
-
-    DeviceCommand(byte mailboxCode, byte/*T*/... additionalCodes) {
-        this.identifierCode = mailboxCode;
-        this.additionalCodes = additionalCodes;
+    DeviceCommand(DeviceCommandEvent commandEvent) {
+        this.commandEvent = commandEvent;
     }
 
     /**
      * Return the unique identifier of the command
      * @return the unique identifier of the command
      */
-    public byte getCode() {
-        return identifierCode;
+    public DeviceCommandEvent getIdentifier() {
+        return commandEvent;
+    }
+
+    /**
+     * Change the unique identifier of the command
+     */
+    public void setCommandEvent(DeviceCommandEvent commandEvent) {
+        this.commandEvent = commandEvent;
     }
 
     /**
@@ -62,10 +58,13 @@ public abstract class DeviceCommand <T, U extends BaseError> extends CommandInte
     private void allocateBuffer(){
         rawDataBuffer = null; //reset the temporary buffer
 
-        int bufferSize = 1; //the buffer contains at least the identifier device command identifier code
+        int bufferSize = 0;
 
-        if(additionalCodes != null)
-            bufferSize += additionalCodes.length;
+        if(commandEvent != null)
+            bufferSize +=1;
+
+        if(commandEvent != null && commandEvent.getAdditionalCodes() != null)
+            bufferSize += commandEvent.getAdditionalCodes().length;
 
         if(getData() != null) //get data returns the optional data specific to the implemented class
             bufferSize += getData().length;
@@ -78,12 +77,14 @@ public abstract class DeviceCommand <T, U extends BaseError> extends CommandInte
      * to the raw data buffer to send to the headset
      */
     private void fillHeader(){
-        rawDataBuffer.put(identifierCode);
+        if(commandEvent != null) {
+            rawDataBuffer.put(commandEvent.getIdentifierCode());
 
-        if(additionalCodes != null)
-            for(byte singleCode : additionalCodes){
-                rawDataBuffer.put(singleCode);
-            }
+            if (commandEvent.getAdditionalCodes() != null)
+                for (byte singleCode : commandEvent.getAdditionalCodes()) {
+                    rawDataBuffer.put(singleCode);
+                }
+        }
     }
 
     /**

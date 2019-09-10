@@ -2,8 +2,8 @@ package engine.clientevents;
 
 import android.support.annotation.Keep;
 
-import core.device.DCOffsets;
-import core.device.SaturationEvent;
+import core.device.event.DCOffsetEvent;
+import core.device.event.SaturationEvent;
 
 @Keep
 public interface DeviceStatusListener<U extends BaseError> extends BaseErrorEvent<U>{
@@ -17,5 +17,5 @@ public interface DeviceStatusListener<U extends BaseError> extends BaseErrorEven
          * Callback indicating that the headset has measured a new dc offset
          * @param dcOffsets the new measured offsets at a specific time.
          */
-        void onNewDCOffsetMeasured(DCOffsets dcOffsets);
+        void onNewDCOffsetMeasured(DCOffsetEvent dcOffsets);
     }
