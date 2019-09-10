@@ -106,8 +106,24 @@ public class RecordInfo {
             this.exerciseType = exerciseType;
         }
 
+        @Override
+        public String toString() {
+            return "RecordingType{" +
+                    "recordType=" + recordType +
+                    ", spVersion='" + spVersion + '\'' +
+                    ", source=" + source +
+                    ", exerciseType=" + exerciseType +
+                    '}';
+        }
     }
 
+    @Override
+    public String toString() {
+        return "RecordInfo{" +
+                "recordId='" + recordId + '\'' +
+                ", recordingType=" + recordingType +
+                '}';
+    }
 }
 
 

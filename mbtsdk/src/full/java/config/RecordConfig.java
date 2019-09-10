@@ -3,13 +3,14 @@ package config;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.Keep;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.UUID;
 
-import core.recording.Comment;
+import core.recording.metadata.Comment;
 import core.recording.metadata.MelomindExerciseSource;
 import core.recording.metadata.RecordType;
 import core.recording.metadata.MelomindExerciseType;
@@ -92,7 +93,7 @@ public final class RecordConfig {
      * Record information that holds the type & source of the EEG data, and the used signal processing algorithms version.
      * Default values are :
      * {@link RecordType#RAWDATA} for the record type
-     * {@link MelomindExerciseType#DEFAULT} for the exercice type
+     * {@link MelomindExerciseType#DEFAULT} for the exercise type
      * {@link MelomindExerciseSource#DEFAULT} for the source
      */
     private RecordInfo recordInfo;
@@ -101,6 +102,11 @@ public final class RecordConfig {
      * Recording parameters are additional optional data stored in the body of the JSON file.
      */
     private Bundle recordingParameters;
+
+    /**
+     * Enable multiple recordings
+     */
+    private boolean enableMultipleRecordings;
 
     private RecordConfig(String folder,
                          String filename,
@@ -111,7 +117,8 @@ public final class RecordConfig {
                          boolean useExternalStorage,
                          long timestamp,
                          ArrayList<Comment> comments,
-                         Bundle recordingParameters){
+                         Bundle recordingParameters,
+                         boolean enableMultipleRecordings){
 
         this.folder = folder;
         this.filename = filename;
@@ -123,6 +130,7 @@ public final class RecordConfig {
         this.condition = condition;
         this.projectName = projectName;
         this.recordingParameters = recordingParameters;
+        this.enableMultipleRecordings = enableMultipleRecordings;
     }
 
     /**
@@ -188,7 +196,7 @@ public final class RecordConfig {
      * Record information that holds the type & source of the EEG data, and the used signal processing algorithms version.
      * Default values are :
      * {@link RecordType#RAWDATA} for the record type
-     * {@link MelomindExerciseType#DEFAULT} for the exercice type
+     * {@link MelomindExerciseType#DEFAULT} for the exercise type
      * {@link MelomindExerciseSource#DEFAULT} for the source
      */
     public RecordInfo getRecordInfo() {
@@ -217,6 +225,22 @@ public final class RecordConfig {
     public Bundle getRecordingParameters() {
         return recordingParameters;
     }
+
+    public boolean enableMultipleRecordings() {
+        return enableMultipleRecordings;
+    }
+
+    //    /**
+//     * Checks if the recording configuration parameters are correct
+//     * @return true is the configuration is correct, false otherwise
+//     */
+//    public boolean isRecordConfigCorrect() {
+//        return (getFilename() != null/*
+//                        || (getProjectName() != null
+//                        && getRecordInfo() != null
+//                        && getSubjectId() != null
+//                        && getCondition() != null)*/);
+//    }
 
     /**
      * Builder class to ease construction of the {@link RecordConfig} instance.
@@ -262,12 +286,12 @@ public final class RecordConfig {
          * Identifier of the person who's EEG is recorded.
          * Default value is anonymous.
          */
-        private String subjectID = "anonymous";
+        private String subjectID = "-";
         /**
          * Additional information that provide more details of the recording condition
          * Default value is "--".
          */
-        private String condition = "--";
+        private String condition = "";
 
         /**
          * Optional Additional information stored in the header of the JSON file.
@@ -277,7 +301,7 @@ public final class RecordConfig {
          * Record information that holds the type & source of the EEG data, and the used signal processing algorithms version.
          * Default values are :
          * {@link RecordType#RAWDATA} for the record type
-         * {@link MelomindExerciseType#DEFAULT} for the exercice type
+         * {@link MelomindExerciseType#DEFAULT} for the exercise type
          * {@link MelomindExerciseSource#DEFAULT} for the source
          */
         private RecordInfo recordInfo;
@@ -286,9 +310,11 @@ public final class RecordConfig {
          */
         private Bundle recordingParameters;
 
+        private boolean enableMultipleRecordings = false;
+
         public Builder(Context context){
             this.timestamp = System.currentTimeMillis();
-            this.projectName = context.getString(context.getApplicationInfo().labelRes);
+            this.projectName = context.getString(context.getApplicationInfo().labelRes).replace(" ","");
             this.recordInfo = new RecordInfo(UUID.randomUUID().toString());
         }
 
@@ -397,7 +423,7 @@ public final class RecordConfig {
          * Exercise type is the Melomind type of neurofeedback exercise
          * Default value is {@link MelomindExerciseType#DEFAULT}.
          */
-        public Builder exerciceType(MelomindExerciseType exerciseType) {
+        public Builder exerciseType(MelomindExerciseType exerciseType) {
             if(this.recordInfo == null)
                 this.recordInfo = new RecordInfo(UUID.randomUUID().toString());
             this.recordInfo.getRecordingType().setExerciseType(exerciseType);
@@ -427,6 +453,15 @@ public final class RecordConfig {
         }
 
         /**
+         *
+         * @return
+         */
+        public Builder enableMultipleRecordings(){
+            this.enableMultipleRecordings = true;
+            return this;
+        }
+
+        /**
          * Recording parameters are additional optional data stored in the body of the JSON file.
          */
         public Builder bodyParameters(@Nullable Bundle recordingParameters){
@@ -434,8 +469,7 @@ public final class RecordConfig {
             return this;
         }
 
-
-        @Nullable
+        @NonNull
         public RecordConfig create(){
             return new RecordConfig(
                     folder,
@@ -447,7 +481,8 @@ public final class RecordConfig {
                     useExternalStorage,
                     timestamp,
                     headerComments,
-                    recordingParameters);
+                    recordingParameters,
+                    enableMultipleRecordings);
         }
     }
 
@@ -466,4 +501,5 @@ public final class RecordConfig {
                 ", recordingParameters=" + recordingParameters +
                 '}';
     }
+
 }

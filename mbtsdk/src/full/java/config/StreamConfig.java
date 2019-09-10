@@ -1,5 +1,6 @@
 package config;
 
+import android.content.Context;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -11,7 +12,7 @@ import java.util.Arrays;
 import command.DeviceCommand;
 import command.DeviceStreamingCommands;
 import core.eeg.storage.MbtEEGPacket;
-import core.recording.Comment;
+import engine.MbtClient;
 import engine.clientevents.BaseError;
 import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.EegListener;
@@ -36,7 +37,7 @@ public final class StreamConfig {
     /**
      * Recording configuration is all the data required to store the EEG packets in a JSON file.
      * Default values are used if a non null empty {@link RecordConfig} is given in parameter
-     * of the {@link Builder#recordDataAsJson(RecordConfig)} method
+     * of the {@link Builder#recordData(RecordConfig)} method
      */
     private RecordConfig recordConfig;
 
@@ -116,7 +117,7 @@ public final class StreamConfig {
     /**
      * Return the recording configuration that holds all the data required to store the EEG packets in a JSON file.
      * Default values are used if a non null empty {@link RecordConfig} is given in parameter
-     * of the {@link Builder#recordDataAsJson(RecordConfig)} method
+     * of the {@link Builder#recordData(RecordConfig)} method
      */
     public RecordConfig getRecordConfig() {
         return recordConfig;
@@ -161,7 +162,7 @@ public final class StreamConfig {
         /**
          * Recording configuration is all the data required to store the EEG packets in a JSON file.
          * Default values are used if a non null empty {@link RecordConfig} is given in parameter
-         * of the {@link Builder#recordDataAsJson(RecordConfig)} method
+         * of the {@link Builder#recordData(RecordConfig)} method
          */
         @Nullable
         private RecordConfig recordConfig;
@@ -199,14 +200,29 @@ public final class StreamConfig {
 
         /**
          * Records the data acquired by a myBrain Technologies headset in a JSON file
-         * Recording configuration is all the data required to store the EEG packets in a JSON file.
-         * Default values are used if non null empty {@link RecordConfig} is given in parameter
-         * of the {@link Builder#recordDataAsJson(RecordConfig)} method.
-         * No recording (JSON file) can be created if a null {@link RecordConfig} is given in parameter
-         * of the {@link Builder#recordDataAsJson(RecordConfig)} method.
+         * Default config values are used if you use {@link config.StreamConfig.Builder#recordData(Context)}
+         * You can also set your own config if you use {@link config.StreamConfig.Builder#recordData(RecordConfig)}
          * @return the builder instance
          */
-        public Builder recordDataAsJson(@NonNull RecordConfig recordConfig){
+        public Builder recordData(Context context){
+            this.recordConfig = new RecordConfig.Builder(context).create();
+            return this;
+        }
+
+        /**
+         * Records the data acquired by a myBrain Technologies headset in a JSON file
+         * Recording configuration is all the data required to store the EEG packets in a JSON file.
+         * Default values are used if a non null empty {@link RecordConfig} is given in parameter
+         * of the {@link Builder#recordData(RecordConfig)} method.
+         * No recording (JSON file) can be created if a null {@link RecordConfig} is given in parameter
+         * of the {@link Builder#recordData(RecordConfig)} method.
+         * The record config can be set in the RecordConfig input of the {@link engine.MbtClient#startStream(StreamConfig)}  and / or {@link MbtClient#stopStream((StreamConfig)}  method.
+         * If a record config is passed in input of both methods, the {@link MbtClient#stopStream((StreamConfig)}  config input overrides the {@link engine.MbtClient#startStream(StreamConfig)} config one.
+         * If a record config is passed in input of the {@link engine.MbtClient#startStream(StreamConfig)}  method only, this config is used for building the recording file.
+         * If a record config is passed in input of the {@link MbtClient#stopStream((StreamConfig)} method only, this config is used for building the recording file.
+         * @return the builder instance
+         */
+        public Builder recordData(@NonNull RecordConfig recordConfig){
             this.recordConfig = recordConfig;
             return this;
         }
@@ -276,19 +292,6 @@ public final class StreamConfig {
             return false;
 
         return true;
-    }
-
-    /**
-     * Checks if the record configuration parameters are correct
-     * @return true is the configuration is correct, false otherwise
-     */
-    public boolean isRecordConfigCorrect() {
-        return recordConfig == null ||
-                (recordConfig.getFilename() != null
-                || (recordConfig.getProjectName() != null
-                    && recordConfig.getRecordInfo() != null
-                    && recordConfig.getSubjectId() != null
-                    && recordConfig.getCondition() != null));
     }
 
 }

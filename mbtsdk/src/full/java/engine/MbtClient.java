@@ -9,6 +9,7 @@ import android.support.annotation.Nullable;
 
 import command.CommandInterface;
 import config.MbtConfig;
+import config.RecordConfig;
 import config.StreamConfig;
 import config.ConnectionConfig;
 import core.MbtManager;
@@ -163,8 +164,8 @@ public final class MbtClient {
         else
             MbtConfig.setEegBufferLengthClientNotif((streamConfig.getNotificationPeriod()* MbtFeatures.DEFAULT_SAMPLE_RATE)/1000);
 
-        if(streamConfig.getRecordConfig() != null && !streamConfig.isRecordConfigCorrect())
-            streamConfig.getEegListener().onError(ConfigError.ERROR_INVALID_PARAMS, ConfigError.MISSING_RECORDING_CONFIG);
+//        if(streamConfig.getRecordConfig() != null && !streamConfig.getRecordConfig().isRecordConfigCorrect())
+//            streamConfig.getEegListener().onError(ConfigError.ERROR_INVALID_PARAMS, ConfigError.MISSING_RECORDING_CONFIG);
 
         mbtManager.startStream(streamConfig);
     }
@@ -172,9 +173,18 @@ public final class MbtClient {
     /**
      * Stops the currently running eeg stream. This stops bluetooth acquisition and
      * reinit all internal buffering system.
+     * A recording config can be set when you start or stop the stream so that the EEG data can be recorded
+     */
+    public void stopStream(RecordConfig recordConfig){
+        mbtManager.stopStream(recordConfig);
+    }
+
+    /**
+     * Stops the currently running eeg stream. This stops bluetooth acquisition and
+     * reinit all internal buffering system.
      */
     public void stopStream(){
-        mbtManager.stopStream();
+        mbtManager.stopStream(null);
     }
 
     /**

@@ -1,4 +1,4 @@
-package core.recording;
+package core.recording.localstorage;
 
 import android.Manifest;
 import android.content.Context;
@@ -23,36 +23,33 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import core.device.model.MbtDevice;
-import core.eeg.storage.MbtEEGPacket;
+import core.recording.metadata.Comment;
 import model.MbtRecording;
-import model.RecordInfo;
 import utils.AsyncUtils;
 import utils.LogUtils;
-import utils.MbtJsonUtils;
 
-import static utils.MbtJsonUtils.RECORDING_NUMBER_KEY;
+import static core.recording.localstorage.MbtJsonBuilder.RECORDING_NUMBER_KEY;
 
 public final class FileManager {
     private static final String TAG = FileManager.class.getName();
 
     private final static String FILENAME_SPLITTER = "-";
     private final static String FOLDER_SEPARATOR = "/";
-    private final static String DATE_FORMAT_PATTERN = "yyyy-MM-dd_HH:mm:ss.SSS";
+    private final static String DATE_FORMAT_PATTERN = "yyyy-MM-dd_HH-mm-ss.SSS";
     private final static String FILE_FORMAT = ".json";
     private final static String RECORDING_FOLDER = "recording";
 
     /**
      * Create a new file name according to the name standardization decided by MBT.
      *
-     * @param timestamp   the record start timestamp
-     * @param projectName the project in which the record is started
+     * @param timestamp   the recording start timestamp
+     * @param projectName the project in which the recording is started
      * @param deviceName  the device name
      * @param subjectID   the EEG owner ID
-     * @param condition   the record condition
+     * @param condition   the recording condition
      * @return the filename as a string
      */
     public static String createFilename(@NonNull long timestamp,
@@ -64,14 +61,11 @@ public final class FileManager {
         final SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT_PATTERN);
 
         return sdf.format(date) +
-                FILENAME_SPLITTER +
-                projectName +
-                FILENAME_SPLITTER +
-                deviceName +
-                FILENAME_SPLITTER +
-                subjectID +
-                FILENAME_SPLITTER +
-                condition;
+                FILENAME_SPLITTER + projectName +
+                FILENAME_SPLITTER + deviceName +
+                FILENAME_SPLITTER + subjectID +
+                (condition == null || condition.isEmpty() ?
+                        "" : FILENAME_SPLITTER + condition );
     }
 
     /**
@@ -105,7 +99,7 @@ public final class FileManager {
      * @param useExternalStorage
      * @return
      */
-    static File createFile(@NonNull final Context context,
+    public static File createFile(@NonNull final Context context,
                            @Nullable String folder,
                            @NonNull String filename,
                            boolean useExternalStorage)
@@ -137,26 +131,23 @@ public final class FileManager {
      * @param comments A list of commentary with their timestamp
      * @return the absolute path of the file to save it in the Map
      */
-    static String storeDataInFile(@NonNull final Context context,
-                                  @NonNull File file,
-                                  @NonNull String subjectId,
-                                  @NonNull MbtDevice device,
-                                  @NonNull List<MbtEEGPacket> eegPackets,
-                                  @Nullable Bundle recordingParams,
-                                  @NonNull final RecordInfo recordInfo,
-                                  @NonNull final int totalRecordingInSession,
-                                  @NonNull ArrayList<Comment> comments,
-                                  @NonNull long timestamp){
-        if(file == null) {
+    public static String storeRecordingInFile(@NonNull final Context context,
+                                              @NonNull File file,
+                                              @NonNull String subjectId,
+                                              @NonNull MbtDevice device,
+                                              @NonNull MbtRecording recording,
+                                              @Nullable Bundle recordingParams,
+                                              @NonNull final int totalRecordingInSession,
+                                              @Nullable ArrayList<Comment> comments){
+
+        if(file == null || device == null || device.getInternalConfig() == null) {
             LogUtils.e(TAG, "Error: storing failed. Null file");
             return null;
         }
 
         try (final FileWriter fw = new FileWriter(file)) {
-            MbtRecording recording = MbtJsonUtils.convertEEGPacketsToRecording(device.getNbChannels(), recordInfo, timestamp, eegPackets, device.getInternalConfig().getStatusBytes() > 0);
-            LogUtils.e(TAG, "New recording created : "+recording.toString());
 
-            String json = MbtJsonUtils.serializeRecording(device, recording, totalRecordingInSession, comments, recordingParams, subjectId);
+            String json = MbtJsonBuilder.serializeRecording(device, recording, totalRecordingInSession, comments, recordingParams, subjectId);
             fw.append(json);
             fw.close();
 
@@ -185,8 +176,7 @@ public final class FileManager {
      * Updates all current records in the map with
      * @param savedRecordings is the map that contains all the JSON previously created on the app
      */
-    static void updateJSONWithCurrentRecordNb(Map<String, String> savedRecordings) {
-        LogUtils.d(TAG,"Updating JSON files record number: "+savedRecordings.size());
+    public static void updateJSONWithCurrentRecordNb(Map<String, String> savedRecordings) {
 
         final Map<String, Long> savedMap = new HashMap<>();
         Map tmp = new HashMap(savedRecordings);
@@ -196,6 +186,7 @@ public final class FileManager {
             @Override
             public void run() {
                 for (String filepath : savedMap.keySet()) {
+                    LogUtils.d(TAG,"Updating file "+filepath+" with Recording number: "+(savedRecordings.size()));
                     readJsonAsStreamAndUpdateRecordNb(filepath, savedMap.size());
                 }
             }
@@ -212,7 +203,7 @@ public final class FileManager {
 
         char[] input = new char[2000];
         //final String recordStringHook = "\"recordingNb\":\"0x";
-        final String recordStringHook = RECORDING_NUMBER_KEY+"\":\""+MbtJsonUtils.RECORDING_NUMBER_PREFIX;
+        final String recordStringHook = RECORDING_NUMBER_KEY+"\":\""+MbtJsonBuilder.RECORDING_NUMBER_PREFIX;
         boolean replaced = false;
         File file = new File(filename);
         try {

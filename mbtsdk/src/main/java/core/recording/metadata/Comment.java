@@ -1,4 +1,4 @@
-package core.recording;
+package core.recording.metadata;
 
 import android.os.Parcel;
 import android.os.Parcelable;

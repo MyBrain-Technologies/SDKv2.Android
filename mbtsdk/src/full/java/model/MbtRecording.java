@@ -10,6 +10,7 @@ import java.util.List;
 
 import core.eeg.storage.MbtEEGPacket;
 import utils.LogUtils;
+import utils.MatrixUtils;
 
 
 /**
@@ -18,8 +19,8 @@ import utils.LogUtils;
 public class MbtRecording implements Serializable{
 
     @Nullable
-    private final RecordInfo recordInfo;
-    private final long recordingTime;
+    private RecordInfo recordInfo;
+    private long recordingTime;
     private int nbPackets;
     private int firstPacketID;
     private ArrayList<ArrayList<Float>> qualities;
@@ -33,9 +34,13 @@ public class MbtRecording implements Serializable{
                         @NonNull List<MbtEEGPacket> eegPackets,
                         @NonNull final boolean hasStatus) {
 
+        if(eegPackets == null)
+            return;
+
         this.recordingTime = recordingTime;
         this.recordInfo = recordInfo;
         this.firstPacketID = 0;
+        this.nbPackets = eegPackets.size();
 
         this.eegData = new ArrayList<>();
         this.qualities = new ArrayList<>();
@@ -52,12 +57,13 @@ public class MbtRecording implements Serializable{
 
     private void assemblePackets(boolean hasStatus, List<MbtEEGPacket> eegPackets){
         if(eegPackets != null && !eegPackets.isEmpty()) {
+
             for (MbtEEGPacket eegPacket : eegPackets) {
 
                 //RAW EEG
                 for(int eegIndex = 0; eegIndex < eegPacket.getChannelsData().size(); eegIndex++){
-                    if(eegIndex >= eegData.size())
-                        eegData.add(new ArrayList<>());
+//                    if(eegIndex >= eegData.size())
+//                        eegData.add(new ArrayList<>());
                     for (Float rawEEG : eegPacket.getChannelsData().get(eegIndex)) {
                         eegData.get(eegIndex).add(rawEEG);
                     }
@@ -112,7 +118,7 @@ public class MbtRecording implements Serializable{
                 ", recordingTime=" + recordingTime +
                 ", nbPackets=" + nbPackets +
                 ", firstPacketID=" + firstPacketID +
-                ", qualities=" + (qualities != null ? qualities.size() : "null")+
+                ", qualities=" + (qualities != null ? (qualities.size()+"x"+qualities.get(0).size()) : "null")+
                 ", eegData=" + (eegData != null && eegData.size() > 0 ? eegData.size()+"x"+eegData.get(0).size() : eegData)+
                 ", status=" + (status != null ? status.size() : "null") +
                 '}';
