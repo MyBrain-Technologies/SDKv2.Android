@@ -4,12 +4,14 @@ import android.bluetooth.BluetoothDevice;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import core.device.model.FirmwareVersion;
 import core.device.model.MbtDevice;
+import eventbus.MbtEventBus;
 import features.MbtDeviceType;
 
 /**
  * This interface contains all required object classes to communicate with the DEVICE module using
- * the {@link eventbus.EventBusManager} bus.
+ * the {@link MbtEventBus} bus.
  */
 public interface DeviceEvents {
 
@@ -40,30 +42,6 @@ public interface DeviceEvents {
             return device;
         }
     }
-
-
-    class FoundDeviceEvent {
-        @Nullable
-        private final BluetoothDevice device;
-
-        private final MbtDeviceType deviceType;
-
-        public FoundDeviceEvent(@Nullable BluetoothDevice device, MbtDeviceType deviceType){
-            this.device = device;
-            this.deviceType = deviceType;
-        }
-
-        @Nullable
-        public BluetoothDevice getDevice() {
-            return device;
-        }
-
-        MbtDeviceType getDeviceType() {
-            return deviceType;
-        }
-    }
-
-    class DisconnectedDeviceEvent {    }
 
     class AudioDisconnectedDeviceEvent {    }
 
@@ -98,19 +76,15 @@ public interface DeviceEvents {
         }
     }
 
-    /**
-     * Event that returns the headset's response after the SDK has sent a command to it using Mailbox or other characteristic writing methods
-     */
-    class RawDeviceResponseEvent {
-        private byte[] rawResponse;
+    class StartOADUpdate {
+        private FirmwareVersion firmwareVersion;
 
-        public RawDeviceResponseEvent(byte[] rawResponse){
-            this.rawResponse = rawResponse;
+        public StartOADUpdate(FirmwareVersion firmwareVersion) {
+            this.firmwareVersion = firmwareVersion;
         }
 
-        public byte[] getRawResponse() {
-            return rawResponse;
+        public FirmwareVersion getFirmwareVersion() {
+            return firmwareVersion;
         }
     }
-
 }

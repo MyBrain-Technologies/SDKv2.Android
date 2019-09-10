@@ -12,9 +12,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
-import core.bluetooth.lowenergy.MbtBluetoothLE;
 import core.device.model.DeviceInfo;
-import core.oad.OADEvent;
 
 import utils.LogUtils;
 import utils.MbtLock;
@@ -32,7 +30,13 @@ public abstract class MbtBluetooth implements IConnectable{
 
     private final static String TAG = MbtBluetooth.class.getName();
 
+    @NonNull
+    protected IStreamable.StreamState streamingState = IStreamable.StreamState.IDLE;
+
     private volatile BtState currentState = BtState.IDLE;
+
+    protected boolean isUpdating;
+
 
     @Nullable
     protected BluetoothAdapter bluetoothAdapter;
@@ -59,12 +63,6 @@ public abstract class MbtBluetooth implements IConnectable{
         mbtBluetoothManager.notifyDeviceInfoReceived(deviceInfo, deviceValue);
     }
 
-    void notifyOADEvent(OADEvent eventType, int value){
-//        if(this.oadEventListener != null){
-//            this.oadEventListener.onOadEvent(eventType, value);
-//        }
-    }
-
     /**
      * Set the current bluetooth connection state to the value given in parameter
      * and notify the bluetooth manager of this change.
@@ -81,7 +79,7 @@ public abstract class MbtBluetooth implements IConnectable{
 
             if(currentState.isResettableState(previousState)) {  //if a disconnection occurred
                 resetCurrentState();//reset the current connection state to IDLE
-                if(this instanceof MbtBluetoothA2DP)
+                if(this instanceof MbtBluetoothA2DP && !currentState.equals(BtState.UPGRADING))
                     mbtBluetoothManager.disconnectAllBluetooth(false); //audio has failed to connect : we disconnect BLE
             }if(currentState.isDisconnectableState())  //if a failure occurred
                 disconnect(); //disconnect if a headset is connected
@@ -99,12 +97,6 @@ public abstract class MbtBluetooth implements IConnectable{
         else {
             this.currentState = newState;
         }
-    }
-
-    void notifyMailboxEvent(byte code, Object value){
-//        if(this.mailboxEventListener != null){
-//            this.mailboxEventListener.onMailBoxEvent(code, value);
-//        }
     }
 
     protected void notifyBatteryReceived(int value){
@@ -155,7 +147,6 @@ public abstract class MbtBluetooth implements IConnectable{
         this.bluetoothAdapter.enable();
         Boolean b = lock.waitAndGetResult(5000);
         if(b == null){
-            Log.e(TAG, "impossible to enable BT adapter");
             return false;
         }
         return b;
@@ -168,4 +159,21 @@ public abstract class MbtBluetooth implements IConnectable{
             this.currentState = currentState;
         }
     }
+
+    /**
+     * Disable then enable the bluetooth adapter
+     */
+    public boolean resetMobileDeviceBluetoothAdapter() {
+        LogUtils.d(TAG, "Reset Bluetooth adapter");
+
+        bluetoothAdapter.disable();
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+       return enableBluetoothOnDevice();
+    }
+
 }
