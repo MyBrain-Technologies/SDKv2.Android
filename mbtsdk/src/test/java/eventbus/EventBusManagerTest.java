@@ -30,11 +30,11 @@ public class EventBusManagerTest {
     @Test
     public void postEvent_CommandRequestEvent_noCallback_validEvent() {
         EventBus bus = Mockito.spy(EventBus.class);
-        EventBusManager.BUS = bus;
+        MbtEventBus.BUS = bus;
         SimpleRequestCallback callback = Mockito.mock(SimpleRequestCallback.class);
         CommandRequestEvent requestEvent = new CommandRequestEvent(new DeviceCommands.ConnectAudio());
 
-        EventBusManager.postEvent(requestEvent);
+        MbtEventBus.postEvent(requestEvent);
         Mockito.verify(bus).post(requestEvent);
         Mockito.verify(bus,Mockito.never()).register(callback);
     }
@@ -48,7 +48,7 @@ public class EventBusManagerTest {
     public void postEvent_CommandRequestEvent_noCallback_nullEvent() {
         EventBus bus = Mockito.spy(EventBus.class);
 
-        EventBusManager.postEvent(null);
+        MbtEventBus.postEvent(null);
         Mockito.verify(bus, Mockito.never()).post(null);
     }
 
@@ -67,7 +67,7 @@ public class EventBusManagerTest {
         };
         EventBus bus = Mockito.spy(EventBus.class);
 
-        EventBusManager.postEvent(null, callback);
+        MbtEventBus.postEvent(null, callback);
         Mockito.verify(bus,Mockito.never()).register(callback);
         Mockito.verify(bus, Mockito.never()).post(null);
     }
@@ -81,7 +81,7 @@ public class EventBusManagerTest {
     public void postEvent_CommandRequestEvent_withCallback_nullCallbackEvent() {
         EventBus bus = Mockito.spy(EventBus.class);
 
-        EventBusManager.postEvent(null, null);
+        MbtEventBus.postEvent(null, null);
         Mockito.verify(bus,Mockito.never()).register(null);
         Mockito.verify(bus, Mockito.never()).post(null);
     }

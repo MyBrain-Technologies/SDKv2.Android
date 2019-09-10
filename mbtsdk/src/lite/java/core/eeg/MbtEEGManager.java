@@ -27,7 +27,7 @@ import core.eeg.signalprocessing.MBTSignalQualityChecker;
 import core.eeg.acquisition.MbtDataConversion;
 import core.eeg.storage.MbtDataBuffering;
 import core.eeg.storage.RawEEGSample;
-import eventbus.EventBusManager;
+import eventbus.MbtEventBus;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.BluetoothEEGEvent;
 import features.MbtFeatures;
@@ -145,7 +145,7 @@ public final class MbtEEGManager extends BaseModuleManager {
                 if (hasQualities) {
                     eegPackets.setQualities(MbtEEGManager.this.computeEEGSignalQuality(eegPackets));
                 }
-                EventBusManager.postEvent(new ClientReadyEEGEvent(eegPackets));
+                MbtEventBus.postEvent(new ClientReadyEEGEvent(eegPackets));
             }
         });
 
@@ -202,7 +202,7 @@ public final class MbtEEGManager extends BaseModuleManager {
             LogUtils.i(TAG,"quality computation duration is " + (System.currentTimeMillis()-tsBefore));
             return new ArrayList<>(Arrays.asList(ArrayUtils.toObject(qualities)));
         }
-//        EventBusManager.postEvent(new QualityRequest(null, listedQualities));
+//        MbtEventBus.postEvent(new QualityRequest(null, listedQualities));
 //        //requestBeingProcessed  = false;
         return null;
     }
@@ -239,7 +239,7 @@ public final class MbtEEGManager extends BaseModuleManager {
      * Unregister the MbtEEGManager class from the bus to avoid memory leak
      */
     public void deinit() { //TODO CALL WHEN MbtEEGManager IS NOT USED ANYMORE TO AVOID MEMORY LEAK
-        EventBusManager.registerOrUnregister(false, this);
+        MbtEventBus.registerOrUnregister(false, this);
     }
 
 

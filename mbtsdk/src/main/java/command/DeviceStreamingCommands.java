@@ -37,7 +37,7 @@ public interface DeviceStreamingCommands {
          * @param notchFilter is the new Notch filter to apply
          */
         public NotchFilter(FilterConfig notchFilter) {
-            super(DeviceCommandEvents.MBX_SET_NOTCH_FILT);
+            super(DeviceCommandEvent.MBX_SET_NOTCH_FILT);
             this.notchFilter = notchFilter;
             init();
         }
@@ -56,7 +56,7 @@ public interface DeviceStreamingCommands {
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
         public NotchFilter(FilterConfig notchFilter, CommandInterface.CommandCallback<byte[]> commandCallback) {
-            super(DeviceCommandEvents.MBX_SET_NOTCH_FILT);
+            super(DeviceCommandEvent.MBX_SET_NOTCH_FILT);
             this.notchFilter = notchFilter;
             this.commandCallback = commandCallback;
             init();
@@ -100,7 +100,7 @@ public interface DeviceStreamingCommands {
          * @param bandpassFilter is the new Bandpass filter to apply
          */
         public BandpassFilter(FilterConfig bandpassFilter) {
-            super(DeviceCommandEvents.MBX_SET_BANDPASS_FILT);
+            super(DeviceCommandEvent.MBX_SET_BANDPASS_FILT);
             this.bandpassFilter = bandpassFilter;
             init();
         }
@@ -119,7 +119,7 @@ public interface DeviceStreamingCommands {
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
         public BandpassFilter(FilterConfig bandpassFilter, CommandInterface.CommandCallback<byte[]> commandCallback) {
-            super(DeviceCommandEvents.MBX_SET_BANDPASS_FILT);
+            super(DeviceCommandEvent.MBX_SET_BANDPASS_FILT);
             this.bandpassFilter = bandpassFilter;
             this.commandCallback = commandCallback;
             init();
@@ -164,7 +164,7 @@ public interface DeviceStreamingCommands {
          * @param ampGainConfig is the new Amplifier gain to apply
          */
         public AmplifierGain(AmpGainConfig ampGainConfig) {
-            super(DeviceCommandEvents.MBX_SET_AMP_GAIN);
+            super(DeviceCommandEvent.MBX_SET_AMP_GAIN);
             this.ampGainConfig = ampGainConfig;
             init();
         }
@@ -184,7 +184,7 @@ public interface DeviceStreamingCommands {
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
         public AmplifierGain(AmpGainConfig ampGainConfig, CommandInterface.CommandCallback<byte[]> commandCallback) {
-            super(DeviceCommandEvents.MBX_SET_AMP_GAIN);
+            super(DeviceCommandEvent.MBX_SET_AMP_GAIN);
             this.ampGainConfig = ampGainConfig;
             this.commandCallback = commandCallback;
             init();
@@ -233,7 +233,7 @@ public interface DeviceStreamingCommands {
          * Triggers are not sent to the SDK if enableTriggers is set to false.
          */
         public Triggers(boolean enableTriggers) {
-            super(DeviceCommandEvents.MBX_P300_ENABLE);
+            super(DeviceCommandEvent.MBX_P300_ENABLE);
             this.enableTriggers = enableTriggers;
             init();
         }
@@ -254,7 +254,7 @@ public interface DeviceStreamingCommands {
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
         public Triggers(boolean enableTriggers, CommandInterface.CommandCallback<byte[]> commandCallback) {
-            super(DeviceCommandEvents.MBX_P300_ENABLE);
+            super(DeviceCommandEvent.MBX_P300_ENABLE);
             this.enableTriggers = enableTriggers;
             this.commandCallback = commandCallback;
             init();
@@ -300,7 +300,7 @@ public interface DeviceStreamingCommands {
          * DC offsets are not sent to the SDK if enableDcOffset is set to false.
          */
         public DcOffset(boolean enableDcOffset) {
-            super(DeviceCommandEvents.MBX_DC_OFFSET_ENABLE);
+            super(DeviceCommandEvent.MBX_DC_OFFSET_ENABLE);
             this.enableDcOffset = enableDcOffset;
             init();
         }
@@ -321,7 +321,7 @@ public interface DeviceStreamingCommands {
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
         public DcOffset(boolean enableDcOffset, CommandInterface.CommandCallback<byte[]> commandCallback) {
-            super(DeviceCommandEvents.MBX_DC_OFFSET_ENABLE);
+            super(DeviceCommandEvent.MBX_DC_OFFSET_ENABLE);
             this.enableDcOffset = enableDcOffset;
             this.commandCallback = commandCallback;
             init();
@@ -373,7 +373,7 @@ public interface DeviceStreamingCommands {
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
         public EegConfig(CommandInterface.CommandCallback< byte[]> commandCallback) {
-            super(DeviceCommandEvents.MBX_GET_EEG_CONFIG);
+            super(DeviceCommandEvent.MBX_GET_EEG_CONFIG);
             this.commandCallback = commandCallback;
             init(); //must be called after the commandCallback initialisation : isValid will return false otherwise
         }
