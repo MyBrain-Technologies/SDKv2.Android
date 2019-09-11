@@ -62,6 +62,8 @@ public final class StreamConfig {
                 }
             }
         }
+
+        this.deviceCommands.add(new DeviceStreamingCommands.EegConfig(null));
     }
 
     /**

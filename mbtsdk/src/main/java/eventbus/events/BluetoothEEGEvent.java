@@ -14,11 +14,9 @@ import features.MbtDeviceType;
 public class BluetoothEEGEvent {
 
     private byte[] data;
-    private MbtDeviceType deviceType;
 
-    public BluetoothEEGEvent(@NonNull byte[] data, MbtDeviceType deviceType) {
+    public BluetoothEEGEvent(@NonNull byte[] data) {
         this.data = data;
-        this.deviceType = deviceType;
     }
 
     /**
@@ -29,7 +27,4 @@ public class BluetoothEEGEvent {
         return data;
     }
 
-    public MbtDeviceType getDeviceType() {
-        return deviceType;
-    }
 }

@@ -103,7 +103,7 @@ public class MbtDeviceManager extends BaseModuleManager{
 
     @Subscribe
     public void onNewDeviceConfiguration(ConfigEEGEvent configEEGEvent){
-        this.mCurrentConnectedDevice.setInternalConfig(new MbtDevice.InternalConfig(configEEGEvent.getConfig()));
+        this.mCurrentConnectedDevice.setInternalConfig(configEEGEvent.getConfig());
     }
 
     /**

@@ -8,6 +8,7 @@ import android.support.annotation.Nullable;
 import java.util.List;
 
 import features.MbtAcquisitionLocations;
+import features.MbtDeviceType;
 import features.MbtFeatures;
 
 /**
@@ -17,6 +18,8 @@ import features.MbtFeatures;
 public abstract class MbtDevice {
 
     public static final String DEFAULT_FW_VERSION = "0.0.0";
+
+    public MbtDeviceType deviceType;
 
     /**
      * Bluetooth Low Energy name
@@ -57,8 +60,6 @@ public abstract class MbtDevice {
     @Nullable
     private String audioDeviceAddress;
 
-    int sampRate;
-
     int eegPacketLength;
 
     int nbChannels;
@@ -69,13 +70,13 @@ public abstract class MbtDevice {
 
     private InternalConfig internalConfig;
 
-    MbtDevice(BluetoothDevice bluetoothDevice){
+    MbtDevice(BluetoothDevice bluetoothDevice,@NonNull MbtDeviceType deviceType){
+        this.deviceType = deviceType;
         this.deviceAddress = bluetoothDevice.getAddress();
         this.productName = bluetoothDevice.getName();
         this.internalConfig = null;
         this.externalName = MbtFeatures.MELOMIND_DEVICE_NAME;
         this.eegPacketLength = MbtFeatures.DEFAULT_EEG_PACKET_LENGTH;
-        this.sampRate = MbtFeatures.DEFAULT_SAMPLE_RATE;
     }
 
     /**
@@ -124,7 +125,7 @@ public abstract class MbtDevice {
         return deviceAddress;
     }
 
-    public int getSampRate() {return this.sampRate;}
+    public int getSampRate() {return this.internalConfig.sampRate;}
 
     public int getNbChannels() {return this.nbChannels;}
 
@@ -159,7 +160,9 @@ public abstract class MbtDevice {
         return internalConfig;
     }
 
-    public void setInternalConfig(InternalConfig internalConfig) {
+    public abstract void setInternalConfig(Byte[] rawConfig);
+
+    public void setInternalConfig(InternalConfig internalConfig){
         this.internalConfig = internalConfig;
     }
 
@@ -180,21 +183,36 @@ public abstract class MbtDevice {
         this.audioDeviceAddress = audioDeviceAddress;
     }
 
-    public final static class InternalConfig{
-        private byte notchFilterConfig;
-        private byte bandPassFilterConfig;
-        private byte gainValue;
-        private byte statusBytes;
-        private byte nbPackets;
+    public MbtDeviceType getDeviceType() {
+        return deviceType;
+    }
 
-        public InternalConfig(Byte[] configFromHeadset){
-            if (configFromHeadset.length >= 5){
-                notchFilterConfig = configFromHeadset[0];
-                bandPassFilterConfig = configFromHeadset[1];
-                gainValue = configFromHeadset[2];
-                statusBytes = configFromHeadset[3];
-                nbPackets = configFromHeadset[4];
-            }
+    public static class InternalConfig{
+        public final byte DEFAULT = -1;
+
+        byte notchFilterConfig;
+        byte bandPassFilterConfig;
+        byte gainValue;
+        byte statusBytes;
+        byte nbPackets;
+        byte sampRate;
+
+        public InternalConfig(byte notchFilterConfig, byte bandPassFilterConfig, byte gainValue, byte statusBytes, byte nbPackets, byte sampRate) {
+            this.notchFilterConfig = notchFilterConfig;
+            this.bandPassFilterConfig = bandPassFilterConfig;
+            this.gainValue = gainValue;
+            this.statusBytes = statusBytes;
+            this.nbPackets = nbPackets;
+            this.sampRate = sampRate;
+        }
+
+        public InternalConfig(byte gainValue, byte sampRate) {
+            this.notchFilterConfig = DEFAULT;
+            this.bandPassFilterConfig = DEFAULT;
+            this.gainValue = gainValue;
+            this.statusBytes = DEFAULT;
+            this.nbPackets = DEFAULT;
+            this.sampRate = sampRate;
         }
 
         public byte getNotchFilterConfig() {
@@ -217,15 +235,19 @@ public abstract class MbtDevice {
             return nbPackets;
         }
 
+        public byte getSampRate() {
+            return sampRate;
+        }
 
         @Override
         public String toString() {
-            return "InternalConfig{" +
+            return "MelomindInternalConfig{" +
                     "notchFilterConfig=" + notchFilterConfig +
                     ", bandPassFilterConfig=" + bandPassFilterConfig +
                     ", gainValue=" + gainValue +
                     ", statusBytes=" + statusBytes +
                     ", nbPackets=" + nbPackets +
+                    ", sampRate=" + sampRate +
                     '}';
         }
     }
@@ -239,7 +261,6 @@ public abstract class MbtDevice {
                 ", serialNumber='" + serialNumber + '\'' +
                 ", externalName='" + externalName + '\'' +
                 ", deviceAddress='" + deviceAddress + '\'' +
-                ", sampRate=" + sampRate +
                 ", nbChannels=" + nbChannels +
                 ", acquisitionLocations=" + acquisitionLocations +
                 ", referencesLocations=" + referencesLocations +

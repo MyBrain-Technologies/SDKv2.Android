@@ -11,10 +11,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import config.MbtConfig;
 import core.BaseModuleManager;
 import core.MbtManager;
 import core.bluetooth.BtProtocol;
+import core.bluetooth.BtState;
 import core.bluetooth.IStreamable;
 import core.bluetooth.requests.StreamRequestEvent;
 import core.device.model.MbtDevice;
@@ -32,6 +32,7 @@ import eventbus.EventBusManager;
 import eventbus.events.BluetoothEEGEvent;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.ConfigEEGEvent;
+import eventbus.events.ConnectionStateEvent;
 import features.MbtFeatures;
 import mbtsdk.com.mybraintech.mbtsdk.BuildConfig;
 import utils.AsyncUtils;
@@ -57,6 +58,9 @@ public final class MbtEEGManager extends BaseModuleManager {
     private static final String TAG = MbtEEGManager.class.getName();
     private static final int UNCHANGED_VALUE = -1;
 
+    private int sampRate;
+    private int packetLength;
+
     private MbtDataAcquisition dataAcquisition;
     private MbtDataBuffering dataBuffering;
     private ArrayList<ArrayList<Float>> consolidatedEEG;
@@ -76,6 +80,16 @@ public final class MbtEEGManager extends BaseModuleManager {
             System.loadLibrary(ContextSP.LIBRARY_NAME + BuildConfig.USE_ALGO_VERSION);
         } catch (final UnsatisfiedLinkError e) {
             e.printStackTrace();
+        }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onConnectionStateChanged(ConnectionStateEvent connectionStateEvent) {
+        if(connectionStateEvent.getDevice() == null) {
+            protocol = null;
+        }else {
+            if(connectionStateEvent.getNewState().equals(BtState.CONNECTED_AND_READY))
+                protocol = connectionStateEvent.getDevice().getDeviceType().getProtocol();
         }
     }
 
@@ -198,7 +212,7 @@ public final class MbtEEGManager extends BaseModuleManager {
             long tsBefore = System.currentTimeMillis();
             float[] qualities = {-1f,-1f};
             try{
-                qualities = MBTSignalQualityChecker.computeQualitiesForPacketNew(MbtFeatures.getSampleRate(), MbtConfig.getEegPacketLength(), MatrixUtils.invertFloatMatrix(packet.getChannelsData()));
+                qualities = MBTSignalQualityChecker.computeQualitiesForPacketNew(sampRate, packetLength, MatrixUtils.invertFloatMatrix(packet.getChannelsData()));
 
             } catch (IllegalStateException e){
                 e.printStackTrace();
@@ -258,7 +272,6 @@ public final class MbtEEGManager extends BaseModuleManager {
     @Subscribe(threadMode = ThreadMode.BACKGROUND)
     public void onEvent(BluetoothEEGEvent event) { //warning : this method is used
         dataAcquisition.handleDataAcquired(event.getData());
-        protocol = event.getDeviceType().getProtocol();
     }
 
     /**
@@ -274,13 +287,12 @@ public final class MbtEEGManager extends BaseModuleManager {
     @Subscribe
     public void onStreamStartedOrStopped(StreamRequestEvent event){
         if(event.isStart()){
-            this.dataAcquisition = new MbtDataAcquisition(this, event.getBtProtocol());
+            this.dataAcquisition = new MbtDataAcquisition(this, protocol);
             this.dataBuffering = new MbtDataBuffering(this);
             if(event.shouldComputeQualities()){
                 hasQualities = true;
                 initQualityChecker();
             }
-
         }
         else if(!event.isStart() && event.shouldComputeQualities())
             deinitQualityChecker();
@@ -289,8 +301,11 @@ public final class MbtEEGManager extends BaseModuleManager {
 
     @Subscribe
     public void onConfigurationChanged(ConfigEEGEvent configEEGEvent){
-        LogUtils.d(TAG, "new config "+ (Arrays.toString(configEEGEvent.getConfig())));
-        MbtDevice.InternalConfig internalConfig = new MbtDevice.InternalConfig(configEEGEvent.getConfig());
+        LogUtils.d(TAG, "new config "+ configEEGEvent.getConfig());
+        sampRate = configEEGEvent.getDevice().getInternalConfig().getSampRate();
+        packetLength = configEEGEvent.getDevice().getEegPacketLength();
+
+        MbtDevice.InternalConfig internalConfig = configEEGEvent.getConfig();
         resetBuffers(internalConfig.getNbPackets(), internalConfig.getStatusBytes(), internalConfig.getGainValue());
     }
 

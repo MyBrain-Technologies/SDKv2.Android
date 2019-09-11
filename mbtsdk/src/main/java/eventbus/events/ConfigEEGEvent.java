@@ -2,6 +2,11 @@ package eventbus.events;
 
 import android.support.annotation.NonNull;
 
+import core.device.model.MbtDevice;
+import core.device.model.MelomindDevice;
+import core.device.model.VProDevice;
+import features.MbtDeviceType;
+
 /**
  * Event posted when a new raw data is transmitted by the headset to the SDK through Bluetooth
  *
@@ -9,18 +14,24 @@ import android.support.annotation.NonNull;
  */
 public class ConfigEEGEvent {
 
-    private Byte[] config;
+    private MbtDevice device;
+    private MbtDevice.InternalConfig config;
 
-    public ConfigEEGEvent(@NonNull Byte[] config) {
-        this.config = config;
+    public ConfigEEGEvent(@NonNull MbtDevice device, @NonNull Byte[] config) {
+        this.config = (device.deviceType.equals(MbtDeviceType.MELOMIND) ?
+                MelomindDevice.convertRawInternalConfig(config) : VProDevice.convertRawInternalConfig(config)) ;
+        this.device = device;
     }
 
     /**
      * Gets the raw EEG data array acquired
      * @return the raw EEG data array acquired
      */
-    public Byte[] getConfig() {
+    public MbtDevice.InternalConfig getConfig() {
         return config;
     }
 
+    public MbtDevice getDevice() {
+        return device;
+    }
 }

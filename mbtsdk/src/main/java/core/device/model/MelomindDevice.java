@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import features.MbtAcquisitionLocations;
+import features.MbtDeviceType;
 import features.MbtFeatures;
 
 /**
@@ -19,12 +20,11 @@ import features.MbtFeatures;
 public class MelomindDevice extends MbtDevice{
 
     public MelomindDevice(@NonNull final BluetoothDevice device){
-        super(device);
+        super(device, MbtDeviceType.MELOMIND);
         this.acquisitionLocations = Arrays.asList(MbtAcquisitionLocations.P3, MbtAcquisitionLocations.P4);
         this.groundsLocation = Arrays.asList(MbtAcquisitionLocations.M2);
         this.referencesLocations = Arrays.asList(MbtAcquisitionLocations.M1);
         this.nbChannels = MbtFeatures.MELOMIND_NB_CHANNELS;
-        this.sampRate = MbtFeatures.DEFAULT_SAMPLE_RATE;
         this.firmwareVersion = "0.0.0";
         this.hardwareVersion = "0.0.0";
         this.serialNumber = "0000000000";
@@ -106,15 +106,25 @@ public class MelomindDevice extends MbtDevice{
         super.setDeviceAddress(deviceAddress);
     }
 
-
-    @Override
-    public void setInternalConfig(InternalConfig internalConfig) {
-        super.setInternalConfig(internalConfig);
-    }
-
     @Override
     public InternalConfig getInternalConfig() {
         return super.getInternalConfig();
+    }
+
+    @Override
+    public void setInternalConfig(Byte[] rawConfig) {
+        //Returned : [notch_filter, bandpass_filter, amp_gain, p300_status_byte_number, sp_buffer_size, real_ads_freq_sampling];
+        super.setInternalConfig(convertRawInternalConfig(rawConfig));
+    }
+
+    public static InternalConfig convertRawInternalConfig(Byte[] rawConfig) {
+        return new InternalConfig(
+                rawConfig[0],
+                rawConfig[1],
+                rawConfig[2],
+                rawConfig[3],
+                rawConfig[4],
+                rawConfig[5]);
     }
 
     /**
@@ -125,8 +135,6 @@ public class MelomindDevice extends MbtDevice{
     public final String getHardwareVersion() {
         return this.hardwareVersion;
     }
-
-    public final int getSampRate() {return this.sampRate;}
 
     public final int getNbChannels() {return this.nbChannels;}
 
@@ -170,4 +178,6 @@ public class MelomindDevice extends MbtDevice{
     public String getExternalName() {
         return super.getExternalName();
     }
+
+
 }

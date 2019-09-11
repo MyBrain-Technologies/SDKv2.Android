@@ -2,7 +2,7 @@ package command;
 
 /**
  * A class that contains all currently used device commands (mailbox & other commands) codes.
- * One code has one specific functionnality.
+ * One code has one specific functionality.
  */
 public final class DeviceCommandEvents {
 
@@ -28,7 +28,12 @@ public final class DeviceCommandEvents {
             public static final byte MBX_SET_NOTCH_FILT = 11;      // allows to hotswap the filters' parameters
             public static final byte MBX_SET_BANDPASS_FILT = 12;   // Set the signal bandwidth by changing the embedded bandpass filter
             public static final byte MBX_SET_AMP_GAIN = 13;        // Set the eeg signal amplifier gain
+
             public static final byte MBX_GET_EEG_CONFIG = 14;      // Get the current configuration of the Notch filter, the bandpass filter, and the amplifier gain.
+            public static final byte[] SPP_GET_EEG_CONFIG_ADDITIONAL = {(byte) 0x00, (byte)0x00} ; // Additional info to get the current configuration .
+
+            public static final byte[] SPP_PREFIX = {(byte) 0x3C, (byte) 0x00, (byte)0x00} ; // Additional info to get the current configuration .
+
             public static final byte MBX_P300_ENABLE = 15;         // Enable or disable the p300 functionnality of the melomind.
             public static final byte MBX_DC_OFFSET_ENABLE = 16;         // Enable or disable the DC offset measurement computation and sending.
 

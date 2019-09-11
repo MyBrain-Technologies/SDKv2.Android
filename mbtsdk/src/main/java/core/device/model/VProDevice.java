@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import features.MbtAcquisitionLocations;
+import features.MbtDeviceType;
 
 /**
  * Created by manon on 10/10/16.
@@ -17,7 +18,7 @@ import features.MbtAcquisitionLocations;
 public class VProDevice extends MbtDevice{
 
     public VProDevice(@NonNull final BluetoothDevice device){
-        super(device);
+        super(device, MbtDeviceType.VPRO);
         this.productName = device.getName();
         this.deviceAddress = device.getAddress();
 
@@ -62,10 +63,23 @@ public class VProDevice extends MbtDevice{
     }
 
     @NonNull
-    public final int getSampRate() {return this.sampRate;}
+    public final int getSampRate() {return this.getInternalConfig().getSampRate();}
 
     @NonNull
     public final int getNbChannels() {return this.nbChannels;}
+
+    @Override
+    public void setInternalConfig(Byte[] rawConfig) {
+        //Returned : [payload_length(2B), 0x0E, 0x00, 0x00, 0x00, num_eeg_channels, amp_gain, ads_freq_sampling];
+        nbChannels = rawConfig[6];
+        super.setInternalConfig(convertRawInternalConfig(rawConfig));
+    }
+
+    public static InternalConfig convertRawInternalConfig(Byte[] rawConfig) {
+        return new InternalConfig(
+                rawConfig[7],
+                rawConfig[8]);
+    }
 
     @NonNull
     public final List<MbtAcquisitionLocations> getAcquisitionLocations() {return this.acquisitionLocations;}

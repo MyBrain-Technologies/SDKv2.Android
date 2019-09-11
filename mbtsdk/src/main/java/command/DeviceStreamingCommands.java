@@ -354,7 +354,7 @@ public interface DeviceStreamingCommands {
      * The DC offset receiving status is returned by the headset if the command succeeds.
      */
     @Keep
-    class EegConfig extends DeviceCommand<byte[], BaseError>{
+    class EegConfig extends DeviceCommand<byte[], BaseError> implements DeviceStreamingCommands{
 
         /**
          * Mailbox command sent from the SDK to the connected headset

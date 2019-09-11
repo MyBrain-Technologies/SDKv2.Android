@@ -157,7 +157,12 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * Notify the DeviceManager and the EEGManager that the headset returned its stored configuration
      */
     private void notifyDeviceConfigReceived(Byte[] returnedConfig) {
-        EventBusManager.postEvent(new ConfigEEGEvent(returnedConfig));
+        requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
+            @Override
+            public void onRequestComplete(MbtDevice device) {
+                EventBusManager.postEvent(new ConfigEEGEvent(device, returnedConfig));
+            }
+        });
     }
 
     /**
@@ -976,7 +981,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * @param data the raw EEG data array acquired by the headset and transmitted by Bluetooth to the application
      */
     public void handleDataAcquired(@NonNull final byte[] data){
-        EventBusManager.postEvent(new BluetoothEEGEvent(data, deviceTypeRequested)); //MbtEEGManager will convert data from raw packets to eeg values
+        EventBusManager.postEvent(new BluetoothEEGEvent(data)); //MbtEEGManager will convert data from raw packets to eeg values
     }
 
     /**
@@ -1035,7 +1040,12 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 break;
         }
 
-        EventBusManager.postEvent(new ConnectionStateEvent(newState)); //This event is sent to MbtManager for user notifications
+        requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
+            @Override
+            public void onRequestComplete(MbtDevice device) {
+                EventBusManager.postEvent(new ConnectionStateEvent(newState, device)); //This event is sent to MbtManager for user notifications
+            }
+        });
     }
 
     /**
