@@ -59,6 +59,8 @@ public abstract class MbtDevice {
 
     int sampRate;
 
+    int eegPacketLength;
+
     int nbChannels;
 
     List<MbtAcquisitionLocations> acquisitionLocations;
@@ -72,6 +74,8 @@ public abstract class MbtDevice {
         this.productName = bluetoothDevice.getName();
         this.internalConfig = null;
         this.externalName = MbtFeatures.MELOMIND_DEVICE_NAME;
+        this.eegPacketLength = MbtFeatures.DEFAULT_EEG_PACKET_LENGTH;
+        this.sampRate = MbtFeatures.DEFAULT_SAMPLE_RATE;
     }
 
     /**
@@ -123,6 +127,10 @@ public abstract class MbtDevice {
     public int getSampRate() {return this.sampRate;}
 
     public int getNbChannels() {return this.nbChannels;}
+
+    public int getEegPacketLength() {
+        return eegPacketLength;
+    }
 
     @NonNull
     public List<MbtAcquisitionLocations> getAcquisitionLocations() {return this.acquisitionLocations;}

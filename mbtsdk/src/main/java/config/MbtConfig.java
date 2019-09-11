@@ -10,7 +10,6 @@ import features.MbtFeatures;
 public final class MbtConfig {
 
     private static MbtDeviceType deviceType = MbtDeviceType.MELOMIND;
-    private static int eegPacketLength = 250;
 
     public final static int sampleRate = 250;
 
@@ -78,9 +77,6 @@ public final class MbtConfig {
         return BLUETOOTH_CONNECTION_TIMEOUT;
     }
 
-    public static int getEegPacketLength() {
-        return eegPacketLength;
-    }
 
     public static int getBluetoothScanTimeout() {
         return bluetoothScanTimeout;
@@ -243,7 +239,6 @@ public final class MbtConfig {
     }
 
     private MbtConfig(final MbtConfigBuilder builder) {
-        eegPacketLength = builder.eegPacketLength;
         samplePerNotification = builder.samplePerNotification;
         eegBufferLengthClientNotif = builder.eegBufferLengthClientNotif;
         batteryEventsLogsEnabled = builder.batteryEventsLogsEnabled;

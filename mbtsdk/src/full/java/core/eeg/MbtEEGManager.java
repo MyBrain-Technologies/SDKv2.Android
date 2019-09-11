@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import config.MbtConfig;
 import core.BaseModuleManager;
 import core.MbtManager;
 import core.bluetooth.BtProtocol;
@@ -197,7 +198,7 @@ public final class MbtEEGManager extends BaseModuleManager {
             long tsBefore = System.currentTimeMillis();
             float[] qualities = {-1f,-1f};
             try{
-                qualities = MBTSignalQualityChecker.computeQualitiesForPacketNew(MbtFeatures.getSampleRate(), MbtFeatures.getSampleRate(), MatrixUtils.invertFloatMatrix(packet.getChannelsData()));
+                qualities = MBTSignalQualityChecker.computeQualitiesForPacketNew(MbtFeatures.getSampleRate(), MbtConfig.getEegPacketLength(), MatrixUtils.invertFloatMatrix(packet.getChannelsData()));
 
             } catch (IllegalStateException e){
                 e.printStackTrace();
