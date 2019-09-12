@@ -30,9 +30,19 @@ public final class DeviceCommandEvents {
             public static final byte MBX_SET_AMP_GAIN = 13;        // Set the eeg signal amplifier gain
 
             public static final byte MBX_GET_EEG_CONFIG = 14;      // Get the current configuration of the Notch filter, the bandpass filter, and the amplifier gain.
-            public static final byte[] SPP_GET_EEG_CONFIG_ADDITIONAL = {(byte) 0x00, (byte)0x00} ; // Additional info to get the current configuration .
+            public static final byte[] GET_EEG_CONFIG_ADDITIONAL = {(byte) 0x00, (byte)0x00} ; // Additional info to get the current configuration .
+
+            public static final byte CMD_GET_BATTERY_VALUE  = (byte)0x20;
+            public static final byte CMD_START_EEG_ACQUISITION = (byte)0x24;
+            public static final byte CMD_STOP_EEG_ACQUISITION = (byte)0x25;
+            public static final byte CMD_GET_DEVICE_CONFIG  = (byte)0x50;
+            public static final byte CMD_GET_PSM_CONFIG   = (byte)0x51;
+            public static final byte CMD_GET_IMS_CONFIG    = (byte)0x52;
+            public static final byte CMD_SET_DEVICE_CONFIG     = (byte)0x53;
+            public static final byte CMD_GET_DEVICE_INFO      = (byte)0x54;
 
             public static final byte[] SPP_PREFIX = {(byte) 0x3C, (byte) 0x00, (byte)0x00} ; // Additional info to get the current configuration .
+            public static final byte[] SPP_SUFFIX = {(byte) 0x00, (byte) 0x00, (byte)0x00} ; // Additional info to get the current configuration .
 
             public static final byte MBX_P300_ENABLE = 15;         // Enable or disable the p300 functionnality of the melomind.
             public static final byte MBX_DC_OFFSET_ENABLE = 16;         // Enable or disable the DC offset measurement computation and sending.

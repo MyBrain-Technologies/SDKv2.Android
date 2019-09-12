@@ -2,8 +2,6 @@ package eventbus.events;
 
 import android.support.annotation.NonNull;
 
-import features.MbtDeviceType;
-
 
 /**
  * Event posted when a new raw EEG data acquired is transmitted through Bluetooth

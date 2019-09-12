@@ -26,8 +26,6 @@ import mbtsdk.com.mybraintech.sdkv2.R;
 
 import static features.MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX;
 import static features.MbtFeatures.VPRO_DEVICE_NAME_PREFIX;
-import static features.MbtDeviceType.MELOMIND;
-import static features.MbtDeviceType.VPRO;
 
 public class HomeActivity extends AppCompatActivity{
 
@@ -148,16 +146,6 @@ public class HomeActivity extends AppCompatActivity{
                 .create());
 
     }
-
-    private void findAvailableDevice() {
-        notifyUser(getString(R.string.find_first_available_headset));
-        //deviceName =  ;//todo replace  by the method that detects the first available device
-        deviceNameField.setText(deviceName);
-        scanButton.setText(getString(R.string.connect));
-        scanButton.setTextColor(getResources().getColor(R.color.white));
-        scanButton.setBackgroundColor(getResources().getColor(R.color.light_blue));
-    }
-
     private void cancelScan(){
         client.cancelConnection();
     }

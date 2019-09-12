@@ -116,7 +116,7 @@ public final class ConnectionConfig {
     /**
      * By default, Bluetooth connection is only initiated for Data streaming but not for the Audio streaming
      */
-    public boolean useAudio() {
+    public boolean connectAudio() {
         return connectAudio;
     }
 

@@ -47,8 +47,6 @@ public final class MbtConfig {
 
     private static String serverURL;
 
-    private static boolean connectAudioIfDeviceCompatible = false;
-
     public static int getEegBufferLengthClientNotif() {
         return eegBufferLengthClientNotif;
     }
@@ -100,15 +98,6 @@ public final class MbtConfig {
 
     public static MbtDeviceType getDeviceType() {
         return deviceType;
-    }
-
-
-
-    public static boolean connectAudioIfDeviceCompatible() {
-        return connectAudioIfDeviceCompatible;
-    }
-    public static void setConnectAudioIfDeviceCompatible(boolean connectAudio) {
-         connectAudioIfDeviceCompatible = connectAudio;
     }
 
     public static int getBluetoothA2DpConnectionTimeout() {
@@ -227,12 +216,6 @@ public final class MbtConfig {
         }
 
         @NonNull
-        public MbtConfigBuilder connectAudio(final boolean connectAudio) {
-            this.connectAudioIfDeviceCompatible = connectAudio;
-            return this;
-        }
-
-        @NonNull
         public MbtConfig create() {
             return new MbtConfig(this);
         }
@@ -248,7 +231,6 @@ public final class MbtConfig {
         acquisitionEnabledLowBattery = builder.acquisitionEnabledLowBattery;
         bluetoothScanTimeout = builder.bluetoothScanTimeout;
         serverURL = builder.serverURL;
-        connectAudioIfDeviceCompatible = builder.connectAudioIfDeviceCompatible;
     }
 
     public static void setDeviceType(MbtDeviceType deviceType) {

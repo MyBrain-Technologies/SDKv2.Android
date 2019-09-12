@@ -70,7 +70,7 @@ public abstract class MbtDevice {
 
     private InternalConfig internalConfig;
 
-    MbtDevice(BluetoothDevice bluetoothDevice,@NonNull MbtDeviceType deviceType){
+    MbtDevice(BluetoothDevice bluetoothDevice, @NonNull MbtDeviceType deviceType){
         this.deviceType = deviceType;
         this.deviceAddress = bluetoothDevice.getAddress();
         this.productName = bluetoothDevice.getName();

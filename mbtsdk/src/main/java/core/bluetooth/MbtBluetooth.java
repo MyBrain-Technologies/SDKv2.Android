@@ -12,7 +12,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
-import core.bluetooth.lowenergy.MbtBluetoothLE;
 import core.device.model.DeviceInfo;
 import core.oad.OADEvent;
 
@@ -22,13 +21,13 @@ import utils.MbtLock;
 /**
  *
  * Abstract class that contains all fields and methods that are common to the different bluetooth types.
- * It implements{@link IConnectable} interface as all bluetooth types shares this
+ * It implements{@link BluetoothInterfaces} interface as all bluetooth types shares this
  * functionnalities.
  *
  * Created by Etienne on 08/02/2018.
  */
 
-public abstract class MbtBluetooth implements IConnectable{
+public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect{
 
     private final static String TAG = MbtBluetooth.class.getName();
 
@@ -43,8 +42,11 @@ public abstract class MbtBluetooth implements IConnectable{
 
     protected MbtBluetoothManager mbtBluetoothManager;
 
-    public MbtBluetooth(Context context, MbtBluetoothManager mbtBluetoothManager) {
+    protected BtProtocol protocol;
+
+    public MbtBluetooth(Context context, BtProtocol protocol, MbtBluetoothManager mbtBluetoothManager) {
         this.context = context.getApplicationContext();
+        this.protocol = protocol;
         this.mbtBluetoothManager = mbtBluetoothManager;
 
         final BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
@@ -57,12 +59,6 @@ public abstract class MbtBluetooth implements IConnectable{
 
     public void notifyDeviceInfoReceived(@NonNull DeviceInfo deviceInfo, @NonNull String deviceValue){ // This method will be called when a DeviceInfoReceived is posted (fw or hw or serial number) by MbtBluetoothLE or MbtBluetoothSPP
         mbtBluetoothManager.notifyDeviceInfoReceived(deviceInfo, deviceValue);
-    }
-
-    void notifyOADEvent(OADEvent eventType, int value){
-//        if(this.oadEventListener != null){
-//            this.oadEventListener.onOadEvent(eventType, value);
-//        }
     }
 
     /**
@@ -159,6 +155,10 @@ public abstract class MbtBluetooth implements IConnectable{
             return false;
         }
         return b;
+    }
+
+    public BluetoothDevice getCurrentDevice() {
+        return currentDevice;
     }
 
     public BtState getCurrentState() { return currentState; }

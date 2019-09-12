@@ -15,7 +15,7 @@ import core.BaseModuleManager;
 import core.MbtManager;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.BtState;
-import core.bluetooth.IStreamable;
+import core.bluetooth.StreamState;
 import core.bluetooth.requests.StreamRequestEvent;
 import core.device.model.MbtDevice;
 import core.eeg.acquisition.MbtDataAcquisition;
@@ -279,8 +279,8 @@ public final class MbtEEGManager extends BaseModuleManager {
      * @param newState
      */
     @Subscribe(threadMode = ThreadMode.POSTING)
-    public void onStreamStateChanged(IStreamable.StreamState newState) {
-        if (newState == IStreamable.StreamState.STOPPED)
+    public void onStreamStateChanged(StreamState newState) {
+        if (newState == StreamState.STOPPED && dataAcquisition != null)
             resetBuffers((byte) UNCHANGED_VALUE, UNCHANGED_VALUE, (byte) 0);
     }
 

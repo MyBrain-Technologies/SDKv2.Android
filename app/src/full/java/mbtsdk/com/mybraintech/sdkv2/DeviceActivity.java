@@ -7,7 +7,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -21,23 +20,27 @@ import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 
 import java.util.ArrayList;
+
 import java.util.Arrays;
 import java.util.Objects;
 
-import config.StreamConfig;
-import core.bluetooth.BtState;
 import core.device.DCOffsets;
 import core.device.SaturationEvent;
+import core.bluetooth.BtState;
 import core.eeg.storage.MbtEEGPacket;
 import engine.MbtClient;
+
+import config.StreamConfig;
 import engine.clientevents.BaseError;
+import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.BluetoothStateListener;
 import engine.clientevents.DeviceBatteryListener;
-import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.EegListener;
 import features.MbtDeviceType;
 import features.MbtFeatures;
 import utils.LogUtils;
+
+import static utils.MatrixUtils.invertFloatMatrix;
 
 public class
 DeviceActivity extends AppCompatActivity {
@@ -115,18 +118,17 @@ DeviceActivity extends AppCompatActivity {
 
             @Override
             public void onNewPackets(@NonNull final MbtEEGPacket mbtEEGPackets) {
-                Log.i(TAG, "onNewPackets");
-//                if (invertFloatMatrix(mbtEEGPackets.getChannelsData()) != null)
-//                    mbtEEGPackets.setChannelsData(invertFloatMatrix(mbtEEGPackets.getChannelsData()));
-//
-//                if (isStreaming) {
-//                    if (eegGraph != null) {
-//                        addEegDataToGraph(mbtEEGPackets);
-//
-//                        channel1Quality.setText(getString(R.string.channel_1_qc) + ((mbtEEGPackets.getQualities() != null && mbtEEGPackets.getQualities().get(0) != null) ? mbtEEGPackets.getQualities().get(0) : " -- "));
-//                        channel2Quality.setText(getString(R.string.channel_2_qc) + ((mbtEEGPackets.getQualities() != null && mbtEEGPackets.getQualities().get(1) != null) ? mbtEEGPackets.getQualities().get(1) : " -- "));
-//                    }
-//                }
+                if (invertFloatMatrix(mbtEEGPackets.getChannelsData()) != null)
+                    mbtEEGPackets.setChannelsData(invertFloatMatrix(mbtEEGPackets.getChannelsData()));
+
+                if (isStreaming) {
+                    if (eegGraph != null) {
+                        addEegDataToGraph(mbtEEGPackets);
+
+                        channel1Quality.setText(getString(R.string.channel_1_qc) + ((mbtEEGPackets.getQualities() != null && mbtEEGPackets.getQualities().get(0) != null) ? mbtEEGPackets.getQualities().get(0) : " -- "));
+                        channel2Quality.setText(getString(R.string.channel_2_qc) + ((mbtEEGPackets.getQualities() != null && mbtEEGPackets.getQualities().get(1) != null) ? mbtEEGPackets.getQualities().get(1) : " -- "));
+                    }
+                }
             }
         };
     }
@@ -216,7 +218,7 @@ DeviceActivity extends AppCompatActivity {
             deviceType = (MbtDeviceType) Objects.requireNonNull(getIntent().getExtras()).getSerializable(HomeActivity.DEVICE_TYPE_EXTRA);
         }
 
-        deviceNameTextView.setText(deviceName + " | " + deviceQrCode);
+        deviceNameTextView.setText(deviceName + (deviceType != null && deviceType.equals(MbtDeviceType.VPRO) ? "":" | " + deviceQrCode));
     }
 
     private void initReadBatteryButton() {
@@ -246,12 +248,9 @@ DeviceActivity extends AppCompatActivity {
                 if (!isStreaming) { //streaming is not in progress : starting streaming
                         startStream(new StreamConfig.Builder(eegListener)
                             .setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)
-//                            .useQualities()
-//                            .configureAcquisitionFromDeviceCommand(
-//                                    new DeviceStreamingCommands.DcOffset(false),
-//                                    new DeviceStreamingCommands.Triggers(false),
-//                                    (DeviceStreamingCommands) new DeviceStreamingCommands.EegConfig(null))
-                            .createFor(MbtDeviceType.VPRO));
+                            .useQualities()
+                                .configureAcquisitionFromDeviceCommand(null, null)
+                            .createFor(deviceType));
                 } else { //streaming is in progress : stopping streaming
                     stopStream(); // set false to isStreaming et null to the eegListener
                 }

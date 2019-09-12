@@ -14,8 +14,8 @@ import java.util.Set;
 import command.CommandInterface;
 import command.DeviceCommand;
 import config.StreamConfig;
-import core.bluetooth.IStreamable;
 import core.bluetooth.MbtBluetoothManager;
+import core.bluetooth.StreamState;
 import core.bluetooth.requests.CommandRequestEvent;
 import core.bluetooth.requests.DisconnectRequestEvent;
 import core.bluetooth.requests.ReadRequestEvent;
@@ -106,7 +106,12 @@ public class MbtManager{
      * Perform a new Bluetooth connection.
      * @param connectionStateListener a set of callback that will notify the user about connection progress.
      */
-    public void connectBluetooth(@NonNull ConnectionStateListener<BaseError> connectionStateListener, String deviceNameRequested, String deviceQrCodeRequested, MbtDeviceType deviceTypeRequested, int mtu){
+    public void connectBluetooth(@NonNull ConnectionStateListener<BaseError> connectionStateListener,
+                                 boolean connectAudioIfDeviceCompatible,
+                                 String deviceNameRequested,
+                                 String deviceQrCodeRequested,
+                                 MbtDeviceType deviceTypeRequested,
+                                 int mtu){
         this.connectionStateListener = connectionStateListener;
 
         if(deviceNameRequested != null && (!deviceNameRequested.startsWith(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX) && !deviceNameRequested.startsWith(MbtFeatures.VPRO_DEVICE_NAME_PREFIX) )){
@@ -116,7 +121,7 @@ public class MbtManager{
         }else if(deviceQrCodeRequested != null && deviceNameRequested != null && !deviceNameRequested.equals(new MelomindsQRDataBase(mContext,  true).get(deviceQrCodeRequested))){
             this.connectionStateListener.onError(HeadsetDeviceError.ERROR_MATCHING, mContext.getString(R.string.aborted_connection));
         }else{
-            EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent(true, deviceNameRequested, deviceQrCodeRequested, deviceTypeRequested, mtu));
+            EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent(true, deviceNameRequested, deviceQrCodeRequested, deviceTypeRequested, mtu, connectAudioIfDeviceCompatible));
         }
     }
 
@@ -219,13 +224,13 @@ public class MbtManager{
      * @param newState
      */
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onStreamStateChanged(IStreamable.StreamState newState){
+    public void onStreamStateChanged(StreamState newState){
         if(eegListener != null){
-            if(newState == IStreamable.StreamState.FAILED){
+            if(newState == StreamState.FAILED){
                 eegListener.onError(EegError.ERROR_FAIL_START_STREAMING, null);
-            }else if(newState == IStreamable.StreamState.DISCONNECTED){
+            }else if(newState == StreamState.DISCONNECTED){
                 eegListener.onError(BluetoothError.ERROR_NOT_CONNECTED,null);
-            }else if(newState == IStreamable.StreamState.STOPPED){
+            }else if(newState == StreamState.STOPPED){
                 eegListener = null;
             }
         }

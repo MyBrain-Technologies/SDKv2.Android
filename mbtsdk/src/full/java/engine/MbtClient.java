@@ -17,6 +17,7 @@ import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
 import core.eeg.storage.MbtEEGPacket;
 import engine.clientevents.BaseError;
+import engine.clientevents.BluetoothError;
 import engine.clientevents.BluetoothStateListener;
 import engine.clientevents.ConfigError;
 import engine.clientevents.ConnectionStateListener;
@@ -89,7 +90,6 @@ public final class MbtClient {
     @SuppressWarnings("unchecked")
     public void connectBluetooth(@NonNull ConnectionConfig config){
         MbtConfig.setBluetoothScanTimeout(config.getMaxScanDuration());
-        MbtConfig.setConnectAudioIfDeviceCompatible(config.useAudio());
 
         if(!config.isDeviceNameValid(config.getDeviceType())) {
             config.getConnectionStateListener().onError(ConfigError.ERROR_INVALID_PARAMS, " Device name must start with the " + MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX + " and contain 10 digits ");
@@ -106,17 +106,16 @@ public final class MbtClient {
             return;
         }
 
-//        if(config.getDeviceType() == MbtDeviceType.VPRO){
-//            config.getConnectionStateListener().onError(HeadsetDeviceError.ERROR_VPRO_INCOMPATIBLE,null);
-//            return;
-//        }
+        if(config.getDeviceType() == MbtDeviceType.VPRO && config.connectAudio()){
+            config.getConnectionStateListener().onError(BluetoothError.ERROR_A2DP_CONNECT_FAILED,"Impossible to connect a VPRO headset for audio streaming.");
+        }
 
         if(!config.isMtuValid()){
             config.getConnectionStateListener().onError(ConfigError.ERROR_INVALID_PARAMS,"MTU must be included between 23 and 121");
             return;
         }
 
-        this.mbtManager.connectBluetooth(config.getConnectionStateListener(), config.getDeviceName(), config.getDeviceQrCode(), config.getDeviceType(), config.getMtu());
+        this.mbtManager.connectBluetooth(config.getConnectionStateListener(),config.connectAudio(), config.getDeviceName(), config.getDeviceQrCode(), config.getDeviceType(), config.getMtu());
     }
 
     /**

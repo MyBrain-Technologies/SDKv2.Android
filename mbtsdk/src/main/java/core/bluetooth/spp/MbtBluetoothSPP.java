@@ -22,10 +22,12 @@ import java.util.TimerTask;
 import java.util.UUID;
 
 import command.CommandInterface;
+import command.DeviceCommandEvents;
+import core.bluetooth.BtProtocol;
 import core.bluetooth.BtState;
-import core.bluetooth.IStreamable;
-import core.bluetooth.MbtBluetooth;
 import core.bluetooth.MbtBluetoothManager;
+import core.bluetooth.MbtDataBluetooth;
+import core.bluetooth.StreamState;
 import core.device.model.DeviceInfo;
 import utils.AsyncUtils;
 import utils.LogUtils;
@@ -41,7 +43,8 @@ import static core.bluetooth.spp.MessageStatus.STATE_LENGTH;
  * Created by Etienne on 08/02/2018.
  */
 
-public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
+public final class MbtBluetoothSPP
+        extends MbtDataBluetooth {
 
     private final static String TAG = MbtBluetoothSPP.class.getName();
 
@@ -66,19 +69,6 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
     private MessageStatus currentStatus;
 
     private Timer keepAliveTimer;
-
-    public MbtBluetoothSPP(@NonNull final Context context, @NonNull MbtBluetoothManager mbtBluetoothManager) {
-        super(context, mbtBluetoothManager);
-        final BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-        this.bluetoothAdapter = (manager!=null) ? manager.getAdapter() : null;
-    }
-
-    public MbtBluetoothSPP(@NonNull final Context context, @NonNull final String deviceAddress,@NonNull MbtBluetoothManager mbtBluetoothManager) {
-        super(context, mbtBluetoothManager);
-        final BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-        this.bluetoothAdapter = manager.getAdapter();
-        this.deviceAddress = deviceAddress;
-    }
 
     private BroadcastReceiver scanReceiver = new BroadcastReceiver() {
         public final void onReceive(@NonNull final Context context, @NonNull final Intent intent) {
@@ -114,9 +104,21 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
         }
     };
 
+    public MbtBluetoothSPP(@NonNull final Context context, @NonNull MbtBluetoothManager mbtBluetoothManager) {
+        super(context, BtProtocol.BLUETOOTH_SPP, mbtBluetoothManager);
+        final BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+        this.bluetoothAdapter = (manager!=null) ? manager.getAdapter() : null;
+    }
 
-    @Nullable
-    public boolean startScanDiscovery() {
+    public MbtBluetoothSPP(@NonNull final Context context, @NonNull final String deviceAddress,@NonNull MbtBluetoothManager mbtBluetoothManager) {
+        super(context, BtProtocol.BLUETOOTH_SPP, mbtBluetoothManager);
+        final BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+        this.bluetoothAdapter = manager.getAdapter();
+        this.deviceAddress = deviceAddress;
+    }
+
+    @Override
+    public boolean startScan() {
         boolean isScanStarted = false;
         if(bluetoothAdapter == null)
             return isScanStarted;
@@ -134,17 +136,17 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
         return isScanStarted;
     }
 
-    public void stopScanDiscovery() {
+    @Override
+    public void stopScan() {
         if(bluetoothAdapter != null && bluetoothAdapter.isDiscovering())
             bluetoothAdapter.cancelDiscovery();
         context.unregisterReceiver(scanReceiver);
-
     }
 
     @Override
     public boolean connect(Context context, @Nullable BluetoothDevice device) {
         if (device != null) {
-            LogUtils.i(TAG," connect  "+device.getName());
+            LogUtils.i(TAG," Connect  "+device.getName());
             return connectToDevice(device);
         }
         return false;
@@ -190,7 +192,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
                     }
                 });
                 notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
-                notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER,toConnect.getAddress());
+                notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER, toConnect.getAddress());
                 LogUtils.i(TAG,toConnect.getName() + " Connected");
                 return true;
             }
@@ -222,7 +224,7 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
     @Override
     public boolean startStream() {
         LogUtils.i(TAG, "Requested to start stream...");
-        final byte[] msg = new byte[] {FRAME_HEADER,0,1,3,0,0,0,1};
+        final byte[] msg = new byte[] {DeviceCommandEvents.SPP_PREFIX, ,DeviceCommandEvents.SPP_SUFFIX};
         if (!isConnected()) {
             LogUtils.i(TAG,"Error Not connected!");
             return false;
@@ -527,10 +529,6 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
         }
     }
 
-    //todo
-    public void sendCommand(CommandInterface.MbtCommand command) {
-    }
-
     /**
      * Whenever there is a new stream state, this method is called to notify the bluetooth manager about it.
      * @param newStreamState the new stream state based on {@link StreamState the StreamState enum}
@@ -541,5 +539,13 @@ public final class MbtBluetoothSPP extends MbtBluetooth implements IStreamable {
         super.mbtBluetoothManager.notifyStreamStateChanged(newStreamState);
     }
 
+    @Override
+    public boolean readBattery() {
+        return false;
+    }
+
+    @Override
+    public void sendCommand(CommandInterface.MbtCommand command) {
+    }
 }
 

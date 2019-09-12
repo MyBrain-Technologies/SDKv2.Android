@@ -10,6 +10,7 @@ import java.util.List;
 
 import features.MbtAcquisitionLocations;
 import features.MbtDeviceType;
+import features.MbtFeatures;
 
 /**
  * Created by manon on 10/10/16.
@@ -19,6 +20,7 @@ public class VProDevice extends MbtDevice{
 
     public VProDevice(@NonNull final BluetoothDevice device){
         super(device, MbtDeviceType.VPRO);
+        this.externalName = MbtFeatures.VPRO_DEVICE_NAME;
         this.productName = device.getName();
         this.deviceAddress = device.getAddress();
 
