@@ -170,7 +170,7 @@ public class HomeActivity extends AppCompatActivity{
          * Callback used to receive a notification when the Bluetooth connection state changes
          */
         @Override
-        public void onNewState(BtState newState) {
+        public void onNewState(BtState newState, MbtDevice device) {
             if(newState.equals(BtState.READING_SUCCESS)){
                 sdkClient.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
                     @Override
@@ -206,7 +206,8 @@ public class HomeActivity extends AppCompatActivity{
          * Callback used to receive a notification when the Bluetooth connection is established
          */
         @Override
-        public void onDeviceConnected() {
+        public void onDeviceConnected(MbtDevice device) {
+            deviceName = device.getProductName();
             toast.cancel();
             deinitCurrentActivity();
         }

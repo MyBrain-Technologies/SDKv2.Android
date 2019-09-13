@@ -377,6 +377,26 @@ public interface DeviceStreamingCommands {
             this.commandCallback = commandCallback;
             init(); //must be called after the commandCallback initialisation : isValid will return false otherwise
         }
+        public EegConfig() {
+            super(DeviceCommandEvents.MBX_GET_EEG_CONFIG);
+            this.commandCallback = new CommandInterface.CommandCallback<byte[]>() {
+                @Override
+                public void onResponseReceived(CommandInterface.MbtCommand request, byte[] response) {
+
+                }
+
+                @Override
+                public void onError(CommandInterface.MbtCommand request, BaseError error, String additionalInfo) {
+
+                }
+                
+                @Override
+                public void onRequestSent(CommandInterface.MbtCommand request) {
+
+                }
+            };
+            init(); //must be called after the commandCallback initialisation : isValid will return false otherwise
+        }
 
         @Override
         public boolean isValid() {
@@ -394,4 +414,76 @@ public interface DeviceStreamingCommands {
         }
     }
 
+
+    /**
+     * Mailbox command sent from the SDK to the connected headset
+     * in order to start a Bluetooth EEG streaming.
+     * The streaming status is returned by the headset if the command succeeds.
+     */
+    @Keep
+    class StopEEGAcquisition extends DeviceCommand<byte[], BaseError>{
+
+        /**
+         * Mailbox command sent from the SDK to the connected headset
+         * in order to start a Bluetooth EEG streaming.
+         * The streaming status is returned by the headset if the command succeeds.
+         * If you're interested in getting the returned raw response
+         * sent by the headset to the SDK once the start command is received,
+         * call the {@link StopEEGAcquisition}({@link CommandInterface.CommandCallback}<DeviceCommand, byte[]> commandCallback) constructor
+         */
+        public StopEEGAcquisition() {
+            super(DeviceCommandEvents.assembleCodes(
+                    DeviceCommandEvents.START_FRAME,
+                    DeviceCommandEvents.PAYLOAD_LENGTH),
+                    DeviceCommandEvents.CMD_STOP_EEG_ACQUISITION,
+                    DeviceCommandEvents.assembleCodes(
+                            DeviceCommandEvents.COMPRESS,
+                            DeviceCommandEvents.PACKET_ID,
+                            DeviceCommandEvents.PAYLOAD));
+
+
+            init();
+        }
+
+        /**
+         * Mailbox command sent from the SDK to the connected headset
+         * in order to establish a Bluetooth disconnection for audio streaming.
+         * The disconnection status is returned by the headset if the command succeeds.
+         * @param commandCallback is a {@link CommandInterface.CommandCallback} object
+         * that provides a callback for the returned raw response
+         * sent by the headset to the SDK once the disconnect command is received.
+         * This raw response is a byte array that has be to converted to be readable.
+         * If you're not interested in getting the returned raw response
+         * sent by the headset to the SDK once the connect command is received,
+         * call the {@link StopEEGAcquisition}() constructor
+         * The onRequestSent callback is triggered if the command has successfully been sent.
+         */
+        public StopEEGAcquisition(CommandInterface.CommandCallback<byte[]> commandCallback) {
+            super(DeviceCommandEvents.assembleCodes(
+                    DeviceCommandEvents.START_FRAME,
+                    DeviceCommandEvents.PAYLOAD_LENGTH),
+                    DeviceCommandEvents.CMD_STOP_EEG_ACQUISITION,
+                    DeviceCommandEvents.assembleCodes(
+                            DeviceCommandEvents.COMPRESS,
+                            DeviceCommandEvents.PACKET_ID,
+                            DeviceCommandEvents.PAYLOAD));
+            this.commandCallback = commandCallback;
+            init();
+        }
+
+        @Override
+        public boolean isValid() {
+            return true;
+        }
+
+        @Override
+        public byte[] getData() {
+            return null;
+        }
+
+        @Override
+        public String getInvalidityError() {
+            return null;
+        }
+    }
 }

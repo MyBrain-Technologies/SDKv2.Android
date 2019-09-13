@@ -84,7 +84,7 @@ public class DeviceActivity extends AppCompatActivity {
     private ConnectionStateListener connectionStateListener = new ConnectionStateListener(){
 
         @Override
-        public void onDeviceConnected() {
+        public void onDeviceConnected(MbtDevice device) {
             isConnected = true;
         }
 

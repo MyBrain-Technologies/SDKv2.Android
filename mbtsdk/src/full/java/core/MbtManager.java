@@ -203,11 +203,11 @@ public class MbtManager{
             return;
         //LogUtils.i(TAG, "New state received : " + connectionStateEvent.getNewState());
         if(connectionStateListener instanceof BluetoothStateListener)
-            ((BluetoothStateListener) connectionStateListener).onNewState(connectionStateEvent.getNewState());
+            ((BluetoothStateListener) connectionStateListener).onNewState(connectionStateEvent.getNewState(), connectionStateEvent.getDevice());
 
         switch (connectionStateEvent.getNewState()) {
             case CONNECTED_AND_READY:
-                connectionStateListener.onDeviceConnected();
+                connectionStateListener.onDeviceConnected(connectionStateEvent.getDevice());
                 break;
             case DATA_BT_DISCONNECTED:
                 connectionStateListener.onDeviceDisconnected();

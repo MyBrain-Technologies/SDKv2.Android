@@ -225,6 +225,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         void parseRequest(BluetoothRequests request) {
             //BluetoothRequests request = pendingRequests.remove();
             //disconnect request doesn't need to be in "queue" as it is top priority
+            Log.d(TAG, "Parse request "+request.toString());
+
             while (requestBeingProcessed);
             requestBeingProcessed = true;
             if (request instanceof StartOrContinueConnectionRequestEvent) {

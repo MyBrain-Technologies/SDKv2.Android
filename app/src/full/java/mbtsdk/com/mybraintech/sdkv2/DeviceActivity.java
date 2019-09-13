@@ -27,6 +27,7 @@ import java.util.Objects;
 import core.device.DCOffsets;
 import core.device.SaturationEvent;
 import core.bluetooth.BtState;
+import core.device.model.MbtDevice;
 import core.eeg.storage.MbtEEGPacket;
 import engine.MbtClient;
 
@@ -171,11 +172,11 @@ DeviceActivity extends AppCompatActivity {
     private void initConnectionStateListener() {
         bluetoothStateListener = new BluetoothStateListener() {
             @Override
-            public void onNewState(BtState newState) {
+            public void onNewState(BtState newState, MbtDevice device) {
             }
 
             @Override
-            public void onDeviceConnected() {
+            public void onDeviceConnected(MbtDevice device) {
                 LogUtils.i(TAG, " device connected");
                 isConnected = true;
             }

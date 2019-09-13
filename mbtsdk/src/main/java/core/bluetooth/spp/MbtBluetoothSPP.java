@@ -17,12 +17,13 @@ import android.util.Log;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
 
 import command.CommandInterface;
-import command.DeviceCommandEvents;
+import command.DeviceCommands;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.BtState;
 import core.bluetooth.MbtBluetoothManager;
@@ -206,6 +207,8 @@ public final class MbtBluetoothSPP
 
     @Override
     public boolean disconnect() {
+        monitorBatteryAcquisition(STOP);
+
         boolean acquisitionStopped = true;
         if (!isConnected()) {
             LogUtils.i(TAG, "Device already disconnected");
@@ -223,8 +226,8 @@ public final class MbtBluetoothSPP
 
     @Override
     public boolean startStream() {
-        LogUtils.i(TAG, "Requested to start stream...");
-        final byte[] msg = new byte[] {DeviceCommandEvents.SPP_PREFIX, ,DeviceCommandEvents.SPP_SUFFIX};
+        final byte[] msg = new DeviceCommands.StartEEGAcquisition().serialize();
+        LogUtils.i(TAG, "Requested to start stream... "+ Arrays.toString(msg));
         if (!isConnected()) {
             LogUtils.i(TAG,"Error Not connected!");
             return false;
@@ -265,7 +268,7 @@ public final class MbtBluetoothSPP
     }
 
     private void sendKeepAlive(boolean keepAlive) {
-        final byte[] msg = {FRAME_HEADER,0,1,3,0,0,0,1};
+        final byte[] msg = new DeviceCommands.StartEEGAcquisition().serialize();
         if (keepAlive) {
             if (this.keepAliveTimer != null)
                 this.keepAliveTimer.cancel();
@@ -411,6 +414,8 @@ public final class MbtBluetoothSPP
                                 AsyncUtils.executeAsync(new Runnable() {
                                     @Override
                                     public void run() {
+                                        Log.e(TAG, Arrays.toString(finalData));
+
                                         notifyNewDataAcquired(finalData);
                                     }
                                 });
@@ -448,7 +453,7 @@ public final class MbtBluetoothSPP
                                 default:
                                     break;
                             }
-                            //mbtBluetoothManager.updateBatteryLevel(pourcent);
+                            //mbtBluetoothManager.updateBatteryLevel(percent);
                         }else {
                             //TODO here are non implemented cases. Please see the MBT SPP protocol for infos.
                         }
@@ -473,14 +478,15 @@ public final class MbtBluetoothSPP
 
     @Override
     public boolean stopStream() {
-        LogUtils.i(TAG, "Requested to stop stream...");
-        final byte[] msg = new byte[] {FRAME_HEADER,0,1,3,0,0,0,0};
+        final byte[] msg = new DeviceCommands.StopEEGAcquisition().serialize();
+        LogUtils.i(TAG, "Requested to stop stream... "+Arrays.toString(msg));
         if (!isConnected()) {
             LogUtils.i(TAG,"Error Not connected!");
             return false;
         }
         else {
             if (sendData(msg)) {
+
                 LogUtils.i(TAG,"Successfully requested to stop stream");
                 sendKeepAlive(false);
                 isStreaming = false;
@@ -507,7 +513,9 @@ public final class MbtBluetoothSPP
      * @param start is true for starting the battery timer and false for cancelling the battery timer
      */
     private Timer batteryTimer;
-    void askForBatteryLevel(final boolean start) {
+    private final boolean START = true;
+    private final boolean STOP = false;
+    private void monitorBatteryAcquisition(final boolean start) {
         final byte[] msg = {FRAME_HEADER,0,1,4,0,0,0,1};
         if (start) {
             if (this.batteryTimer != null)
@@ -529,6 +537,12 @@ public final class MbtBluetoothSPP
         }
     }
 
+    @Override
+    public boolean readBattery() {
+        monitorBatteryAcquisition(START);
+        return true;
+    }
+
     /**
      * Whenever there is a new stream state, this method is called to notify the bluetooth manager about it.
      * @param newStreamState the new stream state based on {@link StreamState the StreamState enum}
@@ -539,13 +553,11 @@ public final class MbtBluetoothSPP
         super.mbtBluetoothManager.notifyStreamStateChanged(newStreamState);
     }
 
-    @Override
-    public boolean readBattery() {
-        return false;
-    }
 
     @Override
     public void sendCommand(CommandInterface.MbtCommand command) {
+        //not implemented yet
+        mbtBluetoothManager.notifyResponseReceived(null, command);//return null response to the client if request has not been sent
     }
 }
 

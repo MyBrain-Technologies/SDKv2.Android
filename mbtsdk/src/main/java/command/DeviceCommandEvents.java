@@ -1,5 +1,7 @@
 package command;
 
+import java.nio.ByteBuffer;
+
 /**
  * A class that contains all currently used device commands (mailbox & other commands) codes.
  * One code has one specific functionality.
@@ -41,8 +43,11 @@ public final class DeviceCommandEvents {
             public static final byte CMD_SET_DEVICE_CONFIG     = (byte)0x53;
             public static final byte CMD_GET_DEVICE_INFO      = (byte)0x54;
 
-            public static final byte[] SPP_PREFIX = {(byte) 0x3C, (byte) 0x00, (byte)0x00} ; // Additional info to get the current configuration .
-            public static final byte[] SPP_SUFFIX = {(byte) 0x00, (byte) 0x00, (byte)0x00} ; // Additional info to get the current configuration .
+            public static final byte[] START_FRAME = {(byte) 0x3C} ;
+            public static final byte[] PAYLOAD_LENGTH = { (byte)0x00, (byte)0x00 };
+            public static final byte[] COMPRESS = {(byte) 0x00};
+            public static final byte[] PACKET_ID = {(byte) 0x00} ;
+            public static final byte[] PAYLOAD = {(byte) 0x00} ; // Additional info to get the current configuration .
 
             public static final byte MBX_P300_ENABLE = 15;         // Enable or disable the p300 functionnality of the melomind.
             public static final byte MBX_DC_OFFSET_ENABLE = 16;         // Enable or disable the DC offset measurement computation and sending.
@@ -71,5 +76,26 @@ public final class DeviceCommandEvents {
              */
             public static final byte CMD_CODE_DISCONNECT_IN_A2DP_FAILED = 0x01; //1
             public static final byte CMD_CODE_DISCONNECT_IN_A2DP_SUCCESS = (byte)0xFF; //-1
+
+    /**
+     * Assemble all the input codes in a single array
+     * @param codes codes byte array to assemble
+     * @return the assembled array
+     */
+    public static byte[] assembleCodes(byte[]... codes){
+        int bufferLength = 0;
+        for (byte[] code : codes) {
+            for (byte codeByte : code) {
+                bufferLength++;
+            }
+        }
+        ByteBuffer buffer = ByteBuffer.allocate(bufferLength);
+        for (byte[] code : codes) {
+            for (byte codeByte : code) {
+                buffer.put(codeByte);
+            }
+        }
+        return buffer.array();
+    }
 
 }

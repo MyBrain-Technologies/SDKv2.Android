@@ -156,11 +156,11 @@ DeviceActivity extends AppCompatActivity {
     private void initConnectionStateListener() {
         bluetoothStateListener = new BluetoothStateListener(){
             @Override
-            public void onNewState(BtState newState) {
+            public void onNewState(BtState newState, MbtDevice device) {
             }
 
             @Override
-            public void onDeviceConnected() {
+            public void onDeviceConnected(MbtDevice device) {
                 LogUtils.i(TAG," device connected");
                 isConnected = true;
             }

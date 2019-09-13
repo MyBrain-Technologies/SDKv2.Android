@@ -20,6 +20,11 @@ public abstract class DeviceCommand <T, U extends BaseError> extends CommandInte
     final byte DISABLE = 0x00;
 
     /**
+     * Optional header codes
+     */
+    private byte[] headerCodes;
+
+    /**
      * Unique identifier of the command.
      * This code is sent to the headset in the write characteristic operation.
      */
@@ -47,6 +52,12 @@ public abstract class DeviceCommand <T, U extends BaseError> extends CommandInte
         this.additionalCodes = additionalCodes;
     }
 
+    DeviceCommand(byte[] headerCodes, byte mailboxCode, byte/*T*/... additionalCodes) {
+        this.headerCodes = headerCodes;
+        this.identifierCode = mailboxCode;
+        this.additionalCodes = additionalCodes;
+    }
+
     /**
      * Return the unique identifier of the command
      * @return the unique identifier of the command
@@ -64,6 +75,9 @@ public abstract class DeviceCommand <T, U extends BaseError> extends CommandInte
 
         int bufferSize = 1; //the buffer contains at least the identifier device command identifier code
 
+        if(headerCodes != null)
+            bufferSize += headerCodes.length;
+
         if(additionalCodes != null)
             bufferSize += additionalCodes.length;
 
@@ -78,6 +92,11 @@ public abstract class DeviceCommand <T, U extends BaseError> extends CommandInte
      * to the raw data buffer to send to the headset
      */
     private void fillHeader(){
+        if(headerCodes != null)
+            for(byte singleCode : headerCodes){
+                rawDataBuffer.put(singleCode);
+            }
+
         rawDataBuffer.put(identifierCode);
 
         if(additionalCodes != null)

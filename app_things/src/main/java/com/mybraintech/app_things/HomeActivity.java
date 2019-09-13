@@ -18,6 +18,7 @@ import android.widget.Toast;
 import java.util.ArrayList;
 
 import config.ConnectionConfig;
+import core.device.model.MbtDevice;
 import engine.MbtClient;
 import engine.clientevents.BaseError;
 import engine.clientevents.ConnectionStateListener;
@@ -65,7 +66,8 @@ public class HomeActivity extends AppCompatActivity{
         }
 
         @Override
-        public void onDeviceConnected() {
+        public void onDeviceConnected(MbtDevice device) {
+            deviceName = device.getProductName();
             toast.cancel();
             deinitCurrentActivity(true);
         }
