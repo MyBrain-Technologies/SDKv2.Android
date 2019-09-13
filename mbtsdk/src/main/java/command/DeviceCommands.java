@@ -443,4 +443,76 @@ public interface DeviceCommands {
         }
     }
 
+
+    /**
+     * SPP command sent from the SDK to the connected headset
+     * in order to read the battery charge level.
+     * The battery level is returned by the headset if the command succeeds.
+     */
+    @Keep
+    class GetBattery extends DeviceCommand<byte[], BaseError>{
+
+        /**
+         * SPP command sent from the SDK to the connected headset
+         * in order to read the battery charge level.
+         * The battery level is returned by the headset if the command succeeds.
+         * If you're interested in getting the returned raw response
+         * sent by the headset to the SDK once the command is received,
+         * call the {@link DeviceStreamingCommands.StopEEGAcquisition}({@link CommandInterface.CommandCallback}<DeviceCommand, byte[]> commandCallback) constructor
+         */
+        public GetBattery() {
+            super(DeviceCommandEvents.assembleCodes(
+                    DeviceCommandEvents.START_FRAME,
+                    DeviceCommandEvents.PAYLOAD_LENGTH),
+                    DeviceCommandEvents.CMD_STOP_EEG_ACQUISITION,
+                    DeviceCommandEvents.assembleCodes(
+                            DeviceCommandEvents.COMPRESS,
+                            DeviceCommandEvents.PACKET_ID,
+                            DeviceCommandEvents.PAYLOAD));
+
+
+            init();
+        }
+
+        /**
+         * SPP command sent from the SDK to the connected headset
+         * in order to read the battery charge level.
+         * The battery level is returned by the headset if the command succeeds.
+         * @param commandCallback is a {@link CommandInterface.CommandCallback} object
+         * that provides a callback for the returned raw response
+         * sent by the headset to the SDK once the command is received.
+         * This raw response is a byte array that has be to converted to be readable.
+         * If you're not interested in getting the returned raw response
+         * sent by the headset to the SDK once the connect command is received,
+         * call the {@link GetBattery}() constructor
+         * The onRequestSent callback is triggered if the command has successfully been sent.
+         */
+        public GetBattery(CommandInterface.CommandCallback<byte[]> commandCallback) {
+            super(DeviceCommandEvents.assembleCodes(
+                    DeviceCommandEvents.START_FRAME,
+                    DeviceCommandEvents.PAYLOAD_LENGTH),
+                    DeviceCommandEvents.CMD_GET_BATTERY_VALUE,
+                    DeviceCommandEvents.assembleCodes(
+                            DeviceCommandEvents.COMPRESS,
+                            DeviceCommandEvents.PACKET_ID,
+                            DeviceCommandEvents.PAYLOAD));
+            this.commandCallback = commandCallback;
+            init();
+        }
+
+        @Override
+        public boolean isValid() {
+            return true;
+        }
+
+        @Override
+        public byte[] getData() {
+            return null;
+        }
+
+        @Override
+        public String getInvalidityError() {
+            return null;
+        }
+    }
 }

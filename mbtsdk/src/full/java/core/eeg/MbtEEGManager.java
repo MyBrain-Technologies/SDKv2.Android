@@ -31,7 +31,7 @@ import core.eeg.storage.RawEEGSample;
 import eventbus.EventBusManager;
 import eventbus.events.BluetoothEEGEvent;
 import eventbus.events.ClientReadyEEGEvent;
-import eventbus.events.ConfigEEGEvent;
+import eventbus.events.EEGConfigEvent;
 import eventbus.events.ConnectionStateEvent;
 import features.MbtFeatures;
 import mbtsdk.com.mybraintech.mbtsdk.BuildConfig;
@@ -300,7 +300,7 @@ public final class MbtEEGManager extends BaseModuleManager {
     }
 
     @Subscribe
-    public void onConfigurationChanged(ConfigEEGEvent configEEGEvent){
+    public void onConfigurationChanged(EEGConfigEvent configEEGEvent){
         LogUtils.d(TAG, "new config "+ configEEGEvent.getConfig());
         sampRate = configEEGEvent.getDevice().getInternalConfig().getSampRate();
         packetLength = configEEGEvent.getDevice().getEegPacketLength();

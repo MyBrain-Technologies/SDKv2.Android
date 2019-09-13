@@ -24,6 +24,7 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 
 import command.CommandInterface;
+import command.DeviceCommandEvents;
 import command.DeviceCommands;
 import command.DeviceStreamingCommands;
 import core.bluetooth.BtProtocol;
@@ -51,8 +52,6 @@ public final class MbtBluetoothSPP
         extends MbtDataBluetooth {
 
     private final static String TAG = MbtBluetoothSPP.class.getName();
-
-    private final byte FRAME_HEADER = 0x3C;
 
     private String deviceAddress;
 
@@ -352,20 +351,20 @@ public final class MbtBluetoothSPP
         while (this.reader != null && this.writer != null) {
 
             try {
-                byte b = this.reader.readByte();
+                byte currentByte = this.reader.readByte();
 
                 switch(currentStatus){
 
                     case STATE_IDLE:
-                        if(b == FRAME_HEADER){
+                        if(currentByte == DeviceCommandEvents.START_FRAME[0]){
                             currentStatus = STATE_LENGTH;
-                        }else if(b != 0){
+                        }else if(currentByte != 0){
                             //LogUtils.e(TAG, "Byte b = " + b);
                         }
                         break;
 
                     case STATE_LENGTH:
-                        payloadSizeBuf[counter++] = b;
+                        payloadSizeBuf[counter++] = currentByte;
                         if(counter == 2){
                             counter = 0;
                             payloadSize = ((payloadSizeBuf[0] & 0xFF) << 8) + (payloadSizeBuf[1] & 0xFF);
@@ -375,17 +374,16 @@ public final class MbtBluetoothSPP
                         break;
 
                     case STATE_COMMAND:
-                        command = b ;
-                        if(command != 3 && command != 4){
+                        command = currentByte ;
+                        if(command != 3 && command != 4) {
                             currentStatus = STATE_IDLE;
                         }else{
                             currentStatus = STATE_COMPRESSION;
                         }
                         break;
-
                     case STATE_COMPRESSION:
-                        if(b == 0x00 || b == 0x01){
-                            data[counter++] = b;
+                        if(currentByte == 0x00 || currentByte == 0x01){
+                            data[counter++] = currentByte;
                             currentStatus = STATE_FRAME_NB;
                         }
                         else{
@@ -395,7 +393,7 @@ public final class MbtBluetoothSPP
 
                     case STATE_FRAME_NB:
 
-                        data[counter++] = b;
+                        data[counter++] = currentByte;
                         if(counter == 3){
                             pcktNumber[0] = data[1];
                             pcktNumber[1] = data[2];
@@ -405,7 +403,7 @@ public final class MbtBluetoothSPP
 
                     case STATE_ACQ:
                         if(command == 3) {
-                            data[counter++] = b;
+                            data[counter++] = currentByte;
 
                             if (counter == payloadSize + 3) {
                                 counter = 0;
@@ -427,7 +425,7 @@ public final class MbtBluetoothSPP
                         }else if(command == 4) {
                             LogUtils.i(TAG, "Reading Battery level");
                             data = new byte[payloadSize];
-                            int level = b;
+                            int level = currentByte;
                             counter = 0;
                             currentStatus = STATE_IDLE;
                             int percent = -1;
@@ -457,6 +455,21 @@ public final class MbtBluetoothSPP
                                     break;
                             }
                             //mbtBluetoothManager.updateBatteryLevel(percent);
+                        }else if(command == DeviceCommandEvents.MBX_GET_EEG_CONFIG){
+                            data[counter++] = currentByte;
+                            if (counter == payloadSize + 3) {
+                                counter = 0;
+                                currentStatus = STATE_IDLE;
+
+                                final byte[] finalData =  data.clone();//Arrays.copyOf(data, data.length);
+                                AsyncUtils.executeAsync(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Log.e(TAG, "EEG config "+Arrays.toString(finalData));
+                                        notifyCommandResponseReceived(finalData);
+                                    }
+                                });
+                            }
                         }else {
                             //TODO here are non implemented cases. Please see the MBT SPP protocol for infos.
                         }
@@ -519,7 +532,8 @@ public final class MbtBluetoothSPP
     private final boolean START = true;
     private final boolean STOP = false;
     private void monitorBatteryAcquisition(final boolean start) {
-        final byte[] msg = {FRAME_HEADER,0,1,4,0,0,0,1};
+        //sendCommand(new DeviceCommands.GetBattery());
+        final byte[] msg = new DeviceCommands.GetBattery().serialize();
         if (start) {
             if (this.batteryTimer != null)
                 this.batteryTimer.cancel();

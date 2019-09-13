@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothDevice;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import java.util.List;
 
@@ -62,15 +63,14 @@ public abstract class MbtDevice {
 
     int eegPacketLength;
 
-    int nbChannels;
-
     List<MbtAcquisitionLocations> acquisitionLocations;
     List<MbtAcquisitionLocations> referencesLocations;
     List<MbtAcquisitionLocations> groundsLocation;
 
     private InternalConfig internalConfig;
 
-    MbtDevice(BluetoothDevice bluetoothDevice, @NonNull MbtDeviceType deviceType){
+    MbtDevice(BluetoothDevice bluetoothDevice, @NonNull MbtDeviceType deviceType, int nbChannels){
+        this.internalConfig = new InternalConfig(nbChannels);
         this.deviceType = deviceType;
         this.deviceAddress = bluetoothDevice.getAddress();
         this.productName = bluetoothDevice.getName();
@@ -127,7 +127,7 @@ public abstract class MbtDevice {
 
     public int getSampRate() {return this.internalConfig.sampRate;}
 
-    public int getNbChannels() {return this.nbChannels;}
+    public int getNbChannels() {return this.internalConfig.nbChannels;}
 
     public int getEegPacketLength() {
         return eegPacketLength;
@@ -159,8 +159,6 @@ public abstract class MbtDevice {
     public InternalConfig getInternalConfig() {
         return internalConfig;
     }
-
-    public abstract void setInternalConfig(Byte[] rawConfig);
 
     public void setInternalConfig(InternalConfig internalConfig){
         this.internalConfig = internalConfig;
@@ -196,8 +194,14 @@ public abstract class MbtDevice {
         byte statusBytes;
         byte nbPackets;
         byte sampRate;
+        int nbChannels;
 
-        public InternalConfig(byte notchFilterConfig, byte bandPassFilterConfig, byte gainValue, byte statusBytes, byte nbPackets, byte sampRate) {
+        public InternalConfig(int nbChannels) {
+            this.nbChannels = nbChannels;
+        }
+
+        public InternalConfig(int nbChannels, byte notchFilterConfig, byte bandPassFilterConfig, byte gainValue, byte statusBytes, byte nbPackets, byte sampRate) {
+            this.nbChannels = nbChannels;
             this.notchFilterConfig = notchFilterConfig;
             this.bandPassFilterConfig = bandPassFilterConfig;
             this.gainValue = gainValue;
@@ -206,7 +210,8 @@ public abstract class MbtDevice {
             this.sampRate = sampRate;
         }
 
-        public InternalConfig(byte gainValue, byte sampRate) {
+        public InternalConfig(int nbChannels, byte gainValue, byte sampRate) {
+            this.nbChannels = nbChannels;
             this.notchFilterConfig = DEFAULT;
             this.bandPassFilterConfig = DEFAULT;
             this.gainValue = gainValue;
@@ -248,6 +253,7 @@ public abstract class MbtDevice {
                     ", statusBytes=" + statusBytes +
                     ", nbPackets=" + nbPackets +
                     ", sampRate=" + sampRate +
+                    ", nbChannels=" + nbChannels +
                     '}';
         }
     }
@@ -261,7 +267,6 @@ public abstract class MbtDevice {
                 ", serialNumber='" + serialNumber + '\'' +
                 ", externalName='" + externalName + '\'' +
                 ", deviceAddress='" + deviceAddress + '\'' +
-                ", nbChannels=" + nbChannels +
                 ", acquisitionLocations=" + acquisitionLocations +
                 ", referencesLocations=" + referencesLocations +
                 ", groundsLocation=" + groundsLocation +

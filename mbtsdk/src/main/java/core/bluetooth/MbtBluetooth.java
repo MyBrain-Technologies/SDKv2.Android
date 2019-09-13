@@ -196,7 +196,7 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect{
         return null;
     }
 
-    protected void notifyCommandResponseReceived(Object response) {
+    public void notifyCommandResponseReceived(Object response) {
         lock.stopWaitingOperation(response);
     }
 

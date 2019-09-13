@@ -346,7 +346,7 @@ public interface DeviceStreamingCommands {
     }
 
     /**
-     * Mailbox command sent from the SDK to the connected headset
+     * Command sent from the SDK to the connected headset
      * in order to get the device streaming configuration such as :
      * the notch filter,
      * the bandpass filter,
@@ -359,7 +359,7 @@ public interface DeviceStreamingCommands {
     class EegConfig extends DeviceCommand<byte[], BaseError> implements DeviceStreamingCommands{
 
         /**
-         * Mailbox command sent from the SDK to the connected headset
+         * Command sent from the SDK to the connected headset
          * in order to get the device streaming configuration such as :
          * the notch filter,
          * the bandpass filter,
@@ -408,7 +408,7 @@ public interface DeviceStreamingCommands {
 
 
     /**
-     * Mailbox command sent from the SDK to the connected headset
+     * SPP command sent from the SDK to the connected headset
      * in order to start a Bluetooth EEG streaming.
      * The streaming status is returned by the headset if the command succeeds.
      */
@@ -416,11 +416,11 @@ public interface DeviceStreamingCommands {
     class StartEEGAcquisition extends DeviceCommand<byte[], BaseError>{
 
         /**
-         * Mailbox command sent from the SDK to the connected headset
+         * SPP command sent from the SDK to the connected headset
          * in order to start a Bluetooth EEG streaming.
          * The streaming status is returned by the headset if the command succeeds.
          * If you're interested in getting the returned raw response
-         * sent by the headset to the SDK once the start command is received,
+         * sent by the headset to the SDK once the stream command is received,
          * call the {@link StartEEGAcquisition}({@link CommandInterface.CommandCallback}<DeviceCommand, byte[]> commandCallback) constructor
          */
         public StartEEGAcquisition() {
@@ -438,15 +438,15 @@ public interface DeviceStreamingCommands {
         }
 
         /**
-         * Mailbox command sent from the SDK to the connected headset
+         * SPP command sent from the SDK to the connected headset
          * in order to establish a Bluetooth disconnection for audio streaming.
-         * The disconnection status is returned by the headset if the command succeeds.
+         * The streaming status is returned by the headset if the command succeeds.
          * @param commandCallback is a {@link CommandInterface.CommandCallback} object
          * that provides a callback for the returned raw response
-         * sent by the headset to the SDK once the disconnect command is received.
+         * sent by the headset to the SDK once the streaming command is received.
          * This raw response is a byte array that has be to converted to be readable.
          * If you're not interested in getting the returned raw response
-         * sent by the headset to the SDK once the connect command is received,
+         * sent by the headset to the SDK once the streaming command is received,
          * call the {@link StartEEGAcquisition}() constructor
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
@@ -480,7 +480,7 @@ public interface DeviceStreamingCommands {
     }
 
     /**
-     * Mailbox command sent from the SDK to the connected headset
+     * SPP command sent from the SDK to the connected headset
      * in order to start a Bluetooth EEG streaming.
      * The streaming status is returned by the headset if the command succeeds.
      */
@@ -488,11 +488,11 @@ public interface DeviceStreamingCommands {
     class StopEEGAcquisition extends DeviceCommand<byte[], BaseError>{
 
         /**
-         * Mailbox command sent from the SDK to the connected headset
+         * SPP command sent from the SDK to the connected headset
          * in order to start a Bluetooth EEG streaming.
          * The streaming status is returned by the headset if the command succeeds.
          * If you're interested in getting the returned raw response
-         * sent by the headset to the SDK once the start command is received,
+         * sent by the headset to the SDK once the stop command is received,
          * call the {@link StopEEGAcquisition}({@link CommandInterface.CommandCallback}<DeviceCommand, byte[]> commandCallback) constructor
          */
         public StopEEGAcquisition() {
@@ -510,15 +510,15 @@ public interface DeviceStreamingCommands {
         }
 
         /**
-         * Mailbox command sent from the SDK to the connected headset
+         * SPP command sent from the SDK to the connected headset
          * in order to establish a Bluetooth disconnection for audio streaming.
-         * The disconnection status is returned by the headset if the command succeeds.
+         * The streaming status is returned by the headset if the command succeeds.
          * @param commandCallback is a {@link CommandInterface.CommandCallback} object
          * that provides a callback for the returned raw response
          * sent by the headset to the SDK once the disconnect command is received.
          * This raw response is a byte array that has be to converted to be readable.
          * If you're not interested in getting the returned raw response
-         * sent by the headset to the SDK once the connect command is received,
+         * sent by the headset to the SDK once the streaming command is received,
          * call the {@link StopEEGAcquisition}() constructor
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */

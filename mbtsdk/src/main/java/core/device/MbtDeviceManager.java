@@ -15,7 +15,7 @@ import core.device.model.VProDevice;
 import core.eeg.acquisition.MbtDataConversion;
 import core.oad.OADFileManager;
 import eventbus.EventBusManager;
-import eventbus.events.ConfigEEGEvent;
+import eventbus.events.EEGConfigEvent;
 import eventbus.events.DeviceInfoEvent;
 import utils.LogUtils;
 
@@ -102,8 +102,9 @@ public class MbtDeviceManager extends BaseModuleManager{
     }
 
     @Subscribe
-    public void onNewDeviceConfiguration(ConfigEEGEvent configEEGEvent){
+    public void onNewDeviceConfiguration(EEGConfigEvent configEEGEvent){
         this.mCurrentConnectedDevice.setInternalConfig(configEEGEvent.getConfig());
+        Log.d(TAG, "Current device: "+this.mCurrentConnectedDevice.toString());
     }
 
     /**

@@ -50,7 +50,7 @@ import engine.clientevents.BaseError;
 import engine.clientevents.ConnectionStateReceiver;
 import eventbus.EventBusManager;
 import eventbus.events.BluetoothEEGEvent;
-import eventbus.events.ConfigEEGEvent;
+import eventbus.events.EEGConfigEvent;
 import eventbus.events.ConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
 import features.MbtDeviceType;
@@ -154,7 +154,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
             @Override
             public void onRequestComplete(MbtDevice device) {
-                EventBusManager.postEvent(new ConfigEEGEvent(device, returnedConfig));
+                EventBusManager.postEvent(new EEGConfigEvent(device, returnedConfig));
             }
         });
     }

@@ -19,11 +19,10 @@ import features.MbtFeatures;
 public class VProDevice extends MbtDevice{
 
     public VProDevice(@NonNull final BluetoothDevice device){
-        super(device, MbtDeviceType.VPRO);
+        super(device, MbtDeviceType.VPRO, MbtFeatures.VPRO_NB_CHANNELS);
         this.externalName = MbtFeatures.VPRO_DEVICE_NAME;
         this.productName = device.getName();
         this.deviceAddress = device.getAddress();
-
     }
 
 
@@ -67,20 +66,11 @@ public class VProDevice extends MbtDevice{
     @NonNull
     public final int getSampRate() {return this.getInternalConfig().getSampRate();}
 
-    @NonNull
-    public final int getNbChannels() {return this.nbChannels;}
-
-    @Override
-    public void setInternalConfig(Byte[] rawConfig) {
-        //Returned : [payload_length(2B), 0x0E, 0x00, 0x00, 0x00, num_eeg_channels, amp_gain, ads_freq_sampling];
-        nbChannels = rawConfig[6];
-        super.setInternalConfig(convertRawInternalConfig(rawConfig));
-    }
-
     public static InternalConfig convertRawInternalConfig(Byte[] rawConfig) {
         return new InternalConfig(
-                rawConfig[7],
-                rawConfig[8]);
+                rawConfig[0],
+                rawConfig[1],
+                rawConfig[2]);
     }
 
     @NonNull

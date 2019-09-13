@@ -1,6 +1,7 @@
 package eventbus.events;
 
 import android.support.annotation.NonNull;
+import android.util.Log;
 
 import core.device.model.MbtDevice;
 import core.device.model.MelomindDevice;
@@ -12,12 +13,12 @@ import features.MbtDeviceType;
  *
  * @author Sophie Zecri on 29/05/2018
  */
-public class ConfigEEGEvent {
+public class EEGConfigEvent {
 
     private MbtDevice device;
     private MbtDevice.InternalConfig config;
 
-    public ConfigEEGEvent(@NonNull MbtDevice device, @NonNull Byte[] config) {
+    public EEGConfigEvent(@NonNull MbtDevice device, @NonNull Byte[] config) {
         this.config = (device.deviceType.equals(MbtDeviceType.MELOMIND) ?
                 MelomindDevice.convertRawInternalConfig(config) : VProDevice.convertRawInternalConfig(config)) ;
         this.device = device;

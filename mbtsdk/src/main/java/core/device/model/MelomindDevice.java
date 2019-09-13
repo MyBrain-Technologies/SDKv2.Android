@@ -20,11 +20,10 @@ import features.MbtFeatures;
 public class MelomindDevice extends MbtDevice{
 
     public MelomindDevice(@NonNull final BluetoothDevice device){
-        super(device, MbtDeviceType.MELOMIND);
+        super(device, MbtDeviceType.MELOMIND, MbtFeatures.MELOMIND_NB_CHANNELS);
         this.acquisitionLocations = Arrays.asList(MbtAcquisitionLocations.P3, MbtAcquisitionLocations.P4);
         this.groundsLocation = Arrays.asList(MbtAcquisitionLocations.M2);
         this.referencesLocations = Arrays.asList(MbtAcquisitionLocations.M1);
-        this.nbChannels = MbtFeatures.MELOMIND_NB_CHANNELS;
         this.firmwareVersion = "0.0.0";
         this.hardwareVersion = "0.0.0";
         this.serialNumber = "0000000000";
@@ -111,14 +110,9 @@ public class MelomindDevice extends MbtDevice{
         return super.getInternalConfig();
     }
 
-    @Override
-    public void setInternalConfig(Byte[] rawConfig) {
-        //Returned : [notch_filter, bandpass_filter, amp_gain, p300_status_byte_number, sp_buffer_size, real_ads_freq_sampling];
-        super.setInternalConfig(convertRawInternalConfig(rawConfig));
-    }
-
     public static InternalConfig convertRawInternalConfig(Byte[] rawConfig) {
         return new InternalConfig(
+                MbtFeatures.MELOMIND_NB_CHANNELS,
                 rawConfig[0],
                 rawConfig[1],
                 rawConfig[2],
@@ -135,8 +129,6 @@ public class MelomindDevice extends MbtDevice{
     public final String getHardwareVersion() {
         return this.hardwareVersion;
     }
-
-    public final int getNbChannels() {return this.nbChannels;}
 
     @NonNull
     public final List<MbtAcquisitionLocations> getAcquisitionLocations() {return this.acquisitionLocations;}
