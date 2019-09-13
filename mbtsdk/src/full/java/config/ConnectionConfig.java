@@ -162,7 +162,6 @@ public final class ConnectionConfig {
         private int mtu = BluetoothCommands.Mtu.DEFAULT;
 
         private boolean connectAudio = false;
-        private MbtDeviceType deviceType = MbtDeviceType.MELOMIND;
         @NonNull
         private final ConnectionStateListener<BaseError> connectionStateListener;
 
@@ -250,21 +249,11 @@ public final class ConnectionConfig {
             return this;
         }
 
-        /**
-         * Use this method to define which kind of device you want to connect to.
-         * @see MbtDeviceType
-         * @param deviceType
-         * @return the builder instance
-         */
         @NonNull
-        public Builder scanDeviceType(MbtDeviceType deviceType){
-            this.deviceType = deviceType;
-            return this;
-        }
-
-        @NonNull
-        public ConnectionConfig create(){
-            return new ConnectionConfig(this.deviceName, this.deviceQrCode, this.maxScanDuration, this.connectAudio, this.deviceType, this.mtu, this.connectionStateListener);
+        public ConnectionConfig createForDevice(@NonNull MbtDeviceType deviceType){
+            if(deviceType == null)
+                deviceType = MbtDeviceType.MELOMIND;
+            return new ConnectionConfig(this.deviceName, this.deviceQrCode, this.maxScanDuration, this.connectAudio, deviceType, this.mtu, this.connectionStateListener);
         }
 
 

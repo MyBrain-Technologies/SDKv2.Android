@@ -22,7 +22,6 @@ import command.DeviceCommandEvents;
 import command.DeviceCommands;
 import config.MbtConfig;
 import core.bluetooth.BtState;
-import core.bluetooth.IStreamable;
 import core.bluetooth.MbtBluetoothManager;
 import core.bluetooth.StreamState;
 import core.bluetooth.spp.MbtBluetoothSPP;
@@ -607,7 +606,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void stopLowEnergyScan_StateIsNotScanStarted() {
-        bluetoothLE.stopLowEnergyScan();
+        bluetoothLE.stopScan();
         assertNotEquals(bluetoothLE.getCurrentState(), BtState.SCAN_STARTED);
     }
 
@@ -616,7 +615,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void stopLowEnergyScan_StateIsIdle() {
-        bluetoothLE.stopLowEnergyScan();
+        bluetoothLE.stopScan();
         assertEquals(bluetoothLE.getCurrentState(), BtState.IDLE);
     }
 
@@ -1330,7 +1329,7 @@ public class MbtBluetoothLETest {
         final int timeout = 11000;
         command = Mockito.mock(BluetoothCommands.Mtu.class);
         bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED);
-        bluetoothLE.setAsyncConfiguration(asyncOperation); //if this setter is not called, the async configuration mock is not called
+        bluetoothLE.setLock(asyncOperation); //if this setter is not called, the async configuration mock is not called
         when(command.isValid()).thenReturn(true);
         when(command.serialize()).thenReturn(mtu);
         when(gatt.requestMtu(47)).thenReturn(true);

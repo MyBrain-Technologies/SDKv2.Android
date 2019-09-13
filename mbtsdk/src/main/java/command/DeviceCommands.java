@@ -317,7 +317,7 @@ public interface DeviceCommands {
         @Override
         public String getInvalidityError() {
             return "You are not allowed to use a CommandCallback or other Object that extends the MbtResponse interface for the commandCallback input.\n"
-            +"As no response is expected, you have to call the ICommandCallback constructor to create a instance of ICommandCallback object.\n"
+            +"As no response is expected, you have to call the ICommandCallback constructor to createForDevice a instance of ICommandCallback object.\n"
             +"If you still use a CommandCallback or other Object that extends the MbtResponse interface, the command won't be sent and the onError callback will be triggered.";
         }
     }
@@ -423,78 +423,6 @@ public interface DeviceCommands {
         public DisconnectAudio(CommandInterface.CommandCallback<byte[]> commandCallback) {
             super(DeviceCommandEvents.MBX_DISCONNECT_IN_A2DP,
                     DeviceCommandEvents.MBX_DISCONNECT_IN_A2DP_ADDITIONAL);
-            this.commandCallback = commandCallback;
-            init();
-        }
-
-        @Override
-        public boolean isValid() {
-            return true;
-        }
-
-        @Override
-        public byte[] getData() {
-            return null;
-        }
-
-        @Override
-        public String getInvalidityError() {
-            return null;
-        }
-    }
-
-    /**
-     * Mailbox command sent from the SDK to the connected headset
-     * in order to start a Bluetooth EEG streaming.
-     * The streaming status is returned by the headset if the command succeeds.
-     */
-    @Keep
-    class StartEEGAcquisition extends DeviceCommand<byte[], BaseError>{
-
-        /**
-         * Mailbox command sent from the SDK to the connected headset
-         * in order to start a Bluetooth EEG streaming.
-         * The streaming status is returned by the headset if the command succeeds.
-         * If you're interested in getting the returned raw response
-         * sent by the headset to the SDK once the start command is received,
-         * call the {@link StartEEGAcquisition}({@link CommandInterface.CommandCallback}<DeviceCommand, byte[]> commandCallback) constructor
-         */
-        public StartEEGAcquisition() {
-            super(DeviceCommandEvents.assembleCodes(
-                    DeviceCommandEvents.START_FRAME,
-                    DeviceCommandEvents.PAYLOAD_LENGTH),
-                    DeviceCommandEvents.CMD_START_EEG_ACQUISITION,
-                    DeviceCommandEvents.assembleCodes(
-                            DeviceCommandEvents.COMPRESS,
-                            DeviceCommandEvents.PACKET_ID,
-                            DeviceCommandEvents.PAYLOAD));
-
-
-            init();
-        }
-
-        /**
-         * Mailbox command sent from the SDK to the connected headset
-         * in order to establish a Bluetooth disconnection for audio streaming.
-         * The disconnection status is returned by the headset if the command succeeds.
-         * @param commandCallback is a {@link CommandInterface.CommandCallback} object
-         * that provides a callback for the returned raw response
-         * sent by the headset to the SDK once the disconnect command is received.
-         * This raw response is a byte array that has be to converted to be readable.
-         * If you're not interested in getting the returned raw response
-         * sent by the headset to the SDK once the connect command is received,
-         * call the {@link StartEEGAcquisition}() constructor
-         * The onRequestSent callback is triggered if the command has successfully been sent.
-         */
-        public StartEEGAcquisition(CommandInterface.CommandCallback<byte[]> commandCallback) {
-            super(DeviceCommandEvents.assembleCodes(
-                    DeviceCommandEvents.START_FRAME,
-                    DeviceCommandEvents.PAYLOAD_LENGTH),
-                    DeviceCommandEvents.CMD_START_EEG_ACQUISITION,
-                    DeviceCommandEvents.assembleCodes(
-                            DeviceCommandEvents.COMPRESS,
-                            DeviceCommandEvents.PACKET_ID,
-                            DeviceCommandEvents.PAYLOAD));
             this.commandCallback = commandCallback;
             init();
         }

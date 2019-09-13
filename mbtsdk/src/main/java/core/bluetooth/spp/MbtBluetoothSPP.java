@@ -21,15 +21,18 @@ import java.util.Arrays;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 
 import command.CommandInterface;
 import command.DeviceCommands;
+import command.DeviceStreamingCommands;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.BtState;
 import core.bluetooth.MbtBluetoothManager;
 import core.bluetooth.MbtDataBluetooth;
 import core.bluetooth.StreamState;
 import core.device.model.DeviceInfo;
+import engine.clientevents.BluetoothError;
 import utils.AsyncUtils;
 import utils.LogUtils;
 
@@ -226,7 +229,7 @@ public final class MbtBluetoothSPP
 
     @Override
     public boolean startStream() {
-        final byte[] msg = new DeviceCommands.StartEEGAcquisition().serialize();
+        final byte[] msg = new DeviceStreamingCommands.StartEEGAcquisition().serialize();
         LogUtils.i(TAG, "Requested to start stream... "+ Arrays.toString(msg));
         if (!isConnected()) {
             LogUtils.i(TAG,"Error Not connected!");
@@ -268,7 +271,7 @@ public final class MbtBluetoothSPP
     }
 
     private void sendKeepAlive(boolean keepAlive) {
-        final byte[] msg = new DeviceCommands.StartEEGAcquisition().serialize();
+        final byte[] msg = new DeviceStreamingCommands.StartEEGAcquisition().serialize();
         if (keepAlive) {
             if (this.keepAliveTimer != null)
                 this.keepAliveTimer.cancel();
@@ -478,7 +481,7 @@ public final class MbtBluetoothSPP
 
     @Override
     public boolean stopStream() {
-        final byte[] msg = new DeviceCommands.StopEEGAcquisition().serialize();
+        final byte[] msg = new DeviceStreamingCommands.StopEEGAcquisition().serialize();
         LogUtils.i(TAG, "Requested to stop stream... "+Arrays.toString(msg));
         if (!isConnected()) {
             LogUtils.i(TAG,"Error Not connected!");
@@ -556,8 +559,40 @@ public final class MbtBluetoothSPP
 
     @Override
     public void sendCommand(CommandInterface.MbtCommand command) {
-        //not implemented yet
-        mbtBluetoothManager.notifyResponseReceived(null, command);//return null response to the client if request has not been sent
+        Object response = null;
+
+        if (!isConnectedDeviceReadyForCommand()){ //error returned if no headset is connected
+            LogUtils.w(TAG, "Command not sent : "+command);
+            command.onError(BluetoothError.ERROR_NOT_CONNECTED, null);
+        } else { //any command is not sent if no device is connected
+            if (command.isValid()){//any invalid command is not sent : validity criteria are defined in each Bluetooth implemented class , the onError callback is triggered in the constructor of the command object
+                LogUtils.i(TAG, "Send command : "+command);
+                try {
+                    Thread.sleep(200);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                boolean requestSent = sendData((byte[])command.serialize());
+
+                if(!requestSent) {
+                    LogUtils.e(TAG, "Command sending failed");
+                    command.onError(BluetoothError.ERROR_REQUEST_OPERATION, null);
+
+                }else {
+                    command.onRequestSent();
+
+                    if (command.isResponseExpected()) {
+                        response = waitResponseForCommand(11000);
+                        command.onResponseReceived(response);
+                    }
+                }
+            }else
+                LogUtils.w(TAG, "Command not sent : "+command);
+        }
+
+        mbtBluetoothManager.notifyResponseReceived(response, command);//return null response to the client if request has not been sent
     }
+
 }
 

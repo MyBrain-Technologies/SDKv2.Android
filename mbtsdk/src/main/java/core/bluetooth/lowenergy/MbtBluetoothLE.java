@@ -17,6 +17,7 @@ import android.content.Intent;
 import android.os.Handler;
 import android.os.ParcelUuid;
 import android.support.annotation.NonNull;
+import android.support.annotation.VisibleForTesting;
 import android.util.Log;
 
 import java.lang.reflect.InvocationTargetException;
@@ -77,8 +78,6 @@ public class MbtBluetoothLE
     private final static String REFRESH_METHOD = "refresh";
 
     private MbtAsyncWaitOperation asyncOperation = new MbtAsyncWaitOperation<Boolean>();
-
-    private MbtAsyncWaitOperation asyncConfiguration = new MbtAsyncWaitOperation<>();
 
     /**
      * An internal event used to notify MbtBluetoothLE that A2DP has disconnected.
@@ -459,10 +458,6 @@ public class MbtBluetoothLE
     }
 
 
-    public boolean isConnectedDeviceReadyForCommand() {
-        return (getCurrentState().ordinal() >= BtState.DATA_BT_CONNECTION_SUCCESS.ordinal());
-    }
-
     /**
      * Starts a read operation on a specific characteristic
      * @param characteristic the characteristic to read
@@ -626,10 +621,6 @@ public class MbtBluetoothLE
         }
     }
 
-    void notifyCommandResponseReceived(Object response) {
-        asyncConfiguration.stopWaitingOperation(response);
-    }
-
     void notifyConnectionResponseReceived(byte mailboxEvent, byte mailboxResponse) {
         if (!mbtGattController.isConnectionMailboxEvent(mailboxEvent)){
             LogUtils.e(TAG, "Error : received response is not related to Bluetooth connection");
@@ -650,20 +641,6 @@ public class MbtBluetoothLE
 
     void updateConnectionState(boolean isCompleted){
         mbtBluetoothManager.updateConnectionState(isCompleted); //do nothing if the current state is CONNECTED_AND_READY
-    }
-
-    /**
-     * This method waits until the device has returned a response
-     * related to the SDK request (blocking method).
-     */
-    private Object waitResponseForCommand(){
-        Log.d(TAG, "Wait response of device command ");
-            try {
-                return asyncConfiguration.waitOperationResult(11000);
-            } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                LogUtils.e(TAG, "Device command response not received : "+e);
-            }
-        return null;
     }
 
     /**
@@ -704,7 +681,7 @@ public class MbtBluetoothLE
                     command.onRequestSent();
 
                     if (command.isResponseExpected()) {
-                        response = waitResponseForCommand();
+                        response = waitResponseForCommand(11000);
                         command.onResponseReceived(response);
                     }
                 }
@@ -828,9 +805,7 @@ public class MbtBluetoothLE
         asyncOperation.stopWaitingOperation(false);
     }
 
-    void setAsyncConfiguration(MbtAsyncWaitOperation asyncConfiguration) {
-        this.asyncConfiguration = asyncConfiguration;
-    }
+    @VisibleForTesting
     void setAsyncOperation(MbtAsyncWaitOperation asyncOperation) {
         this.asyncOperation = asyncOperation;
     }

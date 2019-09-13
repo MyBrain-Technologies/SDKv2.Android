@@ -251,7 +251,7 @@ DeviceActivity extends AppCompatActivity {
                             .setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)
                             .useQualities()
                                 .configureAcquisitionFromDeviceCommand(null, null)
-                            .createFor(deviceType));
+                            .createForDevice(deviceType));
                 } else { //streaming is in progress : stopping streaming
                     stopStream(); // set false to isStreaming et null to the eegListener
                 }

@@ -10,12 +10,19 @@ import android.content.IntentFilter;
 import android.support.annotation.NonNull;
 
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 import android.util.Log;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+
+import command.CommandInterface;
 import core.device.model.DeviceInfo;
 import core.oad.OADEvent;
 
+import engine.clientevents.BluetoothError;
 import utils.LogUtils;
+import utils.MbtAsyncWaitOperation;
 import utils.MbtLock;
 
 /**
@@ -43,6 +50,8 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect{
     protected MbtBluetoothManager mbtBluetoothManager;
 
     protected BtProtocol protocol;
+
+    private MbtAsyncWaitOperation lock = new MbtAsyncWaitOperation<>();
 
     public MbtBluetooth(Context context, BtProtocol protocol, MbtBluetoothManager mbtBluetoothManager) {
         this.context = context.getApplicationContext();
@@ -168,4 +177,32 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect{
             this.currentState = currentState;
         }
     }
+
+    protected boolean isConnectedDeviceReadyForCommand() {
+        return (currentState.ordinal() >= BtState.DATA_BT_CONNECTION_SUCCESS.ordinal());
+    }
+
+    /**
+     * This method waits until the device has returned a response
+     * related to the SDK request (blocking method).
+     */
+    protected Object waitResponseForCommand(int timeout){
+        Log.d(TAG, "Wait response of device command ");
+        try {
+            return lock.waitOperationResult(timeout);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            LogUtils.e(TAG, "Device command response not received : "+e);
+        }
+        return null;
+    }
+
+    protected void notifyCommandResponseReceived(Object response) {
+        lock.stopWaitingOperation(response);
+    }
+
+    @VisibleForTesting
+    public void setLock(MbtAsyncWaitOperation lock) {
+        this.lock = lock;
+    }
+
 }
