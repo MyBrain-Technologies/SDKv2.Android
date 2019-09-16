@@ -14,7 +14,6 @@ import core.eeg.MbtEEGManager;
 import core.recording.localstorage.MbtRecordBuffering;
 import eventbus.EventBusManager;
 import eventbus.events.ClientReadyEEGEvent;
-import eventbus.events.ConnectionStateEvent;
 
 /**
  * Created by Etienne on 08/02/2018.
@@ -49,13 +48,12 @@ public final class MbtRecordingManager extends BaseModuleManager {
     public void onStreamRequest(final StreamRequestEvent request) {
         if (request.isStart()) { //start streaming
 
-            if (request.recordData()) {
-                recordConfig = request.getRecordConfig();
-                if(recordBuffering != null)
-                    recordBuffering.resetBuffer();
-                else
-                    recordBuffering = new MbtRecordBuffering(mContext);
-            }
+            recordConfig = request.getRecordConfig();
+            if(recordBuffering != null)
+                recordBuffering.resetPacketsBuffer();
+            else
+                recordBuffering = new MbtRecordBuffering(mContext);
+
 
         } else { //stop streaming
             try {
@@ -88,8 +86,22 @@ public final class MbtRecordingManager extends BaseModuleManager {
     }
 
     @Subscribe
-    public void onConnectionStateChanged(ConnectionStateEvent connectionStateEvent) {
-        recordBuffering = null;
+    public void onDeviceDisconnected(DeviceEvents.DisconnectedDeviceEvent event) {
+        if(recordBuffering != null && recordConfig != null){
+            EventBusManager.postEvent(new DeviceEvents.GetDeviceEvent(), new EventBusManager.Callback<DeviceEvents.PostDeviceEvent>() {
+                @Override
+                @Subscribe
+                public Void onEventCallback(DeviceEvents.PostDeviceEvent device) {
+                    EventBusManager.registerOrUnregister(false, this);
+                    if (device != null && device.getDevice() != null)
+                        recordBuffering.storeRecordBuffer(device.getDevice(), recordConfig);
+
+                    return null;
+                }
+            });
+            if(!recordConfig.enableMultipleRecordings())
+                recordBuffering = null;
+        }
     }
 
     /**
@@ -101,7 +113,7 @@ public final class MbtRecordingManager extends BaseModuleManager {
      */
     @Subscribe()
     public void onNewPackets(@NonNull final ClientReadyEEGEvent event) {
-        if(recordConfig != null)
+        if(recordBuffering != null)
             recordBuffering.record(event.getEegPackets());
     }
 

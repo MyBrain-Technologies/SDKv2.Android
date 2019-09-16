@@ -230,6 +230,13 @@ public final class MbtEEGManager extends BaseModuleManager {
     }
 
     /**
+     * Computes the calibration parameters
+     */
+    private float calibrate(int sampRate, MBTCalibrationParameters calibParams, MbtEEGPacket... packets) {
+        return MBTComputeRelaxIndex.computeRelaxIndex(sampRate, calibParams, packets);
+    }
+
+    /**
      * Resets the relaxation index.
      */
     private void reinitRelaxIndexVariables() {
@@ -277,11 +284,11 @@ public final class MbtEEGManager extends BaseModuleManager {
 
     @Subscribe
     public void onStreamStartedOrStopped(StreamRequestEvent event){
-        if(event.isStart() && event.shouldComputeQualities()){
+        if(event.isStart() && event.computeQualities()){
             hasQualities = true;
             initQualityChecker();
         }
-        else if(!event.isStart() && event.shouldComputeQualities())
+        else if(!event.isStart() && !ContextSP.SP_VERSION.equals("0.0.0"))
             deinitQualityChecker();
 
     }

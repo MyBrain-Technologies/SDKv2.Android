@@ -259,8 +259,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
             } else if (request instanceof StreamRequestEvent) {
                 if (((StreamRequestEvent) request).isStart()) {
-                    startStreamOperation(((StreamRequestEvent) request).shouldMonitorDeviceStatus());
-                }else {
+                    startStreamOperation(((StreamRequestEvent) request).monitorDeviceStatus());
+                }else if(((StreamRequestEvent) request).stopStream()){
                     stopStreamOperation();
                 }
 

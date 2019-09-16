@@ -292,6 +292,16 @@ public final class MbtBluetoothA2DP extends MbtBluetooth{
             new A2DPAccessor().initA2DPProxy(context, this.bluetoothAdapter);
     }
 
+    @Override
+    public boolean startStream() {
+        return false;
+    }
+
+    @Override
+    public boolean stopStream() {
+        return false;
+    }
+
     final class A2DPAccessor implements BluetoothProfile.ServiceListener {
         private A2DPMonitor a2DPMonitor = new A2DPMonitor();
         

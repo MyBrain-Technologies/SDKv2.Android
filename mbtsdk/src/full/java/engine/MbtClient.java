@@ -173,18 +173,25 @@ public final class MbtClient {
     /**
      * Stops the currently running eeg stream. This stops bluetooth acquisition and
      * reinit all internal buffering system.
-     * A recording config can be set when you start or stop the stream so that the EEG data can be recorded
      */
-    public void stopStream(RecordConfig recordConfig){
-        mbtManager.stopStream(recordConfig);
+    public void stopStream(){
+        mbtManager.stopStream(null);
     }
 
     /**
      * Stops the currently running eeg stream. This stops bluetooth acquisition and
      * reinit all internal buffering system.
      */
-    public void stopStream(){
-        mbtManager.stopStream(null);
+    public void stopStream(RecordConfig recordConfig){
+        mbtManager.stopStream(recordConfig);
+    }
+
+    public void startRecord(Context context){
+        mbtManager.startRecord(context);
+    }
+
+    public void stopRecord(@NonNull RecordConfig recordConfig){
+        mbtManager.stopRecord(recordConfig);
     }
 
     /**

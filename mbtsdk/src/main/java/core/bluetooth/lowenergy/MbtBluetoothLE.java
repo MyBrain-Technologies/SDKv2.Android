@@ -37,7 +37,6 @@ import command.DeviceCommandEvents;
 import config.MbtConfig;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.BtState;
-import core.bluetooth.IStreamable;
 import core.bluetooth.MbtBluetooth;
 import core.bluetooth.MbtBluetoothManager;
 import core.device.model.DeviceInfo;
@@ -52,7 +51,6 @@ import utils.LogUtils;
 import utils.BitUtils;
 import utils.MbtAsyncWaitOperation;
 
-import static command.DeviceCommandEvents.CMD_CODE_CONNECT_IN_A2DP_FAILED_ALREADY_CONNECTED;
 import static command.DeviceCommandEvents.CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED;
 import static command.DeviceCommandEvents.CMD_CODE_CONNECT_IN_A2DP_SUCCESS;
 
@@ -67,7 +65,7 @@ import static command.DeviceCommandEvents.CMD_CODE_CONNECT_IN_A2DP_SUCCESS;
  *
  */
 
-public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
+public class MbtBluetoothLE extends MbtBluetooth  {
     private static final String TAG = MbtBluetoothLE.class.getSimpleName();
 
     private final static String CONNECT_GATT_METHOD = "connectGatt";
@@ -77,13 +75,6 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     private MbtAsyncWaitOperation asyncOperation = new MbtAsyncWaitOperation<Boolean>();
 
     private MbtAsyncWaitOperation asyncConfiguration = new MbtAsyncWaitOperation<>();
-
-    /**
-     * An internal event used to notify MbtBluetoothLE that A2DP has disconnected.
-     */
-
-    @NonNull
-    private StreamState streamingState = StreamState.IDLE;
 
     private MbtGattController mbtGattController;
 
@@ -147,12 +138,24 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         if (!checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_EEG))
             return false;
 
+//        if (!checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_ECG))
+//            return false;
+
         //Adding small sleep to "free" bluetooth
         try {
             Thread.sleep(50);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+//
+//        enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_ECG));
+//
+//        //Adding small sleep to "free" bluetooth
+//        try {
+//            Thread.sleep(50);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
 
         return enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG));
     }
@@ -190,18 +193,6 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         return enableOrDisableNotificationsOnCharacteristic(false, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG));
     }
 
-    /**
-     * Whenever there is a new stream state, this method is called to notify the bluetooth manager about it.
-     * @param newStreamState the new stream state based on {@link StreamState the StreamState enum}
-     */
-    @Override
-    public void notifyStreamStateChanged(StreamState newStreamState) {
-        LogUtils.i(TAG, "new streamstate with state " + newStreamState.toString());
-
-        streamingState = newStreamState;
-        super.mbtBluetoothManager.notifyStreamStateChanged(newStreamState);
-    }
-
 
     /**
      * Whenever there is a new headset status received, this method is called to notify the bluetooth manager about it.
@@ -211,14 +202,6 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         this.mbtBluetoothManager.notifyNewHeadsetStatus(BtProtocol.BLUETOOTH_LE, payload);
     }
 
-    /**
-     *
-     * @return true if a streaming session is in progress, false otherwise
-     */
-    @Override
-    public boolean isStreaming() {
-        return streamingState == StreamState.STARTED;
-    }
 
 
     /**

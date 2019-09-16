@@ -36,8 +36,6 @@ public final class StreamConfig {
 
     /**
      * Recording configuration is all the data required to store the EEG packets in a JSON file.
-     * Default values are used if a non null empty {@link RecordConfig} is given in parameter
-     * of the {@link Builder#recordData(RecordConfig)} method
      */
     private RecordConfig recordConfig;
 
@@ -116,8 +114,6 @@ public final class StreamConfig {
 
     /**
      * Return the recording configuration that holds all the data required to store the EEG packets in a JSON file.
-     * Default values are used if a non null empty {@link RecordConfig} is given in parameter
-     * of the {@link Builder#recordData(RecordConfig)} method
      */
     public RecordConfig getRecordConfig() {
         return recordConfig;
@@ -161,8 +157,6 @@ public final class StreamConfig {
 
         /**
          * Recording configuration is all the data required to store the EEG packets in a JSON file.
-         * Default values are used if a non null empty {@link RecordConfig} is given in parameter
-         * of the {@link Builder#recordData(RecordConfig)} method
          */
         @Nullable
         private RecordConfig recordConfig;
@@ -195,17 +189,6 @@ public final class StreamConfig {
          */
         public Builder useQualities(){
             this.computeQualities = true;
-            return this;
-        }
-
-        /**
-         * Records the data acquired by a myBrain Technologies headset in a JSON file
-         * Default config values are used if you use {@link config.StreamConfig.Builder#recordData(Context)}
-         * You can also set your own config if you use {@link config.StreamConfig.Builder#recordData(RecordConfig)}
-         * @return the builder instance
-         */
-        public Builder recordData(Context context){
-            this.recordConfig = new RecordConfig.Builder(context).create();
             return this;
         }
 

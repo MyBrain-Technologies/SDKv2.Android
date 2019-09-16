@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,6 +15,8 @@ import core.recording.metadata.Comment;
 import core.recording.metadata.MelomindExerciseSource;
 import core.recording.metadata.RecordType;
 import core.recording.metadata.MelomindExerciseType;
+import features.MbtAcquisitionLocations;
+import features.MbtFeatures;
 import model.RecordInfo;
 
 /**
@@ -74,7 +77,7 @@ public final class RecordConfig {
      * Identifier of the person who's EEG is recorded.
      * Default value is anonymous.
      */
-    private String subjectId;
+    private String subjectID;
 
     /**
      * Starting date and time of the recording
@@ -108,6 +111,8 @@ public final class RecordConfig {
      */
     private boolean enableMultipleRecordings;
 
+    private ArrayList<MbtAcquisitionLocations> acquisitionLocations;
+
     private RecordConfig(String folder,
                          String filename,
                          String subjectId,
@@ -118,11 +123,12 @@ public final class RecordConfig {
                          long timestamp,
                          ArrayList<Comment> comments,
                          Bundle recordingParameters,
-                         boolean enableMultipleRecordings){
+                         boolean enableMultipleRecordings,
+    ArrayList<MbtAcquisitionLocations> acquisitionLocations){
 
         this.folder = folder;
         this.filename = filename;
-        this.subjectId = subjectId;
+        this.subjectID = subjectId;
         this.timestamp = timestamp;
         this.useExternalStorage = useExternalStorage;
         this.recordInfo = recordInfo;
@@ -131,6 +137,7 @@ public final class RecordConfig {
         this.projectName = projectName;
         this.recordingParameters = recordingParameters;
         this.enableMultipleRecordings = enableMultipleRecordings;
+        this.acquisitionLocations = acquisitionLocations;
     }
 
     /**
@@ -173,8 +180,8 @@ public final class RecordConfig {
      * Return the identifier of the person who's EEG is recorded.
      * Default value is anonymous.
      */
-    public String getSubjectId() {
-        return subjectId;
+    public String getSubjectID() {
+        return subjectID;
     }
 
     /**
@@ -190,6 +197,10 @@ public final class RecordConfig {
      */
     public long getTimestamp() {
         return timestamp;
+    }
+
+    public ArrayList<MbtAcquisitionLocations> getAcquisitionLocations() {
+        return acquisitionLocations;
     }
 
     /**
@@ -238,7 +249,7 @@ public final class RecordConfig {
 //        return (getFilename() != null/*
 //                        || (getProjectName() != null
 //                        && getRecordInfo() != null
-//                        && getSubjectId() != null
+//                        && getSubjectID() != null
 //                        && getCondition() != null)*/);
 //    }
 
@@ -312,6 +323,10 @@ public final class RecordConfig {
 
         private boolean enableMultipleRecordings = false;
 
+        private boolean recordQualities = false;
+
+        private ArrayList<MbtAcquisitionLocations> acquisitionLocations = MbtFeatures.MELOMIND_LOCATIONS;
+
         public Builder(Context context){
             this.timestamp = System.currentTimeMillis();
             this.projectName = context.getString(context.getApplicationInfo().labelRes).replace(" ","");
@@ -324,6 +339,15 @@ public final class RecordConfig {
          */
         public Builder folder(@Nullable String folder){
             this.folder = folder;
+            return this;
+        }
+
+        /**
+         * Path of the folder where the JSON file can be stored.
+         * Default folder used is the root folder.
+         */
+        public Builder electrodesLocations(@NonNull MbtAcquisitionLocations... acquisitionLocations){
+            this.acquisitionLocations = new ArrayList<>(Arrays.asList(acquisitionLocations));
             return this;
         }
 
@@ -460,6 +484,14 @@ public final class RecordConfig {
             this.enableMultipleRecordings = true;
             return this;
         }
+        /**
+         *
+         * @return
+         */
+        public Builder recordQualities(){
+            this.recordQualities = true;
+            return this;
+        }
 
         /**
          * Recording parameters are additional optional data stored in the body of the JSON file.
@@ -471,6 +503,7 @@ public final class RecordConfig {
 
         @NonNull
         public RecordConfig create(){
+            Log.d("Record config",this.toString());
             return new RecordConfig(
                     folder,
                     filename,
@@ -482,7 +515,27 @@ public final class RecordConfig {
                     timestamp,
                     headerComments,
                     recordingParameters,
-                    enableMultipleRecordings);
+                    enableMultipleRecordings,
+                    acquisitionLocations);
+        }
+
+        @Override
+        public String toString() {
+            return "Builder{" +
+                    "folder='" + folder + '\'' +
+                    ", filename='" + filename + '\'' +
+                    ", useExternalStorage=" + useExternalStorage +
+                    ", timestamp=" + timestamp +
+                    ", projectName='" + projectName + '\'' +
+                    ", subjectID='" + subjectID + '\'' +
+                    ", condition='" + condition + '\'' +
+                    ", headerComments=" + headerComments +
+                    ", recordInfo=" + recordInfo +
+                    ", recordingParameters=" + recordingParameters +
+                    ", enableMultipleRecordings=" + enableMultipleRecordings +
+                    ", recordQualities=" + recordQualities +
+                    ", acquisitionLocations=" + acquisitionLocations +
+                    '}';
         }
     }
 
@@ -490,15 +543,17 @@ public final class RecordConfig {
     public String toString() {
         return "RecordConfig{" +
                 "folder='" + folder + '\'' +
-                ", useExternalStorage=" + useExternalStorage +
                 ", filename='" + filename + '\'' +
-                ", projectName='" + projectName + '\'' +
-                ", condition='" + condition + '\'' +
-                ", subjectId='" + subjectId + '\'' +
+                ", useExternalStorage=" + useExternalStorage +
                 ", timestamp=" + timestamp +
+                ", projectName='" + projectName + '\'' +
+                ", subjectID='" + subjectID + '\'' +
+                ", condition='" + condition + '\'' +
                 ", headerComments=" + headerComments +
                 ", recordInfo=" + recordInfo +
                 ", recordingParameters=" + recordingParameters +
+                ", enableMultipleRecordings=" + enableMultipleRecordings +
+                ", acquisitionLocations=" + acquisitionLocations +
                 '}';
     }
 

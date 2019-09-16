@@ -157,6 +157,22 @@ public abstract class MbtDevice {
         this.internalConfig = internalConfig;
     }
 
+    public void setNbChannels(int nbChannels) {
+        this.nbChannels = nbChannels;
+    }
+
+    public void setAcquisitionLocations(List<MbtAcquisitionLocations> acquisitionLocations) {
+        this.acquisitionLocations = acquisitionLocations;
+    }
+
+    public void setReferencesLocations(List<MbtAcquisitionLocations> referencesLocations) {
+        this.referencesLocations = referencesLocations;
+    }
+
+    public void setGroundsLocation(List<MbtAcquisitionLocations> groundsLocation) {
+        this.groundsLocation = groundsLocation;
+    }
+
     public void setExternalName(@Nullable String externalName){
         this.externalName = externalName;
     }

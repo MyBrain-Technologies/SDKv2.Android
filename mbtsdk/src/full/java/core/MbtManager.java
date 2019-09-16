@@ -63,7 +63,11 @@ import static mbtsdk.com.mybraintech.mbtsdk.BuildConfig.RECORDING_ENABLED;
  * @author Sophie ZECRI on 29/05/2018
  */
 public class MbtManager{
+
     private static final String TAG = MbtManager.class.getName();
+
+    private static final boolean START = true;
+    private static final boolean STOP = false;
 
     /**
      * Contains the currently reigstered module managers.
@@ -153,7 +157,8 @@ public class MbtManager{
             sendCommand(command);
         }
         EventBusManager.postEvent(
-                new StreamRequestEvent(true,
+                new StreamRequestEvent(START,
+                        streamConfig.getRecordConfig() != null,
                         streamConfig.shouldComputeQualities(),
                         (deviceStatusListener != null),
                         streamConfig.getRecordConfig()));
@@ -163,7 +168,21 @@ public class MbtManager{
      * Posts an event to stop the currently started stream session
      */
     public void stopStream(@Nullable RecordConfig recordConfig){
-        EventBusManager.postEvent(new StreamRequestEvent(false, false, false, recordConfig));
+        EventBusManager.postEvent(
+                new StreamRequestEvent(STOP, false,
+                        false, false, recordConfig));
+    }
+
+    public void startRecord(Context context){
+        EventBusManager.postEvent(
+                new StreamRequestEvent(START, true,
+                        false, (deviceStatusListener != null), new RecordConfig.Builder(context).create()));
+    }
+
+    public void stopRecord(@NonNull RecordConfig recordConfig){
+        EventBusManager.postEvent(
+                new StreamRequestEvent(STOP, eegListener != null, //if eeg listener is null, it means that the client has not previously called start stream (might have called start record), so the SDK should stop the streaming started when the client has called start record
+                        false, false, recordConfig));
     }
 
     /**

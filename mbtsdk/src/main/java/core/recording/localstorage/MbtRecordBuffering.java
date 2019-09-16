@@ -31,37 +31,37 @@ public class MbtRecordBuffering {
      * Temporary buffer of EEG packets recorded.
      * This EEG packets are stored in a JSON file
      */
-    private ArrayList<MbtEEGPacket> eegPackets;
+    private ArrayList<MbtEEGPacket> eegPacketsBuffer;
 
     /**
      * Map that stores the path of the recording as a JSON file and its associated ID
      */
-    private Map<String, String> savedRecordings;
+    private Map<String, String> recordingsBuffer;
 
     private final Context mContext;
 
     public MbtRecordBuffering(Context mContext) {
         LogUtils.d(TAG, " Start recording ");
         this.mContext = mContext;
-        savedRecordings = new HashMap<>();
-        eegPackets = new ArrayList<>();
+        recordingsBuffer = new HashMap<>();
+        eegPacketsBuffer = new ArrayList<>();
     }
 
-    public void resetBuffer(){
-        eegPackets = new ArrayList<>();
+    public void resetPacketsBuffer(){
+        eegPacketsBuffer = new ArrayList<>();
     }
 
     public boolean storeRecordBuffer(@NonNull MbtDevice device, @NonNull RecordConfig recordConfig) {
-        if(eegPackets == null || recordConfig == null || device == null)
+        if(eegPacketsBuffer == null || recordConfig == null || device == null)
             return false;
 
-        LogUtils.d(TAG," Saving buffer of "+eegPackets.size()+ " packets.");
+        LogUtils.d(TAG," Saving buffer of "+ eegPacketsBuffer.size()+ " packets.");
 
             if (recordConfig.getFilename() == null)
                 recordConfig.setFilename(FileManager.createFilename(recordConfig.getTimestamp(),
                         recordConfig.getProjectName(),
                         device.getProductName(),
-                        recordConfig.getSubjectId(),
+                        recordConfig.getSubjectID(),
                         recordConfig.getCondition()));
 
             LogUtils.d(TAG, "JSON(Folder: " + recordConfig.getFolder() + " Filename: " + recordConfig.getFilename() + ")" + " External storage: " + recordConfig.useExternalStorage() + ")");
@@ -74,59 +74,48 @@ public class MbtRecordBuffering {
                 LogUtils.e(TAG, RecordingError.ERROR_CREATE.getMessage());
                 return false;
             }
-            MbtRecording recording = MbtJsonBuilder.convertEEGPacketsToRecording(
+
+        MbtRecording recording = MbtJsonBuilder.convertEEGPacketsToRecording(
                     device.getNbChannels(),
                     recordConfig.getRecordInfo().setSPVersion(ContextSP.SP_VERSION),
-                    recordConfig.getTimestamp(), eegPackets,
+                    recordConfig.getTimestamp(), eegPacketsBuffer,
                     device.getInternalConfig().getStatusBytes() > 0);
             LogUtils.d(TAG, "New recording created : " + recording.toString());
 
-            String recordingPath = FileManager.storeRecordingInFile(mContext,
+        device.setAcquisitionLocations(recordConfig.getAcquisitionLocations());
+        LogUtils.d(TAG, "Device " + device.toString());
+
+        String recordingPath = FileManager.storeRecordingInFile(mContext,
                     file,
-                    recordConfig.getSubjectId(),
+                    recordConfig.getSubjectID(),
                     device,
                     recording,
                     recordConfig.getRecordingParameters(),
-                    savedRecordings.size()+1,
+                    recordingsBuffer.size()+1,
                     recordConfig.getHeaderComments());
 
-            LogUtils.d(TAG, "Recording stored in file: " + recordingPath);
+        LogUtils.d(TAG, "Recording stored in file: " + recordingPath);
 
-            if (recordingPath != null) {
-                savedRecordings.put(recordingPath, recordConfig.getRecordInfo().getRecordId());
-                //Check if Recordings map is empty or not to update the number of recording in each recording JSON file
-                if (savedRecordings.size() > 1)
-                    FileManager.updateJSONWithCurrentRecordNb(savedRecordings);
-            }
+        if (recordingPath != null) {
+            recordingsBuffer.put(recordingPath, recordConfig.getRecordInfo().getRecordId());
+            //Check if Recordings map is empty or not to update the number of recording in each recording JSON file
+            if (recordingsBuffer.size() > 1)
+                FileManager.updateJSONWithCurrentRecordNb(recordingsBuffer);
+        }
 
-        eegPackets = null;
+        resetPacketsBuffer();
 
         if(!recordConfig.enableMultipleRecordings())
-            savedRecordings = null;
+            recordingsBuffer = null;
 
-        return true;
+        return recordingPath != null;
     }
 
     public void record(MbtEEGPacket eegPacket){
-        if(eegPackets != null) {
-            LogUtils.d(TAG, "Record packet #"+(eegPackets != null ? eegPackets.size(): "0"));
-            eegPackets.add(eegPacket);
+        if(eegPacketsBuffer != null) {
+            LogUtils.d(TAG, "Record packet #"+(eegPacketsBuffer != null ? eegPacketsBuffer.size(): "0"));
+            eegPacketsBuffer.add(eegPacket);
         }
     }
 
-    public ArrayList<MbtEEGPacket> getEegPackets() {
-        return eegPackets;
-    }
-
-    public void setEegPackets(ArrayList<MbtEEGPacket> eegPackets) {
-        this.eegPackets = eegPackets;
-    }
-
-    public Map<String, String> getSavedRecordings() {
-        return savedRecordings;
-    }
-
-    public void setSavedRecordings(Map<String, String> savedRecordings) {
-        this.savedRecordings = savedRecordings;
-    }
 }
