@@ -4,8 +4,9 @@ import android.bluetooth.BluetoothDevice;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.List;
 
 import features.MbtAcquisitionLocations;
@@ -74,7 +75,6 @@ public abstract class MbtDevice {
         this.deviceType = deviceType;
         this.deviceAddress = bluetoothDevice.getAddress();
         this.productName = bluetoothDevice.getName();
-        this.internalConfig = null;
         this.externalName = MbtFeatures.MELOMIND_DEVICE_NAME;
         this.eegPacketLength = MbtFeatures.DEFAULT_EEG_PACKET_LENGTH;
     }
@@ -193,14 +193,24 @@ public abstract class MbtDevice {
         byte gainValue;
         byte statusBytes;
         byte nbPackets;
-        byte sampRate;
+        int sampRate;
         int nbChannels;
 
         public InternalConfig(int nbChannels) {
             this.nbChannels = nbChannels;
         }
 
-        public InternalConfig(int nbChannels, byte notchFilterConfig, byte bandPassFilterConfig, byte gainValue, byte statusBytes, byte nbPackets, byte sampRate) {
+        public InternalConfig(int nbChannels, byte notchFilterConfig, byte bandPassFilterConfig, byte gainValue, byte statusBytes, byte nbPackets, byte[] sampRate) {
+            this.nbChannels = nbChannels;
+            this.notchFilterConfig = notchFilterConfig;
+            this.bandPassFilterConfig = bandPassFilterConfig;
+            this.gainValue = gainValue;
+            this.statusBytes = statusBytes;
+            this.nbPackets = nbPackets;
+            this.sampRate = ByteBuffer.wrap(sampRate).getInt();
+        }
+
+        public InternalConfig(int nbChannels, byte notchFilterConfig, byte bandPassFilterConfig, byte gainValue, byte statusBytes, byte nbPackets, int sampRate) {
             this.nbChannels = nbChannels;
             this.notchFilterConfig = notchFilterConfig;
             this.bandPassFilterConfig = bandPassFilterConfig;
@@ -210,14 +220,14 @@ public abstract class MbtDevice {
             this.sampRate = sampRate;
         }
 
-        public InternalConfig(int nbChannels, byte gainValue, byte sampRate) {
+        public InternalConfig(int nbChannels, byte gainValue, byte[] sampRate) {
             this.nbChannels = nbChannels;
             this.notchFilterConfig = DEFAULT;
             this.bandPassFilterConfig = DEFAULT;
             this.gainValue = gainValue;
             this.statusBytes = DEFAULT;
             this.nbPackets = DEFAULT;
-            this.sampRate = sampRate;
+            this.sampRate = ByteBuffer.wrap(sampRate).order(ByteOrder.BIG_ENDIAN).getInt();
         }
 
         public byte getNotchFilterConfig() {
@@ -240,8 +250,12 @@ public abstract class MbtDevice {
             return nbPackets;
         }
 
-        public byte getSampRate() {
+        public int getSampRate() {
             return sampRate;
+        }
+
+        public int getNbChannels() {
+            return nbChannels;
         }
 
         @Override

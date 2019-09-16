@@ -156,4 +156,5 @@ public class BitUtils {
     public static boolean isZero(byte valueToCheck){
         return valueToCheck == 0;
     }
+
 }

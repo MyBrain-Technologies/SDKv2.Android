@@ -5,6 +5,8 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import org.apache.commons.lang.ArrayUtils;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -111,14 +113,29 @@ public class MelomindDevice extends MbtDevice{
     }
 
     public static InternalConfig convertRawInternalConfig(Byte[] rawConfig) {
-        return new InternalConfig(
+
+        int sampRateIndex = 5;
+        byte[] sampRate = (rawConfig.length > sampRateIndex ?
+                new byte[]{rawConfig[sampRateIndex]}
+                : Arrays.copyOfRange(ArrayUtils.toPrimitive(rawConfig), sampRateIndex, rawConfig.length-1));
+
+        return (sampRate[0] == 0 ?
+                new InternalConfig(
                 MbtFeatures.MELOMIND_NB_CHANNELS,
                 rawConfig[0],
                 rawConfig[1],
                 rawConfig[2],
                 rawConfig[3],
                 rawConfig[4],
-                rawConfig[5]);
+                        MbtFeatures.DEFAULT_SAMPLE_RATE):
+                new InternalConfig(
+                MbtFeatures.MELOMIND_NB_CHANNELS,
+                rawConfig[0],
+                rawConfig[1],
+                rawConfig[2],
+                rawConfig[3],
+                rawConfig[4],
+                sampRate));
     }
 
     /**

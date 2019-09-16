@@ -83,9 +83,6 @@ public class MbtBluetoothLE
      * An internal event used to notify MbtBluetoothLE that A2DP has disconnected.
      */
 
-    @NonNull
-    private StreamState streamingState = StreamState.IDLE;
-
     private MbtGattController mbtGattController;
 
     private BluetoothLeScanner bluetoothLeScanner;
@@ -280,35 +277,12 @@ public class MbtBluetoothLE
     }
 
     /**
-     * Whenever there is a new stream state, this method is called to notify the bluetooth manager about it.
-     * @param newStreamState the new stream state based on {@link StreamState the StreamState enum}
-     */
-    @Override
-    public void notifyStreamStateChanged(StreamState newStreamState) {
-        LogUtils.i(TAG, "new streamstate with state " + newStreamState.toString());
-
-        streamingState = newStreamState;
-        super.mbtBluetoothManager.notifyStreamStateChanged(newStreamState);
-    }
-
-
-    /**
      * Whenever there is a new headset status received, this method is called to notify the bluetooth manager about it.
      * @param payload the new headset status as a raw byte array. This byte array has to be parsed afterward.
      */
     void notifyNewHeadsetStatus(byte[] payload){
         this.mbtBluetoothManager.notifyNewHeadsetStatus(BtProtocol.BLUETOOTH_LE, payload);
     }
-
-    /**
-     *
-     * @return true if a streaming session is in progress, false otherwise
-     */
-    @Override
-    public boolean isStreaming() {
-        return streamingState == StreamState.STARTED;
-    }
-
 
     /**
      * Enable or disable notifications on specific characteristic provinding this characteristic is "notification ready".

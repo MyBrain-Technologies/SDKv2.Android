@@ -12,7 +12,7 @@ public class BluetoothInterfaces {
 
     }
 
-    interface IDataStream extends
+    interface IDataBluetooth extends
             IBluetooth,
             IScan,
             IStream,
@@ -21,14 +21,14 @@ public class BluetoothInterfaces {
 
     }
 
-    interface IAudioStream extends
+    interface IAudioBluetooth extends
             IBluetooth {
 
         //TODO add method for audio unit
-        //IPlayable{
-            //boolean play(track, volume, duration);
-            //boolean pause();
-            //boolean stop();
+        //IStream{
+            //startStream ( play(track, volume, duration));
+            //pauseStream( pause());
+            //stopStream( stop());
         // }
     }
 

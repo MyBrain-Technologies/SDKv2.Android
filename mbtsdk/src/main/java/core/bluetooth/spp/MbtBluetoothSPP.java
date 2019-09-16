@@ -14,14 +14,15 @@ import android.support.annotation.WorkerThread;
 import android.text.TextUtils;
 import android.util.Log;
 
+
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Arrays;
+import java.util.Scanner;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 
 import command.CommandInterface;
 import command.DeviceCommandEvents;
@@ -33,6 +34,8 @@ import core.bluetooth.MbtBluetoothManager;
 import core.bluetooth.MbtDataBluetooth;
 import core.bluetooth.StreamState;
 import core.device.model.DeviceInfo;
+import core.device.model.MbtDevice;
+import engine.SimpleRequestCallback;
 import engine.clientevents.BluetoothError;
 import utils.AsyncUtils;
 import utils.LogUtils;
@@ -72,6 +75,8 @@ public final class MbtBluetoothSPP
     private MessageStatus currentStatus;
 
     private Timer keepAliveTimer;
+
+    private final static int DEFAULT_COMMAND_BUFFER_LENGTH = 11;
 
     private BroadcastReceiver scanReceiver = new BroadcastReceiver() {
         public final void onReceive(@NonNull final Context context, @NonNull final Intent intent) {
@@ -237,7 +242,6 @@ public final class MbtBluetoothSPP
         else {
             if (sendData(msg)) {
                 LogUtils.i(TAG,"Successfully requested to start stream");
-
                 sendKeepAlive(true);
                 notifyStreamStateChanged(StreamState.STARTED);
                 isStreaming = true;
@@ -262,7 +266,7 @@ public final class MbtBluetoothSPP
         } catch (@NonNull final IOException ioe) {
             this.reader = null;
             this.writer = null;
-            LogUtils.e(TAG, "Failed to send data. IOException ->\n" + ioe.getMessage());
+            LogUtils.e(TAG, "Failed to send dataBuffer. IOException ->\n" + ioe.getMessage());
             notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);
             Log.getStackTraceString(ioe);
             return false;
@@ -278,6 +282,7 @@ public final class MbtBluetoothSPP
             this.keepAliveTimer.scheduleAtFixedRate(new TimerTask() {
                 public final void run() {
                     if (!isConnected()) {
+                        LogUtils.e(TAG, "Disconnected");
                         cancel(); // something is wrong
                         return;
                     }
@@ -335,145 +340,165 @@ public final class MbtBluetoothSPP
         return false;
     }
 
+    public static final int START_FRAME_NB_BYTES = 1;
+    public static final int PAYLOAD_LENGTH_NB_BYTES = 2;
+    public static final int COMPRESS_NB_BYTES = 1;
+    public static final int PACKET_ID_NB_BYTES = 2;
+    public static final int PAYLOAD_NB_BYTES = 0;
+
     @NonNull
-    byte[] payloadSizeBuf = new byte[2];
+    byte[] payloadLengthBuffer = new byte[PAYLOAD_LENGTH_NB_BYTES];
     @NonNull
-    byte[] data = new byte[0];
+    byte[] dataBuffer = new byte[PAYLOAD_NB_BYTES];
     private int command = -1;
     private int counter = 0;
     private int payloadSize = -1;
     @NonNull
-    private byte[] pcktNumber = new byte[2];
+    private byte[] packetIdBuffer = new byte[PACKET_ID_NB_BYTES];
+    private byte[] byteBuffer = new byte[1000];
+    private int nbBytesRead;
 
     private void listenForIncomingMessages() {
 
         currentStatus = STATE_IDLE;
         while (this.reader != null && this.writer != null) {
-
             try {
-                byte currentByte = this.reader.readByte();
+                while ( (nbBytesRead = reader.read(byteBuffer)) > 0){
+                        for (byte currentByte : byteBuffer){
+                            switch(currentStatus){
 
-                switch(currentStatus){
+                                case STATE_IDLE:
+                                    if(currentByte == DeviceCommandEvents.START_FRAME[0])
+                                        currentStatus = STATE_LENGTH;
+                                    break;
 
-                    case STATE_IDLE:
-                        if(currentByte == DeviceCommandEvents.START_FRAME[0]){
-                            currentStatus = STATE_LENGTH;
-                        }else if(currentByte != 0){
-                            //LogUtils.e(TAG, "Byte b = " + b);
-                        }
-                        break;
-
-                    case STATE_LENGTH:
-                        payloadSizeBuf[counter++] = currentByte;
-                        if(counter == 2){
-                            counter = 0;
-                            payloadSize = ((payloadSizeBuf[0] & 0xFF) << 8) + (payloadSizeBuf[1] & 0xFF);
-                            data = new byte[payloadSize + 3];
-                            currentStatus = STATE_COMMAND;
-                        }
-                        break;
-
-                    case STATE_COMMAND:
-                        command = currentByte ;
-                        if(command != 3 && command != 4) {
-                            currentStatus = STATE_IDLE;
-                        }else{
-                            currentStatus = STATE_COMPRESSION;
-                        }
-                        break;
-                    case STATE_COMPRESSION:
-                        if(currentByte == 0x00 || currentByte == 0x01){
-                            data[counter++] = currentByte;
-                            currentStatus = STATE_FRAME_NB;
-                        }
-                        else{
-                            currentStatus = STATE_IDLE;
-                        }
-                        break;
-
-                    case STATE_FRAME_NB:
-
-                        data[counter++] = currentByte;
-                        if(counter == 3){
-                            pcktNumber[0] = data[1];
-                            pcktNumber[1] = data[2];
-                            currentStatus = STATE_ACQ;
-                        }
-                        break;
-
-                    case STATE_ACQ:
-                        if(command == 3) {
-                            data[counter++] = currentByte;
-
-                            if (counter == payloadSize + 3) {
-                                counter = 0;
-                                currentStatus = STATE_IDLE;
-
-
-                                final byte[] finalData =  (byte[])data.clone();//Arrays.copyOf(data, data.length);
-                                //private final byte[] toAcquire = Arrays.copyOf(finalData, finalData.length);
-                                AsyncUtils.executeAsync(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        Log.e(TAG, Arrays.toString(finalData));
-
-                                        notifyNewDataAcquired(finalData);
+                                case STATE_LENGTH:
+                                    payloadLengthBuffer[counter++] = currentByte;
+                                    if(counter == PAYLOAD_LENGTH_NB_BYTES){
+                                        counter = 0;
+                                        payloadSize = ((payloadLengthBuffer[0] & 0xFF) << 8) + (payloadLengthBuffer[1] & 0xFF);
+                                        dataBuffer = new byte[payloadSize + COMPRESS_NB_BYTES + PACKET_ID_NB_BYTES];
+                                        currentStatus = STATE_COMMAND;
                                     }
-                                });
-                            }
+                                    break;
 
-                        }else if(command == 4) {
-                            LogUtils.i(TAG, "Reading Battery level");
-                            data = new byte[payloadSize];
-                            int level = currentByte;
-                            counter = 0;
-                            currentStatus = STATE_IDLE;
-                            int percent = -1;
-                            switch(level) {
-                                case 0:
-                                    percent = 0;
-                                    break;
-                                case 1:
-                                    percent = 15;
-                                    break;
-                                case 2:
-                                    percent = 30;
-                                    break;
-                                case 3:
-                                    percent = 50;
-                                    break;
-                                case 4:
-                                    percent = 65;
-                                    break;
-                                case 5:
-                                    percent = 85;
-                                    break;
-                                case 6:
-                                    percent = 100;
-                                    break;
-                                default:
-                                    break;
-                            }
-                            //mbtBluetoothManager.updateBatteryLevel(percent);
-                        }else if(command == DeviceCommandEvents.MBX_GET_EEG_CONFIG){
-                            data[counter++] = currentByte;
-                            if (counter == payloadSize + 3) {
-                                counter = 0;
-                                currentStatus = STATE_IDLE;
+                                case STATE_COMMAND:
+                                    command = currentByte ;
 
-                                final byte[] finalData =  data.clone();//Arrays.copyOf(data, data.length);
-                                AsyncUtils.executeAsync(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        Log.e(TAG, "EEG config "+Arrays.toString(finalData));
-                                        notifyCommandResponseReceived(finalData);
+                                    currentStatus =
+                                            ((command != DeviceCommandEvents.CMD_START_EEG_ACQUISITION
+                                                    && command != DeviceCommandEvents.CMD_GET_BATTERY_VALUE
+                                                    && command != DeviceCommandEvents.MBX_GET_EEG_CONFIG) ?
+                                                    STATE_IDLE : STATE_COMPRESSION) ;
+                                    break;
+
+                                case STATE_COMPRESSION:
+                                    if(currentByte == 0x00 || currentByte == 0x01){
+                                        dataBuffer[counter++] = currentByte;
+                                        currentStatus = STATE_FRAME_NB;
+                                    } else
+                                        currentStatus = STATE_IDLE;
+                                    break;
+
+                                case STATE_FRAME_NB:
+                                    dataBuffer[counter++] = currentByte;
+                                    if(counter == 3){
+                                        packetIdBuffer[0] = dataBuffer[1];
+                                        packetIdBuffer[1] = dataBuffer[2];
+                                        currentStatus = STATE_ACQ;
                                     }
-                                });
+                                    break;
+
+                                case STATE_ACQ:
+                                    if(command == DeviceCommandEvents.CMD_START_EEG_ACQUISITION) {
+
+                                        dataBuffer[counter++] = currentByte;
+
+                                        if (counter == payloadSize + COMPRESS_NB_BYTES + PACKET_ID_NB_BYTES) {
+                                            counter = 0;
+                                            currentStatus = STATE_IDLE;
+
+                                            final byte[] finalData =  dataBuffer.clone();//Arrays.copyOf(dataBuffer, dataBuffer.length);
+                                            AsyncUtils.executeAsync(new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                    Log.d(TAG, "bytes "+Arrays.toString(finalData));
+
+                                                    notifyNewDataAcquired(finalData);
+                                                }
+                                            });
+                                        }
+
+                                    }else if(command == DeviceCommandEvents.CMD_GET_BATTERY_VALUE) {
+                                        LogUtils.i(TAG, "Reading Battery level");
+                                        dataBuffer = new byte[payloadSize];
+                                        int level = currentByte;
+                                        counter = 0;
+                                        currentStatus = STATE_IDLE;
+                                        int percent = -1;
+                                        switch(level) {
+                                            case 0:
+                                                percent = 0;
+                                                break;
+                                            case 1:
+                                                percent = 15;
+                                                break;
+                                            case 2:
+                                                percent = 30;
+                                                break;
+                                            case 3:
+                                                percent = 50;
+                                                break;
+                                            case 4:
+                                                percent = 65;
+                                                break;
+                                            case 5:
+                                                percent = 85;
+                                                break;
+                                            case 6:
+                                                percent = 100;
+                                                break;
+                                            default:
+                                                break;
+                                        }
+                                        //mbtBluetoothManager.updateBatteryLevel(percent);
+
+                                    }else if(command == DeviceCommandEvents.MBX_GET_EEG_CONFIG){
+                                        dataBuffer[counter++] = currentByte;
+                                        if (counter == payloadSize + COMPRESS_NB_BYTES + PACKET_ID_NB_BYTES) {
+                                            counter = 0;
+                                            currentStatus = STATE_IDLE;
+                                            //Returned : [0x00, 0x00, 0x00, num_eeg_channels, amp_gain, ads_freq_sampling];
+                                            final byte[] finalData = dataBuffer.clone();
+                                            AsyncUtils.executeAsync(new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                    notifyCommandResponseReceived(finalData);
+//                                        try {
+//                                            Thread.sleep(100);
+//                                        } catch (InterruptedException e) {
+//                                            e.printStackTrace();
+//                                        }
+                                                    mbtBluetoothManager.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
+                                                        @Override
+                                                        public void onRequestComplete(MbtDevice device) {
+                                                            Log.d(TAG," samp rate "+device.getSampRate());
+                                                            //bufferLength = device.getSampRate();
+                                                        }
+                                                    });
+                                                }
+                                            });
+                                        }
+                                    }else {
+                                        //TODO here are non implemented cases. Please see the MBT SPP protocol for infos.
+                                    }
+                                    break;
                             }
-                        }else {
-                            //TODO here are non implemented cases. Please see the MBT SPP protocol for infos.
+
                         }
-                        break;
+
+
+
                 }
 
             } catch (@NonNull final Exception e) {
@@ -516,14 +541,6 @@ public final class MbtBluetoothSPP
         }
     }
 
-
-    @Override
-    public boolean isStreaming() {
-        return isStreaming;
-    }
-
-
-
     /**
      * Ask to get the battery level
      * @param start is true for starting the battery timer and false for cancelling the battery timer
@@ -558,16 +575,6 @@ public final class MbtBluetoothSPP
     public boolean readBattery() {
         monitorBatteryAcquisition(START);
         return true;
-    }
-
-    /**
-     * Whenever there is a new stream state, this method is called to notify the bluetooth manager about it.
-     * @param newStreamState the new stream state based on {@link StreamState the StreamState enum}
-     */
-    @Override
-    public void notifyStreamStateChanged(StreamState newStreamState) {
-        LogUtils.i(TAG, "new streamstate with state " + newStreamState.toString());
-        super.mbtBluetoothManager.notifyStreamStateChanged(newStreamState);
     }
 
 

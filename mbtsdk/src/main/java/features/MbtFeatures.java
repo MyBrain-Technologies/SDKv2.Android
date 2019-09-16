@@ -74,7 +74,7 @@ public final class MbtFeatures{
     public final static int DEFAULT_SPP_NB_BYTES = DEFAULT_SPP_NB_STATUS_BYTES;
 
     public final static int DEFAULT_BLE_RAW_DATA_INDEX_SIZE = DEFAULT_BLE_NB_BYTES;
-    public final static int DEFAULT_SPP_RAW_DATA_INDEX_SIZE = DEFAULT_SPP_NB_BYTES;
+    public final static int DEFAULT_SPP_RAW_DATA_INDEX_SIZE = 3;
 
     public final static int DEFAULT_BLE_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES = DEFAULT_BLE_NB_BYTES * MELOMIND_NB_CHANNELS;
     public final static int DEFAULT_SPP_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES = DEFAULT_SPP_NB_BYTES * VPRO_NB_CHANNELS;
@@ -96,6 +96,7 @@ public final class MbtFeatures{
     public final static ArrayList<MbtAcquisitionLocations> VPRO_GROUNDS = new ArrayList<>();//init values with server data
 
     public static final int DEFAULT_NUMBER_OF_DATA_TO_DISPLAY = 500;
+
     public static int getNbChannels(MbtDeviceType device){
         return (device.equals(MELOMIND) ? MELOMIND_NB_CHANNELS : VPRO_NB_CHANNELS);
     }

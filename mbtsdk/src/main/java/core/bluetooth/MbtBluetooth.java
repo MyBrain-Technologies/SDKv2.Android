@@ -34,11 +34,12 @@ import utils.MbtLock;
  * Created by Etienne on 08/02/2018.
  */
 
-public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect{
+public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, BluetoothInterfaces.IStream{
 
     private final static String TAG = MbtBluetooth.class.getName();
 
     private volatile BtState currentState = BtState.IDLE;
+    protected volatile StreamState streamState = StreamState.IDLE;
 
     @Nullable
     protected BluetoothAdapter bluetoothAdapter;
@@ -203,6 +204,28 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect{
     @VisibleForTesting
     public void setLock(MbtAsyncWaitOperation lock) {
         this.lock = lock;
+    }
+
+    /**
+     *
+     * @return true if a streaming is in progress, false otherwise
+     */
+    @Override
+    public boolean isStreaming() {
+        return streamState == StreamState.STARTED;
+    }
+
+
+    /**
+     * Whenever there is a new stream state, this method is called to notify the bluetooth manager about it.
+     * @param newStreamState the new stream state based on {@link StreamState the StreamState enum}
+     */
+    @Override
+    public void notifyStreamStateChanged(StreamState newStreamState) {
+        LogUtils.i(TAG, "new stream state " + newStreamState.toString());
+
+        streamState = newStreamState;
+        mbtBluetoothManager.notifyStreamStateChanged(newStreamState);
     }
 
 }

@@ -60,6 +60,7 @@ public final class MbtEEGManager extends BaseModuleManager {
 
     private int sampRate;
     private int packetLength;
+    private int nbChannels;
 
     private MbtDataAcquisition dataAcquisition;
     private MbtDataBuffering dataBuffering;
@@ -88,8 +89,10 @@ public final class MbtEEGManager extends BaseModuleManager {
         if(connectionStateEvent.getDevice() == null) {
             protocol = null;
         }else {
-            if(connectionStateEvent.getNewState().equals(BtState.CONNECTED_AND_READY))
+            if(connectionStateEvent.getNewState().equals(BtState.CONNECTED_AND_READY)){
                 protocol = connectionStateEvent.getDevice().getDeviceType().getProtocol();
+                nbChannels = connectionStateEvent.getDevice().getNbChannels();
+            }
         }
     }
 
@@ -271,7 +274,7 @@ public final class MbtEEGManager extends BaseModuleManager {
      */
     @Subscribe(threadMode = ThreadMode.BACKGROUND)
     public void onEvent(BluetoothEEGEvent event) { //warning : this method is used
-        dataAcquisition.handleDataAcquired(event.getData());
+        dataAcquisition.handleDataAcquired(event.getData(), nbChannels);
     }
 
     /**
@@ -306,6 +309,7 @@ public final class MbtEEGManager extends BaseModuleManager {
         packetLength = configEEGEvent.getDevice().getEegPacketLength();
 
         MbtDevice.InternalConfig internalConfig = configEEGEvent.getConfig();
+        nbChannels = internalConfig.getNbChannels();
         resetBuffers(internalConfig.getNbPackets(), internalConfig.getStatusBytes(), internalConfig.getGainValue());
     }
 

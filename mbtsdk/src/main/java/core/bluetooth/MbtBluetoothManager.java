@@ -1078,7 +1078,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         EventBusManager.postEvent(new DeviceEvents.RawDeviceMeasure(payload));
     }
 
-    void requestCurrentConnectedDevice(final SimpleRequestCallback<MbtDevice> callback) {
+    public void requestCurrentConnectedDevice(final SimpleRequestCallback<MbtDevice> callback) {
         EventBusManager.postEvent(new DeviceEvents.GetDeviceEvent(), new EventBusManager.Callback<DeviceEvents.PostDeviceEvent>(){
             @Override
             @Subscribe

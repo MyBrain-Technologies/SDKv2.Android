@@ -16,7 +16,6 @@ import utils.LogUtils;
 
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
 import static features.MbtFeatures.getEEGByteSize;
-import static features.MbtFeatures.getNbChannels;
 import static features.MbtFeatures.getNbStatusBytes;
 import static features.MbtFeatures.getRawDataIndexSize;
 
@@ -54,7 +53,7 @@ public class MbtDataAcquisition {
      * @param data the raw EEG data array acquired by the headset and transmitted by Bluetooth to the application
      */
     @Nullable
-    public synchronized void handleDataAcquired(@NonNull final byte[] data) {
+    public synchronized void handleDataAcquired(@NonNull final byte[] data, int nbChannels) {
 
         singleRawEEGList = new ArrayList<>();
 
@@ -74,14 +73,14 @@ public class MbtDataAcquisition {
         if(indexDifference != 1){
             LogUtils.e(TAG, "diff is " + indexDifference +" . Current index : " + currentIndex + " previousIndex : " + previousIndex);
             for (int i = 0; i < indexDifference; i++) {
-                fillSingleDataEEGList(true, data);
+                fillSingleDataEEGList(nbChannels, true, data);
             }
         }
 
         //3rd step : chunk byte[] input into RawEEGSample objects
         statusDataBytes = (getNbStatusBytes(protocol) > 0) ? (Arrays.copyOfRange(data, getRawDataIndexSize(protocol), getRawDataIndexSize(protocol) + getNbStatusBytes(protocol))) : null;
 
-        fillSingleDataEEGList(false, data);
+        fillSingleDataEEGList(nbChannels, false, data);
 
         //4th step : store and convert
         storeData();
@@ -97,14 +96,14 @@ public class MbtDataAcquisition {
      * @param isInterpolationEEGSample whether or not the array list needs to be filled with interpolated {@link RawEEGSample} or null
      * @param input the bluetooth raw byte array.
      */
-    private void fillSingleDataEEGList(boolean isInterpolationEEGSample, byte[] input){
+    private void fillSingleDataEEGList(int numberOfChannels, boolean isInterpolationEEGSample, byte[] input){
         int count = 0;
-        for (int dataIndex = getRawDataIndexSize(protocol) + getNbStatusBytes(protocol); dataIndex < input.length; dataIndex += getEEGByteSize(protocol)*getNbChannels(protocol.equals(BLUETOOTH_LE) ? MbtDeviceType.MELOMIND : MbtDeviceType.VPRO)) { //init the list of raw EEG data (one raw EEG data is an object that contains a 2 (or 3) bytes data array and status
+        for (int dataIndex = getRawDataIndexSize(protocol) + getNbStatusBytes(protocol); dataIndex < input.length; dataIndex += getEEGByteSize(protocol)*numberOfChannels) { //init the list of raw EEG data (one raw EEG data is an object that contains a 2 (or 3) bytes data array and status
             if(isInterpolationEEGSample){
                 singleRawEEGList.add(RawEEGSample.LOST_PACKET_INTERPOLATOR);
             }else{
                 ArrayList<byte[]> channelsEEGs = new ArrayList<>();
-                for(int nbChannels = 0; nbChannels < getNbChannels(protocol.equals(BLUETOOTH_LE) ? MbtDeviceType.MELOMIND : MbtDeviceType.VPRO); nbChannels++){
+                for(int nbChannels = 0; nbChannels < numberOfChannels; nbChannels++){
                     byte[] bytesEEG = Arrays.copyOfRange(input, dataIndex + nbChannels*getEEGByteSize(BLUETOOTH_LE), dataIndex + (nbChannels+1)*getEEGByteSize(protocol));
                     channelsEEGs.add(bytesEEG);
                 }

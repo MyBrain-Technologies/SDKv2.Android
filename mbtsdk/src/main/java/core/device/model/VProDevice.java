@@ -4,10 +4,15 @@ import android.bluetooth.BluetoothDevice;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
+
+import org.apache.commons.lang.ArrayUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
+import core.bluetooth.spp.MbtBluetoothSPP;
 import features.MbtAcquisitionLocations;
 import features.MbtDeviceType;
 import features.MbtFeatures;
@@ -66,11 +71,26 @@ public class VProDevice extends MbtDevice{
     @NonNull
     public final int getSampRate() {return this.getInternalConfig().getSampRate();}
 
+    //Returned : [0x00, 0x00, 0x00, num_eeg_channels, amp_gain, ads_freq_sampling];
     public static InternalConfig convertRawInternalConfig(Byte[] rawConfig) {
+        int sampRateIndex = MbtBluetoothSPP.COMPRESS_NB_BYTES + MbtBluetoothSPP.PACKET_ID_NB_BYTES+2;
+        byte[] sampRate = new byte[4];
+        Arrays.fill(sampRate, (byte)0);
+
+        byte[] tempSampRate = ArrayUtils.subarray(ArrayUtils.toPrimitive(rawConfig), sampRateIndex, rawConfig.length);
+        Log.d("VPRO", " "+Arrays.toString(tempSampRate));
+        int lengthDiff = sampRate.length - tempSampRate.length;
+        Log.d("VPRO", "diff "+lengthDiff);
+
+        if(lengthDiff > 0){
+            for(int i=0; i<lengthDiff; i++){
+                sampRate[lengthDiff+i] = tempSampRate[i];
+            }
+        }
         return new InternalConfig(
-                rawConfig[0],
-                rawConfig[1],
-                rawConfig[2]);
+                rawConfig[MbtBluetoothSPP.COMPRESS_NB_BYTES + MbtBluetoothSPP.PACKET_ID_NB_BYTES],
+                rawConfig[MbtBluetoothSPP.COMPRESS_NB_BYTES + MbtBluetoothSPP.PACKET_ID_NB_BYTES+1],
+                sampRate);
     }
 
     @NonNull

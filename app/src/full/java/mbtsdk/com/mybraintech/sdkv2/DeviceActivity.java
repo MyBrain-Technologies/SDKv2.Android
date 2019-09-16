@@ -317,11 +317,11 @@ DeviceActivity extends AppCompatActivity {
         eegGraph.invalidate();
     }
 
-    private boolean channelsHasTheSameNumberOfData(ArrayList<ArrayList<Float>> data) {
+    private boolean channelsHasTheSameNumberOfData(int nbChannels, ArrayList<ArrayList<Float>> data) {
         boolean hasTheSameNumberOfData = true;
 
         int size = data.get(1).size();
-        for (int i = 0; i < MbtFeatures.getNbChannels(deviceType); i++) {
+        for (int i = 0; i < nbChannels; i++) {
             if (data.get(i).size() != size) {
                 hasTheSameNumberOfData = false;
             }
@@ -329,17 +329,17 @@ DeviceActivity extends AppCompatActivity {
         return hasTheSameNumberOfData;
     }
 
-    private void addEntry(ArrayList<ArrayList<Float>> channelData) {
+    private void addEntry(int nbChannels, ArrayList<ArrayList<Float>> channelData) {
 
         LineData data = eegGraph.getData();
         if (data != null) {
 
-            if (channelData.size() < MbtFeatures.getNbChannels(deviceType)) {
+            if (channelData.size() < nbChannels) {
                 throw new IllegalStateException("Incorrect matrix size, one or more channel are missing");
             } else {
-                if (channelsHasTheSameNumberOfData(channelData)) {
+                if (channelsHasTheSameNumberOfData(nbChannels,channelData)) {
                     for (int currentEegData = 0; currentEegData < channelData.get(0).size(); currentEegData++) { //for each number of eeg data
-                        for (int currentChannel = 0; currentChannel < MbtFeatures.getNbChannels(deviceType); currentChannel++) { //todo vpro
+                        for (int currentChannel = 0; currentChannel < nbChannels; currentChannel++) { //todo vpro
                             data.addEntry(new Entry(data.getDataSets().get(currentChannel).getEntryCount(), channelData.get(currentChannel).get(currentEegData) * 1000000), currentChannel);
                         }
                     }
@@ -358,9 +358,9 @@ DeviceActivity extends AppCompatActivity {
     }
 
     private void addEegDataToGraph(MbtEEGPacket mbtEEGPackets) {
-
-        eegDataCounter += mbtEEGPackets.getChannelsData().get(0).size();
-        addEntry(mbtEEGPackets.getChannelsData());
+        int size = mbtEEGPackets.getChannelsData().get(0).size();
+        eegDataCounter += size;
+        addEntry(mbtEEGPackets.getChannelsData().size(), mbtEEGPackets.getChannelsData());
     }
 
     private void notifyUser(String message) {

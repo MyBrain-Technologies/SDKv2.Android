@@ -3,6 +3,8 @@ package eventbus.events;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import java.util.Arrays;
+
 import core.device.model.MbtDevice;
 import core.device.model.MelomindDevice;
 import core.device.model.VProDevice;
@@ -21,6 +23,7 @@ public class EEGConfigEvent {
     public EEGConfigEvent(@NonNull MbtDevice device, @NonNull Byte[] config) {
         this.config = (device.deviceType.equals(MbtDeviceType.MELOMIND) ?
                 MelomindDevice.convertRawInternalConfig(config) : VProDevice.convertRawInternalConfig(config)) ;
+        Log.d("CONFIG ", "config "+ Arrays.toString(config));
         this.device = device;
     }
 
