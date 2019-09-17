@@ -29,6 +29,7 @@ public class MelomindDevice extends MbtDevice{
         this.firmwareVersion = "0.0.0";
         this.hardwareVersion = "0.0.0";
         this.serialNumber = "0000000000";
+        this.externalName = MbtFeatures.MELOMIND_DEVICE_NAME;
     }
 
     public static short getBatteryPercentageFromByteValue(byte value){

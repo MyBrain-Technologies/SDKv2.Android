@@ -9,12 +9,14 @@ import java.util.Arrays;
 import core.bluetooth.BtProtocol;
 import core.eeg.MbtEEGManager;
 import core.eeg.storage.RawEEGSample;
-import features.MbtDeviceType;
 import utils.BitUtils;
 import utils.ConversionUtils;
 import utils.LogUtils;
 
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
+import static core.bluetooth.BtProtocol.BLUETOOTH_SPP;
+import static features.MbtFeatures.DEFAULT_SAMPLE_PER_PACKET;
+import static features.MbtFeatures.DEFAULT_SPP_NB_STATUS_BYTES;
 import static features.MbtFeatures.getEEGByteSize;
 import static features.MbtFeatures.getNbStatusBytes;
 import static features.MbtFeatures.getRawDataIndexSize;
@@ -78,16 +80,13 @@ public class MbtDataAcquisition {
         }
 
         //3rd step : chunk byte[] input into RawEEGSample objects
-        statusDataBytes = (getNbStatusBytes(protocol) > 0) ? (Arrays.copyOfRange(data, getRawDataIndexSize(protocol), getRawDataIndexSize(protocol) + getNbStatusBytes(protocol))) : null;
-
         fillSingleDataEEGList(nbChannels, false, data);
 
-        //4th step : store and convert
+        //4th step : store
         storeData();
 
         previousIndex = currentIndex;
     }
-
 
 
     /**
@@ -96,7 +95,46 @@ public class MbtDataAcquisition {
      * @param isInterpolationEEGSample whether or not the array list needs to be filled with interpolated {@link RawEEGSample} or null
      * @param input the bluetooth raw byte array.
      */
-    private void fillSingleDataEEGList(int numberOfChannels, boolean isInterpolationEEGSample, byte[] input){
+    private void fillSingleDataEEGList(int numberOfChannels, boolean isInterpolationEEGSample, byte[] input) {
+        if (protocol.equals(BLUETOOTH_LE)){
+            statusDataBytes = (getNbStatusBytes(protocol) > 0) ? (Arrays.copyOfRange(input, getRawDataIndexSize(protocol), getRawDataIndexSize(protocol) + getNbStatusBytes(protocol))) : null;
+            fillBLESingleDataEEGList(numberOfChannels, isInterpolationEEGSample, input);
+        }else if (protocol.equals(BLUETOOTH_SPP))
+                fillSPPSingleDataEEGList(numberOfChannels, isInterpolationEEGSample, input);
+        }
+
+    private void fillSPPSingleDataEEGList(int numberOfChannels, boolean isInterpolationEEGSample, byte[] input){
+        int count = 0;
+
+        for (int dataIndex = getRawDataIndexSize(protocol);
+             dataIndex < input.length;
+             dataIndex += (getNbStatusBytes(protocol) + getEEGByteSize(protocol)*numberOfChannels)) { //init the list of raw EEG data (one raw EEG data is an object that contains a 2 (or 3) bytes data array and status
+
+            if(getNbStatusBytes(protocol) > 0){
+                if(statusDataBytes == null)
+                    statusDataBytes = new byte[DEFAULT_SPP_NB_STATUS_BYTES * DEFAULT_SAMPLE_PER_PACKET];
+
+                statusDataBytes = (Arrays.copyOfRange(input,
+                        dataIndex,
+                        dataIndex + getNbStatusBytes(protocol)));
+            }
+
+            if(isInterpolationEEGSample){
+                singleRawEEGList.add(RawEEGSample.LOST_PACKET_INTERPOLATOR);
+            }else{
+                ArrayList<byte[]> channelsEEGs = new ArrayList<>();
+                for(int channel = 0; channel < numberOfChannels; channel++){
+                    byte[] bytesEEG = Arrays.copyOfRange(input,
+                            dataIndex + getNbStatusBytes(protocol) + channel * getEEGByteSize(protocol),
+                            dataIndex + getNbStatusBytes(protocol) + (channel+1) * getEEGByteSize(protocol));
+                    channelsEEGs.add(bytesEEG);
+                }
+                singleRawEEGList.add(new RawEEGSample(channelsEEGs, generateStatusData(count++)));
+            }
+        }
+    }
+
+    private void fillBLESingleDataEEGList(int numberOfChannels, boolean isInterpolationEEGSample, byte[] input){
         int count = 0;
         for (int dataIndex = getRawDataIndexSize(protocol) + getNbStatusBytes(protocol); dataIndex < input.length; dataIndex += getEEGByteSize(protocol)*numberOfChannels) { //init the list of raw EEG data (one raw EEG data is an object that contains a 2 (or 3) bytes data array and status
             if(isInterpolationEEGSample){
@@ -121,7 +159,7 @@ public class MbtDataAcquisition {
      *
      */
     private Float generateStatusData(int count) {
-        if (protocol == BLUETOOTH_LE && singleRawEEGList != null) {
+        if (singleRawEEGList != null) {
 
             return statusDataBytes == null ?
                     Float.NaN :
@@ -130,7 +168,8 @@ public class MbtDataAcquisition {
                             statusDataBytes[0] : statusDataBytes[1],
                             (byte) 1, count)));
         }
-        return Float.NaN; //TODO handle SPP
+        statusDataBytes = null;
+        return Float.NaN;
     }
 
     /**

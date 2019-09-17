@@ -5,6 +5,7 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.List;
@@ -17,7 +18,7 @@ import features.MbtFeatures;
  * Created by manon on 10/10/16.
  // */
 @Keep
-public abstract class MbtDevice {
+public abstract class MbtDevice implements Serializable {
 
     public static final String DEFAULT_FW_VERSION = "0.0.0";
 
@@ -62,7 +63,7 @@ public abstract class MbtDevice {
     @Nullable
     private String audioDeviceAddress;
 
-    int eegPacketLength;
+    private int eegPacketLength;
 
     List<MbtAcquisitionLocations> acquisitionLocations;
     List<MbtAcquisitionLocations> referencesLocations;
@@ -75,7 +76,6 @@ public abstract class MbtDevice {
         this.deviceType = deviceType;
         this.deviceAddress = bluetoothDevice.getAddress();
         this.productName = bluetoothDevice.getName();
-        this.externalName = MbtFeatures.MELOMIND_DEVICE_NAME;
         this.eegPacketLength = MbtFeatures.DEFAULT_EEG_PACKET_LENGTH;
     }
 
@@ -162,6 +162,8 @@ public abstract class MbtDevice {
 
     public void setInternalConfig(InternalConfig internalConfig){
         this.internalConfig = internalConfig;
+        if(eegPacketLength != getSampRate());
+            eegPacketLength = getSampRate();
     }
 
     public void setExternalName(@Nullable String externalName){
@@ -185,7 +187,7 @@ public abstract class MbtDevice {
         return deviceType;
     }
 
-    public static class InternalConfig{
+    public static class InternalConfig implements Serializable{
         public final byte DEFAULT = -1;
 
         byte notchFilterConfig;

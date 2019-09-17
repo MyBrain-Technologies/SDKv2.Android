@@ -11,8 +11,6 @@ public final class MbtConfig {
 
     private static MbtDeviceType deviceType = MbtDeviceType.MELOMIND;
 
-    public final static int sampleRate = 250;
-
     private static int samplePerNotification = 4;
 
     /**
@@ -47,8 +45,12 @@ public final class MbtConfig {
 
     private static String serverURL;
 
-    public static int getEegBufferLengthClientNotif() {
-        return eegBufferLengthClientNotif;
+    public static int getEegBufferLengthClientNotif(int sampRate) {
+        return eegBufferLengthClientNotif * sampRate /1000;
+    }
+
+    public static void setEegBufferLengthClientNotif(int notificationPeriod) {
+        eegBufferLengthClientNotif = notificationPeriod;
     }
 
     public static boolean isBatteryEventsLogsEnabled() {
@@ -88,10 +90,6 @@ public final class MbtConfig {
         return serverURL;
     }
 
-    public static int getSampleRate() {
-        return sampleRate;
-    }
-
     public static int getSamplePerNotification() {
         return samplePerNotification;
     }
@@ -102,10 +100,6 @@ public final class MbtConfig {
 
     public static int getBluetoothA2DpConnectionTimeout() {
         return BLUETOOTH_A2DP_CONNECTION_TIMEOUT;
-    }
-
-    public static void setEegBufferLengthClientNotif(int length) {
-        eegBufferLengthClientNotif = length;
     }
 
     public static void setBluetoothScanTimeout(int maxScanDuration) {
@@ -124,8 +118,6 @@ public final class MbtConfig {
     public static class MbtConfigBuilder {
 
         private int eegPacketLength;
-
-        private int sampleRate;
 
         private int samplePerNotification;
 
@@ -153,11 +145,6 @@ public final class MbtConfig {
             return this;
         }
 
-        @NonNull
-        public MbtConfigBuilder setSampleRate(final int sampleRate) {
-            this.sampleRate = sampleRate;
-            return this;
-        }
 
         @NonNull
         public MbtConfigBuilder setSamplePerNotification(final int samplePerNotification) {

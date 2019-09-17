@@ -2,6 +2,7 @@ package core.eeg;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.util.Log;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.greenrobot.eventbus.Subscribe;
@@ -142,7 +143,7 @@ public final class MbtEEGManager extends BaseModuleManager {
                             toDecodeStatus.add(rawEEGSample.getStatus());
                     }
                 }
-                consolidatedEEG = MbtDataConversion.convertRawDataToEEG(toDecodeRawEEG, protocol); //convert byte table data to Float matrix and store the matrix in MbtEEGManager as eegResult attribute
+                consolidatedEEG = MbtDataConversion.convertRawDataToEEG(toDecodeRawEEG, protocol, nbChannels); //convert byte table data to Float matrix and store the matrix in MbtEEGManager as eegResult attribute
 
                 dataBuffering.storeConsolidatedEegInPacketBuffer(consolidatedEEG, toDecodeStatus);// if the packet buffer is full, this method returns the non null packet buffer
 
@@ -213,7 +214,8 @@ public final class MbtEEGManager extends BaseModuleManager {
 
         if(packet.getChannelsData() != null && packet.getChannelsData().size()!=0){
             long tsBefore = System.currentTimeMillis();
-            float[] qualities = {-1f,-1f};
+            float[] qualities = new float[nbChannels];
+            Arrays.fill(qualities, -1f);
             try{
                 qualities = MBTSignalQualityChecker.computeQualitiesForPacketNew(sampRate, packetLength, MatrixUtils.invertFloatMatrix(packet.getChannelsData()));
 
@@ -313,6 +315,9 @@ public final class MbtEEGManager extends BaseModuleManager {
         resetBuffers(internalConfig.getNbPackets(), internalConfig.getStatusBytes(), internalConfig.getGainValue());
     }
 
+    public int getSampRate() {
+        return sampRate;
+    }
 
     public void setTestConsolidatedEEG(ArrayList<ArrayList<Float>> consolidatedEEG) {
         this.consolidatedEEG = consolidatedEEG;

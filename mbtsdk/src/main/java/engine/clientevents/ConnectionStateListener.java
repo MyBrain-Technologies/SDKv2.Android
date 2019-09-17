@@ -12,5 +12,5 @@ public interface ConnectionStateListener<U extends BaseError> extends BaseErrorE
          * See {@link BtState} for all possible states
          */
         void onDeviceConnected(MbtDevice device);
-        void onDeviceDisconnected();
+        void onDeviceDisconnected(MbtDevice device);
     }

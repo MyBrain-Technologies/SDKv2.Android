@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import config.MbtConfig;
 import core.bluetooth.spp.MbtBluetoothSPP;
 import features.MbtAcquisitionLocations;
 import features.MbtDeviceType;
@@ -78,9 +79,7 @@ public class VProDevice extends MbtDevice{
         Arrays.fill(sampRate, (byte)0);
 
         byte[] tempSampRate = ArrayUtils.subarray(ArrayUtils.toPrimitive(rawConfig), sampRateIndex, rawConfig.length);
-        Log.d("VPRO", " "+Arrays.toString(tempSampRate));
         int lengthDiff = sampRate.length - tempSampRate.length;
-        Log.d("VPRO", "diff "+lengthDiff);
 
         if(lengthDiff > 0){
             for(int i=0; i<lengthDiff; i++){

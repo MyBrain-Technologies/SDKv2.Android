@@ -121,7 +121,7 @@ public final class MbtFeatures{
         return (device.equals(MELOMIND) ? MELOMIND_GROUNDS : VPRO_GROUNDS);
     }
 
-    public static int getSampleRate() {
+    public static int getDefaultSampleRate() {
         return DEFAULT_SAMPLE_RATE;
     }
 

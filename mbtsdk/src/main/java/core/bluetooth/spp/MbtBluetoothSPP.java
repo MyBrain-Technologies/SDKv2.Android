@@ -34,8 +34,6 @@ import core.bluetooth.MbtBluetoothManager;
 import core.bluetooth.MbtDataBluetooth;
 import core.bluetooth.StreamState;
 import core.device.model.DeviceInfo;
-import core.device.model.MbtDevice;
-import engine.SimpleRequestCallback;
 import engine.clientevents.BluetoothError;
 import utils.AsyncUtils;
 import utils.LogUtils;
@@ -203,7 +201,9 @@ public final class MbtBluetoothSPP
                 notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER, toConnect.getAddress());
                 LogUtils.i(TAG,toConnect.getName() + " Connected");
                 return true;
-            }
+            }else
+                notifyConnectionStateChanged(BtState.CONNECTION_FAILURE);
+
         } catch (@NonNull final IOException ioe) {
             notifyConnectionStateChanged(BtState.CONNECTION_FAILURE);
             LogUtils.e(TAG, "Exception while connecting ->" + ioe.getMessage());
@@ -246,8 +246,8 @@ public final class MbtBluetoothSPP
                 notifyStreamStateChanged(StreamState.STARTED);
                 isStreaming = true;
                 return true;
-            }
-            else {
+
+            } else {
                 LogUtils.i(TAG,"Error could not send request to start stream!");
                 return false;
             }
@@ -255,6 +255,7 @@ public final class MbtBluetoothSPP
     }
 
     private synchronized boolean sendData(@NonNull final byte[] msg) {
+        LogUtils.i(TAG, "Send data");
         try {
             if(this.writer != null){
                 this.writer.write(msg);
@@ -355,8 +356,8 @@ public final class MbtBluetoothSPP
     private int payloadSize = -1;
     @NonNull
     private byte[] packetIdBuffer = new byte[PACKET_ID_NB_BYTES];
-    private byte[] byteBuffer = new byte[1000];
-    private int nbBytesRead;
+    private byte[] byteBuffer = new byte[500];
+    private int nbBytesRead = 0;
 
     private void listenForIncomingMessages() {
 
@@ -364,7 +365,8 @@ public final class MbtBluetoothSPP
         while (this.reader != null && this.writer != null) {
             try {
                 while ( (nbBytesRead = reader.read(byteBuffer)) > 0){
-                        for (byte currentByte : byteBuffer){
+
+                    for (byte currentByte : byteBuffer){
                             switch(currentStatus){
 
                                 case STATE_IDLE:
@@ -377,6 +379,7 @@ public final class MbtBluetoothSPP
                                     if(counter == PAYLOAD_LENGTH_NB_BYTES){
                                         counter = 0;
                                         payloadSize = ((payloadLengthBuffer[0] & 0xFF) << 8) + (payloadLengthBuffer[1] & 0xFF);
+
                                         dataBuffer = new byte[payloadSize + COMPRESS_NB_BYTES + PACKET_ID_NB_BYTES];
                                         currentStatus = STATE_COMMAND;
                                     }
@@ -410,7 +413,7 @@ public final class MbtBluetoothSPP
                                     break;
 
                                 case STATE_ACQ:
-                                    if(command == DeviceCommandEvents.CMD_START_EEG_ACQUISITION) {
+                                    if(command == DeviceCommandEvents.CMD_START_EEG_ACQUISITION && isStreaming) {
 
                                         dataBuffer[counter++] = currentByte;
 
@@ -422,9 +425,9 @@ public final class MbtBluetoothSPP
                                             AsyncUtils.executeAsync(new Runnable() {
                                                 @Override
                                                 public void run() {
-                                                    Log.d(TAG, "bytes "+Arrays.toString(finalData));
-
+                                                    Log.d(TAG, "bytes (size: "+finalData.length+") "+Arrays.toString(finalData));
                                                     notifyNewDataAcquired(finalData);
+                                                    byteBuffer = new byte[500];
                                                 }
                                             });
                                         }
@@ -474,18 +477,7 @@ public final class MbtBluetoothSPP
                                                 @Override
                                                 public void run() {
                                                     notifyCommandResponseReceived(finalData);
-//                                        try {
-//                                            Thread.sleep(100);
-//                                        } catch (InterruptedException e) {
-//                                            e.printStackTrace();
-//                                        }
-                                                    mbtBluetoothManager.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
-                                                        @Override
-                                                        public void onRequestComplete(MbtDevice device) {
-                                                            Log.d(TAG," samp rate "+device.getSampRate());
-                                                            //bufferLength = device.getSampRate();
-                                                        }
-                                                    });
+
                                                 }
                                             });
                                         }
@@ -524,8 +516,8 @@ public final class MbtBluetoothSPP
         if (!isConnected()) {
             LogUtils.i(TAG,"Error Not connected!");
             return false;
-        }
-        else {
+
+        } else {
             if (sendData(msg)) {
 
                 LogUtils.i(TAG,"Successfully requested to stop stream");

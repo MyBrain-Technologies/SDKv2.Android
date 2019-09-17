@@ -32,7 +32,7 @@ public class MbtDataConversion {
     private static final int POSITIVE_MASK_BLE = (int) (~NEGATIVE_MASK_BLE);
     private static final int POSITIVE_MASK_SPP = (int) (~NEGATIVE_MASK_SPP);
     private static final float VOLTAGE_BLE = (float) ((0.286d * Math.pow(10, -6)) / EEG_AMP_GAIN);
-    private static final float VOLTAGE_SPP = (float) ((0.536d * Math.pow(10, -6)) / 24);
+    private static final float VOLTAGE_SPP = (float) ((0.536d * Math.pow(10, -6)) / 24); //todo VPRO VOLTAGE
     private static final float INCORRECT_VALUE_BLE = 0x0000FFFF;
     private static final float INCORRECT_VALUE_SPP = 0x00FFFFFF;
 
@@ -41,10 +41,9 @@ public class MbtDataConversion {
      * @param rawEEGdataList the raw EEG data array acquired by the headset and transmitted by Bluetooth to the application
      * @param protocol the bluetooth protocol used to acquire data from the headset : Low Energy or Serial Port Profile.
      * @return the eeg data as float lists, with NaN values for missing data
-     * @throws IllegalArgumentException if the number of components of the raw EEG data array is not modulo 250
      */
     @NonNull
-    public static ArrayList<ArrayList<Float>> convertRawDataToEEG(@NonNull ArrayList<RawEEGSample> rawEEGdataList, @NonNull BtProtocol protocol) {
+    public static ArrayList<ArrayList<Float>> convertRawDataToEEG(@NonNull ArrayList<RawEEGSample> rawEEGdataList, @NonNull BtProtocol protocol, int nbChannels) {
 
         if (rawEEGdataList == null)
             return null;
@@ -60,7 +59,7 @@ public class MbtDataConversion {
 
             if(singleRawEEGdata.getBytesEEG() == null){
 
-                for (int nbChannel = 0; nbChannel < MbtFeatures.getNbChannels(protocol.equals(BLUETOOTH_LE) ? MbtDeviceType.MELOMIND : MbtDeviceType.VPRO) ; nbChannel++){
+                for (int nbChannel = 0; nbChannel < nbChannels ; nbChannel++){
                     consolidatedEEGSample.add(Float.NaN); //... fill the EEG data matrix with a NaN value for
                 }
             }else{

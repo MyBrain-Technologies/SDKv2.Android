@@ -101,8 +101,8 @@ public final class MbtEEGPacket {
     @Override
     public String toString() {
         return "MbtEEGPacket{" +
-                "EEG Data=" + channelsData +
-                ", statusData=" + statusData +
+                "EEG Data =" + (channelsData != null && !channelsData.isEmpty() ? (channelsData.size()+"x"+channelsData.get(0).size()) : channelsData) +
+                ", statusData=" + (statusData != null ? statusData.size() : null) +
                 ", timestamp=" + timestamp +
                 '}';
     }

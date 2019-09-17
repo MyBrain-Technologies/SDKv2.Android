@@ -191,7 +191,7 @@ public class MbtManager{
                     if(event.getInfo().equals(-1))
                         deviceInfoListener.onError(HeadsetDeviceError.ERROR_DECODE_BATTERY, null);
                     else
-                        deviceInfoListener.onBatteryChanged((String) event.getInfo());
+                        deviceInfoListener.onBatteryLevelReceived((String) event.getInfo());
                 }
             }
         }
@@ -201,7 +201,7 @@ public class MbtManager{
     public void onConnectionStateChanged(ConnectionStateEvent connectionStateEvent) {
         if (connectionStateListener == null)
             return;
-        //LogUtils.i(TAG, "New state received : " + connectionStateEvent.getNewState());
+
         if(connectionStateListener instanceof BluetoothStateListener)
             ((BluetoothStateListener) connectionStateListener).onNewState(connectionStateEvent.getNewState(), connectionStateEvent.getDevice());
 
@@ -210,7 +210,7 @@ public class MbtManager{
                 connectionStateListener.onDeviceConnected(connectionStateEvent.getDevice());
                 break;
             case DATA_BT_DISCONNECTED:
-                connectionStateListener.onDeviceDisconnected();
+                connectionStateListener.onDeviceDisconnected(connectionStateEvent.getDevice());
                 break;
             default:
                 if (connectionStateEvent.getNewState().isAFailureState())
