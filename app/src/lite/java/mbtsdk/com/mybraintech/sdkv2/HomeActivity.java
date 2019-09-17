@@ -131,7 +131,7 @@ public class HomeActivity extends AppCompatActivity{
         }
 
         @Override
-        public void onDeviceDisconnected() {
+        public void onDeviceDisconnected(MbtDevice device) {
             if(!toast.getView().isShown())
                 notifyUser(getString(R.string.no_connected_headset));
             if(isCancelled)

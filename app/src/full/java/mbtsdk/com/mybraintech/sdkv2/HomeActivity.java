@@ -19,6 +19,7 @@ import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.Toast;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -52,9 +53,8 @@ public class HomeActivity extends AppCompatActivity{
     /**
      * Extra keys used to share data to the next started activity
      */
-    public final static String DEVICE_NAME_EXTRA = "DEVICE_NAME_EXTRA";
-    public final static String DEVICE_QR_CODE_EXTRA = "DEVICE_QR_CODE_EXTRA";
-    public final static String DEVICE_TYPE_EXTRA = "DEVICE_TYPE_EXTRA";
+
+    public final static String DEVICE_EXTRA = "DEVICE_EXTRA";
     public final static String PREVIOUS_ACTIVITY_EXTRA = "PREVIOUS_ACTIVITY_EXTRA";
 
     /**
@@ -71,6 +71,11 @@ public class HomeActivity extends AppCompatActivity{
      * Device name value stored from the value of the {@link HomeActivity#deviceNameField}
      */
     private String deviceName;
+
+    /**
+     * Instance of Headset device returned by the {@link engine.clientevents.ConnectionStateListener#onDeviceConnected(MbtDevice)} callback once a new device is connected
+     */
+    private MbtDevice device;
 
     /**
      * Device QR code field used to enter a specific headset QR code on the application for Bluetooth connection
@@ -206,7 +211,8 @@ public class HomeActivity extends AppCompatActivity{
          * Callback used to receive a notification when the Bluetooth connection is established
          */
         @Override
-        public void onDeviceConnected(MbtDevice device) {
+        public void onDeviceConnected(MbtDevice connectedDevice) {
+            device = connectedDevice;
             deviceName = device.getProductName();
             toast.cancel();
             deinitCurrentActivity();
@@ -217,7 +223,8 @@ public class HomeActivity extends AppCompatActivity{
          */
 
         @Override
-        public void onDeviceDisconnected() {
+        public void onDeviceDisconnected(MbtDevice device) {
+            device = null;
             if(!toast.getView().isShown())
                 notifyUser(getString(R.string.no_connected_headset));
             if(isCancelled)
@@ -480,9 +487,7 @@ public class HomeActivity extends AppCompatActivity{
     private void deinitCurrentActivity(){
         bluetoothStateListener = null;
         final Intent intent = new Intent(HomeActivity.this, DeviceActivity.class);
-        intent.putExtra(DEVICE_NAME_EXTRA, deviceName);
-        intent.putExtra(DEVICE_QR_CODE_EXTRA, deviceQrCode);
-        intent.putExtra(DEVICE_TYPE_EXTRA, deviceType);
+        intent.putExtra(DEVICE_EXTRA, (Serializable) device);
         startActivity(intent);
         finish();
     }

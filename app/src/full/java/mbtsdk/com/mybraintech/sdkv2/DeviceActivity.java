@@ -7,6 +7,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -23,6 +24,7 @@ import java.util.ArrayList;
 
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.Random;
 
 import core.device.DCOffsets;
 import core.device.SaturationEvent;
@@ -32,6 +34,7 @@ import core.eeg.storage.MbtEEGPacket;
 import engine.MbtClient;
 
 import config.StreamConfig;
+import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
 import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.BluetoothStateListener;
@@ -46,10 +49,11 @@ import static utils.MatrixUtils.invertFloatMatrix;
 public class
 DeviceActivity extends AppCompatActivity {
 
-    private static final int MAX_NUMBER_OF_DATA_TO_DISPLAY = 500;
+    private static final int MAX_NUMBER_OF_DATA_TO_DISPLAY = 1000;
     private static String TAG = DeviceActivity.class.getName();
 
     private MbtClient sdkClient;
+    private MbtDevice device;
 
     private String deviceName;
     private String deviceQrCode;
@@ -59,12 +63,8 @@ DeviceActivity extends AppCompatActivity {
     private LineChart eegGraph;
     private LineData eegLineData;
 
-    private LineDataSet channel1;
-    private LineDataSet channel2;
-
     private long eegDataCounter = 0;
-    private TextView channel1Quality;
-    private TextView channel2Quality;
+    private TextView channelsQuality;
 
     private Button startStopStreamingButton;
 
@@ -100,7 +100,6 @@ DeviceActivity extends AppCompatActivity {
         initDisconnectButton();
         initReadBatteryButton();
         initStartStopStreamingButton();
-        initEegGraph();
 
         sdkClient.setConnectionStateListener(bluetoothStateListener);
     }
@@ -119,6 +118,15 @@ DeviceActivity extends AppCompatActivity {
 
             @Override
             public void onNewPackets(@NonNull final MbtEEGPacket mbtEEGPackets) {
+                if(eegGraph == null)
+                    sdkClient.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
+                    @Override
+                    public void onRequestComplete(MbtDevice object) {
+                        device = object;
+                        initEegGraph(device.getNbChannels(), device.getSampRate());
+                    }
+                });
+
                 if (invertFloatMatrix(mbtEEGPackets.getChannelsData()) != null)
                     mbtEEGPackets.setChannelsData(invertFloatMatrix(mbtEEGPackets.getChannelsData()));
 
@@ -126,8 +134,18 @@ DeviceActivity extends AppCompatActivity {
                     if (eegGraph != null) {
                         addEegDataToGraph(mbtEEGPackets);
 
-                        channel1Quality.setText(getString(R.string.channel_1_qc) + ((mbtEEGPackets.getQualities() != null && mbtEEGPackets.getQualities().get(0) != null) ? mbtEEGPackets.getQualities().get(0) : " -- "));
-                        channel2Quality.setText(getString(R.string.channel_2_qc) + ((mbtEEGPackets.getQualities() != null && mbtEEGPackets.getQualities().get(1) != null) ? mbtEEGPackets.getQualities().get(1) : " -- "));
+                        StringBuilder qualities = new StringBuilder();
+                        for (int qualityTextView = 0 ; qualityTextView < device.getNbChannels() ; qualityTextView++){
+                            qualities.append(getString(R.string.quality))
+                                    .append(qualityTextView+1)
+                                    .append( ": ")
+                                    .append( mbtEEGPackets.getQualities() != null ?
+                                            mbtEEGPackets.getQualities().get(qualityTextView)
+                                            : "--")
+                                    .append(" ");
+                        }
+                        channelsQuality.setText(qualities.toString());
+
                     }
                 }
             }
@@ -157,7 +175,7 @@ DeviceActivity extends AppCompatActivity {
     private void initDeviceInfoListener() {
         deviceInfoListener = new DeviceBatteryListener() {
             @Override
-            public void onBatteryChanged(String newLevel) {
+            public void onBatteryLevelReceived(String newLevel) {
                 lastReadBatteryLevel = newLevel;
                 notifyUser("Current battery level : " + lastReadBatteryLevel + " %");
             }
@@ -182,7 +200,7 @@ DeviceActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onDeviceDisconnected() {
+            public void onDeviceDisconnected(MbtDevice device) {
                 LogUtils.i(TAG, " device disconnected");
                 isConnected = false;
                 returnOnPreviousActivity();
@@ -209,17 +227,15 @@ DeviceActivity extends AppCompatActivity {
 
     private void initDeviceNameTextView() {
         deviceNameTextView = findViewById(R.id.deviceNameTextView);
-        if (getIntent().hasExtra(HomeActivity.DEVICE_NAME_EXTRA)) {
-            deviceName = Objects.requireNonNull(getIntent().getExtras()).getString(HomeActivity.DEVICE_NAME_EXTRA, "");
-        }
-        if (getIntent().hasExtra(HomeActivity.DEVICE_QR_CODE_EXTRA)) {
-            deviceQrCode = Objects.requireNonNull(getIntent().getExtras()).getString(HomeActivity.DEVICE_QR_CODE_EXTRA, "");
-        }
-        if (getIntent().hasExtra(HomeActivity.DEVICE_TYPE_EXTRA)) {
-            deviceType = (MbtDeviceType) Objects.requireNonNull(getIntent().getExtras()).getSerializable(HomeActivity.DEVICE_TYPE_EXTRA);
-        }
 
-        deviceNameTextView.setText(deviceName + (deviceType != null && deviceType.equals(MbtDeviceType.VPRO) ? "":" | " + deviceQrCode));
+        if (getIntent().hasExtra(HomeActivity.DEVICE_EXTRA) && Objects.requireNonNull(getIntent().getExtras()).getSerializable(HomeActivity.DEVICE_EXTRA) != null) {
+            device = ((MbtDevice) Objects.requireNonNull(getIntent().getExtras()).getSerializable(HomeActivity.DEVICE_EXTRA));
+            deviceName = device.getProductName();
+            deviceQrCode = device.getExternalName();
+            deviceType = device.getDeviceType();
+
+            deviceNameTextView.setText(deviceName + (deviceType != null && deviceType.equals(MbtDeviceType.VPRO) ? "" : " | " + deviceQrCode));
+        }
     }
 
     private void initReadBatteryButton() {
@@ -234,10 +250,7 @@ DeviceActivity extends AppCompatActivity {
     }
 
     private void initChannelsTextView() {
-        channel1Quality = findViewById(R.id.channel_1_quality);
-        channel2Quality = findViewById(R.id.channel_2_quality);
-        channel1Quality.setText(getString(R.string.channel_1_qc) + " -- ");
-        channel2Quality.setText(getString(R.string.channel_2_qc) + " -- ");
+        channelsQuality = findViewById(R.id.channels_quality);
     }
 
     private void initStartStopStreamingButton() {
@@ -269,30 +282,29 @@ DeviceActivity extends AppCompatActivity {
         startStopStreamingButton.setText((isStreaming ? R.string.stop_streaming : R.string.start_streaming));
     }
 
-    public void initEegGraph() {
-        eegGraph = findViewById(R.id.eegGraph);
+    public void initEegGraph(int nbChannels, int sampRate) {
+        if(eegGraph == null)
+            eegGraph = findViewById(R.id.eegGraph);
 
-        channel1 = new LineDataSet(new ArrayList<Entry>(250), getString(R.string.channel1));
-        channel2 = new LineDataSet(new ArrayList<Entry>(250), getString(R.string.channel2));
-
-        channel1.setDrawValues(false);
-        channel1.disableDashedLine();
-        channel1.setDrawCircleHole(false);
-        channel1.setDrawCircles(false);
-        channel1.setColor(Color.rgb(3, 32, 123));
-        channel1.setAxisDependency(YAxis.AxisDependency.LEFT);
-
-        channel2.setDrawValues(false);
-        channel2.disableDashedLine();
-        channel2.setDrawCircleHole(false);
-        channel2.setDrawCircles(false);
-        channel2.setColor(Color.rgb(99, 186, 233));
-        channel2.setAxisDependency(YAxis.AxisDependency.LEFT);
+//        final int MAXIMUM_MICROVOLT = 500;
+//        final int MINIMUM_MICROVOLT = -500;
+//        eegGraph.setVisibleYRangeMaximum(MAXIMUM_MICROVOLT, YAxis.AxisDependency.LEFT);
+//        eegGraph.setVisibleYRangeMinimum(MINIMUM_MICROVOLT, YAxis.AxisDependency.LEFT);
 
         eegLineData = new LineData();
 
-        eegLineData.addDataSet(channel1);
-        eegLineData.addDataSet(channel2);
+        for (int channel=0 ; channel < nbChannels ; channel++){
+
+            LineDataSet channelDataSet = new LineDataSet(new ArrayList<Entry>(sampRate), getString(R.string.channel)+(channel+1));
+            channelDataSet.setDrawValues(false);
+            channelDataSet.disableDashedLine();
+            channelDataSet.setDrawCircleHole(false);
+            channelDataSet.setDrawCircles(false);
+            channelDataSet.setColor(Color.rgb((int) (Math.random()*255), (int) (Math.random()*255), (int) (Math.random()*255)
+            ));
+            channelDataSet.setAxisDependency(YAxis.AxisDependency.LEFT);
+            eegLineData.addDataSet(channelDataSet);
+        }
 
         eegGraph.setData(eegLineData);
 
@@ -339,14 +351,16 @@ DeviceActivity extends AppCompatActivity {
             } else {
                 if (channelsHasTheSameNumberOfData(nbChannels,channelData)) {
                     for (int currentEegData = 0; currentEegData < channelData.get(0).size(); currentEegData++) { //for each number of eeg data
-                        for (int currentChannel = 0; currentChannel < nbChannels; currentChannel++) { //todo vpro
+                        for (int currentChannel = 0; currentChannel < nbChannels; currentChannel++) {
                             data.addEntry(new Entry(data.getDataSets().get(currentChannel).getEntryCount(), channelData.get(currentChannel).get(currentEegData) * 1000000), currentChannel);
                         }
+
                     }
                 } else {
                     throw new IllegalStateException("Channels do not have the same amount of data");
                 }
             }
+
             data.notifyDataChanged();
             eegGraph.notifyDataSetChanged();// let the chart know it's data has changed
             eegGraph.setVisibleXRangeMaximum(MAX_NUMBER_OF_DATA_TO_DISPLAY);// limit the number of visible entries

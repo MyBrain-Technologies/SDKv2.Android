@@ -917,23 +917,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         if(enableDeviceStatusMonitoring && bluetoothForDataStreaming instanceof MbtBluetoothLE)
             ((MbtBluetoothLE)bluetoothForDataStreaming).activateDeviceStatusMonitoring();
 
-
-
-        try {
-            AsyncUtils.executeAsync(new Runnable() {
-                @Override
-                public void run() {
-                    if(!bluetoothForDataStreaming.startStream()){
-                        asyncOperation.stopWaitingOperation(false);
-                        requestBeingProcessed();
-                        EventBusManager.postEvent(StreamState.FAILED);
-                    }else
-                        asyncOperation.stopWaitingOperation(true);
-                }
-            });
-            asyncOperation.waitOperationResult(10000);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            requestBeingProcessed  = false;
+        if(!bluetoothForDataStreaming.startStream()){
+            requestBeingProcessed();
             EventBusManager.postEvent(StreamState.FAILED);
         }
     }
@@ -943,30 +928,17 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * Initiates the acquisition of EEG data from the correct BtProtocol
      * If there is no streaming session in progress, nothing happens and the method returns silently.
      */
-    private void stopStreamOperation(){
+    private void stopStreamOperation() {
         Log.d(TAG, "Bluetooth Manager stops streaming");
-        if(!bluetoothForDataStreaming.isStreaming()) {
+        if (!bluetoothForDataStreaming.isStreaming()) {
             requestBeingProcessed();
             return;
         }
-        try {
-            AsyncUtils.executeAsync(new Runnable() {
-                @Override
-                public void run() {
-                    if(!bluetoothForDataStreaming.stopStream()){
-                        asyncOperation.stopWaitingOperation(false);
-                        requestBeingProcessed  = false;
-                        EventBusManager.postEvent(StreamState.FAILED);
-                    }else
-                        asyncOperation.stopWaitingOperation(true);
-                }
-            });
-            asyncOperation.waitOperationResult(5000);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            requestBeingProcessed  = false;
+
+        if (!bluetoothForDataStreaming.stopStream()){
+            requestBeingProcessed = false;
             EventBusManager.postEvent(StreamState.FAILED);
         }
-
     }
 
     /**

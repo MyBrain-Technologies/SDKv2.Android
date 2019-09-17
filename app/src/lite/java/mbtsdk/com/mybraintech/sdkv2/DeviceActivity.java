@@ -166,7 +166,7 @@ DeviceActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onDeviceDisconnected() {
+            public void onDeviceDisconnected(MbtDevice device) {
                 LogUtils.i(TAG," device disconnected");
                 isConnected = false;
                 returnOnPreviousActivity();
