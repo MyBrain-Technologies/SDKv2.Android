@@ -78,7 +78,7 @@ public interface BluetoothCommands {
 
         @Override
         public String getInvalidityError() {
-            return "You are not allowed to provide a MTU lower than "+ MINIMUM + " and higher than "+ MAXIMUM +" in the "+this.getClass().getSimpleName()+ " contructor.";
+            return "You are not allowed to provide a MTU lower than "+ MINIMUM + " and higher than "+ MAXIMUM +" in the "+this.getClass().getSimpleName()+ " constructor.";
         }
 
         @Override

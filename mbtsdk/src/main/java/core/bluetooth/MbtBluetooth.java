@@ -40,7 +40,6 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
     protected StreamState streamingState = StreamState.IDLE;
 
     private volatile BtState currentState = BtState.IDLE;
-    protected volatile StreamState streamState = StreamState.IDLE;
 
     protected boolean isUpdating;
 
@@ -159,6 +158,7 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
         this.bluetoothAdapter.enable();
         Boolean b = lock.waitAndGetResult(5000);
         if(b == null){
+            Log.e(TAG, "impossible to enable BT adapter");
             return false;
         }
         return b;

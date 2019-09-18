@@ -39,6 +39,7 @@ import config.MbtConfig;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.BtState;
 import core.bluetooth.BluetoothInterfaces;
+import core.bluetooth.MbtBluetooth;
 import core.bluetooth.MbtBluetoothManager;
 import core.bluetooth.MbtDataBluetooth;
 import core.bluetooth.StreamState;
@@ -58,6 +59,8 @@ import static command.DeviceCommandEvent.CMD_CODE_CONNECT_IN_A2DP_FAILED_ALREADY
 import static command.DeviceCommandEvent.CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED;
 import static command.DeviceCommandEvent.CMD_CODE_CONNECT_IN_A2DP_SUCCESS;
 import static command.DeviceCommandEvent.MBX_CONNECT_IN_A2DP;
+import static command.DeviceCommandEvents.CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED;
+import static command.DeviceCommandEvents.CMD_CODE_CONNECT_IN_A2DP_SUCCESS;
 
 /**
  *
@@ -248,7 +251,6 @@ public class MbtBluetoothLE
 
 
     /**
-
      * This method sends a request to the headset to <strong><code>STOP</code></strong>
      * the EEG raw data acquisition process, therefore disabling the Bluetooth Low Energy notification
      * and cleaning reference to previously registered listener.
@@ -278,8 +280,7 @@ public class MbtBluetoothLE
         if(isStreaming() == isStart)
             return true;
 
-        if (!checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT,
-                MelomindCharacteristics.CHARAC_MEASUREMENT_EEG))
+        if(!checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_EEG))
             return false;
 
         try {
@@ -449,6 +450,10 @@ public class MbtBluetoothLE
     }
 
 
+    public boolean isConnectedDeviceReadyForCommand() {
+        return (getCurrentState().ordinal() >= BtState.DATA_BT_CONNECTION_SUCCESS.ordinal());
+    }
+
     /**
      * Starts a read operation on a specific characteristic
      * @param characteristic the characteristic to read
@@ -541,7 +546,6 @@ public class MbtBluetoothLE
     /**
      * Initiates a read battery operation on this correct BtProtocol
      */
-    @Override
     public boolean readBattery() {
         LogUtils.i(TAG, "read battery");
         return startReadOperation(MelomindCharacteristics.CHARAC_MEASUREMENT_BATTERY_LEVEL);
@@ -630,7 +634,6 @@ public class MbtBluetoothLE
      * @param newState the new {@link BtState state}
      */
     @Override
-
     public void notifyConnectionStateChanged(@NonNull BtState newState) {
         super.notifyConnectionStateChanged(newState);
 
@@ -663,7 +666,7 @@ public class MbtBluetoothLE
                 mbtBluetoothManager.notifyConnectionStateChanged(BtState.JACK_CABLE_CONNECTED);
 
             else if(BitUtils.areByteEquals(MBX_CONNECT_IN_A2DP.getResponseCodeForKey(CMD_CODE_CONNECT_IN_A2DP_SUCCESS), mailboxResponse)
-                || BitUtils.areByteEquals(MBX_CONNECT_IN_A2DP.getResponseCodeForKey(CMD_CODE_CONNECT_IN_A2DP_FAILED_ALREADY_CONNECTED), mailboxResponse))
+               /* || BitUtils.areByteEquals(MBX_CONNECT_IN_A2DP.getResponseCodeForKey(CMD_CODE_CONNECT_IN_A2DP_FAILED_ALREADY_CONNECTED), mailboxResponse)*/)
                 mbtBluetoothManager.notifyConnectionStateChanged(BtState.AUDIO_BT_CONNECTION_SUCCESS);
         }else
             mbtBluetoothManager.notifyConnectionStateChanged(BtState.AUDIO_BT_DISCONNECTED);
@@ -688,7 +691,6 @@ public class MbtBluetoothLE
      * sent by the headset to the SDK once the command is received.
      */
     public void sendCommand(CommandInterface.MbtCommand command){
-
         Object response = null;
 
         if (!isConnectedDeviceReadyForCommand()){ //error returned if no headset is connected
@@ -718,11 +720,6 @@ public class MbtBluetoothLE
         mbtBluetoothManager.notifyResponseReceived(response, command);//return null response to the client if request has not been sent
     }
 
-    /**
-     *
-     * @param command
-     * @return
-     */
     private boolean sendRequestData(CommandInterface.MbtCommand command){
         if(command instanceof BluetoothCommands.Mtu)
             return changeMTU(((Integer)command.serialize()));

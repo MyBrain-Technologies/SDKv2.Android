@@ -30,6 +30,8 @@ public class MelomindDevice extends MbtDevice{
         this.hardwareVersion = "0.0.0";
         this.serialNumber = "0000000000";
         this.externalName = MbtFeatures.MELOMIND_DEVICE_NAME;
+        this.eegPacketLength = MbtFeatures.DEFAULT_EEG_PACKET_LENGTH;
+
     }
 
     public static short getBatteryPercentageFromByteValue(byte value){
@@ -108,6 +110,12 @@ public class MelomindDevice extends MbtDevice{
         super.setDeviceAddress(deviceAddress);
     }
 
+
+    @Override
+    public void setInternalConfig(InternalConfig internalConfig) {
+        super.setInternalConfig(internalConfig);
+    }
+
     @Override
     public InternalConfig getInternalConfig() {
         return super.getInternalConfig();
@@ -147,6 +155,10 @@ public class MelomindDevice extends MbtDevice{
     public final String getHardwareVersion() {
         return this.hardwareVersion;
     }
+
+    public final int getSampRate() {return this.sampRate;}
+
+    public final int getNbChannels() {return this.nbChannels;}
 
     @NonNull
     public final List<MbtAcquisitionLocations> getAcquisitionLocations() {return this.acquisitionLocations;}

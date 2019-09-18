@@ -10,6 +10,7 @@ import command.CommandInterface;
 import command.DeviceCommands;
 import config.ConnectionConfig;
 import config.MbtConfig;
+import config.RecordConfig;
 import config.StreamConfig;
 import core.MbtManager;
 import core.bluetooth.BtState;
@@ -160,7 +161,7 @@ public final class MbtClient {
     @SuppressWarnings("unchecked")
     public void startStream(@NonNull StreamConfig streamConfig){
 
-        if(!streamConfig.isConfigCorrect())
+        if(!streamConfig.isNotificationConfigCorrect())
             streamConfig.getEegListener().onError(ConfigError.ERROR_INVALID_PARAMS, streamConfig.shouldComputeQualities() ?
                     ConfigError.NOTIFICATION_PERIOD_RANGE_QUALITIES : ConfigError.NOTIFICATION_PERIOD_RANGE);
         else
@@ -179,7 +180,23 @@ public final class MbtClient {
      * reinit all internal buffering system.
      */
     public void stopStream(){
-        mbtManager.stopStream();
+        mbtManager.stopStream(null);
+    }
+
+    /**
+     * Stops the currently running eeg stream. This stops bluetooth acquisition and
+     * reinit all internal buffering system.
+     */
+    public void stopStream(RecordConfig recordConfig){
+        mbtManager.stopStream(recordConfig);
+    }
+
+    public void startRecord(Context context){
+        mbtManager.startRecord(context);
+    }
+
+    public void stopRecord(@NonNull RecordConfig recordConfig){
+        mbtManager.stopRecord(recordConfig);
     }
 
     /**
@@ -260,7 +277,7 @@ public final class MbtClient {
 
     /**
      * Stops a pending connection process. If successful,
-     * the new state {@link core.bluetooth.BtState#CONNECTION_INTERRUPTED} is sent to the user in the {@link BluetoothStateListener#onNewState(BtState, MbtDevice)} callback
+     * the new state {@link core.bluetooth.BtState#CONNECTION_INTERRUPTED} is sent to the user in the {@link BluetoothStateListener#onNewState(BtState)} callback
      * <p>If the device is already connected, it simply disconnects the device.</p>
      */
     public void cancelConnection() {

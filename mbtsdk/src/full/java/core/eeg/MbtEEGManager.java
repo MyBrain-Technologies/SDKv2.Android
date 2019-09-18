@@ -242,6 +242,13 @@ public final class MbtEEGManager extends BaseModuleManager {
     }
 
     /**
+     * Computes the calibration parameters
+     */
+    private float calibrate(int sampRate, MBTCalibrationParameters calibParams, MbtEEGPacket... packets) {
+        return MBTComputeRelaxIndex.computeRelaxIndex(sampRate, calibParams, packets);
+    }
+
+    /**
      * Resets the relaxation index.
      */
     private void reinitRelaxIndexVariables() {
@@ -274,6 +281,7 @@ public final class MbtEEGManager extends BaseModuleManager {
     @Subscribe(threadMode = ThreadMode.BACKGROUND)
     public void onEvent(BluetoothEEGEvent event) { //warning : this method is used
         dataAcquisition.handleDataAcquired(event.getData(), nbChannels);
+        protocol = event.getDeviceType().getProtocol();
     }
 
     /**
@@ -302,8 +310,8 @@ public final class MbtEEGManager extends BaseModuleManager {
     }
 
     @Subscribe
-    public void onConfigurationChanged(EEGConfigEvent configEEGEvent){
-        LogUtils.d(TAG, "new config "+ configEEGEvent.getConfig());
+    public void onConfigurationChanged(ConfigEEGEvent configEEGEvent){
+        LogUtils.d(TAG, "new config "+ (Arrays.toString(configEEGEvent.getConfig())));
         sampRate = configEEGEvent.getDevice().getInternalConfig().getSampRate();
         packetLength = configEEGEvent.getDevice().getEegPacketLength();
 
@@ -316,10 +324,12 @@ public final class MbtEEGManager extends BaseModuleManager {
         return sampRate;
     }
 
+    @VisibleForTest
     public void setTestConsolidatedEEG(ArrayList<ArrayList<Float>> consolidatedEEG) {
         this.consolidatedEEG = consolidatedEEG;
     }
 
+    @VisibleForTest
     public void setTestHasQualities(boolean hasQualities) {
         this.hasQualities = hasQualities;
     }
