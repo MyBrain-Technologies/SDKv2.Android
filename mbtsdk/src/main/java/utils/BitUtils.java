@@ -157,4 +157,28 @@ public class BitUtils {
         return valueToCheck == 0;
     }
 
+    /**
+     * Return 0x00 if boolean value is false
+     * Return 0x01 if boolean value is true
+     * @param booleanValue value to convert
+     * @return converted value in byte
+     */
+    public static byte booleanToBit(boolean booleanValue) {
+        return booleanValue ?
+                (byte)0x01 :
+                (byte)0x00;
+    }
+
+    /**
+     * Return false if byte value is 0x00
+     * Return true if boolean value is 0x01
+     * @param byteValue value to convert
+     * @return converted value as a boolean
+     */
+    public static boolean bitToBoolean(byte byteValue) {
+        if(byteValue != 0x01 && byteValue != 0x00)
+            return false;
+
+        return byteValue == (byte)0x01;
+    }
 }

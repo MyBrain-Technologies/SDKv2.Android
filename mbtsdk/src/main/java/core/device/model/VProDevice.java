@@ -37,7 +37,7 @@ public class VProDevice extends MbtDevice{
      * @return the version of the firmware
      */
     @NonNull
-    public final String getFirmwareVersion() {
+    public final FirmwareVersion getFirmwareVersion() {
         return this.firmwareVersion;
     }
 
@@ -103,7 +103,7 @@ public class VProDevice extends MbtDevice{
 
     public void setHardwareVersion(@NonNull final String hardwareVersion) {this.hardwareVersion = hardwareVersion;}
 
-    public void setFirmwareVersion(@NonNull final String firmwareVersion) {this.firmwareVersion = firmwareVersion;}
+    public void setFirmwareVersion(@NonNull final FirmwareVersion firmwareVersion) {this.firmwareVersion = firmwareVersion;}
 
     public void setSerialNumber(@NonNull final String deviceId) {this.serialNumber = deviceId;}
 

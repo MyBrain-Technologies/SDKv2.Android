@@ -24,8 +24,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 
-import core.device.DCOffsets;
-import core.device.SaturationEvent;
 import core.bluetooth.BtState;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindDevice;

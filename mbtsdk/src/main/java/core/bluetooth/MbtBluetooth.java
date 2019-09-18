@@ -16,11 +16,9 @@ import android.util.Log;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
-import command.CommandInterface;
-import core.device.model.DeviceInfo;
-import core.oad.OADEvent;
 
-import engine.clientevents.BluetoothError;
+import core.device.model.DeviceInfo;
+
 import utils.LogUtils;
 import utils.MbtAsyncWaitOperation;
 import utils.MbtLock;
@@ -38,8 +36,14 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
 
     private final static String TAG = MbtBluetooth.class.getName();
 
+    @NonNull
+    protected StreamState streamingState = StreamState.IDLE;
+
     private volatile BtState currentState = BtState.IDLE;
     protected volatile StreamState streamState = StreamState.IDLE;
+
+    protected boolean isUpdating;
+
 
     @Nullable
     protected BluetoothAdapter bluetoothAdapter;
@@ -87,7 +91,7 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
 
             if(currentState.isResettableState(previousState)) {  //if a disconnection occurred
                 resetCurrentState();//reset the current connection state to IDLE
-                if(this instanceof MbtBluetoothA2DP)
+                if(this instanceof MbtBluetoothA2DP && !currentState.equals(BtState.UPGRADING))
                     mbtBluetoothManager.disconnectAllBluetooth(false); //audio has failed to connect : we disconnect BLE
             }if(currentState.isDisconnectableState())  //if a failure occurred
                 disconnect(); //disconnect if a headset is connected
@@ -105,12 +109,6 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
         else {
             this.currentState = newState;
         }
-    }
-
-    void notifyMailboxEvent(byte code, Object value){
-//        if(this.mailboxEventListener != null){
-//            this.mailboxEventListener.onMailBoxEvent(code, value);
-//        }
     }
 
     protected void notifyBatteryReceived(int value){
@@ -161,7 +159,6 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
         this.bluetoothAdapter.enable();
         Boolean b = lock.waitAndGetResult(5000);
         if(b == null){
-            Log.e(TAG, "impossible to enable BT adapter");
             return false;
         }
         return b;
@@ -226,6 +223,22 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
 
         streamState = newStreamState;
         mbtBluetoothManager.notifyStreamStateChanged(newStreamState);
+    }
+
+    /**
+     * Disable then enable the bluetooth adapter
+     */
+    public boolean resetMobileDeviceBluetoothAdapter() {
+        LogUtils.d(TAG, "Reset Bluetooth adapter");
+
+        bluetoothAdapter.disable();
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+       return enableBluetoothOnDevice();
     }
 
 }

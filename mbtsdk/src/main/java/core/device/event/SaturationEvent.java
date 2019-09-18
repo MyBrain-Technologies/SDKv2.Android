@@ -1,4 +1,4 @@
-package core.device;
+package core.device.event;
 
 import android.support.annotation.Keep;
 

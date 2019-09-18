@@ -26,7 +26,7 @@ public class MelomindDevice extends MbtDevice{
         this.acquisitionLocations = Arrays.asList(MbtAcquisitionLocations.P3, MbtAcquisitionLocations.P4);
         this.groundsLocation = Arrays.asList(MbtAcquisitionLocations.M2);
         this.referencesLocations = Arrays.asList(MbtAcquisitionLocations.M1);
-        this.firmwareVersion = "0.0.0";
+        this.firmwareVersion = new FirmwareVersion("0.0.0");
         this.hardwareVersion = "0.0.0";
         this.serialNumber = "0000000000";
         this.externalName = MbtFeatures.MELOMIND_DEVICE_NAME;
@@ -69,7 +69,7 @@ public class MelomindDevice extends MbtDevice{
      * @return the version of the firmware
      */
     @Nullable
-    public final String getFirmwareVersion() {
+    public final FirmwareVersion getFirmwareVersion() {
         return this.firmwareVersion;
     }
 
@@ -159,7 +159,7 @@ public class MelomindDevice extends MbtDevice{
 
     public void setHardwareVersion(@NonNull final String hardwareVersion) {this.hardwareVersion = hardwareVersion;}
 
-    public void setFirmwareVersion(@NonNull final String firmwareVersion) {this.firmwareVersion = firmwareVersion;}
+    public void setFirmwareVersion(@NonNull final FirmwareVersion firmwareVersion) {this.firmwareVersion = firmwareVersion;}
 
     public void setSerialNumber(@NonNull final String deviceId) {this.serialNumber = deviceId;}
 

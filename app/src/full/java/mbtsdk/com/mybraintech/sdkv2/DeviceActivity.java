@@ -7,9 +7,10 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
+
 import android.view.View;
 import android.widget.Button;
+
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -24,12 +25,13 @@ import java.util.ArrayList;
 
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.Random;
 
-import core.device.DCOffsets;
-import core.device.SaturationEvent;
+import core.device.event.DCOffsetEvent;
+import core.device.event.SaturationEvent;
 import core.bluetooth.BtState;
 import core.device.model.MbtDevice;
+import core.device.model.FirmwareVersion;
+import core.device.oad.OADState;
 import core.eeg.storage.MbtEEGPacket;
 import engine.MbtClient;
 
@@ -40,6 +42,7 @@ import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.BluetoothStateListener;
 import engine.clientevents.DeviceBatteryListener;
 import engine.clientevents.EegListener;
+import engine.clientevents.OADStateListener;
 import features.MbtDeviceType;
 import features.MbtFeatures;
 import utils.LogUtils;
@@ -74,7 +77,6 @@ public class DeviceActivity extends AppCompatActivity {
 
     private boolean isConnected = false;
     private boolean isStreaming = false;
-
 
     private BluetoothStateListener bluetoothStateListener;
     private DeviceStatusListener<BaseError> deviceStatusListener;
@@ -166,7 +168,7 @@ public class DeviceActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onNewDCOffsetMeasured(DCOffsets dcOffsets) {
+            public void onNewDCOffsetMeasured(DCOffsetEvent dcOffsets) {
                 notifyUser("Offset: " + Arrays.toString(dcOffsets.getOffset()));
             }
         };
@@ -213,14 +215,35 @@ public class DeviceActivity extends AppCompatActivity {
     }
 
     private void initDisconnectButton() {
+
         disconnectButton = findViewById(R.id.disconnectButton);
         disconnectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 //returnOnPreviousActivity();
-                if (isStreaming)
-                    stopStream();
-                sdkClient.disconnectBluetooth();
+//                if (isStreaming)
+//                    stopStream();
+//                sdkClient.disconnectBluetooth();
+
+                sdkClient.updateFirmware(new FirmwareVersion("1.7.4"), new OADStateListener<BaseError>() {
+                    @Override
+                    public void onStateChanged(OADState newState) { }
+
+                    @Override
+                    public void onProgressPercentChanged(final int progress) {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                notifyUser("Progress "+progress);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onError(BaseError error, String additionalInfo) {
+                        notifyUser(error.getMessage());
+                    }
+                });
             }
         });
     }
@@ -228,14 +251,20 @@ public class DeviceActivity extends AppCompatActivity {
     private void initDeviceNameTextView() {
         deviceNameTextView = findViewById(R.id.deviceNameTextView);
 
-        if (getIntent().hasExtra(HomeActivity.DEVICE_EXTRA) && Objects.requireNonNull(getIntent().getExtras()).getSerializable(HomeActivity.DEVICE_EXTRA) != null) {
-            device = ((MbtDevice) Objects.requireNonNull(getIntent().getExtras()).getSerializable(HomeActivity.DEVICE_EXTRA));
-            deviceName = device.getProductName();
-            deviceQrCode = device.getExternalName();
-            deviceType = device.getDeviceType();
+        sdkClient.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
+            @Override
+            public void onRequestComplete(MbtDevice connectedDevice) {
+                device = connectedDevice;
+                if (device != null) {
+                    deviceName = device.getProductName();
+                    deviceQrCode = device.getExternalName();
+                    deviceType = device.getDeviceType();
 
-            deviceNameTextView.setText(deviceName + (deviceType != null && deviceType.equals(MbtDeviceType.VPRO) ? "" : " | " + deviceQrCode));
-        }
+                    deviceNameTextView.setText(deviceName + (deviceType != null && deviceType.equals(MbtDeviceType.VPRO) ? "" : " | " + deviceQrCode));
+                }
+            }
+        });
+
     }
 
     private void initReadBatteryButton() {

@@ -14,7 +14,7 @@ import command.BluetoothCommand;
 import command.BluetoothCommands;
 import command.CommandInterface;
 import command.DeviceCommand;
-import command.DeviceCommandEvents;
+import command.DeviceCommandEvent;
 import command.DeviceCommands;
 import core.bluetooth.lowenergy.MbtBluetoothLE;
 import core.bluetooth.requests.BluetoothRequests;
@@ -34,9 +34,9 @@ public class MbtBluetoothManagerTest {
 
     private MbtBluetoothManager bluetoothManager;
     private final int RESPONSE_MTU = 47;
-    private final byte[] RESPONSE_SERIAL_NUMBER = new byte[]{DeviceCommandEvents.MBX_SET_SERIAL_NUMBER,1,2,3,4,5};
-    private final byte[] RESPONSE_MODEL_NUMBER = new byte[]{DeviceCommandEvents.MBX_SET_EXTERNAL_NAME,1,2,3,4,5};
-    private final byte[] RESPONSE_EEG_CONFIG = new byte[]{DeviceCommandEvents.MBX_GET_EEG_CONFIG,1,2,3,4,5};
+    private final byte[] RESPONSE_SERIAL_NUMBER = new byte[]{DeviceCommandEvent.MBX_SET_SERIAL_NUMBER.getIdentifierCode(),1,2,3,4,5};
+    private final byte[] RESPONSE_MODEL_NUMBER = new byte[]{DeviceCommandEvent.MBX_SET_EXTERNAL_NAME.getIdentifierCode(),1,2,3,4,5};
+    private final byte[] RESPONSE_EEG_CONFIG = new byte[]{DeviceCommandEvent.MBX_GET_EEG_CONFIG.getIdentifierCode(),1,2,3,4,5};
 
     @Before
     public void setUp() {

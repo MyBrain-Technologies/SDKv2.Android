@@ -1,4 +1,4 @@
-package core.device;
+package core.device.event;
 
 
 import java.io.Serializable;
@@ -10,13 +10,13 @@ import java.util.Arrays;
 import android.support.annotation.Keep;
 
 @Keep
-public final class DCOffsets implements Serializable {
+public final class DCOffsetEvent implements Serializable {
 
     private long timestamp;
 
     private float[] offset;
 
-    public DCOffsets(long timestamp, float[] offset) {
+    public DCOffsetEvent(long timestamp, float[] offset) {
         this.timestamp = timestamp;
         this.offset = offset;
     }
@@ -39,7 +39,7 @@ public final class DCOffsets implements Serializable {
 
     @Override
     public String toString() {
-        return "DCOffsets{" +
+        return "DCOffsetEvent{" +
                 "timestamp=" + timestamp +
                 ", offset=" + Arrays.toString(offset) +
                 '}';

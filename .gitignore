@@ -132,6 +132,8 @@ fabric.properties
 
 !/gradle/wrapper/gradle-wrapper.jar
 
+*.idea
+/mbtsdk/.cxx
 
 mbtsdk/.cxx
 .idea

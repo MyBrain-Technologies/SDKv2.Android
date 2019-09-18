@@ -18,16 +18,15 @@ import android.util.Log;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.reflect.Array;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Scanner;
+
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
 
 import command.CommandInterface;
-import command.DeviceCommandEvents;
+import command.DeviceCommandEvent;
+
 import command.DeviceCommands;
 import command.DeviceStreamingCommands;
 import core.bluetooth.BtProtocol;
@@ -40,6 +39,10 @@ import engine.clientevents.BluetoothError;
 import utils.AsyncUtils;
 import utils.LogUtils;
 
+import static command.DeviceCommandEvent.CMD_GET_BATTERY_VALUE;
+import static command.DeviceCommandEvent.CMD_START_EEG_ACQUISITION;
+import static command.DeviceCommandEvent.MBX_GET_EEG_CONFIG;
+import static command.DeviceCommandEvent.START_FRAME;
 import static core.bluetooth.spp.MessageStatus.STATE_ACQ;
 import static core.bluetooth.spp.MessageStatus.STATE_COMMAND;
 import static core.bluetooth.spp.MessageStatus.STATE_COMPRESSION;
@@ -366,7 +369,7 @@ public final class MbtBluetoothSPP
                     switch(currentStatus){
 
                         case STATE_IDLE:
-                            if(currentByte == DeviceCommandEvents.START_FRAME[0])
+                            if(currentByte == START_FRAME.getIdentifierCode())
                                 currentStatus = STATE_LENGTH;
                             break;
 
@@ -385,9 +388,9 @@ public final class MbtBluetoothSPP
                             command = currentByte ;
 
                             currentStatus =
-                                    ((command != DeviceCommandEvents.CMD_START_EEG_ACQUISITION
-                                            && command != DeviceCommandEvents.CMD_GET_BATTERY_VALUE
-                                            && command != DeviceCommandEvents.MBX_GET_EEG_CONFIG) ?
+                                    ((command != CMD_START_EEG_ACQUISITION.getIdentifierCode()
+                                            && command != CMD_GET_BATTERY_VALUE.getIdentifierCode()
+                                            && command != MBX_GET_EEG_CONFIG.getIdentifierCode()) ?
                                             STATE_IDLE : STATE_COMPRESSION) ;
                             break;
 
@@ -409,8 +412,8 @@ public final class MbtBluetoothSPP
                             break;
 
                         case STATE_ACQ:
-                            if(command == DeviceCommandEvents.CMD_START_EEG_ACQUISITION && isStreaming
-                            || command == DeviceCommandEvents.MBX_GET_EEG_CONFIG) {
+                            if(command == CMD_START_EEG_ACQUISITION.getIdentifierCode() && isStreaming
+                            || command == MBX_GET_EEG_CONFIG.getIdentifierCode()) {
 
                                 dataBuffer[counter++] = currentByte;
 
@@ -422,14 +425,14 @@ public final class MbtBluetoothSPP
                                     AsyncUtils.executeAsync(new Runnable() {
                                         @Override
                                         public void run() {
-                                            if(command == DeviceCommandEvents.CMD_START_EEG_ACQUISITION)
+                                            if(command == DeviceCommandEvent.CMD_START_EEG_ACQUISITION.getIdentifierCode())
                                                 notifyNewDataAcquired(finalData);
                                             else
                                                 notifyCommandResponseReceived(finalData);
                                         }
                                     });
                                 }
-                            }else if(command == DeviceCommandEvents.CMD_GET_BATTERY_VALUE) {
+                            }else if(command == DeviceCommandEvent.CMD_GET_BATTERY_VALUE.getIdentifierCode()) {
                                 LogUtils.i(TAG, "Reading Battery level");
                                 dataBuffer = new byte[payloadSize];
                                 counter = 0;
@@ -552,5 +555,21 @@ public final class MbtBluetoothSPP
         mbtBluetoothManager.notifyResponseReceived(response, command);//return null response to the client if request has not been sent
     }
 
+
+    /**
+     * Assemble all the input codes in a single array
+     * @param code code to assemble
+     * @return the assembled array
+     */
+    public static byte[] assembleCodes(DeviceCommandEvent code){
+        return DeviceCommandEvent.assembleCodes(
+                DeviceCommandEvent.COMPRESS.getAssembledCodes(),
+                DeviceCommandEvent.PACKET_ID.getAssembledCodes(),
+                DeviceCommandEvent.PAYLOAD.getAssembledCodes(),
+                new byte[]{code.getIdentifierCode()},
+                DeviceCommandEvent.START_FRAME.getAssembledCodes(),
+                DeviceCommandEvent.PAYLOAD_LENGTH.getAssembledCodes()
+                );
+    }
 }
 

@@ -131,6 +131,18 @@
         app:layout_constraintStart_toStartOf="@+id/guidelineEndStartStop"
         app:layout_constraintTop_toTopOf="@+id/guidelineBottomChannels" />
 
+    <ProgressBar
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:id="@+id/progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:indeterminate="false"
+        android:max="100"
+        app:layout_constraintBottom_toBottomOf="@+id/disconnectButton"
+        app:layout_constraintEnd_toEndOf="@+id/guidelineStartStartStop"
+        app:layout_constraintStart_toStartOf="@+id/guidelineEndStartStop"
+        app:layout_constraintTop_toTopOf="@+id/channels"
+        />
     <!-- VERTICAL GUIDELINES-->
 
 

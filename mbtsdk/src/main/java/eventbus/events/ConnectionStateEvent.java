@@ -1,10 +1,17 @@
 package eventbus.events;
 
+import android.bluetooth.BluetoothDevice;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import core.bluetooth.BtState;
 import core.device.model.MbtDevice;
+import core.device.model.MelomindDevice;
+import core.device.model.VProDevice;
+import features.MbtDeviceType;
+
+import static features.MbtDeviceType.MELOMIND;
+
 
 public class ConnectionStateEvent {
 
@@ -17,9 +24,17 @@ public class ConnectionStateEvent {
     public ConnectionStateEvent(@NonNull BtState newState){
         this.newState = newState;
     }
+
     public ConnectionStateEvent(@NonNull BtState newState, @Nullable MbtDevice device){
         this.newState = newState;
         this.device = device;
+    }
+
+    public ConnectionStateEvent(@NonNull BtState newState, @Nullable BluetoothDevice device, MbtDeviceType deviceType){
+        this.newState = newState;
+        this.device = deviceType.equals(MELOMIND) ?
+                new MelomindDevice(device) :
+                new VProDevice(device);
     }
 
     public ConnectionStateEvent(@NonNull BtState newState, String additionalInfo){
@@ -39,4 +54,5 @@ public class ConnectionStateEvent {
     public MbtDevice getDevice() {
         return device;
     }
+
 }

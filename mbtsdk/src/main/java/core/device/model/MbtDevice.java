@@ -38,7 +38,7 @@ public abstract class MbtDevice implements Serializable {
      * Firmware version number
      */
     @Nullable
-    String firmwareVersion;
+    FirmwareVersion firmwareVersion;
 
     /**
      * Serial number
@@ -84,8 +84,16 @@ public abstract class MbtDevice implements Serializable {
      * @return the version of the firmware
      */
     @NonNull
-    public String getFirmwareVersion() {
+    public FirmwareVersion getFirmwareVersion() {
         return this.firmwareVersion;
+    }
+    /**
+     * Gets the version of the firmware
+     * @return the version of the firmware
+     */
+    @NonNull
+    public String getFirmwareVersionAsString() {
+        return this.firmwareVersion.getFirmwareVersionAsString();
     }
 
     /**
@@ -144,7 +152,7 @@ public abstract class MbtDevice implements Serializable {
 
     public void setHardwareVersion(@NonNull final String hardwareVersion) {this.hardwareVersion = hardwareVersion;}
 
-    public void setFirmwareVersion(@NonNull final String firmwareVersion) {this.firmwareVersion = firmwareVersion;}
+    public void setFirmwareVersion(@NonNull final FirmwareVersion firmwareVersion) {this.firmwareVersion = firmwareVersion;}
 
     public void setSerialNumber(@NonNull final String serialNumber) {this.serialNumber = serialNumber;}
 

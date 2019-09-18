@@ -54,7 +54,6 @@ public class HomeActivity extends AppCompatActivity{
      * Extra keys used to share data to the next started activity
      */
 
-    public final static String DEVICE_EXTRA = "DEVICE_EXTRA";
     public final static String PREVIOUS_ACTIVITY_EXTRA = "PREVIOUS_ACTIVITY_EXTRA";
 
     /**
@@ -487,7 +486,6 @@ public class HomeActivity extends AppCompatActivity{
     private void deinitCurrentActivity(){
         bluetoothStateListener = null;
         final Intent intent = new Intent(HomeActivity.this, DeviceActivity.class);
-        intent.putExtra(DEVICE_EXTRA, (Serializable) device);
         startActivity(intent);
         finish();
     }

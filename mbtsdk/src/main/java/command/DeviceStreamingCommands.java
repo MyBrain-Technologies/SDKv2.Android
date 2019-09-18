@@ -2,12 +2,11 @@ package command;
 
 
 import android.support.annotation.Keep;
-import android.support.annotation.NonNull;
 
 import config.AmpGainConfig;
 import config.FilterConfig;
 
-import core.device.model.MbtDevice;
+import core.bluetooth.spp.MbtBluetoothSPP;
 import engine.clientevents.BaseError;
 import features.MbtDeviceType;
 
@@ -40,7 +39,7 @@ public interface DeviceStreamingCommands {
          * @param notchFilter is the new Notch filter to apply
          */
         public NotchFilter(FilterConfig notchFilter) {
-            super(DeviceCommandEvents.MBX_SET_NOTCH_FILT);
+            super(DeviceCommandEvent.MBX_SET_NOTCH_FILT);
             this.notchFilter = notchFilter;
             init();
         }
@@ -59,7 +58,7 @@ public interface DeviceStreamingCommands {
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
         public NotchFilter(FilterConfig notchFilter, CommandInterface.CommandCallback<byte[]> commandCallback) {
-            super(DeviceCommandEvents.MBX_SET_NOTCH_FILT);
+            super(DeviceCommandEvent.MBX_SET_NOTCH_FILT);
             this.notchFilter = notchFilter;
             this.commandCallback = commandCallback;
             init();
@@ -103,7 +102,7 @@ public interface DeviceStreamingCommands {
          * @param bandpassFilter is the new Bandpass filter to apply
          */
         public BandpassFilter(FilterConfig bandpassFilter) {
-            super(DeviceCommandEvents.MBX_SET_BANDPASS_FILT);
+            super(DeviceCommandEvent.MBX_SET_BANDPASS_FILT);
             this.bandpassFilter = bandpassFilter;
             init();
         }
@@ -122,7 +121,7 @@ public interface DeviceStreamingCommands {
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
         public BandpassFilter(FilterConfig bandpassFilter, CommandInterface.CommandCallback<byte[]> commandCallback) {
-            super(DeviceCommandEvents.MBX_SET_BANDPASS_FILT);
+            super(DeviceCommandEvent.MBX_SET_BANDPASS_FILT);
             this.bandpassFilter = bandpassFilter;
             this.commandCallback = commandCallback;
             init();
@@ -167,7 +166,7 @@ public interface DeviceStreamingCommands {
          * @param ampGainConfig is the new Amplifier gain to apply
          */
         public AmplifierGain(AmpGainConfig ampGainConfig) {
-            super(DeviceCommandEvents.MBX_SET_AMP_GAIN);
+            super(DeviceCommandEvent.MBX_SET_AMP_GAIN);
             this.ampGainConfig = ampGainConfig;
             init();
         }
@@ -187,7 +186,7 @@ public interface DeviceStreamingCommands {
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
         public AmplifierGain(AmpGainConfig ampGainConfig, CommandInterface.CommandCallback<byte[]> commandCallback) {
-            super(DeviceCommandEvents.MBX_SET_AMP_GAIN);
+            super(DeviceCommandEvent.MBX_SET_AMP_GAIN);
             this.ampGainConfig = ampGainConfig;
             this.commandCallback = commandCallback;
             init();
@@ -236,7 +235,7 @@ public interface DeviceStreamingCommands {
          * Triggers are not sent to the SDK if enableTriggers is set to false.
          */
         public Triggers(boolean enableTriggers) {
-            super(DeviceCommandEvents.MBX_P300_ENABLE);
+            super(DeviceCommandEvent.MBX_P300_ENABLE);
             this.enableTriggers = enableTriggers;
             init();
         }
@@ -257,7 +256,7 @@ public interface DeviceStreamingCommands {
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
         public Triggers(boolean enableTriggers, CommandInterface.CommandCallback<byte[]> commandCallback) {
-            super(DeviceCommandEvents.MBX_P300_ENABLE);
+            super(DeviceCommandEvent.MBX_P300_ENABLE);
             this.enableTriggers = enableTriggers;
             this.commandCallback = commandCallback;
             init();
@@ -303,7 +302,7 @@ public interface DeviceStreamingCommands {
          * DC offsets are not sent to the SDK if enableDcOffset is set to false.
          */
         public DcOffset(boolean enableDcOffset) {
-            super(DeviceCommandEvents.MBX_DC_OFFSET_ENABLE);
+            super(DeviceCommandEvent.MBX_DC_OFFSET_ENABLE);
             this.enableDcOffset = enableDcOffset;
             init();
         }
@@ -324,7 +323,7 @@ public interface DeviceStreamingCommands {
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
         public DcOffset(boolean enableDcOffset, CommandInterface.CommandCallback<byte[]> commandCallback) {
-            super(DeviceCommandEvents.MBX_DC_OFFSET_ENABLE);
+            super(DeviceCommandEvent.MBX_DC_OFFSET_ENABLE);
             this.enableDcOffset = enableDcOffset;
             this.commandCallback = commandCallback;
             init();
@@ -359,6 +358,8 @@ public interface DeviceStreamingCommands {
     @Keep
     class EegConfig extends DeviceCommand<byte[], BaseError> implements DeviceStreamingCommands{
 
+        private boolean useSppProtocol = false;
+
         @Keep
         public static class Builder{
             private CommandInterface.CommandCallback<byte[]> commandCallback;
@@ -374,36 +375,19 @@ public interface DeviceStreamingCommands {
                 return new EegConfig(commandCallback, deviceType.equals(MbtDeviceType.VPRO));
             }
         }
-
-        /**
-         * Command sent from the SDK to the connected headset
-         * in order to get the device streaming configuration such as :
-         * the notch filter,
-         * the bandpass filter,
-         * the triggers receiving status,
-         * the signal processing buffer size (number of EEG sample times),
-         * and real frequency sample measured by the firmware.
-         * The DC offset receiving status is returned by the headset if the command succeeds.
-         * @param commandCallback is a {@link CommandInterface.CommandCallback} object
-         * that provides a callback for the returned raw response
-         * sent by the headset to the SDK once the get command is received.
-         * This raw response is a byte array that has be to converted to be readable.
-         * Each status is returned in one byte of the raw response array.
-         * The onRequestSent callback is triggered if the command has successfully been sent.
-         */
-        EegConfig(CommandInterface.CommandCallback< byte[]> commandCallback, boolean addHeaderAndPayloadCodes) {
-            super(addHeaderAndPayloadCodes ?
-                    DeviceCommandEvents.assembleCodes(
-                    DeviceCommandEvents.START_FRAME,
-                    DeviceCommandEvents.PAYLOAD_LENGTH) : null,
-                    DeviceCommandEvents.MBX_GET_EEG_CONFIG,
-                    addHeaderAndPayloadCodes ?
-                            DeviceCommandEvents.assembleCodes(
-                            DeviceCommandEvents.COMPRESS,
-                            DeviceCommandEvents.PACKET_ID,
-                            DeviceCommandEvents.PAYLOAD) : null);
+        
+        EegConfig(CommandInterface.CommandCallback< byte[]> commandCallback, boolean useSppProtocol) {
+            super(DeviceCommandEvent.MBX_GET_EEG_CONFIG);
+            this.useSppProtocol = useSppProtocol;
             this.commandCallback = commandCallback;
             init(); //must be called after the commandCallback initialisation : isValid will return false otherwise
+        }
+
+        @Override
+        public byte[] serialize() {
+            return useSppProtocol ?
+                    MbtBluetoothSPP.assembleCodes(this.getIdentifier())
+                    : super.serialize();
         }
 
         @Override
@@ -429,7 +413,7 @@ public interface DeviceStreamingCommands {
      * The streaming status is returned by the headset if the command succeeds.
      */
     @Keep
-    class StartEEGAcquisition extends DeviceCommand<byte[], BaseError>{
+    class StartEEGAcquisition extends DeviceCommand<byte[], BaseError> implements DeviceStreamingCommands{
 
         /**
          * SPP command sent from the SDK to the connected headset
@@ -440,16 +424,7 @@ public interface DeviceStreamingCommands {
          * call the {@link StartEEGAcquisition}({@link CommandInterface.CommandCallback}<DeviceCommand, byte[]> commandCallback) constructor
          */
         public StartEEGAcquisition() {
-            super(DeviceCommandEvents.assembleCodes(
-                    DeviceCommandEvents.START_FRAME,
-                    DeviceCommandEvents.PAYLOAD_LENGTH),
-                    DeviceCommandEvents.CMD_START_EEG_ACQUISITION,
-                    DeviceCommandEvents.assembleCodes(
-                            DeviceCommandEvents.COMPRESS,
-                            DeviceCommandEvents.PACKET_ID,
-                            DeviceCommandEvents.PAYLOAD));
-
-
+            super(DeviceCommandEvent.CMD_START_EEG_ACQUISITION);
             init();
         }
 
@@ -467,16 +442,14 @@ public interface DeviceStreamingCommands {
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
         public StartEEGAcquisition(CommandInterface.CommandCallback<byte[]> commandCallback) {
-            super(DeviceCommandEvents.assembleCodes(
-                    DeviceCommandEvents.START_FRAME,
-                    DeviceCommandEvents.PAYLOAD_LENGTH),
-                    DeviceCommandEvents.CMD_START_EEG_ACQUISITION,
-                    DeviceCommandEvents.assembleCodes(
-                            DeviceCommandEvents.COMPRESS,
-                            DeviceCommandEvents.PACKET_ID,
-                            DeviceCommandEvents.PAYLOAD));
+            super(DeviceCommandEvent.CMD_START_EEG_ACQUISITION);
             this.commandCallback = commandCallback;
             init();
+        }
+
+        @Override
+        public byte[] serialize() {
+            return MbtBluetoothSPP.assembleCodes(this.getIdentifier());
         }
 
         @Override
@@ -501,7 +474,7 @@ public interface DeviceStreamingCommands {
      * The streaming status is returned by the headset if the command succeeds.
      */
     @Keep
-    class StopEEGAcquisition extends DeviceCommand<byte[], BaseError>{
+    class StopEEGAcquisition extends DeviceCommand<byte[], BaseError> implements  DeviceStreamingCommands{
 
         /**
          * SPP command sent from the SDK to the connected headset
@@ -512,16 +485,7 @@ public interface DeviceStreamingCommands {
          * call the {@link StopEEGAcquisition}({@link CommandInterface.CommandCallback}<DeviceCommand, byte[]> commandCallback) constructor
          */
         public StopEEGAcquisition() {
-            super(DeviceCommandEvents.assembleCodes(
-                    DeviceCommandEvents.START_FRAME,
-                    DeviceCommandEvents.PAYLOAD_LENGTH),
-                    DeviceCommandEvents.CMD_STOP_EEG_ACQUISITION,
-                    DeviceCommandEvents.assembleCodes(
-                            DeviceCommandEvents.COMPRESS,
-                            DeviceCommandEvents.PACKET_ID,
-                            DeviceCommandEvents.PAYLOAD));
-
-
+            super(DeviceCommandEvent.CMD_STOP_EEG_ACQUISITION);
             init();
         }
 
@@ -539,16 +503,14 @@ public interface DeviceStreamingCommands {
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
         public StopEEGAcquisition(CommandInterface.CommandCallback<byte[]> commandCallback) {
-            super(DeviceCommandEvents.assembleCodes(
-                    DeviceCommandEvents.START_FRAME,
-                    DeviceCommandEvents.PAYLOAD_LENGTH),
-                    DeviceCommandEvents.CMD_STOP_EEG_ACQUISITION,
-                    DeviceCommandEvents.assembleCodes(
-                            DeviceCommandEvents.COMPRESS,
-                            DeviceCommandEvents.PACKET_ID,
-                            DeviceCommandEvents.PAYLOAD));
+            super(DeviceCommandEvent.CMD_STOP_EEG_ACQUISITION);
             this.commandCallback = commandCallback;
             init();
+        }
+
+        @Override
+        public byte[] serialize() {
+            return MbtBluetoothSPP.assembleCodes(this.getIdentifier());
         }
 
         @Override
