@@ -83,9 +83,6 @@ public class MbtBluetoothLE
     private final static String REMOVE_BOND_METHOD = "removeBond";
     private final static String REFRESH_METHOD = "refresh";
 
-
-    private MbtAsyncWaitOperation lock = new MbtAsyncWaitOperation<Boolean>();
-
     /**
      * An internal event used to notify MbtBluetoothLE that A2DP has disconnected.
      */
@@ -365,13 +362,8 @@ public class MbtBluetoothLE
         LogUtils.i(TAG, "Successfully initiated write descriptor operation in order to remotely " +
                 "enable notification... now waiting for confirmation from headset.");
 
-        try {
-            lock.waitOperationResult(MbtConfig.getBluetoothA2DpConnectionTimeout());
-            return true;
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            LogUtils.d(TAG,"Enabling notification failed : "+e);
-            return false;
-        }
+        return (boolean) waitResponseForCommand(MbtConfig.getBluetoothA2DpConnectionTimeout());
+
     }
 
     /**
@@ -657,12 +649,6 @@ public class MbtBluetoothLE
      */
     void notifyEventReceived(DeviceCommandEvent mailboxEvent, byte[] eventData) {
         mbtBluetoothManager.notifyEventReceived(mailboxEvent, eventData);
-    }
-
-    void stopWaitingOperation(Object response) {
-        if(lock.isWaiting())
-            lock.stopWaitingOperation(response);
-
     }
 
     void notifyConnectionResponseReceived(DeviceCommandEvent mailboxEvent, byte mailboxResponse) {

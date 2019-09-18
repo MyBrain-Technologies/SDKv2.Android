@@ -157,7 +157,6 @@ public final class MbtEEGManager extends BaseModuleManager {
      * @param eegPackets the list that contains EEG packets ready to use for the client.
      */
     public void notifyEEGDataIsReady(@NonNull final MbtEEGPacket eegPackets) {
-        LogUtils.d(TAG, "notify EEG Data Is Ready ");
 
         AsyncUtils.executeAsync(new Runnable() {
             @Override
@@ -222,7 +221,6 @@ public final class MbtEEGManager extends BaseModuleManager {
                 e.printStackTrace();
             }
 
-            LogUtils.i(TAG,"quality computation duration is " + (System.currentTimeMillis()-tsBefore));
             return new ArrayList<>(Arrays.asList(ArrayUtils.toObject(qualities)));
         }
 //        MbtEventBus.postEvent(new QualityRequest(null, listedQualities));

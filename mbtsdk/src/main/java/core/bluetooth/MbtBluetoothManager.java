@@ -195,7 +195,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
             }else if(command instanceof OADCommands) {
                 updateConnectionState(BtState.UPGRADING);
-                bluetoothForAudioStreaming.setCurrentState(BtState.UPGRADING);
+                if(bluetoothForAudioStreaming != null)
+                    bluetoothForAudioStreaming.setCurrentState(BtState.UPGRADING);
                 notifyEventReceived(command.getIdentifier(), response);
             }
         }
@@ -559,7 +560,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 isConnectionSuccessful = bluetoothForDataStreaming.connect(mContext, getCurrentDevice());
                 break;
             case BLUETOOTH_A2DP:
-                isConnectionSuccessful = bluetoothForAudioStreaming.connect(mContext, getCurrentDevice());
+                if(bluetoothForAudioStreaming != null)
+                    isConnectionSuccessful = bluetoothForAudioStreaming.connect(mContext, getCurrentDevice());
                 break;
         }
         if(isConnectionSuccessful) {
@@ -975,7 +977,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                     bluetoothForDataStreaming.disconnect();
                     break;
                 case BLUETOOTH_A2DP:
-                    this.bluetoothForAudioStreaming.disconnect();
+                    if(bluetoothForAudioStreaming != null)
+                        bluetoothForAudioStreaming.disconnect();
                     break;
             }
         }
@@ -1027,30 +1030,33 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     public void notifyConnectionStateChanged(@NonNull BtState newState) {
         requestBeingProcessed();
 
-        switch (newState){ //This event is sent to device module if registered
+        switch (newState) { //This event is sent to device module if registered
             case DATA_BT_DISCONNECTED:
-                if(asyncSwitchOperation.isWaiting())
+                if (asyncSwitchOperation.isWaiting())
                     asyncSwitchOperation.stopWaitingOperation(false); //a new a2dp connection was detected while an other headset was connected : here the last device has been well disconnected so we can connect BLE from A2DP
                 else
                     cancelPendingConnection(false); //a disconnection occurred
                 break;
 
             case AUDIO_BT_DISCONNECTED:
-                bluetoothForAudioStreaming.notifyConnectionStateChanged(newState, false);
+                if (bluetoothForAudioStreaming != null)
+                    bluetoothForAudioStreaming.notifyConnectionStateChanged(newState, false);
                 MbtEventBus.postEvent(new DeviceEvents.AudioDisconnectedDeviceEvent());
 
                 break;
 
             case AUDIO_BT_CONNECTION_SUCCESS:
-                bluetoothForAudioStreaming.notifyConnectionStateChanged(newState,false);
-                asyncOperation.stopWaitingOperation(false);
-                if(bluetoothForAudioStreaming.getCurrentDevice() != null && bluetoothForDataStreaming instanceof MbtBluetoothLE){
-                    String bleDeviceName = ((MbtBluetoothLE)bluetoothForDataStreaming).getBleDeviceNameFromA2dp(bluetoothForAudioStreaming.getCurrentDevice().getName(), mContext);
-                    if(((!isDataBluetoothConnected() || !((MbtBluetoothLE)bluetoothForDataStreaming).isCurrentDeviceNameEqual(bleDeviceName))) && connectAudioIfDeviceCompatible)
-                        connectBLEFromA2DP(bleDeviceName);
+                if (bluetoothForAudioStreaming != null){
+                    bluetoothForAudioStreaming.notifyConnectionStateChanged(newState, false);
+                    asyncOperation.stopWaitingOperation(false);
+                    if (bluetoothForAudioStreaming.getCurrentDevice() != null && bluetoothForDataStreaming instanceof MbtBluetoothLE) {
+                        String bleDeviceName = ((MbtBluetoothLE) bluetoothForDataStreaming).getBleDeviceNameFromA2dp(bluetoothForAudioStreaming.getCurrentDevice().getName(), mContext);
+                        if (((!isDataBluetoothConnected() || !((MbtBluetoothLE) bluetoothForDataStreaming).isCurrentDeviceNameEqual(bleDeviceName))) && connectAudioIfDeviceCompatible)
+                            connectBLEFromA2DP(bleDeviceName);
 
-                    MbtEventBus.postEvent(new DeviceEvents.AudioConnectedDeviceEvent(bluetoothForAudioStreaming.getCurrentDevice()));
+                        MbtEventBus.postEvent(new DeviceEvents.AudioConnectedDeviceEvent(bluetoothForAudioStreaming.getCurrentDevice()));
 
+                    }
                 }
                 break;
 

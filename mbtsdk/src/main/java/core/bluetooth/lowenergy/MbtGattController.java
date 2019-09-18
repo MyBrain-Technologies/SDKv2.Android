@@ -263,7 +263,7 @@ final class MbtGattController extends BluetoothGattCallback {
         // Check for EEG Notification status
         LogUtils.i(TAG, "Received a [onDescriptorWrite] callback with status "+((status == BluetoothGatt.GATT_SUCCESS) ? "SUCCESS" : "FAILURE"));
 
-        mbtBluetoothLE.stopWaitingOperation(status == BluetoothGatt.GATT_SUCCESS);
+        mbtBluetoothLE.notifyCommandResponseReceived(status == BluetoothGatt.GATT_SUCCESS);
         mbtBluetoothLE.onNotificationStateChanged(status == BluetoothGatt.GATT_SUCCESS, descriptor.getCharacteristic(), descriptor.getValue() == BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
     }
 
@@ -280,8 +280,7 @@ final class MbtGattController extends BluetoothGattCallback {
     @Override
     public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
         super.onMtuChanged(gatt, mtu, status);
-        mbtBluetoothLE.stopWaitingOperation(mtu
-        );
+        mbtBluetoothLE.notifyCommandResponseReceived(mtu);
     }
 
     /**
@@ -334,7 +333,7 @@ final class MbtGattController extends BluetoothGattCallback {
          if(isMailboxEventFinished(mailboxEvent , response)){
              if(isConnectionMailboxEvent(mailboxEvent))
                  mbtBluetoothLE.notifyConnectionResponseReceived(mailboxEvent, response[0]); //connection and disconnection response are composed of only one byte
-             mbtBluetoothLE.stopWaitingOperation(response);
+             mbtBluetoothLE.notifyCommandResponseReceived(response);
          }
 
      }
