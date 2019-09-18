@@ -46,8 +46,7 @@ import utils.LogUtils;
 
 import static utils.MatrixUtils.invertFloatMatrix;
 
-public class
-DeviceActivity extends AppCompatActivity {
+public class DeviceActivity extends AppCompatActivity {
 
     private static final int MAX_NUMBER_OF_DATA_TO_DISPLAY = 1000;
     private static String TAG = DeviceActivity.class.getName();
@@ -118,6 +117,7 @@ DeviceActivity extends AppCompatActivity {
 
             @Override
             public void onNewPackets(@NonNull final MbtEEGPacket mbtEEGPackets) {
+
                 if(eegGraph == null)
                     sdkClient.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
                     @Override

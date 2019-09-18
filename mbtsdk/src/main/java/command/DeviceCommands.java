@@ -464,7 +464,7 @@ public interface DeviceCommands {
             super(DeviceCommandEvents.assembleCodes(
                     DeviceCommandEvents.START_FRAME,
                     DeviceCommandEvents.PAYLOAD_LENGTH),
-                    DeviceCommandEvents.CMD_STOP_EEG_ACQUISITION,
+                    DeviceCommandEvents.CMD_GET_BATTERY_VALUE,
                     DeviceCommandEvents.assembleCodes(
                             DeviceCommandEvents.COMPRESS,
                             DeviceCommandEvents.PACKET_ID,

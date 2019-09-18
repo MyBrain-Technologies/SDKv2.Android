@@ -7,6 +7,7 @@ import android.support.annotation.NonNull;
 import config.AmpGainConfig;
 import config.FilterConfig;
 
+import core.device.model.MbtDevice;
 import engine.clientevents.BaseError;
 import features.MbtDeviceType;
 
@@ -358,6 +359,22 @@ public interface DeviceStreamingCommands {
     @Keep
     class EegConfig extends DeviceCommand<byte[], BaseError> implements DeviceStreamingCommands{
 
+        @Keep
+        public static class Builder{
+            private CommandInterface.CommandCallback<byte[]> commandCallback;
+
+            /**
+             * The EEG Listener is mandatory to receive the EEG stream from the headset to the SDK.
+             */
+            public Builder(CommandInterface.CommandCallback<byte[]> commandCallback){
+                this.commandCallback = commandCallback;
+            }
+
+            public EegConfig createForDevice(MbtDeviceType deviceType){
+                return new EegConfig(commandCallback, deviceType.equals(MbtDeviceType.VPRO));
+            }
+        }
+
         /**
          * Command sent from the SDK to the connected headset
          * in order to get the device streaming configuration such as :
@@ -374,8 +391,7 @@ public interface DeviceStreamingCommands {
          * Each status is returned in one byte of the raw response array.
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
-
-        public EegConfig(CommandInterface.CommandCallback< byte[]> commandCallback, boolean addHeaderAndPayloadCodes) {
+        EegConfig(CommandInterface.CommandCallback< byte[]> commandCallback, boolean addHeaderAndPayloadCodes) {
             super(addHeaderAndPayloadCodes ?
                     DeviceCommandEvents.assembleCodes(
                     DeviceCommandEvents.START_FRAME,

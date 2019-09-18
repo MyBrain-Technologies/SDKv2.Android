@@ -63,7 +63,7 @@ public final class StreamConfig {
             }
         }
 
-        this.deviceCommands.add(new DeviceStreamingCommands.EegConfig(null, deviceType.equals(MbtDeviceType.VPRO)));
+        this.deviceCommands.add(new DeviceStreamingCommands.EegConfig.Builder(null).createForDevice(MbtDeviceType.VPRO));
     }
 
     /**
