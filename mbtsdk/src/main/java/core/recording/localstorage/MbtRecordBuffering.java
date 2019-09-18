@@ -83,6 +83,8 @@ public class MbtRecordBuffering {
             LogUtils.d(TAG, "New recording created : " + recording.toString());
 
         device.setAcquisitionLocations(recordConfig.getAcquisitionLocations());
+        device.setReferencesLocations(recordConfig.getReferenceLocations());
+        device.setGroundsLocation(recordConfig.getGroundLocations());
         LogUtils.d(TAG, "Device " + device.toString());
 
         String recordingPath = FileManager.storeRecordingInFile(mContext,

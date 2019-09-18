@@ -11,11 +11,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.UUID;
 
+import core.device.model.MbtDevice;
 import core.recording.metadata.Comment;
 import core.recording.metadata.MelomindExerciseSource;
 import core.recording.metadata.RecordType;
 import core.recording.metadata.MelomindExerciseType;
 import features.MbtAcquisitionLocations;
+import features.MbtDeviceType;
 import features.MbtFeatures;
 import model.RecordInfo;
 
@@ -112,6 +114,8 @@ public final class RecordConfig {
     private boolean enableMultipleRecordings;
 
     private ArrayList<MbtAcquisitionLocations> acquisitionLocations;
+    private ArrayList<MbtAcquisitionLocations> referenceLocations;
+    private ArrayList<MbtAcquisitionLocations> groundLocations;
 
     private RecordConfig(String folder,
                          String filename,
@@ -124,7 +128,10 @@ public final class RecordConfig {
                          ArrayList<Comment> comments,
                          Bundle recordingParameters,
                          boolean enableMultipleRecordings,
-    ArrayList<MbtAcquisitionLocations> acquisitionLocations){
+    ArrayList<MbtAcquisitionLocations> acquisitionLocations,
+    ArrayList<MbtAcquisitionLocations> referenceLocation,
+    ArrayList<MbtAcquisitionLocations> groundLocations
+    ){
 
         this.folder = folder;
         this.filename = filename;
@@ -138,6 +145,8 @@ public final class RecordConfig {
         this.recordingParameters = recordingParameters;
         this.enableMultipleRecordings = enableMultipleRecordings;
         this.acquisitionLocations = acquisitionLocations;
+        this.referenceLocations = referenceLocation;
+        this.groundLocations = groundLocations;
     }
 
     /**
@@ -199,10 +208,6 @@ public final class RecordConfig {
         return timestamp;
     }
 
-    public ArrayList<MbtAcquisitionLocations> getAcquisitionLocations() {
-        return acquisitionLocations;
-    }
-
     /**
      * Record information that holds the type & source of the EEG data, and the used signal processing algorithms version.
      * Default values are :
@@ -239,6 +244,18 @@ public final class RecordConfig {
 
     public boolean enableMultipleRecordings() {
         return enableMultipleRecordings;
+    }
+
+    public ArrayList<MbtAcquisitionLocations> getAcquisitionLocations() {
+        return acquisitionLocations;
+    }
+
+    public ArrayList<MbtAcquisitionLocations> getReferenceLocations() {
+        return referenceLocations;
+    }
+
+    public ArrayList<MbtAcquisitionLocations> getGroundLocations() {
+        return groundLocations;
     }
 
     //    /**
@@ -323,9 +340,9 @@ public final class RecordConfig {
 
         private boolean enableMultipleRecordings = false;
 
-        private boolean recordQualities = false;
-
         private ArrayList<MbtAcquisitionLocations> acquisitionLocations = MbtFeatures.MELOMIND_LOCATIONS;
+        private ArrayList<MbtAcquisitionLocations> referenceLocations = MbtFeatures.MELOMIND_REFERENCES;
+        private ArrayList<MbtAcquisitionLocations> groundLocations = MbtFeatures.MELOMIND_GROUNDS;
 
         public Builder(Context context){
             this.timestamp = System.currentTimeMillis();
@@ -343,10 +360,25 @@ public final class RecordConfig {
         }
 
         /**
-         * Path of the folder where the JSON file can be stored.
-         * Default folder used is the root folder.
+         * EEG Electrodes locations
          */
-        public Builder electrodesLocations(@NonNull MbtAcquisitionLocations... acquisitionLocations){
+        public Builder acquisitionLocations(@NonNull MbtAcquisitionLocations... acquisitionLocations){
+            this.acquisitionLocations = new ArrayList<>(Arrays.asList(acquisitionLocations));
+            return this;
+        }
+
+        /**
+         * Ground Electrodes locations
+         */
+        public Builder groundLocations(@NonNull MbtAcquisitionLocations... acquisitionLocations){
+            this.groundLocations = new ArrayList<>(Arrays.asList(acquisitionLocations));
+            return this;
+        }
+
+        /**
+         * Reference Electrodes locations
+         */
+        public Builder referenceLocations(@NonNull MbtAcquisitionLocations... acquisitionLocations){
             this.acquisitionLocations = new ArrayList<>(Arrays.asList(acquisitionLocations));
             return this;
         }
@@ -484,14 +516,6 @@ public final class RecordConfig {
             this.enableMultipleRecordings = true;
             return this;
         }
-        /**
-         *
-         * @return
-         */
-        public Builder recordQualities(){
-            this.recordQualities = true;
-            return this;
-        }
 
         /**
          * Recording parameters are additional optional data stored in the body of the JSON file.
@@ -516,7 +540,10 @@ public final class RecordConfig {
                     headerComments,
                     recordingParameters,
                     enableMultipleRecordings,
-                    acquisitionLocations);
+                    acquisitionLocations,
+                    referenceLocations,
+                    groundLocations
+                    );
         }
 
         @Override
@@ -533,7 +560,6 @@ public final class RecordConfig {
                     ", recordInfo=" + recordInfo +
                     ", recordingParameters=" + recordingParameters +
                     ", enableMultipleRecordings=" + enableMultipleRecordings +
-                    ", recordQualities=" + recordQualities +
                     ", acquisitionLocations=" + acquisitionLocations +
                     '}';
         }
