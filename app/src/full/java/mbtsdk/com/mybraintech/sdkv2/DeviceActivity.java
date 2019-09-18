@@ -48,7 +48,7 @@ import static utils.MatrixUtils.invertFloatMatrix;
 
 public class DeviceActivity extends AppCompatActivity {
 
-    private static final int MAX_NUMBER_OF_DATA_TO_DISPLAY = 1000;
+    private static int MAX_NUMBER_OF_DATA_TO_DISPLAY = 500;
     private static String TAG = DeviceActivity.class.getName();
 
     private MbtClient sdkClient;
@@ -286,11 +286,6 @@ public class DeviceActivity extends AppCompatActivity {
         if(eegGraph == null)
             eegGraph = findViewById(R.id.eegGraph);
 
-//        final int MAXIMUM_MICROVOLT = 500;
-//        final int MINIMUM_MICROVOLT = -500;
-//        eegGraph.setVisibleYRangeMaximum(MAXIMUM_MICROVOLT, YAxis.AxisDependency.LEFT);
-//        eegGraph.setVisibleYRangeMinimum(MINIMUM_MICROVOLT, YAxis.AxisDependency.LEFT);
-
         eegLineData = new LineData();
 
         for (int channel=0 ; channel < nbChannels ; channel++){
@@ -319,6 +314,14 @@ public class DeviceActivity extends AppCompatActivity {
         xAxis.setGranularity(1f); // one hour
 
         eegGraph.setDoubleTapToZoomEnabled(false);
+//        final int MAXIMUM_VOLTAGE = 300;
+//        final int MINIMUM_VOLTAGE = -300;
+//        eegGraph.setVisibleYRange(MINIMUM_VOLTAGE, MAXIMUM_VOLTAGE, YAxis.AxisDependency.LEFT);// limit the number of visible entries
+
+        final int TIME_WINDOW = 2; //2 seconds
+        MAX_NUMBER_OF_DATA_TO_DISPLAY = TIME_WINDOW * sampRate;
+        eegGraph.setVisibleXRangeMaximum(MAX_NUMBER_OF_DATA_TO_DISPLAY);// limit the number of visible entries
+
         eegGraph.setAutoScaleMinMaxEnabled(true);
         eegGraph.getAxisLeft().setDrawGridLines(false);
         eegGraph.getAxisLeft().setDrawLabels(true);
