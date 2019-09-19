@@ -288,7 +288,7 @@ public abstract class MbtDevice implements Serializable {
 
         @Override
         public String toString() {
-            return "MelomindInternalConfig{" +
+            return "InternalConfig{" +
                     "notchFilterConfig=" + notchFilterConfig +
                     ", bandPassFilterConfig=" + bandPassFilterConfig +
                     ", gainValue=" + gainValue +

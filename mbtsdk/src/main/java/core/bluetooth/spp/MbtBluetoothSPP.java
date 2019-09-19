@@ -161,6 +161,7 @@ public final class MbtBluetoothSPP
     public boolean connect(Context context, @Nullable BluetoothDevice device) {
         if (device != null) {
             LogUtils.i(TAG," Connect  "+device.getName());
+            this.requestDisconnect = false;
             return connectToDevice(device);
         }
         return false;
@@ -205,9 +206,9 @@ public final class MbtBluetoothSPP
                         listenForIncomingMessages();
                     }
                 });
-                sendCommand(new DeviceCommands.GetDeviceInfo());
                 notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
                 notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER, toConnect.getAddress());
+                sendCommand(new DeviceCommands.GetDeviceInfo());
                 LogUtils.i(TAG,toConnect.getName() + " Connected");
                 return true;
             }else
@@ -262,12 +263,12 @@ public final class MbtBluetoothSPP
     }
 
     private synchronized boolean sendData(@NonNull final byte[] msg) {
-        LogUtils.i(TAG, "Send data");
+        LogUtils.i(TAG, "Send data "+ Arrays.toString(msg));
         try {
             if(this.writer != null){
                 this.writer.write(msg);
                 this.writer.flush();
-                LogUtils.i(TAG, "Message sent");
+                //LogUtils.i(TAG, "Message sent");
                 return true;
             }
             return false;
@@ -419,41 +420,42 @@ public final class MbtBluetoothSPP
                             break;
 
                         case STATE_ACQ:
+
                             if(command == CMD_START_EEG_ACQUISITION.getIdentifierCode() && isStreaming) {
 
-                                byte[] finalData = fillBuffer(currentByte);
-                                if (finalData != null)
+                                dataBuffer[counter++] = currentByte;
+
+                                if (counter == payloadSize + COMPRESS_NB_BYTES + PACKET_ID_NB_BYTES) {
+                                    counter = 0;
+                                    currentStatus = STATE_IDLE;
+
+                                    final byte[] finalData =  dataBuffer.clone();//Arrays.copyOf(dataBuffer, dataBuffer.length);
                                     AsyncUtils.executeAsync(new Runnable() {
                                         @Override
                                         public void run() {
                                             notifyNewDataAcquired(finalData);
-
                                         }
                                     });
+                                }
 
-                            }else if(command == MBX_GET_EEG_CONFIG.getIdentifierCode()) {
+                            }else if(command == MBX_GET_EEG_CONFIG.getIdentifierCode()
+                            || command == CMD_GET_DEVICE_INFO.getIdentifierCode()) {
 
-                                byte[] finalData = fillBuffer(currentByte);
-                                if (finalData != null)
+                                dataBuffer[counter++] = currentByte;
+
+                                if (counter == payloadSize + COMPRESS_NB_BYTES + PACKET_ID_NB_BYTES) {
+                                    counter = 0;
+                                    currentStatus = STATE_IDLE;
+
+                                    final byte[] finalData = dataBuffer.clone();//Arrays.copyOf(dataBuffer, dataBuffer.length);
                                     AsyncUtils.executeAsync(new Runnable() {
                                         @Override
                                         public void run() {
-                                            notifyCommandResponseReceived(finalData);
+                                            if(!isStreaming)
+                                                notifyCommandResponseReceived(finalData);
                                         }
                                     });
-
-                            }else if(command == CMD_GET_DEVICE_INFO.getIdentifierCode()) {
-
-                                byte[] finalData = fillBuffer(currentByte);
-                                if (finalData != null)
-                                    AsyncUtils.executeAsync(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            notifyDeviceInfoReceived(DeviceInfo.FW_VERSION, new String(ArrayUtils.subarray(dataBuffer, 0, VERSION_NB_BYTES)));
-                                            notifyDeviceInfoReceived(DeviceInfo.HW_VERSION,new String(ArrayUtils.subarray(dataBuffer, VERSION_NB_BYTES, VERSION_NB_BYTES+VERSION_NB_BYTES)));
-                                            notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER,new String(ArrayUtils.subarray(dataBuffer, VERSION_NB_BYTES+VERSION_NB_BYTES, VERSION_NB_BYTES+VERSION_NB_BYTES+SERIAL_NUMBER_NB_BYTES)));
-                                        }
-                                    });
+                                }
 
                             }else if(command == DeviceCommandEvent.CMD_GET_BATTERY_VALUE.getIdentifierCode()) {
                                 LogUtils.i(TAG, "Reading Battery level");
@@ -486,7 +488,7 @@ public final class MbtBluetoothSPP
                                     default:
                                         break;
                                 }
-                                notifyBatteryReceived(percent);
+                                notifyCommandResponseReceived(percent);
 
                             }
                             break;
@@ -498,9 +500,9 @@ public final class MbtBluetoothSPP
                 Log.getStackTraceString(e);
                 if (this.requestDisconnect) {
                     this.requestDisconnect = false; // consumed
-                    notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);
-                } else
                     notifyConnectionStateChanged(BtState.CONNECTION_INTERRUPTED);
+                } else
+                    notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);
                 break;
             }
         }
@@ -513,7 +515,6 @@ public final class MbtBluetoothSPP
         if (counter == payloadSize + COMPRESS_NB_BYTES + PACKET_ID_NB_BYTES) {
             counter = 0;
             currentStatus = STATE_IDLE;
-
             return dataBuffer.clone();//Arrays.copyOf(dataBuffer, dataBuffer.length);
         }
         return null;
@@ -598,12 +599,12 @@ public final class MbtBluetoothSPP
      */
     public static byte[] assembleCodes(DeviceCommandEvent code){
         return DeviceCommandEvent.assembleCodes(
+                DeviceCommandEvent.START_FRAME.getAssembledCodes(),
+                DeviceCommandEvent.PAYLOAD_LENGTH.getAssembledCodes(),
+                new byte[]{code.getIdentifierCode()},
                 DeviceCommandEvent.COMPRESS.getAssembledCodes(),
                 DeviceCommandEvent.PACKET_ID.getAssembledCodes(),
-                DeviceCommandEvent.PAYLOAD.getAssembledCodes(),
-                new byte[]{code.getIdentifierCode()},
-                DeviceCommandEvent.START_FRAME.getAssembledCodes(),
-                DeviceCommandEvent.PAYLOAD_LENGTH.getAssembledCodes()
+                DeviceCommandEvent.PAYLOAD.getAssembledCodes()
                 );
     }
 }

@@ -115,7 +115,6 @@ public class MbtRecordBuffering {
 
     public void record(MbtEEGPacket eegPacket){
         if(eegPacketsBuffer != null) {
-            LogUtils.d(TAG, "Record packet #"+(eegPacketsBuffer != null ? eegPacketsBuffer.size(): "0"));
             eegPacketsBuffer.add(eegPacket);
         }
     }

@@ -63,7 +63,8 @@ public final class FileManager {
         return sdf.format(date) +
                 FILENAME_SPLITTER + projectName +
                 FILENAME_SPLITTER + deviceName +
-                FILENAME_SPLITTER + subjectID +
+                (subjectID == null || subjectID.isEmpty() ?
+                        "" : FILENAME_SPLITTER + subjectID ) +
                 (condition == null || condition.isEmpty() ?
                         "" : FILENAME_SPLITTER + condition );
     }

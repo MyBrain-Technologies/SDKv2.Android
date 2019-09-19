@@ -40,8 +40,13 @@ public class StreamRequestEvent extends BluetoothRequests {
         return recordConfig != null;
     }
 
+    public boolean startStream() {
+        Log.d("Start stream ",""+(isStart && !isRecord));
+        return isStart && !isRecord;
+    }
+
     public boolean stopStream() {
-        Log.d("Stop stream ? ",""+(!isStart && !isRecord));
+        Log.d("Stop stream ",""+(!isStart && !isRecord));
         return !isStart && !isRecord;
     }
 

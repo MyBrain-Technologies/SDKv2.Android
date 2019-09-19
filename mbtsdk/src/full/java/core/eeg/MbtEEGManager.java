@@ -155,7 +155,6 @@ public final class MbtEEGManager extends BaseModuleManager {
                     eegPackets.setQualities(MbtEEGManager.this.computeEEGSignalQuality(eegPackets));
                     eegPackets.setFeatures(MBTSignalQualityChecker.getFeatures());
                 }
-                Log.d(TAG, " onNewPacket");
 
                 MbtEventBus.postEvent(new ClientReadyEEGEvent(eegPackets));
             }
@@ -298,7 +297,7 @@ public final class MbtEEGManager extends BaseModuleManager {
 
     @Subscribe
     public void onStreamStartedOrStopped(StreamRequestEvent event){
-        if(event.isStart()){
+        if(event.startStream()){
             this.dataAcquisition = new MbtDataAcquisition(this, protocol);
             this.dataBuffering = new MbtDataBuffering(this);
             if(event.computeQualities()){
@@ -306,7 +305,7 @@ public final class MbtEEGManager extends BaseModuleManager {
                 initQualityChecker();
             }
         }
-        else if(!event.isStart() && !ContextSP.SP_VERSION.equals("0.0.0"))
+        else if(event.stopStream() && !ContextSP.SP_VERSION.equals("0.0.0"))
             deinitQualityChecker();
 
     }

@@ -206,14 +206,18 @@ public enum DeviceCommandEvent {
     public static byte[] assembleCodes(byte[]... codes){
         int bufferLength = 0;
         for (byte[] code : codes) {
-            for (byte codeByte : code) {
-                bufferLength++;
+            if(code != null){
+                for (byte codeByte : code) {
+                    bufferLength++;
+                }
             }
         }
         ByteBuffer buffer = ByteBuffer.allocate(bufferLength);
         for (byte[] code : codes) {
-            for (byte codeByte : code) {
-                buffer.put(codeByte);
+            if (code != null) {
+                for (byte codeByte : code) {
+                    buffer.put(codeByte);
+                }
             }
         }
         return buffer.array();

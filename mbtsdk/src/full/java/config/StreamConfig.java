@@ -249,7 +249,6 @@ public final class StreamConfig {
             return this;
         }
 
-        @Nullable
         public StreamConfig createForDevice(MbtDeviceType deviceType){
             return new StreamConfig(
                     deviceType,
