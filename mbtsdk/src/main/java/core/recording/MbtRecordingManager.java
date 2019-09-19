@@ -14,6 +14,7 @@ import core.eeg.MbtEEGManager;
 import core.recording.localstorage.MbtRecordBuffering;
 import eventbus.MbtEventBus;
 import eventbus.events.ClientReadyEEGEvent;
+import eventbus.events.ConnectionStateEvent;
 
 /**
  * Created by Etienne on 08/02/2018.
@@ -85,8 +86,8 @@ public final class MbtRecordingManager extends BaseModuleManager {
         }
     }
 
-    @Subscribe
-    public void onDeviceDisconnected(DeviceEvents.DisconnectedDeviceEvent event) {
+    @Subscribe(threadMode = ThreadMode.ASYNC)
+    public void onConnectionStateChanged(ConnectionStateEvent event) {
         if(recordBuffering != null && recordConfig != null){
             MbtEventBus.postEvent(new DeviceEvents.GetDeviceEvent(), new MbtEventBus.Callback<DeviceEvents.PostDeviceEvent>() {
                 @Override
@@ -111,7 +112,7 @@ public final class MbtRecordingManager extends BaseModuleManager {
      * Creates a new MbtEEGPacket instance when the raw buffer contains enough data
      * @param event contains data transmitted by the publisher : here it contains the converted EEG data matrix, the status, the number of acquisition channels and the sampling rate
      */
-    @Subscribe()
+    @Subscribe(threadMode = ThreadMode.ASYNC)
     public void onNewPackets(@NonNull final ClientReadyEEGEvent event) {
         if(recordBuffering != null)
             recordBuffering.record(event.getEegPackets());

@@ -495,4 +495,129 @@ public interface DeviceCommands {
             return null;
         }
     }
+
+    /**
+     * SPP command sent from the SDK to the connected headset
+     * in order to read the device info.
+     * The device info are returned by the headset if the command succeeds.
+     */
+    @Keep
+    class GetDeviceInfo extends DeviceCommand<byte[], BaseError>{
+
+        /**
+         * SPP command sent from the SDK to the connected headset
+         * in order to read the device info.
+         * The device info are returned by the headset if the command succeeds.
+         * If you're interested in getting the returned raw response
+         * sent by the headset to the SDK once the command is received,
+         * call the {@link DeviceStreamingCommands.StopEEGAcquisition}({@link CommandInterface.CommandCallback}<DeviceCommand, byte[]> commandCallback) constructor
+         */
+        public GetDeviceInfo() {
+            super(DeviceCommandEvent.CMD_GET_DEVICE_INFO);
+            init();
+        }
+
+        /**
+         * SPP command sent from the SDK to the connected headset
+         * in order to read the device info.
+         * The device info are returned by the headset if the command succeeds.
+         * @param commandCallback is a {@link CommandInterface.CommandCallback} object
+         * that provides a callback for the returned raw response
+         * sent by the headset to the SDK once the command is received.
+         * This raw response is a byte array that has be to converted to be readable.
+         * If you're not interested in getting the returned raw response
+         * sent by the headset to the SDK once the read command is received,
+         * call the {@link GetDeviceInfo}() constructor
+         * The onRequestSent callback is triggered if the command has successfully been sent.
+         */
+        public GetDeviceInfo(CommandInterface.CommandCallback<byte[]> commandCallback) {
+            super(DeviceCommandEvent.CMD_GET_DEVICE_INFO);
+            this.commandCallback = commandCallback;
+            init();
+        }
+
+        @Override
+        public byte[] serialize() {
+            return MbtBluetoothSPP.assembleCodes(this.getIdentifier());
+        }
+
+        @Override
+        public boolean isValid() {
+            return true;
+        }
+
+        @Override
+        public byte[] getData() {
+            return null;
+        }
+
+        @Override
+        public String getInvalidityError() {
+            return null;
+        }
+    }
+
+
+
+    /**
+     * SPP command sent from the SDK to the connected headset
+     * in order to set the device config.
+     * The device info change status is returned by the headset if the command succeeds.
+     */
+    @Keep
+    class SetDeviceConfig extends DeviceCommand<byte[], BaseError>{
+
+        /**
+         * SPP command sent from the SDK to the connected headset
+         * in order to set the device config.
+         * The device info change status is returned by the headset if the command succeeds.
+         * If you're interested in getting the returned raw response
+         * sent by the headset to the SDK once the command is received,
+         * call the {@link DeviceStreamingCommands.StopEEGAcquisition}({@link CommandInterface.CommandCallback}<DeviceCommand, byte[]> commandCallback) constructor
+         */
+        public SetDeviceConfig() {
+            super(DeviceCommandEvent.CMD_SET_DEVICE_CONFIG);
+            init();
+        }
+
+        /**
+         * SPP command sent from the SDK to the connected headset
+         * in order to set the device config.
+         * The device info change status is returned by the headset if the command succeeds.
+         * @param commandCallback is a {@link CommandInterface.CommandCallback} object
+         * that provides a callback for the returned raw response
+         * sent by the headset to the SDK once the command is received.
+         * This raw response is a byte array that has be to converted to be readable.
+         * If you're not interested in getting the returned raw response
+         * sent by the headset to the SDK once the connect command is received,
+         * call the {@link SetDeviceConfig}() constructor
+         * The onRequestSent callback is triggered if the command has successfully been sent.
+         */
+        public SetDeviceConfig(CommandInterface.CommandCallback<byte[]> commandCallback) {
+            super(DeviceCommandEvent.CMD_SET_DEVICE_CONFIG);
+            this.commandCallback = commandCallback;
+            init();
+        }
+
+        @Override
+        public byte[] serialize() {
+            return MbtBluetoothSPP.assembleCodes(this.getIdentifier());
+        }
+
+        @Override
+        public boolean isValid() {
+            return true;
+        }
+
+        @Override
+        public byte[] getData() {
+            return null;
+        }
+
+        @Override
+        public String getInvalidityError() {
+            return null;
+        }
+    }
+
 }

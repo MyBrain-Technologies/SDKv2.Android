@@ -258,12 +258,9 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                     disconnectAllBluetooth(true);
 
             } else if (request instanceof StreamRequestEvent) {
-                if (((StreamRequestEvent) request).isStart())
-                    startStreamOperation(((StreamRequestEvent) request).shouldMonitorDeviceStatus());
-                else
                 if (((StreamRequestEvent) request).isStart()) {
                     startStreamOperation(((StreamRequestEvent) request).monitorDeviceStatus());
-                }else if(((StreamRequestEvent) request).stopStream()){
+                }else if(((StreamRequestEvent) request).stopStream())
                     stopStreamOperation();
 
             } else if (request instanceof CommandRequestEvent) {
@@ -802,7 +799,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 LogUtils.d(TAG, "device "+device);
                 updateConnectionState(true);//current state is set to QR_CODE_SENDING
                 if (device.getSerialNumber() != null && device.getExternalName() != null && (device.getExternalName().equals(MbtFeatures.MELOMIND_DEVICE_NAME) || device.getExternalName().length() == MbtFeatures.DEVICE_QR_CODE_LENGTH-1) //send the QR code found in the database if the headset do not know its own QR code
-                        && new VersionHelper(device.getFirmwareVersion()).isValidForFeature(FirmwareUtils.FWFeature.REGISTER_EXTERNAL_NAME)) {
+                        && new VersionHelper(device.getFirmwareVersion().getFirmwareVersionAsString()).isValidForFeature(VersionHelper.Feature.REGISTER_EXTERNAL_NAME)) {
                     AsyncUtils.executeAsync(new Runnable() {
                         @Override
                         public void run() {
@@ -1114,7 +1111,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         MbtEventBus.postEvent(newStreamState);
     }
 
-    public void notifyNewHeadsetStatus(BtProtocol protocol, @NonNull byte[] payload) {
+    public void notifyNewHeadsetStatus(@NonNull byte[] payload) {
         MbtEventBus.postEvent(new DeviceEvents.RawDeviceMeasure(payload));
     }
 

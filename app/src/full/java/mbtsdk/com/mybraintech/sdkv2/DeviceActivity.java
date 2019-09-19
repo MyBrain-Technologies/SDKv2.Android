@@ -8,9 +8,11 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -45,6 +47,7 @@ import engine.clientevents.EegListener;
 import engine.clientevents.OADStateListener;
 import features.MbtDeviceType;
 import features.MbtFeatures;
+import utils.AsyncUtils;
 import utils.LogUtils;
 
 import static utils.MatrixUtils.invertFloatMatrix;
@@ -119,15 +122,26 @@ public class DeviceActivity extends AppCompatActivity {
 
             @Override
             public void onNewPackets(@NonNull final MbtEEGPacket mbtEEGPackets) {
-
+                Log.d(TAG, " onNewPacket");
                 if(eegGraph == null)
-                    sdkClient.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
-                    @Override
-                    public void onRequestComplete(MbtDevice object) {
-                        device = object;
-                        initEegGraph(device.getNbChannels(), device.getSampRate());
-                    }
-                });
+                    AsyncUtils.executeAsync(new Runnable() {
+                        @Override
+                        public void run() {
+                            sdkClient.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
+                                @Override
+                                public void onRequestComplete(MbtDevice object) {
+                                    device = object;
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            initEegGraph(device.getNbChannels(), device.getSampRate());
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    });
+
 
                 if (invertFloatMatrix(mbtEEGPackets.getChannelsData()) != null)
                     mbtEEGPackets.setChannelsData(invertFloatMatrix(mbtEEGPackets.getChannelsData()));
@@ -215,6 +229,7 @@ public class DeviceActivity extends AppCompatActivity {
     }
 
     private void initDisconnectButton() {
+        final ProgressBar progressBar = findViewById(R.id.progress);
 
         disconnectButton = findViewById(R.id.disconnectButton);
         disconnectButton.setOnClickListener(new View.OnClickListener() {
@@ -231,12 +246,7 @@ public class DeviceActivity extends AppCompatActivity {
 
                     @Override
                     public void onProgressPercentChanged(final int progress) {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                notifyUser("Progress "+progress);
-                            }
-                        });
+                        progressBar.setProgress(progress);
                     }
 
                     @Override
@@ -292,7 +302,6 @@ public class DeviceActivity extends AppCompatActivity {
                         startStream(new StreamConfig.Builder(eegListener)
                             .setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)
                             .useQualities()
-                                .configureAcquisitionFromDeviceCommand(null, null)
                             .createForDevice(deviceType));
                 } else { //streaming is in progress : stopping streaming
                     stopStream(); // set false to isStreaming et null to the eegListener

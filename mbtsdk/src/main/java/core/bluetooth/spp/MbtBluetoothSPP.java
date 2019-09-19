@@ -15,6 +15,8 @@ import android.text.TextUtils;
 import android.util.Log;
 
 
+import org.apache.commons.lang.ArrayUtils;
+
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -40,6 +42,7 @@ import utils.AsyncUtils;
 import utils.LogUtils;
 
 import static command.DeviceCommandEvent.CMD_GET_BATTERY_VALUE;
+import static command.DeviceCommandEvent.CMD_GET_DEVICE_INFO;
 import static command.DeviceCommandEvent.CMD_START_EEG_ACQUISITION;
 import static command.DeviceCommandEvent.MBX_GET_EEG_CONFIG;
 import static command.DeviceCommandEvent.START_FRAME;
@@ -202,6 +205,7 @@ public final class MbtBluetoothSPP
                         listenForIncomingMessages();
                     }
                 });
+                sendCommand(new DeviceCommands.GetDeviceInfo());
                 notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
                 notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER, toConnect.getAddress());
                 LogUtils.i(TAG,toConnect.getName() + " Connected");
@@ -349,6 +353,8 @@ public final class MbtBluetoothSPP
     public static final int COMPRESS_NB_BYTES = 1;
     public static final int PACKET_ID_NB_BYTES = 2;
     public static final int PAYLOAD_NB_BYTES = 0;
+    public static final int VERSION_NB_BYTES = 2;
+    public static final int SERIAL_NUMBER_NB_BYTES = 4;
 
     @NonNull
     byte[] payloadLengthBuffer = new byte[PAYLOAD_LENGTH_NB_BYTES];
@@ -390,7 +396,8 @@ public final class MbtBluetoothSPP
                             currentStatus =
                                     ((command != CMD_START_EEG_ACQUISITION.getIdentifierCode()
                                             && command != CMD_GET_BATTERY_VALUE.getIdentifierCode()
-                                            && command != MBX_GET_EEG_CONFIG.getIdentifierCode()) ?
+                                            && command != MBX_GET_EEG_CONFIG.getIdentifierCode()
+                                            && command !=  CMD_GET_DEVICE_INFO.getIdentifierCode()) ?
                                             STATE_IDLE : STATE_COMPRESSION) ;
                             break;
 
@@ -412,26 +419,42 @@ public final class MbtBluetoothSPP
                             break;
 
                         case STATE_ACQ:
-                            if(command == CMD_START_EEG_ACQUISITION.getIdentifierCode() && isStreaming
-                            || command == MBX_GET_EEG_CONFIG.getIdentifierCode()) {
+                            if(command == CMD_START_EEG_ACQUISITION.getIdentifierCode() && isStreaming) {
 
-                                dataBuffer[counter++] = currentByte;
-
-                                if (counter == payloadSize + COMPRESS_NB_BYTES + PACKET_ID_NB_BYTES) {
-                                    counter = 0;
-                                    currentStatus = STATE_IDLE;
-
-                                    final byte[] finalData =  dataBuffer.clone();//Arrays.copyOf(dataBuffer, dataBuffer.length);
+                                byte[] finalData = fillBuffer(currentByte);
+                                if (finalData != null)
                                     AsyncUtils.executeAsync(new Runnable() {
                                         @Override
                                         public void run() {
-                                            if(command == DeviceCommandEvent.CMD_START_EEG_ACQUISITION.getIdentifierCode())
-                                                notifyNewDataAcquired(finalData);
-                                            else
-                                                notifyCommandResponseReceived(finalData);
+                                            notifyNewDataAcquired(finalData);
+
                                         }
                                     });
-                                }
+
+                            }else if(command == MBX_GET_EEG_CONFIG.getIdentifierCode()) {
+
+                                byte[] finalData = fillBuffer(currentByte);
+                                if (finalData != null)
+                                    AsyncUtils.executeAsync(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            notifyCommandResponseReceived(finalData);
+                                        }
+                                    });
+
+                            }else if(command == CMD_GET_DEVICE_INFO.getIdentifierCode()) {
+
+                                byte[] finalData = fillBuffer(currentByte);
+                                if (finalData != null)
+                                    AsyncUtils.executeAsync(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            notifyDeviceInfoReceived(DeviceInfo.FW_VERSION, new String(ArrayUtils.subarray(dataBuffer, 0, VERSION_NB_BYTES)));
+                                            notifyDeviceInfoReceived(DeviceInfo.HW_VERSION,new String(ArrayUtils.subarray(dataBuffer, VERSION_NB_BYTES, VERSION_NB_BYTES+VERSION_NB_BYTES)));
+                                            notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER,new String(ArrayUtils.subarray(dataBuffer, VERSION_NB_BYTES+VERSION_NB_BYTES, VERSION_NB_BYTES+VERSION_NB_BYTES+SERIAL_NUMBER_NB_BYTES)));
+                                        }
+                                    });
+
                             }else if(command == DeviceCommandEvent.CMD_GET_BATTERY_VALUE.getIdentifierCode()) {
                                 LogUtils.i(TAG, "Reading Battery level");
                                 dataBuffer = new byte[payloadSize];
@@ -483,6 +506,18 @@ public final class MbtBluetoothSPP
         }
     }
 
+
+    private byte[] fillBuffer(byte currentByte){
+        dataBuffer[counter++] = currentByte;
+
+        if (counter == payloadSize + COMPRESS_NB_BYTES + PACKET_ID_NB_BYTES) {
+            counter = 0;
+            currentStatus = STATE_IDLE;
+
+            return dataBuffer.clone();//Arrays.copyOf(dataBuffer, dataBuffer.length);
+        }
+        return null;
+    }
 
     @Override
     public boolean stopStream() {

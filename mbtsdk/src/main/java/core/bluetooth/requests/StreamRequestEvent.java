@@ -10,10 +10,10 @@ import config.RecordConfig;
  */
 public class StreamRequestEvent extends BluetoothRequests {
 
-    private final boolean isStart = false;
-    private final boolean isRecord = false;
-    private final boolean monitorDeviceStatus = false;
-    private final boolean computeQualities = false;
+    private final boolean isStart;
+    private final boolean isRecord;
+    private final boolean monitorDeviceStatus;
+    private final boolean computeQualities;
     private final RecordConfig recordConfig;
 
     public StreamRequestEvent(boolean isStartRequest, boolean isRecordRequest, boolean computeQualities, boolean monitorDeviceStatus, RecordConfig recordConfig){

@@ -65,8 +65,6 @@ public abstract class MbtDevice implements Serializable {
 
     private int eegPacketLength;
 
-    int eegPacketLength;
-
     List<MbtAcquisitionLocations> acquisitionLocations;
     List<MbtAcquisitionLocations> referencesLocations;
     List<MbtAcquisitionLocations> groundsLocation;
@@ -177,7 +175,7 @@ public abstract class MbtDevice implements Serializable {
     }
 
     public void setNbChannels(int nbChannels) {
-        this.nbChannels = nbChannels;
+        this.internalConfig.nbChannels = nbChannels;
     }
 
     public void setAcquisitionLocations(List<MbtAcquisitionLocations> acquisitionLocations) {
@@ -203,10 +201,6 @@ public abstract class MbtDevice implements Serializable {
 
     public String getAudioDeviceAddress() {
         return audioDeviceAddress;
-    }
-
-    public int getEegPacketLength() {
-        return eegPacketLength;
     }
 
     public void setAudioDeviceAddress(String audioDeviceAddress) {

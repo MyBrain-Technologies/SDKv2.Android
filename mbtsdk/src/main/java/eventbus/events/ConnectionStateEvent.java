@@ -30,7 +30,7 @@ public class ConnectionStateEvent {
         this.device = device;
     }
 
-    public ConnectionStateEvent(@NonNull BtState newState, @Nullable BluetoothDevice device, MbtDeviceType deviceType){
+    public ConnectionStateEvent(@NonNull BtState newState, BluetoothDevice device, MbtDeviceType deviceType){
         this.newState = newState;
         this.device = deviceType.equals(MELOMIND) ?
                 new MelomindDevice(device) :

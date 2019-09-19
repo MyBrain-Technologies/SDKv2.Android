@@ -353,22 +353,6 @@ public class MbtManager{
         }
     }
 
-    /**
-     * Sets an extended {@link BroadcastReceiver} to the connectionStateListener value
-     * @param connectionStateListener the new {@link BluetoothStateListener}. Set it to null if you want to reset the listener
-     */
-    public void setConnectionStateListener(ConnectionStateListener<BaseError> connectionStateListener) {
-        this.connectionStateListener = connectionStateListener;
-    }
-
-    /**
-     * Sets the {@link EegListener} to the connectionStateListener value
-     * @param EEGListener the new {@link EegListener}. Set it to null if you want to reset the listener
-     */
-    public void setEEGListener(EegListener<BaseError> EEGListener) {
-        this.eegListener = EEGListener;
-    }
-
     public void requestCurrentConnectedDevice(@NonNull final SimpleRequestCallback<MbtDevice> callback) {
         if (callback == null)
             return;

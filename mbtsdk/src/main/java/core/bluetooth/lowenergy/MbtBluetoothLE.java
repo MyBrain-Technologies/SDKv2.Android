@@ -17,7 +17,6 @@ import android.content.Intent;
 import android.os.Handler;
 import android.os.ParcelUuid;
 import android.support.annotation.NonNull;
-import android.support.annotation.VisibleForTesting;
 import android.util.Log;
 
 import java.lang.reflect.InvocationTargetException;
@@ -26,8 +25,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 
 import command.BluetoothCommands;
 import command.CommandInterface;
@@ -39,7 +36,6 @@ import config.MbtConfig;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.BtState;
 import core.bluetooth.BluetoothInterfaces;
-import core.bluetooth.MbtBluetooth;
 import core.bluetooth.MbtBluetoothManager;
 import core.bluetooth.MbtDataBluetooth;
 import core.bluetooth.StreamState;
@@ -53,14 +49,10 @@ import features.MbtFeatures;
 import utils.BitUtils;
 import utils.BroadcastUtils;
 import utils.LogUtils;
-import utils.MbtAsyncWaitOperation;
 
-import static command.DeviceCommandEvent.CMD_CODE_CONNECT_IN_A2DP_FAILED_ALREADY_CONNECTED;
 import static command.DeviceCommandEvent.CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED;
 import static command.DeviceCommandEvent.CMD_CODE_CONNECT_IN_A2DP_SUCCESS;
 import static command.DeviceCommandEvent.MBX_CONNECT_IN_A2DP;
-import static command.DeviceCommandEvents.CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED;
-import static command.DeviceCommandEvents.CMD_CODE_CONNECT_IN_A2DP_SUCCESS;
 
 /**
  *
@@ -300,7 +292,7 @@ public class MbtBluetoothLE
      * @param payload the new headset status as a raw byte array. This byte array has to be parsed afterward.
      */
     void notifyNewHeadsetStatus(byte[] payload){
-        this.mbtBluetoothManager.notifyNewHeadsetStatus(BtProtocol.BLUETOOTH_LE, payload);
+        this.mbtBluetoothManager.notifyNewHeadsetStatus(payload);
     }
 
     /**
@@ -363,7 +355,8 @@ public class MbtBluetoothLE
         LogUtils.i(TAG, "Successfully initiated write descriptor operation in order to remotely " +
                 "enable notification... now waiting for confirmation from headset.");
 
-        return (boolean) waitResponseForCommand(MbtConfig.getBluetoothA2DpConnectionTimeout());
+        Boolean result = (Boolean) waitResponseForCommand(MbtConfig.getBluetoothA2DpConnectionTimeout());
+        return result == null ? false : result;
 
     }
 

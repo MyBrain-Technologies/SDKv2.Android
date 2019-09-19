@@ -37,7 +37,7 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
     private final static String TAG = MbtBluetooth.class.getName();
 
     @NonNull
-    protected StreamState streamingState = StreamState.IDLE;
+    private StreamState streamState = StreamState.IDLE;
 
     private volatile BtState currentState = BtState.IDLE;
 
@@ -228,7 +228,7 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
     /**
      * Disable then enable the bluetooth adapter
      */
-    public boolean resetMobileDeviceBluetoothAdapter() {
+    boolean resetMobileDeviceBluetoothAdapter() {
         LogUtils.d(TAG, "Reset Bluetooth adapter");
 
         bluetoothAdapter.disable();

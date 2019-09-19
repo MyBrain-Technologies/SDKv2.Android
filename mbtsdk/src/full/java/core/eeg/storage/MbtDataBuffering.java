@@ -66,9 +66,7 @@ public class MbtDataBuffering {
     private void onPendingRawDataBufferFull() {
         final ArrayList<RawEEGSample> rawEEGtoConvert = (ArrayList<RawEEGSample>) pendingRawData.clone(); //the pending raw data is stored in toDecodeBytes to be converted in readable EEG values
         eegManager.convertToEEG(rawEEGtoConvert);
-
     }
-
 
     /**
      * This method is called by {@link #storePendingDataInBuffer(ArrayList)} when the buffer size reaches the maximum
@@ -77,8 +75,6 @@ public class MbtDataBuffering {
     private void notifyClientEEGDataBufferFull(MbtEEGPacket packet) {
         eegManager.notifyEEGDataIsReady(packet);
     }
-
-
 
     /**
      * Stores the newly created EEG packet in the Packets buffer

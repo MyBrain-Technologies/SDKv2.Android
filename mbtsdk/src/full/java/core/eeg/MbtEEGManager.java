@@ -2,6 +2,8 @@ package core.eeg;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.support.annotation.VisibleForTesting;
+import android.util.Log;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.greenrobot.eventbus.Subscribe;
@@ -84,18 +86,6 @@ public final class MbtEEGManager extends BaseModuleManager {
         }
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onConnectionStateChanged(ConnectionStateEvent connectionStateEvent) {
-        if(connectionStateEvent.getDevice() == null) {
-            protocol = null;
-        }else {
-            if(connectionStateEvent.getNewState().equals(BtState.CONNECTED_AND_READY)){
-                protocol = connectionStateEvent.getDevice().getDeviceType().getProtocol();
-                nbChannels = connectionStateEvent.getDevice().getNbChannels();
-            }
-        }
-    }
-
     /**
      * Stores the EEG raw data buffer when the maximum size of the buffer is reached
      *
@@ -165,6 +155,8 @@ public final class MbtEEGManager extends BaseModuleManager {
                     eegPackets.setQualities(MbtEEGManager.this.computeEEGSignalQuality(eegPackets));
                     eegPackets.setFeatures(MBTSignalQualityChecker.getFeatures());
                 }
+                Log.d(TAG, " onNewPacket");
+
                 MbtEventBus.postEvent(new ClientReadyEEGEvent(eegPackets));
             }
         });
@@ -270,6 +262,17 @@ public final class MbtEEGManager extends BaseModuleManager {
         MbtEventBus.registerOrUnregister(false, this);
     }
 
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onConnectionStateChanged(ConnectionStateEvent connectionStateEvent) {
+        if(connectionStateEvent.getDevice() == null) {
+            protocol = null;
+        }else {
+            if(connectionStateEvent.getNewState().equals(BtState.CONNECTED_AND_READY)){
+                protocol = connectionStateEvent.getDevice().getDeviceType().getProtocol();
+                nbChannels = connectionStateEvent.getDevice().getNbChannels();
+            }
+        }
+    }
 
     /**
      * Handles the raw EEG data acquired by the headset and transmitted to the application
@@ -281,7 +284,6 @@ public final class MbtEEGManager extends BaseModuleManager {
     @Subscribe(threadMode = ThreadMode.BACKGROUND)
     public void onEvent(BluetoothEEGEvent event) { //warning : this method is used
         dataAcquisition.handleDataAcquired(event.getData(), nbChannels);
-        protocol = event.getDeviceType().getProtocol();
     }
 
     /**
@@ -299,7 +301,7 @@ public final class MbtEEGManager extends BaseModuleManager {
         if(event.isStart()){
             this.dataAcquisition = new MbtDataAcquisition(this, protocol);
             this.dataBuffering = new MbtDataBuffering(this);
-            if(event.shouldComputeQualities()){
+            if(event.computeQualities()){
                 hasQualities = true;
                 initQualityChecker();
             }
@@ -310,8 +312,8 @@ public final class MbtEEGManager extends BaseModuleManager {
     }
 
     @Subscribe
-    public void onConfigurationChanged(ConfigEEGEvent configEEGEvent){
-        LogUtils.d(TAG, "new config "+ (Arrays.toString(configEEGEvent.getConfig())));
+    public void onConfigurationChanged(EEGConfigEvent configEEGEvent){
+        LogUtils.d(TAG, "new config "+ configEEGEvent.getConfig().toString());
         sampRate = configEEGEvent.getDevice().getInternalConfig().getSampRate();
         packetLength = configEEGEvent.getDevice().getEegPacketLength();
 
@@ -324,12 +326,12 @@ public final class MbtEEGManager extends BaseModuleManager {
         return sampRate;
     }
 
-    @VisibleForTest
+    @VisibleForTesting
     public void setTestConsolidatedEEG(ArrayList<ArrayList<Float>> consolidatedEEG) {
         this.consolidatedEEG = consolidatedEEG;
     }
 
-    @VisibleForTest
+    @VisibleForTesting
     public void setTestHasQualities(boolean hasQualities) {
         this.hasQualities = hasQualities;
     }
