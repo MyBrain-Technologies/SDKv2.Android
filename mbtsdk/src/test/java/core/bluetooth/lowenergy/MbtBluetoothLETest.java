@@ -6,21 +6,28 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.content.Context;
-import android.support.annotation.NonNull;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
+
+import command.BluetoothCommands;
+import command.CommandInterface;
+import command.DeviceCommandEvent;
+import command.DeviceCommands;
 import config.MbtConfig;
-import core.MbtManager;
 import core.bluetooth.BtState;
-import core.bluetooth.IStreamable;
 import core.bluetooth.MbtBluetoothManager;
+import core.bluetooth.StreamState;
 import core.bluetooth.spp.MbtBluetoothSPP;
+import engine.clientevents.BluetoothError;
 import features.MbtDeviceType;
+import utils.MbtAsyncWaitOperation;
 
 import static java.util.UUID.fromString;
 import static org.junit.Assert.*;
@@ -29,23 +36,53 @@ import static org.mockito.Mockito.when;
 public class MbtBluetoothLETest {
 
     private Context context;
-    MbtBluetoothLE bluetoothLE;
-    MbtBluetoothManager bluetoothManager;
-    MbtManager mbtManager;
 
-    final UUID SERVICE = MelomindCharacteristics.SERVICE_MEASUREMENT;
-    final UUID CHARACTERISTIC_MAILBOX = MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX;
-    final UUID CHARACTERISTIC_EEG = MelomindCharacteristics.CHARAC_MEASUREMENT_EEG;
-    final UUID UNKNOWN = fromString("0-0-0-0-0");
-    final String DEVICE_NAME = "melo_01010101";
+    /**
+     * Class under test
+     */
+    private MbtBluetoothLE bluetoothLE;
+
+    private MbtBluetoothManager bluetoothManager;
+
+    private BluetoothGatt gatt;
+
+    private BluetoothGattService gattService;
+
+    private BluetoothGattCharacteristic characteristic;
+
+    private BluetoothGattDescriptor descriptor;
+
+    private CommandInterface.MbtCommand command;
+
+    private MbtAsyncWaitOperation asyncOperation;
+
+    private final byte[] BYTE_REQUEST = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    private final byte[] BYTE_RESPONSE = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+    private final UUID SERVICE = MelomindCharacteristics.SERVICE_MEASUREMENT;
+    private final UUID CHARACTERISTIC_MAILBOX = MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX;
+    private final UUID CHARACTERISTIC_EEG = MelomindCharacteristics.CHARAC_MEASUREMENT_EEG;
+    private final UUID DESCRIPTOR = MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID;
+    private final UUID UNKNOWN = fromString("0-0-0-0-0");
+
+    private final String DEVICE_NAME = "melo_1010100100";
 
     @Before
     public void setUp() {
 
         context = Mockito.mock(Context.class);
-        mbtManager = new MbtManager(context);
-        bluetoothManager = new MbtBluetoothManager(context, mbtManager);
+        bluetoothManager = Mockito.mock(MbtBluetoothManager.class);
         bluetoothLE = new MbtBluetoothLE(context, bluetoothManager);
+
+        gatt = Mockito.mock(BluetoothGatt.class);
+        bluetoothLE.gatt = gatt;
+        gattService = Mockito.mock(BluetoothGattService.class);
+        characteristic = Mockito.mock(BluetoothGattCharacteristic.class);
+        descriptor = Mockito.mock(BluetoothGattDescriptor.class);
+
+        command = Mockito.mock(CommandInterface.MbtCommand.class);
+        asyncOperation = Mockito.mock(MbtAsyncWaitOperation.class);
+
     }
 //
 //    @Test
@@ -66,40 +103,45 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void startStream_Idle() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.IDLE);
+        bluetoothLE.notifyStreamStateChanged(StreamState.IDLE);
         assertFalse(bluetoothLE.startStream());
     }
+
     /**
      * Assert that streaming state become IDLE if headset is disconnected
      */
     @Test
     public void startStream_StreamStoppedAfterDisconnection() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.STARTED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.STARTED);
         bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);
         assertFalse(bluetoothLE.isStreaming());
         assertFalse(bluetoothLE.startStream());
-    }/**
+    }
+
+    /**
      * Assert that streaming cannot be started if headset is disconnected
      */
     @Test
     public void startStream_Disconnected() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.DISCONNECTED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.DISCONNECTED);
         assertFalse(bluetoothLE.startStream());
     }
+
     /**
      * Assert that streaming return true if the stream state is started
      */
     @Test
     public void startStream_Started() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.STARTED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.STARTED);
         assertTrue(bluetoothLE.startStream());
     }
+
     /**
      * Assert that streaming cannot be started if streaming has just been stopped
      */
     @Test
     public void startStream_Stopped() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.STOPPED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.STOPPED);
         assertFalse(bluetoothLE.startStream());
     }
 
@@ -111,6 +153,7 @@ public class MbtBluetoothLETest {
         bluetoothLE.gatt = null;
         assertFalse(bluetoothLE.startStream());
     }
+
     /**
      * Assert that streaming cannot be started if headset is connected BUT not ready
      */
@@ -119,6 +162,7 @@ public class MbtBluetoothLETest {
         bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
         assertFalse(bluetoothLE.startStream());
     }
+
     /**
      * Assert that streaming cannot be started if headset connection is in progress
      */
@@ -127,6 +171,7 @@ public class MbtBluetoothLETest {
         bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_CONNECTING);
         assertFalse(bluetoothLE.startStream());
     }
+
     /**
      * Assert that streaming cannot be started if headset disconnection is in progress
      */
@@ -135,6 +180,7 @@ public class MbtBluetoothLETest {
         bluetoothLE.notifyConnectionStateChanged(BtState.DISCONNECTING);
         assertFalse(bluetoothLE.startStream());
     }
+
     /**
      * Assert that streaming cannot be started if headset connection that was in progress has failed
      */
@@ -143,6 +189,7 @@ public class MbtBluetoothLETest {
         bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTION_FAILURE);
         assertFalse(bluetoothLE.startStream());
     }
+
     /**
      * Assert that streaming cannot be started if headset connection that was in progress has failed because Bluetooth is off on the user's mobile device
      */
@@ -151,6 +198,7 @@ public class MbtBluetoothLETest {
         bluetoothLE.notifyConnectionStateChanged(BtState.BLUETOOTH_DISABLED);
         assertFalse(bluetoothLE.startStream());
     }
+
     /**
      * Assert that streaming cannot be started if headset connection that was in progress has failed because Bluetooth is not supported by the user's mobile device
      */
@@ -159,6 +207,7 @@ public class MbtBluetoothLETest {
         bluetoothLE.notifyConnectionStateChanged(BtState.NO_BLUETOOTH);
         assertFalse(bluetoothLE.startStream());
     }
+
     /**
      * Assert that streaming cannot be started if headset connection that was in progress has failed because Location is off on the user's mobile device
      */
@@ -167,6 +216,7 @@ public class MbtBluetoothLETest {
         bluetoothLE.notifyConnectionStateChanged(BtState.LOCATION_DISABLED);
         assertFalse(bluetoothLE.startStream());
     }
+
     /**
      * Assert that streaming cannot be started if headset connection that was in progress has failed because Bluetooth is off on the user's mobile device
      */
@@ -175,6 +225,7 @@ public class MbtBluetoothLETest {
         bluetoothLE.notifyConnectionStateChanged(BtState.LOCATION_PERMISSION_NOT_GRANTED);
         assertFalse(bluetoothLE.startStream());
     }
+
     /**
      * Assert that streaming cannot be started if headset connection was interrupted by the user
      */
@@ -183,6 +234,7 @@ public class MbtBluetoothLETest {
         bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTION_INTERRUPTED);
         assertFalse(bluetoothLE.startStream());
     }
+
     /**
      * Assert that streaming cannot be started if connection process is still in progress, at the services discovering step
      */
@@ -191,6 +243,7 @@ public class MbtBluetoothLETest {
         bluetoothLE.notifyConnectionStateChanged(BtState.DISCOVERING_SERVICES);
         assertFalse(bluetoothLE.startStream());
     }
+
     /**
      * Assert that streaming cannot be started if headset connection has failed while it was discovering services
      */
@@ -199,6 +252,7 @@ public class MbtBluetoothLETest {
         bluetoothLE.notifyConnectionStateChanged(BtState.DISCOVERING_FAILURE);
         assertFalse(bluetoothLE.startStream());
     }
+
     /**
      * Assert that streaming cannot be started if connection process is still in progress, at the device info reading step
      */
@@ -207,6 +261,7 @@ public class MbtBluetoothLETest {
         bluetoothLE.notifyConnectionStateChanged(BtState.READING_FIRMWARE_VERSION);
         assertFalse(bluetoothLE.startStream());
     }
+
     /**
      * Assert that streaming cannot be started if headset connection has failed while it was reading device info
      */
@@ -215,6 +270,7 @@ public class MbtBluetoothLETest {
         bluetoothLE.notifyConnectionStateChanged(BtState.READING_FAILURE);
         assertFalse(bluetoothLE.startStream());
     }
+
     /**
      * Assert that streaming cannot be started if connection process is still in progress, at the bonding step
      */
@@ -223,6 +279,7 @@ public class MbtBluetoothLETest {
         bluetoothLE.notifyConnectionStateChanged(BtState.BONDING);
         assertFalse(bluetoothLE.startStream());
     }
+
     /**
      * Assert that streaming cannot be started if headset connection has failed while it was requesting bonding
      */
@@ -231,6 +288,7 @@ public class MbtBluetoothLETest {
         bluetoothLE.notifyConnectionStateChanged(BtState.BONDING_FAILURE);
         assertFalse(bluetoothLE.startStream());
     }
+
     /**
      * Assert that streaming cannot be started if firmware version upgrading is in progress
      */
@@ -239,6 +297,7 @@ public class MbtBluetoothLETest {
         bluetoothLE.notifyConnectionStateChanged(BtState.UPGRADING);
         assertFalse(bluetoothLE.startStream());
     }
+
     /**
      * Assert that streaming cannot be started if firmware version upgrade has failed
      */
@@ -247,6 +306,7 @@ public class MbtBluetoothLETest {
         bluetoothLE.notifyConnectionStateChanged(BtState.UPGRADING_FAILURE);
         assertFalse(bluetoothLE.startStream());
     }
+
     /**
      * Assert that status monitoring can not be activated if gatt is null
      */
@@ -255,6 +315,7 @@ public class MbtBluetoothLETest {
         bluetoothLE.gatt = null;
         assertFalse(bluetoothLE.activateDeviceStatusMonitoring());
     }
+
     /**
      * Assert that status monitoring can not be activated if headset is not connected
      */
@@ -269,23 +330,25 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void stopStream_NotStreamingIdle() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.IDLE);
+        bluetoothLE.notifyStreamStateChanged(StreamState.IDLE);
         assertTrue(bluetoothLE.stopStream());
     }
+
     /**
      * Check that nothing happens if user requests stopping streaming whereas the headset is disconnected
      */
     @Test
     public void stopStream_NotStreamingDisconnected() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.DISCONNECTED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.DISCONNECTED);
         assertTrue(bluetoothLE.stopStream());
     }
+
     /**
      * Check that nothing happens if user requests stopping streaming whereas it was already stopped
      */
     @Test
     public void stopStream_StreamingAlreadyStopped() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.STOPPED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.STOPPED);
         assertTrue(bluetoothLE.stopStream());
     }
 
@@ -294,9 +357,8 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void stopStream_UnknownService() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.STARTED);
-        BluetoothGatt gatt = Mockito.mock(BluetoothGatt.class);
-        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT)).thenReturn(null);
+        bluetoothLE.notifyStreamStateChanged(StreamState.STARTED);
+        when(gatt.getService(SERVICE)).thenReturn(null);
         bluetoothLE.gatt = gatt;
         assertFalse(bluetoothLE.stopStream());
     }
@@ -306,12 +368,10 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void stopStream_UnknownCharacteristic() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.STARTED);
-        BluetoothGatt gatt = Mockito.mock(BluetoothGatt.class);
-        BluetoothGattService gattService = Mockito.mock(BluetoothGattService.class);
-        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT)).thenReturn(gattService);
-        when(gattService.getUuid()).thenReturn(MelomindCharacteristics.SERVICE_MEASUREMENT);
-        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG)).thenReturn(null);
+        bluetoothLE.notifyStreamStateChanged(StreamState.STARTED);
+        when(gatt.getService(SERVICE)).thenReturn(gattService);
+        when(gattService.getUuid()).thenReturn(SERVICE);
+        when(gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG)).thenReturn(null);
         bluetoothLE.gatt = gatt;
         assertFalse(bluetoothLE.stopStream());
     }
@@ -321,43 +381,38 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void stopStream_NullGatt() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.STARTED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.STARTED);
         bluetoothLE.gatt = null;
         assertFalse(bluetoothLE.stopStream());
     }
+
     /**
      * Check that nothing happens if user requests stopping streaming whereas notification disabling is not working (streaming is in progress and service & characteristic are valid)
      */
     @Test
     public void stopStream_DisablingNotificationFail() {
         bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.STARTED);
-        BluetoothGatt gatt = Mockito.mock(BluetoothGatt.class);
-        BluetoothGattService gattService = Mockito.mock(BluetoothGattService.class);
-        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT)).thenReturn(gattService);
-        when(gattService.getUuid()).thenReturn(MelomindCharacteristics.SERVICE_MEASUREMENT);
-        BluetoothGattCharacteristic characteristic = Mockito.mock(BluetoothGattCharacteristic.class);
-        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG)).thenReturn(characteristic);
-        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG).getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID)).thenReturn(null);
+        bluetoothLE.notifyStreamStateChanged(StreamState.STARTED);
+        when(gatt.getService(SERVICE)).thenReturn(gattService);
+        when(gattService.getUuid()).thenReturn(SERVICE);
+        when(gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG)).thenReturn(characteristic);
+        when(gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG).getDescriptor(DESCRIPTOR)).thenReturn(null);
         bluetoothLE.gatt = gatt;
         assertFalse(bluetoothLE.stopStream());
     }
+
     /**
      * Check that streaming in progress is stopped if service & characteristic are valid and notification disabling succeeded
      */
     @Test
     public void stopStream_DisableNotificationWorking() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.STARTED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.STARTED);
         bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
-        BluetoothGatt gatt = Mockito.mock(BluetoothGatt.class);
-        BluetoothGattService gattService = Mockito.mock(BluetoothGattService.class);
-        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT)).thenReturn(gattService);
-        when(gattService.getUuid()).thenReturn(MelomindCharacteristics.SERVICE_MEASUREMENT);
-        BluetoothGattCharacteristic characteristic = Mockito.mock(BluetoothGattCharacteristic.class);
-        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG)).thenReturn(characteristic);
-        BluetoothGattDescriptor descriptor = Mockito.mock(BluetoothGattDescriptor.class);
-        when(gatt.setCharacteristicNotification(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG), false)).thenReturn(true);
-        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG).getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID)).thenReturn(descriptor);
+        when(gatt.getService(SERVICE)).thenReturn(gattService);
+        when(gattService.getUuid()).thenReturn(SERVICE);
+        when(gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG)).thenReturn(characteristic);
+        when(gatt.setCharacteristicNotification(gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG), false)).thenReturn(true);
+        when(gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG).getDescriptor(DESCRIPTOR)).thenReturn(descriptor);
 
 
         bluetoothLE.gatt = gatt;
@@ -370,15 +425,16 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void notifyStreamStateChanged_Started() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.STARTED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.STARTED);
         assertTrue(bluetoothLE.isStreaming());
     }
+
     /**
      * Check that streaming is not in progress if stream has stopped
      */
     @Test
     public void notifyStreamStateChanged_Stopped() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.STOPPED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.STOPPED);
         assertFalse(bluetoothLE.isStreaming());
     }
 
@@ -387,17 +443,19 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void notifyStreamStateChanged_Failed() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.FAILED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.FAILED);
         assertFalse(bluetoothLE.isStreaming());
     }
+
     /**
      * Check that streaming is not in progress if stream state is IDLE
      */
     @Test
     public void notifyStreamStateChanged_Idle() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.IDLE);
+        bluetoothLE.notifyStreamStateChanged(StreamState.IDLE);
         assertFalse(bluetoothLE.isStreaming());
     }
+
     /**
      * Check that streaming is not in progress if stream state is IDLE
      */
@@ -405,10 +463,9 @@ public class MbtBluetoothLETest {
     public void notifyStreamStateChanged_Vpro() {
         MbtConfig.setDeviceType(MbtDeviceType.VPRO);
         MbtBluetoothSPP bluetoothSPP = new MbtBluetoothSPP(context, bluetoothManager);
-        bluetoothSPP.notifyStreamStateChanged(IStreamable.StreamState.STARTED);
+        bluetoothSPP.notifyStreamStateChanged(StreamState.STARTED);
         assertFalse(bluetoothLE.isStreaming());
     }
-
 
 
     /**
@@ -416,39 +473,43 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void isStreaming_Null() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.FAILED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.FAILED);
         assertFalse(bluetoothLE.isStreaming());
     }
+
     /**
      * Assert that Bluetooth is streaming if headset is disconnected
      */
     @Test
     public void isStreaming_Disconnected() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.DISCONNECTED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.DISCONNECTED);
         assertFalse(bluetoothLE.isStreaming());
     }
+
     /**
      * Assert that Bluetooth is streaming if stream is started
      */
     @Test
     public void isStreaming_Started() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.STARTED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.STARTED);
         assertTrue(bluetoothLE.isStreaming());
     }
+
     /**
      * Assert that Bluetooth is not streaming if streaming is stopped
      */
     @Test
     public void isStreaming_Stopped() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.STOPPED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.STOPPED);
         assertFalse(bluetoothLE.isStreaming());
     }
+
     /**
      * Assert that bluetooth is not streaming if headset is idle
      */
     @Test
     public void isStreaming_Idle() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.IDLE);
+        bluetoothLE.notifyStreamStateChanged(StreamState.IDLE);
         assertFalse(bluetoothLE.isConnected());
     }
 
@@ -459,7 +520,7 @@ public class MbtBluetoothLETest {
     public void isStreaming_Vpro() {
         MbtConfig.setDeviceType(MbtDeviceType.VPRO);
         MbtBluetoothSPP bluetoothSPP = new MbtBluetoothSPP(context, bluetoothManager);
-        bluetoothSPP.notifyStreamStateChanged(IStreamable.StreamState.STARTED);
+        bluetoothSPP.notifyStreamStateChanged(StreamState.STARTED);
         assertFalse(bluetoothLE.isConnected());
     }
 
@@ -469,79 +530,74 @@ public class MbtBluetoothLETest {
     @Test
     public void enableOrDisableNotificationsOnCharacteristic_DisconnectedEnable() {
         bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);
-        assertFalse(bluetoothLE.enableOrDisableNotificationsOnCharacteristic(true,null));
+        assertFalse(bluetoothLE.enableOrDisableNotificationsOnCharacteristic(true, null));
 
     }
+
     /**
      * Assert that notifications can not be disabled if headset is not connected
      */
     @Test
     public void enableOrDisableNotificationsOnCharacteristic_DisconnectedDisable() {
         bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);
-        assertFalse(bluetoothLE.enableOrDisableNotificationsOnCharacteristic(false,null));
+        assertFalse(bluetoothLE.enableOrDisableNotificationsOnCharacteristic(false, null));
 
     }
+
     /**
      * Assert that notifications can be enabled if headset is connected and ready
      */
     @Test
     public void enableOrDisableNotificationsOnCharacteristic_ConnectedReadyEnable() {
         bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
-        BluetoothGatt gatt = Mockito.mock(BluetoothGatt.class);
-        BluetoothGattService gattService = Mockito.mock(BluetoothGattService.class);
-        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT)).thenReturn(gattService);
-        when(gattService.getUuid()).thenReturn(MelomindCharacteristics.SERVICE_MEASUREMENT);
-        BluetoothGattCharacteristic characteristic = Mockito.mock(BluetoothGattCharacteristic.class);
-        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG)).thenReturn(characteristic);
-        BluetoothGattDescriptor descriptor = Mockito.mock(BluetoothGattDescriptor.class);
-        when(gatt.setCharacteristicNotification(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG), false)).thenReturn(true);
-        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG).getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID)).thenReturn(descriptor);
+        when(gatt.getService(SERVICE)).thenReturn(gattService);
+        when(gattService.getUuid()).thenReturn(SERVICE);
+        when(gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG)).thenReturn(characteristic);
+        when(gatt.setCharacteristicNotification(gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG), false)).thenReturn(true);
+        when(gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG).getDescriptor(DESCRIPTOR)).thenReturn(descriptor);
 
-        when(gatt.setCharacteristicNotification(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG),true)).thenReturn(true);
-        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG).getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID).setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)).thenReturn(true);
-        when(gatt.writeDescriptor(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG).getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID))).thenReturn(true);
+        when(gatt.setCharacteristicNotification(gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG), true)).thenReturn(true);
+        when(gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG).getDescriptor(DESCRIPTOR).setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)).thenReturn(true);
+        when(gatt.writeDescriptor(gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG).getDescriptor(DESCRIPTOR))).thenReturn(true);
 
         bluetoothLE.gatt = gatt;
 
-        assertTrue(bluetoothLE.enableOrDisableNotificationsOnCharacteristic(true,bluetoothLE.gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG)));
+        assertTrue(bluetoothLE.enableOrDisableNotificationsOnCharacteristic(true, bluetoothLE.gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG)));
 
     }
+
     /**
      * Assert that notifications can be disabled if headset is connected and ready
      */
     @Test
     public void enableOrDisableNotificationsOnCharacteristic_ConnectedReadyDisable() {
         bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
-        BluetoothGatt gatt = Mockito.mock(BluetoothGatt.class);
-        BluetoothGattService gattService = Mockito.mock(BluetoothGattService.class);
-        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT)).thenReturn(gattService);
-        when(gattService.getUuid()).thenReturn(MelomindCharacteristics.SERVICE_MEASUREMENT);
-        BluetoothGattCharacteristic characteristic = Mockito.mock(BluetoothGattCharacteristic.class);
-        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG)).thenReturn(characteristic);
-        BluetoothGattDescriptor descriptor = Mockito.mock(BluetoothGattDescriptor.class);
-        when(gatt.setCharacteristicNotification(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG), false)).thenReturn(true);
-        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG).getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID)).thenReturn(descriptor);
+        when(gatt.getService(SERVICE)).thenReturn(gattService);
+        when(gattService.getUuid()).thenReturn(SERVICE);
+        when(gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG)).thenReturn(characteristic);
+        when(gatt.setCharacteristicNotification(gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG), false)).thenReturn(true);
+        when(gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG).getDescriptor(DESCRIPTOR)).thenReturn(descriptor);
 
-        when(gatt.setCharacteristicNotification(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG),true)).thenReturn(true);
-        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG).getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID).setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)).thenReturn(true);
-        when(gatt.writeDescriptor(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG).getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID))).thenReturn(true);
+        when(gatt.setCharacteristicNotification(gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG), true)).thenReturn(true);
+        when(gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG).getDescriptor(DESCRIPTOR).setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)).thenReturn(true);
+        when(gatt.writeDescriptor(gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG).getDescriptor(DESCRIPTOR))).thenReturn(true);
 
         bluetoothLE.gatt = gatt;
 
-        assertTrue(bluetoothLE.enableOrDisableNotificationsOnCharacteristic(false,bluetoothLE.gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG)));
+        assertTrue(bluetoothLE.enableOrDisableNotificationsOnCharacteristic(false, bluetoothLE.gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG)));
 
     }
 
 
     @Test
     public void startLowEnergyScan_FailedNullNameFilterOn() {
-        assertFalse(bluetoothLE.startLowEnergyScan(true));
+        assertFalse(bluetoothLE.startScan());
         assertNotEquals(bluetoothLE.getCurrentState(), BtState.SCAN_FAILURE);
     }
 
     @Test
     public void startLowEnergyScan_FailedNotNullNameFilterOn() {
-        assertFalse(bluetoothLE.startLowEnergyScan(true));
+        assertFalse(bluetoothLE.startScan());
         assertNotEquals(bluetoothLE.getCurrentState(), BtState.SCAN_FAILURE);
     }
 
@@ -550,7 +606,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void stopLowEnergyScan_StateIsNotScanStarted() {
-        bluetoothLE.stopLowEnergyScan();
+        bluetoothLE.stopScan();
         assertNotEquals(bluetoothLE.getCurrentState(), BtState.SCAN_STARTED);
     }
 
@@ -559,7 +615,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void stopLowEnergyScan_StateIsIdle() {
-        bluetoothLE.stopLowEnergyScan();
+        bluetoothLE.stopScan();
         assertEquals(bluetoothLE.getCurrentState(), BtState.IDLE);
     }
 
@@ -568,15 +624,15 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void stopLowEnergyScan_StartedStoppedFailed() {
-        bluetoothLE.startLowEnergyScan(true);
-        bluetoothLE.stopLowEnergyScan();
+        bluetoothLE.startScan();
+        bluetoothLE.stopScan();
     }
 
 
     @Test
-    public void connect_failure() {
+    public void connect_NonNullContext() {
         BluetoothDevice device = Mockito.mock(BluetoothDevice.class);
-        assertFalse(bluetoothLE.connect(context, device));
+        assertTrue(bluetoothLE.connect(context, device));
         assertNull(bluetoothLE.gatt);
     }
 
@@ -584,14 +640,13 @@ public class MbtBluetoothLETest {
     public void connect_NullContext() {
         BluetoothDevice device = Mockito.mock(BluetoothDevice.class);
         assertFalse(bluetoothLE.connect(null, device));
-        assertNull(bluetoothLE.gatt);
+        assertNotNull(bluetoothLE.gatt);
     }
 
     @Test
     public void connect_NullDevice() {
-        BluetoothDevice device = Mockito.mock(BluetoothDevice.class);
         assertFalse(bluetoothLE.connect(context, null));
-        assertNull(bluetoothLE.gatt);
+        assertNotNull(bluetoothLE.gatt);
     }
 
 
@@ -602,6 +657,7 @@ public class MbtBluetoothLETest {
     public void disconnect_NoConnectedHeadset() {
         assertFalse(bluetoothLE.disconnect());
     }
+
     /**
      * check that disconnection fail if gatt is null
      */
@@ -610,159 +666,188 @@ public class MbtBluetoothLETest {
         bluetoothLE.gatt = null;
         assertFalse(bluetoothLE.disconnect());
     }
+
     /**
      * check that gatt is reset to null after disconnection
      */
     @Test
     public void disconnect_GattNotNull() {
-        bluetoothLE.gatt = Mockito.mock(BluetoothGatt.class);
+        bluetoothLE.gatt = gatt;
         assertFalse(bluetoothLE.disconnect());
         assertNull(bluetoothLE.gatt);
     }
 
     @Test
     public void isConnected_ConnectedAndReady() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY,true);
+        bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY, true);
         assertTrue(bluetoothLE.isConnected());
     }
+
     @Test
     public void isConnected_Connected() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_CONNECTION_SUCCESS,true);
+        bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_CONNECTION_SUCCESS, true);
         assertFalse(bluetoothLE.isConnected());
     }
+
     @Test
     public void isConnected_Disconnected() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED,true);
+        bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED, true);
         assertFalse(bluetoothLE.isConnected());
     }
+
     @Test
     public void isConnected_ScanFailed() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.SCAN_FAILURE,true);
+        bluetoothLE.notifyConnectionStateChanged(BtState.SCAN_FAILURE, true);
         assertFalse(bluetoothLE.isConnected());
     }
+
     @Test
     public void isConnected_AudioConnected() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.AUDIO_BT_CONNECTION_SUCCESS,true);
+        bluetoothLE.notifyConnectionStateChanged(BtState.AUDIO_BT_CONNECTION_SUCCESS, true);
         assertFalse(bluetoothLE.isConnected());
     }
+
     @Test
     public void isConnected_ConnectionFailure() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTION_FAILURE,true);
+        bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTION_FAILURE, true);
         assertFalse(bluetoothLE.isConnected());
     }
+
     @Test
     public void isConnected_ConnectionInterrupted() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTION_INTERRUPTED,true);
+        bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTION_INTERRUPTED, true);
         assertFalse(bluetoothLE.isConnected());
     }
+
     @Test
     public void isConnected_InternalFailure() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.INTERNAL_FAILURE,true);
+        bluetoothLE.notifyConnectionStateChanged(BtState.INTERNAL_FAILURE, true);
         assertFalse(bluetoothLE.isConnected());
     }
+
     @Test
     public void isConnected_BluetoothDisabled() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.BLUETOOTH_DISABLED,true);
+        bluetoothLE.notifyConnectionStateChanged(BtState.BLUETOOTH_DISABLED, true);
         assertFalse(bluetoothLE.isConnected());
     }
+
     @Test
     public void isConnected_ReadingDeviceInfo() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.READING_FIRMWARE_VERSION,true);
+        bluetoothLE.notifyConnectionStateChanged(BtState.READING_FIRMWARE_VERSION, true);
         assertFalse(bluetoothLE.isConnected());
     }
+
     @Test
     public void isConnected_ReadingFailure() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.READING_FAILURE,true);
+        bluetoothLE.notifyConnectionStateChanged(BtState.READING_FAILURE, true);
         assertFalse(bluetoothLE.isConnected());
     }
+
     @Test
     public void isConnected_ScanTimeout() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.SCAN_TIMEOUT,true);
+        bluetoothLE.notifyConnectionStateChanged(BtState.SCAN_TIMEOUT, true);
         assertFalse(bluetoothLE.isConnected());
     }
+
     @Test
     public void isConnected_Bonding() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.BONDING,true);
+        bluetoothLE.notifyConnectionStateChanged(BtState.BONDING, true);
         assertFalse(bluetoothLE.isConnected());
     }
+
     @Test
     public void isConnected_AnotherDeviceConnected() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.ANOTHER_DEVICE_CONNECTED,true);
+        bluetoothLE.notifyConnectionStateChanged(BtState.ANOTHER_DEVICE_CONNECTED, true);
         assertFalse(bluetoothLE.isConnected());
     }
+
     @Test
     public void isConnected_BondingFailure() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.BONDING_FAILURE,true);
+        bluetoothLE.notifyConnectionStateChanged(BtState.BONDING_FAILURE, true);
         assertFalse(bluetoothLE.isConnected());
     }
+
     @Test
     public void isConnected_Connecting() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_CONNECTING,true);
+        bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_CONNECTING, true);
         assertFalse(bluetoothLE.isConnected());
     }
+
     @Test
     public void isConnected_DeviceFound() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DEVICE_FOUND,true);
+        bluetoothLE.notifyConnectionStateChanged(BtState.DEVICE_FOUND, true);
         assertFalse(bluetoothLE.isConnected());
     }
+
     @Test
     public void isConnected_Disconnecting() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DISCONNECTING,true);
+        bluetoothLE.notifyConnectionStateChanged(BtState.DISCONNECTING, true);
         assertFalse(bluetoothLE.isConnected());
     }
+
     @Test
     public void isConnected_DiscoveringFailed() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DISCOVERING_FAILURE,true);
+        bluetoothLE.notifyConnectionStateChanged(BtState.DISCOVERING_FAILURE, true);
         assertFalse(bluetoothLE.isConnected());
     }
+
     @Test
     public void isConnected_Discovering() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DISCOVERING_SERVICES,true);
+        bluetoothLE.notifyConnectionStateChanged(BtState.DISCOVERING_SERVICES, true);
         assertFalse(bluetoothLE.isConnected());
     }
+
     @Test
     public void isConnected_Idle() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.IDLE,true);
+        bluetoothLE.notifyConnectionStateChanged(BtState.IDLE, true);
         assertFalse(bluetoothLE.isConnected());
     }
+
     @Test
     public void isConnected_LocationIsRequired() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.LOCATION_DISABLED,true);
+        bluetoothLE.notifyConnectionStateChanged(BtState.LOCATION_DISABLED, true);
         assertFalse(bluetoothLE.isConnected());
     }
+
     @Test
     public void isConnected_LocationPermission() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.LOCATION_PERMISSION_NOT_GRANTED,true);
+        bluetoothLE.notifyConnectionStateChanged(BtState.LOCATION_PERMISSION_NOT_GRANTED, true);
         assertFalse(bluetoothLE.isConnected());
     }
+
     @Test
     public void isConnected_BluetoothNotSupported() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.NO_BLUETOOTH,true);
+        bluetoothLE.notifyConnectionStateChanged(BtState.NO_BLUETOOTH, true);
         assertFalse(bluetoothLE.isConnected());
     }
+
     @Test
     public void isConnected_ScanFailedAlreadyStarted() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.SCAN_FAILED_ALREADY_STARTED,true);
+        bluetoothLE.notifyConnectionStateChanged(BtState.SCAN_FAILED_ALREADY_STARTED, true);
         assertFalse(bluetoothLE.isConnected());
     }
+
     @Test
     public void isConnected_ScanInterrupted() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.SCAN_INTERRUPTED,true);
+        bluetoothLE.notifyConnectionStateChanged(BtState.SCAN_INTERRUPTED, true);
         assertFalse(bluetoothLE.isConnected());
     }
+
     @Test
-    public void isConnected_ScanStarted(){
-        bluetoothLE.notifyConnectionStateChanged(BtState.SCAN_STARTED,true);
+    public void isConnected_ScanStarted() {
+        bluetoothLE.notifyConnectionStateChanged(BtState.SCAN_STARTED, true);
         assertFalse(bluetoothLE.isConnected());
     }
+
     @Test
-    public void isConnected_UpgradingFailed(){
-        bluetoothLE.notifyConnectionStateChanged(BtState.UPGRADING_FAILURE,true);
+    public void isConnected_UpgradingFailed() {
+        bluetoothLE.notifyConnectionStateChanged(BtState.UPGRADING_FAILURE, true);
         assertFalse(bluetoothLE.isConnected());
     }
+
     @Test
-    public void isConnected_Upgrading(){
-        bluetoothLE.notifyConnectionStateChanged(BtState.UPGRADING,true);
+    public void isConnected_Upgrading() {
+        bluetoothLE.notifyConnectionStateChanged(BtState.UPGRADING, true);
         assertFalse(bluetoothLE.isConnected());
     }
 
@@ -770,124 +855,184 @@ public class MbtBluetoothLETest {
     public void startReadOperation_ConnectedNotReady() {
         bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_CONNECTION_SUCCESS, true);
         assertFalse(bluetoothLE.startReadOperation(MelomindCharacteristics.CHARAC_INFO_FIRMWARE_VERSION));
-        assertEquals(bluetoothLE.getCurrentState(),BtState.READING_FAILURE);
+        assertEquals(bluetoothLE.getCurrentState(), BtState.READING_FAILURE);
     }
+
     @Test
     public void startReadOperation_GattNull() {
         bluetoothLE.gatt = null;
         assertFalse(bluetoothLE.startReadOperation(MelomindCharacteristics.CHARAC_INFO_FIRMWARE_VERSION));
     }
+
     @Test
     public void startReadOperation_GattCharacteristicNull() {
         assertFalse(bluetoothLE.startReadOperation(UNKNOWN));
     }
 
+    /**
+     * Check that startWriteOperation return false if gatt is invalid
+     */
     @Test
-    public void startWriteOperation_GattNull() {
+    public void startWriteOperation_GattInvalid() {
         bluetoothLE.gatt = null;
-        byte[] code = {MailboxEvents.MBX_GET_EEG_CONFIG};
-        assertFalse(bluetoothLE.startWriteOperation(CHARACTERISTIC_MAILBOX,code));
-    }
-    @Test
-    public void startWriteOperation_GattCharacteristicNull() {
-        byte[] code = {MailboxEvents.MBX_GET_EEG_CONFIG};
-        assertFalse(bluetoothLE.startWriteOperation(UNKNOWN,code));
+        byte[] code = {DeviceCommandEvent.MBX_GET_EEG_CONFIG.getIdentifierCode()};
+        assertFalse(bluetoothLE.startWriteOperation(SERVICE, CHARACTERISTIC_MAILBOX, code));
     }
 
     /**
-     * Checks that the Measurement service and the EEG characteristic that are going to be used to communicate with the remote device are valid.
+     * Check that startWriteOperation return false if gatt service is invalid
      */
     @Test
-    public void checkServiceAndCharacteristicValidity_SuccessMeasurementEEG() {
-        BluetoothGatt gatt = Mockito.mock(BluetoothGatt.class);
-        BluetoothGattService gattService = Mockito.mock(BluetoothGattService.class);
-        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT)).thenReturn(gattService);
-        when(gattService.getUuid()).thenReturn(MelomindCharacteristics.SERVICE_MEASUREMENT);
-        BluetoothGattCharacteristic characteristic = Mockito.mock(BluetoothGattCharacteristic.class);
-        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG)).thenReturn(characteristic);
+    public void startWriteOperation_ServiceInvalid() {
+        byte[] code = {DeviceCommandEvent.MBX_GET_EEG_CONFIG.getIdentifierCode()};
         bluetoothLE.gatt = gatt;
-        assertNotNull(bluetoothLE.gatt);
-        assertTrue(bluetoothLE.checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_EEG));
-        assertNotEquals(bluetoothLE.getCurrentState(),BtState.READING_FAILURE);
+        when(gatt.getService(SERVICE)).thenReturn(null);
 
-    }
-    /**
-     * Checks that an unknown service with a EEG characteristic that are going to be used to communicate with the remote device are invalid.
-     */
-    @Test
-    public void checkServiceAndCharacteristicValidity_UnknownService() {
-        BluetoothGatt gatt = Mockito.mock(BluetoothGatt.class);
-        BluetoothGattService gattService = Mockito.mock(BluetoothGattService.class);
-        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT)).thenReturn(null);
-        when(gattService.getUuid()).thenReturn(MelomindCharacteristics.SERVICE_MEASUREMENT);
-        bluetoothLE.gatt = gatt;
-        assertFalse(bluetoothLE.checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_EEG));
-    }
-    /**
-     * Checks that the Measurement service and an unknown characteristic that are going to be used to communicate with the remote device are invalid.
-     */
-    @Test
-    public void checkServiceAndCharacteristicValidity_UnknownCharacteristic() {
-        BluetoothGatt gatt = Mockito.mock(BluetoothGatt.class);
-        BluetoothGattService gattService = Mockito.mock(BluetoothGattService.class);
-        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT)).thenReturn(gattService);
-        when(gattService.getUuid()).thenReturn(MelomindCharacteristics.SERVICE_MEASUREMENT);
-        when(gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG)).thenReturn(null);
-        bluetoothLE.gatt = gatt;
-        assertFalse(bluetoothLE.checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_EEG));
+        assertFalse(bluetoothLE.startWriteOperation(SERVICE, CHARACTERISTIC_MAILBOX, code));
     }
 
     /**
-     * Checks that any service and any characteristic that are going to be used to communicate with the remote device are invalid if their associated gatt is null.
+     * Check that startWriteOperation return false if gatt characteristic is invalid
      */
     @Test
-    public void checkServiceAndCharacteristicValidity_NullGatt() {
+    public void startWriteOperation_CharacteristicInvalid() {
+        byte[] code = {DeviceCommandEvent.MBX_GET_EEG_CONFIG.getIdentifierCode()};
+        when(gatt.getService(SERVICE)).thenReturn(gattService);
+        when(gattService.getUuid()).thenReturn(SERVICE);
+        BluetoothGattCharacteristic characteristic = null;
+        when(gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_MAILBOX)).thenReturn(characteristic);
+
+        assertFalse(bluetoothLE.startWriteOperation(SERVICE, CHARACTERISTIC_MAILBOX, code));
+    }
+
+    /**
+     * Check that startWriteOperation return false if gatt write characteristic is invalid
+     */
+    @Test
+    public void startWriteOperation_WriteCharacteristicInvalid() {
+        byte[] code = {DeviceCommandEvent.MBX_GET_EEG_CONFIG.getIdentifierCode()};
+        when(gatt.getService(SERVICE)).thenReturn(gattService);
+        when(gattService.getUuid()).thenReturn(SERVICE);
+        when(gattService.getCharacteristic(CHARACTERISTIC_MAILBOX)).thenReturn(characteristic);
+        when(gatt.writeCharacteristic(characteristic)).thenReturn(false);
+
+        assertFalse(bluetoothLE.startWriteOperation(SERVICE, CHARACTERISTIC_MAILBOX, code));
+    }
+
+    /**
+     * Check that startWriteOperation return true if gatt write characteristic is valid
+     */
+    @Test
+    public void startWriteOperation_Valid() {
+        byte[] code = {DeviceCommandEvent.MBX_GET_EEG_CONFIG.getIdentifierCode()};
+        when(gatt.getService(SERVICE)).thenReturn(gattService);
+        when(gattService.getUuid()).thenReturn(SERVICE);
+        when(gattService.getCharacteristic(CHARACTERISTIC_MAILBOX)).thenReturn(characteristic);
+        when(gatt.writeCharacteristic(characteristic)).thenReturn(true);
+
+        assertTrue(bluetoothLE.startWriteOperation(SERVICE, CHARACTERISTIC_MAILBOX, code));
+    }
+
+    /**
+     * Checks that checkServiceAndCharacteristicValidity returns true if
+     * a valid service and a valid characteristic are used.
+     */
+    @Test
+    public void checkServiceAndCharacteristicValidity_Valid() {
+        when(gatt.getService(SERVICE)).thenReturn(gattService);
+        when(gattService.getUuid()).thenReturn(SERVICE);
+        when(gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG)).thenReturn(characteristic);
+        assertTrue(bluetoothLE.checkServiceAndCharacteristicValidity(SERVICE, CHARACTERISTIC_EEG));
+    }
+
+    /**
+     * Checks that checkServiceAndCharacteristicValidity returns false if
+     * a invalid service and a valid characteristic are used.
+     */
+    @Test
+    public void checkServiceAndCharacteristicValidity_InvalidService() {
+        when(gatt.getService(SERVICE)).thenReturn(null);
+        assertFalse(bluetoothLE.checkServiceAndCharacteristicValidity(SERVICE, CHARACTERISTIC_EEG));
+    }
+
+    /**
+     * Checks that checkServiceAndCharacteristicValidity returns false if
+     * a valid service and a invalid characteristic are used.
+     */
+    @Test
+    public void checkServiceAndCharacteristicValidity_InvalidCharacteristic() {
+        when(gatt.getService(SERVICE)).thenReturn(gattService);
+        when(gattService.getUuid()).thenReturn(SERVICE);
+        when(gattService.getCharacteristic(CHARACTERISTIC_EEG)).thenReturn(null);
+        assertFalse(bluetoothLE.checkServiceAndCharacteristicValidity(SERVICE, CHARACTERISTIC_EEG));
+    }
+
+    /**
+     * Checks that checkServiceAndCharacteristicValidity returns false if
+     * a invalid gatt is used.
+     */
+    @Test
+    public void checkServiceAndCharacteristicValidity_InvalidGatt() {
         bluetoothLE.gatt = null;
-        assertFalse(bluetoothLE.checkServiceAndCharacteristicValidity(SERVICE,CHARACTERISTIC_EEG));
-    }
-    /**
-     * Checks that if the Measurement service and the EEG characteristic have been inverted, the given service and characteristic are considered invalid
-     */
-    @Test
-    public void checkServiceAndCharacteristicValidity_InvertedServiceAndCharacteristic() {
-        BluetoothGatt gatt = Mockito.mock(BluetoothGatt.class);
-        when(gatt.getService(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG)).thenReturn(null);
-        bluetoothLE.gatt = gatt;
-        assertFalse(bluetoothLE.checkServiceAndCharacteristicValidity(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG, MelomindCharacteristics.SERVICE_MEASUREMENT));
+        assertFalse(bluetoothLE.checkServiceAndCharacteristicValidity(SERVICE, CHARACTERISTIC_EEG));
     }
 
+
     /**
-     * Check that false is returned if gatt is null
+     * Check that false is returned if gatt is invalid
      */
     @Test
-    public void isNotificationEnabledOnCharacteristic_NullGatt() {
+    public void isNotificationEnabledOnCharacteristic_InvalidGatt() {
         bluetoothLE.gatt = null;
         assertFalse(bluetoothLE.isNotificationEnabledOnCharacteristic(SERVICE, CHARACTERISTIC_MAILBOX));
     }
+
     /**
-     * Check that false is returned if gatt services are null
+     * Check that false is returned if service is invalid
      */
     @Test
-    public void isNotificationEnabledOnCharacteristic_NullGattServices() {
-        bluetoothLE.gatt = Mockito.mock(BluetoothGatt.class);
-        assertFalse(bluetoothLE.isNotificationEnabledOnCharacteristic(UNKNOWN, CHARACTERISTIC_MAILBOX)); // unknown is "0" should not exist so this should return false
+    public void isNotificationEnabledOnCharacteristic_InvalidService() {
+        when(gatt.getService(SERVICE)).thenReturn(null);
+        assertFalse(bluetoothLE.isNotificationEnabledOnCharacteristic(SERVICE, CHARACTERISTIC_MAILBOX));
     }
+
     /**
-     * Check that false is returned if gatt service is not null but characteristic does not exist
+     * Check that false is returned if characteristic is invalid
      */
     @Test
-    public void isNotificationEnabledOnCharacteristic_NullGattCharacteristic() {
-        bluetoothLE.gatt = Mockito.mock(BluetoothGatt.class);
+    public void isNotificationEnabledOnCharacteristic_InvalidCharacteristic() {
+
+        when(gatt.getService(SERVICE)).thenReturn(gattService);
+        when(gattService.getUuid()).thenReturn(SERVICE);
+        when(gattService.getCharacteristic(CHARACTERISTIC_EEG)).thenReturn(null);
         assertFalse(bluetoothLE.isNotificationEnabledOnCharacteristic(SERVICE, CHARACTERISTIC_MAILBOX));
 
     }
+
     /**
-     * Check that false is returned if gatt service is not null but characteristic does not exist
+     * Check that false is returned if characteristic is invalid
      */
     @Test
-    public void isNotificationEnabledOnCharacteristic_InvertedServiceAndCharacteristic() {
-        bluetoothLE.gatt = Mockito.mock(BluetoothGatt.class);
-        assertFalse(bluetoothLE.isNotificationEnabledOnCharacteristic(CHARACTERISTIC_MAILBOX, SERVICE));
+    public void isNotificationEnabledOnCharacteristic_InvalidDescriptor() {
+        when(gatt.getService(SERVICE)).thenReturn(gattService);
+        when(gattService.getUuid()).thenReturn(SERVICE);
+        when(gattService.getCharacteristic(CHARACTERISTIC_EEG)).thenReturn(characteristic);
+        when(characteristic.getDescriptor(DESCRIPTOR)).thenReturn(descriptor);
+        assertFalse(bluetoothLE.isNotificationEnabledOnCharacteristic(SERVICE, CHARACTERISTIC_MAILBOX));
+
+    }
+
+    /**
+     * Check that true is returned if the descriptor is valid
+     */
+    @Test
+    public void isNotificationEnabledOnCharacteristic_ValidDescriptor() {
+        when(gatt.getService(SERVICE)).thenReturn(gattService);
+        when(gattService.getUuid()).thenReturn(SERVICE);
+        when(gattService.getCharacteristic(CHARACTERISTIC_EEG)).thenReturn(characteristic);
+        when(characteristic.getDescriptor(DESCRIPTOR)).thenReturn(descriptor);
+        when(descriptor.getValue()).thenReturn(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+        assertFalse(bluetoothLE.isNotificationEnabledOnCharacteristic(SERVICE, CHARACTERISTIC_MAILBOX));
 
     }
 
@@ -895,13 +1040,15 @@ public class MbtBluetoothLETest {
     public void readBattery_ConnectedNotReady() {
         bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_CONNECTION_SUCCESS, true);
         assertFalse(bluetoothLE.readBattery());
-        assertEquals(bluetoothLE.getCurrentState(),BtState.READING_FAILURE);
+        assertEquals(bluetoothLE.getCurrentState(), BtState.READING_FAILURE);
     }
+
     @Test
     public void readBattery_GattNull() {
         bluetoothLE.gatt = null;
         assertFalse(bluetoothLE.readBattery());
     }
+
     @Test
     public void readBattery_GattCharacteristicNull() {
         assertFalse(bluetoothLE.readBattery());
@@ -911,13 +1058,15 @@ public class MbtBluetoothLETest {
     public void readFwVersion_ConnectedNotReady() {
         bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_CONNECTION_SUCCESS, true);
         assertFalse(bluetoothLE.readFwVersion());
-        assertEquals(bluetoothLE.getCurrentState(),BtState.READING_FAILURE);
+        assertEquals(bluetoothLE.getCurrentState(), BtState.READING_FAILURE);
     }
+
     @Test
     public void readFwVersion_GattNull() {
         bluetoothLE.gatt = null;
         assertFalse(bluetoothLE.readFwVersion());
     }
+
     @Test
     public void readFwVersion_GattCharacteristicNull() {
         assertFalse(bluetoothLE.readFwVersion());
@@ -927,13 +1076,15 @@ public class MbtBluetoothLETest {
     public void readHwVersion_ConnectedNotReady() {
         bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_CONNECTION_SUCCESS, true);
         assertFalse(bluetoothLE.readHwVersion());
-        assertEquals(bluetoothLE.getCurrentState(),BtState.READING_FAILURE);
+        assertEquals(bluetoothLE.getCurrentState(), BtState.READING_FAILURE);
     }
+
     @Test
     public void readHwVersion_GattNull() {
         bluetoothLE.gatt = null;
         assertFalse(bluetoothLE.readHwVersion());
     }
+
     @Test
     public void readHwVersion_GattCharacteristicNull() {
         assertFalse(bluetoothLE.readHwVersion());
@@ -944,13 +1095,15 @@ public class MbtBluetoothLETest {
     public void readSerialNumber_ConnectedNotReady() {
         bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_CONNECTION_SUCCESS, true);
         assertFalse(bluetoothLE.readSerialNumber());
-        assertEquals(bluetoothLE.getCurrentState(),BtState.READING_FAILURE);
+        assertEquals(bluetoothLE.getCurrentState(), BtState.READING_FAILURE);
     }
+
     @Test
     public void readSerialNumber_GattNull() {
         bluetoothLE.gatt = null;
         assertFalse(bluetoothLE.readSerialNumber());
     }
+
     @Test
     public void readSerialNumber_GattCharacteristicNull() {
         assertFalse(bluetoothLE.readSerialNumber());
@@ -958,19 +1111,21 @@ public class MbtBluetoothLETest {
 
     @Test
     public void onNotificationStateChanged_started() {
-        BluetoothGattCharacteristic characteristic = new BluetoothGattCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG,0,0);
+        BluetoothGattCharacteristic characteristic = new BluetoothGattCharacteristic(CHARACTERISTIC_EEG, 0, 0);
         bluetoothLE.onNotificationStateChanged(true, characteristic, true);
         //assertTrue(bluetoothLE.isStreaming()); //todo check why characteristic.getuuid is null
     }
+
     @Test
     public void onNotificationStateChanged_stopped() {
-        BluetoothGattCharacteristic characteristic = new BluetoothGattCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG,0,0);
+        BluetoothGattCharacteristic characteristic = new BluetoothGattCharacteristic(CHARACTERISTIC_EEG, 0, 0);
         bluetoothLE.onNotificationStateChanged(true, characteristic, false);
         assertFalse(bluetoothLE.isStreaming());
     }
+
     @Test
     public void onNotificationStateChanged_failed() {
-        BluetoothGattCharacteristic characteristic = new BluetoothGattCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG,0,0);
+        BluetoothGattCharacteristic characteristic = new BluetoothGattCharacteristic(CHARACTERISTIC_EEG, 0, 0);
         bluetoothLE.onNotificationStateChanged(false, characteristic, false);
         assertFalse(bluetoothLE.isStreaming());
     }
@@ -980,84 +1135,30 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void notifyConnectionStateChanged_DisconnectionDuringStreaming() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.STARTED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.STARTED);
         assertTrue(bluetoothLE.isStreaming());
         bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED, true);
         assertFalse(bluetoothLE.isStreaming());
     }
+
     /**
      * Assert that streaming state do not change if streaming is in progress and the new state is not equal to DATA_BT_DISCONNECTED
      */
     @Test
     public void notifyConnectionStateChanged_ConnectionWhileStreaming() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.STARTED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.STARTED);
         bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_CONNECTION_SUCCESS, true);
         assertTrue(bluetoothLE.isStreaming());
     }
+
     /**
      * Assert that streaming state do not change if streaming is not progress and the new state is to DATA_BT_DISCONNECTED
      */
     @Test
     public void notifyConnectionStateChanged_DisconnectionDuringStoppedStream() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.STOPPED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.STOPPED);
         bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED, true);
         assertFalse(bluetoothLE.isStreaming());
-    }
-
-    /**
-     * Check that MTU is not changed if the new value is lower than the minimum required value
-     */
-    @Test
-    public void changeMTU_LowerThanMinimum() {
-        assertFalse(bluetoothLE.changeMTU(0));
-    }
-    /**
-     * Check that MTU is not changed if the new value is higher than the maximum required value
-     */
-    @Test
-    public void changeMTU_HigherThanMaximmum() {
-        assertFalse(bluetoothLE.changeMTU(200));
-    }
-
-    /**
-     * Check that MTU is not changed if the headset is not connected
-     */
-    @Test
-    public void changeMTU_DisconnectedHeadset() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED, true);
-        assertFalse(bluetoothLE.changeMTU(200));
-    }
-    /**
-     * Check that MTU is not changed if the headset disconnection is in progress
-     */
-    @Test
-    public void changeMTU_DisconnectingHeadset() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DISCONNECTING, true);
-        assertFalse(bluetoothLE.changeMTU(200));
-    }
-    /**
-     * Check that MTU is not changed if the headset is connected but not ready (connection process is in progress)
-     */
-    @Test
-    public void changeMTU_ConnectedNotReadyHeadset() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_CONNECTION_SUCCESS, true);
-        assertFalse(bluetoothLE.changeMTU(200));
-    }
-    /**
-     * Check that MTU is not changed if the headset connection is in progress
-     */
-    @Test
-    public void changeMTU_ConnectingHeadset() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_CONNECTING, true);
-        assertFalse(bluetoothLE.changeMTU(200));
-    }
-    /**
-     * Check that MTU is not changed if a firmware version upgrade is in progress
-     */
-    @Test
-    public void changeMTU_FirmwareUpgrade() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.UPGRADING, true);
-        assertFalse(bluetoothLE.changeMTU(200));
     }
 
     /**
@@ -1066,80 +1167,25 @@ public class MbtBluetoothLETest {
     @Test
     public void changeMTU_GattNull() {
         bluetoothLE.gatt = null;
-        assertFalse(bluetoothLE.changeMTU(200));
+        assertFalse(bluetoothLE.changeMTU(47));
     }
 
     /**
-     * Filter configuration 50 Hz if notification is enabled on mailbox characteristic
+     * Check that MTU is not changed if gatt requestMtu return false
      */
     @Test
-    public void changeFilterConfiguration_50() {
-     //   assertFalse(bluetoothLE.changeFilterConfiguration(FilterConfig.NOTCH_FILTER_50HZ)); //todo mock
-    }
-    /**
-     * Filter configuration 50 Hz if notification is enabled on mailbox characteristic
-     */
-    @Test
-    public void changeFilterConfiguration_60() {
-      //  assertFalse(bluetoothLE.changeFilterConfiguration(FilterConfig.NOTCH_FILTER_60HZ)); //todo mock
-    }
-    /**
-     * Filter configuration 50 Hz if notification is enabled on mailbox characteristic
-     */
-    @Test
-    public void changeFilterConfiguration_DEFAULT() {
-       // assertFalse(bluetoothLE.changeFilterConfiguration(FilterConfig.NOTCH_FILTER_DEFAULT)); //todo mock
+    public void changeMTU_RequestMtuFailure() {
+        Mockito.when(gatt.requestMtu(Mockito.anyInt())).thenReturn(false);
+        assertFalse(bluetoothLE.changeMTU(47));
     }
 
     /**
-     * Amplifier configuration x4 if notification is enabled on mailbox characteristic
+     * Check that MTU is changed if gatt requestMtu return true
      */
     @Test
-    public void changeAmpGainConfiguration_4() {
-       // assertFalse(bluetoothLE.changeAmpGainConfiguration(AmpGainConfig.AMP_GAIN_X4_VLOW)); //todo mock
-    }
-    /**
-     * Amplifier configuration x6 if notification is enabled on mailbox characteristic
-     */
-    @Test
-    public void changeAmpGainConfiguration_6() {
-       // assertFalse(bluetoothLE.changeAmpGainConfiguration(AmpGainConfig.AMP_GAIN_X6_LOW)); //todo mock
-    }
-
-    /**
-     * Amplifier configuration x8 if notification is enabled on mailbox characteristic
-     */
-    @Test
-    public void changeAmpGainConfiguration_8() {
-       // assertFalse(bluetoothLE.changeAmpGainConfiguration(AmpGainConfig.AMP_GAIN_X8_MEDIUM)); //todo mock
-    }
-
-    /**
-     * Amplifier configuration x12 if notification is enabled on mailbox characteristic
-     */
-    @Test
-    public void changeAmpGainConfiguration_12() {
-       // assertFalse(bluetoothLE.changeAmpGainConfiguration(AmpGainConfig.AMP_GAIN_X12_DEFAULT)); //todo mock
-    }
-
-    /**
-     * P300 enabled if notification is enabled on mailbox characteristic
-     */
-    @Test
-    public void switchP300Mode_useP300() {
-        //assertFalse(bluetoothLE.switchP300Mode(true)); //todo mock
-    }
-    /**
-     * P300 disabled if notification is enabled on mailbox characteristic
-     */
-    @Test
-    public void switchP300Mode_donotuseP300() {
-        //assertFalse(bluetoothLE.switchP300Mode(false)); //todo mock
-    }
-
-    @Test
-    public void requestDeviceConfig() {
-        //todo mock
+    public void changeMTU_RequestMtuSuccess() {
+        Mockito.when(gatt.requestMtu(Mockito.anyInt())).thenReturn(true);
+        assertTrue(bluetoothLE.changeMTU(47));
     }
 
     /**
@@ -1147,16 +1193,17 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void disconnectHeadsetAlreadyConnected_DisconnectionSuccess() {
-//        bluetoothLE.gatt = Mockito.mock(BluetoothGatt.class); //todo mock gatt.getdevice.getname
+//        bluetoothLE.gatt = gatt; //todo mock gatt.getdevice.getname
 //        bluetoothLE.disconnectHeadsetAlreadyConnected(DEVICE_NAME,true);
 //        assertFalse(bluetoothLE.gatt.discoverServices());
     }
+
     /**
      * Check that gatt services cannot be discovered if gatt is disconnected
      */
     @Test
     public void disconnectHeadsetAlreadyConnected_DisconnectionFailed() {
-//        bluetoothLE.gatt = Mockito.mock(BluetoothGatt.class); //todo mock gatt.getdevice.getname
+//        bluetoothLE.gatt = gatt; //todo mock gatt.getdevice.getname
 //        bluetoothLE.disconnectHeadsetAlreadyConnected(DEVICE_NAME,false);
 //        assertFalse(bluetoothLE.gatt.discoverServices());
     }
@@ -1187,39 +1234,149 @@ public class MbtBluetoothLETest {
     @Test
     public void notifyConnectionStateChanged_notifyClientConnected() {
         bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_CONNECTION_SUCCESS);
-        assertEquals(bluetoothLE.getCurrentState(),BtState.DATA_BT_CONNECTION_SUCCESS);
+
+        assertEquals(bluetoothLE.getCurrentState(), BtState.DATA_BT_CONNECTION_SUCCESS);
     }
+
     @Test
     public void notifyConnectionStateChanged_doNotNotifyClientConnected() {
         bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_CONNECTION_SUCCESS);
-        assertEquals(bluetoothLE.getCurrentState(),BtState.DATA_BT_CONNECTION_SUCCESS);
+
+        assertEquals(bluetoothLE.getCurrentState(), BtState.DATA_BT_CONNECTION_SUCCESS);
     }
+
     @Test
     public void notifyConnectionStateChanged_notifyClientDisconnected() {
         bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);
-        assertEquals(bluetoothLE.getCurrentState(),BtState.IDLE);
+
+        assertEquals(bluetoothLE.getCurrentState(), BtState.IDLE);
     }
 
     @Test
     public void enableBluetoothOnDevice() {
     }
 
-    private class MbtBluetoothLEWrapper extends MbtBluetoothLE{
-        /**
-         * public constructor that will instanciate this class. It also instanciate a new
-         * {@link MbtGattController MbtGattController} instance
-         *
-         * @param context             the application context
-         * @param mbtBluetoothManager the Bluetooth manager that performs requests and receives results.
-         */
-        public MbtBluetoothLEWrapper(@NonNull Context context, MbtBluetoothManager mbtBluetoothManager) {
-            super(context, mbtBluetoothManager);
-        }
 
-        public boolean isNotificationEnabledOnCharacteristic_test(@NonNull UUID service, @NonNull UUID characteristic){
-            return super.isNotificationEnabledOnCharacteristic(service, characteristic);
-        }
+    /**
+     * Check that a command is not sent
+     * and that an error is raised
+     * if the connection state is invalid
+     */
+    @Test
+    public void sendCommand_invalidConnectionState(){
+        bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_CONNECTING);
+        when(gatt.getService(SERVICE)).thenReturn(gattService);
+        when(gattService.getUuid()).thenReturn(SERVICE);
+        when(gattService.getCharacteristic(CHARACTERISTIC_MAILBOX)).thenReturn(characteristic);
+
+        when(gatt.setCharacteristicNotification(characteristic, false)).thenReturn(true);
+        when(characteristic.getDescriptor(DESCRIPTOR)).thenReturn(descriptor);
+        when(gatt.writeCharacteristic(characteristic)).thenReturn(true);
+
+        bluetoothLE.sendCommand(command);
+
+        Mockito.verify(command).onError(BluetoothError.ERROR_NOT_CONNECTED, null);
+        Mockito.verifyZeroInteractions(gatt); //a valid command interacts with gatt to write the characteristic/request the mtu
+        Mockito.verifyZeroInteractions(asyncOperation); //a valid command interacts with an asyncOperation that wait until the response is received (or until timeout)
+        Mockito.verify(bluetoothManager).notifyResponseReceived(null, command); //null response is supposed to be returned to notify the bluetooth manager that the command has failed to be sent
+    }
+
+    /**
+     * Check that a command is not sent
+     * and that an error is raised if the command is invalid
+     */
+    @Test
+    public void sendCommand_invalidCommand(){
+        bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED);
+        when(command.isValid()).thenReturn(false);
+
+        bluetoothLE.sendCommand(command);
+
+        Mockito.verifyZeroInteractions(gatt); //a valid command interact with gatt to write the characteristic/request the mtu
+        Mockito.verifyZeroInteractions(asyncOperation); //a valid command interacts with an asyncOperation that wait until the response is received (or until timeout)
+        Mockito.verify(bluetoothManager).notifyResponseReceived(null, command); //null response is supposed to be returned to notify the bluetooth manager that the command has failed to be sent
 
     }
+
+
+    /**
+     * Check that a command is not sent
+     * and that an error is raised
+     * if the sending operation encountered a problem (mock sendRequestData)
+     */
+    @Test
+    public void sendCommand_failureSendRequestData(){
+        bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED);
+        when(command.isValid()).thenReturn(true);
+
+        bluetoothLE.sendCommand(command);
+
+        Mockito.verify(command).onError(BluetoothError.ERROR_REQUEST_OPERATION, null);
+        Mockito.verifyZeroInteractions(asyncOperation); //a valid command interacts with an asyncOperation that wait until the response is received (or until timeout)
+        Mockito.verify(bluetoothManager).notifyResponseReceived(null, command); //null response is supposed to be returned to notify the bluetooth manager that the command has failed to be sent
+    }
+
+
+
+    /**
+     * Check that a command is sent and a response is returned to the client
+     * if a device is connected , the command is valid and the send request data method succeeded
+     *
+     */
+    @Test
+    public void sendCommand_SuccessWithResponse() throws InterruptedException, ExecutionException, TimeoutException {
+        final int mtu = 47;
+        final int timeout = 11000;
+        command = Mockito.mock(BluetoothCommands.Mtu.class);
+        bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED);
+        bluetoothLE.setLock(asyncOperation); //if this setter is not called, the async configuration mock is not called
+        when(command.isValid()).thenReturn(true);
+        when(command.serialize()).thenReturn(mtu);
+        when(gatt.requestMtu(47)).thenReturn(true);
+        when(command.isResponseExpected()).thenReturn(true);
+        when(asyncOperation.waitOperationResult(timeout)).thenReturn(mtu);
+        bluetoothLE.sendCommand(command);
+
+        Mockito.verify(command).serialize();
+        Mockito.verify(gatt).requestMtu(47);
+        Mockito.verify(command).isResponseExpected();
+        Mockito.verify(command).onRequestSent();
+        Mockito.verify(asyncOperation).waitOperationResult(timeout);
+        Mockito.verify(command).onResponseReceived(mtu);
+        Mockito.verify(bluetoothManager).notifyResponseReceived(mtu, command); //non null response is supposed to be returned to notify the bluetooth manager that the command has succeeded to be sent
+    }
+
+    /**
+     * Check that a command is sent and no response is returned to the client
+     * if a device is connected , the command is valid and the send request data method succeeded
+     */
+    @Test
+    public void sendCommand_SuccessNoResponse(){
+        final int timeout = 11000;
+        command = Mockito.mock(DeviceCommands.Reboot.class);
+        bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED);
+        when(command.isValid()).thenReturn(true);
+        when(command.serialize()).thenReturn(BYTE_REQUEST);
+        when(gatt.getService(SERVICE)).thenReturn(gattService);
+        when(gattService.getUuid()).thenReturn(SERVICE);
+        when(gattService.getCharacteristic(CHARACTERISTIC_MAILBOX)).thenReturn(characteristic);
+        when(characteristic.getUuid()).thenReturn(CHARACTERISTIC_MAILBOX);
+        when(characteristic.getDescriptor(DESCRIPTOR)).thenReturn(descriptor);
+        when(descriptor.getValue()).thenReturn(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+        when(gatt.setCharacteristicNotification(characteristic, true)).thenReturn(true);
+        when(descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)).thenReturn(true);
+        when(gatt.writeDescriptor(descriptor)).thenReturn(true);
+        when(gatt.writeCharacteristic(characteristic)).thenReturn(true);
+        when(command.isResponseExpected()).thenReturn(false);
+
+        bluetoothLE.sendCommand(command);
+
+        Mockito.verify(command).serialize();
+        Mockito.verify(command).onRequestSent();
+        Mockito.verify(command).isResponseExpected();
+        Mockito.verifyZeroInteractions(asyncOperation); // no response is expected so the async operation does not wait for any response
+        Mockito.verify(bluetoothManager).notifyResponseReceived(null, command); //null response is supposed to be returned to notify the bluetooth manager that the command has failed to be sent
+    }
+
 }
 

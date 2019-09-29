@@ -1469,7 +1469,7 @@ int main()
             f = f+1;
 
 
-            // Spectral Edge Frequency 80%
+            // Spectral Edge FrequencyBand 80%
             float sum_EEG_power = std::accumulate(EEG_power.begin(), EEG_power.begin() + EEG_power.size(), 0.0);
             std::vector<float> EEG_power_norm;
             EEG_power_norm.assign(EEG_power.size(),0);
@@ -1496,7 +1496,7 @@ int main()
             f = f+1;
 
 
-            // Spectral Edge Frequency 90%
+            // Spectral Edge FrequencyBand 90%
             std::vector<float> EEG_power_cum_90;
             EEG_power_cum_90.assign(EEG_power_cum.size(),0);
             for (int i = 0; i < EEG_power_cum_90.size(); i++)
@@ -1513,7 +1513,7 @@ int main()
             f = f+1;
 
 
-            // Spectral Edge Frequency 95%
+            // Spectral Edge FrequencyBand 95%
             std::vector<float> EEG_power_cum_95;
             EEG_power_cum_95.assign(EEG_power_cum.size(),0);
             for (int i = 0; i < EEG_power_cum_95.size(); i++)
@@ -1584,7 +1584,7 @@ int main()
         CC9 = [CC9;cc(9)];
         CC10 = [CC10;cc(10)];*/
 /*
-            // Frequency-filtered band energies
+            // FrequencyBand-filtered band energies
             float ff_delta = (log_theta_pow - 0);
             m_testFeatures(ch,f) = ff_delta;
             if (isnan(m_testFeatures(ch,f)))
@@ -1757,7 +1757,7 @@ int main()
             f = f+1;
 
 
-            // Modified Median Frequency
+            // Modified Median FrequencyBand
             std::vector<float> ecart;
             ecart.assign(floor(m_sampRate/2),0);
             for (int i = 0; i<floor(m_sampRate/2); i++)
@@ -1792,7 +1792,7 @@ int main()
             f = f+1;
 
 
-            // Modified Mean Frequency
+            // Modified Mean FrequencyBand
             float mod_mean_freq = 0.0;
             for (int i = 0; i<EEG_power.size(); i++)
             {

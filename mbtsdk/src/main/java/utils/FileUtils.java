@@ -7,6 +7,7 @@ import android.text.TextUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,7 +40,7 @@ public final class FileUtils {
             throw new ExceptionUtils.NullArg("destination");
         if(source.isDirectory()){
 
-            //if directory not exists, create it
+            //if directory not exists, createForDevice it
             if(!destination.exists()){
                 destination.mkdir();
             }
@@ -159,4 +160,5 @@ public final class FileUtils {
         zis.close();
         return outPutFile;
     }
+
 }

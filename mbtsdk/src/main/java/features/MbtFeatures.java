@@ -10,7 +10,6 @@ import core.bluetooth.BtProtocol;
 import core.device.model.MelomindsQRDataBase;
 
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
-import static core.bluetooth.BtProtocol.BLUETOOTH_SPP;
 import static features.MbtDeviceType.MELOMIND;
 
 
@@ -32,7 +31,7 @@ public final class MbtFeatures{
     public final static int DEFAULT_SAMPLE_PER_PACKET = 4;
     public static int DEFAULT_SAMPLE_PER_NOTIF = DEFAULT_SAMPLE_PER_PACKET;
 
-    public final static int DEFAULT_EEG_PACKET_LENGTH = 250;
+    public final static int DEFAULT_EEG_PACKET_LENGTH = DEFAULT_SAMPLE_RATE;
 
     public final static int DEFAULT_CLIENT_PACKET_SIZE = 250;
     public final static int DEFAULT_CLIENT_NOTIFICATION_PERIOD = 1000;
@@ -54,7 +53,7 @@ public final class MbtFeatures{
     public static final String QR_CODE_NAME_PREFIX = MelomindsQRDataBase.QR_PREFIX;
     public static final String VPRO_DEVICE_NAME_PREFIX = "VPro";
 
-    public final static int DEVICE_NAME_LENGTH = MbtFeatures.A2DP_DEVICE_NAME_PREFIX_LEGACY.length() + 10;
+    public final static int DEVICE_NAME_LENGTH = MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX.length() + 10;
     public final static int DEVICE_QR_CODE_LENGTH = MbtFeatures.QR_CODE_NAME_PREFIX.length() + 8;
 
     public static final String MELOMIND_DEVICE_NAME = "melomind";
@@ -75,7 +74,7 @@ public final class MbtFeatures{
     public final static int DEFAULT_SPP_NB_BYTES = DEFAULT_SPP_NB_STATUS_BYTES;
 
     public final static int DEFAULT_BLE_RAW_DATA_INDEX_SIZE = DEFAULT_BLE_NB_BYTES;
-    public final static int DEFAULT_SPP_RAW_DATA_INDEX_SIZE = DEFAULT_SPP_NB_BYTES;
+    public final static int DEFAULT_SPP_RAW_DATA_INDEX_SIZE = 3;
 
     public final static int DEFAULT_BLE_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES = DEFAULT_BLE_NB_BYTES * MELOMIND_NB_CHANNELS;
     public final static int DEFAULT_SPP_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES = DEFAULT_SPP_NB_BYTES * VPRO_NB_CHANNELS;
@@ -97,6 +96,7 @@ public final class MbtFeatures{
     public final static ArrayList<MbtAcquisitionLocations> VPRO_GROUNDS = new ArrayList<>();//init values with server data
 
     public static final int DEFAULT_NUMBER_OF_DATA_TO_DISPLAY = 500;
+
     public static int getNbChannels(MbtDeviceType device){
         return (device.equals(MELOMIND) ? MELOMIND_NB_CHANNELS : VPRO_NB_CHANNELS);
     }
@@ -121,7 +121,7 @@ public final class MbtFeatures{
         return (device.equals(MELOMIND) ? MELOMIND_GROUNDS : VPRO_GROUNDS);
     }
 
-    public static int getSampleRate() {
+    public static int getDefaultSampleRate() {
         return DEFAULT_SAMPLE_RATE;
     }
 

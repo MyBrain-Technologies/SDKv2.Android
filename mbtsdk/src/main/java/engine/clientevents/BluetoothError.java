@@ -12,7 +12,7 @@ public final class BluetoothError extends BaseError {
     public static String ERROR_LABEL = DOMAIN + " Error :";
 
     public static BluetoothError ERROR_NOT_CONNECTED                        = new BluetoothError(CODE_RANGE,"No connected headset.");
-    public static BluetoothError ERROR_LOST_CONNECTION                      = new BluetoothError( CODE_RANGE+1,  "Lost Headset Connection.");
+    public static BluetoothError ERROR_LOST_CONNECTION                      = new BluetoothError( CODE_RANGE+1,  "Lost Headset connection.");
     public static BluetoothError ERROR_ALREADY_CONNECTED                    = new BluetoothError( CODE_RANGE+2,  "Headset already connected");
     public static BluetoothError ERROR_ALREADY_DISCONNECTED                 = new BluetoothError( CODE_RANGE+3,  "Headset already disconnected");
     public static BluetoothError ERROR_ALREADY_SCANNING                     = new BluetoothError( CODE_RANGE+4,  "Scanning already started.");
@@ -39,6 +39,10 @@ public final class BluetoothError extends BaseError {
     public static BluetoothError ERROR_SCANNING_FAILED                      = new BluetoothError( CODE_RANGE+25,  "Bluetooth Scanning failed.");
     public static BluetoothError ERROR_CONNECTION_INTERRUPTED               = new BluetoothError( CODE_RANGE+26,  "Bluetooth Connection has been interrupted.");
     public static BluetoothError ERROR_SETTINGS_INTERFACE_ACTION            = new BluetoothError( CODE_RANGE+27,  "Bluetooth Audio Connection with an unpaired headset is not supported on your mobile. Please read the User Guide to connect Audio in a different way.");
+    public static BluetoothError ERROR_WRITE_CHARACTERISTIC_OPERATION       = new BluetoothError( CODE_RANGE+28,  "Bluetooth characteristic write operation failed.");
+    public static BluetoothError ERROR_REQUEST_OPERATION                    = new BluetoothError( CODE_RANGE+28,  "Bluetooth request operation failed.");
+    public static BluetoothError ERROR_VALIDITY_CHARACTERISTIC_OPERATION    = new BluetoothError( CODE_RANGE+29,  "Error: failed to check service and characteristic validity.");
+    public static BluetoothError ERROR_REBOOT_FAILED                        = new BluetoothError(CODE_RANGE+30, "Headset device reboot failed or could not be completed within the permitted time.");
 
 
     private BluetoothError(int code, String exception){

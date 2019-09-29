@@ -18,10 +18,10 @@ import core.bluetooth.requests.DisconnectRequestEvent;
 import core.bluetooth.MbtBluetoothManager;
 import core.bluetooth.requests.ReadRequestEvent;
 import core.bluetooth.requests.StreamRequestEvent;
-import core.device.DCOffsets;
 import core.device.DeviceEvents;
 import core.device.MbtDeviceManager;
-import core.device.SaturationEvent;
+import core.device.event.DCOffsetEvent;
+import core.device.event.SaturationEvent;
 import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindsQRDataBase;
@@ -36,7 +36,7 @@ import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.EegError;
 import engine.clientevents.EegListener;
 import engine.clientevents.HeadsetDeviceError;
-import eventbus.EventBusManager;
+import eventbus.MbtEventBus;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.ConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
@@ -81,14 +81,14 @@ public class MbtManager{
         this.mContext = context;
         this.registeredModuleManagers = new HashSet<>();
 
-        EventBusManager.registerOrUnregister(true, this);
+        MbtEventBus.registerOrUnregister(true, this);
 
         if(DEVICE_ENABLED)
-            registerManager(new MbtDeviceManager(mContext, MbtManager.this));
+            registerManager(new MbtDeviceManager(mContext));
         if(BLUETOOTH_ENABLED)
-            registerManager(new MbtBluetoothManager(mContext, MbtManager.this));
+            registerManager(new MbtBluetoothManager(mContext));
         if(EEG_ENABLED)
-            registerManager(new MbtEEGManager(mContext, MbtManager.this, BtProtocol.BLUETOOTH_LE));
+            registerManager(new MbtEEGManager(mContext, BtProtocol.BLUETOOTH_LE));
     }
 
     /**
@@ -103,7 +103,7 @@ public class MbtManager{
      * Perform a new Bluetooth connection.
      * @param connectionStateListener a set of callback that will notify the user about connection progress.
      */
-    public void connectBluetooth(@NonNull ConnectionStateListener<BaseError> connectionStateListener, String deviceNameRequested, String deviceQrCodeRequested, MbtDeviceType deviceTypeRequested){
+    public void connectBluetooth(@NonNull ConnectionStateListener<BaseError> connectionStateListener, String deviceNameRequested, String deviceQrCodeRequested, MbtDeviceType deviceTypeRequested, int mtu){
         this.connectionStateListener = connectionStateListener;
         if(deviceNameRequested != null && (!deviceNameRequested.startsWith(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX) && !deviceNameRequested.startsWith(MbtFeatures.VPRO_DEVICE_NAME_PREFIX) )){
             this.connectionStateListener.onError(HeadsetDeviceError.ERROR_PREFIX," "+ (deviceTypeRequested.equals(MbtDeviceType.MELOMIND) ? MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX : MbtFeatures.VPRO_DEVICE_NAME_PREFIX));
@@ -112,7 +112,7 @@ public class MbtManager{
         }else if(deviceQrCodeRequested != null && deviceNameRequested != null && !deviceNameRequested.equals(new MelomindsQRDataBase(mContext,  true).get(deviceQrCodeRequested))){
             this.connectionStateListener.onError(HeadsetDeviceError.ERROR_MATCHING, mContext.getString(R.string.aborted_connection));
         }else{
-            EventBusManager.postEvent(new StartOrContinueConnectionRequestEvent(true, deviceNameRequested, deviceQrCodeRequested, deviceTypeRequested));
+            MbtEventBus.postEvent(new StartOrContinueConnectionRequestEvent(true, deviceNameRequested, deviceQrCodeRequested, deviceTypeRequested, mtu));
 
         }
     }
@@ -121,7 +121,7 @@ public class MbtManager{
      * Perform a Bluetooth disconnection.
      */
     public void disconnectBluetooth(boolean isAbortion){
-        EventBusManager.postEvent(new DisconnectRequestEvent(isAbortion));
+        MbtEventBus.postEvent(new DisconnectRequestEvent(isAbortion));
     }
 
     /**
@@ -130,7 +130,7 @@ public class MbtManager{
      */
     public void readBluetooth(@NonNull DeviceInfo deviceInfo, @NonNull DeviceBatteryListener listener){
         this.deviceInfoListener = listener;
-        EventBusManager.postEvent(new ReadRequestEvent(deviceInfo));
+        MbtEventBus.postEvent(new ReadRequestEvent(deviceInfo));
     }
 
     /**
@@ -140,7 +140,7 @@ public class MbtManager{
         this.eegListener = streamConfig.getEegListener();
         this.deviceStatusListener = streamConfig.getDeviceStatusListener();
 
-        EventBusManager.postEvent(
+        MbtEventBus.postEvent(
                 new StreamRequestEvent(true,
                         streamConfig.shouldComputeQualities(),
                         (deviceStatusListener != null)));
@@ -150,7 +150,7 @@ public class MbtManager{
      * Posts an event to stop the currently started stream session
      */
     public void stopStream(){
-        EventBusManager.postEvent(new StreamRequestEvent(false, false, false));
+        MbtEventBus.postEvent(new StreamRequestEvent(false, false, false));
     }
 
     /**
@@ -178,18 +178,18 @@ public class MbtManager{
         if (connectionStateListener == null)
             return;
         if(connectionStateListener instanceof BluetoothStateListener)
-            ((BluetoothStateListener) connectionStateListener).onNewState(connectionStateEvent.getNewState());
+            ((BluetoothStateListener) connectionStateListener).onNewState(connectionStateEvent.getNewState(), connectionStateEvent.getDevice());
 
         switch (connectionStateEvent.getNewState()) {
             case CONNECTED_AND_READY:
-                connectionStateListener.onDeviceConnected();
+                connectionStateListener.onDeviceConnected(connectionStateEvent.getDevice());
                 break;
             case DATA_BT_DISCONNECTED:
                 connectionStateListener.onDeviceDisconnected();
                 break;
             default:
                 if (connectionStateEvent.getNewState().isAFailureState())
-                    connectionStateListener.onError(connectionStateEvent.getNewState().getAssociatedError(), connectionStateEvent.getAdditionnalInfo());
+                    connectionStateListener.onError(connectionStateEvent.getNewState().getAssociatedError(), connectionStateEvent.getAdditionalInfo());
                 break;
         }
     }
@@ -199,13 +199,13 @@ public class MbtManager{
      * @param newState
      */
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onStreamStateChanged(IStreamable.StreamState newState){
+    public void onStreamStateChanged(StreamState newState){
         if(eegListener != null){
-            if(newState == IStreamable.StreamState.FAILED){
+            if(newState == StreamState.FAILED){
                 eegListener.onError(EegError.ERROR_FAIL_START_STREAMING, null);
-            }else if(newState == IStreamable.StreamState.DISCONNECTED){
+            }else if(newState == StreamState.DISCONNECTED){
                 eegListener.onError(BluetoothError.ERROR_NOT_CONNECTED,null);
-            }else if(newState == IStreamable.StreamState.STOPPED){
+            }else if(newState == StreamState.STOPPED){
                 eegListener = null;
             }
         }
@@ -225,7 +225,7 @@ public class MbtManager{
      * Called when a new DCOffset measure event has been broadcast on the event bus.
      */
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onNewDCOffset(DCOffsets dcOffsets){
+    public void onNewDCOffset(DCOffsetEvent dcOffsets){
         if(deviceStatusListener != null){
             deviceStatusListener.onNewDCOffsetMeasured(dcOffsets);
         }
@@ -261,10 +261,11 @@ public class MbtManager{
     }
 
     public void requestCurrentConnectedDevice(final SimpleRequestCallback<MbtDevice> callback) {
-        EventBusManager.postEventWithCallback(new DeviceEvents.GetDeviceEvent(), new EventBusManager.Callback<DeviceEvents.PostDeviceEvent>(){
+        MbtEventBus.postEvent(new DeviceEvents.GetDeviceEvent(), new MbtEventBus.Callback<DeviceEvents.PostDeviceEvent>(){
             @Override
             @Subscribe
             public Void onEventCallback(DeviceEvents.PostDeviceEvent object) {
+                MbtEventBus.registerOrUnregister(false, this);
                 callback.onRequestComplete(object.getDevice());
                 return null;
             }

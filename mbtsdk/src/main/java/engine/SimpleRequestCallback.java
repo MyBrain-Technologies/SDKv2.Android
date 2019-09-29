@@ -6,3 +6,4 @@ import android.support.annotation.Keep;
 public interface SimpleRequestCallback<T> {
     void onRequestComplete(T object);
 }
+

@@ -5,11 +5,14 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import org.apache.commons.lang.ArrayUtils;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import features.MbtAcquisitionLocations;
+import features.MbtDeviceType;
 import features.MbtFeatures;
 
 /**
@@ -19,15 +22,14 @@ import features.MbtFeatures;
 public class MelomindDevice extends MbtDevice{
 
     public MelomindDevice(@NonNull final BluetoothDevice device){
-        super(device);
+        super(device, MbtDeviceType.MELOMIND, MbtFeatures.MELOMIND_NB_CHANNELS);
         this.acquisitionLocations = Arrays.asList(MbtAcquisitionLocations.P3, MbtAcquisitionLocations.P4);
         this.groundsLocation = Arrays.asList(MbtAcquisitionLocations.M2);
         this.referencesLocations = Arrays.asList(MbtAcquisitionLocations.M1);
-        this.nbChannels = MbtFeatures.MELOMIND_NB_CHANNELS;
-        this.sampRate = MbtFeatures.DEFAULT_SAMPLE_RATE;
-        this.firmwareVersion = "0.0.0";
+        this.firmwareVersion = new FirmwareVersion("0.0.0");
         this.hardwareVersion = "0.0.0";
         this.serialNumber = "0000000000";
+        this.externalName = MbtFeatures.MELOMIND_DEVICE_NAME;
     }
 
     public static short getBatteryPercentageFromByteValue(byte value){
@@ -67,7 +69,7 @@ public class MelomindDevice extends MbtDevice{
      * @return the version of the firmware
      */
     @Nullable
-    public final String getFirmwareVersion() {
+    public final FirmwareVersion getFirmwareVersion() {
         return this.firmwareVersion;
     }
 
@@ -117,6 +119,32 @@ public class MelomindDevice extends MbtDevice{
         return super.getInternalConfig();
     }
 
+    public static InternalConfig convertRawInternalConfig(Byte[] rawConfig) {
+
+        int sampRateIndex = 5;
+        byte[] sampRate = (rawConfig.length > sampRateIndex ?
+                new byte[]{rawConfig[sampRateIndex]}
+                : Arrays.copyOfRange(ArrayUtils.toPrimitive(rawConfig), sampRateIndex, rawConfig.length-1));
+
+        return (sampRate[0] == 0 ?
+                new InternalConfig(
+                MbtFeatures.MELOMIND_NB_CHANNELS,
+                rawConfig[0],
+                rawConfig[1],
+                rawConfig[2],
+                rawConfig[3],
+                rawConfig[4],
+                        MbtFeatures.DEFAULT_SAMPLE_RATE):
+                new InternalConfig(
+                MbtFeatures.MELOMIND_NB_CHANNELS,
+                rawConfig[0],
+                rawConfig[1],
+                rawConfig[2],
+                rawConfig[3],
+                rawConfig[4],
+                sampRate));
+    }
+
     /**
      * Gets the version of the hardware used
      * @return the heardware version
@@ -126,9 +154,9 @@ public class MelomindDevice extends MbtDevice{
         return this.hardwareVersion;
     }
 
-    public final int getSampRate() {return this.sampRate;}
+    public final int getSampRate() {return this.getInternalConfig().getSampRate();}
 
-    public final int getNbChannels() {return this.nbChannels;}
+    public final int getNbChannels() {return this.getInternalConfig().getNbChannels();}
 
     @NonNull
     public final List<MbtAcquisitionLocations> getAcquisitionLocations() {return this.acquisitionLocations;}
@@ -141,7 +169,7 @@ public class MelomindDevice extends MbtDevice{
 
     public void setHardwareVersion(@NonNull final String hardwareVersion) {this.hardwareVersion = hardwareVersion;}
 
-    public void setFirmwareVersion(@NonNull final String firmwareVersion) {this.firmwareVersion = firmwareVersion;}
+    public void setFirmwareVersion(@NonNull final FirmwareVersion firmwareVersion) {this.firmwareVersion = firmwareVersion;}
 
     public void setSerialNumber(@NonNull final String deviceId) {this.serialNumber = deviceId;}
 
@@ -170,4 +198,6 @@ public class MelomindDevice extends MbtDevice{
     public String getExternalName() {
         return super.getExternalName();
     }
+
+
 }

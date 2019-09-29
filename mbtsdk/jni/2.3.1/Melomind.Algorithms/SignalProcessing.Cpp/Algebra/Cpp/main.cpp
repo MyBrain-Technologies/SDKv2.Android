@@ -662,7 +662,7 @@ int main()
         f = f+1;
 
 
-        // Spectral Edge Frequency 80%
+        // Spectral Edge FrequencyBand 80%
         float sum_EEG_power = std::accumulate(EEG_power.begin(), EEG_power.begin() + EEG_power.size(), 0.0);
         std::vector<float> EEG_power_norm;
         EEG_power_norm.assign(EEG_power.size(),0);
@@ -685,7 +685,7 @@ int main()
         f = f+1;
 
 
-        // Spectral Edge Frequency 90%
+        // Spectral Edge FrequencyBand 90%
         std::vector<float> EEG_power_cum_90;
         EEG_power_cum_90.assign(EEG_power_cum.size(),0);
         for (int i = 0; i < EEG_power_cum_90.size(); i++)
@@ -698,7 +698,7 @@ int main()
         f = f+1;
 
 
-        // Spectral Edge Frequency 95%
+        // Spectral Edge FrequencyBand 95%
         std::vector<float> EEG_power_cum_95;
         EEG_power_cum_95.assign(EEG_power_cum.size(),0);
         for (int i = 0; i < EEG_power_cum_95.size(); i++)
@@ -733,7 +733,7 @@ int main()
 
     % Cepstral coefficients (EEG Signal Description with Spectral-Envelope-Based Speech Recognition Features for Detection of Neonatal Seizures by Andriy Temko et al.)
     % --------------------- (https://en.wikipedia.org/wiki/Mel-frequency_cepstrum)
-    % Calcul de la transformée de Fourier de la trame à analyser
+    % Calcul de la transformï¿½e de Fourier de la trame ï¿½ analyser
     y = abs(fft(X));      %Retain Magnitude (imaginary part = phase)
     EEG_power = y(1:N/2);     %Discard Half of Points
     f = Fs*(0:N/2-1)/N;
@@ -742,10 +742,10 @@ int main()
     nb_banks = 30; % the number of filter banks to construct
     Filter = melfilter(nb_banks,f); % ####################### required Signal Processing Toolbox
 
-    % Pondération du spectre d'amplitude (ou de puissance selon les cas) par un banc de filtres triangulaires espacés selon l'échelle de Mel
+    % Pondï¿½ration du spectre d'amplitude (ou de puissance selon les cas) par un banc de filtres triangulaires espacï¿½s selon l'ï¿½chelle de Mel
     F_EEG_power = Filter*double(EEG_power');
 
-    % Calcul de la transformée en cosinus discrète du log-mel-spectre % The expansion coefficients in vector X measure how much energy is stored in each of the components.
+    % Calcul de la transformï¿½e en cosinus discrï¿½te du log-mel-spectre % The expansion coefficients in vector X measure how much energy is stored in each of the components.
     %ij = find(F_EEG_power);  % Make mask to eliminate 0's since log(0) = -inf.
     %list_mel_log_powers = log10(F_EEG_power(ij));
     list_mel_log_powers = log10(F_EEG_power);
@@ -765,7 +765,7 @@ int main()
     CC9 = [CC9;cc(9)];
     CC10 = [CC10;cc(10)];*/
 
-        // Frequency-filtered band energies
+        // FrequencyBand-filtered band energies
         float ff_delta = (log_theta_pow - 0);
         testFeatures(ch,f) = ff_delta;
         f = f+1;
@@ -870,7 +870,7 @@ int main()
         f = f+1;
 
 
-        // Modified Median Frequency
+        // Modified Median FrequencyBand
         std::vector<float> ecart;
         ecart.assign(floor(sampRate/2),0);
         for (int i = 0; i<floor(sampRate/2); i++)
@@ -901,7 +901,7 @@ int main()
         f = f+1;
 
 
-        // Modified Mean Frequency
+        // Modified Mean FrequencyBand
         float mod_mean_freq = 0.0;
         for (int i = 0; i<EEG_power.size(); i++)
         {

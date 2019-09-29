@@ -2,6 +2,8 @@ package core.eeg;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.support.annotation.VisibleForTesting;
+import android.util.Log;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.greenrobot.eventbus.Subscribe;
@@ -14,23 +16,25 @@ import java.util.HashMap;
 import core.BaseModuleManager;
 import core.MbtManager;
 import core.bluetooth.BtProtocol;
-import core.bluetooth.IStreamable;
+import core.bluetooth.BtState;
+import core.bluetooth.StreamState;
 import core.bluetooth.requests.StreamRequestEvent;
 import core.device.model.MbtDevice;
 import core.eeg.acquisition.MbtDataAcquisition;
+import core.eeg.acquisition.MbtDataConversion;
 import core.eeg.signalprocessing.ContextSP;
 import core.eeg.signalprocessing.MBTCalibrationParameters;
 import core.eeg.signalprocessing.MBTComputeRelaxIndex;
 import core.eeg.signalprocessing.MBTComputeStatistics;
-import core.eeg.storage.MbtEEGPacket;
 import core.eeg.signalprocessing.MBTSignalQualityChecker;
-import core.eeg.acquisition.MbtDataConversion;
 import core.eeg.storage.MbtDataBuffering;
+import core.eeg.storage.MbtEEGPacket;
 import core.eeg.storage.RawEEGSample;
-import eventbus.EventBusManager;
+import eventbus.MbtEventBus;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.BluetoothEEGEvent;
-import eventbus.events.ConfigEEGEvent;
+import eventbus.events.EEGConfigEvent;
+import eventbus.events.ConnectionStateEvent;
 import features.MbtFeatures;
 import mbtsdk.com.mybraintech.mbtsdk.BuildConfig;
 import utils.AsyncUtils;
@@ -55,6 +59,11 @@ public final class MbtEEGManager extends BaseModuleManager {
 
     private static final String TAG = MbtEEGManager.class.getName();
     private static final int UNCHANGED_VALUE = -1;
+    public static final int UNDEFINED_DURATION = -1;
+
+    private int sampRate;
+    private int packetLength;
+    private int nbChannels;
 
     private MbtDataAcquisition dataAcquisition;
     private MbtDataBuffering dataBuffering;
@@ -68,19 +77,14 @@ public final class MbtEEGManager extends BaseModuleManager {
 //    private MbtEEGManager.RequestThread requestThread;
 //    private Handler requestHandler;
 
-    public MbtEEGManager(@NonNull Context context, MbtManager mbtManagerController, @NonNull BtProtocol protocol) {
-        super(context, mbtManagerController);
-        this.protocol = protocol;
-        this.dataAcquisition = new MbtDataAcquisition(this, protocol);
+    public MbtEEGManager(@NonNull Context context) {
+        super(context);
         this.dataBuffering = new MbtDataBuffering(this);
         try {
             System.loadLibrary(ContextSP.LIBRARY_NAME + BuildConfig.USE_ALGO_VERSION);
         } catch (final UnsatisfiedLinkError e) {
             e.printStackTrace();
         }
-//        requestThread = new MbtEEGManager.RequestThread("requestThread", Thread.MAX_PRIORITY);
-//        requestThread.start();
-//        requestHandler = new Handler(requestThread.getLooper());
     }
 
     /**
@@ -129,7 +133,7 @@ public final class MbtEEGManager extends BaseModuleManager {
                             toDecodeStatus.add(rawEEGSample.getStatus());
                     }
                 }
-                consolidatedEEG = MbtDataConversion.convertRawDataToEEG(toDecodeRawEEG, protocol); //convert byte table data to Float matrix and store the matrix in MbtEEGManager as eegResult attribute
+                consolidatedEEG = MbtDataConversion.convertRawDataToEEG(toDecodeRawEEG, protocol, nbChannels); //convert byte table data to Float matrix and store the matrix in MbtEEGManager as eegResult attribute
 
                 dataBuffering.storeConsolidatedEegInPacketBuffer(consolidatedEEG, toDecodeStatus);// if the packet buffer is full, this method returns the non null packet buffer
 
@@ -144,7 +148,6 @@ public final class MbtEEGManager extends BaseModuleManager {
      * @param eegPackets the list that contains EEG packets ready to use for the client.
      */
     public void notifyEEGDataIsReady(@NonNull final MbtEEGPacket eegPackets) {
-        LogUtils.d(TAG, "notify EEG Data Is Ready ");
 
         AsyncUtils.executeAsync(new Runnable() {
             @Override
@@ -153,7 +156,8 @@ public final class MbtEEGManager extends BaseModuleManager {
                     eegPackets.setQualities(MbtEEGManager.this.computeEEGSignalQuality(eegPackets));
                     eegPackets.setFeatures(MBTSignalQualityChecker.getFeatures());
                 }
-                EventBusManager.postEvent(new ClientReadyEEGEvent(eegPackets));
+
+                MbtEventBus.postEvent(new ClientReadyEEGEvent(eegPackets));
             }
         });
 
@@ -180,7 +184,6 @@ public final class MbtEEGManager extends BaseModuleManager {
      * @param threshold the level above which the relaxation indexes are considered in a relaxed state (under this threshold, they are considered not relaxed)
      * @param snrValues the array that contains the relaxation indexes of the session
      * @return the qualities for each provided channels
-     * @throws IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
      */
     @NonNull
     public HashMap<String, Float> computeStatisticsSNR(final float threshold, @NonNull final Float[] snrValues) {
@@ -196,24 +199,41 @@ public final class MbtEEGManager extends BaseModuleManager {
      * This array contains 2 qualities (items) if the headset used is MELOMIND.
      * This array contains 9 qualities (items) if the headset used is VPRO.
      * The method computes and displays the duration for quality computation.
-     * @throws IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
      */
     private ArrayList<Float> computeEEGSignalQuality(final MbtEEGPacket packet) {
 
         if(packet.getChannelsData() != null && packet.getChannelsData().size()!=0){
-            long tsBefore = System.currentTimeMillis();
-            float[] qualities = {-1f,-1f};
+
+            float[] qualities = new float[nbChannels];
+            Arrays.fill(qualities, -1f);
             try{
-                qualities = MBTSignalQualityChecker.computeQualitiesForPacketNew(MbtFeatures.getSampleRate(), MbtFeatures.getSampleRate(), MatrixUtils.invertFloatMatrix(packet.getChannelsData()));
+                if(protocol.equals(BtProtocol.BLUETOOTH_LE))
+                    qualities = MBTSignalQualityChecker.computeQualitiesForPacketNew(sampRate, packetLength, MatrixUtils.invertFloatMatrix(packet.getChannelsData()));
+
+                else if(protocol.equals(BtProtocol.BLUETOOTH_SPP)){
+                    ArrayList<Float> qualitiesList = new ArrayList<>();
+
+                    ArrayList<ArrayList<Float>> temp = new  ArrayList<ArrayList<Float>>();
+                    for(int i = 0; i < nbChannels; i+=2) {
+                        final float[] qts;
+                        temp.add(0,MatrixUtils.invertFloatMatrix(packet.getChannelsData()).get(i));
+                        temp.add(1,MatrixUtils.invertFloatMatrix(packet.getChannelsData()).get(i+1));
+                        qts = MBTSignalQualityChecker.computeQualitiesForPacketNew(sampRate, packetLength, temp);
+                        temp.clear();
+                        for (float q : qts) {
+                            qualitiesList.add(q);
+                        }
+                    }
+                    return qualitiesList;
+                }
 
             } catch (IllegalStateException e){
                 e.printStackTrace();
             }
 
-            LogUtils.i(TAG,"quality computation duration is " + (System.currentTimeMillis()-tsBefore));
             return new ArrayList<>(Arrays.asList(ArrayUtils.toObject(qualities)));
         }
-//        EventBusManager.postEvent(new QualityRequest(null, listedQualities));
+//        MbtEventBus.postEvent(new QualityRequest(null, listedQualities));
 //        //requestBeingProcessed  = false;
         return null;
     }
@@ -226,9 +246,15 @@ public final class MbtEEGManager extends BaseModuleManager {
      * @param calibParams the calibration paramters previously performed
      *                    the EEG packets containing EEG data, theirs status and qualities.
      * @return the relaxation index
-     * @throws IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
      */
     private float computeRelaxIndex(int sampRate, MBTCalibrationParameters calibParams, MbtEEGPacket... packets) {
+        return MBTComputeRelaxIndex.computeRelaxIndex(sampRate, calibParams, packets);
+    }
+
+    /**
+     * Computes the calibration parameters
+     */
+    private float calibrate(int sampRate, MBTCalibrationParameters calibParams, MbtEEGPacket... packets) {
         return MBTComputeRelaxIndex.computeRelaxIndex(sampRate, calibParams, packets);
     }
 
@@ -251,9 +277,20 @@ public final class MbtEEGManager extends BaseModuleManager {
      * Unregister the MbtEEGManager class from the bus to avoid memory leak
      */
     public void deinit() { //TODO CALL WHEN MbtEEGManager IS NOT USED ANYMORE TO AVOID MEMORY LEAK
-        EventBusManager.registerOrUnregister(false, this);
+        MbtEventBus.registerOrUnregister(false, this);
     }
 
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onConnectionStateChanged(ConnectionStateEvent connectionStateEvent) {
+        if(connectionStateEvent.getDevice() == null) {
+            protocol = null;
+        }else {
+            if(connectionStateEvent.getNewState().equals(BtState.CONNECTED_AND_READY)){
+                protocol = connectionStateEvent.getDevice().getDeviceType().getProtocol();
+                nbChannels = connectionStateEvent.getDevice().getNbChannels();
+            }
+        }
+    }
 
     /**
      * Handles the raw EEG data acquired by the headset and transmitted to the application
@@ -264,8 +301,7 @@ public final class MbtEEGManager extends BaseModuleManager {
      */
     @Subscribe(threadMode = ThreadMode.BACKGROUND)
     public void onEvent(BluetoothEEGEvent event) { //warning : this method is used
-        dataAcquisition.handleDataAcquired(event.getData());
-        protocol = event.getDeviceType().getProtocol();
+        dataAcquisition.handleDataAcquired(event.getData(), nbChannels);
     }
 
     /**
@@ -273,78 +309,47 @@ public final class MbtEEGManager extends BaseModuleManager {
      * @param newState
      */
     @Subscribe(threadMode = ThreadMode.POSTING)
-    public void onStreamStateChanged(IStreamable.StreamState newState) {
-        if (newState == IStreamable.StreamState.STOPPED)
+    public void onStreamStateChanged(StreamState newState) {
+        if (newState == StreamState.STOPPED && dataAcquisition != null)
             resetBuffers((byte) UNCHANGED_VALUE, UNCHANGED_VALUE, (byte) 0);
     }
 
     @Subscribe
     public void onStreamStartedOrStopped(StreamRequestEvent event){
-        if(event.isStart() && event.shouldComputeQualities()){
-            hasQualities = true;
-            initQualityChecker();
+        if(event.startStream()){
+            this.dataAcquisition = new MbtDataAcquisition(this, protocol);
+            this.dataBuffering = new MbtDataBuffering(this);
+            if(event.computeQualities()){
+                hasQualities = true;
+                initQualityChecker();
+            }
         }
-        else if(!event.isStart() && event.shouldComputeQualities())
+        else if(event.stopStream() && !ContextSP.SP_VERSION.equals("0.0.0"))
             deinitQualityChecker();
 
     }
 
     @Subscribe
-    public void onConfigurationChanged(ConfigEEGEvent configEEGEvent){
-        LogUtils.d(TAG, "new config "+ (Arrays.toString(configEEGEvent.getConfig())));
-        MbtDevice.InternalConfig internalConfig = new MbtDevice.InternalConfig(configEEGEvent.getConfig());
+    public void onConfigurationChanged(EEGConfigEvent configEEGEvent){
+        LogUtils.d(TAG, "new config "+ configEEGEvent.getConfig().toString());
+        sampRate = configEEGEvent.getDevice().getInternalConfig().getSampRate();
+        packetLength = configEEGEvent.getDevice().getEegPacketLength();
+
+        MbtDevice.InternalConfig internalConfig = configEEGEvent.getConfig();
+        nbChannels = internalConfig.getNbChannels();
         resetBuffers(internalConfig.getNbPackets(), internalConfig.getStatusBytes(), internalConfig.getGainValue());
     }
 
-//    /**
-//     * Add the new {@link EegRequests} to the handler thread that will execute tasks one after another
-//     * This method must return quickly in order not to block the thread.
-//     * @param request the new {@link EegRequests } to execute
-//     */
-//    @Subscribe(threadMode = ThreadMode.ASYNC)
-//    public void onNewEegRequest(final EegRequests request){
-//        LogUtils.i(TAG, "onNewEEGRequest");
-//
-//            requestHandler.post(new Runnable() {
-//                @Override
-//                public void run() {
-//                    requestThread.parseRequest(request);
-//                }
-//            });
-//    }
+    public int getSampRate() {
+        return sampRate;
+    }
 
-//    private class RequestThread extends HandlerThread {
-//        RequestThread(String name) {
-//            super(name);
-//        }
-//
-//        RequestThread(String name, int priority) {
-//            super(name, priority);
-//        }
-//
-//        @Override
-//        protected void onLooperPrepared() {
-//            super.onLooperPrepared();
-//        }
-//
-//        /**
-//         * Checks the subclass type of {@link EegRequests} and handles the correct method/action to perform.
-//         *
-//         * @param request the {@link EegRequests} request to execute.
-//         */
-//        void parseRequest(EegRequests request) {
-//            LogUtils.i(TAG, "parsing new request");
-//            requestBeingProcessed = true;
-//            if(request instanceof QualityRequest){
-//                computeEEGSignalQuality(((QualityRequest) request).testGetEegMatrix());
-//            }
-//        }
-//    }
-
+    @VisibleForTesting
     public void setTestConsolidatedEEG(ArrayList<ArrayList<Float>> consolidatedEEG) {
         this.consolidatedEEG = consolidatedEEG;
     }
 
+    @VisibleForTesting
     public void setTestHasQualities(boolean hasQualities) {
         this.hasQualities = hasQualities;
     }

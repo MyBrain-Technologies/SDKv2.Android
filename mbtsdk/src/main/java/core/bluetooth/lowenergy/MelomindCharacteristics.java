@@ -53,6 +53,8 @@ final class MelomindCharacteristics {
 
     final static UUID CHARAC_MEASUREMENT_EEG = UUID.fromString("0000b2a5-0000-1000-8000-00805f9b34fb");
 
+//    final static UUID CHARAC_MEASUREMENT_ECG = UUID.fromString("0000b2a7");
+
     /**
      * The Device Brain Activity characteristic UUID from the Device Measurement Service. Short UUID 0xB2A6
      */

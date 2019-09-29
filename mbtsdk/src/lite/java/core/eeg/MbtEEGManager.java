@@ -27,7 +27,7 @@ import core.eeg.signalprocessing.MBTSignalQualityChecker;
 import core.eeg.acquisition.MbtDataConversion;
 import core.eeg.storage.MbtDataBuffering;
 import core.eeg.storage.RawEEGSample;
-import eventbus.EventBusManager;
+import eventbus.MbtEventBus;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.BluetoothEEGEvent;
 import features.MbtFeatures;
@@ -66,8 +66,8 @@ public final class MbtEEGManager extends BaseModuleManager {
 //    private MbtEEGManager.RequestThread requestThread;
 //    private Handler requestHandler;
 
-    public MbtEEGManager(@NonNull Context context, MbtManager mbtManagerController, @NonNull BtProtocol protocol) {
-        super(context, mbtManagerController);
+    public MbtEEGManager(@NonNull Context context, @NonNull BtProtocol protocol) {
+        super(context);
         this.protocol = protocol;
         this.dataAcquisition = new MbtDataAcquisition(this, protocol);
         this.dataBuffering = new MbtDataBuffering(this);
@@ -145,7 +145,7 @@ public final class MbtEEGManager extends BaseModuleManager {
                 if (hasQualities) {
                     eegPackets.setQualities(MbtEEGManager.this.computeEEGSignalQuality(eegPackets));
                 }
-                EventBusManager.postEvent(new ClientReadyEEGEvent(eegPackets));
+                MbtEventBus.postEvent(new ClientReadyEEGEvent(eegPackets));
             }
         });
 
@@ -172,7 +172,6 @@ public final class MbtEEGManager extends BaseModuleManager {
      * @param threshold the level above which the relaxation indexes are considered in a relaxed state (under this threshold, they are considered not relaxed)
      * @param snrValues the array that contains the relaxation indexes of the session
      * @return the qualities for each provided channels
-     * @throws IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
      */
     @NonNull
     public HashMap<String, Float> computeStatisticsSNR(final float threshold, @NonNull final Float[] snrValues) {
@@ -188,7 +187,6 @@ public final class MbtEEGManager extends BaseModuleManager {
      * This array contains 2 qualities (items) if the headset used is MELOMIND.
      * This array contains 9 qualities (items) if the headset used is VPRO.
      * The method computes and displays the duration for quality computation.
-     * @throws IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
      */
     private ArrayList<Float> computeEEGSignalQuality(final MbtEEGPacket packet) {
 
@@ -204,7 +202,7 @@ public final class MbtEEGManager extends BaseModuleManager {
             LogUtils.i(TAG,"quality computation duration is " + (System.currentTimeMillis()-tsBefore));
             return new ArrayList<>(Arrays.asList(ArrayUtils.toObject(qualities)));
         }
-//        EventBusManager.postEvent(new QualityRequest(null, listedQualities));
+//        MbtEventBus.postEvent(new QualityRequest(null, listedQualities));
 //        //requestBeingProcessed  = false;
         return null;
     }
@@ -217,7 +215,6 @@ public final class MbtEEGManager extends BaseModuleManager {
      * @param calibParams the calibration paramters previously performed
      *                    the EEG packets containing EEG data, theirs status and qualities.
      * @return the relaxation index
-     * @throws IllegalArgumentException if any of the provided arguments are <code>null</code> or invalid
      */
     private float computeRelaxIndex(int sampRate, MBTCalibrationParameters calibParams, MbtEEGPacket... packets) {
         return MBTComputeRelaxIndex.computeRelaxIndex(sampRate, calibParams, packets);
@@ -242,7 +239,7 @@ public final class MbtEEGManager extends BaseModuleManager {
      * Unregister the MbtEEGManager class from the bus to avoid memory leak
      */
     public void deinit() { //TODO CALL WHEN MbtEEGManager IS NOT USED ANYMORE TO AVOID MEMORY LEAK
-        EventBusManager.registerOrUnregister(false, this);
+        MbtEventBus.registerOrUnregister(false, this);
     }
 
 
@@ -263,8 +260,8 @@ public final class MbtEEGManager extends BaseModuleManager {
      * @param newState
      */
     @Subscribe(threadMode = ThreadMode.POSTING)
-    public void onStreamStateChanged(IStreamable.StreamState newState) {
-        if (newState == IStreamable.StreamState.STOPPED)
+    public void onStreamStateChanged(StreamState newState) {
+        if (newState == StreamState.STOPPED)
             reinitBuffers();
     }
 

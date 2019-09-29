@@ -63,6 +63,7 @@ LOCAL_SRC_FILES := $(MY_ALGO_VERSION)/MBT_JNI/MBT_JNI_ComputeQuality.cpp \
                      $(MY_ALGO_VERSION)/MBT_JNI/MBT_JNI_Calibrator.cpp \
                      $(MY_ALGO_VERSION)/MBT_JNI/MBT_JNI_ComputeRelaxIndex.cpp \
                      $(MY_ALGO_VERSION)/MBT_JNI/MBT_JNI_ComputeStatistics.cpp \
+                     $(MY_ALGO_VERSION)/MBT_JNI/MBT_JNI_EegFilter.cpp \
                      $(MY_ALGO_VERSION)/Melomind.Algorithms/QualityChecker/Cpp/MBT_MainQC.cpp \
                      $(MY_ALGO_VERSION)/Melomind.Algorithms/NF_Melomind/Cpp/MBT_ComputeCalibration.cpp \
                      $(MY_ALGO_VERSION)/Melomind.Algorithms/NF_Melomind/Cpp/MBT_ComputeRelaxIndex.cpp \

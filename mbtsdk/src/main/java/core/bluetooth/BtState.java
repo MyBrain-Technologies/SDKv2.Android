@@ -7,7 +7,7 @@ import engine.clientevents.BaseError;
 import engine.clientevents.BasicError;
 import engine.clientevents.BluetoothError;
 import engine.clientevents.EegError;
-import engine.clientevents.FirmwareError;
+import engine.clientevents.OADError;
 import engine.clientevents.MobileDeviceError;
 
 /**
@@ -27,20 +27,24 @@ public enum BtState {
 
 
 
-        /**
-     * Initial state that corresponds to a standby mode : it represents a state where the mobile device is not connected to any headset and is awaiting order from the user or the SDK.
+    /**
+     * Initial state that corresponds to a standby mode :
+     * it represents a state where the mobile device is not connected to any headset and is awaiting order from the user or the SDK.
      * For example, he is awaiting for the user to call the connect method.
-     * The IDLE state is automatically returned few minutes after the DATA_BT_DISCONNECTED state is returned (= after disconnection or lost connection or failure during the connection process).
+     * The IDLE state is automatically returned few minutes after the DATA_BT_DISCONNECTED state is returned
+     * (= after disconnection or lost connection or failure during the connection process).
      */
     IDLE,
 
     /**
-     * All the prerequisites are ok to start a bluetooth connection operation (device is not already connected, bluetooth is enabled, location is enabled & location permission is granted)
+     * All the prerequisites are ok to start a bluetooth connection operation
+     * (device is not already connected, bluetooth is enabled, location is enabled & location permission is granted)
      */
     READY_FOR_BLUETOOTH_OPERATION,
 
     /**
-     * In case all the connection prerequisites are valid, a scanning has just started to look for an available headset using the LE scan discovery.
+     * In case all the connection prerequisites are valid,
+     * a scanning has just started to look for an available headset using the LE scan discovery.
      * The Low Energy Scanner is used first, as it is more efficient than the classical Bluetooth discovery Scanner.
      * A specific headset can be targeted if the user specify a headset name when he call the connect method.
      */
@@ -98,6 +102,7 @@ public enum BtState {
      */
     READING_SUCCESS,
 
+
     /**
      * Exchanging and storing of the long term keys for the next times a connection is initiated.
      * This operation is included in the connection process only for headsets whose firmware version are higher than or equal to 1.7.0.
@@ -111,6 +116,10 @@ public enum BtState {
      * Successfully completed bonding operation
      */
     BONDED,
+
+    CHANGING_BT_PARAMETERS,
+
+    BT_PARAMETERS_CHANGED,
 
     /**
      * Sending the QR Code as an external name to the headset
@@ -145,7 +154,7 @@ public enum BtState {
     /**
      * Failed to replace the current firmware installed with a new one. This failure trigger a disconnection.
      */
-    UPGRADING_FAILURE(FirmwareError.ERROR_FIRMWARE_UPGRADE_FAILED),
+    UPGRADING_FAILURE(OADError.ERROR_FIRMWARE_UPDATE_FAILED),
 
     /**
      * When connection is being disconnected
@@ -281,7 +290,7 @@ public enum BtState {
     private BaseError associatedError;
 
     /**
-     * This contructor is used for the states that are not considered as a failure state (more explanation are available on the description of the associatedError variable)
+     * This constructor is used for the states that are not considered as a failure state (more explanation are available on the description of the associatedError variable)
      * It is included between 0 and the value of BtState.CONNECTED_AND_READY.ordinal(),
      * which returns the ordinal of this enumeration constant (its position in its enum declaration, where the initial constant is assigned an ordinal of zero).
      * For example, the IDLE state is the initial state so its order value is 0.
@@ -289,7 +298,7 @@ public enum BtState {
     BtState() { }
 
     /**
-     * This contructor is used for the states that are considered as a failure state
+     * This constructor is used for the states that are considered as a failure state
      * @param error is the Error to return to the SDK user
      */
     BtState(@Nullable BaseError error) {

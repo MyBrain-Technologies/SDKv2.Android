@@ -11,8 +11,12 @@ import java.util.ArrayList;
 import config.SynchronisationConfig;
 import utils.LogUtils;
 
-
-public class MbtOSCStreamer extends IStreamer<OSCMessage> {
+/**
+ * Open Sound Control (OSC)
+ * is a simple content format, although it is often though of as a protocol for the transmission of data over a network.
+ * It can be used as a replacement for MIDI - as a network-protocol for the exchange of musical control data between soft- and hardware over a UDP/IP network
+ */
+public class MbtOSCStreamer extends AbstractStreamer<OSCMessage> {
 
     /**
      * OSCPortOut is the class that sends OSC messages
@@ -20,7 +24,7 @@ public class MbtOSCStreamer extends IStreamer<OSCMessage> {
      */
     private OSCPortOut oscOut;
 
-    MbtOSCStreamer(SynchronisationConfig config) {
+    MbtOSCStreamer(SynchronisationConfig.OSC config) {
         super(config.streamRawEEG(), config.streamQualities(), config.getFeaturesToStream());
 
         try {

@@ -11,7 +11,7 @@ public final class RecordingError extends BaseError{
 
     public static String ERROR_LABEL = DOMAIN + " Error :";
 
-    public static RecordingError ERROR_CREATE           = new RecordingError(CODE_RANGE, "Failed to create Recording / JSON file.");
+    public static RecordingError ERROR_CREATE           = new RecordingError(CODE_RANGE, "Failed to createForDevice Recording / JSON file.");
     public static RecordingError ERROR_WRITE            = new RecordingError(CODE_RANGE+1, "Failed to write JSON file.");
     public static RecordingError ERROR_READ             = new RecordingError(CODE_RANGE+2, "Failed to read Recording / JSON file.");
     public static RecordingError ERROR_DELETE           = new RecordingError(CODE_RANGE+3, "Failed to delete Recording / JSON file.");

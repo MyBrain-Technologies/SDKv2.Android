@@ -97,7 +97,7 @@ public:
 
     /*
      * @brief Naive inverse DFT, useful for example to verify faster algorithms.
-     * @param Frequency-space data vector.
+     * @param FrequencyBand-space data vector.
      * @param option The FFT flag.
      * @return Corresponding time-space vector.
      */

@@ -1274,7 +1274,7 @@ void MBT_MainQC::MBT_featuresQualityChecker(bool bandpassProcess, float firstBou
             f = f+1;
 
 
-            // Spectral Edge Frequency 80%
+            // Spectral Edge FrequencyBand 80%
             double sum_EEG_power = std::accumulate(EEG_power.begin(), EEG_power.begin() + EEG_power.size(), 0.0);
             std::vector<double> EEG_power_norm;
             EEG_power_norm.assign(EEG_power.size(),0);
@@ -1303,7 +1303,7 @@ void MBT_MainQC::MBT_featuresQualityChecker(bool bandpassProcess, float firstBou
                 f = f+1;
 
 
-                // Spectral Edge Frequency 90%
+                // Spectral Edge FrequencyBand 90%
                 std::vector<double> EEG_power_cum_90;
                 EEG_power_cum_90.assign(EEG_power_cum.size(),0);
                 for (unsigned int i = 0; i < EEG_power_cum_90.size(); i++)
@@ -1320,7 +1320,7 @@ void MBT_MainQC::MBT_featuresQualityChecker(bool bandpassProcess, float firstBou
                 f = f+1;
 
 
-                // Spectral Edge Frequency 95%
+                // Spectral Edge FrequencyBand 95%
                 std::vector<double> EEG_power_cum_95;
                 EEG_power_cum_95.assign(EEG_power_cum.size(),0);
                 for (unsigned int i = 0; i < EEG_power_cum_95.size(); i++)
@@ -1338,11 +1338,11 @@ void MBT_MainQC::MBT_featuresQualityChecker(bool bandpassProcess, float firstBou
             }
             else
             {
-                m_testFeatures(ch,f) = 0; // Spectral Edge Frequency 80%
+                m_testFeatures(ch,f) = 0; // Spectral Edge FrequencyBand 80%
                 f = f+1;
-                m_testFeatures(ch,f) = 0; // Spectral Edge Frequency 90%
+                m_testFeatures(ch,f) = 0; // Spectral Edge FrequencyBand 90%
                 f = f+1;
-                m_testFeatures(ch,f) = 0; // Spectral Edge Frequency 95%
+                m_testFeatures(ch,f) = 0; // Spectral Edge FrequencyBand 95%
                 f=f+1;
             }
 
@@ -1400,7 +1400,7 @@ void MBT_MainQC::MBT_featuresQualityChecker(bool bandpassProcess, float firstBou
         CC9 = [CC9;cc(9)];
         CC10 = [CC10;cc(10)];*/
 
-            // Frequency-filtered band energies
+            // FrequencyBand-filtered band energies
             double ff_delta = (log_theta_pow - (double)0);
             m_testFeatures(ch,f) = (float)ff_delta;
             if (isnan(m_testFeatures(ch,f)))
@@ -1609,7 +1609,7 @@ void MBT_MainQC::MBT_featuresQualityChecker(bool bandpassProcess, float firstBou
             f = f+1;
 
 
-            // Modified Median Frequency
+            // Modified Median FrequencyBand
             std::vector<double> ecart;
             ecart.assign((unsigned int) floor((double)m_sampRate/(double)2),0);
             for (unsigned int i = 0; i<floor(m_sampRate/2); i++)
@@ -1644,7 +1644,7 @@ void MBT_MainQC::MBT_featuresQualityChecker(bool bandpassProcess, float firstBou
             f = f+1;
 
 
-            // Modified Mean Frequency
+            // Modified Mean FrequencyBand
             double mod_mean_freq = 0.0;
             for (unsigned int i = 0; i<EEG_power.size(); i++)
             {

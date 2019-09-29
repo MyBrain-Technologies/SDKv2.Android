@@ -4,17 +4,16 @@ import org.apache.commons.lang.ArrayUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import config.SynchronisationConfig;
 import utils.LogUtils;
 
 
-public class MbtLSLStreamer extends IStreamer<float[]> {
+public class MbtLSLStreamer extends AbstractStreamer<float[]> {
 
     private LSL.StreamOutlet lslOut;
 
-    public MbtLSLStreamer(SynchronisationConfig config) {
+    MbtLSLStreamer(SynchronisationConfig.LSL config) {
         super(config.streamRawEEG(), config.streamQualities(), config.getFeaturesToStream());
     }
 
@@ -34,7 +33,7 @@ public class MbtLSLStreamer extends IStreamer<float[]> {
             return null;
         }
 
-        return ArrayUtils.toPrimitive(dataToStream.toArray(new Float[0]), 0.0F);;
+        return ArrayUtils.toPrimitive(dataToStream.toArray(new Float[0]), 0.0F);
     }
 
     @Override

@@ -1,15 +1,20 @@
 package mbtsdk.com.mybraintech.sdkv2;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.text.InputType;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -25,16 +30,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 
+import command.CommandInterface;
 import config.SynchronisationConfig;
-import core.device.DCOffsets;
-import core.device.SaturationEvent;
+import core.bluetooth.StreamState;
 import core.bluetooth.BtState;
-import core.eeg.storage.MbtEEGFeatures;
+import core.device.event.DCOffsetEvent;
+import core.device.event.SaturationEvent;
+import core.device.model.MbtDevice;
 import core.eeg.storage.MbtEEGPacket;
 import engine.MbtClient;
 
 import config.StreamConfig;
-import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
 import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.BluetoothStateListener;
@@ -134,6 +140,11 @@ DeviceActivity extends AppCompatActivity {
                     }
                 }
             }
+
+            @Override
+            public void onNewStreamState(@NonNull StreamState streamState) {
+
+            }
         };
     }
 
@@ -141,7 +152,7 @@ DeviceActivity extends AppCompatActivity {
         deviceStatusListener = new DeviceStatusListener<BaseError>() {
 
             @Override
-            public void onError(BaseError error, String additionnalInfo) {
+            public void onError(BaseError error, String additionalInfo) {
 
             }
 
@@ -151,7 +162,7 @@ DeviceActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onNewDCOffsetMeasured(DCOffsets dcOffsets) {
+            public void onNewDCOffsetMeasured(DCOffsetEvent dcOffsets) {
                 notifyUser("Offset: " + Arrays.toString(dcOffsets.getOffset()));
             }
         };
@@ -160,7 +171,7 @@ DeviceActivity extends AppCompatActivity {
     private void initDeviceInfoListener() {
         deviceInfoListener = new DeviceBatteryListener() {
             @Override
-            public void onBatteryChanged(String newLevel) {
+            public void onBatteryLevelReceived(String newLevel) {
                 lastReadBatteryLevel = newLevel;
                 notifyUser("Current battery level : " + lastReadBatteryLevel + " %");
             }
@@ -175,17 +186,17 @@ DeviceActivity extends AppCompatActivity {
     private void initConnectionStateListener() {
         bluetoothStateListener = new BluetoothStateListener() {
             @Override
-            public void onNewState(BtState newState) {
+            public void onNewState(BtState newState, MbtDevice device) {
             }
 
             @Override
-            public void onDeviceConnected() {
+            public void onDeviceConnected(MbtDevice device) {
                 LogUtils.i(TAG, " device connected");
                 isConnected = true;
             }
 
             @Override
-            public void onDeviceDisconnected() {
+            public void onDeviceDisconnected(MbtDevice device) {
                 LogUtils.i(TAG, " device disconnected");
                 isConnected = false;
                 returnOnPreviousActivity();
@@ -243,6 +254,9 @@ DeviceActivity extends AppCompatActivity {
         channel2Quality.setText(getString(R.string.channel_2_qc) + " -- ");
     }
 
+    private String ipAddress = "";
+    private int port = 8000;
+
     private void initStartStopStreamingButton() {
         startStopStreamingButton = findViewById(R.id.startStopStreamingButton);
         startStopStreamingButton.setOnClickListener(new View.OnClickListener() {
@@ -250,18 +264,68 @@ DeviceActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if (!isStreaming) { //streaming is not in progress : starting streaming
 
-                    startStream(new StreamConfig.Builder(eegListener)
-                            .setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)
-                            .useQualities()
-                            .streamOverOSC(new SynchronisationConfig.Builder()
-                                    .port(8000)
-                                    .ipAddress("1.2.3.4")
-                                    .streamRawEEG()
-                                    .streamQualities()
-                                    .streamFeature(MbtEEGFeatures.Frequency.ALPHA.getPower())
-                                    .streamFrequencyFeatures(MbtEEGFeatures.Frequency.GAMMA, MbtEEGFeatures.Frequency.BETA)
-                                    .create())
-                            .create());
+                    final AlertDialog.Builder alertDialog = new AlertDialog.Builder(DeviceActivity.this);
+                    final EditText ipAddressEditText = new EditText(DeviceActivity.this);
+                    ipAddressEditText.setInputType(InputType.TYPE_CLASS_TEXT);
+                    final EditText portEditText = new EditText(DeviceActivity.this);
+                    portEditText.setInputType(InputType.TYPE_CLASS_NUMBER);
+
+                    LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT,
+                            LinearLayout.LayoutParams.MATCH_PARENT);
+                    ipAddressEditText.setLayoutParams(lp);
+                    portEditText.setLayoutParams(lp);
+                    portEditText.setText(port);
+                    alertDialog.setView(ipAddressEditText);
+                    alertDialog.setCancelable(true);
+                    alertDialog.setTitle("Stream over OSC ?");
+                    alertDialog.setPositiveButton("YES", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            alertDialog.setView(portEditText);
+                            alertDialog.setTitle("Enter the port");
+                            alertDialog.setNeutralButton("NEXT", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    port = Integer.parseInt(portEditText.getText().toString());
+                                    alertDialog.setView(ipAddressEditText);
+                                    alertDialog.setTitle("Enter the IP address");
+                                    alertDialog.setNeutralButton("OK", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            ipAddress = ipAddressEditText.getText().toString();
+                                            startStream(new StreamConfig.Builder(eegListener)
+                                                    .setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)
+                                                    .useQualities()
+                                                    .streamOverOSC(new SynchronisationConfig.OSC.Builder()
+                                                            .ipAddress(ipAddress)
+                                                            .streamQualities()
+                                                            .port(port)
+                                                            .create())
+                                                    .createForDevice(deviceType));
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    });
+                    alertDialog.setNegativeButton("NO", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+
+                            startStream(new StreamConfig.Builder(eegListener)
+                                    .setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)
+                                    .useQualities()
+                                    .streamOverOSC(new SynchronisationConfig.OSC.Builder()
+                                            .ipAddress("")
+                                            .streamQualities()
+                                            .port(8000)
+                                            .create())
+                                    .createForDevice(deviceType));
+                        }
+                    });
+                    alertDialog.show();
+
                 } else { //streaming is in progress : stopping streaming
                     stopStream(); // set false to isStreaming et null to the eegListener
                 }
@@ -387,10 +451,20 @@ DeviceActivity extends AppCompatActivity {
     }
 
     private void updateSerialNumber(String serialNumber) {
-        client.updateSerialNumber(serialNumber, new SimpleRequestCallback<byte[]>() {
+        client.updateSerialNumber(serialNumber, new CommandInterface.CommandCallback<byte[]>() {
             @Override
-            public void onRequestComplete(byte[] response) {
-                Log.d(TAG," Request complete. Returned response : "+Arrays.toString(response));
+            public void onResponseReceived(CommandInterface.MbtCommand request, byte[] response) {
+
+            }
+
+            @Override
+            public void onError(CommandInterface.MbtCommand request, BaseError error, String additionalInfo) {
+
+            }
+
+            @Override
+            public void onRequestSent(CommandInterface.MbtCommand request) {
+                Log.d(TAG," Request complete. Returned response : "+request);
             }
         });
     }

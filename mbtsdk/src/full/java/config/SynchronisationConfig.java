@@ -2,44 +2,40 @@ package config;
 
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import core.eeg.storage.MbtEEGFeatures;
+import core.eeg.storage.Feature;
+import core.eeg.storage.FrequencyBand;
 
 @Keep
-public final class SynchronisationConfig {
+public interface SynchronisationConfig {
+
+    @Keep
+    abstract class AbstractConfig {
 
     private String ipAddress;
-
-    private int port;
 
     private boolean streamRawEEG;
     private boolean streamQualities;
 
-    private ArrayList<MbtEEGFeatures.Feature> featuresToStream;
+    private ArrayList<Feature> featuresToStream;
 
-    private SynchronisationConfig(@NonNull String ipAddress, int port, boolean streamRawEEG, boolean streamQualities, ArrayList<MbtEEGFeatures.Feature> featuresToStream){
+    AbstractConfig(@NonNull String ipAddress, boolean streamRawEEG, boolean streamQualities, ArrayList<Feature> featuresToStream) {
 
-        if(ipAddress == null || ipAddress.isEmpty() || port < 0)
+        if (ipAddress == null || ipAddress.isEmpty())
             throw new IllegalArgumentException("Impossible to stream data to a null or empty IP address");
 
         this.ipAddress = ipAddress;
-        this.port = port;
         this.streamRawEEG = streamRawEEG;
-        this.streamQualities= streamQualities;
+        this.streamQualities = streamQualities;
         this.featuresToStream = featuresToStream;
     }
 
 
     public String getIpAddress() {
         return ipAddress;
-    }
-
-    public int getPort() {
-        return port;
     }
 
     public boolean streamRawEEG() {
@@ -50,7 +46,7 @@ public final class SynchronisationConfig {
         return streamQualities;
     }
 
-    public ArrayList<MbtEEGFeatures.Feature> getFeaturesToStream() {
+    public ArrayList<Feature> getFeaturesToStream() {
         return featuresToStream;
     }
 
@@ -58,29 +54,25 @@ public final class SynchronisationConfig {
      * Specify the IP address, port and element(feature or EEG) to stream
      */
     @Keep
-    public static class Builder{
+    public static abstract class Builder<B extends Builder<B>> {
 
-        private String ipAddress = "";
+        abstract B self();
 
-        private int port = 8000;
+        String ipAddress = "";
 
-        private boolean streamRawEEG = false;
-        private boolean streamQualities = false;
+        boolean streamRawEEG = false;
+        boolean streamQualities = false;
 
+        ArrayList<Feature> featuresToStream = new ArrayList<>();
 
-        private ArrayList<MbtEEGFeatures.Feature> featuresToStream = new ArrayList<>();
-
-        public Builder() {
-        }
-
-        public Builder streamRawEEG(){
+        public B streamRawEEG() {
             this.streamRawEEG = true;
-            return this;
+            return self();
         }
 
-        public Builder streamQualities(){
+        public B streamQualities() {
             this.streamQualities = true;
-            return this;
+            return self();
         }
 
         /**
@@ -88,51 +80,112 @@ public final class SynchronisationConfig {
          * @param frequenciesToStream frequencies to stream
          * @return
          */
-        public Builder streamFrequencyFeatures(MbtEEGFeatures.Frequency... frequenciesToStream){
+        public B streamFrequencyBandFeatures(FrequencyBand... frequenciesToStream) {
             final int nbFeaturePerFrequency = 4;
-            for (int feature = 0; feature < frequenciesToStream.length*nbFeaturePerFrequency ; feature++) {
+            for (int feature = 0; feature < frequenciesToStream.length * nbFeaturePerFrequency; feature++) {
                 this.featuresToStream.add(frequenciesToStream[feature].getRatio());
                 this.featuresToStream.add(frequenciesToStream[feature].getPower());
                 this.featuresToStream.add(frequenciesToStream[feature].getLogPower());
                 this.featuresToStream.add(frequenciesToStream[feature].getNormalizedPower());
+                this.featuresToStream.add(frequenciesToStream[feature].getMaximum());
+                this.featuresToStream.add(frequenciesToStream[feature].getKurtosis());
+                this.featuresToStream.add(frequenciesToStream[feature].getStandardDeviation());
+                this.featuresToStream.add(frequenciesToStream[feature].getSkewness());
             }
-            return this;
+            return self();
         }
 
         /**
          * Stream specific features
+         *
          * @param featuresToStream
          * @return
          */
-        public Builder streamFeatures(MbtEEGFeatures.Feature... featuresToStream){
+        public B streamFeatures(Feature... featuresToStream) {
             this.featuresToStream.addAll(Arrays.asList(featuresToStream));
-            return this;
+            return self();
         }
+
         /**
          * Stream specific feature
          * @param featureToStream
          * @return
          */
-        public Builder streamFeature(MbtEEGFeatures.Feature featureToStream){
+        public B streamFeature(Feature featureToStream) {
             this.featuresToStream.add(featureToStream);
-            return this;
+            return self();
         }
 
-        public Builder ipAddress(String ipAddress){
+        public B ipAddress(String ipAddress) {
             this.ipAddress = ipAddress;
-            return this;
+            return self();
         }
 
-        public Builder port(int port){
+        public abstract AbstractConfig create();
+    }
+}
+
+    @Keep
+    final class OSC extends AbstractConfig {
+
+        private int port;
+
+        OSC(@NonNull String ipAddress, int port, boolean streamRawEEG, boolean streamQualities, ArrayList<Feature> featuresToStream) {
+            super(ipAddress, streamRawEEG, streamQualities, featuresToStream);
             this.port = port;
-            return this;
         }
 
-        @Nullable
-        public SynchronisationConfig create(){
-            if(featuresToStream.isEmpty())
-                featuresToStream = null;
-            return new SynchronisationConfig(ipAddress, port, streamRawEEG, streamQualities, featuresToStream);
+        public int getPort() {
+            return port;
+        }
+
+        @Keep
+        public static class Builder extends AbstractConfig.Builder<Builder>{
+
+            int port = 8000;
+
+            public Builder port(int port){
+                this.port = port;
+                return self();
+            }
+
+            @Override
+            Builder self() {
+                return this;
+            }
+
+            @Override
+            public OSC create() {
+                if(featuresToStream.isEmpty())
+                    featuresToStream = null;
+
+                return new OSC(super.ipAddress, port, streamRawEEG, streamQualities, featuresToStream);
+            }
+        }
+    }
+
+    @Keep
+    final class LSL extends AbstractConfig {
+
+        LSL(@NonNull String ipAddress, boolean streamRawEEG, boolean streamQualities, ArrayList<Feature> featuresToStream) {
+            super(ipAddress, streamRawEEG, streamQualities, featuresToStream);
+        }
+
+        @Keep
+        public static class Builder extends AbstractConfig.Builder<Builder>{
+
+            @Override
+            Builder self() {
+                return this;
+            }
+
+            @Override
+            public LSL create() {
+                if(featuresToStream.isEmpty())
+                    featuresToStream = null;
+
+                return new LSL(super.ipAddress, streamRawEEG, streamQualities, featuresToStream);
+            }
         }
     }
 }

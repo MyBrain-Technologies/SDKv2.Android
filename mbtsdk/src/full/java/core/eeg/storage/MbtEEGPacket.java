@@ -6,12 +6,15 @@ import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
 
+
 @Keep
 public final class MbtEEGPacket {
     @NonNull
     private ArrayList<ArrayList<Float>> channelsData = new ArrayList<>();
 
+    @Nullable
     private ArrayList<Float> statusData = new ArrayList<>();
+
     @NonNull
     private final long timestamp;
 
@@ -39,7 +42,6 @@ public final class MbtEEGPacket {
     public MbtEEGPacket(@NonNull final ArrayList<ArrayList<Float>> channelsData) {
 
         this.channelsData = channelsData;
-
         this.timestamp = System.currentTimeMillis();
     }
 
@@ -52,7 +54,6 @@ public final class MbtEEGPacket {
 
         this.channelsData = channelsData;
         this.statusData = statusData;
-
         this.timestamp = System.currentTimeMillis();
 
     }
@@ -99,8 +100,8 @@ public final class MbtEEGPacket {
     @Override
     public String toString() {
         return "MbtEEGPacket{" +
-                "EEG Data=" + channelsData +
-                ", statusData=" + statusData +
+                "EEG Data =" + (channelsData != null && !channelsData.isEmpty() ? (channelsData.size()+"x"+channelsData.get(0).size()) : channelsData) +
+                ", statusData=" + (statusData != null ? statusData.size() : null) +
                 ", timestamp=" + timestamp +
                 '}';
     }
@@ -143,21 +144,23 @@ public final class MbtEEGPacket {
         return features;
     }
 
-    /**
-     * Get one of the features available for all channels of acquisition using its name
-     * @param feature is the feature to get
-     * @return a list of {@link features.MbtFeatures#MELOMIND_NB_CHANNELS} elements
-     * or {@link features.MbtFeatures#VPRO_NB_CHANNELS} elements for the feature value
-     */
-    public ArrayList<Float> getFeature(MbtEEGFeatures.Feature feature) {
-        ArrayList<Float> featureList = new ArrayList<>();
-        for (float channelFeature  : features[feature.ordinal()]) {
-            featureList.add(channelFeature);
+    public ArrayList<Float> getFeature(Feature feature) {
+        return getFeature(feature.ordinal());
+    }
+
+    public ArrayList<Float> getFeature(int frequency) {
+        ArrayList<Float> feature = new ArrayList<>();
+        for (int channelIndex = 0; channelIndex < features.length ; channelIndex++){
+            feature.add(features[channelIndex][frequency]);
         }
-        return featureList;
+        return feature;
     }
 
     public void setFeatures(float[][] features) {
         this.features = features;
+    }
+
+    public void setStatusData(@Nullable ArrayList<Float> statusData) {
+        this.statusData = statusData;
     }
 }

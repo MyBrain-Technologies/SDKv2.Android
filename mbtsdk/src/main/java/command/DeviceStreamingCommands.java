@@ -1,127 +1,532 @@
 package command;
 
+
 import android.support.annotation.Keep;
 
 import config.AmpGainConfig;
 import config.FilterConfig;
-import engine.SimpleRequestCallback;
+
+import core.bluetooth.spp.MbtBluetoothSPP;
+import engine.clientevents.BaseError;
+import features.MbtDeviceType;
 
 /**
- * Mailbox commands and other headset commands related to EEG streaming are hold in this object
+ * Device commands sent from the SDK to the headset
+ * and related to EEG streaming
+ * in order to configure a parameter,
+ * or get values stored by the headset
+ * or ask the headset to perform an action.
  */
 @Keep
 public interface DeviceStreamingCommands {
 
-
-    class Mtu extends DeviceCommand implements DeviceStreamingCommands{
-        private int mtu;
-
-        public Mtu(int mtu) {
-            this.mtu = mtu;
-        }
-
-        public Mtu(int mtu, SimpleRequestCallback<byte[]> responseCallback) {
-            this.mtu = mtu;
-            this.responseCallback = responseCallback;
-        }
-
-        public int getMtu() {
-            return mtu;
-        }
-
-    }
-
-    class NotchFilter extends DeviceCommand implements DeviceStreamingCommands {
+    /**
+     * Mailbox command sent from the SDK to the connected headset
+     * in order to change the applied Notch filter.
+     * The new notch filter is stored and returned by the headset if the command succeeds.
+     */
+    @Keep
+    class NotchFilter extends DeviceCommand<byte[], BaseError> implements DeviceStreamingCommands {
+        /**
+         * The new notch filter to apply
+         */
         private FilterConfig notchFilter;
 
+        /**
+         * Mailbox command sent from the SDK to the connected headset
+         * in order to change the applied Notch filter.
+         * The new notch filter is stored and returned by the headset if the command succeeds.
+         * @param notchFilter is the new Notch filter to apply
+         */
         public NotchFilter(FilterConfig notchFilter) {
+            super(DeviceCommandEvent.MBX_SET_NOTCH_FILT);
             this.notchFilter = notchFilter;
+            init();
         }
 
-        public NotchFilter(FilterConfig notchFilter, SimpleRequestCallback<byte[]> responseCallback) {
+        /**
+         * Mailbox command sent from the SDK to the connected headset
+         * in order to change the applied Notch filter.
+         * The new notch filter is stored and returned by the headset if the command succeeds.
+         * @param notchFilter is the new Notch filter to apply
+         * @param commandCallback is a {@link CommandInterface.CommandCallback} object
+         * that provides a callback for the returned raw response
+         * sent by the headset to the SDK once the configuration command is received.
+         * This raw response is a byte array that has be to converted to be readable.
+         * If you're not interested in getting the returned response,
+         * call the {@link NotchFilter}(FilterConfig notchFilter) constructor.
+         * The onRequestSent callback is triggered if the command has successfully been sent.
+         */
+        public NotchFilter(FilterConfig notchFilter, CommandInterface.CommandCallback<byte[]> commandCallback) {
+            super(DeviceCommandEvent.MBX_SET_NOTCH_FILT);
             this.notchFilter = notchFilter;
-            this.responseCallback = responseCallback;
+            this.commandCallback = commandCallback;
+            init();
         }
 
-        public FilterConfig getNotchFilter() {
-            return notchFilter;
+        @Override
+        public boolean isValid() {
+            return notchFilter != null;
+        }
+
+        @Override
+        public String getInvalidityError() {
+            return "You are not allowed to provide a null FilterConfig instance in the "+this.getClass().getSimpleName()+ " constructor.";
+        }
+
+        @Override
+        public byte[] getData() {
+            if(notchFilter == null)
+                return null;
+
+            return new byte[]{(byte)notchFilter.getNumVal()};
         }
     }
 
-    class BandpassFilter extends DeviceCommand implements DeviceStreamingCommands{
+    /**
+     * Mailbox command sent from the SDK to the connected headset
+     * in order to change the applied Bandpass filter.
+     * The new bandpass filter is stored and returned by the headset if the command succeeds.
+     */
+    @Keep
+    class BandpassFilter extends DeviceCommand<byte[], BaseError> implements DeviceStreamingCommands{
+        /**
+         * The new bandpass filter to apply
+         */
         private FilterConfig bandpassFilter;
 
+        /**
+         * Mailbox command sent from the SDK to the connected headset
+         * in order to change the applied Bandpass filter.
+         * The new bandpass filter is stored and returned by the headset if the command succeeds.
+         * @param bandpassFilter is the new Bandpass filter to apply
+         */
         public BandpassFilter(FilterConfig bandpassFilter) {
+            super(DeviceCommandEvent.MBX_SET_BANDPASS_FILT);
             this.bandpassFilter = bandpassFilter;
+            init();
         }
 
-        public BandpassFilter(FilterConfig bandpassFilter, SimpleRequestCallback<byte[]> responseCallback) {
+        /**
+         * Mailbox command sent from the SDK to the connected headset
+         * in order to change the applied Bandpass filter.
+         * The new bandpass filter is stored and returned by the headset if the command succeeds
+         * @param bandpassFilter is the new Bandpass filter to apply
+         * @param commandCallback is a {@link CommandInterface.CommandCallback} object
+         * that provides a callback for the returned raw response
+         * sent by the headset to the SDK once the configuration command is received.
+         * This raw response is a byte array that has be to converted to be readable.
+         * If you're not interested in getting the returned response,
+         * call the {@link BandpassFilter}(FilterConfig bandpassFilter) constructor
+         * The onRequestSent callback is triggered if the command has successfully been sent.
+         */
+        public BandpassFilter(FilterConfig bandpassFilter, CommandInterface.CommandCallback<byte[]> commandCallback) {
+            super(DeviceCommandEvent.MBX_SET_BANDPASS_FILT);
             this.bandpassFilter = bandpassFilter;
-            this.responseCallback = responseCallback;
+            this.commandCallback = commandCallback;
+            init();
         }
 
-        public FilterConfig getBandpassFilter() {
-            return bandpassFilter;
+        @Override
+        public boolean isValid() {
+            return bandpassFilter != null;
+        }
+
+        @Override
+        public String getInvalidityError() {
+            return "You are not allowed to provide a null FilterConfig instance in the "+this.getClass().getSimpleName()+ " constructor.";
+        }
+
+        @Override
+        public byte[] getData() {
+            if(bandpassFilter == null)
+                return null;
+
+            return new byte[]{(byte)bandpassFilter.getNumVal()};
         }
     }
 
-    class AmplifierGain extends DeviceCommand implements DeviceStreamingCommands{
+    /**
+     * Mailbox command sent from the SDK to the connected headset
+     * in order to change the applied amplifier gain.
+     * The new bandpass filter is stored and returned by the headset if the command succeeds.
+     */
+    @Keep
+    class AmplifierGain extends DeviceCommand<byte[], BaseError> implements DeviceStreamingCommands {
+        /**
+         * The new amplifier gain to apply
+         */
         private AmpGainConfig ampGainConfig;
 
+        /**
+         * Mailbox command sent from the SDK to the connected headset
+         * in order to change the applied amplifier gain.
+         * The new amplifier gain is stored and returned by the headset if the command succeeds
+         *
+         * @param ampGainConfig is the new Amplifier gain to apply
+         */
         public AmplifierGain(AmpGainConfig ampGainConfig) {
+            super(DeviceCommandEvent.MBX_SET_AMP_GAIN);
             this.ampGainConfig = ampGainConfig;
+            init();
         }
 
-        public AmplifierGain(AmpGainConfig ampGainConfig, SimpleRequestCallback<byte[]> responseCallback) {
+        /**
+         * Mailbox command sent from the SDK to the connected headset
+         * in order to change the applied amplifier gain.
+         * The new amplifier gain is stored and returned by the headset if the command succeeds
+         *
+         * @param ampGainConfig    is the new Amplifier gain to apply
+         * @param commandCallback is a {@link CommandInterface.CommandCallback} object
+         *                         that provides a callback for the returned raw response
+         *                         sent by the headset to the SDK once the configuration command is received.
+         *                         This raw response is a byte array that has be to converted to be readable.
+         *                         If you're not interested in getting the returned response,
+         *                         call the {@link AmplifierGain}(AmpGainConfig ampGainConfig) constructor.
+         * The onRequestSent callback is triggered if the command has successfully been sent.
+         */
+        public AmplifierGain(AmpGainConfig ampGainConfig, CommandInterface.CommandCallback<byte[]> commandCallback) {
+            super(DeviceCommandEvent.MBX_SET_AMP_GAIN);
             this.ampGainConfig = ampGainConfig;
-            this.responseCallback = responseCallback;
+            this.commandCallback = commandCallback;
+            init();
         }
 
-        public AmpGainConfig getAmpGainConfig() {
-            return ampGainConfig;
+        @Override
+        public boolean isValid() {
+            return ampGainConfig != null;
+        }
+
+        @Override
+        public String getInvalidityError() {
+            return "You are not allowed to provide a null AmpGainConfig instance in the "+this.getClass().getSimpleName()+ " constructor.";
+        }
+
+        @Override
+        public byte[] getData() {
+            if (ampGainConfig == null)
+                return null;
+
+            return new byte[]{(byte) ampGainConfig.getNumVal()};
         }
     }
 
-    class Triggers extends DeviceCommand implements DeviceStreamingCommands{
+
+    /**
+     * Mailbox command sent from the SDK to the connected headset
+     * in order to enable or disable triggers receiving and synchronize external acquisitions.
+     * The triggers receiving status is returned by the headset if the command succeeds.
+     */
+    @Keep
+    class Triggers extends DeviceCommand<byte[], BaseError> implements DeviceStreamingCommands{
+        /**
+         * The new boolean status of triggers receiving
+         * Triggers are sent to the SDK if enableTriggers is set to true.
+         * Triggers are not sent to the SDK if enableTriggers is set to false.
+         */
         private boolean enableTriggers;
 
+        /**
+         * Mailbox command sent from the SDK to the connected headset
+         * in order to enable or disable triggers receiving and synchronize external acquisitions.
+         * The triggers receiving status is returned by the headset if the command succeeds.
+         * @param enableTriggers is the new boolean status of triggers receiving
+         * Triggers are sent to the SDK if enableTriggers is set to true.
+         * Triggers are not sent to the SDK if enableTriggers is set to false.
+         */
         public Triggers(boolean enableTriggers) {
+            super(DeviceCommandEvent.MBX_P300_ENABLE);
             this.enableTriggers = enableTriggers;
+            init();
         }
 
-        public Triggers(boolean enableTriggers, SimpleRequestCallback<byte[]> responseCallback) {
+        /**
+         * Mailbox command sent from the SDK to the connected headset
+         * in order to enable or disable triggers receiving and synchronize external acquisitions.
+         * The triggers receiving status is returned by the headset if the command succeeds.
+         * @param enableTriggers is the new boolean status of triggers receiving
+         * Triggers are sent to the SDK if enableTriggers is set to true.
+         * Triggers are not sent to the SDK if enableTriggers is set to false.
+         * @param commandCallback is a {@link CommandInterface.CommandCallback} object
+         * that provides a callback for the returned raw response
+         * sent by the headset to the SDK once the configuration command is received.
+         * This raw response is a byte array that has be to converted to be readable.
+         * If you're not interested in getting the returned response,
+         * call the {@link Triggers}(boolean enableTriggers) constructor.
+         * The onRequestSent callback is triggered if the command has successfully been sent.
+         */
+        public Triggers(boolean enableTriggers, CommandInterface.CommandCallback<byte[]> commandCallback) {
+            super(DeviceCommandEvent.MBX_P300_ENABLE);
             this.enableTriggers = enableTriggers;
-            this.responseCallback = responseCallback;
+            this.commandCallback = commandCallback;
+            init();
         }
 
-        public boolean areTriggersEnabled() {
-            return enableTriggers;
+        @Override
+        public boolean isValid() {
+            return true;
+        }
+
+        @Override
+        public String getInvalidityError() {
+            return null;
+        }
+
+        @Override
+        public byte[] getData() {
+
+            return new byte[]{enableTriggers ? ENABLE : DISABLE};
         }
     }
 
-    class DcOffset extends DeviceCommand implements DeviceStreamingCommands {
+    /**
+     * Mailbox command sent from the SDK to the connected headset
+     * in order to enable or disable EEG signal DC offset receiving.
+     * The DC offset receiving status is returned by the headset if the command succeeds.
+     */
+    @Keep
+    class DcOffset extends DeviceCommand<byte[], BaseError> implements DeviceStreamingCommands {
+        /**
+         * The new boolean status of EEG signal DC offset receiving
+         * DC offsets are sent to the SDK if enableDcOffset is set to true.
+         * DC offsets are not sent to the SDK if enableDcOffset is set to false.
+         */
         private boolean enableDcOffset;
 
+        /**
+         * Mailbox command sent from the SDK to the connected headset
+         * in order to enable or disable EEG signal DC offset receiving.
+         * The DC offset receiving status is returned by the headset if the command succeeds.
+         * @param enableDcOffset is the new boolean status of EEG signal DC offset receiving
+         * DC offsets are sent to the SDK if enableDcOffset is set to true.
+         * DC offsets are not sent to the SDK if enableDcOffset is set to false.
+         */
         public DcOffset(boolean enableDcOffset) {
+            super(DeviceCommandEvent.MBX_DC_OFFSET_ENABLE);
             this.enableDcOffset = enableDcOffset;
+            init();
         }
 
-        public DcOffset(boolean enableDcOffset, SimpleRequestCallback<byte[]> responseCallback) {
+        /**
+         * Mailbox command sent from the SDK to the connected headset
+         * in order to enable or disable EEG signal DC offset receiving.
+         * The DC offset receiving status is returned by the headset if the command succeeds.
+         * @param enableDcOffset is the new boolean status of EEG signal DC offset receiving
+         * DC offsets are sent to the SDK if enableDcOffset is set to true.
+         * DC offsets are not sent to the SDK if enableDcOffset is set to false.
+         * @param commandCallback is a {@link CommandInterface.CommandCallback} object
+         * that provides a callback for the returned raw response
+         * sent by the headset to the SDK once the configuration command is received.
+         * This raw response is a byte array that has be to converted to be readable.
+         * If you're not interested in getting the returned response,
+         * call the {@link DcOffset}(boolean enableDcOffset) constructor.
+         * The onRequestSent callback is triggered if the command has successfully been sent.
+         */
+        public DcOffset(boolean enableDcOffset, CommandInterface.CommandCallback<byte[]> commandCallback) {
+            super(DeviceCommandEvent.MBX_DC_OFFSET_ENABLE);
             this.enableDcOffset = enableDcOffset;
-            this.responseCallback = responseCallback;
+            this.commandCallback = commandCallback;
+            init();
         }
 
-        public boolean isEnableDcOffset() {
-            return enableDcOffset;
+        @Override
+        public boolean isValid() {
+            return true;
+        }
+
+        @Override
+        public String getInvalidityError() {
+            return null;
+        }
+
+        @Override
+        public byte[] getData() {
+            return new byte[]{enableDcOffset ? ENABLE : DISABLE};
         }
     }
 
-    class EegConfig extends DeviceCommand implements DeviceStreamingCommands{
+    /**
+     * Command sent from the SDK to the connected headset
+     * in order to get the device streaming configuration such as :
+     * the notch filter,
+     * the bandpass filter,
+     * the triggers receiving status,
+     * the signal processing buffer size (number of EEG sample times),
+     * and real frequency sample measured by the firmware.
+     * The DC offset receiving status is returned by the headset if the command succeeds.
+     */
+    @Keep
+    class EegConfig extends DeviceCommand<byte[], BaseError> implements DeviceStreamingCommands{
 
-        public EegConfig(SimpleRequestCallback<byte[]> responseCallback) {
-            this.responseCallback = responseCallback;
+        private boolean useSppProtocol = false;
+
+        @Keep
+        public static class Builder{
+            private CommandInterface.CommandCallback<byte[]> commandCallback;
+
+            /**
+             * The EEG Listener is mandatory to receive the EEG stream from the headset to the SDK.
+             */
+            public Builder(CommandInterface.CommandCallback<byte[]> commandCallback){
+                this.commandCallback = commandCallback;
+            }
+
+            public EegConfig createForDevice(MbtDeviceType deviceType){
+                return new EegConfig(commandCallback, deviceType.equals(MbtDeviceType.VPRO));
+            }
         }
 
+        EegConfig(CommandInterface.CommandCallback< byte[]> commandCallback, boolean useSppProtocol) {
+            super(DeviceCommandEvent.MBX_GET_EEG_CONFIG);
+            this.useSppProtocol = useSppProtocol;
+            this.commandCallback = commandCallback;
+            init(); //must be called after the commandCallback initialisation : isValid will return false otherwise
+        }
+
+        @Override
+        public byte[] serialize() {
+            return useSppProtocol ?
+                    MbtBluetoothSPP.assembleCodes(this.getIdentifier())
+                    : super.serialize();
+        }
+
+        @Override
+        public boolean isValid() {
+            return true;
+        }
+
+        @Override
+        public String getInvalidityError() {
+            return "You are not allowed to provide a null CommandCallback instance in the "+this.getClass().getSimpleName()+ " contructor.";
+        }
+
+        @Override
+        public byte[] getData() {
+            return null;
+        }
+    }
+
+
+    /**
+     * SPP command sent from the SDK to the connected headset
+     * in order to start a Bluetooth EEG streaming.
+     * The streaming status is returned by the headset if the command succeeds.
+     */
+    @Keep
+    class StartEEGAcquisition extends DeviceCommand<byte[], BaseError> implements DeviceStreamingCommands{
+
+        /**
+         * SPP command sent from the SDK to the connected headset
+         * in order to start a Bluetooth EEG streaming.
+         * The streaming status is returned by the headset if the command succeeds.
+         * If you're interested in getting the returned raw response
+         * sent by the headset to the SDK once the stream command is received,
+         * call the {@link StartEEGAcquisition}({@link CommandInterface.CommandCallback}<DeviceCommand, byte[]> commandCallback) constructor
+         */
+        public StartEEGAcquisition() {
+            super(DeviceCommandEvent.CMD_START_EEG_ACQUISITION);
+            init();
+        }
+
+        /**
+         * SPP command sent from the SDK to the connected headset
+         * in order to establish a Bluetooth disconnection for audio streaming.
+         * The streaming status is returned by the headset if the command succeeds.
+         * @param commandCallback is a {@link CommandInterface.CommandCallback} object
+         * that provides a callback for the returned raw response
+         * sent by the headset to the SDK once the streaming command is received.
+         * This raw response is a byte array that has be to converted to be readable.
+         * If you're not interested in getting the returned raw response
+         * sent by the headset to the SDK once the streaming command is received,
+         * call the {@link StartEEGAcquisition}() constructor
+         * The onRequestSent callback is triggered if the command has successfully been sent.
+         */
+        public StartEEGAcquisition(CommandInterface.CommandCallback<byte[]> commandCallback) {
+            super(DeviceCommandEvent.CMD_START_EEG_ACQUISITION);
+            this.commandCallback = commandCallback;
+            init();
+        }
+
+        @Override
+        public byte[] serialize() {
+            return MbtBluetoothSPP.assembleCodes(this.getIdentifier());
+        }
+
+        @Override
+        public boolean isValid() {
+            return true;
+        }
+
+        @Override
+        public byte[] getData() {
+            return null;
+        }
+
+        @Override
+        public String getInvalidityError() {
+            return null;
+        }
+    }
+
+    /**
+     * SPP command sent from the SDK to the connected headset
+     * in order to start a Bluetooth EEG streaming.
+     * The streaming status is returned by the headset if the command succeeds.
+     */
+    @Keep
+    class StopEEGAcquisition extends DeviceCommand<byte[], BaseError> implements  DeviceStreamingCommands{
+
+        /**
+         * SPP command sent from the SDK to the connected headset
+         * in order to start a Bluetooth EEG streaming.
+         * The streaming status is returned by the headset if the command succeeds.
+         * If you're interested in getting the returned raw response
+         * sent by the headset to the SDK once the stop command is received,
+         * call the {@link StopEEGAcquisition}({@link CommandInterface.CommandCallback}<DeviceCommand, byte[]> commandCallback) constructor
+         */
+        public StopEEGAcquisition() {
+            super(DeviceCommandEvent.CMD_STOP_EEG_ACQUISITION);
+            init();
+        }
+
+        /**
+         * SPP command sent from the SDK to the connected headset
+         * in order to establish a Bluetooth disconnection for audio streaming.
+         * The streaming status is returned by the headset if the command succeeds.
+         * @param commandCallback is a {@link CommandInterface.CommandCallback} object
+         * that provides a callback for the returned raw response
+         * sent by the headset to the SDK once the disconnect command is received.
+         * This raw response is a byte array that has be to converted to be readable.
+         * If you're not interested in getting the returned raw response
+         * sent by the headset to the SDK once the streaming command is received,
+         * call the {@link StopEEGAcquisition}() constructor
+         * The onRequestSent callback is triggered if the command has successfully been sent.
+         */
+        public StopEEGAcquisition(CommandInterface.CommandCallback<byte[]> commandCallback) {
+            super(DeviceCommandEvent.CMD_STOP_EEG_ACQUISITION);
+            this.commandCallback = commandCallback;
+            init();
+        }
+
+        @Override
+        public byte[] serialize() {
+            return MbtBluetoothSPP.assembleCodes(this.getIdentifier());
+        }
+
+        @Override
+        public boolean isValid() {
+            return true;
+        }
+
+        @Override
+        public byte[] getData() {
+            return null;
+        }
+
+        @Override
+        public String getInvalidityError() {
+            return null;
+        }
     }
 
 }

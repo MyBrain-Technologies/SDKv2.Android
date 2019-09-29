@@ -6,18 +6,20 @@ import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
 
+
 import command.DeviceCommand;
 import command.DeviceStreamingCommands;
 import core.eeg.storage.MbtEEGPacket;
+import engine.MbtClient;
 import engine.clientevents.BaseError;
 import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.EegListener;
+import features.MbtDeviceType;
 import features.MbtFeatures;
 
 /**
  * This class aims at configuring the stream process. It contains user configurable
  * parameters to specify how the streaming is going to be.
- *
  * <p>Use the {@link Builder} class to instanciate this.</p>
  */
 @Keep
@@ -31,24 +33,65 @@ public final class StreamConfig {
 
     private boolean computeQualities;
 
-    private ArrayList<DeviceCommand> deviceCommands;
+    private SynchronisationConfig.AbstractConfig synchronisationConfig;
 
-    private SynchronisationConfig oscConfig;
+    /**
+     * Recording configuration is all the data required to store the EEG packets in a JSON file.
+     */
+    private RecordConfig recordConfig;
 
-    private StreamConfig(boolean computeQualities, EegListener<BaseError> eegListener, DeviceStatusListener<BaseError> deviceStatusListener,
-                         int notificationPeriod, DeviceStreamingCommands[] deviceCommands, SynchronisationConfig oscConfig){
+    /**
+     * Optional list of commands sent to the headset in order to
+     * configure a parameter,
+     * or get values stored by the headset
+     * or ask the headset to perform an action.
+     */
+    private ArrayList<DeviceCommand> deviceCommands = new ArrayList<>();
+
+    private StreamConfig(MbtDeviceType deviceType,
+                         boolean computeQualities,
+                         EegListener<BaseError> eegListener,
+                         DeviceStatusListener<BaseError> deviceStatusListener,
+                         int notificationPeriod,
+                         DeviceStreamingCommands[] deviceCommands,
+                         RecordConfig recordConfig,
+                         SynchronisationConfig.AbstractConfig synchronisationConfig
+    ){
+
         this.computeQualities = computeQualities;
         this.eegListener = eegListener;
         this.deviceStatusListener = deviceStatusListener;
         this.notificationPeriod = notificationPeriod;
-        this.deviceCommands = new ArrayList<>();
-        this.oscConfig = oscConfig;
+        this.recordConfig = recordConfig;
+        this.synchronisationConfig = synchronisationConfig;
 
         if(deviceCommands != null && deviceCommands.length > 0) {
             for (DeviceStreamingCommands deviceCommand : deviceCommands) {
-                this.deviceCommands.add((DeviceCommand) deviceCommand);
+                if(deviceCommand != null){
+                    int index = getRegisteredCommandIndex(deviceCommand);
+                    if(index != -1) //if a command with the same type is already in the list, it is replaced (input can be different)
+                        this.deviceCommands.set(index, (DeviceCommand) deviceCommand);
+                    else
+                        this.deviceCommands.add((DeviceCommand) deviceCommand);
+                }
             }
         }
+
+        this.deviceCommands.add(new DeviceStreamingCommands.EegConfig.Builder(null).createForDevice(deviceType));
+    }
+
+    /**
+     * Returns the index of the already registered command in the deviceCommands list
+     * Returns -1 if the command is not already registered
+     * @param deviceCommand
+     * @return
+     */
+    private int getRegisteredCommandIndex(DeviceStreamingCommands deviceCommand){
+        for (DeviceCommand registeredCommand : deviceCommands) {
+                if(registeredCommand.getClass() == deviceCommand.getClass())
+                return deviceCommands.indexOf(registeredCommand);
+        }
+        return -1;
     }
 
     public EegListener getEegListener() {
@@ -71,8 +114,15 @@ public final class StreamConfig {
         return deviceCommands;
     }
 
-    public SynchronisationConfig getOscConfig() {
-        return oscConfig;
+    public SynchronisationConfig.AbstractConfig getSynchronisationConfig() {
+        return synchronisationConfig;
+    }
+
+    /**
+     * Return the recording configuration that holds all the data required to store the EEG packets in a JSON file.
+     */
+    public RecordConfig getRecordConfig() {
+        return recordConfig;
     }
 
     public void setNotificationPeriod(int notificationPeriod) {
@@ -91,10 +141,6 @@ public final class StreamConfig {
         this.deviceStatusListener = deviceStatusListener;
     }
 
-    public void setOscConfig(SynchronisationConfig oscConfig) {
-        this.oscConfig = oscConfig;
-    }
-
     /**
      * Builder class to ease construction of the {@link StreamConfig} instance.
      */
@@ -103,6 +149,10 @@ public final class StreamConfig {
 
         private int notificationPeriod = MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD;
 
+        /**
+         * The EEG Listener is a callback that receives the EEG raw data streamed
+         * from the headset to the SDK.
+         */
         @NonNull
         private final EegListener<BaseError> eegListener;
 
@@ -111,12 +161,26 @@ public final class StreamConfig {
 
         private boolean computeQualities = false;
 
-        private DeviceStreamingCommands[] deviceCommands;
+        /**
+         * Recording configuration is all the data required to store the EEG packets in a JSON file.
+         */
+        @Nullable
+        private RecordConfig recordConfig;
 
-        private SynchronisationConfig oscConfig;
+        @Nullable
+        private SynchronisationConfig.AbstractConfig synchronisationConfig;
+
 
         /**
-         * The eeg Listener is mandatory.
+         * Optional set of commands sent to the headset in order to
+         * configure a parameter,
+         * or get values stored by the headset
+         * or ask the headset to perform an action.
+         */
+        private DeviceStreamingCommands[] deviceCommands;
+
+        /**
+         * The EEG Listener is mandatory to receive the EEG stream from the headset to the SDK.
          */
         public Builder(@NonNull EegListener<BaseError> eegListener){
             this.eegListener = eegListener;
@@ -138,6 +202,24 @@ public final class StreamConfig {
         }
 
         /**
+         * Records the data acquired by a myBrain Technologies headset in a JSON file
+         * Recording configuration is all the data required to store the EEG packets in a JSON file.
+         * Default values are used if a non null empty {@link RecordConfig} is given in parameter
+         * of the {@link Builder#recordData(RecordConfig)} method.
+         * No recording (JSON file) can be created if a null {@link RecordConfig} is given in parameter
+         * of the {@link Builder#recordData(RecordConfig)} method.
+         * The record config can be set in the RecordConfig input of the {@link engine.MbtClient#startStream(StreamConfig)}  and / or {@link MbtClient#stopStream((StreamConfig)}  method.
+         * If a record config is passed in input of both methods, the {@link MbtClient#stopStream((StreamConfig)}  config input overrides the {@link engine.MbtClient#startStream(StreamConfig)} config one.
+         * If a record config is passed in input of the {@link engine.MbtClient#startStream(StreamConfig)}  method only, this config is used for building the recording file.
+         * If a record config is passed in input of the {@link MbtClient#stopStream((StreamConfig)} method only, this config is used for building the recording file.
+         * @return the builder instance
+         */
+        public Builder recordData(@NonNull RecordConfig recordConfig){
+            this.recordConfig = recordConfig;
+            return this;
+        }
+
+        /**
          * Configures optional parameters applied by the headset for the EEG signal acquisition
          * such as the amplifier gain, the notch filter, the MTU, etc.
          * Default values can be found in the user guide for the gain, filters, MTU
@@ -146,6 +228,17 @@ public final class StreamConfig {
          */
         public Builder configureAcquisitionFromDeviceCommand(DeviceStreamingCommands... deviceCommands){
             this.deviceCommands = deviceCommands;
+            return this;
+        }
+
+
+        public Builder streamOverOSC(@NonNull SynchronisationConfig.OSC synchronisationConfig){
+            this.synchronisationConfig = synchronisationConfig;
+            return this;
+        }
+
+        public Builder streamOverLSL(@NonNull SynchronisationConfig.LSL synchronisationConfig){
+            this.synchronisationConfig = synchronisationConfig;
             return this;
         }
 
@@ -177,26 +270,30 @@ public final class StreamConfig {
             return this;
         }
 
-        @NonNull
-        public Builder streamOverOSC(@NonNull SynchronisationConfig oscConfig){
-            this.oscConfig = oscConfig;
-            return this;
-        }
-
-        @Nullable
-        public StreamConfig create(){
-            return new StreamConfig(this.computeQualities, this.eegListener, this.deviceStatusListener, this.notificationPeriod, this.deviceCommands, this.oscConfig);
+        public StreamConfig createForDevice(MbtDeviceType deviceType){
+            return new StreamConfig(
+                    deviceType,
+                    this.computeQualities,
+                    this.eegListener,
+                    this.deviceStatusListener,
+                    this.notificationPeriod,
+                    this.deviceCommands,
+                    this.recordConfig,
+                    this.synchronisationConfig
+            );
         }
     }
 
     /**
-     * Checks if the configuration parameters are correct
+     * Checks if the notification configuration parameters are correct
      * @return true is the configuration is correct, false otherwise
      */
-    public boolean isConfigCorrect() {
-        if(this.notificationPeriod <  (this.computeQualities ? MbtFeatures.MIN_CLIENT_NOTIFICATION_PERIOD_WITH_QUALITIES_IN_MILLIS : MbtFeatures.MIN_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS))
+    public boolean isNotificationConfigCorrect() {
+        if(this.notificationPeriod <  (this.computeQualities ?
+                MbtFeatures.MIN_CLIENT_NOTIFICATION_PERIOD_WITH_QUALITIES_IN_MILLIS : MbtFeatures.MIN_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS))
             return false;
-        else if(notificationPeriod >  (this.computeQualities ? MbtFeatures.MAX_CLIENT_NOTIFICATION_PERIOD_WITH_QUALITIES_IN_MILLIS : MbtFeatures.MAX_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS))
+        else if(notificationPeriod >  (this.computeQualities ?
+                MbtFeatures.MAX_CLIENT_NOTIFICATION_PERIOD_WITH_QUALITIES_IN_MILLIS : MbtFeatures.MAX_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS))
             return false;
 
         return true;

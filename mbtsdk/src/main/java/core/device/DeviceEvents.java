@@ -4,12 +4,14 @@ import android.bluetooth.BluetoothDevice;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import core.device.model.FirmwareVersion;
 import core.device.model.MbtDevice;
+import eventbus.MbtEventBus;
 import features.MbtDeviceType;
 
 /**
  * This interface contains all required object classes to communicate with the DEVICE module using
- * the {@link eventbus.EventBusManager} bus.
+ * the {@link MbtEventBus} bus.
  */
 public interface DeviceEvents {
 
@@ -22,7 +24,6 @@ public interface DeviceEvents {
     class GetDeviceEvent {
     }
 
-
     /**
      * This object is used to encapsulate the {@link MbtDevice} instance out of the module. The encapsulation
      * is mandatory because the {@link MbtDevice} instance be null at some point (for example, before a
@@ -32,7 +33,7 @@ public interface DeviceEvents {
         @Nullable
         private final MbtDevice device;
 
-        PostDeviceEvent(@Nullable MbtDevice device){
+        public PostDeviceEvent(@Nullable MbtDevice device){
             this.device = device;
         }
 
@@ -42,15 +43,14 @@ public interface DeviceEvents {
         }
     }
 
-    class NewBluetoothDeviceEvent {
+    class AudioDisconnectedDeviceEvent {    }
+
+    class AudioConnectedDeviceEvent {
         @Nullable
         private final BluetoothDevice device;
 
-        private final MbtDeviceType deviceType;
-
-        public NewBluetoothDeviceEvent(@Nullable BluetoothDevice device, MbtDeviceType deviceType){
+        public AudioConnectedDeviceEvent(@Nullable BluetoothDevice device){
             this.device = device;
-            this.deviceType = deviceType;
         }
 
         @Nullable
@@ -58,9 +58,6 @@ public interface DeviceEvents {
             return device;
         }
 
-        MbtDeviceType getDeviceType() {
-            return deviceType;
-        }
     }
 
 
@@ -79,19 +76,15 @@ public interface DeviceEvents {
         }
     }
 
-    /**
-     * Event that returns the headset's response after the SDK has sent a command to it using Mailbox or other characteristic writing methods
-     */
-    class RawDeviceResponseEvent {
-        private byte[] rawResponse;
+    class StartOADUpdate {
+        private FirmwareVersion firmwareVersion;
 
-        public RawDeviceResponseEvent(@NonNull byte[] rawResponse){
-            this.rawResponse = rawResponse;
+        public StartOADUpdate(FirmwareVersion firmwareVersion) {
+            this.firmwareVersion = firmwareVersion;
         }
 
-        public byte[] getRawResponse() {
-            return rawResponse;
+        public FirmwareVersion getFirmwareVersion() {
+            return firmwareVersion;
         }
     }
-
 }

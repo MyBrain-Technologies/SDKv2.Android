@@ -3,8 +3,9 @@ package model;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 
-import features.MelomindExerciseType;
-import core.recordingsession.metadata.DataSource;
+import core.recording.metadata.MelomindExerciseSource;
+import core.recording.metadata.MelomindExerciseType;
+import core.recording.metadata.RecordType;
 
 /**
  * Created by manon on 19/10/16.
@@ -18,16 +19,9 @@ import core.recordingsession.metadata.DataSource;
  */
 @Keep
 public class RecordInfo {
+
     private String recordId;
     private  RecordingType recordingType;
-
-    @Keep
-    public enum RecordType {
-        CALIBRATION,
-        SESSION,
-        RAWDATA,
-        STUDY
-    }
 
     public RecordInfo(){}
 
@@ -45,10 +39,6 @@ public class RecordInfo {
         return recordId;
     }
 
-    public void setRecordId(String recordId) {
-        this.recordId = recordId;
-    }
-
     public RecordingType getRecordingType() {
         return recordingType;
     }
@@ -57,20 +47,27 @@ public class RecordInfo {
         this.recordingType = recordingType;
     }
 
+    public RecordInfo setSPVersion(String SPVersion) {
+        this.recordingType.setSPVersion(SPVersion);
+        return this;
+    }
+
     /**
      * Inner class for recording type.
      */
     public class RecordingType{
         private RecordType recordType;
         private String spVersion;
-        private DataSource source;
+        private MelomindExerciseSource source;
         private MelomindExerciseType exerciseType;
 
         public RecordingType(){
-
+            this.exerciseType = MelomindExerciseType.DEFAULT;
+            this.source = MelomindExerciseSource.DEFAULT;
+            this.recordType = RecordType.RAWDATA;
         }
 
-        public RecordingType(@NonNull RecordType recordType, @NonNull String spVersion, @NonNull DataSource dataSource, @NonNull MelomindExerciseType exerciseType){
+        public RecordingType(@NonNull RecordType recordType, @NonNull String spVersion, @NonNull MelomindExerciseSource dataSource, @NonNull MelomindExerciseType exerciseType){
             this.exerciseType = exerciseType;
             this.source = dataSource;
             this.spVersion = spVersion;
@@ -93,11 +90,11 @@ public class RecordInfo {
             this.spVersion = SPVersion;
         }
 
-        public DataSource getSource() {
+        public MelomindExerciseSource getSource() {
             return source;
         }
 
-        public void setSource(DataSource source) {
+        public void setSource(MelomindExerciseSource source) {
             this.source = source;
         }
 
@@ -109,8 +106,24 @@ public class RecordInfo {
             this.exerciseType = exerciseType;
         }
 
+        @Override
+        public String toString() {
+            return "RecordingType{" +
+                    "recordType=" + recordType +
+                    ", spVersion='" + spVersion + '\'' +
+                    ", source=" + source +
+                    ", exerciseType=" + exerciseType +
+                    '}';
+        }
     }
 
+    @Override
+    public String toString() {
+        return "RecordInfo{" +
+                "recordId='" + recordId + '\'' +
+                ", recordingType=" + recordingType +
+                '}';
+    }
 }
 
 

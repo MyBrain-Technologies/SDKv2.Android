@@ -1,6 +1,10 @@
 package core.bluetooth.requests;
 
 
+import android.util.Log;
+
+import config.RecordConfig;
+import config.StreamConfig;
 import config.SynchronisationConfig;
 
 /**
@@ -8,31 +12,53 @@ import config.SynchronisationConfig;
  */
 public class StreamRequestEvent extends BluetoothRequests {
 
-    private boolean isStart = false;
-    private boolean monitorDeviceStatus = false;
-    private boolean computeQualities = false;
-    private SynchronisationConfig oscConfig;
+    private final boolean isStart;
+    private final boolean isRecord;
+    private final RecordConfig recordConfig;
+    private final StreamConfig streamConfig;
 
-    public StreamRequestEvent(boolean isStartRequest, boolean computeQualities, boolean monitorDeviceStatus, SynchronisationConfig oscConfig){
+    public StreamRequestEvent(boolean isStartRequest, boolean isRecordRequest, RecordConfig recordConfig, StreamConfig streamConfig){
         this.isStart = isStartRequest;
-        this.monitorDeviceStatus = monitorDeviceStatus;
-        this.computeQualities = computeQualities;
-        this.oscConfig = oscConfig;
+        this.isRecord = isRecordRequest;
+        this.recordConfig = recordConfig;
+        this.streamConfig = streamConfig;
     }
 
     public boolean isStart() {
         return isStart;
     }
 
-    public boolean shouldMonitorDeviceStatus() {
-        return monitorDeviceStatus;
+    public boolean monitorDeviceStatus() {
+        return streamConfig.getDeviceStatusListener() != null;
     }
 
-    public boolean shouldComputeQualities() {
-        return computeQualities;
+    public boolean computeQualities() {
+        return streamConfig.shouldComputeQualities();
     }
 
-    public SynchronisationConfig getOscConfig() {
-        return oscConfig;
+    public boolean recordData() {
+        return recordConfig != null;
+    }
+
+    public boolean startStream() {
+        Log.d("Start stream ",""+(isStart && !isRecord));
+        return isStart && !isRecord;
+    }
+
+    public boolean stopStream() {
+        Log.d("Stop stream ",""+(!isStart && !isRecord));
+        return !isStart && !isRecord;
+    }
+
+    public RecordConfig getRecordConfig() {
+        return recordConfig;
+    }
+
+    public StreamConfig getStreamConfig() {
+        return streamConfig;
+    }
+
+    public SynchronisationConfig.AbstractConfig getSynchronisationConfig(){
+        return streamConfig == null ? null : streamConfig.getSynchronisationConfig();
     }
 }
