@@ -1021,7 +1021,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 asyncOperation.stopWaitingOperation(false);
                 if(mbtBluetoothA2DP.getConnectedDevice() != null){
                     String bleDeviceName = mbtBluetoothLE.getBleDeviceNameFromA2dp(mbtBluetoothA2DP.getConnectedDevice().getName(), mContext);
-                    if(((!isDataBluetoothConnected() || !mbtBluetoothLE.isCurrentDeviceNameEqual(bleDeviceName))) && MbtConfig.connectAudioIfDeviceCompatible()) {
+                    if(((!isDataBluetoothConnected() || !mbtBluetoothLE.isCurrentDeviceNameEqual(bleDeviceName)))) {
                         connectBLEFromA2DP(bleDeviceName);
                     }
                     MbtEventBus.postEvent(new DeviceEvents.AudioConnectedDeviceEvent(mbtBluetoothA2DP.getConnectedDevice()));
