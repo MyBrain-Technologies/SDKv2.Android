@@ -25,7 +25,7 @@ public class MbtOSCStreamer extends AbstractStreamer<OSCMessage> {
     private OSCPortOut oscOut;
 
     MbtOSCStreamer(SynchronisationConfig.OSC config) {
-        super(config.streamRawEEG(), config.streamQualities(), config.getFeaturesToStream());
+        super(config.streamRawEEG(), config.streamQualities(), config.getFeaturesToStream(), config);
 
         try {
             oscOut = new OSCPortOut(InetAddress.getByName(
@@ -53,6 +53,11 @@ public class MbtOSCStreamer extends AbstractStreamer<OSCMessage> {
             message.addArgument(argument);
         }
         return message;
+    }
+
+    @Override
+    SynchronisationConfig.OSC getSynchronisationConfig() {
+        return (SynchronisationConfig.OSC) this.synchronisationConfig;
     }
 
     @Override

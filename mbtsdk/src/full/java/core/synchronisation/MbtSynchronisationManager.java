@@ -65,8 +65,12 @@ public final class MbtSynchronisationManager extends BaseModuleManager {
      */
     @Subscribe(threadMode = ThreadMode.ASYNC)
     public void onNewPackets(@NonNull final ClientReadyEEGEvent event) {
-        if(streamer != null)
-            streamer.execute(getPacketWithInvertedMatrix(event.getEegPackets()));
+        if(streamer != null) {
+            if(streamer instanceof MbtOSCStreamer)
+                new MbtOSCStreamer(((MbtOSCStreamer)streamer).getSynchronisationConfig()).execute(getPacketWithInvertedMatrix(event.getEegPackets()));
+            else if(streamer instanceof MbtLSLStreamer)
+                new MbtLSLStreamer(((MbtLSLStreamer)streamer).getSynchronisationConfig()).execute(getPacketWithInvertedMatrix(event.getEegPackets()));
+        }
     }
 
     private MbtEEGPacket getPacketWithInvertedMatrix(MbtEEGPacket eegPacket){

@@ -275,8 +275,7 @@ DeviceActivity extends AppCompatActivity {
                             LinearLayout.LayoutParams.MATCH_PARENT);
                     ipAddressEditText.setLayoutParams(lp);
                     portEditText.setLayoutParams(lp);
-                    portEditText.setText(port);
-                    alertDialog.setView(ipAddressEditText);
+                    //portEditText.setText(port);
                     alertDialog.setCancelable(true);
                     alertDialog.setTitle("Stream over OSC ?");
                     alertDialog.setPositiveButton("YES", new DialogInterface.OnClickListener() {
@@ -305,8 +304,11 @@ DeviceActivity extends AppCompatActivity {
                                                     .createForDevice(deviceType));
                                         }
                                     });
+                                    alertDialog.show();
+
                                 }
                             });
+                            alertDialog.show();
                         }
                     });
                     alertDialog.setNegativeButton("NO", new DialogInterface.OnClickListener() {

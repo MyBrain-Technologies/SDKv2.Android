@@ -4,6 +4,7 @@ import android.os.AsyncTask;
 
 import java.util.ArrayList;
 
+import config.SynchronisationConfig;
 import core.eeg.storage.Feature;
 import core.eeg.storage.MbtEEGPacket;
 
@@ -25,7 +26,10 @@ public abstract class AbstractStreamer<U> extends AsyncTask<MbtEEGPacket, Void, 
 
     private ArrayList<Feature> featuresToStream;
 
-    AbstractStreamer(boolean streamRawEEG, boolean streamQualities, ArrayList<Feature> featuresToStream) {
+    protected SynchronisationConfig.AbstractConfig synchronisationConfig;
+
+    AbstractStreamer(boolean streamRawEEG, boolean streamQualities, ArrayList<Feature> featuresToStream, SynchronisationConfig.AbstractConfig synchronisationConfig) {
+        this.synchronisationConfig = synchronisationConfig;
         this.streamRawEEG = streamRawEEG;
         this.streamQualities = streamQualities;
         this.featuresToStream = featuresToStream;
@@ -87,4 +91,5 @@ public abstract class AbstractStreamer<U> extends AsyncTask<MbtEEGPacket, Void, 
 
     protected abstract U initStreamRequest(ArrayList<Float> dataToStream, String address);
 
+    abstract SynchronisationConfig.AbstractConfig getSynchronisationConfig();
 }
