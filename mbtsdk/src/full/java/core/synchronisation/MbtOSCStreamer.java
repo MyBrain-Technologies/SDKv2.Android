@@ -28,6 +28,8 @@ public class MbtOSCStreamer extends AbstractStreamer<OSCMessage> {
         super(config.streamRawEEG(), config.streamQualities(), config.getFeaturesToStream(), config);
 
         try {
+            LogUtils.i("Init", "Address: " + config.getIpAddress() + " | Port: " +  config.getPort());
+
             oscOut = new OSCPortOut(InetAddress.getByName(
                     config.getIpAddress()),
                     config.getPort());

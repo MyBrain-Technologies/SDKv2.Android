@@ -37,6 +37,7 @@ import core.bluetooth.BtState;
 import core.device.event.DCOffsetEvent;
 import core.device.event.SaturationEvent;
 import core.device.model.MbtDevice;
+import core.eeg.storage.Feature;
 import core.eeg.storage.MbtEEGPacket;
 import engine.MbtClient;
 
@@ -264,7 +265,9 @@ DeviceActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if (!isStreaming) { //streaming is not in progress : starting streaming
 
-                    final AlertDialog.Builder alertDialog = new AlertDialog.Builder(DeviceActivity.this);
+                    final AlertDialog.Builder alertDialogMain = new AlertDialog.Builder(DeviceActivity.this);
+                    final AlertDialog.Builder alertDialogAddress = new AlertDialog.Builder(DeviceActivity.this);
+                    final AlertDialog.Builder alertDialogPort = new AlertDialog.Builder(DeviceActivity.this);
                     final EditText ipAddressEditText = new EditText(DeviceActivity.this);
                     ipAddressEditText.setInputType(InputType.TYPE_CLASS_TEXT);
                     final EditText portEditText = new EditText(DeviceActivity.this);
@@ -276,20 +279,21 @@ DeviceActivity extends AppCompatActivity {
                     ipAddressEditText.setLayoutParams(lp);
                     portEditText.setLayoutParams(lp);
                     //portEditText.setText(port);
-                    alertDialog.setCancelable(true);
-                    alertDialog.setTitle("Stream over OSC ?");
-                    alertDialog.setPositiveButton("YES", new DialogInterface.OnClickListener() {
+                    alertDialogMain.setCancelable(true);
+                    alertDialogMain.setTitle("Stream over OSC ?");
+                    alertDialogMain.setPositiveButton("YES", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            alertDialog.setView(portEditText);
-                            alertDialog.setTitle("Enter the port");
-                            alertDialog.setNeutralButton("NEXT", new DialogInterface.OnClickListener() {
+
+                            alertDialogPort.setView(portEditText);
+                            alertDialogPort.setTitle("Enter the port");
+                            alertDialogPort.setNeutralButton("NEXT", new DialogInterface.OnClickListener() {
                                 @Override
                                 public void onClick(DialogInterface dialog, int which) {
                                     port = Integer.parseInt(portEditText.getText().toString());
-                                    alertDialog.setView(ipAddressEditText);
-                                    alertDialog.setTitle("Enter the IP address");
-                                    alertDialog.setNeutralButton("OK", new DialogInterface.OnClickListener() {
+                                    alertDialogAddress.setView(ipAddressEditText);
+                                    alertDialogAddress.setTitle("Enter the IP address");
+                                    alertDialogAddress.setNeutralButton("OK", new DialogInterface.OnClickListener() {
                                         @Override
                                         public void onClick(DialogInterface dialog, int which) {
                                             ipAddress = ipAddressEditText.getText().toString();
@@ -298,20 +302,20 @@ DeviceActivity extends AppCompatActivity {
                                                     .useQualities()
                                                     .streamOverOSC(new SynchronisationConfig.OSC.Builder()
                                                             .ipAddress(ipAddress)
-                                                            .streamQualities()
+                                                            .streamFeature(Feature.ALPHA_POWER)
                                                             .port(port)
                                                             .create())
                                                     .createForDevice(deviceType));
                                         }
                                     });
-                                    alertDialog.show();
+                                    alertDialogAddress.show();
 
                                 }
                             });
-                            alertDialog.show();
+                            alertDialogPort.show();
                         }
                     });
-                    alertDialog.setNegativeButton("NO", new DialogInterface.OnClickListener() {
+                    alertDialogMain.setNegativeButton("NO", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i) {
 
@@ -324,9 +328,10 @@ DeviceActivity extends AppCompatActivity {
                                             .port(8000)
                                             .create())
                                     .createForDevice(deviceType));
+                            updateStreaming();
                         }
                     });
-                    alertDialog.show();
+                    alertDialogMain.show();
 
                 } else { //streaming is in progress : stopping streaming
                     stopStream(); // set false to isStreaming et null to the eegListener
