@@ -133,9 +133,10 @@ final class MbtGattController extends BluetoothGattCallback {
 
         // Checking if services were indeed discovered or not : getServices should be not null and contains values at this point
         if (gatt.getServices() == null || gatt.getServices().isEmpty() || status != BluetoothGatt.GATT_SUCCESS) {
-            gatt.disconnect();
             if (mbtBluetoothLE.getCurrentState().equals(BtState.DISCOVERING_SERVICES))
                 this.mbtBluetoothLE.notifyConnectionStateChanged(BtState.DISCOVERING_FAILURE);
+            gatt.disconnect();
+
 
             return;
         }
@@ -299,7 +300,7 @@ final class MbtGattController extends BluetoothGattCallback {
         }
 
         switch (event) {
-                //mailbox events received in response to a request sent by the SDK
+            //mailbox events received in response to a request sent by the SDK
             case MBX_CONNECT_IN_A2DP:
             case MBX_DISCONNECT_IN_A2DP:
             case MBX_SET_SERIAL_NUMBER: //this case occurs when a QR code or a serial number is sent to the headset through a writing operation);
@@ -315,7 +316,7 @@ final class MbtGattController extends BluetoothGattCallback {
                 notifyResponseReceived(event, response);
                 break;
 
-                //mailbox events received that are NOT in response to a request sent by the SDK
+            //mailbox events received that are NOT in response to a request sent by the SDK
             case MBX_OTA_STATUS_EVT:
             case MBX_OTA_IDX_RESET_EVT:
                 mbtBluetoothLE.notifyEventReceived(event, response);
@@ -330,31 +331,31 @@ final class MbtGattController extends BluetoothGattCallback {
         }
     }
 
-     private void notifyResponseReceived(DeviceCommandEvent mailboxEvent, byte[] response){
-         if(isMailboxEventFinished(mailboxEvent , response)){
-             if(isConnectionMailboxEvent(mailboxEvent))
-                 mbtBluetoothLE.notifyConnectionResponseReceived(mailboxEvent, response[0]); //connection and disconnection response are composed of only one byte
-             mbtBluetoothLE.stopWaitingOperation(response);
-         }
+    private void notifyResponseReceived(DeviceCommandEvent mailboxEvent, byte[] response){
+        if(isMailboxEventFinished(mailboxEvent , response)){
+            if(isConnectionMailboxEvent(mailboxEvent))
+                mbtBluetoothLE.notifyConnectionResponseReceived(mailboxEvent, response[0]); //connection and disconnection response are composed of only one byte
+            mbtBluetoothLE.stopWaitingOperation(response);
+        }
 
-     }
+    }
 
     /**
      * Return true if the mailboxEvent if the Bluetooth connection or disconnection event is finished (no more reponse will be received)
      * @param mailboxEvent mailbox command identifier
      */
-     boolean isConnectionMailboxEvent(DeviceCommandEvent mailboxEvent){
-         return (mailboxEvent == MBX_DISCONNECT_IN_A2DP || mailboxEvent == MBX_CONNECT_IN_A2DP);
-     }
+    boolean isConnectionMailboxEvent(DeviceCommandEvent mailboxEvent){
+        return (mailboxEvent == MBX_DISCONNECT_IN_A2DP || mailboxEvent == MBX_CONNECT_IN_A2DP);
+    }
 
     /**
      * Return true if the mailboxEvent if the Bluetooth connection or disconnection event is finished (no more reponse will be received)
      * The SDK waits until timeout if a mailbox response is received for a command that is not finished
      * @param mailboxEvent mailbox command identifier
      */
-     private boolean isMailboxEventFinished(DeviceCommandEvent mailboxEvent, byte[] response){
+    private boolean isMailboxEventFinished(DeviceCommandEvent mailboxEvent, byte[] response){
         return mailboxEvent != MBX_CONNECT_IN_A2DP //the connect a2dp command is the only command where the headset returns several responses
                 || (!BitUtils.areByteEquals(MBX_CONNECT_IN_A2DP.getResponseCodeForKey(CMD_CODE_CONNECT_IN_A2DP_IN_PROGRESS), response[0])//wait another response until timeout if the connection is not in progress
-                    && !BitUtils.areByteEquals(MBX_CONNECT_IN_A2DP.getResponseCodeForKey(CMD_CODE_CONNECT_IN_A2DP_LINKKEY_INVALID), response[0])); //wait another response until timeout if the linkkey invalid response is returned
-     }
+                && !BitUtils.areByteEquals(MBX_CONNECT_IN_A2DP.getResponseCodeForKey(CMD_CODE_CONNECT_IN_A2DP_LINKKEY_INVALID), response[0])); //wait another response until timeout if the linkkey invalid response is returned
+    }
 }
