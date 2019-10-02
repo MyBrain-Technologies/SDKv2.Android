@@ -5,6 +5,7 @@ import android.support.annotation.NonNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 
 import core.eeg.storage.Feature;
 import core.eeg.storage.FrequencyBand;
@@ -20,9 +21,9 @@ public interface SynchronisationConfig {
     private boolean streamRawEEG;
     private boolean streamQualities;
 
-    private ArrayList<Feature> featuresToStream;
+    private HashSet<Feature> featuresToStream;
 
-    AbstractConfig(@NonNull String ipAddress, boolean streamRawEEG, boolean streamQualities, ArrayList<Feature> featuresToStream) {
+    AbstractConfig(@NonNull String ipAddress, boolean streamRawEEG, boolean streamQualities, HashSet<Feature> featuresToStream) {
 
         if (ipAddress == null || ipAddress.isEmpty())
             throw new IllegalArgumentException("Impossible to stream data to a null or empty IP address");
@@ -46,11 +47,21 @@ public interface SynchronisationConfig {
         return streamQualities;
     }
 
-    public ArrayList<Feature> getFeaturesToStream() {
+    public HashSet<Feature> getFeaturesToStream() {
         return featuresToStream;
     }
 
-    /**
+        @Override
+        public String toString() {
+            return "SynchronisationConfig{" +
+                    "ipAddress='" + ipAddress + '\'' +
+                    ", streamRawEEG=" + streamRawEEG +
+                    ", streamQualities=" + streamQualities +
+                    ", featuresToStream=" + featuresToStream +
+                    '}';
+        }
+
+        /**
      * Specify the IP address, port and element(feature or EEG) to stream
      */
     @Keep
@@ -63,7 +74,7 @@ public interface SynchronisationConfig {
         boolean streamRawEEG = false;
         boolean streamQualities = false;
 
-        ArrayList<Feature> featuresToStream = new ArrayList<>();
+        HashSet<Feature> featuresToStream = new HashSet<>();
 
         public B streamRawEEG() {
             this.streamRawEEG = true;
@@ -130,7 +141,7 @@ public interface SynchronisationConfig {
 
         private int port;
 
-        OSC(@NonNull String ipAddress, int port, boolean streamRawEEG, boolean streamQualities, ArrayList<Feature> featuresToStream) {
+        OSC(@NonNull String ipAddress, int port, boolean streamRawEEG, boolean streamQualities, HashSet<Feature> featuresToStream) {
             super(ipAddress, streamRawEEG, streamQualities, featuresToStream);
             this.port = port;
         }
@@ -167,7 +178,7 @@ public interface SynchronisationConfig {
     @Keep
     final class LSL extends AbstractConfig {
 
-        LSL(@NonNull String ipAddress, boolean streamRawEEG, boolean streamQualities, ArrayList<Feature> featuresToStream) {
+        LSL(@NonNull String ipAddress, boolean streamRawEEG, boolean streamQualities, HashSet<Feature> featuresToStream) {
             super(ipAddress, streamRawEEG, streamQualities, featuresToStream);
         }
 
@@ -188,4 +199,5 @@ public interface SynchronisationConfig {
             }
         }
     }
+
 }

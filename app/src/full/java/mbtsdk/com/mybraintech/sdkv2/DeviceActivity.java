@@ -306,6 +306,8 @@ DeviceActivity extends AppCompatActivity {
                                                             .port(port)
                                                             .create())
                                                     .createForDevice(deviceType));
+                                            updateStreaming();
+
                                         }
                                     });
                                     alertDialogAddress.show();
@@ -322,11 +324,6 @@ DeviceActivity extends AppCompatActivity {
                             startStream(new StreamConfig.Builder(eegListener)
                                     .setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)
                                     .useQualities()
-                                    .streamOverOSC(new SynchronisationConfig.OSC.Builder()
-                                            .ipAddress("")
-                                            .streamQualities()
-                                            .port(8000)
-                                            .create())
                                     .createForDevice(deviceType));
                             updateStreaming();
                         }

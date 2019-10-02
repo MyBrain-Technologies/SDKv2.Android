@@ -2,6 +2,7 @@ package core.synchronisation;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.util.Log;
 
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
@@ -43,18 +44,19 @@ public final class MbtSynchronisationManager extends BaseModuleManager {
 
             if(event.getSynchronisationConfig() != null) {
                 if (event.getSynchronisationConfig() instanceof SynchronisationConfig.OSC)
-                    streamer = new MbtOSCStreamer((SynchronisationConfig.OSC) event.getSynchronisationConfig());
+                    streamer = new MbtOSCProcessor((SynchronisationConfig.OSC) event.getSynchronisationConfig());
 
                 else if (event.getSynchronisationConfig() instanceof SynchronisationConfig.LSL)
-                    streamer = new MbtLSLStreamer((SynchronisationConfig.LSL)event.getSynchronisationConfig());
+                    streamer = new MbtLSLProcessor((SynchronisationConfig.LSL)event.getSynchronisationConfig());
             }
+
         }else if(streamer != null) {
             try {
                 Thread.sleep(500); //packets can be received with a small delay so we wait this packets
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            streamer = null;
+            streamer.reset();
         }
     }
 
@@ -65,12 +67,10 @@ public final class MbtSynchronisationManager extends BaseModuleManager {
      */
     @Subscribe(threadMode = ThreadMode.ASYNC)
     public void onNewPackets(@NonNull final ClientReadyEEGEvent event) {
-        if(streamer != null) {
-            if(streamer instanceof MbtOSCStreamer)
-                new MbtOSCStreamer(((MbtOSCStreamer)streamer).getSynchronisationConfig()).execute(getPacketWithInvertedMatrix(event.getEegPackets()));
-            else if(streamer instanceof MbtLSLStreamer)
-                new MbtLSLStreamer(((MbtLSLStreamer)streamer).getSynchronisationConfig()).execute(getPacketWithInvertedMatrix(event.getEegPackets()));
-        }
+
+        if(streamer != null)
+            streamer.execute(getPacketWithInvertedMatrix(event.getEegPackets()));
+
     }
 
     private MbtEEGPacket getPacketWithInvertedMatrix(MbtEEGPacket eegPacket){

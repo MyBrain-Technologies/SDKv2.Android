@@ -317,7 +317,7 @@ public class LSL {
 //     * A stream outlet.
 //     * Outlets are used to make streaming data (and the meta-data) available on the lab network.
 //     */
-//    public static class StreamOutlet {
+    public static class StreamOutlet {
 //        /**
 //         * Establish a new stream outlet. This makes the stream discoverable.
 //         * @param info The stream information to use for creating this stream. Stays constant over the lifetime of the outlet.
@@ -444,7 +444,7 @@ public class LSL {
 //        public StreamInfo info() { return new StreamInfo(inst.lsl_get_info(obj)); }
 //
 //        private Pointer obj;
-//    }
+    }
 //
 //
 //    // ===========================

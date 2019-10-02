@@ -18,6 +18,7 @@ import android.widget.Toast;
 import java.util.ArrayList;
 
 import config.ConnectionConfig;
+import core.device.model.MbtDevice;
 import engine.MbtClient;
 import engine.clientevents.BaseError;
 import engine.clientevents.ConnectionStateListener;
@@ -67,13 +68,13 @@ public class HomeActivity extends AppCompatActivity{
         }
 
         @Override
-        public void onDeviceConnected() {
+        public void onDeviceConnected(MbtDevice device) {
             toast.cancel();
             deinitCurrentActivity(true);
         }
 
         @Override
-        public void onDeviceDisconnected() {
+        public void onDeviceDisconnected(MbtDevice device) {
             if(!toast.getView().isShown())
                 notifyUser(getString(R.string.no_connected_headset));
             if(isCancelled)
@@ -145,7 +146,7 @@ public class HomeActivity extends AppCompatActivity{
                         ((deviceName != null) && (deviceName.equals(MELOMIND_DEVICE_NAME_PREFIX) || deviceName.equals(VPRO_DEVICE_NAME_PREFIX)) ) ? //if no no name has been entered by the user, the default device name is the headset prefix
                                 null : deviceName ) //null is given in parameters if no name has been entered by the user
                 .maxScanDuration(SCAN_DURATION)
-                .create());
+                .createForDevice(isMelomindDevice() ? MELOMIND : VPRO));
 
     }
 

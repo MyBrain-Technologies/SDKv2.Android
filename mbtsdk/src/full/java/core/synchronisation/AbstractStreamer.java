@@ -1,71 +1,110 @@
 package core.synchronisation;
 
-import android.os.AsyncTask;
-
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 
 import config.SynchronisationConfig;
 import core.eeg.storage.Feature;
 import core.eeg.storage.MbtEEGPacket;
+import utils.AsyncUtils;
+import utils.LogUtils;
 
 /**
  * @param <U> type of the message sent over the streaming protocol
  */
-public abstract class AbstractStreamer<U> extends AsyncTask<MbtEEGPacket, Void, Void> {
+public abstract class AbstractStreamer<U, V, C extends SynchronisationConfig.AbstractConfig> implements IStreamer<U> {
+
+    private static final String TAG = AbstractStreamer.class.getName();
+
+    private static final boolean START_STREAM = true;
+    private static final boolean STOP_STREAM = false;
 
     static private final String ADDRESS_PREFIX = "/";
-    static final String RAW_EEG_ADDRESS = ADDRESS_PREFIX + "raweeg";
-    static final String QUALITY_ADDRESS = ADDRESS_PREFIX +"quality";
 
+    static class StreamNotificationState {
 
-    private boolean streamRawEEG;
-    private boolean streamQualities;
+        boolean startNotificationSent = false;
+        boolean stopNotificationSent = false;
 
-    protected boolean startStreamNotificationSent;
-    protected boolean stopStreamNotificationSent;
-
-    private ArrayList<Feature> featuresToStream;
-
-    protected SynchronisationConfig.AbstractConfig synchronisationConfig;
-
-    AbstractStreamer(boolean streamRawEEG, boolean streamQualities, ArrayList<Feature> featuresToStream, SynchronisationConfig.AbstractConfig synchronisationConfig) {
-        this.synchronisationConfig = synchronisationConfig;
-        this.streamRawEEG = streamRawEEG;
-        this.streamQualities = streamQualities;
-        this.featuresToStream = featuresToStream;
-
-        this.startStreamNotificationSent = false;
-        this.stopStreamNotificationSent = false;
-    }
-
-    @Override
-    protected Void doInBackground(MbtEEGPacket... mbtEEGPacketsBundle) {
-
-        for (MbtEEGPacket mbtEEGPackets : mbtEEGPacketsBundle) {
-            if(streamRawEEG)
-                streamRawEEGPacket(mbtEEGPackets.getChannelsData());
-
-            if(streamQualities & mbtEEGPackets.getQualities() != null)
-                streamQualities(mbtEEGPackets.getQualities());
-
-            if(featuresToStream != null && !featuresToStream.isEmpty())
-                streamFeatures(mbtEEGPackets, featuresToStream);
+        void sendStartNotification() {
+            this.startNotificationSent = true;
         }
-        return null;
-    }
 
-        private void streamQualities(ArrayList<Float> qualities){
-       stream(initStreamRequest(qualities, QUALITY_ADDRESS));
-
-    }
-
-    private void streamFeatures(MbtEEGPacket eegPacket, ArrayList<Feature> featuresToStream){
-        for (Feature feature : featuresToStream) {
-            stream(initStreamRequest(eegPacket.getFeature(feature), ADDRESS_PREFIX + feature.name().toLowerCase().replace("_","")));
+        void sendStopNotification() {
+            this.stopNotificationSent = true;
         }
+    }
+
+    private static final String RAW_EEG_ADDRESS = ADDRESS_PREFIX + "raweeg";
+    private static final String QUALITY_ADDRESS = ADDRESS_PREFIX + "quality";
+    private static final String FEATURE_ADDRESS = ADDRESS_PREFIX + "feature";
+
+    private static HashMap<String, StreamNotificationState> notificationStateForAddressMap = new HashMap<>();
+    private static ArrayList<Feature> featuresToStream = new ArrayList<>();
+
+    V streamer;
+
+    AbstractStreamer(C config) {
+        if(config == null)
+            return;
+
+        boolean streamRawEEG = config.streamRawEEG();
+        boolean streamQualities = config.streamQualities();
+        HashSet<Feature> features = config.getFeaturesToStream();
+
+        LogUtils.d(TAG,"\nstreamRawEEG "+streamRawEEG+ " \nstreamQualities "+streamQualities + " \nfeaturesToStream "+(features != null ? features.toString(): "null"));
+
+        if (streamRawEEG)
+            notificationStateForAddressMap.put(RAW_EEG_ADDRESS, new StreamNotificationState());
+
+        if (streamQualities)
+            notificationStateForAddressMap.put(QUALITY_ADDRESS, new StreamNotificationState());
+
+        if (features != null)
+            for (Feature feature : features) {
+                featuresToStream.add(feature);
+                notificationStateForAddressMap.put(FEATURE_ADDRESS + ADDRESS_PREFIX + feature.name().toLowerCase().replace("_",ADDRESS_PREFIX), new StreamNotificationState());
+            }
+
+        initStreamer(config);
+        notifyReceiverStartOrStop(START_STREAM);
+
+    }
+
+    abstract void initStreamer(C config);
+
+    private void notifyReceiverStartOrStop(String address, boolean startOrStopStream){
+        LogUtils.d(TAG,"notifyReceiverStartOrStop "+address+ " "+startOrStopStream);
+
+        if(startOrStopStream == START_STREAM && !notificationStateForAddressMap.get(address).startNotificationSent) {
+            notificationStateForAddressMap.get(address).sendStartNotification();
+            stream(initStreamRequest(address, startOrStopStream));
+
+        }else if(startOrStopStream == STOP_STREAM && !notificationStateForAddressMap.get(address).stopNotificationSent) {
+            notificationStateForAddressMap.get(address).sendStopNotification();
+            stream(initStreamRequest(address, startOrStopStream));
+        }
+    }
+
+    private void notifyReceiverStartOrStop(boolean isStart){
+        LogUtils.d(TAG,(isStart ? "Start" : "Stop")+" stream");
+
+        if(streamRawEEG())
+            notifyReceiverStartOrStop(RAW_EEG_ADDRESS, isStart);
+
+        if(streamQualities())
+            notifyReceiverStartOrStop(QUALITY_ADDRESS, isStart);
+
+        if(getFeaturesAddresses() != null)
+            for (String featureAddress : getFeaturesAddresses()) {
+                notifyReceiverStartOrStop(featureAddress, isStart);
+            }
     }
 
     private void streamRawEEGPacket(ArrayList<ArrayList<Float>> channelsData){
+        LogUtils.d(TAG,"Number of Data: "+channelsData.size()+ " | Number of Channels: "+channelsData.get(0).size());
+
         int nbData = channelsData.size();
         int nbChannels = channelsData.get(0).size();
 
@@ -74,22 +113,71 @@ public abstract class AbstractStreamer<U> extends AsyncTask<MbtEEGPacket, Void, 
             for (int channel = 0; channel < nbChannels; channel++) {
                 dataToStream.add(channelsData.get(eegRawData).get(channel));
             }
-            stream(initStreamRequest(dataToStream, RAW_EEG_ADDRESS));
+            stream(initStreamRequest(RAW_EEG_ADDRESS, dataToStream));
         }
-
     }
 
-    protected void sendStartStreamNotification(){
-        this.startStreamNotificationSent = true;
+    private void streamQualities(ArrayList<Float> qualities){
+        stream(initStreamRequest(QUALITY_ADDRESS, qualities));
     }
 
-    protected void sendStopStreamNotification(){
-        this.stopStreamNotificationSent = true;
+    private void streamFeatures(MbtEEGPacket eegPacket, ArrayList<String> featuresAddresses, ArrayList<Feature> featuresToStream){
+        LogUtils.d(TAG,"Stream feature "+featuresToStream);
+        for (int feature = 0 ; feature < featuresToStream.size() ; feature ++){
+            stream(initStreamRequest(
+                    featuresAddresses.get(feature), //get the address
+                    eegPacket.getFeature(featuresToStream.get(feature)))); //get the value of the feature
+        }
     }
 
-    protected abstract void stream(U message);
+    private boolean streamRawEEG(){
+        return notificationStateForAddressMap.containsKey(RAW_EEG_ADDRESS);
+    }
 
-    protected abstract U initStreamRequest(ArrayList<Float> dataToStream, String address);
+    private boolean streamQualities(){
+        return notificationStateForAddressMap.containsKey(QUALITY_ADDRESS);
+    }
 
-    abstract SynchronisationConfig.AbstractConfig getSynchronisationConfig();
+    private ArrayList<String> getFeaturesAddresses(){
+        ArrayList<String> featuresAddresses = new ArrayList<>();
+        for (String address : notificationStateForAddressMap.keySet()) {
+            if(address.startsWith(FEATURE_ADDRESS))
+                featuresAddresses.add(address);
+        }
+        return (featuresAddresses.isEmpty() ? null : featuresAddresses);
+    }
+
+    public void reset(){
+        LogUtils.d(TAG,"Reset");
+        notifyReceiverStartOrStop(STOP_STREAM);
+        notificationStateForAddressMap = new HashMap<>();
+        featuresToStream = new ArrayList<>();
+    }
+
+    /**
+     * Select the EEG packets data to stream and stream it
+     */
+    void execute(final MbtEEGPacket... mbtEEGPackets){
+        AsyncUtils.executeAsync(new Runnable() {
+            @Override
+            public void run() {
+                if(mbtEEGPackets != null){
+                    for (MbtEEGPacket mbtEEGPacket : mbtEEGPackets) {
+                        if(streamRawEEG())
+                            streamRawEEGPacket(mbtEEGPacket.getChannelsData());
+
+                        if(streamQualities() & mbtEEGPacket.getQualities() != null) //if qualities have not been enabled in the StreamConfig configuration
+                            streamQualities(mbtEEGPacket.getQualities());
+
+                        if(featuresToStream != null && getFeaturesAddresses() != null)
+                            streamFeatures(mbtEEGPacket, getFeaturesAddresses(), featuresToStream);
+                    }
+                }
+            }
+        });
+    }
+
 }
+
+
+

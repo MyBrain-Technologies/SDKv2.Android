@@ -16,21 +16,25 @@ import utils.LogUtils;
  * is a simple content format, although it is often though of as a protocol for the transmission of data over a network.
  * It can be used as a replacement for MIDI - as a network-protocol for the exchange of musical control data between soft- and hardware over a UDP/IP network
  */
-public class MbtOSCStreamer extends AbstractStreamer<OSCMessage> {
+public class MbtOSCProcessor extends AbstractStreamer<OSCMessage, OSCPortOut, SynchronisationConfig.OSC> {
+
+    private static final String TAG = MbtOSCProcessor.class.getName();
 
     /**
      * OSCPortOut is the class that sends OSC messages
      * to a specific address and port.
      */
-    private OSCPortOut oscOut;
 
-    MbtOSCStreamer(SynchronisationConfig.OSC config) {
-        super(config.streamRawEEG(), config.streamQualities(), config.getFeaturesToStream(), config);
+    MbtOSCProcessor(SynchronisationConfig.OSC config) {
+        super(config);
+    }
 
+    @Override
+    void initStreamer(SynchronisationConfig.OSC config) {
         try {
             LogUtils.i("Init", "Address: " + config.getIpAddress() + " | Port: " +  config.getPort());
 
-            oscOut = new OSCPortOut(InetAddress.getByName(
+            streamer = new OSCPortOut(InetAddress.getByName(
                     config.getIpAddress()),
                     config.getPort());
         } catch (SocketException | UnknownHostException e) {
@@ -39,39 +43,25 @@ public class MbtOSCStreamer extends AbstractStreamer<OSCMessage> {
     }
 
     @Override
-    protected void stream(OSCMessage message) {
+    public void stream(OSCMessage message) {
         try { // Send the messages
-            LogUtils.i("Stream", "Address: " + (message).getAddress() + " | Data: " + (message).getArguments());
-            oscOut.send((message));
+            if (streamer != null){
+                streamer.send((message));
+                LogUtils.i("Stream", "Address: " + (message).getAddress() + " | Data: " + (message).getArguments());
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     @Override
-    protected OSCMessage initStreamRequest(ArrayList<Float> dataToStream, String address) {
+    public OSCMessage initStreamRequest(String address, Object... dataToStream) {
+
         OSCMessage message = new OSCMessage(address);
-        for (Float argument : dataToStream){
+        for (Object argument : dataToStream){
             message.addArgument(argument);
         }
         return message;
     }
 
-    @Override
-    SynchronisationConfig.OSC getSynchronisationConfig() {
-        return (SynchronisationConfig.OSC) this.synchronisationConfig;
-    }
-
-    @Override
-    protected void sendStartStreamNotification() {
-        //todo send boolean true
-        super.sendStartStreamNotification();
-    }
-
-    @Override
-    protected void sendStopStreamNotification() {
-        //todo send boolean false
-        oscOut = null;
-        super.sendStopStreamNotification();
-    }
 }
