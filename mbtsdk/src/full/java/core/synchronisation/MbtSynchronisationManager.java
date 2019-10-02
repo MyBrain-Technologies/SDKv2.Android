@@ -34,8 +34,10 @@ public final class MbtSynchronisationManager extends BaseModuleManager {
     @Subscribe(threadMode = ThreadMode.ASYNC)
     public void onConnectionStateChanged(ConnectionStateEvent event) {
         if(event.getNewState().equals(BtState.DATA_BT_DISCONNECTED)
-        && streamer != null)
+        && streamer != null) {
+            streamer.reset();
             streamer = null;
+        }
     }
 
     @Subscribe(threadMode = ThreadMode.ASYNC)
@@ -67,7 +69,6 @@ public final class MbtSynchronisationManager extends BaseModuleManager {
      */
     @Subscribe(threadMode = ThreadMode.ASYNC)
     public void onNewPackets(@NonNull final ClientReadyEEGEvent event) {
-
         if(streamer != null)
             streamer.execute(getPacketWithInvertedMatrix(event.getEegPackets()));
 

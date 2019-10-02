@@ -302,6 +302,8 @@ DeviceActivity extends AppCompatActivity {
                                                     .useQualities()
                                                     .streamOverOSC(new SynchronisationConfig.OSC.Builder()
                                                             .ipAddress(ipAddress)
+                                                            .streamRawEEG()
+                                                            .streamQualities()
                                                             .streamFeature(Feature.ALPHA_POWER)
                                                             .port(port)
                                                             .create())
