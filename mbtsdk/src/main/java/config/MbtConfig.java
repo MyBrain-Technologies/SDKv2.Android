@@ -7,7 +7,7 @@ import features.MbtDeviceType;
 import features.MbtFeatures;
 
 @Keep
-public final class MbtConfig {
+public final class MbtConfig { //todo remove this class and stop using static variables in config classes
 
     private static MbtDeviceType deviceType = MbtDeviceType.MELOMIND;
 
