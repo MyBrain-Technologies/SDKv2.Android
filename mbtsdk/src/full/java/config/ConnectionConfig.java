@@ -20,15 +20,15 @@ import features.MbtFeatures;
 @Keep
 public final class ConnectionConfig {
 
-    private String deviceName;
+    private String deviceName; //todo only available for Melomind : extends Connection config in order to have a Melomind Config and a Vpro Config ?
 
     private String deviceQrCode;
 
     private int maxScanDuration;
 
-    private boolean connectAudio;
+    private boolean connectAudio; //todo only available for Melomind : extends Connection config in order to have a Melomind Config and a Vpro Config ?
 
-    private MbtDeviceType deviceType;
+    private MbtDeviceType deviceType; //todo remove it if Melomind Config and  Vpro Config are created ?
 
     /**
      *  Maximum Transmission Unit
@@ -108,7 +108,7 @@ public final class ConnectionConfig {
      */
     public boolean isDeviceNameValid(MbtDeviceType type){
         if(type == MbtDeviceType.VPRO)
-            return true; //TODO
+            return true; //TODO check if starts with expected prefix for Vpro & Melomind
 
         return deviceName == null || deviceName.length() == MbtFeatures.DEVICE_NAME_LENGTH;
     }
@@ -116,7 +116,7 @@ public final class ConnectionConfig {
     /**
      * By default, Bluetooth connection is only initiated for Data streaming but not for the Audio streaming
      */
-    public boolean connectAudio() {
+    public boolean connectAudio() { //todo only available for Melomind 
         return connectAudio;
     }
 
@@ -132,7 +132,7 @@ public final class ConnectionConfig {
         this.deviceName = deviceName;
     }
 
-    public void setDeviceQrCode(String deviceQrCode) {
+    public void setDeviceQrCode(String deviceQrCode) { //todo only available for Melomind ?
         this.deviceQrCode = deviceQrCode;
     }
 
@@ -140,7 +140,7 @@ public final class ConnectionConfig {
         this.maxScanDuration = maxScanDuration;
     }
 
-    public void setConnectAudio(boolean connectAudio) {
+    public void setConnectAudio(boolean connectAudio) { //todo only available for Melomind ?
         this.connectAudio = connectAudio;
     }
 
@@ -244,13 +244,13 @@ public final class ConnectionConfig {
          * @return the builder instance
          */
         @NonNull
-        public Builder connectAudioIfDeviceCompatible(){
+        public Builder connectAudioIfDeviceCompatible(){ //todo only available for Melomind
             this.connectAudio = true;
             return this;
         }
 
         @NonNull
-        public ConnectionConfig createForDevice(@NonNull MbtDeviceType deviceType){
+        public ConnectionConfig createForDevice(@NonNull MbtDeviceType deviceType){ //todo replace useless forDevice in createForDevice if Melomind Config and Vpro Config ?
             if(deviceType == null)
                 deviceType = MbtDeviceType.MELOMIND;
             return new ConnectionConfig(this.deviceName, this.deviceQrCode, this.maxScanDuration, this.connectAudio, deviceType, this.mtu, this.connectionStateListener);
