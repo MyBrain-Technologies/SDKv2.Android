@@ -10,5 +10,13 @@ public enum Note {
     D,
     E,
     F,
-    G,
+    G;
+
+    public static Note convertIntegerToNote(int noteAsInteger){
+        for (Note value : Note.values()){
+            if(value.ordinal() == noteAsInteger)
+                return value;
+        }
+        return null;
+    }
 }

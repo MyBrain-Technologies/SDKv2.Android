@@ -33,7 +33,6 @@ import core.device.model.MelomindsQRDataBase;
 import core.device.model.FirmwareVersion;
 import core.eeg.MbtEEGManager;
 import core.synchronisation.midi.Key;
-import core.synchronisation.midi.MidiScaler;
 import core.synchronisation.midi.Note;
 import core.recording.MbtRecordingManager;
 import core.synchronisation.MbtSynchronisationManager;

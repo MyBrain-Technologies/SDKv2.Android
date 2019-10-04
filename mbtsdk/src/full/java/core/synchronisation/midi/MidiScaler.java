@@ -3,8 +3,6 @@ package core.synchronisation.midi;
 
 import android.support.annotation.Keep;
 
-import java.util.Scanner;
-
 @Keep
 public class MidiScaler {
 

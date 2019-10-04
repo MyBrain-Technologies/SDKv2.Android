@@ -1,7 +1,6 @@
 package eventbus.events;
 
 import core.synchronisation.midi.Key;
-import core.synchronisation.midi.MidiScaler;
 import core.synchronisation.midi.Note;
 import core.synchronisation.midi.Scale;
 

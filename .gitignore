@@ -340,3 +340,9 @@ fabric.properties
 /mbtsdk/.idea/runConfigurations.xml
 /mbtsdk/.idea/vcs.xml
 /mbtsdk/.idea/workspace.xml
+/mbtsdk/.cxx/ndkBuild/fullDebug/x86/android_gradle_build_targets.command.txt
+/mbtsdk/.cxx/ndkBuild/fullDebug/x86/android_gradle_build_targets.stderr.txt
+/mbtsdk/.cxx/ndkBuild/fullDebug/x86/android_gradle_build_targets.stdout.txt
+/mbtsdk/.cxx/ndkBuild/fullDebug/x86_64/android_gradle_build_targets.command.txt
+/mbtsdk/.cxx/ndkBuild/fullDebug/x86_64/android_gradle_build_targets.stderr.txt
+/mbtsdk/.cxx/ndkBuild/fullDebug/x86_64/android_gradle_build_targets.stdout.txt

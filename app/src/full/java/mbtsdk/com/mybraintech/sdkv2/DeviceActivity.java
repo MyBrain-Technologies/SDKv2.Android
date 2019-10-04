@@ -10,11 +10,12 @@ import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.InputType;
-import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -30,7 +31,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 
-import command.CommandInterface;
 import config.SynchronisationConfig;
 import core.bluetooth.StreamState;
 import core.bluetooth.BtState;
@@ -39,6 +39,9 @@ import core.device.event.SaturationEvent;
 import core.device.model.MbtDevice;
 import core.eeg.storage.Feature;
 import core.eeg.storage.MbtEEGPacket;
+import core.synchronisation.midi.Key;
+import core.synchronisation.midi.Note;
+import core.synchronisation.midi.Scale;
 import engine.MbtClient;
 
 import config.StreamConfig;
@@ -93,6 +96,13 @@ DeviceActivity extends AppCompatActivity {
 
     private EegListener<BaseError> eegListener;
 
+    private Spinner keySpinner;
+    private Spinner scaleSpinner;
+    private Spinner pitchSpinner;
+
+    private float minPower = 0.0f;
+    private float maxPower = 0.0f;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -111,6 +121,9 @@ DeviceActivity extends AppCompatActivity {
         initReadBatteryButton();
         initStartStopStreamingButton();
         initEegGraph();
+        initKeySpinner();
+        initPitchSpinner();
+        initScaleSpinner();
 
         client.setConnectionStateListener(bluetoothStateListener);
     }
@@ -139,6 +152,26 @@ DeviceActivity extends AppCompatActivity {
                         channel1Quality.setText(getString(R.string.channel_1_qc) + ((mbtEEGPackets.getQualities() != null && mbtEEGPackets.getQualities().get(0) != null) ? mbtEEGPackets.getQualities().get(0) : " -- "));
                         channel2Quality.setText(getString(R.string.channel_2_qc) + ((mbtEEGPackets.getQualities() != null && mbtEEGPackets.getQualities().get(1) != null) ? mbtEEGPackets.getQualities().get(1) : " -- "));
                     }
+
+                    Float meanPower = (mbtEEGPackets.getFeature(Feature.ALPHA_POWER).get(0) + mbtEEGPackets.getFeature(Feature.ALPHA_POWER).get(1)) / 2;
+
+                    if (minPower > meanPower)
+                        minPower = meanPower;
+
+                    if (maxPower < meanPower)
+                        maxPower = meanPower;
+
+                    float meanRatio = (mbtEEGPackets.getFeature(Feature.ALPHA_RATIO).get(0) + mbtEEGPackets.getFeature(Feature.ALPHA_RATIO).get(1)) / 2;
+
+                    int ratioConvertedToNote = (int)resize(meanRatio,0, 0.14f,0,6);
+                    int powerConvertedToVelocity = (int)resize(meanPower,minPower, maxPower,12,127);
+
+                    Note note = Note.convertIntegerToNote(ratioConvertedToNote);
+                    int velocity = powerConvertedToVelocity;
+                    int pitch = (int) pitchSpinner.getSelectedItem();
+                    Key key = (Key) keySpinner.getSelectedItem();
+                    Scale scale = (Scale) scaleSpinner.getSelectedItem();
+                    client.sendMidi(note, velocity, pitch, key, scale);
                 }
             }
 
@@ -147,6 +180,22 @@ DeviceActivity extends AppCompatActivity {
 
             }
         };
+    }
+
+    private float resize(float value,
+                      float minSrc, float maxSrc,
+                      float minDest, float maxDest) {
+
+        float diff = maxSrc - minSrc;
+        float  div ;
+
+        if (diff == 0.0) {
+            div = 1.0f;
+        }else{
+            div = diff;
+        }
+
+        return (minDest + (maxDest - minDest) * ((value - minSrc) / div))%maxDest ;
     }
 
     private void initDeviceStatusListener() {
@@ -456,23 +505,33 @@ DeviceActivity extends AppCompatActivity {
         }
     }
 
-    private void updateSerialNumber(String serialNumber) {
-        client.updateSerialNumber(serialNumber, new CommandInterface.CommandCallback<byte[]>() {
-            @Override
-            public void onResponseReceived(CommandInterface.MbtCommand request, byte[] response) {
+    private void initKeySpinner() {
+        keySpinner = findViewById(R.id.keySpinner);
 
-            }
+        ArrayAdapter<Key> arrayAdapter = new ArrayAdapter<Key>(this,
+                android.R.layout.simple_spinner_item, Key.values());
+        arrayAdapter.setDropDownViewResource(R.layout.spinner_item);
+        keySpinner.setAdapter(arrayAdapter);
+        keySpinner.setSelection(arrayAdapter.getPosition(Key.values()[0]));
+    }
 
-            @Override
-            public void onError(CommandInterface.MbtCommand request, BaseError error, String additionalInfo) {
+    private void initScaleSpinner() {
+        scaleSpinner = findViewById(R.id.scaleSpinner);
+        ArrayAdapter<Scale> arrayAdapter = new ArrayAdapter<Scale>(this,
+                android.R.layout.simple_spinner_item, Scale.values());
+        arrayAdapter.setDropDownViewResource(R.layout.spinner_item);
+        scaleSpinner.setAdapter(arrayAdapter);
+        scaleSpinner.setSelection(arrayAdapter.getPosition(Scale.values()[0]));
+    }
 
-            }
-
-            @Override
-            public void onRequestSent(CommandInterface.MbtCommand request) {
-                Log.d(TAG," Request complete. Returned response : "+request);
-            }
-        });
+    private void initPitchSpinner() {
+        ArrayList<Integer> listPitches = new ArrayList<>(Arrays.asList(-2,-1,0,1,2));
+        pitchSpinner = findViewById(R.id.pitchSpinner);
+        ArrayAdapter<Integer> arrayAdapter = new ArrayAdapter<Integer>(this,
+                android.R.layout.simple_spinner_item, listPitches);
+        arrayAdapter.setDropDownViewResource(R.layout.spinner_item);
+        pitchSpinner.setAdapter(arrayAdapter);
+        pitchSpinner.setSelection(arrayAdapter.getPosition(listPitches.get(2)));
     }
 
     private void startStream(StreamConfig streamConfig) {

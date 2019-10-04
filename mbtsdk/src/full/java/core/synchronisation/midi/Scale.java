@@ -7,7 +7,7 @@ import android.support.annotation.Keep;
  * How to play like Mozart
  */
 @Keep
-public enum Scale{
+public enum Scale {
 
     MAJOR("major", new int[]{0, 2, 2, 1, 2, 2, 2, 1}),
     NATURAL_MINOR("natural minor", new int[]{0, 2, 1, 2, 2, 1, 2, 2});
