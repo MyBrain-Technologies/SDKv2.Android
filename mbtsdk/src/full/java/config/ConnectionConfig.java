@@ -20,15 +20,15 @@ import features.MbtFeatures;
 @Keep
 public final class ConnectionConfig {
 
-    private String deviceName; //todo only available for Melomind : extends Connection config in order to have a Melomind Config and a Vpro Config ?
+    private String deviceName; //todo [code review] only available for Melomind : extends Connection config in order to have a Melomind Config and a Vpro Config ?
 
     private String deviceQrCode;
 
     private int maxScanDuration;
 
-    private boolean connectAudio; //todo only available for Melomind : extends Connection config in order to have a Melomind Config and a Vpro Config ?
+    private boolean connectAudio; //todo [code review] only available for Melomind : extends Connection config in order to have a Melomind Config and a Vpro Config ?
 
-    private MbtDeviceType deviceType; //todo remove it if Melomind Config and  Vpro Config are created ?
+    private MbtDeviceType deviceType; //todo [code review] remove it if Melomind Config and  Vpro Config are created ?
 
     /**
      *  Maximum Transmission Unit
@@ -108,7 +108,7 @@ public final class ConnectionConfig {
      */
     public boolean isDeviceNameValid(MbtDeviceType type){
         if(type == MbtDeviceType.VPRO)
-            return true; //TODO check if starts with expected prefix for Vpro & Melomind
+            return true; //TODO [code review] check if starts with expected prefix for Vpro & Melomind
 
         return deviceName == null || deviceName.length() == MbtFeatures.DEVICE_NAME_LENGTH;
     }
@@ -116,7 +116,7 @@ public final class ConnectionConfig {
     /**
      * By default, Bluetooth connection is only initiated for Data streaming but not for the Audio streaming
      */
-    public boolean connectAudio() { //todo only available for Melomind 
+    public boolean connectAudio() { //todo [code review] only available for Melomind
         return connectAudio;
     }
 
@@ -132,7 +132,7 @@ public final class ConnectionConfig {
         this.deviceName = deviceName;
     }
 
-    public void setDeviceQrCode(String deviceQrCode) { //todo only available for Melomind ?
+    public void setDeviceQrCode(String deviceQrCode) { //todo [code review] only available for Melomind ?
         this.deviceQrCode = deviceQrCode;
     }
 
@@ -140,7 +140,7 @@ public final class ConnectionConfig {
         this.maxScanDuration = maxScanDuration;
     }
 
-    public void setConnectAudio(boolean connectAudio) { //todo only available for Melomind ?
+    public void setConnectAudio(boolean connectAudio) { //todo [code review] only available for Melomind ?
         this.connectAudio = connectAudio;
     }
 

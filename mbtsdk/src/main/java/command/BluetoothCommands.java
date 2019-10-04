@@ -60,7 +60,7 @@ public interface BluetoothCommands {
          * call the {@link Mtu}(int mtu) constructor
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
-        public Mtu(@IntRange(from = MINIMUM, to = MAXIMUM) int mtu, CommandInterface.CommandCallback<Integer> commandCallback) { //todo add @NonNull annotation and throw exception is a null commandCallback is passed in input
+        public Mtu(@IntRange(from = MINIMUM, to = MAXIMUM) int mtu, CommandInterface.CommandCallback<Integer> commandCallback) { //todo [code review] add @NonNull annotation and throw exception is a null commandCallback is passed in input
             this.mtu = mtu;
             this.commandCallback = commandCallback;
             this.init();
