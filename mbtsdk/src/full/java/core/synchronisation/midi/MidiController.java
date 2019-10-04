@@ -22,20 +22,20 @@ public class MidiController {
 
     private MidiDeviceInfo[] infos;
 
-    private MidiManager m;
+    private MidiManager midiManager;
     private MidiInputPort inputPort;
     private WeakReference<Context> contextWeakReference;
     private MidiObject previousMidiObject = null;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
-    public MidiController(Context context){
-        this.m = (MidiManager)context.getSystemService(Context.MIDI_SERVICE);
+    MidiController(Context context){
+        this.midiManager = (MidiManager)context.getSystemService(Context.MIDI_SERVICE);
         this.contextWeakReference = new WeakReference<>(context);
     }
 
 
     @RequiresApi(api = Build.VERSION_CODES.M)
-    public void sendNote(MidiObject object){
+    void sendNote(MidiObject object){
 
         MidiOutput output;
         try {
@@ -53,12 +53,6 @@ public class MidiController {
         }
     }
 
-    /**
-     *
-     * @param midiObject
-     * @return
-     * @throws IOException
-     */
     private MidiOutput createMidiTrams(@NonNull MidiObject midiObject, byte noteMode) {
         previousMidiObject = midiObject;
 
@@ -80,14 +74,14 @@ public class MidiController {
      *
      */
     @RequiresApi(api = Build.VERSION_CODES.M)
-    public void openDevice(final int portNumber, final OnDeviceOpenedListener onDeviceOpenedListener){
-        MidiDeviceInfo[] infos = m.getDevices();
+    void openDevice(final int portNumber, final OnDeviceOpenedListener onDeviceOpenedListener){
+        MidiDeviceInfo[] infos = midiManager.getDevices();
 
         if(infos.length ==0)
             throw new RuntimeException("No device found");
 
         final MidiDeviceInfo info = infos[0];
-        m.openDevice(info, new MidiManager.OnDeviceOpenedListener() {
+        midiManager.openDevice(info, new MidiManager.OnDeviceOpenedListener() {
             @Override
             public void onDeviceOpened(MidiDevice device) {
                 if (device == null) {

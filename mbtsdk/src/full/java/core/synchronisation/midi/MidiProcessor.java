@@ -43,7 +43,7 @@ public class MidiProcessor {
         if(controller != null && midiScaler != null)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 LogUtils.e("MidiProcessor", "Sending note "+note+ " velocity"+velocity);
-                controller.sendNote(midiScaler.callMeForMagic(note.ordinal(), velocity));
+                controller.sendNote(midiScaler.createMidiObject(note.ordinal(), velocity));
             }
     }
 }

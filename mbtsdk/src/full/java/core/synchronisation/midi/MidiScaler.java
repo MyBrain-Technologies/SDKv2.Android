@@ -95,10 +95,7 @@ public class MidiScaler {
         this.baseNote = Key.valueOf(key.toString()).ordinal();
     }
 
-
-
-    // Ca paaaaaassse
-    MidiObject callMeForMagic(int relativeNote, int velocity) {
+    MidiObject createMidiObject(int relativeNote, int velocity) {
         int cumulatedIntervals = 0;
         for (int i = 0; i <= relativeNote; i++) {
             int intervalLength = this.scale.getIntervals().length;

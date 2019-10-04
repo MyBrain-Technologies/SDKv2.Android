@@ -7,8 +7,8 @@ android {
     defaultConfig {
         minSdkVersion 22
         targetSdkVersion 28
-        versionCode 9
-        versionName '2.1.0'
+        versionCode 11
+        versionName '2.1.2'
         flavorDimensions "default"
         testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'
     }
@@ -115,7 +115,7 @@ project.afterEvaluate {
     publishing {
         publications {
             full(MavenPublication) {
-                groupId 'mybraintech.com'
+                groupId 'beta.mybraintech.com'
                 artifactId 'sdk-full'
                 version android.defaultConfig.versionName
 
@@ -175,13 +175,13 @@ project.afterEvaluate {
         }
             //Add repository here with publisher credentials
             repositories {
-//                maven {
-//                    url nexusUrl
-//                    credentials {
-//                        username nexusUsername
-//                        password nexusPassword
-//                    }
-//                }
+                maven {
+                    url nexusUrl
+                    credentials {
+                        username nexusUsername
+                        password nexusPassword
+                    }
+                }
             }
         }
 

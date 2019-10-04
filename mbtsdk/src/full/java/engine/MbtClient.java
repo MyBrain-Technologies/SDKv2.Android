@@ -200,9 +200,17 @@ public final class MbtClient {
         mbtManager.stopRecord(recordConfig);
     }
 
-    public void sendMidi(Note note, int velocity, int pitch, Key key, Scale scale) {
-        mbtManager.sendMidi(note, velocity, pitch, scale, key);
-    }
+    /**
+     * Send a note over MIDI protocol at port 0.
+     * @param note the base note to send
+     * @param velocity the velocity associated to the note
+     * @param pitch the pitch associated to the note
+     * @param key the associated to the note
+     * @param scale the scale associated to the note
+     */
+//    public void sendMidi(Note note, int velocity, int pitch, Key key, Scale scale) {
+//        mbtManager.sendMidi(note, velocity, pitch, scale, key);
+//    }
 
     /**
      * Sends a command to the connected headset to change its current serial number

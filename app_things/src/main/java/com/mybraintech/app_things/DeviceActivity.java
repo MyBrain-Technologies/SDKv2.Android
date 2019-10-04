@@ -28,6 +28,7 @@ import java.util.Queue;
 
 
 import core.bluetooth.BtState;
+import core.bluetooth.StreamState;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindDevice;
 import core.eeg.storage.MbtEEGPacket;
@@ -86,12 +87,12 @@ DeviceActivity extends AppCompatActivity {
     private ConnectionStateListener connectionStateListener = new ConnectionStateListener(){
 
         @Override
-        public void onDeviceConnected() {
+        public void onDeviceConnected(MbtDevice device) {
             isConnected = true;
         }
 
         @Override
-        public void onDeviceDisconnected() {
+        public void onDeviceDisconnected(MbtDevice device) {
             LogUtils.i(TAG," device disconnected");
             isConnected = false;
             //returnOnPreviousActivity();
@@ -105,7 +106,7 @@ DeviceActivity extends AppCompatActivity {
 
     private DeviceBatteryListener deviceInfoListener = new DeviceBatteryListener() {
         @Override
-        public void onBatteryChanged(String newLevel) {
+        public void onBatteryLevelReceived(String newLevel) {
             lastReadBatteryLevel = newLevel;
             notifyUser("Current battery level : "+lastReadBatteryLevel+" %");
         }
@@ -138,6 +139,11 @@ DeviceActivity extends AppCompatActivity {
                     channel2Quality.setText(getString(R.string.channel_2_qc) + ( (mbtEEGPackets.getQualities() != null && mbtEEGPackets.getQualities().get(1) != null ) ? mbtEEGPackets.getQualities().get(1) : " -- "));
                 }
             }
+        }
+
+        @Override
+        public void onNewStreamState(@NonNull StreamState streamState) {
+
         }
 
     };
@@ -215,7 +221,7 @@ DeviceActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if(!isStreaming) { //streaming is not in progress : starting streaming
-                    startStream(new StreamConfig.Builder(eegListener).setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)/*.useQualities(true)*/.create());
+                    startStream(new StreamConfig.Builder(eegListener).setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)/*.useQualities(true)*/.createForDevice(MbtDeviceType.MELOMIND));
                 }else { //streaming is in progress : stopping streaming
                     stopStream(); // set false to isStreaming et null to the eegListener
                 }

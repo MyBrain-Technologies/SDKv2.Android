@@ -171,7 +171,7 @@ DeviceActivity extends AppCompatActivity {
                     int pitch = (int) pitchSpinner.getSelectedItem();
                     Key key = (Key) keySpinner.getSelectedItem();
                     Scale scale = (Scale) scaleSpinner.getSelectedItem();
-                    client.sendMidi(note, velocity, pitch, key, scale);
+                    //client.sendMidi(note, velocity, pitch, key, scale);
                 }
             }
 
