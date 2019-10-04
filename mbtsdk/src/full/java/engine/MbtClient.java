@@ -5,7 +5,6 @@ import android.content.Context;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
 
 import command.CommandInterface;
 import command.DeviceCommands;
@@ -19,6 +18,9 @@ import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
 import core.device.model.FirmwareVersion;
 import core.eeg.storage.MbtEEGPacket;
+import core.synchronisation.midi.Key;
+import core.synchronisation.midi.Note;
+import core.synchronisation.midi.Scale;
 import engine.clientevents.BaseError;
 import engine.clientevents.BluetoothError;
 import engine.clientevents.BluetoothStateListener;
@@ -27,11 +29,9 @@ import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.DeviceBatteryListener;
 import engine.clientevents.EegListener;
 
-import engine.clientevents.HeadsetDeviceError;
 import engine.clientevents.OADStateListener;
 import features.MbtFeatures;
 import features.MbtDeviceType;
-import features.MbtFeatures;
 
 /**
  * Created by Etienne on 08/02/2018.
@@ -198,6 +198,10 @@ public final class MbtClient {
 
     public void stopRecord(@NonNull RecordConfig recordConfig){
         mbtManager.stopRecord(recordConfig);
+    }
+
+    public void sendMidi(Note note, int velocity, int pitch, Key key, Scale scale) {
+        mbtManager.sendMidi(note, velocity, pitch, scale, key);
     }
 
     /**

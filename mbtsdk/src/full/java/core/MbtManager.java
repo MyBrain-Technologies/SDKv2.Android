@@ -32,8 +32,12 @@ import core.device.model.MbtDevice;
 import core.device.model.MelomindsQRDataBase;
 import core.device.model.FirmwareVersion;
 import core.eeg.MbtEEGManager;
+import core.synchronisation.midi.Key;
+import core.synchronisation.midi.MidiScaler;
+import core.synchronisation.midi.Note;
 import core.recording.MbtRecordingManager;
 import core.synchronisation.MbtSynchronisationManager;
+import core.synchronisation.midi.Scale;
 import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
 import engine.clientevents.BluetoothError;
@@ -50,6 +54,7 @@ import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.ConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
 import eventbus.events.FirmwareUpdateClientEvent;
+import eventbus.events.SynchronisationEvent;
 import features.MbtDeviceType;
 import features.MbtFeatures;
 import mbtsdk.com.mybraintech.mbtsdk.R;
@@ -377,5 +382,9 @@ public class MbtManager{
 
     Set<BaseModuleManager> getRegisteredModuleManagers() {
         return registeredModuleManagers;
+    }
+
+    public void sendMidi(Note note, int velocity, int pitch, Scale scale, Key key) {
+        MbtEventBus.postEvent(new SynchronisationEvent.MidiEvent(note, velocity, pitch, scale, key));
     }
 }

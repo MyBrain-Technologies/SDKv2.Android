@@ -1,44 +1,59 @@
 package eventbus.events;
 
-import android.support.annotation.NonNull;
-
-import config.SynchronisationConfig;
+import core.synchronisation.midi.Key;
+import core.synchronisation.midi.MidiScaler;
+import core.synchronisation.midi.Note;
+import core.synchronisation.midi.Scale;
 
 /**
  * Event posted when a OSC stream is initialized
  *
  * @author Sophie Zecri on 24/05/2018
  */
-public class SynchronisationEvent { //Events are just POJO without any specific implementation
+public interface SynchronisationEvent { //Events are just POJO without any specific implementation
 
-    public interface StreamingEvent{
-        void InitEvent();
-    }
-
-    public static class StreamEvent {
-
-    }
 
     /**
-     * Event posted when a OSC stream is initialized
+     * Event posted when a MIDI note is streamed
      *
      * @author Sophie Zecri on 24/05/2018
      */
-    public static class InitEvent { //Events are just POJO without any specific implementation
+     class MidiEvent {
 
-        private SynchronisationConfig oscConfig;
+        private Note note;
+        private int velocity;
+        private int pitch;
+        private Key key;
+        private Scale scale;
 
-        public InitEvent(@NonNull SynchronisationConfig oscConfig) {
-            this.oscConfig = oscConfig;
+
+        public MidiEvent(Note note, int velocity, int pitch, Scale scale, Key key) {
+            this.note = note;
+            this.velocity = velocity;
+            this.key = key;
+            this.pitch = pitch;
+            this.scale = scale;
         }
 
-        /**
-         * Gets the ip address and port to OSC stream
-         */
-        public SynchronisationConfig getSynchronisationConfig() {
-            return oscConfig;
+        public Note getNote() {
+            return note;
         }
 
+        public int getVelocity() {
+            return velocity;
+        }
+
+        public int getPitch() {
+            return pitch;
+        }
+
+        public Key getKey() {
+            return key;
+        }
+
+        public Scale getScale() {
+            return scale;
+        }
     }
 }
 
