@@ -1,5 +1,8 @@
 package features;
 
+import android.support.annotation.Keep;
+
+@Keep
 public enum MbtAcquisitionLocations {
 
     Fpz,
