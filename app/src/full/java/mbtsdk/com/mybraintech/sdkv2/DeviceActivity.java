@@ -354,6 +354,7 @@ DeviceActivity extends AppCompatActivity {
                                                             .streamRawEEG()
                                                             .streamQualities()
                                                             .streamFeature(Feature.ALPHA_POWER)
+                                                            .streamFeature(Feature.ALPHA_RATIO)
                                                             .port(port)
                                                             .create())
                                                     .createForDevice(deviceType));
