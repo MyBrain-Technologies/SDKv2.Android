@@ -59,7 +59,12 @@ public class MbtOSCProcessor extends AbstractStreamer<OSCMessage, OSCPortOut, Sy
 
         OSCMessage message = new OSCMessage(address);
         for (Object argument : dataToStream){
-            message.addArgument(argument);
+            if(argument instanceof ArrayList){
+                for (Object value : (ArrayList)argument){
+                    message.addArgument(value);
+                }
+            }else
+                message.addArgument(dataToStream);
         }
         return message;
     }
