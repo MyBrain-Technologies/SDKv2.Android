@@ -32,16 +32,16 @@ import utils.MbtLock;
  * Created by Etienne on 08/02/2018.
  */
 
-public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, BluetoothInterfaces.IStream{
+public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, BluetoothInterfaces.IStream{ //todo refactor interfaces > abstract classes : see streamstate comments to understand
 
     private final static String TAG = MbtBluetooth.class.getName();
 
     @NonNull
-    private StreamState streamState = StreamState.IDLE;
+    private StreamState streamState = StreamState.IDLE; //todo streamState variable can be inherited from Stream abstract class instead of IStream interface that just implements methods
 
-    private volatile BtState currentState = BtState.IDLE;
+    private volatile BtState currentState = BtState.IDLE; //todo add @NonNull annotation + rename into bluetoothState
 
-    protected boolean isUpdating;
+    protected boolean isUpdating; //todo remove useless
 
 
     @Nullable
@@ -92,7 +92,7 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
                 resetCurrentState();//reset the current connection state to IDLE
                 if(this instanceof MbtBluetoothA2DP && !currentState.equals(BtState.UPGRADING))
                     mbtBluetoothManager.disconnectAllBluetooth(false); //audio has failed to connect : we disconnect BLE
-            }if(currentState.isDisconnectableState())  //if a failure occurred
+            }if(currentState.isDisconnectableState())  //if a failure occurred //todo check if a "else" is not missing here
                 disconnect(); //disconnect if a headset is connected
 
         }
@@ -111,10 +111,10 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
     }
 
     protected void notifyBatteryReceived(int value){
-        mbtBluetoothManager.notifyDeviceInfoReceived(DeviceInfo.BATTERY, String.valueOf(value));
+        mbtBluetoothManager.notifyDeviceInfoReceived(DeviceInfo.BATTERY, String.valueOf(value));//todo keep battery value as integer ?
     }
 
-    void notifyHeadsetStatusEvent(byte code, int value){
+    void notifyHeadsetStatusEvent(byte code, int value){ //todo : only available in Melomind to this day > see if vpro will need it
 //        if(this.headsetStatusListener != null){
 //            if(code == 0x01)
 //                this.headsetStatusListener.onSaturationStateChanged(value);
@@ -128,7 +128,7 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
 
     // Events Registration
 
-    public void notifyNewDataAcquired(@NonNull final byte[] data) {
+    public void notifyNewDataAcquired(@NonNull final byte[] data) {//todo call this method to notify the device manager (and all the managers in general) when the bluetooth receives data from the headset (saturation & offset for example instead of notifyNewHeadsetStatus located in the MbtBluetoothLe)
         mbtBluetoothManager.handleDataAcquired(data);
     }
 
@@ -168,9 +168,9 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
         return currentDevice;
     }
 
-    public BtState getCurrentState() { return currentState; }
+    public BtState getCurrentState() { return currentState; }//todo rename getBluetoothState
 
-    void setCurrentState(BtState currentState) {
+    void setCurrentState(BtState currentState) {//todo rename setBluetoothState
         if(!this.currentState.equals(currentState)){
             this.currentState = currentState;
         }
@@ -184,7 +184,7 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
      * This method waits until the device has returned a response
      * related to the SDK request (blocking method).
      */
-    protected Object waitResponseForCommand(int timeout){
+    protected Object waitResponseForCommand(int timeout){ //todo rename startWait/wait
         Log.d(TAG, "Wait response of device command ");
         try {
             return lock.waitOperationResult(timeout);
@@ -209,7 +209,7 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
      */
     @Override
     public boolean isStreaming() {
-        return streamState == StreamState.STARTED;
+        return streamState == StreamState.STARTED; //todo add OR == StreamState.STREAMING
     }
 
 

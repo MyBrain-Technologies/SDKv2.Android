@@ -27,13 +27,9 @@ import core.device.model.MbtDevice;
 import core.device.model.MelomindDevice;
 import core.eeg.storage.MbtEEGPacket;
 import engine.SimpleRequestCallback;
-<<<<<<< HEAD
 import eventbus.MbtEventBus;
-=======
 import engine.clientevents.BaseError;
 import engine.clientevents.EegListener;
-import eventbus.MbtEventBus;
->>>>>>> origin/SDK-140_storage_json
 
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
@@ -156,19 +152,19 @@ public class MbtManagerTest {
 
 
     @Test
-<<<<<<< HEAD
-    public void sendCommand(){
+
+    public void sendCommand() {
         CommandInterface.MbtCommand command = Mockito.mock(CommandInterface.MbtCommand.class);
         PowerMockito.spy(MbtEventBus.class);
         MbtEventBus.postEvent(new CommandRequestEvent(command));
-=======
+    }
+
     public void stopStream_noRecord(){
         manager.startStream(new StreamConfig.Builder(new EegListener<BaseError>() {
             @Override
             public void onNewPackets(@NonNull MbtEEGPacket eegPackets) {
 
             }
->>>>>>> origin/SDK-140_storage_json
 
             @Override
             public void onError(BaseError error, String additionalInfo) {
@@ -252,12 +248,11 @@ public class MbtManagerTest {
 
     }
     @Test
-<<<<<<< HEAD
-    public void requestCurrentConnectedDevice_withValidCallback(){
+    public void requestCurrentConnectedDevice_withValidCallback() {
         Context context = Mockito.mock(Context.class);
         MbtManager manager = new MbtManager(context);
         BluetoothDevice bluetoothDevice = Mockito.mock(BluetoothDevice.class);
-        MbtDevice connectedDevice  = new MelomindDevice(bluetoothDevice);
+        MbtDevice connectedDevice = new MelomindDevice(bluetoothDevice);
         ArgumentCaptor<DeviceEvents.GetDeviceEvent> captor = ArgumentCaptor.forClass(DeviceEvents.GetDeviceEvent.class); //capture any get device request
 
         SimpleRequestCallback<MbtDevice> callback = device -> {
@@ -271,16 +266,18 @@ public class MbtManagerTest {
 
         try {
             PowerMockito
-                .doAnswer((Answer<Void>) invocation -> {
-                    MbtEventBus.postEvent(connectedDevice);
-                        return null;})
-                .when(MbtEventBus.class, "postEvent", captor.capture(), Mockito.any(MbtEventBus.Callback.class));
+                    .doAnswer((Answer<Void>) invocation -> {
+                        MbtEventBus.postEvent(connectedDevice);
+                        return null;
+                    })
+                    .when(MbtEventBus.class, "postEvent", captor.capture(), Mockito.any(MbtEventBus.Callback.class));
 
         } catch (Exception e) {
             e.printStackTrace();
         }
         manager.requestCurrentConnectedDevice(callback);
-=======
+    }
+
     public void stopRecord_noStream(){
         //manager.startRecord(context);
         assertTrue(new StreamRequestEvent(false, false,
@@ -294,5 +291,4 @@ public class MbtManagerTest {
         assertTrue(new StreamRequestEvent(false, false,
                 false, false, null).stopStream());
 
->>>>>>> origin/SDK-140_storage_json
     }
