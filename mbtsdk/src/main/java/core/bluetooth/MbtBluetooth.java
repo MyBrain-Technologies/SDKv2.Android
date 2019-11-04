@@ -210,14 +210,15 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
      */
     @Override
     public boolean isStreaming() {
-        return streamState == StreamState.STARTED; //todo add OR == StreamState.STREAMING
+        return streamState == StreamState.STARTED || streamState.equals(StreamState.STREAMING);
     }
 
 
-    /**
-     * Whenever there is a new stream state, this method is called to notify the bluetooth manager about it.
-     * @param newStreamState the new stream state based on {@link StreamState the StreamState enum}
-     */
+
+        /**
+         * Whenever there is a new stream state, this method is called to notify the bluetooth manager about it.
+         * @param newStreamState the new stream state based on {@link StreamState the StreamState enum}
+         */
     @Override
     public void notifyStreamStateChanged(StreamState newStreamState) {
         LogUtils.i(TAG, "new stream state " + newStreamState.toString());

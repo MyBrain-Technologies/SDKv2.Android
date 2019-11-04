@@ -12,6 +12,7 @@ import org.greenrobot.eventbus.ThreadMode;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 
 import core.BaseModuleManager;
 import core.MbtManager;
@@ -59,6 +60,7 @@ public final class MbtEEGManager extends BaseModuleManager {
 
     private static final String TAG = MbtEEGManager.class.getName();
     private static final int UNCHANGED_VALUE = -1;
+    public static final int UNDEFINED_DURATION = -1;
 
     private int sampRate;
     private int packetLength;
@@ -153,7 +155,13 @@ public final class MbtEEGManager extends BaseModuleManager {
             public void run() {
                 if (hasQualities) {
                     eegPackets.setQualities(MbtEEGManager.this.computeEEGSignalQuality(eegPackets));
-                    eegPackets.setFeatures(MBTSignalQualityChecker.getFeatures());
+                    try{
+                        if(Integer.parseInt(ContextSP.SP_VERSION.replace(".","")) >=
+                                Integer.parseInt(FREQUENCY_BAND_FEATURES_VERSION.replace(".","")))
+                            eegPackets.setFeatures(MBTSignalQualityChecker.getFeatures());
+                    }catch (NumberFormatException e){
+                        Log.e(TAG, "Qualities checker version unknown");
+                    }
                 }
 
                 MbtEventBus.postEvent(new ClientReadyEEGEvent(eegPackets));
@@ -161,6 +169,7 @@ public final class MbtEEGManager extends BaseModuleManager {
         });
 
     }
+    private final String FREQUENCY_BAND_FEATURES_VERSION = "2.3.1";
 
     /**
      * Initializes the main quality checker object in the JNI which will live throughout all session.
@@ -202,11 +211,31 @@ public final class MbtEEGManager extends BaseModuleManager {
     private ArrayList<Float> computeEEGSignalQuality(final MbtEEGPacket packet) {
 
         if(packet.getChannelsData() != null && packet.getChannelsData().size()!=0){
-            long tsBefore = System.currentTimeMillis();
+
             float[] qualities = new float[nbChannels];
             Arrays.fill(qualities, -1f);
             try{
-                qualities = MBTSignalQualityChecker.computeQualitiesForPacketNew(sampRate, packetLength, MatrixUtils.invertFloatMatrix(packet.getChannelsData()));
+                if(protocol.equals(BtProtocol.BLUETOOTH_LE)){
+                    qualities = MBTSignalQualityChecker.computeQualitiesForPacketNew(sampRate, packetLength, MatrixUtils.invertFloatMatrix(packet.getChannelsData()));
+
+                }else if(protocol.equals(BtProtocol.BLUETOOTH_SPP)){
+                    ArrayList<Float> qualitiesList = new ArrayList<>();
+                    ArrayList<ArrayList<Float>> temp = new  ArrayList<ArrayList<Float>>();
+                    //WARNING : quality checker C++ algo only takes into account 2 channels
+                    for(int i = 0; i < nbChannels; i+=2) {
+                        final float[] qts;
+                        temp.add(0, downsample(MatrixUtils.invertFloatMatrix(packet.getChannelsData()).get(i)));
+                        temp.add(1, downsample(MatrixUtils.invertFloatMatrix(packet.getChannelsData()).get(i+1)));
+                        int mSampRate = temp.get(0).size();
+                        int mPacketLentgh = mSampRate;
+                        qts = MBTSignalQualityChecker.computeQualitiesForPacketNew(mSampRate, mPacketLentgh, temp);
+                        temp.clear();
+                        for (float q : qts) {
+                            qualitiesList.add(q);
+                        }
+                    }
+                    return qualitiesList;
+                }
 
             } catch (IllegalStateException e){
                 e.printStackTrace();
@@ -219,6 +248,28 @@ public final class MbtEEGManager extends BaseModuleManager {
         return null;
     }
 
+    /**
+     * Temporary used to fix the quality checker bug for 500 Hz (non 250Hz)
+     * @param vector 500 Hz
+     * @return vector of 250 Hz (one of out 2 values are removed)
+     */
+    private ArrayList<Float> downsample(ArrayList<Float> vector){
+        int size = 0;
+        if(vector != null)
+            size = vector.size()/2;
+
+        ArrayList<Float> temp = new ArrayList<>(size);
+        Iterator<Float> iterator = vector.iterator();
+        boolean keep = true;
+        while (iterator.hasNext()){
+            Float value = iterator.next();
+            if(keep){
+                temp.add(value);
+            }
+            keep = !keep;
+        }
+        return temp;
+    }
     /**
      * Computes the relaxation index using the provided <code>MbtEEGPacket</code>.
      * For now, we admit there are only 2 channels for each packet

@@ -3,7 +3,7 @@ package core.recording.metadata;
 public enum MelomindExerciseType {
 
     DEFAULT,
-    VOYAGE, //todo JOURNEY ?
+    JOURNEY,
     SWITCH,
     BALANCE
 }

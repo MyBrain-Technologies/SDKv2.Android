@@ -312,7 +312,7 @@ public interface DeviceCommands {
         @Override
         public String getInvalidityError() {
             return "You are not allowed to use a CommandCallback or other Object that extends the MbtResponse interface for the commandCallback input.\n"
-            +"As no response is expected, you have to call the ICommandCallback constructor to createForDevice a instance of ICommandCallback object.\n"
+            +"As no response is expected, you have to call the ICommandCallback constructor to create a instance of ICommandCallback object.\n"
             +"If you still use a CommandCallback or other Object that extends the MbtResponse interface, the command won't be sent and the onError callback will be triggered.";
         }
     }

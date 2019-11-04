@@ -14,6 +14,8 @@ public enum StreamState{
      */
     STARTED,
 
+    STREAMING,
+
     /**
      * Steam has correctly been stopped
      */

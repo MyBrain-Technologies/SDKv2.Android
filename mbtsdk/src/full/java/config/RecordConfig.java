@@ -11,15 +11,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.UUID;
 
-import core.device.model.MbtDevice;
 import core.recording.metadata.Comment;
 import core.recording.metadata.MelomindExerciseSource;
 import core.recording.metadata.RecordType;
 import core.recording.metadata.MelomindExerciseType;
 import features.MbtAcquisitionLocations;
-import features.MbtDeviceType;
 import features.MbtFeatures;
 import model.RecordInfo;
+
+import static core.eeg.MbtEEGManager.UNDEFINED_DURATION;
 
 /**
  * Recording configuration is all the data required to store the EEG packets in a JSON file.
@@ -87,6 +87,8 @@ public final class RecordConfig {
      */
     private long timestamp;
 
+    private int duration;
+
     ///CONFIG RELATED TO THE CONTENT OF THE JSON FILE
 
     /**
@@ -125,18 +127,20 @@ public final class RecordConfig {
                          String projectName,
                          boolean useExternalStorage,
                          long timestamp,
+                         int duration,
                          ArrayList<Comment> comments,
                          Bundle recordingParameters,
                          boolean enableMultipleRecordings,
-    ArrayList<MbtAcquisitionLocations> acquisitionLocations,
-    ArrayList<MbtAcquisitionLocations> referenceLocation,
-    ArrayList<MbtAcquisitionLocations> groundLocations
+                         ArrayList<MbtAcquisitionLocations> acquisitionLocations,
+                         ArrayList<MbtAcquisitionLocations> referenceLocation,
+                         ArrayList<MbtAcquisitionLocations> groundLocations
     ){
 
         this.folder = folder;
         this.filename = filename;
         this.subjectID = subjectId;
         this.timestamp = timestamp;
+        this.duration = duration;
         this.useExternalStorage = useExternalStorage;
         this.recordInfo = recordInfo;
         this.headerComments = comments;
@@ -206,6 +210,10 @@ public final class RecordConfig {
      */
     public long getTimestamp() {
         return timestamp;
+    }
+
+    public int getDuration() {
+        return duration;
     }
 
     /**
@@ -304,6 +312,8 @@ public final class RecordConfig {
          * formatted as the following example: "yyyy-MM-dd_HH:mm:ss.SSS".
          */
         private long timestamp;
+
+        private int duration = UNDEFINED_DURATION;
         /**
          * Name of your Android application
          * Default value is the name defined in your Manifest file for the attribute android:name
@@ -370,16 +380,16 @@ public final class RecordConfig {
         /**
          * Ground Electrodes locations
          */
-        public Builder groundLocations(@NonNull MbtAcquisitionLocations... acquisitionLocations){
-            this.groundLocations = new ArrayList<>(Arrays.asList(acquisitionLocations));
+        public Builder groundLocations(@NonNull MbtAcquisitionLocations... groundLocations){
+            this.groundLocations = new ArrayList<>(Arrays.asList(groundLocations));
             return this;
         }
 
         /**
          * Reference Electrodes locations
          */
-        public Builder referenceLocations(@NonNull MbtAcquisitionLocations... acquisitionLocations){
-            this.acquisitionLocations = new ArrayList<>(Arrays.asList(acquisitionLocations));
+        public Builder referenceLocations(@NonNull MbtAcquisitionLocations... referenceLocations){
+            this.referenceLocations = new ArrayList<>(Arrays.asList(referenceLocations));
             return this;
         }
 
@@ -466,6 +476,11 @@ public final class RecordConfig {
             return this;
         }
 
+        public Builder duration(int duration) {
+            this.duration = duration;
+            return this;
+        }
+
         /**
          * Name of your Android application
          * Default value is the name defined in your Manifest file for the attribute android:name
@@ -537,32 +552,16 @@ public final class RecordConfig {
                     projectName,
                     useExternalStorage,
                     timestamp,
+                    duration,
                     headerComments,
                     recordingParameters,
                     enableMultipleRecordings,
                     acquisitionLocations,
                     referenceLocations,
                     groundLocations
-                    );
+            );
         }
 
-        @Override
-        public String toString() {
-            return "Builder{" +
-                    "folder='" + folder + '\'' +
-                    ", filename='" + filename + '\'' +
-                    ", useExternalStorage=" + useExternalStorage +
-                    ", timestamp=" + timestamp +
-                    ", projectName='" + projectName + '\'' +
-                    ", subjectID='" + subjectID + '\'' +
-                    ", condition='" + condition + '\'' +
-                    ", headerComments=" + headerComments +
-                    ", recordInfo=" + recordInfo +
-                    ", recordingParameters=" + recordingParameters +
-                    ", enableMultipleRecordings=" + enableMultipleRecordings +
-                    ", acquisitionLocations=" + acquisitionLocations +
-                    '}';
-        }
     }
 
     @Override
@@ -580,6 +579,8 @@ public final class RecordConfig {
                 ", recordingParameters=" + recordingParameters +
                 ", enableMultipleRecordings=" + enableMultipleRecordings +
                 ", acquisitionLocations=" + acquisitionLocations +
+                ", referenceLocations=" + referenceLocations +
+                ", groundLocations=" + groundLocations +
                 '}';
     }
 

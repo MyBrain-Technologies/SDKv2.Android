@@ -5,6 +5,7 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 
 
+import core.bluetooth.StreamState;
 import core.eeg.storage.MbtEEGPacket;
 
 /**
@@ -23,4 +24,6 @@ public interface EegListener<U extends BaseError> extends BaseErrorEvent<U>{
      *
      */
     void onNewPackets(@NonNull MbtEEGPacket eegPackets);
+
+    void onNewStreamState(@NonNull StreamState streamState);
 }

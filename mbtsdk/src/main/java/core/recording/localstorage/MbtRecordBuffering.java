@@ -16,6 +16,8 @@ import engine.clientevents.RecordingError;
 import model.MbtRecording;
 import utils.LogUtils;
 
+import static core.eeg.MbtEEGManager.UNDEFINED_DURATION;
+
 /**
  * MbtRecordBuffering is responsible for storing EEG raw data acquired
  * in a temporary buffer if a recording is started.
@@ -52,35 +54,47 @@ public class MbtRecordBuffering {
     }
 
     public boolean storeRecordBuffer(@NonNull MbtDevice device, @NonNull RecordConfig recordConfig) {
-        if(eegPacketsBuffer == null || recordConfig == null || device == null)
+        if (eegPacketsBuffer == null || eegPacketsBuffer.isEmpty()){
+            LogUtils.w(TAG," JSON file not created: null or empty buffer of EEG packets");
             return false;
+        }
 
-        LogUtils.d(TAG," Saving buffer of "+ eegPacketsBuffer.size()+ " packets.");
+        if (recordConfig == null || device == null){
+            LogUtils.w(TAG," JSON file not created : null device or record config ");
+            return false;
+        }
+        ArrayList<MbtEEGPacket> eegPacketsClone = (ArrayList<MbtEEGPacket>) eegPacketsBuffer.clone();
+        resetPacketsBuffer();
 
-            if (recordConfig.getFilename() == null)
-                recordConfig.setFilename(FileManager.createFilename(recordConfig.getTimestamp(),
-                        recordConfig.getProjectName(),
-                        device.getProductName(),
-                        recordConfig.getSubjectID(),
-                        recordConfig.getCondition()));
+        if(recordConfig.getDuration() > 0 && eegPacketsClone.size() > recordConfig.getDuration())
+            eegPacketsClone = new ArrayList<>(eegPacketsClone.subList(0,recordConfig.getDuration()));
 
-            LogUtils.d(TAG, "JSON(Folder: " + recordConfig.getFolder() + " Filename: " + recordConfig.getFilename() + ")" + " External storage: " + recordConfig.useExternalStorage() + ")");
+        LogUtils.d(TAG," Saving buffer of "+ eegPacketsClone.size()+ " packets.");
 
-            File file = FileManager.createFile(mContext,
-                    recordConfig.getFolder(),
-                    recordConfig.getFilename(),
-                    recordConfig.useExternalStorage());
-            if (file == null) {
-                LogUtils.e(TAG, RecordingError.ERROR_CREATE.getMessage());
-                return false;
-            }
+        if (recordConfig.getFilename() == null)
+            recordConfig.setFilename(FileManager.createFilename(recordConfig.getTimestamp(),
+                    recordConfig.getProjectName(),
+                    device.getProductName(),
+                    recordConfig.getSubjectID(),
+                    recordConfig.getCondition()));
+
+        LogUtils.d(TAG, "JSON(Folder: " + recordConfig.getFolder() + " Filename: " + recordConfig.getFilename() + ")" + " External storage: " + recordConfig.useExternalStorage() + ")");
+
+        File file = FileManager.createFile(mContext,
+                recordConfig.getFolder(),
+                recordConfig.getFilename(),
+                recordConfig.useExternalStorage());
+        if (file == null) {
+            LogUtils.e(TAG, RecordingError.ERROR_CREATE.getMessage());
+            return false;
+        }
 
         MbtRecording recording = MbtJsonBuilder.convertEEGPacketsToRecording(
-                    device.getNbChannels(),
-                    recordConfig.getRecordInfo().setSPVersion(ContextSP.SP_VERSION),
-                    recordConfig.getTimestamp(), eegPacketsBuffer,
-                    device.getInternalConfig().getStatusBytes() > 0);
-            LogUtils.d(TAG, "New recording created : " + recording.toString());
+                device.getNbChannels(),
+                recordConfig.getRecordInfo().setSPVersion(ContextSP.SP_VERSION),
+                recordConfig.getTimestamp(), eegPacketsClone,
+                device.getInternalConfig().getStatusBytes() > 0);
+        LogUtils.d(TAG, "New recording created : " + recording.toString());
 
         device.setAcquisitionLocations(recordConfig.getAcquisitionLocations());
         device.setReferencesLocations(recordConfig.getReferenceLocations());
@@ -88,13 +102,13 @@ public class MbtRecordBuffering {
         LogUtils.d(TAG, "Device " + device.toString());
 
         String recordingPath = FileManager.storeRecordingInFile(mContext,
-                    file,
-                    recordConfig.getSubjectID(),
-                    device,
-                    recording,
-                    recordConfig.getRecordingParameters(),
-                    recordingsBuffer.size()+1,
-                    recordConfig.getHeaderComments());
+                file,
+                recordConfig.getSubjectID(),
+                device,
+                recording,
+                recordConfig.getRecordingParameters(),
+                recordingsBuffer.size()+1,
+                recordConfig.getHeaderComments());
 
         LogUtils.d(TAG, "Recording stored in file: " + recordingPath);
 
@@ -104,8 +118,6 @@ public class MbtRecordBuffering {
             if (recordingsBuffer.size() > 1)
                 FileManager.updateJSONWithCurrentRecordNb(recordingsBuffer);
         }
-
-        resetPacketsBuffer();
 
         if(!recordConfig.enableMultipleRecordings())
             recordingsBuffer = null;
@@ -119,4 +131,7 @@ public class MbtRecordBuffering {
         }
     }
 
+    public boolean isEegPacketsBufferEmpty() {
+        return (eegPacketsBuffer == null || eegPacketsBuffer.isEmpty());
+    }
 }

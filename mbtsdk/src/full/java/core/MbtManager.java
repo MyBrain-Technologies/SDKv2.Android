@@ -23,7 +23,6 @@ import core.bluetooth.requests.DisconnectRequestEvent;
 import core.bluetooth.requests.ReadRequestEvent;
 import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
 import core.bluetooth.requests.StreamRequestEvent;
-import core.bluetooth.requests.CommandRequestEvent;
 import core.device.event.DCOffsetEvent;
 import core.device.DeviceEvents;
 import core.device.MbtDeviceManager;
@@ -210,7 +209,7 @@ public class MbtManager{
      * @param command is the command to send
      */
     public void sendCommand(@NonNull CommandInterface.MbtCommand command) {
-       MbtEventBus.postEvent(new CommandRequestEvent(command));
+        MbtEventBus.postEvent(new CommandRequestEvent(command));
     }
 
     /**
@@ -289,6 +288,8 @@ public class MbtManager{
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onStreamStateChanged(StreamState newState){
         if(eegListener != null){
+            eegListener.onNewStreamState(newState);
+
             if(newState == StreamState.FAILED){
                 eegListener.onError(EegError.ERROR_FAIL_START_STREAMING, null);
             }else if(newState == StreamState.DISCONNECTED){

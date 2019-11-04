@@ -6,7 +6,7 @@ import android.support.annotation.NonNull;
 
 import command.CommandInterface;
 
-public class BluetoothInterfaces {
+public interface BluetoothInterfaces {
 
 
     interface IDataBluetooth extends

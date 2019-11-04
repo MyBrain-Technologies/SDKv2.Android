@@ -101,9 +101,9 @@ public final class FileManager {
      * @return
      */
     public static File createFile(@NonNull final Context context,
-                           @Nullable String folder,
-                           @NonNull String filename,
-                           boolean useExternalStorage)
+                                  @Nullable String folder,
+                                  @NonNull String filename,
+                                  boolean useExternalStorage)
     {
         String absolutePath = createFolder(context, folder, useExternalStorage);
         if (absolutePath == null){
@@ -149,7 +149,8 @@ public final class FileManager {
         try (final FileWriter fw = new FileWriter(file)) {
 
             String json = MbtJsonBuilder.serializeRecording(device, recording, totalRecordingInSession, comments, recordingParams, subjectId);
-            fw.append(json);
+            if(json != null)
+                fw.append(json);
             fw.close();
 
             //This block of code only serves to see the file in USB storage mode

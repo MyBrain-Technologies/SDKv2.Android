@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 
+import core.bluetooth.StreamState;
 import core.device.event.DCOffsetEvent;
 import core.device.event.SaturationEvent;
 import core.bluetooth.BtState;
@@ -164,6 +165,11 @@ public class DeviceActivity extends AppCompatActivity {
 
                     }
                 }
+            }
+
+            @Override
+            public void onNewStreamState(@NonNull StreamState streamState) {
+
             }
         };
     }

@@ -12,7 +12,7 @@
 /**
  * Jni function to call the correct compute statistics functions
  */
-JNIEXPORT jfloatArray JNICALL Java_core_eeg_signalprocessing_MBTEegFilter_bandpassFilter(JNIEnv *env, jobject instance,
+JNIEXPORT jfloatArray JNICALL Java_core_eeg_signalprocessing_MBTEegFilter_nativeBandpassFilter(JNIEnv *env, jobject instance,
                                                                                jfloat freqBound1,
                                                                                jfloat freqBound2,
                                                                                jint size,
