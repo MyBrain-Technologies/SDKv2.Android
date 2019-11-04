@@ -578,7 +578,7 @@ public final class MbtBluetoothSPP
                     command.onRequestSent();
 
                     if (command.isResponseExpected()) {
-                        response = waitResponseForCommand(11000);
+                        response = startWaitingOperation(11000);
                         command.onResponseReceived(response);
                     }
                 }

@@ -185,7 +185,7 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
      * This method waits until the device has returned a response
      * related to the SDK request (blocking method).
      */
-    protected Object waitResponseForCommand(int timeout){ //todo rename startWait/wait
+    protected Object startWaitingOperation(int timeout){ //todo rename startWait/wait
         Log.d(TAG, "Wait response of device command ");
         try {
             return lock.waitOperationResult(timeout);

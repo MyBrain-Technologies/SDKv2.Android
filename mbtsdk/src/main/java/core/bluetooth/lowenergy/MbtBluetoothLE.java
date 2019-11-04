@@ -355,7 +355,7 @@ public class MbtBluetoothLE
         LogUtils.i(TAG, "Successfully initiated write descriptor operation in order to remotely " +
                 "enable notification... now waiting for confirmation from headset.");
 
-        Boolean result = (Boolean) waitResponseForCommand(MbtConfig.getBluetoothA2DpConnectionTimeout());
+        Boolean result = (Boolean) startWaitingOperation(MbtConfig.getBluetoothA2DpConnectionTimeout());
         return result == null ? false : result;
 
     }
@@ -668,23 +668,6 @@ public class MbtBluetoothLE
         mbtBluetoothManager.updateConnectionState(isCompleted); //do nothing if the current state is CONNECTED_AND_READY
     }
 
-
-    /**
-     * This method waits until the device has returned a response
-     * related to the SDK request (blocking method).
-     */
-    private Object waitResponseForCommand(CommandInterface.MbtCommand command){
-        Log.d(TAG, "Wait response of device command "+command);
-        try {
-            return lock.waitOperationResult(11000);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            LogUtils.e(TAG, "Device command response not received : "+e);
-            if(e instanceof TimeoutException)
-                command.onError(BluetoothError.ERROR_TIMEOUT, "Device command sent but no response has been received.");
-        }
-        return null;
-    }
-
     /**
      * This method handle a single command in order to
      * reconfigure some headset or bluetooth streaming parameters
@@ -717,7 +700,7 @@ public class MbtBluetoothLE
                     command.onRequestSent();
 
                     if (command.isResponseExpected()) {
-                        response = waitResponseForCommand(11000);
+                        response = startWaitingOperation(11000);
                         command.onResponseReceived(response);
                     }
                 }
