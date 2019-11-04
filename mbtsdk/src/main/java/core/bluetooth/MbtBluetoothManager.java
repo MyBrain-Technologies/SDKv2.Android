@@ -3,6 +3,7 @@ package core.bluetooth;
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -364,7 +365,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                     case BT_PARAMETERS_CHANGED:
                         startSendingExternalName();
                         break;
-                        case CONNECTED:
+                    case CONNECTED:
                         startConnectionForAudioStreaming();
                         break;
                     default:
@@ -828,8 +829,10 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
                 @Override
                 public void onRequestComplete(MbtDevice device) {
-                    if(device == null)
+                    if(device == null) {
+                        requestBeingProcessed = false;
                         return;
+                    }
                     if(!isRequestCompleted){
                         isRequestCompleted = true;
                         boolean connectionFromBleAvailable = new VersionHelper(device.getFirmwareVersionAsString()).isValidForFeature(VersionHelper.Feature.A2DP_FROM_HEADSET);
@@ -848,6 +851,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                                 }
                             });
                             asyncOperation.waitOperationResult(MbtConfig.getBluetoothA2DpConnectionTimeout());
+
                         } catch (CancellationException | InterruptedException | ExecutionException | TimeoutException e) {
                             LogUtils.w(TAG, "Exception raised during audio connection : \n " + e.toString());
                             if(e instanceof CancellationException )
@@ -868,6 +872,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                         e.printStackTrace();
                     }
                     startConnectionForAudioStreaming();
+
                 } else {
                     connectionRetryCounter = 0;
                     bluetoothForAudioStreaming.notifyConnectionStateChanged(BtState.CONNECTION_FAILURE); //at this point : current state should be AUDIO_CONNECTED if audio connection succeeded
@@ -1047,6 +1052,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         switch (newState) { //This event is sent to device module if registered
             case DATA_BT_DISCONNECTED:
                 if (asyncSwitchOperation.isWaiting())
+
                     asyncSwitchOperation.stopWaitingOperation(false); //a new a2dp connection was detected while an other headset was connected : here the last device has been well disconnected so we can connect BLE from A2DP
                 else
                     cancelPendingConnection(false); //a disconnection occurred
@@ -1069,7 +1075,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                             connectBLEFromA2DP(bleDeviceName);
 
                         MbtEventBus.postEvent(new DeviceEvents.AudioConnectedDeviceEvent(bluetoothForAudioStreaming.getCurrentDevice()));
-
                     }
                 }
                 break;

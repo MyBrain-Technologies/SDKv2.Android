@@ -82,7 +82,8 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
      */
     @Override
     public void notifyConnectionStateChanged(@NonNull BtState newState) {
-        if(!newState.equals(currentState)){
+
+        if(!newState.equals(currentState) && !(newState.isAFailureState() && currentState.equals(BtState.DATA_BT_DISCONNECTED))){
             BtState previousState = currentState;
             currentState = newState;
             LogUtils.i(TAG," current state is now  =  "+currentState);
@@ -238,7 +239,7 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
             e.printStackTrace();
         }
 
-       return enableBluetoothOnDevice();
+        return enableBluetoothOnDevice();
     }
 
 }
