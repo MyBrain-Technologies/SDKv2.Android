@@ -15,8 +15,6 @@ import android.text.TextUtils;
 import android.util.Log;
 
 
-import org.apache.commons.lang.ArrayUtils;
-
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -452,7 +450,7 @@ public final class MbtBluetoothSPP
                                         @Override
                                         public void run() {
                                             if(!isStreaming)
-                                                notifyCommandResponseReceived(finalData);
+                                                stopWaitingOperation(finalData);
                                         }
                                     });
                                 }
@@ -488,7 +486,7 @@ public final class MbtBluetoothSPP
                                     default:
                                         break;
                                 }
-                                notifyCommandResponseReceived(percent);
+                                stopWaitingOperation(percent);
 
                             }
                             break;

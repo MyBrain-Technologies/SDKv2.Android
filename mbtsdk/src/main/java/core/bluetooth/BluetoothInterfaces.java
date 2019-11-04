@@ -8,21 +8,16 @@ import command.CommandInterface;
 
 public class BluetoothInterfaces {
 
-    interface IBluetooth extends IConnect{
-
-    }
 
     interface IDataBluetooth extends
-            IBluetooth,
             IScan,
-            IStream,
             IBattery,
             ICommand {
 
     }
 
-    interface IAudioBluetooth extends
-            IBluetooth {
+    interface IAudioBluetooth
+             {
 
         //TODO add method for audio unit
         //IStream{

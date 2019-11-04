@@ -180,7 +180,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         else if (command instanceof BluetoothCommand)
             onBluetoothResponseReceived(response, (BluetoothCommand) command);
 
-        requestProcessed();
+        setRequestAsProcessed();
     }
 
     private void notifyDeviceResponseReceived(Object response, DeviceCommand command) {
@@ -252,7 +252,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             Log.d(TAG, "Parse request "+request.toString());
 
             while (requestBeingProcessed);
-            requestProcessing();
+            setRequestAsProcessing();
             if (request instanceof StartOrContinueConnectionRequestEvent) {
 
                 initBluetoothParameters((StartOrContinueConnectionRequestEvent)request);
@@ -273,7 +273,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 }else if(((StreamRequestEvent) request).stopStream())
                     stopStreamOperation();
                 else
-                    requestProcessed();
+                    setRequestAsProcessed();
 
             } else if (request instanceof CommandRequestEvent) {
                 sendCommand(((CommandRequestEvent) request).getCommand());
@@ -368,10 +368,10 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                         startConnectionForAudioStreaming();
                         break;
                     default:
-                        requestProcessed();
+                        setRequestAsProcessed();
                 }
             }else
-                requestProcessed();
+                setRequestAsProcessed();
         }
     }
 
@@ -396,7 +396,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     }
 
     private void switchToNextConnectionStep(){
-        requestProcessed();
+        setRequestAsProcessed();
         if(!getCurrentState().isAFailureState() && !isConnectionInterrupted && !getCurrentState().equals(BtState.IDLE))  //if nothing went wrong during the current step of the connection process, we continue the process
             onNewBluetoothRequest(new StartOrContinueConnectionRequestEvent(false, deviceNameRequested, deviceQrCodeRequested, deviceTypeRequested, mtu, connectAudioIfDeviceCompatible));
 
@@ -694,7 +694,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      */
     private void readBattery() {
         if(!bluetoothForDataStreaming.readBattery()){
-            requestProcessed();
+            setRequestAsProcessed();
             MbtEventBus.postEvent(new DeviceInfoEvent<>(DeviceInfo.BATTERY, null));
         }
     }
@@ -706,7 +706,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private void readFwVersion(){
         if(bluetoothForDataStreaming instanceof BluetoothInterfaces.IDeviceInfoMonitor
         && !((BluetoothInterfaces.IDeviceInfoMonitor)bluetoothForDataStreaming).readFwVersion()){
-            requestProcessed();
+            setRequestAsProcessed();
             MbtEventBus.postEvent(new DeviceInfoEvent<>(DeviceInfo.FW_VERSION, null));
         }
     }
@@ -718,7 +718,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private void readHwVersion(){
         if(bluetoothForDataStreaming instanceof BluetoothInterfaces.IDeviceInfoMonitor
                 && !((BluetoothInterfaces.IDeviceInfoMonitor)bluetoothForDataStreaming).readHwVersion()){
-            requestProcessed();
+            setRequestAsProcessed();
             MbtEventBus.postEvent(new DeviceInfoEvent<>(DeviceInfo.HW_VERSION, null));
         }
     }
@@ -730,7 +730,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private void readSerialNumber(){
         if(bluetoothForDataStreaming instanceof BluetoothInterfaces.IDeviceInfoMonitor
                 && !((BluetoothInterfaces.IDeviceInfoMonitor)bluetoothForDataStreaming).readSerialNumber()){
-            requestProcessed();
+            setRequestAsProcessed();
             MbtEventBus.postEvent(new DeviceInfoEvent<>(DeviceInfo.SERIAL_NUMBER, null));
 
         }
@@ -743,7 +743,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private void readModelNumber(){
         if(bluetoothForDataStreaming instanceof BluetoothInterfaces.IDeviceInfoMonitor
                 && !((BluetoothInterfaces.IDeviceInfoMonitor)bluetoothForDataStreaming).readModelNumber()){
-            requestProcessed();
+            setRequestAsProcessed();
             MbtEventBus.postEvent(new DeviceInfoEvent<>(DeviceInfo.MODEL_NUMBER, null));
 
         }
@@ -788,13 +788,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             }
 
         try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        try {
-            Thread.sleep(1000);
+            Thread.sleep(1500);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -885,7 +879,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         if(isConnected())
             updateConnectionState(true); //BLE and audio (if SDK user requested it) are connected so the client is notified that the device is fully connected
 
-        requestProcessed();
+        setRequestAsProcessed();
 
         LogUtils.i(TAG, "connection completed");
     }
@@ -950,12 +944,12 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
         if(!bluetoothForDataStreaming.isConnected()){
             notifyStreamStateChanged(StreamState.DISCONNECTED);
-            requestProcessed();
+            setRequestAsProcessed();
             return;
         }
 
         if(bluetoothForDataStreaming.isStreaming()){
-            requestProcessed();
+            setRequestAsProcessed();
             return;
         }
 
@@ -963,7 +957,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             ((MbtBluetoothLE)bluetoothForDataStreaming).activateDeviceStatusMonitoring();
 
         if(!bluetoothForDataStreaming.startStream()){
-            requestProcessed();
+            setRequestAsProcessed();
             MbtEventBus.postEvent(StreamState.FAILED);
         }
     }
@@ -976,12 +970,12 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private void stopStreamOperation(){
         Log.d(TAG, "Bluetooth Manager stops streaming");
         if (!bluetoothForDataStreaming.isStreaming()) {
-            requestProcessed();
+            setRequestAsProcessed();
             return;
         }
 
         if (!bluetoothForDataStreaming.stopStream()){
-            requestProcessed();
+            setRequestAsProcessed();
             MbtEventBus.postEvent(StreamState.FAILED);
         }
     }
@@ -1017,7 +1011,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      */
     private void cancelPendingConnection(boolean isClientUserAbortion) {
         LogUtils.i(TAG, "cancelling pending connection");
-        requestProcessed();
+        setRequestAsProcessed();
         disconnectAllBluetooth(!asyncSwitchOperation.isWaiting());
 
         if(isClientUserAbortion){
@@ -1048,7 +1042,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * @param newState the new {@link BtState}
      */
     public void notifyConnectionStateChanged(@NonNull BtState newState) {
-        requestProcessed();
+        setRequestAsProcessed();
 
         switch (newState) { //This event is sent to device module if registered
             case DATA_BT_DISCONNECTED:
@@ -1109,7 +1103,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      */
     void notifyDeviceInfoReceived(DeviceInfo deviceInfo, String deviceValue){
         Log.d(TAG," Device info returned by the headset "+deviceInfo+ " : "+deviceValue);
-        requestProcessed();
+        setRequestAsProcessed();
         MbtEventBus.postEvent(new DeviceInfoEvent<>(deviceInfo, deviceValue));
     }
 
@@ -1119,7 +1113,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * @param newStreamState the {@link StreamState} new state
      */
     public void notifyStreamStateChanged(StreamState newStreamState) {
-        requestProcessed();
+        setRequestAsProcessed();
         MbtEventBus.postEvent(newStreamState);
     }
 
@@ -1243,12 +1237,12 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         }
     }
 
-    private void requestProcessing(){
+    private void setRequestAsProcessing(){
         Log.d(TAG, "Processing request");
         requestBeingProcessed = true;
     }
 
-    private void requestProcessed() {
+    private void setRequestAsProcessed() {
         Log.d(TAG, "Request processed");
         requestBeingProcessed = false;
     }
