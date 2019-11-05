@@ -76,9 +76,9 @@ public final class FileManager {
      * @param useExternalStorage
      * @return the absolute path of the folder created
      */
-    public static String createFolder(@NonNull final Context context,
-                                      @Nullable String folder,
-                                      boolean useExternalStorage)
+    public static String createDirectory(@NonNull final Context context,
+                                         @Nullable String folder,
+                                         boolean useExternalStorage)
     {
         File parent = new File(
                 (useExternalStorage && ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE)
@@ -105,7 +105,7 @@ public final class FileManager {
                                   @NonNull String filename,
                                   boolean useExternalStorage)
     {
-        String absolutePath = createFolder(context, folder, useExternalStorage);
+        String absolutePath = createDirectory(context, folder, useExternalStorage);
         if (absolutePath == null){
             Log.e(TAG, "Impossible to create the folder: "+folder);
             return null;

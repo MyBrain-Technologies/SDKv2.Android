@@ -32,15 +32,15 @@ public final class RecordConfig {
     //CONFIG RELATED TO THE LOCATION OF THE JSON FILE
 
     /**
-     * Path of the folder where the JSON file that contains the recording can be stored
-     * Default folder used is the root folder.
+     * Path of the directory where the JSON file that contains the recording can be stored
+     * Default directory used is the root directory.
      */
-    private String folder;
+    private String directory;
 
     /**
-     * Boolean flag used to define if the JSON file has to be stored in the folder external to the application folder.
-     * An external folder is located at the root of your Android device internal storage.
-     * An internal folder is located in the Internal storage>Android>data folder.
+     * Boolean flag used to define if the JSON file has to be stored in the directory external to the application directory.
+     * An external directory is located at the root of your Android device internal storage.
+     * An internal directory is located in the Internal storage>Android>data directory.
      * Default value is false.
      */
     private boolean useExternalStorage;
@@ -136,7 +136,7 @@ public final class RecordConfig {
                          ArrayList<MbtAcquisitionLocations> groundLocations
     ){
 
-        this.folder = folder;
+        this.directory = folder;
         this.filename = filename;
         this.subjectID = subjectId;
         this.timestamp = timestamp;
@@ -154,11 +154,11 @@ public final class RecordConfig {
     }
 
     /**
-     * Path of the folder where the JSON file that contains the recording can be stored.
-     * Default folder used is the root folder.
+     * Path of the directory where the JSON file that contains the recording can be stored.
+     * Default directory used is the root directory.
      */
-    public String getFolder() {
-        return folder;
+    public String getDirectory() {
+        return directory;
     }
 
     /**
@@ -180,9 +180,9 @@ public final class RecordConfig {
     }
 
     /**
-     * Boolean flag used to define if the JSON file has to be stored in the folder external to the application folder.
-     * An external folder is located at the root of your Android device internal storage.
-     * An internal folder is located in the Internal storage>Android>data folder.
+     * Boolean flag used to define if the JSON file has to be stored in the directory external to the application directory.
+     * An external directory is located at the root of your Android device internal storage.
+     * An internal directory is located in the Internal storage>Android>data directory.
      * Default value is false.
      */
     public boolean useExternalStorage() {
@@ -285,8 +285,8 @@ public final class RecordConfig {
     public static class Builder{
 
         /**
-         * Path of the folder where the JSON file that contains the recording can be stored
-         * Default folder used is the root folder.
+         * Path of the directory where the JSON file that contains the recording can be stored
+         * Default directory used is the root directory.
          */
         private String folder = "";
         /**
@@ -301,9 +301,9 @@ public final class RecordConfig {
          */
         private String filename;
         /**
-         * Boolean flag used to define if the JSON file has to be stored in the folder external to the application folder.
-         * An external folder is located at the root of your Android device internal storage.
-         * An internal folder is located in the Internal storage>Android>data folder.
+         * Boolean flag used to define if the JSON file has to be stored in the directory external to the application directory.
+         * An external directory is located at the root of your Android device internal storage.
+         * An internal directory is located in the Internal storage>Android>data directory.
          * Default value is false.
          */
         private boolean useExternalStorage = false;
@@ -361,8 +361,8 @@ public final class RecordConfig {
         }
 
         /**
-         * Path of the folder where the JSON file can be stored.
-         * Default folder used is the root folder.
+         * Path of the directory where the JSON file can be stored.
+         * Default directory used is the root directory.
          */
         public Builder folder(@Nullable String folder){
             this.folder = folder;
@@ -446,10 +446,10 @@ public final class RecordConfig {
         }
 
         /**
-         * Define that the JSON file has to be stored in the folder external to the application folder.
-         * An external folder is located at the root of your Android device internal storage.
-         * An internal folder is located in the Internal storage>Android>data folder.
-         * Default folder used is the internal folder.
+         * Define that the JSON file has to be stored in the directory external to the application directory.
+         * An external directory is located at the root of your Android device internal storage.
+         * An internal directory is located in the Internal storage>Android>data directory.
+         * Default directory used is the internal directory.
          */
         public Builder useExternalStorage() {
             this.useExternalStorage = true;
@@ -457,10 +457,10 @@ public final class RecordConfig {
         }
 
         /**
-         * Define that the JSON file has to be stored in the internal application folder.
-         * An external folder is located at the root of your Android device internal storage.
-         * An internal folder is located in the Internal storage>Android>data folder.
-         * Default folder used is the internal folder.
+         * Define that the JSON file has to be stored in the internal application directory.
+         * An external directory is located at the root of your Android device internal storage.
+         * An internal directory is located in the Internal storage>Android>data directory.
+         * Default directory used is the internal directory.
          */
         public Builder useInternalStorage() {
             this.useExternalStorage = false;
@@ -567,7 +567,7 @@ public final class RecordConfig {
     @Override
     public String toString() {
         return "RecordConfig{" +
-                "folder='" + folder + '\'' +
+                "directory='" + directory + '\'' +
                 ", filename='" + filename + '\'' +
                 ", useExternalStorage=" + useExternalStorage +
                 ", timestamp=" + timestamp +
