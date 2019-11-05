@@ -37,8 +37,8 @@ public abstract class DeviceCommand <T, U extends BaseError> extends CommandInte
      */
     private ByteBuffer rawDataBuffer;
 
-    DeviceCommand(DeviceCommandEvent mailboxCode) {
-        this.commandEvent = mailboxCode;
+    DeviceCommand(DeviceCommandEvent commandEvent) {
+        this.commandEvent = commandEvent;
     }
 
     /**
