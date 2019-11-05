@@ -25,6 +25,7 @@ import core.eeg.acquisition.MbtDataAcquisition;
 import core.eeg.acquisition.MbtDataConversion;
 import core.eeg.signalprocessing.ContextSP;
 import core.eeg.signalprocessing.MBTCalibrationParameters;
+import core.eeg.signalprocessing.MBTCalibrator;
 import core.eeg.signalprocessing.MBTComputeRelaxIndex;
 import core.eeg.signalprocessing.MBTComputeStatistics;
 import core.eeg.signalprocessing.MBTSignalQualityChecker;
@@ -286,8 +287,8 @@ public final class MbtEEGManager extends BaseModuleManager {
     /**
      * Computes the calibration parameters
      */
-    private float calibrate(int sampRate, MBTCalibrationParameters calibParams, MbtEEGPacket... packets) {
-        return MBTComputeRelaxIndex.computeRelaxIndex(sampRate, calibParams, packets);
+    private HashMap<String, float[]> calibrate(MbtEEGPacket... packets) {
+        return MBTCalibrator.calibrateNew(sampRate, packetLength, ContextSP.smoothingDuration, packets);
     }
 
     /**
