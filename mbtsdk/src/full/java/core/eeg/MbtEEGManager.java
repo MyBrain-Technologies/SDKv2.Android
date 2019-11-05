@@ -313,7 +313,7 @@ public final class MbtEEGManager extends BaseModuleManager {
         MbtEventBus.registerOrUnregister(false, this);
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
+    @Subscribe(threadMode = ThreadMode.BACKGROUND)
     public void onConnectionStateChanged(ConnectionStateEvent connectionStateEvent) {
         if(connectionStateEvent.getDevice() == null) {
             protocol = null;
