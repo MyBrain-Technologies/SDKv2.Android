@@ -226,16 +226,6 @@ public abstract class MbtDevice implements Serializable {
             this.nbChannels = nbChannels;
         }
 
-        public InternalConfig(int nbChannels, byte notchFilterConfig, byte bandPassFilterConfig, byte gainValue, byte statusBytes, byte nbPackets, byte[] sampRate) {
-            this.nbChannels = nbChannels;
-            this.notchFilterConfig = notchFilterConfig;
-            this.bandPassFilterConfig = bandPassFilterConfig;
-            this.gainValue = gainValue;
-            this.statusBytes = statusBytes;
-            this.nbPackets = nbPackets;
-            this.sampRate = ByteBuffer.wrap(sampRate).getInt();
-        }
-
         public InternalConfig(int nbChannels, byte notchFilterConfig, byte bandPassFilterConfig, byte gainValue, byte statusBytes, byte nbPackets, int sampRate) {
             this.nbChannels = nbChannels;
             this.notchFilterConfig = notchFilterConfig;

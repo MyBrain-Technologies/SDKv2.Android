@@ -4,9 +4,11 @@ import android.bluetooth.BluetoothDevice;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import org.apache.commons.lang.ArrayUtils;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -121,28 +123,27 @@ public class MelomindDevice extends MbtDevice{
 
     public static InternalConfig convertRawInternalConfig(Byte[] rawConfig) {
 
-        int sampRateIndex = 5;
-        byte[] sampRate = (rawConfig.length > sampRateIndex ?
-                new byte[]{rawConfig[sampRateIndex]}
-                : Arrays.copyOfRange(ArrayUtils.toPrimitive(rawConfig), sampRateIndex, rawConfig.length-1));
+        final int SAMP_RATE_INDEX = 5;
+        if(rawConfig.length < SAMP_RATE_INDEX ) {
+            Log.e(MelomindDevice.class.getSimpleName(), "Invalid internal config size : "+Arrays.toString(rawConfig)+". Minimum expected size is "+SAMP_RATE_INDEX );
+            return null;
+        }
 
-        return (sampRate[0] == 0 ?
-                new InternalConfig(
+            byte[] sampRate = (rawConfig.length > SAMP_RATE_INDEX ?
+                new byte[]{rawConfig[SAMP_RATE_INDEX]}
+                : Arrays.copyOfRange(ArrayUtils.toPrimitive(rawConfig), SAMP_RATE_INDEX, rawConfig.length-1));
+
+        return new InternalConfig(
                 MbtFeatures.MELOMIND_NB_CHANNELS,
                 rawConfig[0],
                 rawConfig[1],
                 rawConfig[2],
                 rawConfig[3],
                 rawConfig[4],
-                        MbtFeatures.DEFAULT_SAMPLE_RATE):
-                new InternalConfig(
-                MbtFeatures.MELOMIND_NB_CHANNELS,
-                rawConfig[0],
-                rawConfig[1],
-                rawConfig[2],
-                rawConfig[3],
-                rawConfig[4],
-                sampRate));
+                        sampRate[0] == 0 ?
+                                MbtFeatures.DEFAULT_SAMPLE_RATE :
+                                ByteBuffer.wrap(sampRate).getInt());
+
     }
 
     /**
