@@ -47,9 +47,10 @@ public final class MbtRecordingManager extends BaseModuleManager {
      */
     @Subscribe (threadMode = ThreadMode.ASYNC)
     public void onStreamRequest(final StreamRequestEvent request) {
+        recordConfig = request.getRecordConfig();
+
         if (request.isStart()) { //start streaming
 
-            recordConfig = request.getRecordConfig();
             if(recordBuffering != null)
                 recordBuffering.resetPacketsBuffer();
             else
@@ -58,7 +59,6 @@ public final class MbtRecordingManager extends BaseModuleManager {
         } else { //stop streaming
             try {
                 Thread.sleep(500); //packets can be received with a small delay so we wait this packets
-                recordConfig = request.getRecordConfig();
 
                 if(recordConfig != null && !recordBuffering.isEegPacketsBufferEmpty())
                     storeRecording(); //Save the EEG packets and associated data on a JSON file
