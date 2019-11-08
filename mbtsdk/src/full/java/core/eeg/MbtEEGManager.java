@@ -131,8 +131,10 @@ public final class MbtEEGManager extends BaseModuleManager {
                 ArrayList<Float> toDecodeStatus = new ArrayList<>();
                 for (RawEEGSample rawEEGSample : toDecodeRawEEG) {
                     if (rawEEGSample.getStatus() != null) {
-                        if (rawEEGSample.getStatus() != Float.NaN)
-                            toDecodeStatus.add(rawEEGSample.getStatus());
+                            for(Float status : rawEEGSample.getStatus()){
+                                if (status != Float.NaN)
+                                    toDecodeStatus.add(status);
+                            }
                     }
                 }
                 consolidatedEEG = MbtDataConversion.convertRawDataToEEG(toDecodeRawEEG, protocol, nbChannels); //convert byte table data to Float matrix and store the matrix in MbtEEGManager as eegResult attribute
@@ -150,6 +152,7 @@ public final class MbtEEGManager extends BaseModuleManager {
      * @param eegPackets the list that contains EEG packets ready to use for the client.
      */
     public void notifyEEGDataIsReady(@NonNull final MbtEEGPacket eegPackets) {
+        LogUtils.d(TAG, "New packet: "+eegPackets.toString());
 
         AsyncUtils.executeAsync(new Runnable() {
             @Override
