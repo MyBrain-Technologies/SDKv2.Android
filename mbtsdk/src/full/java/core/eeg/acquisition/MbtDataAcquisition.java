@@ -6,6 +6,7 @@ import android.support.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedList;
 
 import core.bluetooth.BtProtocol;
 import core.eeg.MbtEEGManager;
@@ -105,6 +106,8 @@ public class MbtDataAcquisition {
         }
 
     private void fillSPPSingleDataEEGList(int numberOfChannels, boolean isInterpolationEEGSample, byte[] input){
+        int count = 0;
+
         for (int dataIndex = getRawDataIndexSize(protocol);
              dataIndex < input.length;
              dataIndex += (getNbStatusBytes(protocol) + getEEGByteSize(protocol)*numberOfChannels)) { //init the list of raw EEG data (one raw EEG data is an object that contains a 2 (or 3) bytes data array and status
@@ -128,7 +131,7 @@ public class MbtDataAcquisition {
                             dataIndex + getNbStatusBytes(protocol) + (channel+1) * getEEGByteSize(protocol));
                     channelsEEGs.add(bytesEEG);
                 }
-                singleRawEEGList.add(new RawEEGSample(channelsEEGs, generateStatusData()));
+                singleRawEEGList.add(new RawEEGSample(channelsEEGs, generateSPPStatusData(count++)));
             }
         }
     }
@@ -138,12 +141,16 @@ public class MbtDataAcquisition {
             if(isInterpolationEEGSample){
                 singleRawEEGList.add(RawEEGSample.LOST_PACKET_INTERPOLATOR);
             }else{
+                LinkedList<Float> statuses = generateBLEStatusData();
                 ArrayList<byte[]> channelsEEGs = new ArrayList<>();
                 for(int nbChannels = 0; nbChannels < numberOfChannels; nbChannels++){
-                    byte[] bytesEEG = Arrays.copyOfRange(input, dataIndex + nbChannels*getEEGByteSize(BLUETOOTH_LE), dataIndex + (nbChannels+1)*getEEGByteSize(protocol));
+                    byte[] bytesEEG = Arrays.copyOfRange(input, dataIndex + nbChannels*getEEGByteSize(protocol), dataIndex + (nbChannels+1)*getEEGByteSize(protocol));
                     channelsEEGs.add(bytesEEG);
                 }
-                singleRawEEGList.add(new RawEEGSample(channelsEEGs, generateStatusData()));
+                if(statuses.getFirst() == null)
+                    singleRawEEGList.add(RawEEGSample.LOST_PACKET_INTERPOLATOR);
+                else
+                    singleRawEEGList.add(new RawEEGSample(channelsEEGs, statuses.poll()));
             }
         }
     }
@@ -156,35 +163,57 @@ public class MbtDataAcquisition {
      * Nan is a constant holding a Not-a-Number value of type float.
      *
      */
-    private ArrayList<Float> generateStatusData() {
+    private LinkedList<Float> generateBLEStatusData() {
         // A status sample is encoded on 1 byte
         final int BYTE_SIZE = 8;
 
-        ArrayList<Float> deserializedStatusData = new ArrayList<>(getNbStatusBytes(protocol));
+        LinkedList<Float> deserializedStatusData = new LinkedList<>();
 
         if(statusDataBytes == null) {
-            Collections.fill(deserializedStatusData, Float.NaN);
+            for(int statusByte = 0; statusByte < getNbStatusBytes(protocol); statusByte++){
+                deserializedStatusData.add(Float.NaN);
+            }
             return deserializedStatusData;
         }
 
-    if (singleRawEEGList != null) {
-            // One status is retrieved from several chunks / status samples from a raw bluetooth packet, where the number of status samples match the number of EEG samples
-            for(int statusByte = 0; statusByte < statusDataBytes.length; statusByte++){
-                byte status = statusDataBytes[statusByte];
 
-                //each byte contains 8 bits and each status sample matches the number of eeg sample
-                //As one byte is 8 bits, 2 bytes are sent in the bluetooth notification
-                for(int bit = 0;
-                    bit < ((getSamplePerNotification() - statusByte*BYTE_SIZE) < BYTE_SIZE ?
-                            (getSamplePerNotification() - statusByte*BYTE_SIZE) : BYTE_SIZE);
-                    bit++){
+        // One status is retrieved from several chunks / status samples from a raw bluetooth packet, where the number of status samples match the number of EEG samples
+        for(int statusByte = 0; statusByte < statusDataBytes.length; statusByte++){
+            byte status = statusDataBytes[statusByte];
 
-                    deserializedStatusData.add(BitUtils.isBitSet(status, bit));
-                }
+            //each byte contains 8 bits and each status sample matches the number of eeg sample
+            //As one byte is 8 bits, 2 bytes are sent in the bluetooth notification
+            for(int bit = 0;
+                bit < ((getSamplePerNotification() - statusByte*BYTE_SIZE) < BYTE_SIZE ?
+                        (getSamplePerNotification() - statusByte*BYTE_SIZE) : BYTE_SIZE);
+                bit++){
+
+                deserializedStatusData.add(BitUtils.isBitSet(status, bit));
             }
         }
-        statusDataBytes = null;
         return deserializedStatusData;
+    }
+
+    /**
+     * Fills the status data list corresponding to the EEG data array.
+     * If the frames are consecutive, the status data list contains only 2 values : 0 or 1.
+     * If the frames are not consecutive, it means that we have lost some EEG data packets :
+     * in this case the status can't be determined so we affect the NaN value.
+     * Nan is a constant holding a Not-a-Number value of type float.
+     *
+     */
+    private Float generateSPPStatusData(int count) {
+        if (singleRawEEGList != null) {
+
+            return statusDataBytes == null ?
+                    Float.NaN :
+                    (ConversionUtils.booleanToFloat(
+                            BitUtils.isBitSet(count < 8 ? // return 1f to fill the status data array if the bit is set, otherwise returns 0f
+                                            statusDataBytes[0] : statusDataBytes[1],
+                                    (byte) 1, count)));
+        }
+        statusDataBytes = null;
+        return Float.NaN;
     }
 
     /**
