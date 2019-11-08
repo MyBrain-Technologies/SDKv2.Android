@@ -148,10 +148,8 @@ public class MbtDataAcquisition {
                     channelsEEGs.add(bytesEEG);
                 }
                 Float status = statuses.poll();
-                if(status == null)
-                    singleRawEEGList.add(RawEEGSample.LOST_PACKET_INTERPOLATOR);
-                else
-                    singleRawEEGList.add(new RawEEGSample(channelsEEGs, status));
+
+                singleRawEEGList.add(new RawEEGSample(channelsEEGs, (status == null) ? Float.NaN : status));
             }
         }
     }
