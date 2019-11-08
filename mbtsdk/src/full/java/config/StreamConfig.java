@@ -104,7 +104,7 @@ public final class StreamConfig {
     public void setComputeQualities(boolean computeQualities) {
         this.computeQualities = computeQualities;
     }
-    public void setDeviceCommand(LinkedList<DeviceCommand> deviceCommands) {
+    public void setDeviceCommands(LinkedList<DeviceCommand> deviceCommands) {
         this.deviceCommands = deviceCommands;
     }
     public void setDeviceStatusListener(DeviceStatusListener<BaseError> deviceStatusListener) {

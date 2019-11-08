@@ -58,8 +58,6 @@ public class MbtDataAcquisition {
      */
     @Nullable
     public synchronized void handleDataAcquired(@NonNull final byte[] data, int nbChannels) {
-        LogUtils.e(TAG, "data "+Arrays.toString(data));
-
         singleRawEEGList = new ArrayList<>();
 
         if(data.length < getRawDataIndexSize(protocol))
