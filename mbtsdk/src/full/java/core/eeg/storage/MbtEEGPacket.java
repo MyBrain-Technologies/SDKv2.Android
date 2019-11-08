@@ -103,8 +103,8 @@ public final class MbtEEGPacket {
     public String toString() {
         return "MbtEEGPacket{" +
                 "EEG Data =" + (channelsData != null && !channelsData.isEmpty() ? (channelsData.size()+"x"+channelsData.get(0).size()) : channelsData) +
-                ", statusData=" + (statusData != null ? statusData.size() : null) +
-                ", timestamp=" + timestamp +
+                ", statusData=\n" + (statusData != null ? "size: " +statusData.size() + " content: ["+ statusData.toString()+"]" : null) +
+                ",\n timestamp=" + timestamp +
                 '}';
     }
 

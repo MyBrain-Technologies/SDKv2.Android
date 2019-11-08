@@ -1,14 +1,8 @@
 package config;
-
-import android.content.Context;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-
-
+import java.util.LinkedList;
 import command.DeviceCommand;
 import command.DeviceStreamingCommands;
 import core.eeg.storage.MbtEEGPacket;
@@ -18,7 +12,6 @@ import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.EegListener;
 import features.MbtDeviceType;
 import features.MbtFeatures;
-
 /**
  * This class aims at configuring the stream process. It contains user configurable
  * parameters to specify how the streaming is going to be.
@@ -26,28 +19,21 @@ import features.MbtFeatures;
  */
 @Keep
 public final class StreamConfig {
-
     private int notificationPeriod;
-
     private final EegListener<BaseError> eegListener;
-
     private DeviceStatusListener<BaseError> deviceStatusListener;
-
     private boolean computeQualities;
-
     /**
      * Recording configuration is all the data required to store the EEG packets in a JSON file.
      */
     private RecordConfig recordConfig;
-
     /**
      * Optional list of commands sent to the headset in order to
      * configure a parameter,
      * or get values stored by the headset
      * or ask the headset to perform an action.
      */
-    private ArrayList<DeviceCommand> deviceCommands = new ArrayList<>();
-
+    private LinkedList<DeviceCommand> deviceCommands ;
     private StreamConfig(MbtDeviceType deviceType,
                          boolean computeQualities,
                          EegListener<BaseError> eegListener,
@@ -55,28 +41,29 @@ public final class StreamConfig {
                          int notificationPeriod,
                          DeviceStreamingCommands[] deviceCommands,
                          RecordConfig recordConfig){
-
         this.computeQualities = computeQualities;
         this.eegListener = eegListener;
         this.deviceStatusListener = deviceStatusListener;
         this.notificationPeriod = notificationPeriod;
         this.recordConfig = recordConfig;
-
+        this.deviceCommands = new LinkedList<>();
         if(deviceCommands != null && deviceCommands.length > 0) {
+            DeviceStreamingCommands.EegConfig eegConfig = new DeviceStreamingCommands.EegConfig.Builder(null).createForDevice(deviceType);
             for (DeviceStreamingCommands deviceCommand : deviceCommands) {
                 if(deviceCommand != null){
                     int index = getRegisteredCommandIndex(deviceCommand);
-                    if(index != -1) //if a command with the same type is already in the list, it is replaced (input can be different)
-                        this.deviceCommands.set(index, (DeviceCommand) deviceCommand);
-                    else
-                        this.deviceCommands.add((DeviceCommand) deviceCommand);
+                    if(index != -1) {//if a command with the same type is already in the list, it is replaced (input can be different)
+                        if (deviceCommand instanceof DeviceStreamingCommands.EegConfig)
+                            eegConfig = (DeviceStreamingCommands.EegConfig) deviceCommand;
+                        else
+                            this.deviceCommands.set(index,  (DeviceCommand) deviceCommand);
+                    }else if(!(deviceCommand instanceof DeviceStreamingCommands.EegConfig))
+                        this.deviceCommands.addFirst( (DeviceCommand) deviceCommand);
                 }
             }
+            this.deviceCommands.addLast(eegConfig);
         }
-
-        this.deviceCommands.add(new DeviceStreamingCommands.EegConfig.Builder(null).createForDevice(deviceType));
     }
-
     /**
      * Returns the index of the already registered command in the deviceCommands list
      * Returns -1 if the command is not already registered
@@ -85,82 +72,64 @@ public final class StreamConfig {
      */
     private int getRegisteredCommandIndex(DeviceStreamingCommands deviceCommand){
         for (DeviceCommand registeredCommand : deviceCommands) {
-                if(registeredCommand.getClass() == deviceCommand.getClass())
+            if(registeredCommand.getClass() == deviceCommand.getClass())
                 return deviceCommands.indexOf(registeredCommand);
         }
         return -1;
     }
-
     public EegListener getEegListener() {
         return eegListener;
     }
-
     public DeviceStatusListener<BaseError> getDeviceStatusListener() {
         return deviceStatusListener;
     }
-
     public int getNotificationPeriod() {
         return notificationPeriod;
     }
-
     public boolean shouldComputeQualities() {
         return computeQualities;
     }
-
-    public ArrayList<DeviceCommand> getDeviceCommands() {
+    public LinkedList<DeviceCommand> getDeviceCommands() {
         return deviceCommands;
     }
-
     /**
      * Return the recording configuration that holds all the data required to store the EEG packets in a JSON file.
      */
     public RecordConfig getRecordConfig() {
         return recordConfig;
     }
-
     public void setNotificationPeriod(int notificationPeriod) {
         this.notificationPeriod = notificationPeriod;
     }
-
     public void setComputeQualities(boolean computeQualities) {
         this.computeQualities = computeQualities;
     }
-
-    public void setDeviceCommand(ArrayList<DeviceCommand> deviceCommands) {
+    public void setDeviceCommand(LinkedList<DeviceCommand> deviceCommands) {
         this.deviceCommands = deviceCommands;
     }
-
     public void setDeviceStatusListener(DeviceStatusListener<BaseError> deviceStatusListener) {
         this.deviceStatusListener = deviceStatusListener;
     }
-
     /**
      * Builder class to ease construction of the {@link StreamConfig} instance.
      */
     @Keep
     public static class Builder{
-
         private int notificationPeriod = MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD;
-
         /**
          * The EEG Listener is a callback that receives the EEG raw data streamed
          * from the headset to the SDK.
          */
         @NonNull
         private final EegListener<BaseError> eegListener;
-
         @Nullable
         private DeviceStatusListener<BaseError> deviceStatusListener;
-
         private boolean computeQualities = false;
-
         /**
          * Recording configuration is all the data required to store the EEG packets in a JSON file.
          */
         @Nullable
         private RecordConfig recordConfig;
-
-
         /**
          * Optional set of commands sent to the headset in order to
          * configure a parameter,
@@ -168,14 +137,12 @@ public final class StreamConfig {
          * or ask the headset to perform an action.
          */
         private DeviceStreamingCommands[] deviceCommands;
-
         /**
          * The EEG Listener is mandatory to receive the EEG stream from the headset to the SDK.
          */
         public Builder(@NonNull EegListener<BaseError> eegListener){
             this.eegListener = eegListener;
         }
-
         /**
          * Says whether or not the qualities are automatically computed while streaming EEG.
          * This requires some specific configuration: One complete period of EEG acquisition is mandatory, ie:
@@ -190,7 +157,6 @@ public final class StreamConfig {
             this.computeQualities = true;
             return this;
         }
-
         /**
          * Records the data acquired by a myBrain Technologies headset in a JSON file
          * Recording configuration is all the data required to store the EEG packets in a JSON file.
@@ -208,7 +174,6 @@ public final class StreamConfig {
             this.recordConfig = recordConfig;
             return this;
         }
-
         /**
          * Configures optional parameters applied by the headset for the EEG signal acquisition
          * such as the amplifier gain, the notch filter, the MTU, etc.
@@ -220,7 +185,6 @@ public final class StreamConfig {
             this.deviceCommands = deviceCommands;
             return this;
         }
-
         /**
          * Use this method to specify how much eeg you want to receive in the {@link EegListener#onNewPackets(MbtEEGPacket)} method.
          *
@@ -242,13 +206,11 @@ public final class StreamConfig {
             this.notificationPeriod = periodInMillis;
             return this;
         }
-
         @NonNull
         public Builder setDeviceStatusListener(DeviceStatusListener<BaseError> deviceStatusListener){
             this.deviceStatusListener = deviceStatusListener;
             return this;
         }
-
         public StreamConfig createForDevice(MbtDeviceType deviceType){
             return new StreamConfig(
                     deviceType,
@@ -260,7 +222,6 @@ public final class StreamConfig {
                     this.recordConfig);
         }
     }
-
     /**
      * Checks if the notification configuration parameters are correct
      * @return true is the configuration is correct, false otherwise
@@ -272,8 +233,6 @@ public final class StreamConfig {
         else if(notificationPeriod >  (this.computeQualities ?
                 MbtFeatures.MAX_CLIENT_NOTIFICATION_PERIOD_WITH_QUALITIES_IN_MILLIS : MbtFeatures.MAX_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS))
             return false;
-
         return true;
     }
-
 }

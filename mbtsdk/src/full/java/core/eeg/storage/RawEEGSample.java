@@ -15,10 +15,10 @@ public class RawEEGSample {
     private final ArrayList<byte[]> bytesEEG; //array size must be 2 or 3 bytes
 
     @Nullable
-    private Float statusEEG = null; //list size must be 2 or 3
+    private ArrayList<Float> statusEEG = null; //list size must be 2 or 3
 
     @NonNull
-    public static RawEEGSample LOST_PACKET_INTERPOLATOR = new RawEEGSample(null, Float.NaN);
+    public static RawEEGSample LOST_PACKET_INTERPOLATOR = new RawEEGSample(null, new ArrayList<>(Arrays.asList(Float.NaN)));
 
     /**
      * Initializes a new instance of the RawEEGSample object.
@@ -26,7 +26,7 @@ public class RawEEGSample {
      * @param bytes The raw EEG data array corresponding to a single EEG data.
      * @param statusEEG The status associated to this EEG data.
      */
-    public RawEEGSample(@Nullable final ArrayList<byte[]> bytes, @Nullable Float statusEEG) {
+    public RawEEGSample(@Nullable final ArrayList<byte[]> bytes, @Nullable ArrayList<Float> statusEEG) {
         this.bytesEEG = bytes;
         this.statusEEG = statusEEG;
     }
@@ -56,7 +56,7 @@ public class RawEEGSample {
      * @return the status data
      */
     @Nullable
-    public Float getStatus() {
+    public ArrayList<Float> getStatus() {
         return statusEEG;
     }
 
@@ -64,7 +64,7 @@ public class RawEEGSample {
      * Sets a new value to the status data
      * @param status the new status data
      */
-    public void setStatus(@Nullable Float status) {
+    public void setStatus(@Nullable ArrayList<Float> status) {
         this.statusEEG = status;
     }
 

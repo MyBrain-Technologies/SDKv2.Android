@@ -78,10 +78,10 @@ public class MbtRecordBuffering {
                     recordConfig.getSubjectID(),
                     recordConfig.getCondition()));
 
-        LogUtils.d(TAG, "JSON(Folder: " + recordConfig.getFolder() + " Filename: " + recordConfig.getFilename() + ")" + " External storage: " + recordConfig.useExternalStorage() + ")");
+        LogUtils.d(TAG, "JSON(Folder: " + recordConfig.getDirectory() + " Filename: " + recordConfig.getFilename() + ")" + " External storage: " + recordConfig.useExternalStorage() + ")");
 
         File file = FileManager.createFile(mContext,
-                recordConfig.getFolder(),
+                recordConfig.getDirectory(),
                 recordConfig.getFilename(),
                 recordConfig.useExternalStorage());
         if (file == null) {

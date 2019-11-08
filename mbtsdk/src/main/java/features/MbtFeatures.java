@@ -214,7 +214,7 @@ public final class MbtFeatures{
      * @return the number of samples per EEG data packet notification
      */
     public static int getSamplePerNotification() {
-        return DEFAULT_SAMPLE_PER_NOTIF;
+        return samplePerNotif;
     }
 
 }
