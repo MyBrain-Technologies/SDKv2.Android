@@ -147,10 +147,11 @@ public class MbtDataAcquisition {
                     byte[] bytesEEG = Arrays.copyOfRange(input, dataIndex + nbChannels*getEEGByteSize(protocol), dataIndex + (nbChannels+1)*getEEGByteSize(protocol));
                     channelsEEGs.add(bytesEEG);
                 }
-                if(statuses.getFirst() == null)
+                Float status = statuses.poll();
+                if(status == null)
                     singleRawEEGList.add(RawEEGSample.LOST_PACKET_INTERPOLATOR);
                 else
-                    singleRawEEGList.add(new RawEEGSample(channelsEEGs, statuses.poll()));
+                    singleRawEEGList.add(new RawEEGSample(channelsEEGs, status));
             }
         }
     }
