@@ -1,6 +1,5 @@
 package core.device;
 
-import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.VisibleForTesting;
@@ -11,7 +10,6 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 import command.OADCommands;
 import config.ConnectionConfig;
-import config.MbtConfig;
 import core.BaseModuleManager;
 import core.bluetooth.requests.CommandRequestEvent;
 import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
@@ -20,23 +18,20 @@ import core.device.oad.OADState;
 import eventbus.events.BluetoothResponseEvent;
 import core.device.model.FirmwareVersion;
 import core.device.model.MbtDevice;
-import core.device.model.MelomindDevice;
-import core.device.model.VProDevice;
 import core.device.event.DCOffsetEvent;
 import core.device.event.SaturationEvent;
 import core.device.event.OADEvent;
 import core.device.oad.OADManager;
 import core.eeg.acquisition.MbtDataConversion;
 import eventbus.MbtEventBus;
-import eventbus.events.ConfigEEGEvent;
+import eventbus.events.EEGConfigEvent;
 import eventbus.events.ConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
 import eventbus.events.FirmwareUpdateClientEvent;
 import eventbus.events.ResetBluetoothEvent;
-import features.MbtDeviceType;
 import utils.LogUtils;
 
-import static features.MbtDeviceType.MELOMIND;
+
 
 //todo sections
 /**
@@ -118,7 +113,7 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
                 break;
 
             case DEVICE_FOUND:
-                onDeviceFound(connectionStateEvent.getDevice(), connectionStateEvent.getDeviceType());
+                onDeviceFound(connectionStateEvent.getDevice());
             break;
         }
     }
@@ -130,8 +125,9 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
     }
 
     @Subscribe
-    public void onNewDeviceConfiguration(ConfigEEGEvent configEEGEvent){
-        this.mCurrentConnectedDevice.setInternalConfig(new MbtDevice.InternalConfig(configEEGEvent.getConfig()));
+    public void onNewDeviceConfiguration(EEGConfigEvent configEEGEvent){
+        this.mCurrentConnectedDevice.setInternalConfig(configEEGEvent.getConfig());
+        Log.d(TAG, "Current device: "+this.mCurrentConnectedDevice.toString());
     }
 
     /**
@@ -212,14 +208,8 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
         this.mCurrentConnectedDevice = mCurrentConnectedDevice;
     }
 
-    private void onDeviceFound(BluetoothDevice foundDevice, MbtDeviceType deviceType) {
-        MbtDevice device = null;
-        if (foundDevice != null) {
-            device = deviceType.equals(MELOMIND) ?
-                    new MelomindDevice(foundDevice) :
-                    new VProDevice(foundDevice);
-        }
-        setmCurrentConnectedDevice(device);
+    private void onDeviceFound(MbtDevice foundDevice) {
+        setmCurrentConnectedDevice(foundDevice);
     }
 
     private void onDeviceConnected(boolean isReconnectionSuccess) {
@@ -269,18 +259,18 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
 
     @Override
     public void reconnect(boolean reconnectAudio) {
-        ConnectionConfig connectionConfig = new ConnectionConfig.Builder(null)
+        ConnectionConfig.Builder connectionConfigBuilder = new ConnectionConfig.Builder(null)
                 .deviceName(mCurrentConnectedDevice.getProductName())
-                .deviceQrCode(mCurrentConnectedDevice.getExternalName())
-                .create();
+                .deviceQrCode(mCurrentConnectedDevice.getExternalName());
 
-        MbtConfig.setConnectAudioIfDeviceCompatible(reconnectAudio);
+        ConnectionConfig connectionConfig = connectionConfigBuilder.createForDevice(this.mCurrentConnectedDevice.getDeviceType());
 
         MbtEventBus.postEvent(new StartOrContinueConnectionRequestEvent(true,
                 connectionConfig.getDeviceName(),
                 connectionConfig.getDeviceQrCode(),
                 connectionConfig.getDeviceType(),
-                connectionConfig.getMtu()));
+                connectionConfig.getMtu(),
+                reconnectAudio));
 
     }
 

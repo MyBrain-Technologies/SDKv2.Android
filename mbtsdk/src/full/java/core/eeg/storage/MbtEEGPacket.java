@@ -2,6 +2,7 @@ package core.eeg.storage;
 
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
 
@@ -13,7 +14,9 @@ public final class MbtEEGPacket {
     @NonNull
     private ArrayList<ArrayList<Float>> channelsData = new ArrayList<>();
 
+    @Nullable
     private ArrayList<Float> statusData = new ArrayList<>();
+
     @NonNull
     private final long timestamp;
 
@@ -41,7 +44,6 @@ public final class MbtEEGPacket {
     public MbtEEGPacket(@NonNull final ArrayList<ArrayList<Float>> channelsData) {
 
         this.channelsData = channelsData;
-
         this.timestamp = System.currentTimeMillis();
     }
 
@@ -54,7 +56,6 @@ public final class MbtEEGPacket {
 
         this.channelsData = channelsData;
         this.statusData = statusData;
-
         this.timestamp = System.currentTimeMillis();
 
     }
@@ -101,9 +102,9 @@ public final class MbtEEGPacket {
     @Override
     public String toString() {
         return "MbtEEGPacket{" +
-                "EEG Data=" + channelsData +
-                ", statusData=" + statusData +
-                ", timestamp=" + timestamp +
+                "EEG Data =" + (channelsData != null && !channelsData.isEmpty() ? (channelsData.size()+"x"+channelsData.get(0).size()) : channelsData) +
+                ", statusData=\n" + (statusData != null ? "size: " +statusData.size() + " content: ["+ statusData.toString()+"]" : null) +
+                ",\n timestamp=" + timestamp +
                 '}';
     }
 
@@ -157,4 +158,7 @@ public final class MbtEEGPacket {
         this.features = features;
     }
 
+    public void setStatusData(@Nullable ArrayList<Float> statusData) {
+        this.statusData = statusData;
+    }
 }

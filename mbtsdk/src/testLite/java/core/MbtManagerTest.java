@@ -21,7 +21,7 @@ import core.device.DeviceEvents;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindDevice;
 import engine.SimpleRequestCallback;
-import eventbus.EventBusManager;
+import eventbus.MbtEventBus;
 
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
@@ -39,7 +39,7 @@ public class MbtManagerTest {
     public void setUp() throws Exception {
         context = Mockito.mock(Context.class);
         manager = new MbtManager(context);
-        EventBusManager.BUS.unregister(manager);
+        MbtEventBus.BUS.unregister(manager);
         EventBus.clearCaches();
     }
 
@@ -88,18 +88,18 @@ public class MbtManagerTest {
         SimpleRequestCallback<MbtDevice> callback = device -> {
             assertEquals(device, connectedDevice);
             //the subscriber is supposed to be unregistered once the callback is triggered
-            assertFalse(EventBusManager.BUS.hasSubscriberForEvent(DeviceEvents.PostDeviceEvent.class));
+            assertFalse(MbtEventBus.BUS.hasSubscriberForEvent(DeviceEvents.PostDeviceEvent.class));
         };
         //no subscriber is supposed to be registered before the command call
-        assertFalse(EventBusManager.BUS.hasSubscriberForEvent(DeviceEvents.PostDeviceEvent.class));
-        PowerMockito.mockStatic(EventBusManager.class);
+        assertFalse(MbtEventBus.BUS.hasSubscriberForEvent(DeviceEvents.PostDeviceEvent.class));
+        PowerMockito.mockStatic(MbtEventBus.class);
 
         try {
             PowerMockito
                     .doAnswer((Answer<Void>) invocation -> {
-                        EventBusManager.postEvent(connectedDevice);
+                        MbtEventBus.postEvent(connectedDevice);
                         return null;})
-                    .when(EventBusManager.class, "postEvent", captor.capture(), Mockito.any(EventBusManager.Callback.class));
+                    .when(MbtEventBus.class, "postEvent", captor.capture(), Mockito.any(MbtEventBus.Callback.class));
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -116,9 +116,9 @@ public class MbtManagerTest {
         MbtManager manager = new MbtManager(context);
 
         //no subscriber is supposed to be registered before the command call
-        assertFalse(EventBusManager.BUS.hasSubscriberForEvent(DeviceEvents.PostDeviceEvent.class));
-        PowerMockito.spy(EventBusManager.class);
-        PowerMockito.verifyZeroInteractions(EventBusManager.class);
+        assertFalse(MbtEventBus.BUS.hasSubscriberForEvent(DeviceEvents.PostDeviceEvent.class));
+        PowerMockito.spy(MbtEventBus.class);
+        PowerMockito.verifyZeroInteractions(MbtEventBus.class);
 
         manager.requestCurrentConnectedDevice(null);
     }

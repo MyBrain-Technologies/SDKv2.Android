@@ -18,16 +18,16 @@ import android.widget.Toast;
 import java.util.ArrayList;
 
 import config.ConnectionConfig;
+import core.device.model.MbtDevice;
 import engine.MbtClient;
 import engine.clientevents.BaseError;
 import engine.clientevents.ConnectionStateListener;
+import features.MbtDeviceType;
 import features.MbtFeatures;
 import mbtsdk.com.mybraintech.sdkv2.R;
 
 import static features.MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX;
 import static features.MbtFeatures.VPRO_DEVICE_NAME_PREFIX;
-import static features.MbtDeviceType.MELOMIND;
-import static features.MbtDeviceType.VPRO;
 
 public class HomeActivity extends AppCompatActivity{
 
@@ -67,13 +67,14 @@ public class HomeActivity extends AppCompatActivity{
         }
 
         @Override
-        public void onDeviceConnected() {
+        public void onDeviceConnected(MbtDevice device) {
+            deviceName = device.getProductName();
             toast.cancel();
             deinitCurrentActivity(true);
         }
 
         @Override
-        public void onDeviceDisconnected() {
+        public void onDeviceDisconnected(MbtDevice device) {
             if(!toast.getView().isShown())
                 notifyUser(getString(R.string.no_connected_headset));
             if(isCancelled)
@@ -145,19 +146,9 @@ public class HomeActivity extends AppCompatActivity{
                         ((deviceName != null) && (deviceName.equals(MELOMIND_DEVICE_NAME_PREFIX) || deviceName.equals(VPRO_DEVICE_NAME_PREFIX)) ) ? //if no no name has been entered by the user, the default device name is the headset prefix
                                 null : deviceName ) //null is given in parameters if no name has been entered by the user
                 .maxScanDuration(SCAN_DURATION)
-                .create());
+                .createForDevice(isMelomindDevice() ? MbtDeviceType.MELOMIND : MbtDeviceType.VPRO));
 
     }
-
-    private void findAvailableDevice() {
-        notifyUser(getString(R.string.find_first_available_headset));
-        //deviceName =  ;//todo replace  by the method that detects the first available device
-        deviceNameField.setText(deviceName);
-        scanButton.setText(getString(R.string.connect));
-        scanButton.setTextColor(getResources().getColor(R.color.white));
-        scanButton.setBackgroundColor(getResources().getColor(R.color.light_blue));
-    }
-
     private void cancelScan(){
         client.cancelConnection();
     }

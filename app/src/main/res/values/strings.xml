@@ -32,9 +32,7 @@
 
     <string name="title_graph_eeg">Your signal </string>
 
-    <string name="channel_1_qc">Channel 1 Quality : </string>
-    <string name="channel_2_qc">Channel 2 Quality : </string>
-    <string name="channel1">Channel 1</string>
-    <string name="channel2">Channel 2</string>
+    <string name="quality">Q</string>
+    <string name="channel">Channel</string>
 
 </resources>

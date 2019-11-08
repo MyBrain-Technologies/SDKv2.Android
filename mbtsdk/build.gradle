@@ -7,8 +7,8 @@ android {
     defaultConfig {
         minSdkVersion 22
         targetSdkVersion 28
-        versionCode 9
-        versionName '2.1.0'
+        versionCode 10
+        versionName '2.2.0'
         flavorDimensions "default"
         testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'
     }
@@ -25,18 +25,22 @@ android {
             buildConfigField "boolean", "EEG_ENABLED", "true"
             buildConfigField "boolean", "BLUETOOTH_ENABLED", "true"
             buildConfigField "boolean", "DEVICE_ENABLED", "true"
+            buildConfigField "boolean", "RECORDING_ENABLED", "true"
             buildConfigField "String", "FIRMWARE_VERSION", "\"1_7_4\""
         }
         staging {
             buildConfigField "boolean", "EEG_ENABLED", "true"
             buildConfigField "boolean", "BLUETOOTH_ENABLED", "true"
             buildConfigField "boolean", "DEVICE_ENABLED", "true"
+            buildConfigField "boolean", "RECORDING_ENABLED", "true"
+
             buildConfigField "String", "FIRMWARE_VERSION", "\"1_7_4\""
         }
         debug {
             buildConfigField "boolean", "EEG_ENABLED", "true"
             buildConfigField "boolean", "BLUETOOTH_ENABLED", "true"
             buildConfigField "boolean", "DEVICE_ENABLED", "true"
+            buildConfigField "boolean", "RECORDING_ENABLED", "true"
             buildConfigField "String", "FIRMWARE_VERSION", "\"1_7_4\""
         }
         unitTests {
@@ -44,6 +48,7 @@ android {
             buildConfigField "boolean", "EEG_ENABLED", "false"
             buildConfigField "boolean", "BLUETOOTH_ENABLED", "true"
             buildConfigField "boolean", "DEVICE_ENABLED", "false"
+            buildConfigField "boolean", "RECORDING_ENABLED", "false"
             buildConfigField "String", "FIRMWARE_VERSION", "\"1_7_4\""
         }
     }

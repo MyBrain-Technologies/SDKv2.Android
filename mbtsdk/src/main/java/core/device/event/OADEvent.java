@@ -159,7 +159,7 @@ public enum OADEvent {
      * Return the OAD event associated to the mailbox command passed in input
      * @param mailboxIdentifier the mailbox command identifier
      *                          (All the mailbox command identifiers are listed in the {@link DeviceCommandEvent} class
-     *                          or can be accessed through the getCode() getter available for any command class that extends {@link command.DeviceCommand}
+     *                          or can be accessed through the getIdentifier() getter available for any command class that extends {@link command.DeviceCommand}
      * @return the OAD event associated to the mailbox command
      */
     public static OADEvent getEventFromMailboxCommand(DeviceCommandEvent mailboxIdentifier){

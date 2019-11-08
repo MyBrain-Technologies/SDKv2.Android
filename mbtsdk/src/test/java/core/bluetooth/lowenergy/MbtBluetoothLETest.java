@@ -22,8 +22,8 @@ import command.DeviceCommandEvent;
 import command.DeviceCommands;
 import config.MbtConfig;
 import core.bluetooth.BtState;
-import core.bluetooth.IStreamable;
 import core.bluetooth.MbtBluetoothManager;
+import core.bluetooth.StreamState;
 import core.bluetooth.spp.MbtBluetoothSPP;
 import engine.clientevents.BluetoothError;
 import features.MbtDeviceType;
@@ -103,7 +103,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void startStream_Idle() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.IDLE);
+        bluetoothLE.notifyStreamStateChanged(StreamState.IDLE);
         assertFalse(bluetoothLE.startStream());
     }
 
@@ -112,7 +112,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void startStream_StreamStoppedAfterDisconnection() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.STARTED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.STARTED);
         bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);
         assertFalse(bluetoothLE.isStreaming());
         assertFalse(bluetoothLE.startStream());
@@ -123,7 +123,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void startStream_Disconnected() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.DISCONNECTED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.DISCONNECTED);
         assertFalse(bluetoothLE.startStream());
     }
 
@@ -132,7 +132,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void startStream_Started() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.STARTED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.STARTED);
         assertTrue(bluetoothLE.startStream());
     }
 
@@ -141,7 +141,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void startStream_Stopped() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.STOPPED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.STOPPED);
         assertFalse(bluetoothLE.startStream());
     }
 
@@ -330,7 +330,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void stopStream_NotStreamingIdle() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.IDLE);
+        bluetoothLE.notifyStreamStateChanged(StreamState.IDLE);
         assertTrue(bluetoothLE.stopStream());
     }
 
@@ -339,7 +339,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void stopStream_NotStreamingDisconnected() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.DISCONNECTED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.DISCONNECTED);
         assertTrue(bluetoothLE.stopStream());
     }
 
@@ -348,7 +348,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void stopStream_StreamingAlreadyStopped() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.STOPPED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.STOPPED);
         assertTrue(bluetoothLE.stopStream());
     }
 
@@ -357,7 +357,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void stopStream_UnknownService() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.STARTED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.STARTED);
         when(gatt.getService(SERVICE)).thenReturn(null);
         bluetoothLE.gatt = gatt;
         assertFalse(bluetoothLE.stopStream());
@@ -368,7 +368,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void stopStream_UnknownCharacteristic() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.STARTED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.STARTED);
         when(gatt.getService(SERVICE)).thenReturn(gattService);
         when(gattService.getUuid()).thenReturn(SERVICE);
         when(gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG)).thenReturn(null);
@@ -381,7 +381,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void stopStream_NullGatt() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.STARTED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.STARTED);
         bluetoothLE.gatt = null;
         assertFalse(bluetoothLE.stopStream());
     }
@@ -392,7 +392,7 @@ public class MbtBluetoothLETest {
     @Test
     public void stopStream_DisablingNotificationFail() {
         bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.STARTED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.STARTED);
         when(gatt.getService(SERVICE)).thenReturn(gattService);
         when(gattService.getUuid()).thenReturn(SERVICE);
         when(gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG)).thenReturn(characteristic);
@@ -406,7 +406,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void stopStream_DisableNotificationWorking() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.STARTED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.STARTED);
         bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
         when(gatt.getService(SERVICE)).thenReturn(gattService);
         when(gattService.getUuid()).thenReturn(SERVICE);
@@ -425,7 +425,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void notifyStreamStateChanged_Started() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.STARTED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.STARTED);
         assertTrue(bluetoothLE.isStreaming());
     }
 
@@ -434,7 +434,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void notifyStreamStateChanged_Stopped() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.STOPPED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.STOPPED);
         assertFalse(bluetoothLE.isStreaming());
     }
 
@@ -443,7 +443,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void notifyStreamStateChanged_Failed() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.FAILED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.FAILED);
         assertFalse(bluetoothLE.isStreaming());
     }
 
@@ -452,7 +452,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void notifyStreamStateChanged_Idle() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.IDLE);
+        bluetoothLE.notifyStreamStateChanged(StreamState.IDLE);
         assertFalse(bluetoothLE.isStreaming());
     }
 
@@ -463,7 +463,7 @@ public class MbtBluetoothLETest {
     public void notifyStreamStateChanged_Vpro() {
         MbtConfig.setDeviceType(MbtDeviceType.VPRO);
         MbtBluetoothSPP bluetoothSPP = new MbtBluetoothSPP(context, bluetoothManager);
-        bluetoothSPP.notifyStreamStateChanged(IStreamable.StreamState.STARTED);
+        bluetoothSPP.notifyStreamStateChanged(StreamState.STARTED);
         assertFalse(bluetoothLE.isStreaming());
     }
 
@@ -473,7 +473,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void isStreaming_Null() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.FAILED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.FAILED);
         assertFalse(bluetoothLE.isStreaming());
     }
 
@@ -482,7 +482,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void isStreaming_Disconnected() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.DISCONNECTED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.DISCONNECTED);
         assertFalse(bluetoothLE.isStreaming());
     }
 
@@ -491,7 +491,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void isStreaming_Started() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.STARTED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.STARTED);
         assertTrue(bluetoothLE.isStreaming());
     }
 
@@ -500,7 +500,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void isStreaming_Stopped() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.STOPPED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.STOPPED);
         assertFalse(bluetoothLE.isStreaming());
     }
 
@@ -509,7 +509,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void isStreaming_Idle() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.IDLE);
+        bluetoothLE.notifyStreamStateChanged(StreamState.IDLE);
         assertFalse(bluetoothLE.isConnected());
     }
 
@@ -520,7 +520,7 @@ public class MbtBluetoothLETest {
     public void isStreaming_Vpro() {
         MbtConfig.setDeviceType(MbtDeviceType.VPRO);
         MbtBluetoothSPP bluetoothSPP = new MbtBluetoothSPP(context, bluetoothManager);
-        bluetoothSPP.notifyStreamStateChanged(IStreamable.StreamState.STARTED);
+        bluetoothSPP.notifyStreamStateChanged(StreamState.STARTED);
         assertFalse(bluetoothLE.isConnected());
     }
 
@@ -591,13 +591,13 @@ public class MbtBluetoothLETest {
 
     @Test
     public void startLowEnergyScan_FailedNullNameFilterOn() {
-        assertFalse(bluetoothLE.startLowEnergyScan(true));
+        assertFalse(bluetoothLE.startScan());
         assertNotEquals(bluetoothLE.getCurrentState(), BtState.SCAN_FAILURE);
     }
 
     @Test
     public void startLowEnergyScan_FailedNotNullNameFilterOn() {
-        assertFalse(bluetoothLE.startLowEnergyScan(true));
+        assertFalse(bluetoothLE.startScan());
         assertNotEquals(bluetoothLE.getCurrentState(), BtState.SCAN_FAILURE);
     }
 
@@ -606,7 +606,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void stopLowEnergyScan_StateIsNotScanStarted() {
-        bluetoothLE.stopLowEnergyScan();
+        bluetoothLE.stopScan();
         assertNotEquals(bluetoothLE.getCurrentState(), BtState.SCAN_STARTED);
     }
 
@@ -615,7 +615,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void stopLowEnergyScan_StateIsIdle() {
-        bluetoothLE.stopLowEnergyScan();
+        bluetoothLE.stopScan();
         assertEquals(bluetoothLE.getCurrentState(), BtState.IDLE);
     }
 
@@ -624,8 +624,8 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void stopLowEnergyScan_StartedStoppedFailed() {
-        bluetoothLE.startLowEnergyScan(true);
-        bluetoothLE.stopLowEnergyScan();
+        bluetoothLE.startScan();
+        bluetoothLE.stopScan();
     }
 
 
@@ -1135,7 +1135,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void notifyConnectionStateChanged_DisconnectionDuringStreaming() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.STARTED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.STARTED);
         assertTrue(bluetoothLE.isStreaming());
         bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED, true);
         assertFalse(bluetoothLE.isStreaming());
@@ -1146,7 +1146,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void notifyConnectionStateChanged_ConnectionWhileStreaming() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.STARTED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.STARTED);
         bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_CONNECTION_SUCCESS, true);
         assertTrue(bluetoothLE.isStreaming());
     }
@@ -1156,7 +1156,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void notifyConnectionStateChanged_DisconnectionDuringStoppedStream() {
-        bluetoothLE.notifyStreamStateChanged(IStreamable.StreamState.STOPPED);
+        bluetoothLE.notifyStreamStateChanged(StreamState.STOPPED);
         bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED, true);
         assertFalse(bluetoothLE.isStreaming());
     }

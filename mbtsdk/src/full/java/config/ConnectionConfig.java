@@ -5,7 +5,6 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import command.BluetoothCommand;
 import command.BluetoothCommands;
 import engine.clientevents.BaseError;
 import engine.clientevents.ConnectionStateListener;
@@ -21,15 +20,15 @@ import features.MbtFeatures;
 @Keep
 public final class ConnectionConfig {
 
-    private String deviceName;
+    private String deviceName; //todo only available for Melomind : extends Connection config in order to have a Melomind Config and a Vpro Config ?
 
     private String deviceQrCode;
 
     private int maxScanDuration;
 
-    private boolean connectAudio;
+    private boolean connectAudio; //todo only available for Melomind : extends Connection config in order to have a Melomind Config and a Vpro Config ?
 
-    private MbtDeviceType deviceType;
+    private MbtDeviceType deviceType; //todo remove it if Melomind Config and  Vpro Config are created ?
 
     /**
      *  Maximum Transmission Unit
@@ -107,14 +106,17 @@ public final class ConnectionConfig {
      * - null (looking for any device, no matter its QR code)
      * - or not null and its length matchs the expected length
      */
-    public boolean isDeviceNameValid(){
+    public boolean isDeviceNameValid(MbtDeviceType type){
+        if(type == MbtDeviceType.VPRO)
+            return true; //TODO check if starts with expected prefix for Vpro & Melomind
+
         return deviceName == null || deviceName.length() == MbtFeatures.DEVICE_NAME_LENGTH;
     }
 
     /**
      * By default, Bluetooth connection is only initiated for Data streaming but not for the Audio streaming
      */
-    public boolean useAudio() {
+    public boolean connectAudio() { //todo only available for Melomind 
         return connectAudio;
     }
 
@@ -130,7 +132,7 @@ public final class ConnectionConfig {
         this.deviceName = deviceName;
     }
 
-    public void setDeviceQrCode(String deviceQrCode) {
+    public void setDeviceQrCode(String deviceQrCode) { //todo only available for Melomind ?
         this.deviceQrCode = deviceQrCode;
     }
 
@@ -138,7 +140,7 @@ public final class ConnectionConfig {
         this.maxScanDuration = maxScanDuration;
     }
 
-    public void setConnectAudio(boolean connectAudio) {
+    public void setConnectAudio(boolean connectAudio) { //todo only available for Melomind ?
         this.connectAudio = connectAudio;
     }
 
@@ -160,7 +162,6 @@ public final class ConnectionConfig {
         private int mtu = BluetoothCommands.Mtu.DEFAULT;
 
         private boolean connectAudio = false;
-        private MbtDeviceType deviceType = MbtDeviceType.MELOMIND;
         @NonNull
         private final ConnectionStateListener<BaseError> connectionStateListener;
 
@@ -243,26 +244,16 @@ public final class ConnectionConfig {
          * @return the builder instance
          */
         @NonNull
-        public Builder connectAudioIfDeviceCompatible(){
+        public Builder connectAudioIfDeviceCompatible(){ //todo only available for Melomind
             this.connectAudio = true;
             return this;
         }
 
-        /**
-         * Use this method to define which kind of device you want to connect to.
-         * @see MbtDeviceType
-         * @param deviceType
-         * @return the builder instance
-         */
         @NonNull
-        public Builder scanDeviceType(MbtDeviceType deviceType){
-            this.deviceType = deviceType;
-            return this;
-        }
-
-        @NonNull
-        public ConnectionConfig create(){
-            return new ConnectionConfig(this.deviceName, this.deviceQrCode, this.maxScanDuration, this.connectAudio, this.deviceType, this.mtu, this.connectionStateListener);
+        public ConnectionConfig createForDevice(@NonNull MbtDeviceType deviceType){ //todo replace useless forDevice in createForDevice if Melomind Config and Vpro Config ?
+            if(deviceType == null)
+                deviceType = MbtDeviceType.MELOMIND;
+            return new ConnectionConfig(this.deviceName, this.deviceQrCode, this.maxScanDuration, this.connectAudio, deviceType, this.mtu, this.connectionStateListener);
         }
 
 

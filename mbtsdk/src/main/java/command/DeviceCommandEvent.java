@@ -1,5 +1,6 @@
 package command;
 
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 
 /**
@@ -51,6 +52,22 @@ public enum DeviceCommandEvent {
      */
     MBX_SYS_GET_STATUS((byte)0x08),   // allows to retrieve to system global status
     MBX_GET_EEG_CONFIG((byte)0x0E),      // Get the current configuration of the Notch filter, the bandpass filter, and the amplifier gain.
+    GET_EEG_CONFIG_ADDITIONAL((byte) 0x00, (byte)0x00), // Additional info to get the current configuration .
+
+    CMD_GET_BATTERY_VALUE ((byte)0x20),
+    CMD_START_EEG_ACQUISITION((byte)0x24),
+    CMD_STOP_EEG_ACQUISITION((byte)0x25),
+    CMD_GET_DEVICE_CONFIG ((byte)0x50),
+    CMD_GET_PSM_CONFIG((byte)0x51),
+    CMD_GET_IMS_CONFIG((byte)0x52),
+    CMD_SET_DEVICE_CONFIG((byte)0x53),
+    CMD_GET_DEVICE_INFO((byte)0x54),
+
+    START_FRAME((byte) 0x3C),
+    PAYLOAD_LENGTH( (byte)0x00, (byte)0x00 ),
+    COMPRESS((byte) 0x00),
+    PACKET_ID((byte) 0x00 ),
+    PAYLOAD((byte) 0x00), // Additional info to get the current configuration .
 
     /**
      * Event codes related to Audio Connection Events
@@ -153,6 +170,10 @@ public enum DeviceCommandEvent {
         return identifierCode;
     }
 
+    public byte[] getAssembledCodes() {
+        return assembleCodes(new byte[]{identifierCode}, additionalCodes);
+    }
+
     /**
      * Returns the optional additional code associated to the event
      * to add security and avoid requests sent by hackers.
@@ -180,5 +201,25 @@ public enum DeviceCommandEvent {
                 return event;
         }
         return null;
+    }
+
+    public static byte[] assembleCodes(byte[]... codes){
+        int bufferLength = 0;
+        for (byte[] code : codes) {
+            if(code != null){
+                for (byte codeByte : code) {
+                    bufferLength++;
+                }
+            }
+        }
+        ByteBuffer buffer = ByteBuffer.allocate(bufferLength);
+        for (byte[] code : codes) {
+            if (code != null) {
+                for (byte codeByte : code) {
+                    buffer.put(codeByte);
+                }
+            }
+        }
+        return buffer.array();
     }
 }

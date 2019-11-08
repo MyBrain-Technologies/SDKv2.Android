@@ -24,6 +24,7 @@ public final class EegError extends BaseError{
     public static EegError ERROR_RELAXATION_INDEXES                 = new EegError(CODE_RANGE+8, "Failed to compute relaxation index.");
     public static EegError ERROR_CALIBRATION_MISSING                = new EegError(CODE_RANGE+9, "Impossible to perform this operation if no calibration has be done before.");
     public static EegError ERROR_MATRIX_INVERTED                    = new EegError(CODE_RANGE+10, "This processing operation failed : EEG data Matrix must be inverted.");
+    public static EegError ERROR_ALREADY_STREAMING                          = new EegError(CODE_RANGE+11, "Already streaming");
 
     private EegError(int code, String exception) {
         super(DOMAIN, code, exception);

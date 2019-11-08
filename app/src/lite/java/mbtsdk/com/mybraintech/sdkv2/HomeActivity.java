@@ -81,7 +81,7 @@ public class HomeActivity extends AppCompatActivity{
 
     private BluetoothStateListener bluetoothStateListener = new BluetoothStateListener() {
         @Override
-        public void onNewState(BtState newState) {
+        public void onNewState(BtState newState, MbtDevice device) {
             Log.d(TAG, "new state received "+newState);
             if(newState.equals(BtState.READING_SUCCESS)){ //SERIAL NUMBER VALUE HAS NOT BEEN READ BEFORE THIS STEP
                 client.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
@@ -125,13 +125,13 @@ public class HomeActivity extends AppCompatActivity{
         }
 
         @Override
-        public void onDeviceConnected() {
+        public void onDeviceConnected(MbtDevice device) {
             toast.cancel();
             deinitCurrentActivity(true);
         }
 
         @Override
-        public void onDeviceDisconnected() {
+        public void onDeviceDisconnected(MbtDevice device) {
             if(!toast.getView().isShown())
                 notifyUser(getString(R.string.no_connected_headset));
             if(isCancelled)

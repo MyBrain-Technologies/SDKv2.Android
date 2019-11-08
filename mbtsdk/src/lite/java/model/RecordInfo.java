@@ -4,7 +4,7 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 
 import features.MelomindExerciseType;
-import core.recordingsession.metadata.DataSource;
+import core.recording.metadata.DataSource;
 
 /**
  * Created by manon on 19/10/16.
