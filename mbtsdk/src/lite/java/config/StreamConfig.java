@@ -4,7 +4,7 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 
 import command.DeviceCommand;
 import core.eeg.storage.MbtEEGPacket;
@@ -30,7 +30,7 @@ public final class StreamConfig {
 
     private final boolean computeQualities;
 
-    private ArrayList<DeviceCommand> deviceCommands;
+    private LinkedList<DeviceCommand> deviceCommands;
 
     private StreamConfig(EegListener<BaseError> eegListener, DeviceStatusListener<BaseError> deviceStatusListener,int notificationPeriod){
         this.computeQualities = false;
@@ -57,7 +57,7 @@ public final class StreamConfig {
         return deviceStatusListener;
     }
 
-    public ArrayList<DeviceCommand> getDeviceCommands() {
+    public LinkedList<DeviceCommand> getDeviceCommands() {
         return deviceCommands;
     }
 

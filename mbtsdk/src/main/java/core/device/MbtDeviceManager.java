@@ -8,6 +8,8 @@ import android.util.Log;
 
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
+
+import command.BluetoothCommands;
 import command.OADCommands;
 import config.ConnectionConfig;
 import core.BaseModuleManager;
@@ -263,13 +265,13 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
                 .deviceName(mCurrentConnectedDevice.getProductName())
                 .deviceQrCode(mCurrentConnectedDevice.getExternalName());
 
-        ConnectionConfig connectionConfig = connectionConfigBuilder.createForDevice(this.mCurrentConnectedDevice.getDeviceType());
+        ConnectionConfig connectionConfig = connectionConfigBuilder.create();
 
         MbtEventBus.postEvent(new StartOrContinueConnectionRequestEvent(true,
                 connectionConfig.getDeviceName(),
                 connectionConfig.getDeviceQrCode(),
                 connectionConfig.getDeviceType(),
-                connectionConfig.getMtu(),
+                BluetoothCommands.Mtu.DEFAULT,
                 reconnectAudio));
 
     }

@@ -12,12 +12,10 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
 import core.device.model.MbtDevice;
-import core.eeg.storage.MbtEEGPacket;
 import core.recording.metadata.Comment;
 import features.MbtAcquisitionLocations;
 import model.MbtRecording;

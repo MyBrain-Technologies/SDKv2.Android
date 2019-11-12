@@ -19,6 +19,7 @@ import features.MbtFeatures;
  */
 @Keep
 public final class StreamConfig {
+
     private int notificationPeriod;
     private final EegListener<BaseError> eegListener;
     private DeviceStatusListener<BaseError> deviceStatusListener;
