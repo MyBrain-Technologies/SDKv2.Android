@@ -46,8 +46,8 @@ public class MbtOSCProcessor extends AbstractStreamer<OSCMessage, OSCPortOut, Sy
     public void stream(OSCMessage message) {
         try { // Send the messages
             if (streamer != null){
-                streamer.send((message));
-                LogUtils.i("Stream", "Address: " + (message).getAddress() + " | Data: " + (message).getArguments());
+                streamer.send(message);
+                LogUtils.i("Stream", "Address: " + message.getAddress() + " | Data: " + message.getArguments());
             }
         } catch (Exception e) {
             e.printStackTrace();

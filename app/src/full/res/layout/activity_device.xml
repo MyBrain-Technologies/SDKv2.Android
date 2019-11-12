@@ -76,17 +76,17 @@
     </LinearLayout>
 
     <TextView
-        android:id="@+id/channel_1_quality"
+        android:id="@+id/channels_quality"
         android:layout_width="wrap_content"
         android:layout_height="0dp"
-        android:text="@string/channel_1_qc"
         android:textColor="@color/white"
         android:gravity="center_vertical"
         android:textSize="18sp"
         android:visibility="visible"
 
         app:layout_constraintBottom_toBottomOf="@+id/guidelineBottomQuality"
-        app:layout_constraintEnd_toStartOf="@+id/guidelineEndScanButton"
+        app:layout_constraintEnd_toStartOf="@+id/guidelineEnd"
+        app:layout_constraintStart_toStartOf="@+id/guidelineStart"
         app:layout_constraintTop_toTopOf="@id/guidelineTopQuality" />
 
     <TextView
@@ -104,19 +104,6 @@
         app:layout_constraintStart_toStartOf="@+id/guidelineStart"
         app:layout_constraintTop_toTopOf="@id/guidelineTopQuality" />
 
-    <TextView
-        android:id="@+id/channel_2_quality"
-        android:layout_width="wrap_content"
-        android:layout_height="0dp"
-        android:text="@string/channel_2_qc"
-        android:textColor="@color/white"
-        android:textSize="18sp"
-        android:gravity="center_vertical"
-        android:visibility="visible"
-
-        app:layout_constraintBottom_toBottomOf="@+id/guidelineBottomQuality"
-        app:layout_constraintStart_toStartOf="@+id/guidelineStartCancelButton"
-        app:layout_constraintTop_toTopOf="@id/guidelineTopQuality" />
 
     <com.github.mikephil.charting.charts.LineChart
         android:layout_width="match_parent"
@@ -144,52 +131,6 @@
         app:layout_constraintStart_toStartOf="@+id/guidelineEndStartStop"
         app:layout_constraintTop_toTopOf="@+id/guidelineBottomChannels" />
 
-    <Spinner
-        android:id="@+id/scaleSpinner"
-        android:layout_width="122dp"
-        android:layout_height="18dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="8dp"
-        android:spinnerMode="dropdown"
-        android:visibility="invisible"
-        app:layout_constraintBottom_toTopOf="@+id/guidelineTopQuality"
-        app:layout_constraintEnd_toStartOf="@+id/pitchSpinner"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/guidelineBottomButton" />
-
-    <Spinner
-        android:id="@+id/keySpinner"
-        android:layout_width="111dp"
-        android:layout_height="18dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="12dp"
-        android:spinnerMode="dropdown"
-        android:visibility="invisible"
-        app:layout_constraintBottom_toTopOf="@+id/guidelineTopQuality"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toEndOf="@+id/pitchSpinner"
-        app:layout_constraintTop_toTopOf="@+id/guidelineBottomButton"
-        app:layout_constraintVertical_bias="0.692" />
-
-    <Spinner
-        android:id="@+id/pitchSpinner"
-        android:layout_width="111dp"
-        android:layout_height="17dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="8dp"
-        android:spinnerMode="dropdown"
-        android:visibility="invisible"
-        app:layout_constraintBottom_toTopOf="@+id/guidelineTopQuality"
-        app:layout_constraintEnd_toStartOf="@+id/keySpinner"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toEndOf="@+id/scaleSpinner"
-        app:layout_constraintTop_toTopOf="@+id/guidelineBottomButton" />
 
     <!-- VERTICAL GUIDELINES-->
 
