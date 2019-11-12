@@ -60,8 +60,8 @@ public class HomeActivity extends AppCompatActivity{
 
     private ConnectionStateListener connectionStateListener = new ConnectionStateListener() {
         @Override
-        public void onError(BaseError error, String additionnalInfo) {
-            Log.e(TAG, "onError received "+error.getMessage()+ (additionnalInfo != null ? additionnalInfo : ""));
+        public void onError(BaseError error, String additionalInfo) {
+            Log.e(TAG, "onError received "+error.getMessage()+ (additionalInfo != null ? additionalInfo : ""));
             updateScanning(false);
             toast = Toast.makeText(HomeActivity.this, error.getMessage(), Toast.LENGTH_LONG);
             toast.show();

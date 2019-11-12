@@ -7,8 +7,8 @@ android {
     defaultConfig {
         minSdkVersion 22
         targetSdkVersion 28
-        versionCode 11
-        versionName '2.1.2'
+        versionCode 10
+        versionName '2.1.1'
         flavorDimensions "default"
         testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'
     }

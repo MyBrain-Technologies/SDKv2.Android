@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 
+import command.DeviceStreamingCommands;
 import config.SynchronisationConfig;
 import core.bluetooth.StreamState;
 import core.bluetooth.BtState;
@@ -39,9 +40,6 @@ import core.device.event.SaturationEvent;
 import core.device.model.MbtDevice;
 import core.eeg.storage.Feature;
 import core.eeg.storage.MbtEEGPacket;
-import core.synchronisation.midi.Key;
-import core.synchronisation.midi.Note;
-import core.synchronisation.midi.Scale;
 import engine.MbtClient;
 
 import config.StreamConfig;
@@ -72,6 +70,7 @@ DeviceActivity extends AppCompatActivity {
     private LineChart eegGraph;
     private LineData eegLineData;
 
+    private LineDataSet status;
     private LineDataSet channel1;
     private LineDataSet channel2;
 
@@ -121,9 +120,6 @@ DeviceActivity extends AppCompatActivity {
         initReadBatteryButton();
         initStartStopStreamingButton();
         initEegGraph();
-        initKeySpinner();
-        initPitchSpinner();
-        initScaleSpinner();
 
         client.setConnectionStateListener(bluetoothStateListener);
     }
@@ -131,7 +127,7 @@ DeviceActivity extends AppCompatActivity {
     private void initEegListener() {
         eegListener = new EegListener<BaseError>() {
             @Override
-            public void onError(BaseError error, String additionnalInfo) {
+            public void onError(BaseError error, String additionalInfo) {
                 LogUtils.w(TAG, "error : " + error.getMessage());
                 Toast.makeText(DeviceActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
                 if (isStreaming) {
@@ -161,17 +157,7 @@ DeviceActivity extends AppCompatActivity {
                     if (maxPower < meanPower)
                         maxPower = meanPower;
 
-                    float meanRatio = (mbtEEGPackets.getFeature(Feature.ALPHA_RATIO).get(0) + mbtEEGPackets.getFeature(Feature.ALPHA_RATIO).get(1)) / 2;
 
-                    int ratioConvertedToNote = (int)resize(meanRatio,0, 0.14f,0,6);
-                    int powerConvertedToVelocity = (int)resize(meanPower,minPower, maxPower,12,127);
-
-                    Note note = Note.convertIntegerToNote(ratioConvertedToNote);
-                    int velocity = powerConvertedToVelocity;
-                    int pitch = (int) pitchSpinner.getSelectedItem();
-                    Key key = (Key) keySpinner.getSelectedItem();
-                    Scale scale = (Scale) scaleSpinner.getSelectedItem();
-                    //client.sendMidi(note, velocity, pitch, key, scale);
                 }
             }
 
@@ -227,7 +213,7 @@ DeviceActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onError(BaseError error, String additionnalInfo) {
+            public void onError(BaseError error, String additionalInfo) {
                 notifyUser(getString(R.string.error_read_battery));
             }
         };
@@ -252,8 +238,8 @@ DeviceActivity extends AppCompatActivity {
                 returnOnPreviousActivity();
             }
 
-            public void onError(BaseError error, String additionnalInfo) {
-                notifyUser(error.getMessage() + (additionnalInfo != null ? additionnalInfo : ""));
+            public void onError(BaseError error, String additionalInfo) {
+                notifyUser(error.getMessage() + (additionalInfo != null ? additionalInfo : ""));
             }
         };
     }
@@ -349,10 +335,12 @@ DeviceActivity extends AppCompatActivity {
                                             startStream(new StreamConfig.Builder(eegListener)
                                                     .setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)
                                                     .useQualities()
+                                                    .configureAcquisitionFromDeviceCommand(new DeviceStreamingCommands.Triggers(true))
                                                     .streamOverOSC(new SynchronisationConfig.OSC.Builder()
                                                             .ipAddress(ipAddress)
                                                             .streamRawEEG()
                                                             .streamQualities()
+                                                            .streamStatus()
                                                             .streamFeature(Feature.ALPHA_POWER)
                                                             .streamFeature(Feature.ALPHA_RATIO)
                                                             .port(port)
@@ -376,6 +364,7 @@ DeviceActivity extends AppCompatActivity {
                             startStream(new StreamConfig.Builder(eegListener)
                                     .setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)
                                     .useQualities()
+                                    .configureAcquisitionFromDeviceCommand(new DeviceStreamingCommands.Triggers(true))
                                     .createForDevice(deviceType));
                             updateStreaming();
                         }
@@ -403,8 +392,20 @@ DeviceActivity extends AppCompatActivity {
     public void initEegGraph() {
         eegGraph = findViewById(R.id.eegGraph);
 
+        status = new LineDataSet(new ArrayList<Entry>(250), getString(R.string.status));
         channel1 = new LineDataSet(new ArrayList<Entry>(250), getString(R.string.channel1));
         channel2 = new LineDataSet(new ArrayList<Entry>(250), getString(R.string.channel2));
+
+        status.setLabel("STYM");
+        status.setDrawValues(false);
+        status.disableDashedLine();
+        status.setDrawCircleHole(false);
+        status.setDrawCircles(false);
+        status.setColor(Color.GREEN);
+        status.setDrawFilled(true);
+        status.setFillColor(Color.GREEN);
+        status.setFillAlpha(40);
+        status.setAxisDependency(YAxis.AxisDependency.RIGHT);
 
         channel1.setDrawValues(false);
         channel1.disableDashedLine();
@@ -422,6 +423,7 @@ DeviceActivity extends AppCompatActivity {
 
         eegLineData = new LineData();
 
+        eegLineData.addDataSet(status);
         eegLineData.addDataSet(channel1);
         eegLineData.addDataSet(channel2);
 
@@ -460,7 +462,7 @@ DeviceActivity extends AppCompatActivity {
         return hasTheSameNumberOfData;
     }
 
-    private void addEntry(ArrayList<ArrayList<Float>> channelData) {
+    private void addEntry(ArrayList<ArrayList<Float>> channelData, ArrayList<Float> statusData) {
 
         LineData data = eegGraph.getData();
         if (data != null) {
@@ -470,8 +472,9 @@ DeviceActivity extends AppCompatActivity {
             } else {
                 if (channelsHasTheSameNumberOfData(channelData)) {
                     for (int currentEegData = 0; currentEegData < channelData.get(0).size(); currentEegData++) { //for each number of eeg data
+                        data.addEntry(new Entry(data.getDataSets().get(0).getEntryCount(), statusData.get(currentEegData).floatValue()), 0);
                         for (int currentChannel = 0; currentChannel < MbtFeatures.getNbChannels(deviceType); currentChannel++) { //todo vpro
-                            data.addEntry(new Entry(data.getDataSets().get(currentChannel).getEntryCount(), channelData.get(currentChannel).get(currentEegData) * 1000000), currentChannel);
+                            data.addEntry(new Entry(data.getDataSets().get(currentChannel+1).getEntryCount(), channelData.get(currentChannel).get(currentEegData) * 1000000), currentChannel+1);
                         }
                     }
                 } else {
@@ -491,7 +494,7 @@ DeviceActivity extends AppCompatActivity {
     private void addEegDataToGraph(MbtEEGPacket mbtEEGPackets) {
 
         eegDataCounter += mbtEEGPackets.getChannelsData().get(0).size();
-        addEntry(mbtEEGPackets.getChannelsData());
+        addEntry(mbtEEGPackets.getChannelsData(), mbtEEGPackets.getStatusData());
     }
 
     private void notifyUser(String message) {
@@ -504,35 +507,6 @@ DeviceActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getColor(R.color.light_blue)));
         }
-    }
-
-    private void initKeySpinner() {
-        keySpinner = findViewById(R.id.keySpinner);
-
-        ArrayAdapter<Key> arrayAdapter = new ArrayAdapter<Key>(this,
-                android.R.layout.simple_spinner_item, Key.values());
-        arrayAdapter.setDropDownViewResource(R.layout.spinner_item);
-        keySpinner.setAdapter(arrayAdapter);
-        keySpinner.setSelection(arrayAdapter.getPosition(Key.values()[0]));
-    }
-
-    private void initScaleSpinner() {
-        scaleSpinner = findViewById(R.id.scaleSpinner);
-        ArrayAdapter<Scale> arrayAdapter = new ArrayAdapter<Scale>(this,
-                android.R.layout.simple_spinner_item, Scale.values());
-        arrayAdapter.setDropDownViewResource(R.layout.spinner_item);
-        scaleSpinner.setAdapter(arrayAdapter);
-        scaleSpinner.setSelection(arrayAdapter.getPosition(Scale.values()[0]));
-    }
-
-    private void initPitchSpinner() {
-        ArrayList<Integer> listPitches = new ArrayList<>(Arrays.asList(-2,-1,0,1,2));
-        pitchSpinner = findViewById(R.id.pitchSpinner);
-        ArrayAdapter<Integer> arrayAdapter = new ArrayAdapter<Integer>(this,
-                android.R.layout.simple_spinner_item, listPitches);
-        arrayAdapter.setDropDownViewResource(R.layout.spinner_item);
-        pitchSpinner.setAdapter(arrayAdapter);
-        pitchSpinner.setSelection(arrayAdapter.getPosition(listPitches.get(2)));
     }
 
     private void startStream(StreamConfig streamConfig) {

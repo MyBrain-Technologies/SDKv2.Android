@@ -237,10 +237,10 @@ public final class StreamConfig {
             return this;
         }
 
-        public Builder streamOverLSL(@NonNull SynchronisationConfig.LSL synchronisationConfig){
-            this.synchronisationConfig = synchronisationConfig;
-            return this;
-        }
+//        public Builder streamOverLSL(@NonNull SynchronisationConfig.LSL synchronisationConfig){
+//            this.synchronisationConfig = synchronisationConfig;
+//            return this;
+//        }
 
         /**
          * Use this method to specify how much eeg you want to receive in the {@link EegListener#onNewPackets(MbtEEGPacket)} method.

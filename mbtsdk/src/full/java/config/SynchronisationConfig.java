@@ -3,7 +3,6 @@ package config;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 
@@ -16,14 +15,17 @@ public interface SynchronisationConfig {
     @Keep
     abstract class AbstractConfig {
 
+    //private Biosignal biosignal;
+
     private String ipAddress;
 
     private boolean streamRawEEG;
     private boolean streamQualities;
+    private boolean streamStatus;
 
     private HashSet<Feature> featuresToStream;
 
-    AbstractConfig(@NonNull String ipAddress, boolean streamRawEEG, boolean streamQualities, HashSet<Feature> featuresToStream) {
+    AbstractConfig(@NonNull String ipAddress, boolean streamRawEEG, boolean streamQualities, boolean streamStatus, HashSet<Feature> featuresToStream) {
 
         if (ipAddress == null || ipAddress.isEmpty())
             throw new IllegalArgumentException("Impossible to stream data to a null or empty IP address");
@@ -31,7 +33,11 @@ public interface SynchronisationConfig {
         this.ipAddress = ipAddress;
         this.streamRawEEG = streamRawEEG;
         this.streamQualities = streamQualities;
+        this.streamStatus = streamStatus;
         this.featuresToStream = featuresToStream;
+
+        //if(streamRawEEG || streamQualities || !featuresToStream.isEmpty())
+        //    biosignal = Biosignal.EEG;
     }
 
 
@@ -45,6 +51,10 @@ public interface SynchronisationConfig {
 
     public boolean streamQualities() {
         return streamQualities;
+    }
+
+    public boolean streamStatus() {
+        return streamStatus;
     }
 
     public HashSet<Feature> getFeaturesToStream() {
@@ -73,6 +83,7 @@ public interface SynchronisationConfig {
 
         boolean streamRawEEG = false;
         boolean streamQualities = false;
+        boolean streamStatus = false;
 
         HashSet<Feature> featuresToStream = new HashSet<>();
 
@@ -83,6 +94,11 @@ public interface SynchronisationConfig {
 
         public B streamQualities() {
             this.streamQualities = true;
+            return self();
+        }
+
+        public B streamStatus() {
+            this.streamStatus = true;
             return self();
         }
 
@@ -141,8 +157,8 @@ public interface SynchronisationConfig {
 
         private int port;
 
-        OSC(@NonNull String ipAddress, int port, boolean streamRawEEG, boolean streamQualities, HashSet<Feature> featuresToStream) {
-            super(ipAddress, streamRawEEG, streamQualities, featuresToStream);
+        OSC(@NonNull String ipAddress, int port, boolean streamRawEEG, boolean streamQualities, boolean streamStatus, HashSet<Feature> featuresToStream) {
+            super(ipAddress, streamRawEEG, streamQualities, streamStatus, featuresToStream);
             this.port = port;
         }
 
@@ -170,7 +186,7 @@ public interface SynchronisationConfig {
                 if(featuresToStream.isEmpty())
                     featuresToStream = null;
 
-                return new OSC(super.ipAddress, port, streamRawEEG, streamQualities, featuresToStream);
+                return new OSC(super.ipAddress, port, streamRawEEG, streamQualities, streamStatus, featuresToStream);
             }
         }
     }
@@ -178,8 +194,8 @@ public interface SynchronisationConfig {
     @Keep
     final class LSL extends AbstractConfig {
 
-        LSL(@NonNull String ipAddress, boolean streamRawEEG, boolean streamQualities, HashSet<Feature> featuresToStream) {
-            super(ipAddress, streamRawEEG, streamQualities, featuresToStream);
+        LSL(@NonNull String ipAddress, boolean streamRawEEG, boolean streamQualities, boolean streamStatus, HashSet<Feature> featuresToStream) {
+            super(ipAddress, streamRawEEG, streamQualities, streamStatus, featuresToStream);
         }
 
         @Keep
@@ -195,7 +211,7 @@ public interface SynchronisationConfig {
                 if(featuresToStream.isEmpty())
                     featuresToStream = null;
 
-                return new LSL(super.ipAddress, streamRawEEG, streamQualities, featuresToStream);
+                return new LSL(super.ipAddress, streamRawEEG, streamQualities, streamStatus, featuresToStream);
             }
         }
     }

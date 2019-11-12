@@ -98,8 +98,8 @@ DeviceActivity extends AppCompatActivity {
             //returnOnPreviousActivity();
         }
 
-        public void onError(BaseError error, String additionnalInfo) {
-            notifyUser(error.getMessage()+(additionnalInfo != null ? additionnalInfo : ""));
+        public void onError(BaseError error, String additionalInfo) {
+            notifyUser(error.getMessage()+(additionalInfo != null ? additionalInfo : ""));
         }
     };
 
@@ -112,7 +112,7 @@ DeviceActivity extends AppCompatActivity {
         }
 
         @Override
-        public void onError(BaseError error, String additionnalInfo) {
+        public void onError(BaseError error, String additionalInfo) {
             notifyUser(getString(R.string.error_read_battery));
         }
     };
@@ -122,7 +122,7 @@ DeviceActivity extends AppCompatActivity {
     private EegListener<BaseError> eegListener = new EegListener<BaseError>() {
 
         @Override
-        public void onError(BaseError error, String additionnalInfo) {
+        public void onError(BaseError error, String additionalInfo) {
             Toast.makeText(DeviceActivity.this, error.toString(), Toast.LENGTH_SHORT).show();
         }
 

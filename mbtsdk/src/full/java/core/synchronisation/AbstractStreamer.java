@@ -1,5 +1,7 @@
 package core.synchronisation;
 
+import android.util.Log;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -20,7 +22,7 @@ public abstract class AbstractStreamer<U, V, C extends SynchronisationConfig.Abs
     private static final boolean START_STREAM = true;
     private static final boolean STOP_STREAM = false;
 
-    static private final String ADDRESS_PREFIX = "/";
+    static final String ADDRESS_PREFIX = "/";
 
     static class StreamNotificationState {
 
@@ -39,6 +41,7 @@ public abstract class AbstractStreamer<U, V, C extends SynchronisationConfig.Abs
     private static final String RAW_EEG_ADDRESS = ADDRESS_PREFIX + "raweeg";
     private static final String QUALITY_ADDRESS = ADDRESS_PREFIX + "quality";
     private static final String FEATURE_ADDRESS = ADDRESS_PREFIX + "feature";
+    private static final String STATUS_ADDRESS = ADDRESS_PREFIX + "status";
 
     private static HashMap<String, StreamNotificationState> notificationStateForAddressMap = new HashMap<>();
     private static ArrayList<Feature> featuresToStream = new ArrayList<>();
@@ -51,15 +54,19 @@ public abstract class AbstractStreamer<U, V, C extends SynchronisationConfig.Abs
 
         boolean streamRawEEG = config.streamRawEEG();
         boolean streamQualities = config.streamQualities();
+        boolean streamStatus = config.streamStatus();
         HashSet<Feature> features = config.getFeaturesToStream();
 
-        LogUtils.d(TAG,"\nstreamRawEEG "+streamRawEEG+ " \nstreamQualities "+streamQualities + " \nfeaturesToStream "+(features != null ? features.toString(): "null"));
+        Log.d(TAG,"\nstreamRawEEG "+streamRawEEG+ " \nstreamQualities "+streamQualities + " \nstreamStatus "+streamStatus + " \nfeaturesToStream " +(features != null ? features.toString(): "null"));
 
         if (streamRawEEG)
             notificationStateForAddressMap.put(RAW_EEG_ADDRESS, new StreamNotificationState());
 
         if (streamQualities)
             notificationStateForAddressMap.put(QUALITY_ADDRESS, new StreamNotificationState());
+
+        if (streamStatus)
+            notificationStateForAddressMap.put(STATUS_ADDRESS, new StreamNotificationState());
 
         if (features != null)
             for (Feature feature : features) {
@@ -75,7 +82,6 @@ public abstract class AbstractStreamer<U, V, C extends SynchronisationConfig.Abs
     abstract void initStreamer(C config);
 
     private void notifyReceiverStartOrStop(String address, boolean startOrStopStream){
-        LogUtils.d(TAG,"notifyReceiverStartOrStop "+address+ " "+startOrStopStream);
 
         if(startOrStopStream == START_STREAM && !notificationStateForAddressMap.get(address).startNotificationSent) {
             notificationStateForAddressMap.get(address).sendStartNotification();
@@ -88,13 +94,16 @@ public abstract class AbstractStreamer<U, V, C extends SynchronisationConfig.Abs
     }
 
     private void notifyReceiverStartOrStop(boolean isStart){
-        LogUtils.d(TAG,(isStart ? "Start" : "Stop")+" stream");
+        LogUtils.d(TAG,(isStart ? "Start" : "Stop")+" OSC stream");
 
         if(streamRawEEG())
             notifyReceiverStartOrStop(RAW_EEG_ADDRESS, isStart);
 
         if(streamQualities())
             notifyReceiverStartOrStop(QUALITY_ADDRESS, isStart);
+
+        if(streamStatus())
+            notifyReceiverStartOrStop(STATUS_ADDRESS, isStart);
 
         if(getFeaturesAddresses() != null)
             for (String featureAddress : getFeaturesAddresses()) {
@@ -121,6 +130,10 @@ public abstract class AbstractStreamer<U, V, C extends SynchronisationConfig.Abs
         stream(initStreamRequest(QUALITY_ADDRESS, qualities));
     }
 
+    private void streamStatus(ArrayList<Float> status){
+        stream(initStreamRequest(STATUS_ADDRESS, status));
+    }
+
     private void streamFeatures(MbtEEGPacket eegPacket, ArrayList<String> featuresAddresses, ArrayList<Feature> featuresToStream){
         LogUtils.d(TAG,"Stream feature "+featuresToStream);
         for (int feature = 0 ; feature < featuresToStream.size() ; feature ++){
@@ -138,6 +151,10 @@ public abstract class AbstractStreamer<U, V, C extends SynchronisationConfig.Abs
         return notificationStateForAddressMap.containsKey(QUALITY_ADDRESS);
     }
 
+    private boolean streamStatus(){
+        return notificationStateForAddressMap.containsKey(STATUS_ADDRESS);
+    }
+
     private ArrayList<String> getFeaturesAddresses(){
         ArrayList<String> featuresAddresses = new ArrayList<>();
         for (String address : notificationStateForAddressMap.keySet()) {
@@ -148,7 +165,6 @@ public abstract class AbstractStreamer<U, V, C extends SynchronisationConfig.Abs
     }
 
     public void reset(){
-        LogUtils.d(TAG,"Reset");
         notifyReceiverStartOrStop(STOP_STREAM);
         notificationStateForAddressMap = new HashMap<>();
         featuresToStream = new ArrayList<>();
@@ -168,6 +184,9 @@ public abstract class AbstractStreamer<U, V, C extends SynchronisationConfig.Abs
 
                         if(streamQualities() & mbtEEGPacket.getQualities() != null) //if qualities have not been enabled in the StreamConfig configuration
                             streamQualities(mbtEEGPacket.getQualities());
+
+                        if(streamStatus() & mbtEEGPacket.getStatusData() != null) //if qualities have not been enabled in the StreamConfig configuration
+                            streamStatus(mbtEEGPacket.getStatusData());
 
                         if(featuresToStream != null && getFeaturesAddresses() != null)
                             streamFeatures(mbtEEGPacket, getFeaturesAddresses(), featuresToStream);

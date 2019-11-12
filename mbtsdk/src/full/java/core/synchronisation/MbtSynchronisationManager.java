@@ -12,11 +12,8 @@ import core.bluetooth.BtState;
 import core.bluetooth.requests.StreamRequestEvent;
 import core.eeg.MbtEEGManager;
 import core.eeg.storage.MbtEEGPacket;
-import core.synchronisation.midi.MidiController;
-import core.synchronisation.midi.MidiProcessor;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.ConnectionStateEvent;
-import eventbus.events.SynchronisationEvent;
 
 import static utils.MatrixUtils.invertFloatMatrix;
 
@@ -74,16 +71,6 @@ public final class MbtSynchronisationManager extends BaseModuleManager {
         if(streamer != null)
             streamer.execute(getPacketWithInvertedMatrix(event.getEegPackets()));
 
-    }
-
-    @Subscribe(threadMode = ThreadMode.ASYNC)
-    public void onMidiRequest(@NonNull final SynchronisationEvent.MidiEvent event) {
-        new MidiProcessor(mContext).sendMidi(event.getNote(),
-                event.getVelocity(),
-                event.getKey(),
-                event.getPitch(),
-                event.getScale()
-               );
     }
 
     private MbtEEGPacket getPacketWithInvertedMatrix(MbtEEGPacket eegPacket){
