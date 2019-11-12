@@ -39,6 +39,12 @@ android {
 
     flavorDimensions "package"
 
+    externalNativeBuild {
+        ndkBuild {
+            path 'jni/Android.mk'
+        }
+    }
+    flavorDimensions "package"
     productFlavors {
         full{
             dimension "package"

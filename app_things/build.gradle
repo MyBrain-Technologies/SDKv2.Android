@@ -15,19 +15,6 @@ android {
         missingDimensionStrategy "package", "full", "lite"
     }
 
-    productFlavors {
-        full {
-            versionNameSuffix "-Full"
-
-        }
-
-        lite {
-            versionNameSuffix "-Lite"
-        }
-
-    }
-
-
     buildTypes {
         release {
             minifyEnabled false
