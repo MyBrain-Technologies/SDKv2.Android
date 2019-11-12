@@ -10,23 +10,12 @@ android {
         targetSdkVersion 28
         versionCode 2
         versionName "2.0"
-        flavorDimensions "default"
+        missingDimensionStrategy "package", "full", "lite"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
     }
 
-    productFlavors {
-        full {
-            versionNameSuffix "-Full"
-
-        }
-
-        lite {
-            versionNameSuffix "-Lite"
-        }
-
-    }
 
 
     buildTypes {
