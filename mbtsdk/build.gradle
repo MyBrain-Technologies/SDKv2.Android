@@ -36,9 +36,7 @@ android {
         unitTests {
         }
     }
-
-    flavorDimensions "package"
-
+    
     externalNativeBuild {
         ndkBuild {
             path 'jni/Android.mk'
