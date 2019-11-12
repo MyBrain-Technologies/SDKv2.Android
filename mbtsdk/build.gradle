@@ -59,11 +59,15 @@ android {
             path 'jni/Android.mk'
         }
     }
+    flavorDimensions "package"
+
     productFlavors {
         full{
+            dimension "package"
             buildConfigField "String", "USE_ALGO_VERSION", "\"2.3.1\""
         }
         lite{
+            dimension "package"
             buildConfigField "String", "USE_ALGO_VERSION", "\"2.3.1\""
         }
     }
