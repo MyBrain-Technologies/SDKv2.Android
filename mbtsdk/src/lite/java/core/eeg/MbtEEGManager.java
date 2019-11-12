@@ -260,8 +260,8 @@ public final class MbtEEGManager extends BaseModuleManager {
      * @param newState
      */
     @Subscribe(threadMode = ThreadMode.POSTING)
-    public void onStreamStateChanged(IStreamable.StreamState newState) {
-        if (newState == IStreamable.StreamState.STOPPED)
+    public void onStreamStateChanged(StreamState newState) {
+        if (newState == StreamState.STOPPED)
             reinitBuffers();
     }
 

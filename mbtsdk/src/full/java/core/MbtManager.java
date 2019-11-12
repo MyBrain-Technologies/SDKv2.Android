@@ -14,15 +14,15 @@ import java.util.Set;
 import command.CommandInterface;
 import command.DeviceCommand;
 
+import config.RecordConfig;
 import config.StreamConfig;
-import core.bluetooth.BtProtocol;
-import core.bluetooth.IStreamable;
-import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
-import core.bluetooth.requests.DisconnectRequestEvent;
 import core.bluetooth.MbtBluetoothManager;
-import core.bluetooth.requests.ReadRequestEvent;
-import core.bluetooth.requests.StreamRequestEvent;
+import core.bluetooth.StreamState;
 import core.bluetooth.requests.CommandRequestEvent;
+import core.bluetooth.requests.DisconnectRequestEvent;
+import core.bluetooth.requests.ReadRequestEvent;
+import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
+import core.bluetooth.requests.StreamRequestEvent;
 import core.device.event.DCOffsetEvent;
 import core.device.DeviceEvents;
 import core.device.MbtDeviceManager;
@@ -32,11 +32,12 @@ import core.device.model.MbtDevice;
 import core.device.model.MelomindsQRDataBase;
 import core.device.model.FirmwareVersion;
 import core.eeg.MbtEEGManager;
+import core.recording.MbtRecordingManager;
 import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
 import engine.clientevents.BluetoothError;
-import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.BluetoothStateListener;
+import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.DeviceBatteryListener;
 import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.EegError;
@@ -56,6 +57,7 @@ import utils.LogUtils;
 import static mbtsdk.com.mybraintech.mbtsdk.BuildConfig.BLUETOOTH_ENABLED;
 import static mbtsdk.com.mybraintech.mbtsdk.BuildConfig.DEVICE_ENABLED;
 import static mbtsdk.com.mybraintech.mbtsdk.BuildConfig.EEG_ENABLED;
+import static mbtsdk.com.mybraintech.mbtsdk.BuildConfig.RECORDING_ENABLED;
 
 /**
  * MbtManager is responsible for managing communication between all the package managers
@@ -63,7 +65,11 @@ import static mbtsdk.com.mybraintech.mbtsdk.BuildConfig.EEG_ENABLED;
  * @author Sophie ZECRI on 29/05/2018
  */
 public class MbtManager{
+
     private static final String TAG = MbtManager.class.getName();
+
+    private static final boolean START = true;
+    private static final boolean STOP = false;
 
     /**
      * Contains the currently reigstered module managers.
@@ -101,7 +107,9 @@ public class MbtManager{
         if(BLUETOOTH_ENABLED)
             registerManager(new MbtBluetoothManager(mContext));
         if(EEG_ENABLED)
-            registerManager(new MbtEEGManager(mContext, BtProtocol.BLUETOOTH_LE)); //todo change protocol must not be initialized here : when connectBluetooth is called
+            registerManager(new MbtEEGManager(mContext)); //todo change protocol must not be initialized here : when connectBluetooth is called
+        if(RECORDING_ENABLED)
+            registerManager(new MbtRecordingManager(mContext));
     }
 
     /**
@@ -116,8 +124,14 @@ public class MbtManager{
      * Perform a new Bluetooth connection.
      * @param connectionStateListener a set of callback that will notify the user about connection progress.
      */
-    public void connectBluetooth(@NonNull ConnectionStateListener<BaseError> connectionStateListener, String deviceNameRequested, String deviceQrCodeRequested, MbtDeviceType deviceTypeRequested, int mtu){
+    public void connectBluetooth(@NonNull ConnectionStateListener<BaseError> connectionStateListener,
+                                 boolean connectAudioIfDeviceCompatible,
+                                 String deviceNameRequested,
+                                 String deviceQrCodeRequested,
+                                 MbtDeviceType deviceTypeRequested,
+                                 int mtu){
         this.connectionStateListener = connectionStateListener;
+
         if(deviceNameRequested != null && (!deviceNameRequested.startsWith(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX) && !deviceNameRequested.startsWith(MbtFeatures.VPRO_DEVICE_NAME_PREFIX) )){
             this.connectionStateListener.onError(HeadsetDeviceError.ERROR_PREFIX," "+ (deviceTypeRequested.equals(MbtDeviceType.MELOMIND) ? MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX : MbtFeatures.VPRO_DEVICE_NAME_PREFIX));
         }else if(deviceQrCodeRequested != null && (!deviceQrCodeRequested.startsWith(MbtFeatures.QR_CODE_NAME_PREFIX))){
@@ -125,7 +139,7 @@ public class MbtManager{
         }else if(deviceQrCodeRequested != null && deviceNameRequested != null && !deviceNameRequested.equals(new MelomindsQRDataBase(mContext,  true).get(deviceQrCodeRequested))){
             this.connectionStateListener.onError(HeadsetDeviceError.ERROR_MATCHING, mContext.getString(R.string.aborted_connection));
         }else{
-            MbtEventBus.postEvent(new StartOrContinueConnectionRequestEvent(true, deviceNameRequested, deviceQrCodeRequested, deviceTypeRequested, mtu));
+            MbtEventBus.postEvent(new StartOrContinueConnectionRequestEvent(true, deviceNameRequested, deviceQrCodeRequested, deviceTypeRequested, mtu, connectAudioIfDeviceCompatible));
         }
     }
 
@@ -145,20 +159,6 @@ public class MbtManager{
         MbtEventBus.postEvent(new ReadRequestEvent(deviceInfo));
     }
 
-    public void requestCurrentConnectedDevice(@NonNull final SimpleRequestCallback<MbtDevice> callback) {
-        if (callback == null)
-            return;
-
-        MbtEventBus.postEvent(new DeviceEvents.GetDeviceEvent(), new MbtEventBus.Callback<DeviceEvents.PostDeviceEvent>(){
-            @Override
-            @Subscribe
-            public Void onEventCallback(DeviceEvents.PostDeviceEvent object) {
-                MbtEventBus.registerOrUnregister(false, this);
-                callback.onRequestComplete(object.getDevice());
-                return null;
-            }
-        });
-    }
 
     /**
      * Posts an event to initiate a stream session.
@@ -171,16 +171,32 @@ public class MbtManager{
             sendCommand(command);
         }
         MbtEventBus.postEvent(
-                new StreamRequestEvent(true,
+                new StreamRequestEvent(START,
+                        streamConfig.getRecordConfig() != null,
                         streamConfig.shouldComputeQualities(),
-                        (deviceStatusListener != null)));
+                        (deviceStatusListener != null),
+                        streamConfig.getRecordConfig()));
     }
 
     /**
      * Posts an event to stop the currently started stream session
      */
-    public void stopStream(){
-        MbtEventBus.postEvent(new StreamRequestEvent(false, false, false));
+    public void stopStream(@Nullable RecordConfig recordConfig){
+        MbtEventBus.postEvent(
+                new StreamRequestEvent(STOP, false,
+                        false, false, recordConfig));
+    }
+
+    public void startRecord(Context context){
+        MbtEventBus.postEvent(
+                new StreamRequestEvent(START, true,
+                        false, (deviceStatusListener != null), new RecordConfig.Builder(context).create()));
+    }
+
+    public void stopRecord(@NonNull RecordConfig recordConfig){
+        MbtEventBus.postEvent(
+                new StreamRequestEvent(STOP, eegListener != null, //if eeg listener is null, it means that the client has not previously called start stream (might have called start record), so the SDK should stop the streaming started when the client has called start record
+                        false, false, recordConfig));
     }
 
     /**
@@ -193,7 +209,7 @@ public class MbtManager{
      * @param command is the command to send
      */
     public void sendCommand(@NonNull CommandInterface.MbtCommand command) {
-       MbtEventBus.postEvent(new CommandRequestEvent(command));
+        MbtEventBus.postEvent(new CommandRequestEvent(command));
     }
 
     /**
@@ -237,7 +253,7 @@ public class MbtManager{
                     if(event.getInfo().equals(-1))
                         deviceInfoListener.onError(HeadsetDeviceError.ERROR_DECODE_BATTERY, null);
                     else
-                        deviceInfoListener.onBatteryChanged((String) event.getInfo());
+                        deviceInfoListener.onBatteryLevelReceived((String) event.getInfo());
                 }
             }
         }
@@ -247,16 +263,16 @@ public class MbtManager{
     public void onConnectionStateChanged(ConnectionStateEvent connectionStateEvent) {
         if (connectionStateListener == null)
             return;
-        //LogUtils.i(TAG, "New state received : " + connectionStateEvent.getNewState());
+
         if(connectionStateListener instanceof BluetoothStateListener)
-            ((BluetoothStateListener) connectionStateListener).onNewState(connectionStateEvent.getNewState());
+            ((BluetoothStateListener) connectionStateListener).onNewState(connectionStateEvent.getNewState(), connectionStateEvent.getDevice());
 
         switch (connectionStateEvent.getNewState()) {
             case CONNECTED_AND_READY:
-                connectionStateListener.onDeviceConnected();
+                connectionStateListener.onDeviceConnected(connectionStateEvent.getDevice());
                 break;
             case DATA_BT_DISCONNECTED:
-                connectionStateListener.onDeviceDisconnected();
+                connectionStateListener.onDeviceDisconnected(connectionStateEvent.getDevice());
                 break;
             default:
                 if (connectionStateEvent.getNewState().isAFailureState())
@@ -270,13 +286,15 @@ public class MbtManager{
      * @param newState
      */
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onStreamStateChanged(IStreamable.StreamState newState){
+    public void onStreamStateChanged(StreamState newState){
         if(eegListener != null){
-            if(newState == IStreamable.StreamState.FAILED){
+            eegListener.onNewStreamState(newState);
+
+            if(newState == StreamState.FAILED){
                 eegListener.onError(EegError.ERROR_FAIL_START_STREAMING, null);
-            }else if(newState == IStreamable.StreamState.DISCONNECTED){
+            }else if(newState == StreamState.DISCONNECTED){
                 eegListener.onError(BluetoothError.ERROR_NOT_CONNECTED,null);
-            }else if(newState == IStreamable.StreamState.STOPPED){
+            }else if(newState == StreamState.STOPPED){
                 eegListener = null;
             }
         }
@@ -334,5 +352,24 @@ public class MbtManager{
                 oadStateListener.onProgressPercentChanged(event.getOadProgress());
             }
         }
+    }
+
+    public void requestCurrentConnectedDevice(@NonNull final SimpleRequestCallback<MbtDevice> callback) {
+        if (callback == null)
+            return;
+
+        MbtEventBus.postEvent(new DeviceEvents.GetDeviceEvent(), new MbtEventBus.Callback<DeviceEvents.PostDeviceEvent>(){
+            @Override
+            @Subscribe
+            public Void onEventCallback(DeviceEvents.PostDeviceEvent object) {
+                MbtEventBus.registerOrUnregister(false, this);
+                callback.onRequestComplete(object.getDevice());
+                return null;
+            }
+        });
+    }
+
+    Set<BaseModuleManager> getRegisteredModuleManagers() {
+        return registeredModuleManagers;
     }
 }

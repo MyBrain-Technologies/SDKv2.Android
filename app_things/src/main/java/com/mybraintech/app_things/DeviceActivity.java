@@ -84,12 +84,12 @@ public class DeviceActivity extends AppCompatActivity {
     private ConnectionStateListener connectionStateListener = new ConnectionStateListener(){
 
         @Override
-        public void onDeviceConnected() {
+        public void onDeviceConnected(MbtDevice device) {
             isConnected = true;
         }
 
         @Override
-        public void onDeviceDisconnected() {
+        public void onDeviceDisconnected(MbtDevice device) {
             LogUtils.i(TAG," device disconnected");
             isConnected = false;
             //returnOnPreviousActivity();
@@ -103,7 +103,7 @@ public class DeviceActivity extends AppCompatActivity {
 
     private DeviceBatteryListener deviceInfoListener = new DeviceBatteryListener() {
         @Override
-        public void onBatteryChanged(String newLevel) {
+        public void onBatteryLevelReceived(String newLevel) {
             lastReadBatteryLevel = newLevel;
             notifyUser("Current battery level : "+lastReadBatteryLevel+" %");
         }
@@ -217,7 +217,7 @@ public class DeviceActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if(!isStreaming) { //streaming is not in progress : starting streaming
-                    startStream(new StreamConfig.Builder(eegListener).setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)/*.useQualities(true)*/.create());
+                    startStream(new StreamConfig.Builder(eegListener).setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)/*.useQualities(true)*/.createForDevice(currentDeviceType));
                 }else { //streaming is in progress : stopping streaming
                     stopStream(); // set false to isStreaming et null to the eegListener
                 }

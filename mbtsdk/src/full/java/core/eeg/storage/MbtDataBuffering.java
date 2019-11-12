@@ -4,11 +4,10 @@ import android.support.annotation.NonNull;
 
 import java.util.ArrayList;
 
+import config.MbtConfig;
 import core.eeg.MbtEEGManager;
 import core.eeg.acquisition.MbtDataConversion;
 import features.MbtFeatures;
-
-import static config.MbtConfig.getEegBufferLengthClientNotif;
 
 /**
  * MbtDataBuffering is responsible for storing and managing EEG raw data acquired in temporary buffers.
@@ -37,12 +36,10 @@ public class MbtDataBuffering {
      */
     private MbtEEGManager eegManager;
 
-
-
-    public MbtDataBuffering(@NonNull MbtEEGManager eegManagerController) {
-        eegManager = eegManagerController;
-        pendingRawData = new ArrayList<>();
-        mbtEEGPacketsBuffer = new MbtEEGPacket();
+    public MbtDataBuffering(@NonNull MbtEEGManager eegManager) {
+        this.eegManager = eegManager;
+        this.pendingRawData = new ArrayList<>();
+        this.mbtEEGPacketsBuffer = new MbtEEGPacket();
     }
 
     /**
@@ -69,9 +66,7 @@ public class MbtDataBuffering {
     private void onPendingRawDataBufferFull() {
         final ArrayList<RawEEGSample> rawEEGtoConvert = (ArrayList<RawEEGSample>) pendingRawData.clone(); //the pending raw data is stored in toDecodeBytes to be converted in readable EEG values
         eegManager.convertToEEG(rawEEGtoConvert);
-
     }
-
 
     /**
      * This method is called by {@link #storePendingDataInBuffer(ArrayList)} when the buffer size reaches the maximum
@@ -80,8 +75,6 @@ public class MbtDataBuffering {
     private void notifyClientEEGDataBufferFull(MbtEEGPacket packet) {
         eegManager.notifyEEGDataIsReady(packet);
     }
-
-
 
     /**
      * Stores the newly created EEG packet in the Packets buffer
@@ -130,7 +123,7 @@ public class MbtDataBuffering {
      * @return
      */
     private int getBufferLengthClientNotif(){
-        return Math.max(getEegBufferLengthClientNotif(), MbtFeatures.DEFAULT_MAX_PENDING_RAW_DATA_BUFFER_SIZE); //todo ajouter size buffer C++
+        return Math.max(MbtConfig.getEegBufferLengthClientNotif(eegManager.getSampRate()), MbtFeatures.DEFAULT_MAX_PENDING_RAW_DATA_BUFFER_SIZE); //todo ajouter size buffer C++
     }
 
     /**

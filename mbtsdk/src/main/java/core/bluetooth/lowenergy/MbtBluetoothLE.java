@@ -17,9 +17,7 @@ import android.content.Intent;
 import android.os.Handler;
 import android.os.ParcelUuid;
 import android.support.annotation.NonNull;
-import android.support.annotation.VisibleForTesting;
 import android.util.Log;
-
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -27,8 +25,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 
 import command.BluetoothCommands;
 import command.CommandInterface;
@@ -39,9 +35,10 @@ import command.OADCommands;
 import config.MbtConfig;
 import core.bluetooth.BtProtocol;
 import core.bluetooth.BtState;
-import core.bluetooth.IStreamable;
-import core.bluetooth.MbtBluetooth;
+import core.bluetooth.BluetoothInterfaces;
 import core.bluetooth.MbtBluetoothManager;
+import core.bluetooth.MbtDataBluetooth;
+import core.bluetooth.StreamState;
 import core.device.model.DeviceInfo;
 import core.device.model.MelomindDevice;
 import core.device.model.MelomindsQRDataBase;
@@ -49,12 +46,10 @@ import engine.clientevents.BaseError;
 import engine.clientevents.BluetoothError;
 import engine.clientevents.ConnectionStateReceiver;
 import features.MbtFeatures;
+import utils.BitUtils;
 import utils.BroadcastUtils;
 import utils.LogUtils;
-import utils.BitUtils;
-import utils.MbtAsyncWaitOperation;
 
-import static command.DeviceCommandEvent.CMD_CODE_CONNECT_IN_A2DP_FAILED_ALREADY_CONNECTED;
 import static command.DeviceCommandEvent.CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED;
 import static command.DeviceCommandEvent.CMD_CODE_CONNECT_IN_A2DP_SUCCESS;
 import static command.DeviceCommandEvent.MBX_CONNECT_IN_A2DP;
@@ -70,7 +65,10 @@ import static command.DeviceCommandEvent.MBX_CONNECT_IN_A2DP;
  *
  */
 
-public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
+public class MbtBluetoothLE
+        extends MbtDataBluetooth
+        implements BluetoothInterfaces.IDeviceInfoMonitor {
+
     private static final String TAG = MbtBluetoothLE.class.getSimpleName();
 
     private final static boolean START = true;
@@ -79,8 +77,6 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     private final static String CONNECT_GATT_METHOD = "connectGatt";
     private final static String REMOVE_BOND_METHOD = "removeBond";
     private final static String REFRESH_METHOD = "refresh";
-
-    private MbtAsyncWaitOperation lock = new MbtAsyncWaitOperation<>();
 
     /**
      * An internal event used to notify MbtBluetoothLE that A2DP has disconnected.
@@ -118,14 +114,103 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     };
 
     /**
+     * callback used when scanning using bluetooth Low Energy scanner.
+     */
+    @NonNull
+    private ScanCallback leScanCallback = new ScanCallback() {
+
+        public void onScanResult(int callbackType, @NonNull ScanResult result) { //Callback when a BLE advertisement has been found.
+            if(getCurrentState().equals(BtState.SCAN_STARTED)){
+                super.onScanResult(callbackType, result);
+                final BluetoothDevice device = result.getDevice();
+                LogUtils.i(TAG, String.format("Stopping Low Energy Scan -> device detected " + "with name '%s' and MAC address '%s' ", device.getName(), device.getAddress()));
+                currentDevice = device;
+                updateConnectionState(true); //current state is set to DEVICE_FOUND and future is completed
+            }
+        }
+
+        public final void onScanFailed(final int errorCode) { //Callback when scan could not be started.
+            super.onScanFailed(errorCode);
+            String msg = "Could not start scan. Reason -> ";
+            if(errorCode == SCAN_FAILED_ALREADY_STARTED) {
+                msg += "Scan already started!";
+                notifyConnectionStateChanged(BtState.SCAN_FAILED_ALREADY_STARTED);
+            }else{
+                msg += "Scan failed. No more details.";
+                notifyConnectionStateChanged(BtState.SCAN_FAILURE);
+            }
+            LogUtils.e(TAG, msg);
+        }
+    };
+
+
+    /**
      * public constructor that will instanciate this class. It also instanciate a new
      * {@link MbtGattController MbtGattController} instance
      * @param context the application context
      * @param mbtBluetoothManager the Bluetooth manager that performs requests and receives results.
      */
     public MbtBluetoothLE(@NonNull Context context, MbtBluetoothManager mbtBluetoothManager) {
-        super(context, mbtBluetoothManager);
+        super(context, BtProtocol.BLUETOOTH_LE, mbtBluetoothManager);
         this.mbtGattController = new MbtGattController(context, this);
+    }
+
+    /**
+     * Start bluetooth low energy scanner in order to find BLE device that matches the specific filters.
+     * <p><strong>Note:</strong> This method will consume your mobile/tablet battery. Please consider calling
+     * {@link #stopScan()} when scanning is no longer needed.</p>
+     * @return Each found device that matches the specified filters
+     */
+    @Override
+    public boolean startScan() {
+        boolean filterOnDeviceService = true;
+
+        LogUtils.i(TAG," start low energy scan on device "+mbtBluetoothManager.getDeviceNameRequested());
+        List<ScanFilter> mFilters = new ArrayList<>();
+
+        if (super.bluetoothAdapter == null || super.bluetoothAdapter.getBluetoothLeScanner() == null){
+            Log.e(TAG, "Unable to get LE scanner");
+            notifyConnectionStateChanged(BtState.SCAN_FAILURE);
+            return false;
+        }else
+            this.bluetoothLeScanner = super.bluetoothAdapter.getBluetoothLeScanner();
+
+        currentDevice = null;
+
+        if (filterOnDeviceService) {
+            final ScanFilter.Builder filterService = new ScanFilter.Builder()
+                    .setServiceUuid(new ParcelUuid(MelomindCharacteristics.SERVICE_MEASUREMENT));
+
+            if(mbtBluetoothManager.getDeviceNameRequested() != null)
+                filterService.setDeviceName(mbtBluetoothManager.getDeviceNameRequested());
+
+            mFilters.add(filterService.build());
+        }
+
+        final ScanSettings settings = new ScanSettings.Builder()
+                .setReportDelay(0)
+                .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+                .build();
+
+        LogUtils.i(TAG, String.format("Starting Low Energy Scan with filtering on name '%s' and service UUID '%s'", mbtBluetoothManager.getDeviceNameRequested(), MelomindCharacteristics.SERVICE_MEASUREMENT));
+        this.bluetoothLeScanner.startScan(mFilters, settings, this.leScanCallback);
+        if(getCurrentState().equals(BtState.READY_FOR_BLUETOOTH_OPERATION))
+            mbtBluetoothManager.updateConnectionState(false); //current state is set to SCAN_STARTED
+        return true; //true : scan is started
+
+    }
+
+    /**
+     * Stops the currently bluetooth low energy scanner.
+     * If a lock is currently waiting, the lock is disabled.
+     */
+    @Override
+    public void stopScan() {
+        LogUtils.i(TAG, "Stopping Low Energy scan");
+        if(this.bluetoothLeScanner != null)
+            this.bluetoothLeScanner.stopScan(this.leScanCallback);
+        if(!getCurrentState().equals(BtState.DEVICE_FOUND) && !getCurrentState().equals(BtState.DATA_BT_CONNECTING))
+            currentDevice = null;
     }
 
     /**
@@ -145,6 +230,17 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
     public synchronized boolean startStream() {
         return switchStream(START);
     }
+
+    /**
+     * Enable notifications on HeadsetStatus characteristic in order to have the saturation and DC Offset values
+     */
+    public boolean activateDeviceStatusMonitoring(){
+        if (!checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_HEADSET_STATUS))
+            return false;
+
+        return enableOrDisableNotificationsOnCharacteristic(true, gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT).getCharacteristic(MelomindCharacteristics.CHARAC_HEADSET_STATUS));
+    }
+
 
     /**
      * This method sends a request to the headset to <strong><code>STOP</code></strong>
@@ -176,8 +272,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         if(isStreaming() == isStart)
             return true;
 
-        if (!checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT,
-                MelomindCharacteristics.CHARAC_MEASUREMENT_EEG))
+        if(!checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_EEG))
             return false;
 
         try {
@@ -191,49 +286,14 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
                         .getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG));
     }
 
-    /**
-     * Enable notifications on HeadsetStatus characteristic in order to have the saturation and DC Offset values
-     */
-    public boolean activateDeviceStatusMonitoring(){
-        if (!checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT,
-                MelomindCharacteristics.CHARAC_MEASUREMENT_EEG))
-            return false;
-
-        return enableOrDisableNotificationsOnCharacteristic(true,
-                gatt.getService(MelomindCharacteristics.SERVICE_MEASUREMENT)
-                        .getCharacteristic(MelomindCharacteristics.CHARAC_HEADSET_STATUS));
-    }
-
-    /**
-     * Whenever there is a new stream state, this method is called to notify the bluetooth manager about it.
-     * @param newStreamState the new stream state based on {@link StreamState the StreamState enum}
-     */
-    @Override
-    public void notifyStreamStateChanged(StreamState newStreamState) {
-        LogUtils.i(TAG, "new streamstate with state " + newStreamState.toString());
-
-        streamingState = newStreamState;
-        super.mbtBluetoothManager.notifyStreamStateChanged(newStreamState);
-    }
-
 
     /**
      * Whenever there is a new headset status received, this method is called to notify the bluetooth manager about it.
      * @param payload the new headset status as a raw byte array. This byte array has to be parsed afterward.
      */
     void notifyNewHeadsetStatus(byte[] payload){
-        this.mbtBluetoothManager.notifyNewHeadsetStatus(BtProtocol.BLUETOOTH_LE, payload);
+        this.mbtBluetoothManager.notifyNewHeadsetStatus(payload);
     }
-
-    /**
-     *
-     * @return true if a streaming session is in progress, false otherwise
-     */
-    @Override
-    public boolean isStreaming() {
-        return streamingState == StreamState.STARTED;
-    }
-
 
     /**
      * Enable or disable notifications on specific characteristic provinding this characteristic is "notification ready".
@@ -281,7 +341,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         }
 
         try {
-            Thread.sleep(50);
+            Thread.sleep(1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -295,101 +355,10 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         LogUtils.i(TAG, "Successfully initiated write descriptor operation in order to remotely " +
                 "enable notification... now waiting for confirmation from headset.");
 
-        try {
-            lock.waitOperationResult(MbtConfig.getBluetoothA2DpConnectionTimeout());
-            return true;
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            LogUtils.d(TAG,"Enabling notification failed : "+e);
-            return false;
-        }
+        Boolean result = (Boolean) startWaitingOperation(MbtConfig.getBluetoothA2DpConnectionTimeout());
+        return result == null ? false : result;
+
     }
-
-
-    /**
-     * Start bluetooth low energy scanner in order to find BLE device that matches the specific filters.
-     * <p><strong>Note:</strong> This method will consume your mobile/tablet battery. Please consider calling
-     * {@link #stopLowEnergyScan()} when scanning is no longer needed.</p>
-     * @return Each found device that matches the specified filters
-     */
-    public boolean startLowEnergyScan(boolean filterOnDeviceService) {
-        LogUtils.i(TAG," start low energy scan on device "+mbtBluetoothManager.getDeviceNameRequested());
-        List<ScanFilter> mFilters = new ArrayList<>();
-
-        if (super.bluetoothAdapter == null || super.bluetoothAdapter.getBluetoothLeScanner() == null){
-            Log.e(TAG, "Unable to get LE scanner");
-            notifyConnectionStateChanged(BtState.SCAN_FAILURE);
-            return false;
-        }else
-            this.bluetoothLeScanner = super.bluetoothAdapter.getBluetoothLeScanner();
-
-        currentDevice = null;
-
-        if (filterOnDeviceService) {
-            final ScanFilter.Builder filterService = new ScanFilter.Builder()
-                    .setServiceUuid(new ParcelUuid(MelomindCharacteristics.SERVICE_MEASUREMENT));
-
-            if(mbtBluetoothManager.getDeviceNameRequested() != null)
-                filterService.setDeviceName(mbtBluetoothManager.getDeviceNameRequested());
-
-            mFilters.add(filterService.build());
-        }
-
-        final ScanSettings settings = new ScanSettings.Builder()
-                .setReportDelay(0)
-                .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-                .build();
-
-        LogUtils.i(TAG, String.format("Starting Low Energy Scan with filtering on name '%s' and service UUID '%s'", mbtBluetoothManager.getDeviceNameRequested(), MelomindCharacteristics.SERVICE_MEASUREMENT));
-        this.bluetoothLeScanner.startScan(mFilters, settings, this.leScanCallback);
-        if(getCurrentState().equals(BtState.READY_FOR_BLUETOOTH_OPERATION))
-            mbtBluetoothManager.updateConnectionState(false); //current state is set to SCAN_STARTED
-        return true; //true : scan is started
-    }
-
-
-    /**
-     * Stops the currently bluetooth low energy scanner.
-     * If a lock is currently waiting, the lock is disabled.
-     */
-    public void stopLowEnergyScan() {
-        LogUtils.i(TAG, "Stopping Low Energy scan");
-        if(this.bluetoothLeScanner != null)
-            this.bluetoothLeScanner.stopScan(this.leScanCallback);
-        if(!getCurrentState().equals(BtState.DEVICE_FOUND) && !getCurrentState().equals(BtState.DATA_BT_CONNECTING))
-            currentDevice = null;
-    }
-
-
-
-    /**
-     * callback used when scanning using bluetooth Low Energy scanner.
-     */
-    @NonNull
-    private ScanCallback leScanCallback = new ScanCallback() {
-
-        public void onScanResult(int callbackType, @NonNull ScanResult result) { //Callback when a BLE advertisement has been found.
-            if(getCurrentState().equals(BtState.SCAN_STARTED)){
-                super.onScanResult(callbackType, result);
-                final BluetoothDevice device = result.getDevice();
-                LogUtils.i(TAG, String.format("Stopping Low Energy Scan -> device detected " + "with name '%s' and MAC address '%s' ", device.getName(), device.getAddress()));
-                currentDevice = device;
-                updateConnectionState(true); //current state is set to DEVICE_FOUND and future is completed
-            }
-        }
-
-        public final void onScanFailed(final int errorCode) { //Callback when scan could not be started.
-            super.onScanFailed(errorCode);
-            String msg = "Could not start scan. Reason -> ";
-            if(errorCode == SCAN_FAILED_ALREADY_STARTED) {
-                msg += "Scan already started!";
-                notifyConnectionStateChanged(BtState.SCAN_FAILED_ALREADY_STARTED);
-            }else{
-                msg += "Scan failed. No more details.";
-                notifyConnectionStateChanged(BtState.SCAN_FAILURE);
-            }
-            LogUtils.e(TAG, msg);
-        }
-    };
 
     /**
      * This method removes bonding of the device.
@@ -658,7 +627,6 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * @param newState the new {@link BtState state}
      */
     @Override
-
     public void notifyConnectionStateChanged(@NonNull BtState newState) {
         super.notifyConnectionStateChanged(newState);
 
@@ -679,12 +647,6 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         mbtBluetoothManager.notifyEventReceived(mailboxEvent, eventData);
     }
 
-    void stopWaitingOperation(Object response) {
-        if(lock.isWaiting())
-            lock.stopWaitingOperation(response);
-
-    }
-
     void notifyConnectionResponseReceived(DeviceCommandEvent mailboxEvent, byte mailboxResponse) {
         if (!mbtGattController.isConnectionMailboxEvent(mailboxEvent)){
             LogUtils.e(TAG, "Error : received response is not related to Bluetooth connection");
@@ -696,8 +658,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
             if(BitUtils.areByteEquals(MBX_CONNECT_IN_A2DP.getResponseCodeForKey(CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED), mailboxResponse))
                 mbtBluetoothManager.notifyConnectionStateChanged(BtState.JACK_CABLE_CONNECTED);
 
-            else if(BitUtils.areByteEquals(MBX_CONNECT_IN_A2DP.getResponseCodeForKey(CMD_CODE_CONNECT_IN_A2DP_SUCCESS), mailboxResponse)
-                    || BitUtils.areByteEquals(MBX_CONNECT_IN_A2DP.getResponseCodeForKey(CMD_CODE_CONNECT_IN_A2DP_FAILED_ALREADY_CONNECTED), mailboxResponse))
+            else if(BitUtils.areByteEquals(MBX_CONNECT_IN_A2DP.getResponseCodeForKey(CMD_CODE_CONNECT_IN_A2DP_SUCCESS), mailboxResponse))
                 mbtBluetoothManager.notifyConnectionStateChanged(BtState.AUDIO_BT_CONNECTION_SUCCESS);
         }else
             mbtBluetoothManager.notifyConnectionStateChanged(BtState.AUDIO_BT_DISCONNECTED);
@@ -705,22 +666,6 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
 
     void updateConnectionState(boolean isCompleted){
         mbtBluetoothManager.updateConnectionState(isCompleted); //do nothing if the current state is CONNECTED_AND_READY
-    }
-
-    /**
-     * This method waits until the device has returned a response
-     * related to the SDK request (blocking method).
-     */
-    private Object waitResponseForCommand(CommandInterface.MbtCommand command){
-        Log.d(TAG, "Wait response of device command "+command);
-        try {
-            return lock.waitOperationResult(11000);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            LogUtils.e(TAG, "Device command response not received : "+e);
-            if(e instanceof TimeoutException)
-                command.onError(BluetoothError.ERROR_TIMEOUT, "Device command sent but no response has been received.");
-        }
-        return null;
     }
 
     /**
@@ -737,7 +682,6 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
      * sent by the headset to the SDK once the command is received.
      */
     public void sendCommand(CommandInterface.MbtCommand command){
-
         Object response = null;
 
         if (!isConnectedDeviceReadyForCommand()){ //error returned if no headset is connected
@@ -756,7 +700,7 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
                     command.onRequestSent();
 
                     if (command.isResponseExpected()) {
-                        response = waitResponseForCommand(command);
+                        response = startWaitingOperation(11000);
                         command.onResponseReceived(response);
                     }
                 }
@@ -884,8 +828,4 @@ public class MbtBluetoothLE extends MbtBluetooth implements IStreamable {
         return false;
     }
 
-    @VisibleForTesting
-    void setLock(MbtAsyncWaitOperation lock) {
-        this.lock = lock;
-    }
 }

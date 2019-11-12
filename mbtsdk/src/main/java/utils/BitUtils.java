@@ -145,7 +145,16 @@ public class BitUtils {
     public static boolean isBitSet(byte mask, byte dataToShift, int shift) {
         return ! isZero((byte) maskAND(mask, shiftLeft(dataToShift, shift)));
     }
-
+    /**
+     * Returns true if the bit is set, otherwise returns false
+     */
+    public static Float isBitSet(byte b, int bit)
+    {
+        if((b & (1 << bit)) != 0)
+            return 1f;
+        else
+            return 0f;
+    }
 
     /**
      * Return true if valueToCheck is 0

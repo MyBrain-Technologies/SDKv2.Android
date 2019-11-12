@@ -3,6 +3,7 @@ package engine.clientevents;
 import android.support.annotation.Keep;
 
 import core.bluetooth.BtState;
+import core.device.model.MbtDevice;
 
 @Keep
 public interface ConnectionStateListener<U extends BaseError> extends BaseErrorEvent<U>{
@@ -10,6 +11,6 @@ public interface ConnectionStateListener<U extends BaseError> extends BaseErrorE
          * Callback indicating the current state of the bluetooth communication
          * See {@link BtState} for all possible states
          */
-        void onDeviceConnected();
-        void onDeviceDisconnected();
+        void onDeviceConnected(MbtDevice device);
+        void onDeviceDisconnected(MbtDevice device);
     }

@@ -231,7 +231,6 @@ public final class OADManager {
      * is received by the Device unit Manager
      */
     public void onOADEvent(OADEvent event) {
-        LogUtils.d(TAG, "on OAD event "+event.toString());
         switch (event){
             case LOST_PACKET:
                 if(currentState.equals(OADState.TRANSFERRING)) {

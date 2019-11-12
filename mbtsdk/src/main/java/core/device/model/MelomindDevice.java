@@ -4,12 +4,17 @@ import android.bluetooth.BluetoothDevice;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
+import org.apache.commons.lang.ArrayUtils;
+
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import features.MbtAcquisitionLocations;
+import features.MbtDeviceType;
 import features.MbtFeatures;
 
 /**
@@ -19,15 +24,14 @@ import features.MbtFeatures;
 public class MelomindDevice extends MbtDevice{
 
     public MelomindDevice(@NonNull final BluetoothDevice device){
-        super(device);
+        super(device, MbtDeviceType.MELOMIND, MbtFeatures.MELOMIND_NB_CHANNELS);
         this.acquisitionLocations = Arrays.asList(MbtAcquisitionLocations.P3, MbtAcquisitionLocations.P4);
         this.groundsLocation = Arrays.asList(MbtAcquisitionLocations.M2);
         this.referencesLocations = Arrays.asList(MbtAcquisitionLocations.M1);
-        this.nbChannels = MbtFeatures.MELOMIND_NB_CHANNELS;
-        this.sampRate = MbtFeatures.DEFAULT_SAMPLE_RATE;
         this.firmwareVersion = new FirmwareVersion("0.0.0");
         this.hardwareVersion = "0.0.0";
         this.serialNumber = "0000000000";
+        this.externalName = MbtFeatures.MELOMIND_DEVICE_NAME;
     }
 
     public static short getBatteryPercentageFromByteValue(byte value){
@@ -117,6 +121,31 @@ public class MelomindDevice extends MbtDevice{
         return super.getInternalConfig();
     }
 
+    public static InternalConfig convertRawInternalConfig(Byte[] rawConfig) {
+
+        final int SAMP_RATE_INDEX = 5;
+        if(rawConfig.length < SAMP_RATE_INDEX ) {
+            Log.e(MelomindDevice.class.getSimpleName(), "Invalid internal config size : "+Arrays.toString(rawConfig)+". Minimum expected size is "+SAMP_RATE_INDEX );
+            return null;
+        }
+
+            byte[] sampRate = (rawConfig.length > SAMP_RATE_INDEX ?
+                new byte[]{rawConfig[SAMP_RATE_INDEX]}
+                : Arrays.copyOfRange(ArrayUtils.toPrimitive(rawConfig), SAMP_RATE_INDEX, rawConfig.length-1));
+
+        return new InternalConfig(
+                MbtFeatures.MELOMIND_NB_CHANNELS,
+                rawConfig[0],
+                rawConfig[1],
+                rawConfig[2],
+                rawConfig[3],
+                rawConfig[4],
+                        sampRate[0] == 0 ?
+                                MbtFeatures.DEFAULT_SAMPLE_RATE :
+                                ByteBuffer.wrap(sampRate).getInt());
+
+    }
+
     /**
      * Gets the version of the hardware used
      * @return the heardware version
@@ -126,9 +155,9 @@ public class MelomindDevice extends MbtDevice{
         return this.hardwareVersion;
     }
 
-    public final int getSampRate() {return this.sampRate;}
+    public final int getSampRate() {return this.getInternalConfig().getSampRate();}
 
-    public final int getNbChannels() {return this.nbChannels;}
+    public final int getNbChannels() {return this.getInternalConfig().getNbChannels();}
 
     @NonNull
     public final List<MbtAcquisitionLocations> getAcquisitionLocations() {return this.acquisitionLocations;}
@@ -170,4 +199,6 @@ public class MelomindDevice extends MbtDevice{
     public String getExternalName() {
         return super.getExternalName();
     }
+
+
 }

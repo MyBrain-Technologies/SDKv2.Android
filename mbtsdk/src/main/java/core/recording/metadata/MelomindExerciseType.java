@@ -1,8 +1,9 @@
-package features;
+package core.recording.metadata;
 
 public enum MelomindExerciseType {
+
     DEFAULT,
-    VOYAGE,
+    JOURNEY,
     SWITCH,
     BALANCE
 }

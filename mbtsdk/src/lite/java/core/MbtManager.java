@@ -178,11 +178,11 @@ public class MbtManager{
         if (connectionStateListener == null)
             return;
         if(connectionStateListener instanceof BluetoothStateListener)
-            ((BluetoothStateListener) connectionStateListener).onNewState(connectionStateEvent.getNewState());
+            ((BluetoothStateListener) connectionStateListener).onNewState(connectionStateEvent.getNewState(), connectionStateEvent.getDevice());
 
         switch (connectionStateEvent.getNewState()) {
             case CONNECTED_AND_READY:
-                connectionStateListener.onDeviceConnected();
+                connectionStateListener.onDeviceConnected(connectionStateEvent.getDevice());
                 break;
             case DATA_BT_DISCONNECTED:
                 connectionStateListener.onDeviceDisconnected();
@@ -199,13 +199,13 @@ public class MbtManager{
      * @param newState
      */
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onStreamStateChanged(IStreamable.StreamState newState){
+    public void onStreamStateChanged(StreamState newState){
         if(eegListener != null){
-            if(newState == IStreamable.StreamState.FAILED){
+            if(newState == StreamState.FAILED){
                 eegListener.onError(EegError.ERROR_FAIL_START_STREAMING, null);
-            }else if(newState == IStreamable.StreamState.DISCONNECTED){
+            }else if(newState == StreamState.DISCONNECTED){
                 eegListener.onError(BluetoothError.ERROR_NOT_CONNECTED,null);
-            }else if(newState == IStreamable.StreamState.STOPPED){
+            }else if(newState == StreamState.STOPPED){
                 eegListener = null;
             }
         }

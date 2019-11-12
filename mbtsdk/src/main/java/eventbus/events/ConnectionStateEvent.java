@@ -5,31 +5,41 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import core.bluetooth.BtState;
+import core.device.model.MbtDevice;
+import core.device.model.MelomindDevice;
+import core.device.model.VProDevice;
 import features.MbtDeviceType;
 
+import static features.MbtDeviceType.MELOMIND;
+
+
 public class ConnectionStateEvent {
+
     private BtState newState;
     private String additionalInfo;
 
     @Nullable
-    private BluetoothDevice device;
-    @Nullable
-    private MbtDeviceType deviceType;
-
+    private MbtDevice device;
 
     public ConnectionStateEvent(@NonNull BtState newState){
         this.newState = newState;
     }
+
+    public ConnectionStateEvent(@NonNull BtState newState, @Nullable MbtDevice device){
+        this.newState = newState;
+        this.device = device;
+    }
+
+    public ConnectionStateEvent(@NonNull BtState newState, BluetoothDevice device, MbtDeviceType deviceType){
+        this.newState = newState;
+        this.device = deviceType.equals(MELOMIND) ?
+                new MelomindDevice(device) :
+                new VProDevice(device);
+    }
+
     public ConnectionStateEvent(@NonNull BtState newState, String additionalInfo){
         this.newState = newState;
         this.additionalInfo = additionalInfo;
-    }
-
-    public ConnectionStateEvent(BtState newState, @Nullable BluetoothDevice device, @Nullable MbtDeviceType deviceType) {
-        this.newState = newState;
-        this.additionalInfo = additionalInfo;
-        this.device = device;
-        this.deviceType = deviceType;
     }
 
     public BtState getNewState() {
@@ -41,12 +51,8 @@ public class ConnectionStateEvent {
     }
 
     @Nullable
-    public BluetoothDevice getDevice() {
+    public MbtDevice getDevice() {
         return device;
     }
 
-    @Nullable
-    public MbtDeviceType getDeviceType() {
-        return deviceType;
-    }
 }

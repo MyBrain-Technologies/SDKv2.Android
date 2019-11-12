@@ -281,8 +281,7 @@ final class MbtGattController extends BluetoothGattCallback {
     @Override
     public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
         super.onMtuChanged(gatt, mtu, status);
-        mbtBluetoothLE.stopWaitingOperation(mtu
-        );
+        mbtBluetoothLE.stopWaitingOperation(mtu);
     }
 
     /**
@@ -331,12 +330,13 @@ final class MbtGattController extends BluetoothGattCallback {
         }
     }
 
-    private void notifyResponseReceived(DeviceCommandEvent mailboxEvent, byte[] response){
-        if(isMailboxEventFinished(mailboxEvent , response)){
-            if(isConnectionMailboxEvent(mailboxEvent))
-                mbtBluetoothLE.notifyConnectionResponseReceived(mailboxEvent, response[0]); //connection and disconnection response are composed of only one byte
-            mbtBluetoothLE.stopWaitingOperation(response);
-        }
+     private void notifyResponseReceived(DeviceCommandEvent event, byte[] response){
+         if(isMailboxEventFinished(event , response)){
+             if(isConnectionMailboxEvent(event))
+                 mbtBluetoothLE.notifyConnectionResponseReceived(event, response[0]); //connection and disconnection response are composed of only one byte
+             mbtBluetoothLE.stopWaitingOperation(response);
+         }
+
 
     }
 

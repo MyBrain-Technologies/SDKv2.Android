@@ -12,7 +12,7 @@ import engine.clientevents.BaseError;
  * It provides a callback used to return a raw response sent by the headset to the SDK
  */
 @Keep
-public abstract class BluetoothCommand <T,U extends BaseError> extends CommandInterface.MbtCommand<U> {
+public abstract class BluetoothCommand <T,U extends BaseError> extends CommandInterface.MbtCommand<U> { //todo replace BaseError with a specific CommandError
 
     /**
      * Returns the optional data specific to the implemented class
@@ -20,6 +20,7 @@ public abstract class BluetoothCommand <T,U extends BaseError> extends CommandIn
      */
     public abstract T getData();
 
+    //todo add javadoc
     @Override
     public abstract boolean isValid();
 }
