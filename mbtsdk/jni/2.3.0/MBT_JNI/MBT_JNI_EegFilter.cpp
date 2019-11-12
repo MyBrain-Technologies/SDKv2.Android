@@ -6,8 +6,7 @@
 #include "MBT_JNI_EegFilter.h"
 
 #include "../Melomind.Algorithms/SignalProcessing.Cpp/PreProcessing/Headers/MBT_BandPass_fftw3.h"
-#include "../../../../../../../../AppData/Local/Android/Sdk/ndk-bundle/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/include/jni.h"
-#include "../../../../../../../../AppData/Local/Android/Sdk/ndk-bundle/sources/cxx-stl/llvm-libc++/include/vector"
+
 
 /**
  * Jni function to call the correct compute statistics functions
