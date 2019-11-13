@@ -11,9 +11,12 @@ import org.greenrobot.eventbus.ThreadMode;
 import java.util.HashSet;
 import java.util.Set;
 
+import command.CommandInterface;
+import command.DeviceCommand;
 import config.RecordConfig;
 import config.StreamConfig;
 import core.bluetooth.StreamState;
+import core.bluetooth.requests.CommandRequestEvent;
 import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
 import core.bluetooth.requests.DisconnectRequestEvent;
 import core.bluetooth.MbtBluetoothManager;
@@ -161,12 +164,28 @@ public class MbtManager{
         this.eegListener = streamConfig.getEegListener();
         this.deviceStatusListener = streamConfig.getDeviceStatusListener();
 
+        for (DeviceCommand command : streamConfig.getDeviceCommands()) {
+            sendCommand(command);
+        }
         MbtEventBus.postEvent(
                 new StreamRequestEvent(START,
                         streamConfig.getRecordConfig() != null,
                         streamConfig.shouldComputeQualities(),
                         (deviceStatusListener != null),
                         streamConfig.getRecordConfig()));
+    }
+
+    /**
+     * Send a command request
+     * to the connected headset,
+     * such as a Mailbox command,
+     * in order to configure a parameter,
+     * or get values stored by the headset
+     * or ask the headset to perform an action.
+     * @param command is the command to send
+     */
+    public void sendCommand(@NonNull CommandInterface.MbtCommand command) {
+        MbtEventBus.postEvent(new CommandRequestEvent(command));
     }
 
     /**
