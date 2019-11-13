@@ -13,7 +13,6 @@ android {
         versionCode 2
         versionName "2.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-        missingDimensionStrategy "package", "full", "lite"
     }
     buildTypes {
         release {
@@ -24,7 +23,18 @@ android {
             versionNameSuffix "-UnitTest"
         }
     }
+    flavorDimensions "package"
+    productFlavors {
+        full {
+            dimension "package"
+            versionNameSuffix "-Full"
+        }
 
+        lite {
+            dimension "package"
+            versionNameSuffix "-Lite"
+        }
+    }
 }
 
 dependencies {

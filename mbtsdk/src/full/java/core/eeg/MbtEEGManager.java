@@ -63,9 +63,9 @@ public final class MbtEEGManager extends BaseModuleManager {
     private static final int UNCHANGED_VALUE = -1;
     public static final int UNDEFINED_DURATION = -1;
 
-    private int sampRate;
-    private int packetLength;
-    private int nbChannels;
+    private int sampRate = MbtFeatures.DEFAULT_SAMPLE_RATE;
+    private int packetLength = MbtFeatures.DEFAULT_EEG_PACKET_LENGTH;
+    private int nbChannels = MbtFeatures.MELOMIND_NB_CHANNELS;
 
     private MbtDataAcquisition dataAcquisition;
     private MbtDataBuffering dataBuffering;
@@ -131,10 +131,8 @@ public final class MbtEEGManager extends BaseModuleManager {
                 ArrayList<Float> toDecodeStatus = new ArrayList<>();
                 for (RawEEGSample rawEEGSample : toDecodeRawEEG) {
                     if (rawEEGSample.getStatus() != null) {
-                            for(Float status : rawEEGSample.getStatus()){
-                                if (status != Float.NaN)
-                                    toDecodeStatus.add(status);
-                            }
+                        if (rawEEGSample.getStatus() != Float.NaN)
+                            toDecodeStatus.add(rawEEGSample.getStatus());
                     }
                 }
                 consolidatedEEG = MbtDataConversion.convertRawDataToEEG(toDecodeRawEEG, protocol, nbChannels); //convert byte table data to Float matrix and store the matrix in MbtEEGManager as eegResult attribute
@@ -247,8 +245,7 @@ public final class MbtEEGManager extends BaseModuleManager {
 
             return new ArrayList<>(Arrays.asList(ArrayUtils.toObject(qualities)));
         }
-//        MbtEventBus.postEvent(new QualityRequest(null, listedQualities));
-//        //requestBeingProcessed  = false;
+
         return null;
     }
 

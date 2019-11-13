@@ -1,9 +1,11 @@
 package config;
 
+import android.support.annotation.IntRange;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import command.BluetoothCommands;
 import engine.clientevents.BaseError;
 import engine.clientevents.ConnectionStateListener;
 import features.MbtDeviceType;
@@ -20,24 +22,38 @@ public final class ConnectionConfig {
 
     private static final int DEFAULT_MTU = 47;
 
-    private final String deviceName;
+    private String deviceName; //todo only available for Melomind : extends Connection config in order to have a Melomind Config and a Vpro Config ?
 
-    private final String deviceQrCode;
+    private String deviceQrCode;
 
-    private final int maxScanDuration;
+    private int maxScanDuration;
 
-    private final boolean connectAudio;
+    private boolean connectAudio; //todo only available for Melomind : extends Connection config in order to have a Melomind Config and a Vpro Config ?
 
-    private final MbtDeviceType deviceType = MbtDeviceType.MELOMIND;
+    private MbtDeviceType deviceType; //todo remove it if Melomind Config and  Vpro Config are created ?
+
+    /**
+     *  Maximum Transmission Unit
+     *  is the maximum size of the data packets
+     *  sent by the headset to the SDK.
+     */
+    @IntRange(from = BluetoothCommands.Mtu.MINIMUM,to = BluetoothCommands.Mtu.MAXIMUM)
+    private int mtu;
 
     private final ConnectionStateListener<BaseError> connectionStateListener;
 
-    private ConnectionConfig(String deviceName,  String deviceQrCode, int maxScanDuration, boolean connectAudio, ConnectionStateListener<BaseError> connectionStateListener){
+    private ConnectionConfig(String deviceName, String deviceQrCode, int maxScanDuration, boolean connectAudio, MbtDeviceType deviceType, int mtu, ConnectionStateListener<BaseError> connectionStateListener){
         this.deviceName = deviceName;
         this.deviceQrCode = deviceQrCode;
         this.maxScanDuration = maxScanDuration;
+        this.deviceType = deviceType;
         this.connectAudio = (deviceType == MbtDeviceType.MELOMIND && connectAudio);
         this.connectionStateListener = connectionStateListener;
+        this.mtu = mtu;
+    }
+
+    public int getMtu(){
+        return mtu;
     }
 
     /**
@@ -47,34 +63,24 @@ public final class ConnectionConfig {
         return deviceName;
     }
 
+    public String getDeviceQrCode() {
+        return deviceQrCode;
+    }
 
     public int getMaxScanDuration() {
         return maxScanDuration;
     }
 
-    public String getDeviceQrCode() {
-        return deviceQrCode;
-    }
 
     /**
-     * By default, Bluetooth connection is only initiated for Data streaming but not for the Audio streaming
+     * Check the validity of the configured MTU
+     * @return true if the MTU is included between
+     * {@link BluetoothCommands.Mtu#MINIMUM} and {@link BluetoothCommands.Mtu#MAXIMUM}
+     * Return false otherwise.
      */
-    public boolean useAudio() {
-        return connectAudio;
+    public boolean isMtuValid(){
+        return new BluetoothCommands.Mtu(mtu).isValid();
     }
-
-    public MbtDeviceType getDeviceType() {
-        return deviceType;
-    }
-
-    public ConnectionStateListener getConnectionStateListener() {
-        return connectionStateListener;
-    }
-
-    public int getMtu(){
-        return DEFAULT_MTU;
-    }
-
 
     /**
      * Check the validity of the configured Bluetooth scanning duration
@@ -93,7 +99,7 @@ public final class ConnectionConfig {
      * - or not null and its length matchs the expected length
      */
     public boolean isDeviceQrCodeValid(){
-        return deviceQrCode == null || ( deviceQrCode.length() == MbtFeatures.DEVICE_QR_CODE_LENGTH && deviceQrCode.length() == MbtFeatures.DEVICE_QR_CODE_LENGTH-1);
+        return deviceQrCode == null ||  (deviceQrCode.length() == MbtFeatures.DEVICE_QR_CODE_LENGTH || deviceQrCode.length() == MbtFeatures.DEVICE_QR_CODE_LENGTH-1);
     }
 
     /**
@@ -102,8 +108,46 @@ public final class ConnectionConfig {
      * - null (looking for any device, no matter its QR code)
      * - or not null and its length matchs the expected length
      */
-    public boolean isDeviceNameValid(){
+    public boolean isDeviceNameValid(MbtDeviceType type){
+        if(type == MbtDeviceType.VPRO)
+            return true; //TODO check if starts with expected prefix for Vpro & Melomind
+
         return deviceName == null || deviceName.length() == MbtFeatures.DEVICE_NAME_LENGTH;
+    }
+
+    /**
+     * By default, Bluetooth connection is only initiated for Data streaming but not for the Audio streaming
+     */
+    public boolean connectAudio() { //todo only available for Melomind
+        return connectAudio;
+    }
+
+    public MbtDeviceType getDeviceType() {
+        return deviceType;
+    }
+
+    public ConnectionStateListener getConnectionStateListener() {
+        return connectionStateListener;
+    }
+
+    public void setDeviceName(String deviceName){
+        this.deviceName = deviceName;
+    }
+
+    public void setDeviceQrCode(String deviceQrCode) { //todo only available for Melomind ?
+        this.deviceQrCode = deviceQrCode;
+    }
+
+    public void setMaxScanDuration(int maxScanDuration) {
+        this.maxScanDuration = maxScanDuration;
+    }
+
+    public void setConnectAudio(boolean connectAudio) { //todo only available for Melomind ?
+        this.connectAudio = connectAudio;
+    }
+
+    public void setDeviceType(MbtDeviceType deviceType) {
+        this.deviceType = deviceType;
     }
 
     /**
@@ -115,9 +159,13 @@ public final class ConnectionConfig {
         private String deviceName = null;
         private String deviceQrCode = null;
         private int maxScanDuration = MbtFeatures.DEFAULT_MAX_SCAN_DURATION_IN_MILLIS;
+
         private boolean connectAudio = false;
         @NonNull
         private final ConnectionStateListener<BaseError> connectionStateListener;
+
+        @IntRange(from = BluetoothCommands.Mtu.MINIMUM, to = BluetoothCommands.Mtu.MAXIMUM)
+        private int mtu = BluetoothCommands.Mtu.DEFAULT;
 
 
         public Builder(@NonNull ConnectionStateListener<BaseError> connectionStateListener){
@@ -135,9 +183,8 @@ public final class ConnectionConfig {
             this.deviceName = deviceName;
             return this;
         }
-
         /**
-         * Use this method to specify the QR code number of the device you are trying to connect to.
+         * Use this method to specify the QR Code number of the device you are trying to connect to.
          * The QR code must contain 9 or 10 digits and start with the {@link core.device.model.MelomindsQRDataBase#QR_PREFIX} prefix
          * Pass NULL if unknown or if you don't want to specify any.
          * @param deviceQrCode the device QR code number. Can be NULL
@@ -167,22 +214,13 @@ public final class ConnectionConfig {
         }
 
         /**
-         * Unused at the moment
-         * */
-//        public Builder connectionTimeout(int connectionTimeoutInMillis){
-//            this.connectionTimeout = connectionTimeoutInMillis;
-//            return this;
-//        }
-
-        /**
-         * Use this method to force audio connection to a device. This is automatically set to {@link Boolean#FALSE}
+         * Use this method to force audio connection to a device. This is automatically set to Boolean#FALSE
          * if the device is not a melomind.
          *
          * If the device is a melomind, then the flag will tell either or not the SDK has to connect the audio bluetooth.
          * <p>Caution, the audio is handled by the Android system itself and is not meant to be connect via a third party application.
-         * If set to {@link Boolean#TRUE}, the connection attempt may fail. It is still possible to connect to audio through the system settings of your android device.</p>
+         * If set to Boolean#TRUE, the connection attempt may fail. It is still possible to connect to audio through the system settings of your android device.</p>
          *
-         * @param useAudio true to connect automatically, false otherwise. If the device is not audio compatible, the flag is forced to false.
          * @return the builder instance
          */
         @NonNull
@@ -192,10 +230,11 @@ public final class ConnectionConfig {
         }
 
         @NonNull
-        public ConnectionConfig create(){
-            return new ConnectionConfig(this.deviceName, this.deviceQrCode, this.maxScanDuration, this.connectAudio, this.connectionStateListener);
+        public ConnectionConfig createForDevice(@NonNull MbtDeviceType deviceType){ //todo replace useless forDevice in createForDevice if Melomind Config and Vpro Config ?
+            if(deviceType == null)
+                deviceType = MbtDeviceType.MELOMIND;
+            return new ConnectionConfig(this.deviceName, this.deviceQrCode, this.maxScanDuration, this.connectAudio, deviceType, this.mtu, this.connectionStateListener);
         }
-
 
     }
 
