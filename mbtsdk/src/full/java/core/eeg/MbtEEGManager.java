@@ -28,6 +28,7 @@ import core.eeg.signalprocessing.MBTCalibrationParameters;
 import core.eeg.signalprocessing.MBTCalibrator;
 import core.eeg.signalprocessing.MBTComputeRelaxIndex;
 import core.eeg.signalprocessing.MBTComputeStatistics;
+import core.eeg.signalprocessing.MBTEegFilter;
 import core.eeg.signalprocessing.MBTSignalQualityChecker;
 import core.eeg.storage.MbtDataBuffering;
 import core.eeg.storage.MbtEEGPacket;
@@ -37,6 +38,7 @@ import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.BluetoothEEGEvent;
 import eventbus.events.EEGConfigEvent;
 import eventbus.events.ConnectionStateEvent;
+import eventbus.events.SignalProcessingEvent;
 import features.MbtFeatures;
 import mbtsdk.com.mybraintech.mbtsdk.BuildConfig;
 import utils.AsyncUtils;
@@ -360,6 +362,19 @@ public final class MbtEEGManager extends BaseModuleManager {
         else if(event.stopStream() && !ContextSP.SP_VERSION.equals("0.0.0"))
             deinitQualityChecker();
 
+    }
+
+    @Subscribe
+    public void onBandpassFilter(SignalProcessingEvent.GetBandpassFilter config){
+        MbtEventBus.postEvent(
+                new SignalProcessingEvent.PostBandpassFilter(
+                        MBTEegFilter.bandpassFilter(
+                                config.getFrequencyBoundMin(),
+                                config.getFrequencyBoundMax(),
+                                config.getSize(),
+                                config.getInputData())
+                )
+        );
     }
 
     @Subscribe

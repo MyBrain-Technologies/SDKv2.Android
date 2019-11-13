@@ -49,6 +49,7 @@ import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.ConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
 import eventbus.events.FirmwareUpdateClientEvent;
+import eventbus.events.SignalProcessingEvent;
 import features.MbtDeviceType;
 import features.MbtFeatures;
 import mbtsdk.com.mybraintech.mbtsdk.R;
@@ -95,6 +96,7 @@ public class MbtManager{
     private DeviceBatteryListener<BaseError> deviceInfoListener;
     @Nullable
     private DeviceStatusListener deviceStatusListener;
+
 
     public MbtManager(Context context) {
         this.mContext = context;
@@ -221,6 +223,23 @@ public class MbtManager{
         this.oadStateListener = stateListener;
         DeviceEvents.StartOADUpdate event = new DeviceEvents.StartOADUpdate(firmwareVersion);
         MbtEventBus.postEvent(event);
+    }
+
+    public void bandpassFilter(float freqBound1, float freqBound2, int size, float[] inputData, @NonNull final SimpleRequestCallback<float[]> callback) {
+            if (callback == null)
+                return;
+
+            MbtEventBus.postEvent(new SignalProcessingEvent.GetBandpassFilter(freqBound1, freqBound2, inputData, size),
+                    new MbtEventBus.Callback<SignalProcessingEvent.PostBandpassFilter>() {
+                        @Override
+                        @Subscribe
+                        public Void onEventCallback(SignalProcessingEvent.PostBandpassFilter filteredSignal) {
+                            MbtEventBus.registerOrUnregister(false, this);
+                            callback.onRequestComplete(filteredSignal.getOutputData());
+                            return null;
+                        }
+                    });
+
     }
 
     /**

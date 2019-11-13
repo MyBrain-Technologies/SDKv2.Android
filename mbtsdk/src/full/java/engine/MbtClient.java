@@ -26,11 +26,9 @@ import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.DeviceBatteryListener;
 import engine.clientevents.EegListener;
 
-import engine.clientevents.HeadsetDeviceError;
 import engine.clientevents.OADStateListener;
 import features.MbtFeatures;
 import features.MbtDeviceType;
-import features.MbtFeatures;
 
 /**
  * Created by Etienne on 08/02/2018.
@@ -318,6 +316,11 @@ public final class MbtClient {
     public void updateFirmware(@NonNull FirmwareVersion firmwareVersion, @Nullable OADStateListener<BaseError> stateListener){
         mbtManager.updateFirmware(firmwareVersion, stateListener);
     }
+
+    public void bandpassFilter(float freqBound1, float freqBound2, int size, float[] inputData, SimpleRequestCallback<float[]> callback){
+        mbtManager.bandpassFilter(freqBound1, freqBound2, size, inputData, callback);
+    }
+
 
     @Keep
     private static class MbtClientBuilder {
