@@ -19,6 +19,7 @@ import features.MbtFeatures;
  */
 @Keep
 public final class StreamConfig {
+
     private int notificationPeriod;
     private final EegListener<BaseError> eegListener;
     private DeviceStatusListener<BaseError> deviceStatusListener;
@@ -47,8 +48,8 @@ public final class StreamConfig {
         this.notificationPeriod = notificationPeriod;
         this.recordConfig = recordConfig;
         this.deviceCommands = new LinkedList<>();
+        DeviceStreamingCommands.EegConfig eegConfig = new DeviceStreamingCommands.EegConfig.Builder(null).createForDevice(deviceType);
         if(deviceCommands != null && deviceCommands.length > 0) {
-            DeviceStreamingCommands.EegConfig eegConfig = new DeviceStreamingCommands.EegConfig.Builder(null).createForDevice(deviceType);
             for (DeviceStreamingCommands deviceCommand : deviceCommands) {
                 if(deviceCommand != null){
                     int index = getRegisteredCommandIndex(deviceCommand);
@@ -61,8 +62,9 @@ public final class StreamConfig {
                         this.deviceCommands.addFirst( (DeviceCommand) deviceCommand);
                 }
             }
-            this.deviceCommands.addLast(eegConfig);
         }
+        this.deviceCommands.addLast(eegConfig);
+
     }
     /**
      * Returns the index of the already registered command in the deviceCommands list
