@@ -12,7 +12,6 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -235,31 +234,15 @@ public class DeviceActivity extends AppCompatActivity {
     }
 
     private void initDisconnectButton() {
-        final ProgressBar progressBar = findViewById(R.id.progress);
 
         disconnectButton = findViewById(R.id.disconnectButton);
         disconnectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //returnOnPreviousActivity();
-//                if (isStreaming)
-//                    stopStream();
-//                sdkClient.disconnectBluetooth();
-
-                sdkClient.updateFirmware(new FirmwareVersion("1.7.4"), new OADStateListener<BaseError>() {
-                    @Override
-                    public void onStateChanged(OADState newState) { }
-
-                    @Override
-                    public void onProgressPercentChanged(final int progress) {
-                        progressBar.setProgress(progress);
-                    }
-
-                    @Override
-                    public void onError(BaseError error, String additionalInfo) {
-                        notifyUser(error.getMessage());
-                    }
-                });
+                returnOnPreviousActivity();
+                if (isStreaming)
+                    stopStream();
+                sdkClient.disconnectBluetooth();
             }
         });
     }

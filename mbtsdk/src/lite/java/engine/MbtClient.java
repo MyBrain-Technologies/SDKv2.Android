@@ -9,18 +9,21 @@ import android.support.annotation.NonNull;
 
 import config.ConnectionConfig;
 import config.MbtConfig;
+import config.RecordConfig;
 import config.StreamConfig;
 import core.MbtManager;
+import core.bluetooth.BtState;
 import core.device.model.MbtDevice;
 import core.eeg.storage.MbtEEGPacket;
 import core.device.model.DeviceInfo;
 import engine.clientevents.BaseError;
+import engine.clientevents.BluetoothError;
+import engine.clientevents.BluetoothStateListener;
 import engine.clientevents.ConfigError;
 import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.ConnectionStateReceiver;
 import engine.clientevents.DeviceBatteryListener;
 import engine.clientevents.EegListener;
-import engine.clientevents.HeadsetDeviceError;
 import features.MbtFeatures;
 import features.MbtDeviceType;
 
@@ -80,35 +83,42 @@ public final class MbtClient {
     }
 
     /**
-     * Call this method to establish a bluetooth connection with a remote Melomind device.
-     * <p>If the parameters are invalid, the method returns immediately and {@link ConnectionStateReceiver#onError(engine.clientevents.BaseError, String)} method is called</p>
+     * Call this method to establish a bluetooth connection with a remote device.
+     * It is possible to connect either a Melomind or a VPro device through this method. You need to specify
+     * the device type in the {@link ConnectionConfig} input instance with the {@link MbtDeviceType} type.
+     * <p>If the parameters are invalid, the method returns immediately and {@link BluetoothStateListener#onError(engine.clientevents.BaseError, String)} method is called</p>
      *
      * @param config the {@link ConnectionConfig} instance that holds all the configuration parameters inside.
      */
     @SuppressWarnings("unchecked")
     public void connectBluetooth(@NonNull ConnectionConfig config){
         MbtConfig.setBluetoothScanTimeout(config.getMaxScanDuration());
-        MbtConfig.setConnectAudioIfDeviceCompatible(config.useAudio());
 
-        if(!config.isDeviceNameValid()) {
+        if(!config.isDeviceNameValid(config.getDeviceType())) {
             config.getConnectionStateListener().onError(ConfigError.ERROR_INVALID_PARAMS, " Device name must start with the " + MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX + " and contain 10 digits ");
             return;
         }
+
         if(!config.isDeviceQrCodeValid()){
-            config.getConnectionStateListener().onError(ConfigError.ERROR_INVALID_PARAMS, " Device QR code must start with " + MbtFeatures.QR_CODE_NAME_PREFIX + " and contain "+ MbtFeatures.DEVICE_QR_CODE_LENGTH+" digits ");
+            config.getConnectionStateListener().onError(ConfigError.ERROR_INVALID_PARAMS, " Device QR code must start with " + MbtFeatures.QR_CODE_NAME_PREFIX + " and contain "+ MbtFeatures.DEVICE_QR_CODE_LENGTH+ " digits ");
             return;
         }
+
         if(!config.isScanDurationValid()){
             config.getConnectionStateListener().onError(ConfigError.ERROR_INVALID_PARAMS,ConfigError.SCANNING_MINIMUM_DURATION);
             return;
         }
 
-        if(config.getDeviceType() == MbtDeviceType.VPRO){
-            config.getConnectionStateListener().onError(HeadsetDeviceError.ERROR_VPRO_INCOMPATIBLE,null);
+        if(config.getDeviceType() == MbtDeviceType.VPRO && config.connectAudio()){
+            config.getConnectionStateListener().onError(BluetoothError.ERROR_A2DP_CONNECT_FAILED,"Impossible to connect a VPRO headset for audio streaming.");
+        }
+
+        if(!config.isMtuValid()){
+            config.getConnectionStateListener().onError(ConfigError.ERROR_INVALID_PARAMS,"MTU must be included between 23 and 121");
             return;
         }
 
-        this.mbtManager.connectBluetooth(config.getConnectionStateListener(), config.getDeviceName(), config.getDeviceQrCode(), config.getDeviceType(), config.getMtu());
+        this.mbtManager.connectBluetooth(config.getConnectionStateListener(),config.connectAudio(), config.getDeviceName(), config.getDeviceQrCode(), config.getDeviceType(), config.getMtu());
     }
 
     /**
@@ -139,8 +149,8 @@ public final class MbtClient {
      *
      * <p>You can customize some parameters in the {@link StreamConfig}class.</p>
      *
-     * <p>If the parameters are incorrect, the function returns directly and the {@link EegListener#onError(engine.clientevents.BaseError,String)} method is called</p>
-     * If something wrong happens during the operation, {@link EegListener#onError(engine.clientevents.BaseError,String)} method is called.
+     * <p>If the parameters are incorrect, the function returns directly and the {@link EegListener#onError} method is called</p>
+     * If something wrong happens during the operation, {@link EegListener#onError} method is called.
      *
      * <p>If everything went well, the EEG will be available in the {@link EegListener#onNewPackets(MbtEEGPacket)} callback.</p>
      *
@@ -148,11 +158,17 @@ public final class MbtClient {
      */
     @SuppressWarnings("unchecked")
     public void startStream(@NonNull StreamConfig streamConfig){
-        if(!streamConfig.isConfigCorrect())
+
+        if(!streamConfig.isNotificationConfigCorrect())
             streamConfig.getEegListener().onError(ConfigError.ERROR_INVALID_PARAMS, streamConfig.shouldComputeQualities() ?
                     ConfigError.NOTIFICATION_PERIOD_RANGE_QUALITIES : ConfigError.NOTIFICATION_PERIOD_RANGE);
         else
-            MbtConfig.setEegBufferLengthClientNotif(((streamConfig.getNotificationPeriod()* MbtFeatures.DEFAULT_SAMPLE_RATE)/1000));
+            requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
+                @Override
+                public void onRequestComplete(MbtDevice device) {
+                    MbtConfig.setEegBufferLengthClientNotif(streamConfig.getNotificationPeriod());
+                }
+            });
 
         mbtManager.startStream(streamConfig);
     }
@@ -163,12 +179,27 @@ public final class MbtClient {
      * reinit all internal buffering system.
      */
     public void stopStream(){
-        mbtManager.stopStream();
+        mbtManager.stopStream(null);
+    }
+    /**
+     * Stops the currently running eeg stream. This stops bluetooth acquisition and
+     * reinit all internal buffering system.
+     */
+    public void stopStream(RecordConfig recordConfig){
+        mbtManager.stopStream(recordConfig);
+    }
+
+    public void startRecord(Context context){
+        mbtManager.startRecord(context);
+    }
+
+    public void stopRecord(@NonNull RecordConfig recordConfig){
+        mbtManager.stopRecord(recordConfig);
     }
 
     /**
      * Stops a pending connection process. If successful,
-     * the new state {@link core.bluetooth.BtState#CONNECTION_INTERRUPTED} is sent to the user in the {@link BluetoothStateListener#onNewState(BtState)} callback
+     * the new state {@link core.bluetooth.BtState#CONNECTION_INTERRUPTED} is sent to the user in the {@link BluetoothStateListener#onNewState(BtState, MbtDevice)}} callback
      * {@link ConnectionStateReceiver#onReceive(Context, Intent)} callback.
      *
      * <p>If the device is already connected, it simply disconnects the device.</p>

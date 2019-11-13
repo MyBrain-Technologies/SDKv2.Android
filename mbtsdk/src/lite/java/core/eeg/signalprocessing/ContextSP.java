@@ -10,10 +10,7 @@ import android.support.annotation.NonNull;
  */
 
 public final class ContextSP {
-    /**
-     * The current set of calibration parameters
-     */
-    public static MBTCalibrationParameters calibrationParameters;
+
     /**
      * The current signal processing version. This value is updated as soon as the library is correctly loaded
      */
@@ -25,7 +22,5 @@ public final class ContextSP {
      * defined by @{@link mbtsdk.com.mybraintech.mbtsdk.BuildConfig} USE_ALGO_VERSION final field
      */
     public final static String LIBRARY_NAME = "mbtalgo_";
-
-    public final static int smoothingDuration = 4;
 
 }

@@ -2,15 +2,12 @@ package model;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 import core.eeg.storage.MbtEEGPacket;
-import utils.LogUtils;
-import utils.MatrixUtils;
 
 
 /**

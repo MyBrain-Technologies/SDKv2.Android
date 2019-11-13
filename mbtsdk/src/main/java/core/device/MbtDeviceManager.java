@@ -265,13 +265,13 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
                 .deviceName(mCurrentConnectedDevice.getProductName())
                 .deviceQrCode(mCurrentConnectedDevice.getExternalName());
 
-        ConnectionConfig connectionConfig = connectionConfigBuilder.create();
+        ConnectionConfig connectionConfig = connectionConfigBuilder.createForDevice(mCurrentConnectedDevice.getDeviceType());
 
         MbtEventBus.postEvent(new StartOrContinueConnectionRequestEvent(true,
                 connectionConfig.getDeviceName(),
                 connectionConfig.getDeviceQrCode(),
                 connectionConfig.getDeviceType(),
-                BluetoothCommands.Mtu.DEFAULT,
+                connectionConfig.getMtu(),
                 reconnectAudio));
 
     }

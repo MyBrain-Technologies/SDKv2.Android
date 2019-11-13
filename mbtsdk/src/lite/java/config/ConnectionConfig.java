@@ -20,6 +20,8 @@ import features.MbtFeatures;
 @Keep
 public final class ConnectionConfig {
 
+    private static final int DEFAULT_MTU = 47;
+
     private String deviceName; //todo only available for Melomind : extends Connection config in order to have a Melomind Config and a Vpro Config ?
 
     private String deviceQrCode;
@@ -30,15 +32,28 @@ public final class ConnectionConfig {
 
     private MbtDeviceType deviceType; //todo remove it if Melomind Config and  Vpro Config are created ?
 
+    /**
+     *  Maximum Transmission Unit
+     *  is the maximum size of the data packets
+     *  sent by the headset to the SDK.
+     */
+    @IntRange(from = BluetoothCommands.Mtu.MINIMUM,to = BluetoothCommands.Mtu.MAXIMUM)
+    private int mtu;
+
     private final ConnectionStateListener<BaseError> connectionStateListener;
 
-    private ConnectionConfig(String deviceName, String deviceQrCode, int maxScanDuration, boolean connectAudio, MbtDeviceType deviceType, ConnectionStateListener<BaseError> connectionStateListener){
+    private ConnectionConfig(String deviceName, String deviceQrCode, int maxScanDuration, boolean connectAudio, MbtDeviceType deviceType, int mtu, ConnectionStateListener<BaseError> connectionStateListener){
         this.deviceName = deviceName;
         this.deviceQrCode = deviceQrCode;
         this.maxScanDuration = maxScanDuration;
         this.deviceType = deviceType;
         this.connectAudio = (deviceType == MbtDeviceType.MELOMIND && connectAudio);
         this.connectionStateListener = connectionStateListener;
+        this.mtu = mtu;
+    }
+
+    public int getMtu(){
+        return mtu;
     }
 
     /**
@@ -54,6 +69,17 @@ public final class ConnectionConfig {
 
     public int getMaxScanDuration() {
         return maxScanDuration;
+    }
+
+
+    /**
+     * Check the validity of the configured MTU
+     * @return true if the MTU is included between
+     * {@link BluetoothCommands.Mtu#MINIMUM} and {@link BluetoothCommands.Mtu#MAXIMUM}
+     * Return false otherwise.
+     */
+    public boolean isMtuValid(){
+        return new BluetoothCommands.Mtu(mtu).isValid();
     }
 
     /**
@@ -138,6 +164,9 @@ public final class ConnectionConfig {
         @NonNull
         private final ConnectionStateListener<BaseError> connectionStateListener;
 
+        @IntRange(from = BluetoothCommands.Mtu.MINIMUM, to = BluetoothCommands.Mtu.MAXIMUM)
+        private int mtu = BluetoothCommands.Mtu.DEFAULT;
+
 
         public Builder(@NonNull ConnectionStateListener<BaseError> connectionStateListener){
             this.connectionStateListener = connectionStateListener;
@@ -201,10 +230,11 @@ public final class ConnectionConfig {
         }
 
         @NonNull
-        public ConnectionConfig create(){ //todo replace useless forDevice in createForDevice if Melomind Config and Vpro Config ?
-            return new ConnectionConfig(this.deviceName, this.deviceQrCode, this.maxScanDuration, this.connectAudio, MbtDeviceType.MELOMIND, this.connectionStateListener);
+        public ConnectionConfig createForDevice(@NonNull MbtDeviceType deviceType){ //todo replace useless forDevice in createForDevice if Melomind Config and Vpro Config ?
+            if(deviceType == null)
+                deviceType = MbtDeviceType.MELOMIND;
+            return new ConnectionConfig(this.deviceName, this.deviceQrCode, this.maxScanDuration, this.connectAudio, deviceType, this.mtu, this.connectionStateListener);
         }
-
 
     }
 
