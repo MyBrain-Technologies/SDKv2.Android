@@ -5,18 +5,24 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import java.io.Serializable;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.List;
 
 import features.MbtAcquisitionLocations;
+import features.MbtDeviceType;
 import features.MbtFeatures;
 
 /**
  * Created by manon on 10/10/16.
  // */
 @Keep
-public abstract class MbtDevice {
+public abstract class MbtDevice implements Serializable {
 
     public static final String DEFAULT_FW_VERSION = "0.0.0";
+
+    public MbtDeviceType deviceType;
 
     /**
      * Bluetooth Low Energy name
@@ -57,9 +63,7 @@ public abstract class MbtDevice {
     @Nullable
     private String audioDeviceAddress;
 
-    int sampRate;
-
-    int nbChannels;
+    private int eegPacketLength;
 
     List<MbtAcquisitionLocations> acquisitionLocations;
     List<MbtAcquisitionLocations> referencesLocations;
@@ -67,11 +71,12 @@ public abstract class MbtDevice {
 
     private InternalConfig internalConfig;
 
-    MbtDevice(BluetoothDevice bluetoothDevice){
+    MbtDevice(BluetoothDevice bluetoothDevice, @NonNull MbtDeviceType deviceType, int nbChannels){
+        this.internalConfig = new InternalConfig(nbChannels);
+        this.deviceType = deviceType;
         this.deviceAddress = bluetoothDevice.getAddress();
         this.productName = bluetoothDevice.getName();
-        this.internalConfig = null;
-        this.externalName = MbtFeatures.MELOMIND_DEVICE_NAME;
+        this.eegPacketLength = MbtFeatures.DEFAULT_EEG_PACKET_LENGTH;
     }
 
     /**
@@ -128,9 +133,13 @@ public abstract class MbtDevice {
         return deviceAddress;
     }
 
-    public int getSampRate() {return this.sampRate;}
+    public int getSampRate() {return this.internalConfig.sampRate;}
 
-    public int getNbChannels() {return this.nbChannels;}
+    public int getNbChannels() {return this.internalConfig.nbChannels;}
+
+    public int getEegPacketLength() {
+        return eegPacketLength;
+    }
 
     @NonNull
     public List<MbtAcquisitionLocations> getAcquisitionLocations() {return this.acquisitionLocations;}
@@ -159,8 +168,26 @@ public abstract class MbtDevice {
         return internalConfig;
     }
 
-    public void setInternalConfig(InternalConfig internalConfig) {
+    public void setInternalConfig(InternalConfig internalConfig){
         this.internalConfig = internalConfig;
+        if(eegPacketLength != getSampRate());
+            eegPacketLength = getSampRate();
+    }
+
+    public void setNbChannels(int nbChannels) {
+        this.internalConfig.nbChannels = nbChannels;
+    }
+
+    public void setAcquisitionLocations(List<MbtAcquisitionLocations> acquisitionLocations) {
+        this.acquisitionLocations = acquisitionLocations;
+    }
+
+    public void setReferencesLocations(List<MbtAcquisitionLocations> referencesLocations) {
+        this.referencesLocations = referencesLocations;
+    }
+
+    public void setGroundsLocation(List<MbtAcquisitionLocations> groundsLocation) {
+        this.groundsLocation = groundsLocation;
     }
 
     public void setExternalName(@Nullable String externalName){
@@ -180,21 +207,43 @@ public abstract class MbtDevice {
         this.audioDeviceAddress = audioDeviceAddress;
     }
 
-    public final static class InternalConfig{
-        private byte notchFilterConfig;
-        private byte bandPassFilterConfig;
-        private byte gainValue;
-        private byte statusBytes;
-        private byte nbPackets;
+    public MbtDeviceType getDeviceType() {
+        return deviceType;
+    }
 
-        public InternalConfig(Byte[] configFromHeadset){
-            if (configFromHeadset.length >= 5){
-                notchFilterConfig = configFromHeadset[0];
-                bandPassFilterConfig = configFromHeadset[1];
-                gainValue = configFromHeadset[2];
-                statusBytes = configFromHeadset[3];
-                nbPackets = configFromHeadset[4];
-            }
+    public static class InternalConfig implements Serializable{
+        public final byte DEFAULT = -1;
+
+        byte notchFilterConfig;
+        byte bandPassFilterConfig;
+        byte gainValue;
+        byte statusBytes;
+        byte nbPackets;
+        int sampRate;
+        int nbChannels;
+
+        public InternalConfig(int nbChannels) {
+            this.nbChannels = nbChannels;
+        }
+
+        public InternalConfig(int nbChannels, byte notchFilterConfig, byte bandPassFilterConfig, byte gainValue, byte statusBytes, byte nbPackets, int sampRate) {
+            this.nbChannels = nbChannels;
+            this.notchFilterConfig = notchFilterConfig;
+            this.bandPassFilterConfig = bandPassFilterConfig;
+            this.gainValue = gainValue;
+            this.statusBytes = statusBytes;
+            this.nbPackets = nbPackets;
+            this.sampRate = sampRate;
+        }
+
+        public InternalConfig(int nbChannels, byte gainValue, byte[] sampRate) {
+            this.nbChannels = nbChannels;
+            this.notchFilterConfig = DEFAULT;
+            this.bandPassFilterConfig = DEFAULT;
+            this.gainValue = gainValue;
+            this.statusBytes = DEFAULT;
+            this.nbPackets = DEFAULT;
+            this.sampRate = ByteBuffer.wrap(sampRate).order(ByteOrder.BIG_ENDIAN).getInt();
         }
 
         public byte getNotchFilterConfig() {
@@ -217,6 +266,15 @@ public abstract class MbtDevice {
             return nbPackets;
         }
 
+        public int getSampRate() {
+            return sampRate;
+        }
+
+        public int getNbChannels() {
+            return nbChannels;
+        }
+
+
 
         @Override
         public String toString() {
@@ -226,6 +284,8 @@ public abstract class MbtDevice {
                     ", gainValue=" + gainValue +
                     ", statusBytes=" + statusBytes +
                     ", nbPackets=" + nbPackets +
+                    ", sampRate=" + sampRate +
+                    ", nbChannels=" + nbChannels +
                     '}';
         }
     }
@@ -239,8 +299,6 @@ public abstract class MbtDevice {
                 ", serialNumber='" + serialNumber + '\'' +
                 ", externalName='" + externalName + '\'' +
                 ", deviceAddress='" + deviceAddress + '\'' +
-                ", sampRate=" + sampRate +
-                ", nbChannels=" + nbChannels +
                 ", acquisitionLocations=" + acquisitionLocations +
                 ", referencesLocations=" + referencesLocations +
                 ", groundsLocation=" + groundsLocation +

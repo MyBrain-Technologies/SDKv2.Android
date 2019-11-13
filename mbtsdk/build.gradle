@@ -7,10 +7,17 @@ android {
     defaultConfig {
         minSdkVersion 22
         targetSdkVersion 28
-        versionCode 10
-        versionName '2.1.1'
-        flavorDimensions "default"
+
+        versionCode 11
+        versionName '2.2.0'
         testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'
+
+        buildConfigField "boolean", "EEG_ENABLED", "true"
+        buildConfigField "boolean", "BLUETOOTH_ENABLED", "true"
+        buildConfigField "boolean", "DEVICE_ENABLED", "true"
+        buildConfigField "boolean", "RECORDING_ENABLED", "true"
+        buildConfigField "String", "FIRMWARE_VERSION", "\"1_7_4\""
+        buildConfigField "String", "USE_ALGO_VERSION", "\"2.3.1\""
     }
 
     buildTypes {
@@ -22,29 +29,27 @@ android {
                     outputFileName = "lib_${variant.flavorName}_${variant.buildType.name}_${defaultConfig.versionName}.aar"
                 }
             }
-            buildConfigField "boolean", "EEG_ENABLED", "true"
-            buildConfigField "boolean", "BLUETOOTH_ENABLED", "true"
-            buildConfigField "boolean", "DEVICE_ENABLED", "true"
-            buildConfigField "String", "FIRMWARE_VERSION", "\"1_7_4\""
         }
         staging {
-            buildConfigField "boolean", "EEG_ENABLED", "true"
-            buildConfigField "boolean", "BLUETOOTH_ENABLED", "true"
-            buildConfigField "boolean", "DEVICE_ENABLED", "true"
-            buildConfigField "String", "FIRMWARE_VERSION", "\"1_7_4\""
         }
         debug {
-            buildConfigField "boolean", "EEG_ENABLED", "true"
-            buildConfigField "boolean", "BLUETOOTH_ENABLED", "true"
-            buildConfigField "boolean", "DEVICE_ENABLED", "true"
-            buildConfigField "String", "FIRMWARE_VERSION", "\"1_7_4\""
         }
         unitTests {
-            initWith (buildTypes.debug)
-            buildConfigField "boolean", "EEG_ENABLED", "false"
-            buildConfigField "boolean", "BLUETOOTH_ENABLED", "true"
-            buildConfigField "boolean", "DEVICE_ENABLED", "false"
-            buildConfigField "String", "FIRMWARE_VERSION", "\"1_7_4\""
+        }
+    }
+    
+    externalNativeBuild {
+        ndkBuild {
+            path 'jni/Android.mk'
+        }
+    }
+    flavorDimensions "package"
+    productFlavors {
+        full{
+            dimension "package"
+        }
+        lite{
+            dimension "package"
         }
     }
 
@@ -55,14 +60,9 @@ android {
             path 'jni/Android.mk'
         }
     }
-    productFlavors {
-        full{
-            buildConfigField "String", "USE_ALGO_VERSION", "\"2.3.1\""
-        }
-        lite{
-            buildConfigField "String", "USE_ALGO_VERSION", "\"2.3.1\""
-        }
-    }
+
+
+
     testOptions {
         unitTests.returnDefaultValues = true
     }

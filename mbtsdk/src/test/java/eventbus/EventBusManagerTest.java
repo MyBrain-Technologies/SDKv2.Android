@@ -11,7 +11,7 @@ import engine.SimpleRequestCallback;
 
 
 
-public class EventBusManagerTest {
+public class MbtEventBusTest {
 
     @Before
     public void setUp()  {

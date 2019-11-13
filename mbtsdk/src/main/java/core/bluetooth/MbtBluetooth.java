@@ -10,32 +10,38 @@ import android.content.IntentFilter;
 import android.support.annotation.NonNull;
 
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 import android.util.Log;
+
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+
 
 import core.device.model.DeviceInfo;
 
 import utils.LogUtils;
+import utils.MbtAsyncWaitOperation;
 import utils.MbtLock;
 
 /**
  *
  * Abstract class that contains all fields and methods that are common to the different bluetooth types.
- * It implements{@link IConnectable} interface as all bluetooth types shares this
+ * It implements{@link BluetoothInterfaces} interface as all bluetooth types shares this
  * functionnalities.
  *
  * Created by Etienne on 08/02/2018.
  */
 
-public abstract class MbtBluetooth implements IConnectable{
+public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, BluetoothInterfaces.IStream{ //todo refactor interfaces > abstract classes : see streamstate comments to understand
 
     private final static String TAG = MbtBluetooth.class.getName();
 
     @NonNull
-    protected IStreamable.StreamState streamingState = IStreamable.StreamState.IDLE;
+    private StreamState streamState = StreamState.IDLE; //todo streamState variable can be inherited from Stream abstract class instead of IStream interface that just implements methods
 
-    private volatile BtState currentState = BtState.IDLE;
+    private volatile BtState currentState = BtState.IDLE; //todo add @NonNull annotation + rename into bluetoothState
 
-    protected boolean isUpdating;
+    protected boolean isUpdating; //todo remove useless
 
 
     @Nullable
@@ -47,8 +53,13 @@ public abstract class MbtBluetooth implements IConnectable{
 
     protected MbtBluetoothManager mbtBluetoothManager;
 
-    public MbtBluetooth(Context context, MbtBluetoothManager mbtBluetoothManager) {
+    protected BtProtocol protocol;
+
+    private MbtAsyncWaitOperation lock = new MbtAsyncWaitOperation<>();
+
+    public MbtBluetooth(Context context, BtProtocol protocol, MbtBluetoothManager mbtBluetoothManager) {
         this.context = context.getApplicationContext();
+        this.protocol = protocol;
         this.mbtBluetoothManager = mbtBluetoothManager;
 
         final BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
@@ -82,8 +93,7 @@ public abstract class MbtBluetooth implements IConnectable{
                 resetCurrentState();//reset the current connection state to IDLE
                 if(this instanceof MbtBluetoothA2DP && !currentState.equals(BtState.UPGRADING))
                     mbtBluetoothManager.disconnectAllBluetooth(false); //audio has failed to connect : we disconnect BLE
-            }
-            if(currentState.isDisconnectableState())  //if a failure occurred
+            }if(currentState.isDisconnectableState())  //if a failure occurred //todo check if a "else" is not missing here
                 disconnect(); //disconnect if a headset is connected
 
         }
@@ -102,10 +112,10 @@ public abstract class MbtBluetooth implements IConnectable{
     }
 
     protected void notifyBatteryReceived(int value){
-        mbtBluetoothManager.notifyDeviceInfoReceived(DeviceInfo.BATTERY, String.valueOf(value));
+        mbtBluetoothManager.notifyDeviceInfoReceived(DeviceInfo.BATTERY, String.valueOf(value));//todo keep battery value as integer ?
     }
 
-    void notifyHeadsetStatusEvent(byte code, int value){
+    void notifyHeadsetStatusEvent(byte code, int value){ //todo : only available in Melomind to this day > see if vpro will need it
 //        if(this.headsetStatusListener != null){
 //            if(code == 0x01)
 //                this.headsetStatusListener.onSaturationStateChanged(value);
@@ -119,7 +129,7 @@ public abstract class MbtBluetooth implements IConnectable{
 
     // Events Registration
 
-    public void notifyNewDataAcquired(@NonNull final byte[] data) {
+    public void notifyNewDataAcquired(@NonNull final byte[] data) {//todo call this method to notify the device manager (and all the managers in general) when the bluetooth receives data from the headset (saturation & offset for example instead of notifyNewHeadsetStatus located in the MbtBluetoothLe)
         mbtBluetoothManager.handleDataAcquired(data);
     }
 
@@ -149,23 +159,78 @@ public abstract class MbtBluetooth implements IConnectable{
         this.bluetoothAdapter.enable();
         Boolean b = lock.waitAndGetResult(5000);
         if(b == null){
+            Log.e(TAG, "impossible to enable BT adapter");
             return false;
         }
         return b;
     }
 
-    public BtState getCurrentState() { return currentState; }
+    public BluetoothDevice getCurrentDevice() {
+        return currentDevice;
+    }
 
-    void setCurrentState(BtState currentState) {
+    public BtState getCurrentState() { return currentState; }//todo rename getBluetoothState
+
+    void setCurrentState(BtState currentState) {//todo rename setBluetoothState
         if(!this.currentState.equals(currentState)){
             this.currentState = currentState;
         }
     }
 
+    protected boolean isConnectedDeviceReadyForCommand() {
+        return (currentState.ordinal() >= BtState.DATA_BT_CONNECTION_SUCCESS.ordinal());
+    }
+
+    /**
+     * This method waits until the device has returned a response
+     * related to the SDK request (blocking method).
+     */
+    protected Object startWaitingOperation(int timeout){ //todo rename startWait/wait
+        Log.d(TAG, "Wait response of device command ");
+        try {
+            return lock.waitOperationResult(timeout);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            LogUtils.e(TAG, "Device command response not received : "+e);
+        }
+        return null;
+    }
+
+    public void stopWaitingOperation(Object response) {
+        lock.stopWaitingOperation(response);
+    }
+
+    @VisibleForTesting
+    public void setLock(MbtAsyncWaitOperation lock) {
+        this.lock = lock;
+    }
+
+    /**
+     *
+     * @return true if a streaming is in progress, false otherwise
+     */
+    @Override
+    public boolean isStreaming() {
+        return streamState == StreamState.STARTED || streamState.equals(StreamState.STREAMING);
+    }
+
+
+
+        /**
+         * Whenever there is a new stream state, this method is called to notify the bluetooth manager about it.
+         * @param newStreamState the new stream state based on {@link StreamState the StreamState enum}
+         */
+    @Override
+    public void notifyStreamStateChanged(StreamState newStreamState) {
+        LogUtils.i(TAG, "new stream state " + newStreamState.toString());
+
+        streamState = newStreamState;
+        mbtBluetoothManager.notifyStreamStateChanged(newStreamState);
+    }
+
     /**
      * Disable then enable the bluetooth adapter
      */
-    public boolean resetMobileDeviceBluetoothAdapter() {
+    boolean resetMobileDeviceBluetoothAdapter() {
         LogUtils.d(TAG, "Reset Bluetooth adapter");
 
         bluetoothAdapter.disable();
