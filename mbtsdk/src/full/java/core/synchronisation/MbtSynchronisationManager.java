@@ -14,6 +14,7 @@ import core.eeg.MbtEEGManager;
 import core.eeg.storage.MbtEEGPacket;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.ConnectionStateEvent;
+import utils.LogUtils;
 
 import static utils.MatrixUtils.invertFloatMatrix;
 
@@ -68,8 +69,9 @@ public final class MbtSynchronisationManager extends BaseModuleManager {
      */
     @Subscribe(threadMode = ThreadMode.ASYNC)
     public void onNewPackets(@NonNull final ClientReadyEEGEvent event) {
+        LogUtils.d(TAG, "New packet: "+event.getEegPackets().toString());
         if(streamer != null)
-            streamer.execute(event.getEegPackets());
+            streamer.execute(getPacketWithInvertedMatrix(event.getEegPackets()));
 
     }
 
