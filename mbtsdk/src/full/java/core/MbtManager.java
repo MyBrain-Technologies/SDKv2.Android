@@ -49,6 +49,7 @@ import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.ConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
 import eventbus.events.FirmwareUpdateClientEvent;
+import eventbus.events.SignalProcessingEvent;
 import features.MbtDeviceType;
 import features.MbtFeatures;
 import mbtsdk.com.mybraintech.mbtsdk.R;
@@ -95,6 +96,7 @@ public class MbtManager{
     private DeviceBatteryListener<BaseError> deviceInfoListener;
     @Nullable
     private DeviceStatusListener deviceStatusListener;
+
 
     public MbtManager(Context context) {
         this.mContext = context;
@@ -221,6 +223,33 @@ public class MbtManager{
         this.oadStateListener = stateListener;
         DeviceEvents.StartOADUpdate event = new DeviceEvents.StartOADUpdate(firmwareVersion);
         MbtEventBus.postEvent(event);
+    }
+
+    /**
+     * Apply a bandpass filter to the input signal to keep frequencies included between
+     * @param minFrequency and
+     * @param maxFrequency .
+     * @param size is the number of EEG data of one channel
+     * @param inputData is the array of EEG data to filter for one channel
+     * @param resultCallback is the callback that returns the filtered signal
+     */
+    public void bandpassFilter(float minFrequency, float maxFrequency, int size, @NonNull float[] inputData, @NonNull final SimpleRequestCallback<float[]> resultCallback) {
+            if (resultCallback == null)
+                return;
+            if(inputData == null || inputData.length == 0 || size < 0)
+                resultCallback.onRequestComplete(null);
+
+            MbtEventBus.postEvent(new SignalProcessingEvent.GetBandpassFilter(minFrequency, maxFrequency, inputData, size),
+                    new MbtEventBus.Callback<SignalProcessingEvent.PostBandpassFilter>() {
+                        @Override
+                        @Subscribe
+                        public Void onEventCallback(SignalProcessingEvent.PostBandpassFilter filteredSignal) {
+                            MbtEventBus.registerOrUnregister(false, this);
+                            resultCallback.onRequestComplete(filteredSignal.getOutputSignal());
+                            return null;
+                        }
+                    });
+
     }
 
     /**

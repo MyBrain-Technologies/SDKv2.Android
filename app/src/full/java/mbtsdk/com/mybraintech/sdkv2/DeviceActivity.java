@@ -122,7 +122,7 @@ public class DeviceActivity extends AppCompatActivity {
 
             @Override
             public void onNewPackets(@NonNull final MbtEEGPacket mbtEEGPackets) {
-                Log.d(TAG, " onNewPacket");
+                Log.d(TAG, " onNewPacket "+mbtEEGPackets.toString());
                 if(eegGraph == null)
                     AsyncUtils.executeAsync(new Runnable() {
                         @Override
@@ -292,6 +292,7 @@ public class DeviceActivity extends AppCompatActivity {
                             .setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)
                             .useQualities()
                             .createForDevice(deviceType));
+
                 } else { //streaming is in progress : stopping streaming
                     stopStream(); // set false to isStreaming et null to the eegListener
                 }
