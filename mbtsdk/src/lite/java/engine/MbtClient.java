@@ -104,6 +104,7 @@ public final class MbtClient {
             return;
         }
 
+
         if(!config.isScanDurationValid()){
             config.getConnectionStateListener().onError(ConfigError.ERROR_INVALID_PARAMS,ConfigError.SCANNING_MINIMUM_DURATION);
             return;
@@ -119,6 +120,7 @@ public final class MbtClient {
         }
 
         this.mbtManager.connectBluetooth(config.getConnectionStateListener(),config.connectAudio(), config.getDeviceName(), config.getDeviceQrCode(), config.getDeviceType(), config.getMtu());
+
     }
 
     /**

@@ -33,6 +33,8 @@ import core.device.model.MelomindsQRDataBase;
 import core.device.model.FirmwareVersion;
 import core.eeg.MbtEEGManager;
 import core.recording.MbtRecordingManager;
+
+import core.synchronisation.MbtSynchronisationManager;
 import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
 import engine.clientevents.BluetoothError;
@@ -50,6 +52,7 @@ import eventbus.events.ConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
 import eventbus.events.FirmwareUpdateClientEvent;
 import eventbus.events.SignalProcessingEvent;
+
 import features.MbtDeviceType;
 import features.MbtFeatures;
 import mbtsdk.com.mybraintech.mbtsdk.R;
@@ -59,6 +62,8 @@ import static mbtsdk.com.mybraintech.mbtsdk.BuildConfig.BLUETOOTH_ENABLED;
 import static mbtsdk.com.mybraintech.mbtsdk.BuildConfig.DEVICE_ENABLED;
 import static mbtsdk.com.mybraintech.mbtsdk.BuildConfig.EEG_ENABLED;
 import static mbtsdk.com.mybraintech.mbtsdk.BuildConfig.RECORDING_ENABLED;
+import static mbtsdk.com.mybraintech.mbtsdk.BuildConfig.SYNCHRONISATION_ENABLED;
+
 
 /**
  * MbtManager is responsible for managing communication between all the package managers
@@ -112,6 +117,8 @@ public class MbtManager{
             registerManager(new MbtEEGManager(mContext)); //todo change protocol must not be initialized here : when connectBluetooth is called
         if(RECORDING_ENABLED)
             registerManager(new MbtRecordingManager(mContext));
+        if(SYNCHRONISATION_ENABLED)
+            registerManager(new MbtSynchronisationManager(mContext));
     }
 
     /**
@@ -175,9 +182,8 @@ public class MbtManager{
         MbtEventBus.postEvent(
                 new StreamRequestEvent(START,
                         streamConfig.getRecordConfig() != null,
-                        streamConfig.shouldComputeQualities(),
-                        (deviceStatusListener != null),
-                        streamConfig.getRecordConfig()));
+                        streamConfig));
+
     }
 
     /**
@@ -185,20 +191,25 @@ public class MbtManager{
      */
     public void stopStream(@Nullable RecordConfig recordConfig){
         MbtEventBus.postEvent(
-                new StreamRequestEvent(STOP, false,
-                        false, false, recordConfig));
+                new StreamRequestEvent(STOP,
+                        false,
+                        recordConfig));
     }
 
     public void startRecord(Context context){
         MbtEventBus.postEvent(
-                new StreamRequestEvent(START, true,
-                        false, (deviceStatusListener != null), new RecordConfig.Builder(context).create()));
+                new StreamRequestEvent(START,
+                        true,
+                        new RecordConfig.Builder(context).create()));
+
     }
 
     public void stopRecord(@NonNull RecordConfig recordConfig){
         MbtEventBus.postEvent(
-                new StreamRequestEvent(STOP, eegListener != null, //if eeg listener is null, it means that the client has not previously called start stream (might have called start record), so the SDK should stop the streaming started when the client has called start record
-                        false, false, recordConfig));
+                new StreamRequestEvent(STOP,
+                        eegListener != null, //if eeg listener is null, it means that the client has not previously called start stream (might have called start record), so the SDK should stop the streaming started when the client has called start record
+                        recordConfig));
+
     }
 
     /**
@@ -261,6 +272,7 @@ public class MbtManager{
     }
 
     /**
+
      * Sets the {@link EegListener} to the connectionStateListener value
      * @param EEGListener the new {@link EegListener}. Set it to null if you want to reset the listener
      */

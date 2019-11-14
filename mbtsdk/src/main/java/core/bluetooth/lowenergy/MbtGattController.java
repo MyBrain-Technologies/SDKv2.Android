@@ -265,6 +265,7 @@ final class MbtGattController extends BluetoothGattCallback {
         LogUtils.i(TAG, "Received a [onDescriptorWrite] callback with status "+((status == BluetoothGatt.GATT_SUCCESS) ? "SUCCESS" : "FAILURE"));
 
         mbtBluetoothLE.stopWaitingOperation(status == BluetoothGatt.GATT_SUCCESS);
+
         mbtBluetoothLE.onNotificationStateChanged(status == BluetoothGatt.GATT_SUCCESS, descriptor.getCharacteristic(), descriptor.getValue() == BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
     }
 
@@ -281,7 +282,9 @@ final class MbtGattController extends BluetoothGattCallback {
     @Override
     public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
         super.onMtuChanged(gatt, mtu, status);
+
         mbtBluetoothLE.stopWaitingOperation(mtu);
+
     }
 
     /**
@@ -326,6 +329,7 @@ final class MbtGattController extends BluetoothGattCallback {
             case MBX_LEAD_OFF_EVT:
             case MBX_BAD_EVT:
             default:
+
                 break;
         }
     }
@@ -336,8 +340,6 @@ final class MbtGattController extends BluetoothGattCallback {
                  mbtBluetoothLE.notifyConnectionResponseReceived(event, response[0]); //connection and disconnection response are composed of only one byte
              mbtBluetoothLE.stopWaitingOperation(response);
          }
-
-
     }
 
     /**
@@ -358,4 +360,5 @@ final class MbtGattController extends BluetoothGattCallback {
                 || (!BitUtils.areByteEquals(MBX_CONNECT_IN_A2DP.getResponseCodeForKey(CMD_CODE_CONNECT_IN_A2DP_IN_PROGRESS), response[0])//wait another response until timeout if the connection is not in progress
                 && !BitUtils.areByteEquals(MBX_CONNECT_IN_A2DP.getResponseCodeForKey(CMD_CODE_CONNECT_IN_A2DP_LINKKEY_INVALID), response[0])); //wait another response until timeout if the linkkey invalid response is returned
     }
+
 }

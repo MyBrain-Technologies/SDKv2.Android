@@ -79,6 +79,7 @@ public final class FileManager {
     public static String createDirectory(@NonNull final Context context,
                                          @Nullable String folder,
                                          boolean useExternalStorage)
+
     {
         File parent = new File(
                 (useExternalStorage && ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE)
@@ -106,6 +107,7 @@ public final class FileManager {
                                   boolean useExternalStorage)
     {
         String absolutePath = createDirectory(context, folder, useExternalStorage);
+
         if (absolutePath == null){
             Log.e(TAG, "Impossible to create the folder: "+folder);
             return null;
@@ -151,6 +153,7 @@ public final class FileManager {
             String json = MbtJsonBuilder.serializeRecording(device, recording, totalRecordingInSession, comments, recordingParams, subjectId);
             if(json != null)
                 fw.append(json);
+
             fw.close();
 
             //This block of code only serves to see the file in USB storage mode

@@ -23,6 +23,7 @@ public interface BluetoothCommands {
     @Keep
     class Mtu extends BluetoothCommand<Integer, BaseError>{ //Replace BaseError by a specific CommandError & refactor to make the Mtu extends an interface common to all the classes defined in this file
 
+
         /**
          * The new Maximum Transmission Unit
          * (maximum size of the data sent by the headset to the SDK)
@@ -61,6 +62,7 @@ public interface BluetoothCommands {
          * The onRequestSent callback is triggered if the command has successfully been sent.
          */
         public Mtu(@IntRange(from = MINIMUM, to = MAXIMUM) int mtu, CommandInterface.CommandCallback<Integer> commandCallback) { //todo add @NonNull annotation and throw exception is a null commandCallback is passed in input
+
             this.mtu = mtu;
             this.commandCallback = commandCallback;
             this.init();

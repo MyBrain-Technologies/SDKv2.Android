@@ -148,6 +148,7 @@ public final class ConnectionConfig {
 
     public void setDeviceType(MbtDeviceType deviceType) {
         this.deviceType = deviceType;
+
     }
 
     /**

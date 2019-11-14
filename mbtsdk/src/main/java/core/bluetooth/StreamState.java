@@ -1,7 +1,11 @@
 package core.bluetooth;
+import android.support.annotation.Keep;
+
 /**
  * The differents stream states
  */
+@Keep
+
 public enum StreamState{
     /**
      * No stream is in progress and no start and stop operation has been launched. This is the

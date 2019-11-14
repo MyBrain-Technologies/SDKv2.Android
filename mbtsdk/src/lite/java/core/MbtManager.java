@@ -42,6 +42,7 @@ import engine.clientevents.EegError;
 import engine.clientevents.EegListener;
 import engine.clientevents.HeadsetDeviceError;
 import engine.clientevents.OADStateListener;
+
 import eventbus.MbtEventBus;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.ConnectionStateEvent;
@@ -107,6 +108,7 @@ public class MbtManager{
             registerManager(new MbtEEGManager(mContext)); //todo change protocol must not be initialized here : when connectBluetooth is called
         if(RECORDING_ENABLED)
             registerManager(new MbtRecordingManager(mContext));
+
     }
 
     /**
@@ -121,20 +123,25 @@ public class MbtManager{
      * Perform a new Bluetooth connection.
      * @param connectionStateListener a set of callback that will notify the user about connection progress.
      */
+
     public void connectBluetooth(@NonNull ConnectionStateListener<BaseError> connectionStateListener,
                                  boolean connectAudioIfDeviceCompatible,
                                  String deviceNameRequested,
                                  String deviceQrCodeRequested,
                                  MbtDeviceType deviceTypeRequested,
                                  int mtu){
+
         this.connectionStateListener = connectionStateListener;
 
         if(deviceNameRequested != null && (!deviceNameRequested.startsWith(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX) && !deviceNameRequested.startsWith(MbtFeatures.VPRO_DEVICE_NAME_PREFIX) )){
             this.connectionStateListener.onError(HeadsetDeviceError.ERROR_PREFIX," "+ (deviceTypeRequested.equals(MbtDeviceType.MELOMIND) ? MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX : MbtFeatures.VPRO_DEVICE_NAME_PREFIX));
+
         }else if(deviceQrCodeRequested != null && (!deviceQrCodeRequested.startsWith(MbtFeatures.QR_CODE_NAME_PREFIX))){
             this.connectionStateListener.onError(HeadsetDeviceError.ERROR_PREFIX," "+MbtFeatures.QR_CODE_NAME_PREFIX);
+
         }else if(deviceQrCodeRequested != null && deviceNameRequested != null && !deviceNameRequested.equals(new MelomindsQRDataBase(mContext,  true).get(deviceQrCodeRequested))){
             this.connectionStateListener.onError(HeadsetDeviceError.ERROR_MATCHING, mContext.getString(R.string.aborted_connection));
+
         }else{
             MbtEventBus.postEvent(new StartOrContinueConnectionRequestEvent(true, deviceNameRequested, deviceQrCodeRequested, deviceTypeRequested, mtu, connectAudioIfDeviceCompatible));
         }
@@ -171,7 +178,7 @@ public class MbtManager{
                 new StreamRequestEvent(START,
                         streamConfig.getRecordConfig() != null,
                         streamConfig.shouldComputeQualities(),
-                        (deviceStatusListener != null),
+                        deviceStatusListener != null,
                         streamConfig.getRecordConfig()));
     }
 
@@ -201,6 +208,7 @@ public class MbtManager{
         MbtEventBus.postEvent(
                 new StreamRequestEvent(START, true,
                         false, (deviceStatusListener != null), new RecordConfig.Builder(context).create()));
+
     }
 
     public void stopRecord(@NonNull RecordConfig recordConfig){

@@ -50,7 +50,6 @@ public final class MbtRecordingManager extends BaseModuleManager {
         recordConfig = request.getRecordConfig();
 
         if (request.isStart()) { //start streaming
-
             if(recordBuffering != null)
                 recordBuffering.resetPacketsBuffer();
             else
@@ -63,6 +62,7 @@ public final class MbtRecordingManager extends BaseModuleManager {
                 if(recordConfig != null && !recordBuffering.isEegPacketsBufferEmpty())
                     storeRecording(); //Save the EEG packets and associated data on a JSON file
 
+
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -70,8 +70,6 @@ public final class MbtRecordingManager extends BaseModuleManager {
             recordConfig = null;
         }
     }
-
-
 
     @Subscribe(threadMode = ThreadMode.ASYNC)
     public void onConnectionStateChanged(ConnectionStateEvent event) {
@@ -103,7 +101,6 @@ public final class MbtRecordingManager extends BaseModuleManager {
     public void onNewPackets(@NonNull final ClientReadyEEGEvent event) {
         if(recordBuffering != null)
             recordBuffering.record(event.getEegPackets());
-
     }
 
     private void storeRecording(){
@@ -121,7 +118,6 @@ public final class MbtRecordingManager extends BaseModuleManager {
 
         if(!recordConfig.enableMultipleRecordings())
             recordBuffering = null;
+
     }
-
-
 }

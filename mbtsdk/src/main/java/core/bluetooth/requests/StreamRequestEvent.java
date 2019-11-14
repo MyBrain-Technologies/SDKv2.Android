@@ -4,6 +4,8 @@ package core.bluetooth.requests;
 import android.util.Log;
 
 import config.RecordConfig;
+import config.StreamConfig;
+import config.SynchronisationConfig;
 
 /**
  * An event class when a stream request is being sent by the user.
@@ -12,16 +14,21 @@ public class StreamRequestEvent extends BluetoothRequests {
 
     private final boolean isStart;
     private final boolean isRecord;
-    private final boolean monitorDeviceStatus;
-    private final boolean computeQualities;
+    private final StreamConfig streamConfig;
     private final RecordConfig recordConfig;
 
-    public StreamRequestEvent(boolean isStartRequest, boolean isRecordRequest, boolean computeQualities, boolean monitorDeviceStatus, RecordConfig recordConfig){
+    public StreamRequestEvent(boolean isStartRequest, boolean isRecordRequest, StreamConfig streamConfig){
         this.isStart = isStartRequest;
         this.isRecord = isRecordRequest;
-        this.monitorDeviceStatus = monitorDeviceStatus;
-        this.computeQualities = computeQualities;
+        this.streamConfig = streamConfig;
+        this.recordConfig = null;
+    }
+
+    public StreamRequestEvent(boolean isStartRequest, boolean isRecordRequest, RecordConfig recordConfig){
+        this.isStart = isStartRequest;
+        this.isRecord = isRecordRequest;
         this.recordConfig = recordConfig;
+        this.streamConfig = null;
     }
 
     public boolean isStart() {
@@ -29,15 +36,15 @@ public class StreamRequestEvent extends BluetoothRequests {
     }
 
     public boolean monitorDeviceStatus() {
-        return monitorDeviceStatus;
+        return streamConfig != null && streamConfig.getDeviceStatusListener() != null;
     }
 
     public boolean computeQualities() {
-        return computeQualities;
+        return streamConfig != null && streamConfig.shouldComputeQualities();
     }
 
     public boolean recordData() {
-        return recordConfig != null;
+        return recordConfig != null || streamConfig != null && streamConfig.getRecordConfig() != null;
     }
 
     public boolean startStream() {
@@ -50,8 +57,16 @@ public class StreamRequestEvent extends BluetoothRequests {
         return !isStart && !isRecord;
     }
 
-    public RecordConfig getRecordConfig() {
-        return recordConfig;
+    public StreamConfig getStreamConfig() {
+        return streamConfig;
     }
 
+    public RecordConfig getRecordConfig() {
+        return recordConfig != null ? recordConfig :
+                streamConfig != null ? streamConfig.getRecordConfig() : null;
+    }
+
+    public SynchronisationConfig.AbstractConfig getSynchronisationConfig(){
+        return streamConfig == null ? null : streamConfig.getSynchronisationConfig();
+    }
 }

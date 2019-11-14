@@ -144,6 +144,7 @@ public class MelomindDevice extends MbtDevice{
                                 MbtFeatures.DEFAULT_SAMPLE_RATE :
                                 ByteBuffer.wrap(sampRate).getInt());
 
+
     }
 
     /**

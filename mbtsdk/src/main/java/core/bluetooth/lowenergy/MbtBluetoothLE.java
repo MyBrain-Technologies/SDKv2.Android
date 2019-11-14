@@ -356,6 +356,7 @@ public class MbtBluetoothLE
                 "enable notification... now waiting for confirmation from headset.");
 
         Boolean result = (Boolean) startWaitingOperation(MbtConfig.getBluetoothA2DpConnectionTimeout());
+
         return result == null ? false : result;
 
     }
@@ -491,6 +492,7 @@ public class MbtBluetoothLE
      * @return immediatly false on error, true otherwise
      */
     synchronized boolean startWriteOperation(@NonNull UUID service, @NonNull UUID characteristic, byte[] payload){
+
         if(!checkServiceAndCharacteristicValidity(service, characteristic)) {
             LogUtils.e(TAG, "Error: failed to check service and characteristic validity" + characteristic.toString());
             return false;
@@ -498,13 +500,12 @@ public class MbtBluetoothLE
 
         //Send buffer
         this.gatt.getService(service).getCharacteristic(characteristic).setValue(payload);
-        //Log.d(TAG, "write "+ Arrays.toString(gatt.getService(service).getCharacteristic(characteristic).getValue()));
         if (!this.gatt.writeCharacteristic(gatt.getService(service).getCharacteristic(characteristic))) { //the mbtgattcontroller onCharacteristicWrite callback is invoked, reporting the result of the operation.
             LogUtils.e(TAG, "Error: failed to write characteristic " + characteristic.toString());
             return false;
         }
 
-        return true;
+       return true;
     }
 
 
@@ -668,6 +669,7 @@ public class MbtBluetoothLE
         mbtBluetoothManager.updateConnectionState(isCompleted); //do nothing if the current state is CONNECTED_AND_READY
     }
 
+
     /**
      * This method handle a single command in order to
      * reconfigure some headset or bluetooth streaming parameters
@@ -701,6 +703,7 @@ public class MbtBluetoothLE
 
                     if (command.isResponseExpected()) {
                         response = startWaitingOperation(11000);
+
                         command.onResponseReceived(response);
                     }
                 }
@@ -725,6 +728,7 @@ public class MbtBluetoothLE
 
         return false;
     }
+
 
     /**
      * Initiates a change MTU request in order to have bigger (or smaller) bluetooth notifications.

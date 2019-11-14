@@ -6,9 +6,6 @@ import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
 
-import core.eeg.signalprocessing.Frequency;
-import core.eeg.signalprocessing.MbtEegFeatures;
-
 @Keep
 public final class MbtEEGPacket {
     @NonNull
@@ -144,6 +141,10 @@ public final class MbtEEGPacket {
 
     public float[][] getFeatures() {
         return features;
+    }
+
+    public ArrayList<Float> getFeature(Feature feature) {
+        return getFeature(feature.ordinal());
     }
 
     public ArrayList<Float> getFeature(int frequency) {

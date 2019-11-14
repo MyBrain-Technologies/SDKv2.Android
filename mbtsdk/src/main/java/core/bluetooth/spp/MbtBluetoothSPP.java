@@ -14,9 +14,6 @@ import android.support.annotation.WorkerThread;
 import android.text.TextUtils;
 import android.util.Log;
 
-
-import org.apache.commons.lang.ArrayUtils;
-
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -285,6 +282,7 @@ public final class MbtBluetoothSPP
 
     private void sendKeepAlive(boolean keepAlive) {
         final byte[] msg = new byte[]{0};//new DeviceStreamingCommands.StartEEGAcquisition().serialize();
+
         if (keepAlive) {
             if (this.keepAliveTimer != null)
                 this.keepAliveTimer.cancel();
@@ -472,6 +470,7 @@ public final class MbtBluetoothSPP
                                     if (previousdataBuffer != null && !unknownByteDetected)
                                         notifyNewDataAcquired(previousdataBuffer);
 
+
                                     previousdataBuffer = finalData;
                                     unknownByteDetected = false;
                                 }
@@ -539,6 +538,7 @@ public final class MbtBluetoothSPP
 
                         } else {
                             //Log.w(TAG, "Unknown command found = " + currentByte);
+
                             resetStatus();
                         }
                         break;
@@ -643,6 +643,7 @@ public final class MbtBluetoothSPP
 
                     if (command.isResponseExpected()) {
                         response = startWaitingOperation(11000);
+
                         command.onResponseReceived(response);
                     }
                 }

@@ -24,6 +24,7 @@ public class EEGConfigEvent {
         this.config = (device.deviceType.equals(MbtDeviceType.MELOMIND) ?
                 MelomindDevice.convertRawInternalConfig(config) : VProDevice.convertRawInternalConfig(config)) ;
         Log.d(EEGConfigEvent.class.getSimpleName(), "config "+ Arrays.toString(config));
+
         this.device = device;
     }
 

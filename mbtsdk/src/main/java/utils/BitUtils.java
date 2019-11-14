@@ -156,6 +156,7 @@ public class BitUtils {
             return 0f;
     }
 
+
     /**
      * Return true if valueToCheck is 0
      * Return false if valueToCheck is 1

@@ -39,6 +39,7 @@ public abstract class DeviceCommand <T, U extends BaseError> extends CommandInte
 
     DeviceCommand(DeviceCommandEvent commandEvent) {
         this.commandEvent = commandEvent;
+
     }
 
     /**

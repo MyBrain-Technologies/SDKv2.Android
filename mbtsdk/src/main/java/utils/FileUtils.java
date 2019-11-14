@@ -40,7 +40,7 @@ public final class FileUtils {
             throw new ExceptionUtils.NullArg("destination");
         if(source.isDirectory()){
 
-            //if directory not exists, create it
+            //if directory not exists, createForDevice it
             if(!destination.exists()){
                 destination.mkdir();
             }

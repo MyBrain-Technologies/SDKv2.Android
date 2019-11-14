@@ -39,6 +39,7 @@ import eventbus.events.BluetoothEEGEvent;
 import eventbus.events.EEGConfigEvent;
 import eventbus.events.ConnectionStateEvent;
 import eventbus.events.SignalProcessingEvent;
+
 import features.MbtFeatures;
 import mbtsdk.com.mybraintech.mbtsdk.BuildConfig;
 import utils.AsyncUtils;
@@ -233,6 +234,7 @@ public final class MbtEEGManager extends BaseModuleManager {
                         int mSampRate = temp.get(0).size();
                         int mPacketLentgh = mSampRate;
                         qts = MBTSignalQualityChecker.computeQualitiesForPacketNew(mSampRate, mPacketLentgh, temp);
+
                         temp.clear();
                         for (float q : qts) {
                             qualitiesList.add(q);
@@ -291,6 +293,7 @@ public final class MbtEEGManager extends BaseModuleManager {
      */
     private HashMap<String, float[]> calibrate(MbtEEGPacket... packets) {
         return MBTCalibrator.calibrateNew(sampRate, packetLength, ContextSP.smoothingDuration, packets);
+
     }
 
     /**

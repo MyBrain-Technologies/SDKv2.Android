@@ -256,6 +256,7 @@ public final class MbtEEGManager extends BaseModuleManager {
     public void onStreamStateChanged(StreamState newState) {
         if (newState == StreamState.STOPPED && dataAcquisition != null)
             resetBuffers((byte) UNCHANGED_VALUE, UNCHANGED_VALUE, (byte) 0);
+
     }
 
 

@@ -213,6 +213,7 @@ public class HomeActivity extends AppCompatActivity{
         public void onDeviceConnected(MbtDevice connectedDevice) {
             device = connectedDevice;
             deviceName = device.getProductName();
+
             toast.cancel();
             deinitCurrentActivity();
         }
@@ -224,6 +225,7 @@ public class HomeActivity extends AppCompatActivity{
         @Override
         public void onDeviceDisconnected(MbtDevice device) {
             device = null;
+
             if(!toast.getView().isShown())
                 notifyUser(getString(R.string.no_connected_headset));
             if(isCancelled)
@@ -419,6 +421,7 @@ public class HomeActivity extends AppCompatActivity{
         if(connectAudioIfDeviceCompatible) {
             builder.connectAudioIfDeviceCompatible();
         }
+
         sdkClient.connectBluetooth(builder.createForDevice(deviceType));
     }
 

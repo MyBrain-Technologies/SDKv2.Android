@@ -111,6 +111,7 @@ public class DeviceActivity extends AppCompatActivity {
             @Override
             public void onError(BaseError error, String additionalInfo) {
                 LogUtils.w(TAG, "error : " + error.getMessage());
+
                 Toast.makeText(DeviceActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
                 if (isStreaming) {
                     stopStream();
@@ -227,6 +228,7 @@ public class DeviceActivity extends AppCompatActivity {
 
             public void onError(BaseError error, String additionalInfo) {
                 notifyUser(error.getMessage() + (additionalInfo != null ? additionalInfo : ""));
+
             }
         };
     }

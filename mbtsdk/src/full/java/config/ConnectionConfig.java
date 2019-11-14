@@ -38,6 +38,7 @@ public final class ConnectionConfig {
     @IntRange(from = BluetoothCommands.Mtu.MINIMUM,to = BluetoothCommands.Mtu.MAXIMUM)
     private int mtu;
 
+
     private final ConnectionStateListener<BaseError> connectionStateListener;
 
     private ConnectionConfig(String deviceName, String deviceQrCode, int maxScanDuration, boolean connectAudio, MbtDeviceType deviceType, int mtu, ConnectionStateListener<BaseError> connectionStateListener){
@@ -116,7 +117,7 @@ public final class ConnectionConfig {
     /**
      * By default, Bluetooth connection is only initiated for Data streaming but not for the Audio streaming
      */
-    public boolean connectAudio() { //todo only available for Melomind 
+    public boolean connectAudio() { //todo only available for Melomind
         return connectAudio;
     }
 
@@ -251,6 +252,7 @@ public final class ConnectionConfig {
 
         @NonNull
         public ConnectionConfig createForDevice(@NonNull MbtDeviceType deviceType){ //todo replace useless forDevice in createForDevice if Melomind Config and Vpro Config ?
+
             if(deviceType == null)
                 deviceType = MbtDeviceType.MELOMIND;
             return new ConnectionConfig(this.deviceName, this.deviceQrCode, this.maxScanDuration, this.connectAudio, deviceType, this.mtu, this.connectionStateListener);

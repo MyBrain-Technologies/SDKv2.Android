@@ -96,6 +96,7 @@ public class MbtRecordBuffering {
                 device.getInternalConfig().getStatusBytes() > 0);
         LogUtils.d(TAG, "New recording created : " + recording.toString());
 
+
         device.setAcquisitionLocations(recordConfig.getAcquisitionLocations());
         device.setReferencesLocations(recordConfig.getReferenceLocations());
         device.setGroundsLocation(recordConfig.getGroundLocations());
@@ -118,6 +119,8 @@ public class MbtRecordBuffering {
             if (recordingsBuffer.size() > 1)
                 FileManager.updateJSONWithCurrentRecordNb(recordingsBuffer);
         }
+
+        //resetPacketsBuffer(); //todo check (present in SDK_osc-lsl-streaming and  absent in dev
 
         if(!recordConfig.enableMultipleRecordings())
             recordingsBuffer = null;

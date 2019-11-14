@@ -131,6 +131,7 @@
         app:layout_constraintStart_toStartOf="@+id/guidelineEndStartStop"
         app:layout_constraintTop_toTopOf="@+id/guidelineBottomChannels" />
 
+
     <!-- VERTICAL GUIDELINES-->
 
 

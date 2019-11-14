@@ -1,17 +1,23 @@
 package mbtsdk.com.mybraintech.sdkv2;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 
+import android.text.InputType;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
+
+import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -27,13 +33,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 
+import command.DeviceStreamingCommands;
+import config.SynchronisationConfig;
 import core.bluetooth.StreamState;
 import core.device.event.DCOffsetEvent;
 import core.device.event.SaturationEvent;
 import core.bluetooth.BtState;
 import core.device.model.MbtDevice;
-import core.device.model.FirmwareVersion;
-import core.device.oad.OADState;
+
+import core.eeg.storage.Feature;
 import core.eeg.storage.MbtEEGPacket;
 import engine.MbtClient;
 
@@ -44,7 +52,6 @@ import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.BluetoothStateListener;
 import engine.clientevents.DeviceBatteryListener;
 import engine.clientevents.EegListener;
-import engine.clientevents.OADStateListener;
 import features.MbtDeviceType;
 import features.MbtFeatures;
 import utils.AsyncUtils;
@@ -281,17 +288,86 @@ public class DeviceActivity extends AppCompatActivity {
         channelsQuality = findViewById(R.id.channels_quality);
     }
 
+    private String ipAddress = "";
+    private int port = 8000;
+
     private void initStartStopStreamingButton() {
         startStopStreamingButton = findViewById(R.id.startStopStreamingButton);
         startStopStreamingButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 if (!isStreaming) { //streaming is not in progress : starting streaming
-                        startStream(new StreamConfig.Builder(eegListener)
-                            .setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)
-                            .useQualities()
-                            .createForDevice(deviceType));
+
+                    final AlertDialog.Builder alertDialogMain = new AlertDialog.Builder(DeviceActivity.this);
+                    final AlertDialog.Builder alertDialogAddress = new AlertDialog.Builder(DeviceActivity.this);
+                    final AlertDialog.Builder alertDialogPort = new AlertDialog.Builder(DeviceActivity.this);
+                    final EditText ipAddressEditText = new EditText(DeviceActivity.this);
+                    ipAddressEditText.setInputType(InputType.TYPE_CLASS_TEXT);
+                    final EditText portEditText = new EditText(DeviceActivity.this);
+                    portEditText.setInputType(InputType.TYPE_CLASS_NUMBER);
+
+                    LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT,
+                            LinearLayout.LayoutParams.MATCH_PARENT);
+                    ipAddressEditText.setLayoutParams(lp);
+                    portEditText.setLayoutParams(lp);
+                    //portEditText.setText(port);
+                    alertDialogMain.setCancelable(true);
+                    alertDialogMain.setTitle("Stream over OSC ?");
+                    alertDialogMain.setPositiveButton("YES", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                            alertDialogPort.setView(portEditText);
+                            alertDialogPort.setTitle("Enter the port");
+                            alertDialogPort.setNeutralButton("NEXT", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    port = Integer.parseInt(portEditText.getText().toString());
+                                    alertDialogAddress.setView(ipAddressEditText);
+                                    alertDialogAddress.setTitle("Enter the IP address");
+                                    alertDialogAddress.setNeutralButton("OK", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            ipAddress = ipAddressEditText.getText().toString();
+                                            startStream(new StreamConfig.Builder(eegListener)
+                                                    .setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)
+                                                    .useQualities()
+                                                    .configureAcquisitionFromDeviceCommand(new DeviceStreamingCommands.Triggers(true))
+                                                    .streamOverOSC(new SynchronisationConfig.OSC.Builder()
+                                                            .ipAddress(ipAddress)
+                                                            .streamRawEEG()
+                                                            .streamQualities()
+                                                            .streamStatus()
+                                                            .streamFeature(Feature.ALPHA_POWER)
+                                                            .streamFeature(Feature.ALPHA_RATIO)
+                                                            .port(port)
+                                                            .create())
+                                                    .createForDevice(deviceType));
+                                            updateStreaming();
+
+                                        }
+                                    });
+                                    alertDialogAddress.show();
+
+                                }
+                            });
+                            alertDialogPort.show();
+                        }
+                    });
+                    alertDialogMain.setNegativeButton("NO", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+
+                            startStream(new StreamConfig.Builder(eegListener)
+                                    .setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)
+                                    .useQualities()
+                                    .configureAcquisitionFromDeviceCommand(new DeviceStreamingCommands.Triggers(true))
+                                    .createForDevice(deviceType));
+                            updateStreaming();
+                        }
+                    });
+                    alertDialogMain.show();
 
                 } else { //streaming is in progress : stopping streaming
                     stopStream(); // set false to isStreaming et null to the eegListener

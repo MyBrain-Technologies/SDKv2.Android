@@ -198,7 +198,7 @@ public class HomeActivity extends AppCompatActivity{
          */
         @Override
         public void onError(BaseError error, String additionalInfo) {
-            Log.e("HomeActivity", "onError received "+error.getMessage()+ (additionalInfo != null ? additionalInfo : ""));
+            Log.e(TAG, "onError received "+error.getMessage()+ (additionalInfo != null ? additionalInfo : ""));
             isErrorRaised = true;
             updateScanning(false);
             toast = Toast.makeText(HomeActivity.this, error.getMessage()+ (additionalInfo != null ? additionalInfo : ""), Toast.LENGTH_LONG);
