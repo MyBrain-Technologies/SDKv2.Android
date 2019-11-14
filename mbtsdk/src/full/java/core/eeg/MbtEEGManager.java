@@ -365,7 +365,7 @@ public final class MbtEEGManager extends BaseModuleManager {
     }
 
     @Subscribe
-    public void onBandpassFilter(SignalProcessingEvent.GetBandpassFilter config){
+    public void applyBandpassFilter(SignalProcessingEvent.GetBandpassFilter config){
         MbtEventBus.postEvent(
                 new SignalProcessingEvent.PostBandpassFilter(
                         MBTEegFilter.bandpassFilter(
