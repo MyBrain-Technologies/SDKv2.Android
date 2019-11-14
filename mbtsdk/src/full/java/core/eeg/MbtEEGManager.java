@@ -369,10 +369,10 @@ public final class MbtEEGManager extends BaseModuleManager {
         MbtEventBus.postEvent(
                 new SignalProcessingEvent.PostBandpassFilter(
                         MBTEegFilter.bandpassFilter(
-                                config.getFrequencyBoundMin(),
-                                config.getFrequencyBoundMax(),
+                                config.getMinFrequency(),
+                                config.getMaxFrequency(),
                                 config.getSize(),
-                                config.getInputData())
+                                config.getInputSignal())
                 )
         );
     }

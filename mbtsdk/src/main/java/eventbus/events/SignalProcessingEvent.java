@@ -1,47 +1,48 @@
 package eventbus.events;
 
-import android.support.annotation.NonNull;
-
-import java.util.ArrayList;
-
-import core.eeg.storage.MbtEEGPacket;
 
 /**
- * Event posted when a raw EEG data array has been converted to user-readable EEG matrix
- * Event data contains the converted EEG data matrix
+ * Event posted when a raw EEG data array has to be filtered using a bandpass filter
+ * Event data contains the bounds of the bandpass filter 
  *
  * @author Sophie Zecri on 24/05/2018
  */
-public interface SignalProcessingEvent{ //Events are just POJO without any specific implementation
+public interface SignalProcessingEvent{
 
-    class GetBandpassFilter { //Events are just POJO without any specific implementation
+    /**
+     * Request to apply a bandpass filter to the input signal to keep frequencies included between
+     */
+    class GetBandpassFilter { 
 
-        private float frequencyBoundMin;
-        private float frequencyBoundMax;
-        private float[] inputData;
+        private float minFrequency;
+        private float maxFrequency;
+        private float[] inputSignal;
         private int size;
 
-        public GetBandpassFilter(float frequencyBoundMin, float frequencyBoundMax, float[] inputData, int size) {
-            this.frequencyBoundMin = frequencyBoundMin;
-            this.frequencyBoundMax = frequencyBoundMax;
-            this.inputData = inputData;
+        /**
+         * Apply a bandpass filter to the input signal to keep frequencies included between
+         * @param minFrequency and
+         * @param maxFrequency .
+         * @param size is the number of EEG data of one channel
+         * @param inputData is the array of EEG data to filter for one channel
+         */
+        public GetBandpassFilter(float minFrequency, float maxFrequency, float[] inputData, int size) {
+            this.minFrequency = minFrequency;
+            this.maxFrequency = maxFrequency;
+            this.inputSignal = inputData;
             this.size = size;
         }
 
-        public GetBandpassFilter(float frequencyBoundMin) {
-            this.frequencyBoundMin = frequencyBoundMin;
+        public float getMinFrequency() {
+            return minFrequency;
         }
 
-        public float getFrequencyBoundMin() {
-            return frequencyBoundMin;
+        public float getMaxFrequency() {
+            return maxFrequency;
         }
 
-        public float getFrequencyBoundMax() {
-            return frequencyBoundMax;
-        }
-
-        public float[] getInputData() {
-            return inputData;
+        public float[] getInputSignal() {
+            return inputSignal;
         }
 
         public int getSize() {
@@ -49,16 +50,19 @@ public interface SignalProcessingEvent{ //Events are just POJO without any speci
         }
     }
 
-    class PostBandpassFilter { //Events are just POJO without any specific implementation
+    /**
+     * Return the result of a bandpass filter operation on a signal
+     */
+    class PostBandpassFilter {
 
-        private float[] outputData;
+        private float[] outputSignal;
 
         public PostBandpassFilter(float[] outputData) {
-            this.outputData = outputData;
+            this.outputSignal = outputData;
         }
 
-        public float[] getOutputData() {
-            return outputData;
+        public float[] getOutputSignal() {
+            return outputSignal;
         }
     }
 
