@@ -26,11 +26,9 @@ import engine.clientevents.ConnectionStateListener;
 import engine.clientevents.DeviceBatteryListener;
 import engine.clientevents.EegListener;
 
-import engine.clientevents.HeadsetDeviceError;
 import engine.clientevents.OADStateListener;
 import features.MbtFeatures;
 import features.MbtDeviceType;
-import features.MbtFeatures;
 
 /**
  * Created by Etienne on 08/02/2018.
@@ -318,6 +316,19 @@ public final class MbtClient {
     public void updateFirmware(@NonNull FirmwareVersion firmwareVersion, @Nullable OADStateListener<BaseError> stateListener){
         mbtManager.updateFirmware(firmwareVersion, stateListener);
     }
+
+    /**
+     * Apply a bandpass filter to the input signal to keep frequencies included between
+     * @param minFrequency and
+     * @param maxFrequency .
+     * @param size is the number of EEG data of one channel
+     * @param inputData is the array of EEG data to filter for one channel
+     * @param resultCallback is the callback that returns the filtered signal
+     */
+    public void bandpassFilter(float minFrequency, float maxFrequency, int size,@NonNull float[] inputData,@NonNull SimpleRequestCallback<float[]> resultCallback){
+        mbtManager.bandpassFilter(minFrequency, maxFrequency, size, inputData, resultCallback);
+    }
+
 
     @Keep
     private static class MbtClientBuilder {

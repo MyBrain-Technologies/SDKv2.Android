@@ -2,14 +2,14 @@
 #include <jni.h>
 /* Header for class mybraintech_com_mbtsdk_core_signalprocessing_MBTSignalQualityChecker */
 
-#ifndef _Included_mybraintech_com_mbtsdk_core_signalprocessing_MBTEegFilter
-#define _Included_mybraintech_com_mbtsdk_core_signalprocessing_MBTEegFilter
+#ifndef _Included_core_eeg_signalprocessing_MBTEegFilter
+#define _Included_core_eeg_signalprocessing_MBTEegFilter
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 JNIEXPORT jfloatArray JNICALL
-Java_core_eeg_signalprocessing_MBTEegFilter_bandpassFilter(JNIEnv *env, jobject instance,
+Java_core_eeg_signalprocessing_MBTEegFilter_nativeBandpassFilter(JNIEnv *env, jobject instance,
                                                                                jfloat freqBound1,
                                                                                jfloat freqBound2,
                                                                                jint size,
