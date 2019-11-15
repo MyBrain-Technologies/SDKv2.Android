@@ -108,16 +108,15 @@ public interface SynchronisationConfig {
          * @return
          */
         public B streamFrequencyBandFeatures(FrequencyBand... frequenciesToStream) {
-            final int nbFeaturePerFrequency = 4;
-            for (int feature = 0; feature < frequenciesToStream.length * nbFeaturePerFrequency; feature++) {
-                this.featuresToStream.add(frequenciesToStream[feature].getRatio());
-                this.featuresToStream.add(frequenciesToStream[feature].getPower());
-                this.featuresToStream.add(frequenciesToStream[feature].getLogPower());
-                this.featuresToStream.add(frequenciesToStream[feature].getNormalizedPower());
-                this.featuresToStream.add(frequenciesToStream[feature].getMaximum());
-                this.featuresToStream.add(frequenciesToStream[feature].getKurtosis());
-                this.featuresToStream.add(frequenciesToStream[feature].getStandardDeviation());
-                this.featuresToStream.add(frequenciesToStream[feature].getSkewness());
+            for (int frequency = 0; frequency < frequenciesToStream.length ; frequency++) {
+                this.featuresToStream.add(frequenciesToStream[frequency].getRatio());
+                this.featuresToStream.add(frequenciesToStream[frequency].getPower());
+                this.featuresToStream.add(frequenciesToStream[frequency].getLogPower());
+                this.featuresToStream.add(frequenciesToStream[frequency].getNormalizedPower());
+                this.featuresToStream.add(frequenciesToStream[frequency].getMaximum());
+                this.featuresToStream.add(frequenciesToStream[frequency].getKurtosis());
+                this.featuresToStream.add(frequenciesToStream[frequency].getStandardDeviation());
+                this.featuresToStream.add(frequenciesToStream[frequency].getSkewness());
             }
             return self();
         }

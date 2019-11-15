@@ -7,8 +7,11 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 
 import config.SynchronisationConfig;
+import utils.ConversionUtils;
 import utils.LogUtils;
 
 /**
@@ -59,12 +62,13 @@ public class MbtOSCProcessor extends AbstractStreamer<OSCMessage, OSCPortOut, Sy
 
         OSCMessage message = new OSCMessage(address);
         for (Object argument : dataToStream){
-            if(argument instanceof ArrayList){
-                for (Object value : (ArrayList)argument){
+            if(!(argument instanceof Collection))
+                argument = new ArrayList<>(Arrays.asList(dataToStream));
+
+                for (Object value : (Collection)argument){
                     message.addArgument(value);
                 }
-            }else
-                message.addArgument(dataToStream);
+
         }
         return message;
     }
