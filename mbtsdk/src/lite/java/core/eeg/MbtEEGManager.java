@@ -1,6 +1,7 @@
 package core.eeg;
 
 import android.content.Context;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
@@ -270,8 +271,14 @@ public final class MbtEEGManager extends BaseModuleManager {
                 initQualityChecker();
             }
         }
-        else if(event.stopStream() && !ContextSP.SP_VERSION.equals("0.0.0"))
-            deinitQualityChecker();
+        else if(event.stopStream() && !ContextSP.SP_VERSION.equals("0.0.0")){
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    deinitQualityChecker();
+                }
+            }, 1100);
+        }
 
     }
 

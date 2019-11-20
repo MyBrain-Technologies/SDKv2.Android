@@ -6,6 +6,8 @@ import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
 
+import mbtsdk.com.mybraintech.mbtsdk.BuildConfig;
+
 @Keep
 public final class MbtEEGPacket {
     @NonNull
@@ -95,9 +97,9 @@ public final class MbtEEGPacket {
     @Override
     public String toString() {
         return "MbtEEGPacket{" +
-                "EEG Data=" + channelsData +
-                ", statusData=" + statusData +
-                ", timestamp=" + timestamp +
+                "EEG Data =" + (channelsData != null && !channelsData.isEmpty() ? (channelsData.size()+"x"+channelsData.get(0).size() +  (BuildConfig.DEBUG ? ("\n content["+ channelsData.toString() +"]") : "")) : channelsData) +
+                ", statusData=\n" + (statusData != null ? "size: " +statusData.size() + " content: ["+ statusData.toString()+"]" : null) +
+                ",\n timestamp=" + timestamp +
                 '}';
     }
 

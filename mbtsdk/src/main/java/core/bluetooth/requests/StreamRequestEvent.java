@@ -1,11 +1,8 @@
 package core.bluetooth.requests;
 
-
 import android.util.Log;
-
 import config.RecordConfig;
 import config.StreamConfig;
-import config.SynchronisationConfig;
 
 /**
  * An event class when a stream request is being sent by the user.
@@ -64,9 +61,5 @@ public class StreamRequestEvent extends BluetoothRequests {
     public RecordConfig getRecordConfig() {
         return recordConfig != null ? recordConfig :
                 streamConfig != null ? streamConfig.getRecordConfig() : null;
-    }
-
-    public SynchronisationConfig.AbstractConfig getSynchronisationConfig(){
-        return streamConfig == null ? null : streamConfig.getSynchronisationConfig();
     }
 }

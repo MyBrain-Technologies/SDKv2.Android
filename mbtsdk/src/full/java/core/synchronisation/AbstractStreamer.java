@@ -3,6 +3,7 @@ package core.synchronisation;
 import android.util.Log;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -174,26 +175,22 @@ public abstract class AbstractStreamer<U, V, C extends SynchronisationConfig.Abs
      * Select the EEG packets data to stream and stream it
      */
     void execute(final MbtEEGPacket... mbtEEGPackets){
-        AsyncUtils.executeAsync(new Runnable() {
-            @Override
-            public void run() {
-                if(mbtEEGPackets != null){
-                    for (MbtEEGPacket mbtEEGPacket : mbtEEGPackets) {
-                        if(streamRawEEG())
-                            streamRawEEGPacket(mbtEEGPacket.getChannelsData());
+        if(mbtEEGPackets != null){
+            for (MbtEEGPacket mbtEEGPacket : mbtEEGPackets) {
 
-                        if(streamQualities() & mbtEEGPacket.getQualities() != null) //if qualities have not been enabled in the StreamConfig configuration
-                            streamQualities(mbtEEGPacket.getQualities());
+                if(streamRawEEG())
+                    streamRawEEGPacket(mbtEEGPacket.getChannelsData());
 
-                        if(streamStatus() & mbtEEGPacket.getStatusData() != null) //if qualities have not been enabled in the StreamConfig configuration
-                            streamStatus(mbtEEGPacket.getStatusData());
+                if(streamQualities() & mbtEEGPacket.getQualities() != null) //if qualities have not been enabled in the StreamConfig configuration
+                    streamQualities(mbtEEGPacket.getQualities());
 
-                        if(featuresToStream != null && getFeaturesAddresses() != null)
-                            streamFeatures(mbtEEGPacket, getFeaturesAddresses(), featuresToStream);
-                    }
-                }
+                if(streamStatus() & mbtEEGPacket.getStatusData() != null) //if qualities have not been enabled in the StreamConfig configuration
+                    streamStatus(mbtEEGPacket.getStatusData());
+
+                if(featuresToStream != null && getFeaturesAddresses() != null)
+                    streamFeatures(mbtEEGPacket, getFeaturesAddresses(), featuresToStream);
             }
-        });
+        }
     }
 
 }

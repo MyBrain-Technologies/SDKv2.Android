@@ -11,12 +11,9 @@ import core.BaseModuleManager;
 import core.bluetooth.BtState;
 import core.bluetooth.requests.StreamRequestEvent;
 import core.eeg.MbtEEGManager;
-import core.eeg.storage.MbtEEGPacket;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.ConnectionStateEvent;
-import utils.LogUtils;
 
-import static utils.MatrixUtils.invertFloatMatrix;
 
 /**
  * Entry point of the OSC unit
@@ -43,14 +40,18 @@ public final class MbtSynchronisationManager extends BaseModuleManager {
     @Subscribe(threadMode = ThreadMode.ASYNC)
     public void onStreamRequest(@NonNull final StreamRequestEvent event) {
         if(event.isStart()) {
+            if(event.getStreamConfig() == null)
+                return;
 
-            if(event.getSynchronisationConfig() != null) {
-                if (event.getSynchronisationConfig() instanceof SynchronisationConfig.OSC)
-                    streamer = new MbtOSCProcessor((SynchronisationConfig.OSC) event.getSynchronisationConfig());
+            SynchronisationConfig.AbstractConfig config = event.getStreamConfig().getSynchronisationConfig();
+            if(config != null) {
+                if (config instanceof SynchronisationConfig.OSC)
+                    streamer = new MbtOSCProcessor((SynchronisationConfig.OSC) config);
 
-                else if (event.getSynchronisationConfig() instanceof SynchronisationConfig.LSL)
-                    streamer = new MbtLSLProcessor((SynchronisationConfig.LSL)event.getSynchronisationConfig());
-            }
+                else if (config instanceof SynchronisationConfig.LSL)
+                    streamer = new MbtLSLProcessor((SynchronisationConfig.LSL) config);
+            }else
+                streamer = null;
 
         }else if(streamer != null) {
             try {
@@ -69,15 +70,8 @@ public final class MbtSynchronisationManager extends BaseModuleManager {
      */
     @Subscribe(threadMode = ThreadMode.ASYNC)
     public void onNewPackets(@NonNull final ClientReadyEEGEvent event) {
-        LogUtils.d(TAG, "New packet: "+event.getEegPackets().toString());
         if(streamer != null)
-            streamer.execute(getPacketWithInvertedMatrix(event.getEegPackets()));
+            streamer.execute(event.getEegPackets());
 
-    }
-
-    private MbtEEGPacket getPacketWithInvertedMatrix(MbtEEGPacket eegPacket){
-        if(eegPacket != null && invertFloatMatrix(eegPacket.getChannelsData()) != null)
-            eegPacket.setChannelsData(invertFloatMatrix(eegPacket.getChannelsData()));
-        return eegPacket;
     }
 }

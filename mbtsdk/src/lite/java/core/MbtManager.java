@@ -30,6 +30,7 @@ import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindsQRDataBase;
 import core.eeg.MbtEEGManager;
+import core.eeg.storage.MbtEEGPacket;
 import core.recording.MbtRecordingManager;
 import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
@@ -88,7 +89,6 @@ public class MbtManager{
     /**
      * Listener used to notify the SDK client when the current OAD state changes or when the SDK raises an error.
      */
-    private OADStateListener oadStateListener;
     private EegListener<BaseError> eegListener;
     private DeviceBatteryListener<BaseError> deviceInfoListener;
     @Nullable
@@ -105,7 +105,7 @@ public class MbtManager{
         if(BLUETOOTH_ENABLED)
             registerManager(new MbtBluetoothManager(mContext));
         if(EEG_ENABLED)
-            registerManager(new MbtEEGManager(mContext)); //todo change protocol must not be initialized here : when connectBluetooth is called
+            registerManager(new MbtEEGManager(mContext));
         if(RECORDING_ENABLED)
             registerManager(new MbtRecordingManager(mContext));
 
@@ -177,9 +177,8 @@ public class MbtManager{
         MbtEventBus.postEvent(
                 new StreamRequestEvent(START,
                         streamConfig.getRecordConfig() != null,
-                        streamConfig.shouldComputeQualities(),
-                        deviceStatusListener != null,
-                        streamConfig.getRecordConfig()));
+                        streamConfig));
+
     }
 
     /**
@@ -200,21 +199,25 @@ public class MbtManager{
      */
     public void stopStream(@Nullable RecordConfig recordConfig){
         MbtEventBus.postEvent(
-                new StreamRequestEvent(STOP, false,
-                        false, false, recordConfig));
+                new StreamRequestEvent(STOP,
+                        false,
+                        recordConfig));
     }
 
     public void startRecord(Context context){
         MbtEventBus.postEvent(
-                new StreamRequestEvent(START, true,
-                        false, (deviceStatusListener != null), new RecordConfig.Builder(context).create()));
+                new StreamRequestEvent(START,
+                        true,
+                        new RecordConfig.Builder(context).create()));
 
     }
 
     public void stopRecord(@NonNull RecordConfig recordConfig){
         MbtEventBus.postEvent(
-                new StreamRequestEvent(STOP, eegListener != null, //if eeg listener is null, it means that the client has not previously called start stream (might have called start record), so the SDK should stop the streaming started when the client has called start record
-                        false, false, recordConfig));
+                new StreamRequestEvent(STOP,
+                        eegListener != null, //if eeg listener is null, it means that the client has not previously called start stream (might have called start record), so the SDK should stop the streaming started when the client has called start record
+                        recordConfig));
+
     }
     /**
      * Called when a new device info event has been broadcast on the event bus.
@@ -305,7 +308,7 @@ public class MbtManager{
     @Subscribe(threadMode = ThreadMode.MAIN, priority = 1)
     public void onEvent(@NonNull final ClientReadyEEGEvent event) { //warning : do not remove this attribute (consider unsused by the IDE, but actually used)
         if(eegListener != null)
-            eegListener.onNewPackets(event.getEegPackets());
+            eegListener.onNewPackets(new MbtEEGPacket(event.getEegPackets()));
     }
 
     /**

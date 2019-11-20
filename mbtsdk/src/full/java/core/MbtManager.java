@@ -32,6 +32,7 @@ import core.device.model.MbtDevice;
 import core.device.model.MelomindsQRDataBase;
 import core.device.model.FirmwareVersion;
 import core.eeg.MbtEEGManager;
+import core.eeg.storage.MbtEEGPacket;
 import core.recording.MbtRecordingManager;
 
 import core.synchronisation.MbtSynchronisationManager;
@@ -114,7 +115,7 @@ public class MbtManager{
         if(BLUETOOTH_ENABLED)
             registerManager(new MbtBluetoothManager(mContext));
         if(EEG_ENABLED)
-            registerManager(new MbtEEGManager(mContext)); //todo change protocol must not be initialized here : when connectBluetooth is called
+            registerManager(new MbtEEGManager(mContext));
         if(RECORDING_ENABLED)
             registerManager(new MbtRecordingManager(mContext));
         if(SYNCHRONISATION_ENABLED)
@@ -371,7 +372,7 @@ public class MbtManager{
     @Subscribe(threadMode = ThreadMode.MAIN, priority = 1)
     public void onEvent(@NonNull final ClientReadyEEGEvent event) { //warning : do not remove this attribute (consider unsused by the IDE, but actually used)
         if(eegListener != null)
-            eegListener.onNewPackets(event.getEegPackets());
+            eegListener.onNewPackets(new MbtEEGPacket(event.getEegPackets()));
     }
 
     /**
