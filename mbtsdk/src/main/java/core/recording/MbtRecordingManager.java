@@ -11,6 +11,7 @@ import core.BaseModuleManager;
 import core.bluetooth.requests.StreamRequestEvent;
 import core.device.DeviceEvents;
 import core.eeg.MbtEEGManager;
+import core.eeg.storage.MbtEEGPacket;
 import core.recording.localstorage.MbtRecordBuffering;
 import eventbus.MbtEventBus;
 import eventbus.events.ClientReadyEEGEvent;
@@ -100,7 +101,7 @@ public final class MbtRecordingManager extends BaseModuleManager {
     @Subscribe(threadMode = ThreadMode.ASYNC)
     public void onNewPackets(@NonNull final ClientReadyEEGEvent event) {
         if(recordBuffering != null)
-            recordBuffering.record(event.getEegPackets());
+            recordBuffering.record(new MbtEEGPacket(event.getEegPackets()));
     }
 
     private void storeRecording(){

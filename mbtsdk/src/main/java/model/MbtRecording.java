@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import core.eeg.storage.MbtEEGPacket;
+import utils.MatrixUtils;
 
 
 /**
@@ -58,6 +59,10 @@ public class MbtRecording implements Serializable{
             for (MbtEEGPacket eegPacket : eegPackets) {
 
                 //RAW EEG
+                if(eegPacket.getChannelsData().size() != eegData.size() && //if matrix is inverted
+                        eegPacket.getChannelsData().get(0).size() == eegData.size()) // if nb line of the input matrix = nb of column the output matrix
+                    eegPacket.setChannelsData(MatrixUtils.invertFloatMatrix(eegPacket.getChannelsData()));
+
                 for(int eegIndex = 0; eegIndex < eegPacket.getChannelsData().size(); eegIndex++){
 //                    if(eegIndex >= eegData.size())
 //                        eegData.add(new ArrayList<>());
