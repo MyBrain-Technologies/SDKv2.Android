@@ -27,7 +27,7 @@ public class MbtDataBufferingTest {
     public void setUp() {
         Context context = RuntimeEnvironment.application.getApplicationContext();
         //default value for protocol is BLE
-        eegManager = new MbtEEGManager(context, BtProtocol.BLUETOOTH_LE);
+        eegManager = new MbtEEGManager(context);
         this.buffering = new MbtDataBuffering(eegManager);
     }
 

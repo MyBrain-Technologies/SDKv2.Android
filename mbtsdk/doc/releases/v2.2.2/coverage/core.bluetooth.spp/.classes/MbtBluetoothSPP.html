@@ -1,0 +1,858 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: MbtBluetoothSPP</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">core.bluetooth.spp</a> ]
+</div>
+
+<h1>Coverage Summary for Class: MbtBluetoothSPP (core.bluetooth.spp)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">MbtBluetoothSPP</td>
+<td class="coverageStat">
+  <span class="percent">
+    9.1%
+  </span>
+  <span class="absValue">
+    (2/ 22)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    6.1%
+  </span>
+  <span class="absValue">
+    (19/ 311)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">MbtBluetoothSPP$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (1/ 2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    5%
+  </span>
+  <span class="absValue">
+    (1/ 20)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">MbtBluetoothSPP$2</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 2)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">MbtBluetoothSPP$3</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 8)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">MbtBluetoothSPP$4</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 3)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">MbtBluetoothSPP$5</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 1)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    9.7%
+  </span>
+  <span class="absValue">
+    (3/ 31)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    5.8%
+  </span>
+  <span class="absValue">
+    (20/ 345)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package core.bluetooth.spp;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import android.bluetooth.BluetoothAdapter;
+<i>4</i>&nbsp;import android.bluetooth.BluetoothDevice;
+<i>5</i>&nbsp;import android.bluetooth.BluetoothManager;
+<i>6</i>&nbsp;import android.bluetooth.BluetoothSocket;
+<i>7</i>&nbsp;import android.content.BroadcastReceiver;
+<i>8</i>&nbsp;import android.content.Context;
+<i>9</i>&nbsp;import android.content.Intent;
+<i>10</i>&nbsp;import android.content.IntentFilter;
+<i>11</i>&nbsp;import android.support.annotation.NonNull;
+<i>12</i>&nbsp;import android.support.annotation.Nullable;
+<i>13</i>&nbsp;import android.support.annotation.WorkerThread;
+<i>14</i>&nbsp;import android.text.TextUtils;
+<i>15</i>&nbsp;import android.util.Log;
+<i>16</i>&nbsp;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;import org.apache.commons.lang.ArrayUtils;
+<i>19</i>&nbsp;
+<i>20</i>&nbsp;import java.io.DataInputStream;
+<i>21</i>&nbsp;import java.io.IOException;
+<i>22</i>&nbsp;import java.io.OutputStream;
+<i>23</i>&nbsp;import java.util.ArrayList;
+<i>24</i>&nbsp;import java.util.Arrays;
+<i>25</i>&nbsp;
+<i>26</i>&nbsp;import java.util.Timer;
+<i>27</i>&nbsp;import java.util.TimerTask;
+<i>28</i>&nbsp;import java.util.UUID;
+<i>29</i>&nbsp;
+<i>30</i>&nbsp;import command.CommandInterface;
+<i>31</i>&nbsp;import command.DeviceCommandEvent;
+<i>32</i>&nbsp;
+<i>33</i>&nbsp;import command.DeviceCommands;
+<i>34</i>&nbsp;import command.DeviceStreamingCommands;
+<i>35</i>&nbsp;import core.bluetooth.BtProtocol;
+<i>36</i>&nbsp;import core.bluetooth.BtState;
+<i>37</i>&nbsp;import core.bluetooth.MbtBluetoothManager;
+<i>38</i>&nbsp;import core.bluetooth.MbtDataBluetooth;
+<i>39</i>&nbsp;import core.bluetooth.StreamState;
+<i>40</i>&nbsp;import core.device.model.DeviceInfo;
+<i>41</i>&nbsp;import engine.clientevents.BluetoothError;
+<i>42</i>&nbsp;import utils.AsyncUtils;
+<i>43</i>&nbsp;import utils.LogUtils;
+<i>44</i>&nbsp;
+<i>45</i>&nbsp;import static command.DeviceCommandEvent.CMD_GET_BATTERY_VALUE;
+<i>46</i>&nbsp;import static command.DeviceCommandEvent.CMD_GET_DEVICE_INFO;
+<i>47</i>&nbsp;import static command.DeviceCommandEvent.CMD_START_EEG_ACQUISITION;
+<i>48</i>&nbsp;import static command.DeviceCommandEvent.MBX_GET_EEG_CONFIG;
+<i>49</i>&nbsp;import static command.DeviceCommandEvent.START_FRAME;
+<i>50</i>&nbsp;import static core.bluetooth.spp.MessageStatus.STATE_ACQ;
+<i>51</i>&nbsp;import static core.bluetooth.spp.MessageStatus.STATE_COMMAND;
+<i>52</i>&nbsp;import static core.bluetooth.spp.MessageStatus.STATE_COMPRESSION;
+<i>53</i>&nbsp;import static core.bluetooth.spp.MessageStatus.STATE_FRAME_NB;
+<i>54</i>&nbsp;import static core.bluetooth.spp.MessageStatus.STATE_IDLE;
+<i>55</i>&nbsp;import static core.bluetooth.spp.MessageStatus.STATE_LENGTH;
+<i>56</i>&nbsp;
+<i>57</i>&nbsp;/**
+<i>58</i>&nbsp; * Created by Etienne on 08/02/2018.
+<i>59</i>&nbsp; */
+<i>60</i>&nbsp;
+<b class="nc"><i>61</i>&nbsp;public final class MbtBluetoothSPP</b>
+<i>62</i>&nbsp;        extends MbtDataBluetooth {
+<i>63</i>&nbsp;
+<b class="fc"><i>64</i>&nbsp;    private final static String TAG = MbtBluetoothSPP.class.getName();</b>
+<i>65</i>&nbsp;
+<i>66</i>&nbsp;    private String deviceAddress;
+<i>67</i>&nbsp;
+<b class="fc"><i>68</i>&nbsp;    private boolean requestDisconnect = false;</b>
+<i>69</i>&nbsp;
+<b class="fc"><i>70</i>&nbsp;    private static final UUID SERVER_UUID = UUID.fromString(&quot;0001101-0000-1000-8000-00805f9b34fb&quot;);</b>
+<i>71</i>&nbsp;    @Nullable
+<i>72</i>&nbsp;    private BluetoothSocket btSocket;
+<i>73</i>&nbsp;
+<i>74</i>&nbsp;    @Nullable
+<i>75</i>&nbsp;    private DataInputStream reader;
+<i>76</i>&nbsp;    @Nullable
+<i>77</i>&nbsp;    private OutputStream writer;
+<b class="fc"><i>78</i>&nbsp;    private long bytesReceived = 0;</b>
+<i>79</i>&nbsp;
+<b class="fc"><i>80</i>&nbsp;    private boolean isStreaming = false;</b>
+<i>81</i>&nbsp;
+<i>82</i>&nbsp;    private MessageStatus currentStatus;
+<i>83</i>&nbsp;
+<i>84</i>&nbsp;    private Timer keepAliveTimer;
+<i>85</i>&nbsp;
+<i>86</i>&nbsp;    private final static int DEFAULT_COMMAND_BUFFER_LENGTH = 11;
+<i>87</i>&nbsp;
+<b class="fc"><i>88</i>&nbsp;    private BroadcastReceiver scanReceiver = new BroadcastReceiver() {</b>
+<i>89</i>&nbsp;        public final void onReceive(@NonNull final Context context, @NonNull final Intent intent) {
+<b class="nc"><i>90</i>&nbsp;            final String action = intent.getAction();</b>
+<b class="nc"><i>91</i>&nbsp;            if(action == null)</b>
+<b class="nc"><i>92</i>&nbsp;                return;</b>
+<b class="nc"><i>93</i>&nbsp;            switch (action) {</b>
+<i>94</i>&nbsp;                case BluetoothDevice.ACTION_FOUND:
+<b class="nc"><i>95</i>&nbsp;                    final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);</b>
+<b class="nc"><i>96</i>&nbsp;                    final String deviceNameFound = device.getName();</b>
+<b class="nc"><i>97</i>&nbsp;                    if (TextUtils.isEmpty(deviceNameFound)) {</b>
+<b class="nc"><i>98</i>&nbsp;                        LogUtils.w(TAG, &quot;Found device with no name. MAC address is -&gt; &quot; + device.getAddress());</b>
+<b class="nc"><i>99</i>&nbsp;                        return;</b>
+<i>100</i>&nbsp;                    }
+<i>101</i>&nbsp;
+<b class="nc"><i>102</i>&nbsp;                    LogUtils.i(TAG, String.format(&quot;Discovery Scan -&gt; device detected &quot; +</b>
+<b class="nc"><i>103</i>&nbsp;                            &quot;with name &#39;%s&#39; and MAC address &#39;%s&#39; &quot;, deviceNameFound, device.getAddress()));</b>
+<b class="nc"><i>104</i>&nbsp;                    if (mbtBluetoothManager.getDeviceNameRequested() != null</b>
+<b class="nc"><i>105</i>&nbsp;                            &amp;&amp; (deviceNameFound.equals(mbtBluetoothManager.getDeviceNameRequested()) || deviceNameFound.contains(mbtBluetoothManager.getDeviceNameRequested()))) {</b>
+<b class="nc"><i>106</i>&nbsp;                        LogUtils.i(TAG, &quot;Device &quot; + mbtBluetoothManager.getDeviceNameRequested() +&quot; found. Cancelling discovery &amp; connecting&quot;);</b>
+<b class="nc"><i>107</i>&nbsp;                        currentDevice = device;</b>
+<b class="nc"><i>108</i>&nbsp;                        bluetoothAdapter.cancelDiscovery();</b>
+<b class="nc"><i>109</i>&nbsp;                        mbtBluetoothManager.updateConnectionState(true); //current state is set to DEVICE_FOUND and future is completed</b>
+<i>110</i>&nbsp;
+<i>111</i>&nbsp;                    }
+<i>112</i>&nbsp;                    break;
+<i>113</i>&nbsp;                case BluetoothAdapter.ACTION_DISCOVERY_FINISHED:
+<b class="nc"><i>114</i>&nbsp;                    bluetoothAdapter.startDiscovery();</b>
+<i>115</i>&nbsp;
+<i>116</i>&nbsp;                    break;
+<i>117</i>&nbsp;            }
+<i>118</i>&nbsp;
+<b class="nc"><i>119</i>&nbsp;        }</b>
+<i>120</i>&nbsp;    };
+<i>121</i>&nbsp;
+<i>122</i>&nbsp;    public MbtBluetoothSPP(@NonNull final Context context, @NonNull MbtBluetoothManager mbtBluetoothManager) {
+<b class="fc"><i>123</i>&nbsp;        super(context, BtProtocol.BLUETOOTH_SPP, mbtBluetoothManager);</b>
+<b class="fc"><i>124</i>&nbsp;        final BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);</b>
+<b class="fc"><i>125</i>&nbsp;        this.bluetoothAdapter = (manager!=null) ? manager.getAdapter() : null;</b>
+<b class="fc"><i>126</i>&nbsp;    }</b>
+<i>127</i>&nbsp;
+<i>128</i>&nbsp;    public MbtBluetoothSPP(@NonNull final Context context, @NonNull final String deviceAddress,@NonNull MbtBluetoothManager mbtBluetoothManager) {
+<b class="nc"><i>129</i>&nbsp;        super(context, BtProtocol.BLUETOOTH_SPP, mbtBluetoothManager);</b>
+<b class="nc"><i>130</i>&nbsp;        final BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);</b>
+<b class="nc"><i>131</i>&nbsp;        this.bluetoothAdapter = manager.getAdapter();</b>
+<b class="nc"><i>132</i>&nbsp;        this.deviceAddress = deviceAddress;</b>
+<b class="nc"><i>133</i>&nbsp;    }</b>
+<i>134</i>&nbsp;
+<i>135</i>&nbsp;    @Override
+<i>136</i>&nbsp;    public boolean startScan() {
+<b class="nc"><i>137</i>&nbsp;        boolean isScanStarted = false;</b>
+<b class="nc"><i>138</i>&nbsp;        if(bluetoothAdapter == null)</b>
+<b class="nc"><i>139</i>&nbsp;            return isScanStarted;</b>
+<i>140</i>&nbsp;
+<i>141</i>&nbsp;        // at this point, device was not found among bonded devices so let&#39;s start a discovery scan
+<b class="nc"><i>142</i>&nbsp;        LogUtils.i(TAG, &quot;Starting Classic Bluetooth Discovery Scan&quot;);</b>
+<b class="nc"><i>143</i>&nbsp;        final IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);</b>
+<b class="nc"><i>144</i>&nbsp;        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);</b>
+<b class="nc"><i>145</i>&nbsp;        context.registerReceiver(scanReceiver, filter);</b>
+<b class="nc"><i>146</i>&nbsp;        isScanStarted = bluetoothAdapter.startDiscovery();</b>
+<b class="nc"><i>147</i>&nbsp;        LogUtils.i(TAG, &quot;Scan started.&quot;);</b>
+<b class="nc"><i>148</i>&nbsp;        if(isScanStarted &amp;&amp; getCurrentState().equals(BtState.READY_FOR_BLUETOOTH_OPERATION)){</b>
+<b class="nc"><i>149</i>&nbsp;            mbtBluetoothManager.updateConnectionState(false); //current state is set to SCAN_STARTED</b>
+<i>150</i>&nbsp;        }
+<b class="nc"><i>151</i>&nbsp;        return isScanStarted;</b>
+<i>152</i>&nbsp;    }
+<i>153</i>&nbsp;
+<i>154</i>&nbsp;    @Override
+<i>155</i>&nbsp;    public void stopScan() {
+<b class="nc"><i>156</i>&nbsp;        if(bluetoothAdapter != null &amp;&amp; bluetoothAdapter.isDiscovering())</b>
+<b class="nc"><i>157</i>&nbsp;            bluetoothAdapter.cancelDiscovery();</b>
+<b class="nc"><i>158</i>&nbsp;        context.unregisterReceiver(scanReceiver);</b>
+<b class="nc"><i>159</i>&nbsp;    }</b>
+<i>160</i>&nbsp;
+<i>161</i>&nbsp;    @Override
+<i>162</i>&nbsp;    public boolean connect(Context context, @Nullable BluetoothDevice device) {
+<b class="nc"><i>163</i>&nbsp;        if (device != null) {</b>
+<b class="nc"><i>164</i>&nbsp;            LogUtils.i(TAG,&quot; Connect  &quot;+device.getName());</b>
+<b class="nc"><i>165</i>&nbsp;            this.requestDisconnect = false;</b>
+<b class="nc"><i>166</i>&nbsp;            return connectToDevice(device);</b>
+<i>167</i>&nbsp;        }
+<b class="nc"><i>168</i>&nbsp;        return false;</b>
+<i>169</i>&nbsp;    }
+<i>170</i>&nbsp;    /**
+<i>171</i>&nbsp;     * Connects to the specified device.
+<i>172</i>&nbsp;     * &lt;p&gt;&lt;strong&gt;Node:&lt;/strong&gt; This is a blocking call. It should therefore NOT be made in the &lt;code&gt;Main UI Thread&lt;/code&gt;
+<i>173</i>&nbsp;     * as stated by the &lt;code&gt;@WorkerThread&lt;/code&gt; annotation&lt;/p&gt;
+<i>174</i>&nbsp;     * @param device the device hardware MAC address. Cannot be &lt;code&gt;null&lt;/code&gt;
+<i>175</i>&nbsp;     * @return &lt;code&gt;true&lt;/code&gt; upon success, &lt;code&gt;false&lt;/code&gt; otherwise
+<i>176</i>&nbsp;     */
+<i>177</i>&nbsp;    @WorkerThread
+<i>178</i>&nbsp;    synchronized final boolean connectToDevice(@NonNull final BluetoothDevice device) {
+<b class="nc"><i>179</i>&nbsp;        BluetoothDevice toConnect = null;</b>
+<b class="nc"><i>180</i>&nbsp;        if (isConnected()) {</b>
+<b class="nc"><i>181</i>&nbsp;            LogUtils.i(TAG,&quot;Already connected&quot;);</b>
+<b class="nc"><i>182</i>&nbsp;            notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);</b>
+<b class="nc"><i>183</i>&nbsp;            return false;</b>
+<i>184</i>&nbsp;        }
+<b class="nc"><i>185</i>&nbsp;        if (!this.bluetoothAdapter.isEnabled()) {</b>
+<b class="nc"><i>186</i>&nbsp;            notifyConnectionStateChanged(BtState.BLUETOOTH_DISABLED);</b>
+<b class="nc"><i>187</i>&nbsp;            return false;</b>
+<i>188</i>&nbsp;        }
+<i>189</i>&nbsp;
+<b class="nc"><i>190</i>&nbsp;        for (final BluetoothDevice bonded : this.bluetoothAdapter.getBondedDevices())</b>
+<b class="nc"><i>191</i>&nbsp;            if (bonded.getAddress().equals(device.getAddress())) {</b>
+<b class="nc"><i>192</i>&nbsp;                toConnect = bonded;</b>
+<b class="nc"><i>193</i>&nbsp;                break;</b>
+<i>194</i>&nbsp;            }
+<i>195</i>&nbsp;
+<b class="nc"><i>196</i>&nbsp;        if (toConnect == null)</b>
+<b class="nc"><i>197</i>&nbsp;            toConnect = device;</b>
+<i>198</i>&nbsp;
+<i>199</i>&nbsp;        try {
+<b class="nc"><i>200</i>&nbsp;            notifyConnectionStateChanged(BtState.DATA_BT_CONNECTING);</b>
+<b class="nc"><i>201</i>&nbsp;            this.btSocket = toConnect.createRfcommSocketToServiceRecord(SERVER_UUID);</b>
+<b class="nc"><i>202</i>&nbsp;            this.btSocket.connect();</b>
+<b class="nc"><i>203</i>&nbsp;            if (retrieveStreams()) {</b>
+<b class="nc"><i>204</i>&nbsp;                AsyncUtils.executeAsync(new Runnable() {</b>
+<i>205</i>&nbsp;                    @Override
+<i>206</i>&nbsp;                    public void run() {
+<b class="nc"><i>207</i>&nbsp;                        listenForIncomingMessages();</b>
+<i>208</i>&nbsp;                    }
+<i>209</i>&nbsp;                });
+<b class="nc"><i>210</i>&nbsp;                notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);</b>
+<b class="nc"><i>211</i>&nbsp;                notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER, toConnect.getAddress());</b>
+<b class="nc"><i>212</i>&nbsp;                sendCommand(new DeviceCommands.GetDeviceInfo());</b>
+<b class="nc"><i>213</i>&nbsp;                LogUtils.i(TAG,toConnect.getName() + &quot; Connected&quot;);</b>
+<b class="nc"><i>214</i>&nbsp;                return true;</b>
+<i>215</i>&nbsp;            }else
+<b class="nc"><i>216</i>&nbsp;                notifyConnectionStateChanged(BtState.CONNECTION_FAILURE);</b>
+<i>217</i>&nbsp;
+<b class="nc"><i>218</i>&nbsp;        } catch (@NonNull final IOException ioe) {</b>
+<b class="nc"><i>219</i>&nbsp;            notifyConnectionStateChanged(BtState.CONNECTION_FAILURE);</b>
+<b class="nc"><i>220</i>&nbsp;            LogUtils.e(TAG, &quot;Exception while connecting -&gt;&quot; + ioe.getMessage());</b>
+<b class="nc"><i>221</i>&nbsp;            Log.getStackTraceString(ioe);</b>
+<b class="nc"><i>222</i>&nbsp;        }</b>
+<b class="nc"><i>223</i>&nbsp;        return false;</b>
+<i>224</i>&nbsp;    }
+<i>225</i>&nbsp;
+<i>226</i>&nbsp;    @Override
+<i>227</i>&nbsp;    public boolean disconnect() {
+<b class="nc"><i>228</i>&nbsp;        boolean acquisitionStopped = true;</b>
+<b class="nc"><i>229</i>&nbsp;        if (!isConnected()) {</b>
+<b class="nc"><i>230</i>&nbsp;            LogUtils.i(TAG, &quot;Device already disconnected&quot;);</b>
+<i>231</i>&nbsp;        } else {
+<b class="nc"><i>232</i>&nbsp;            acquisitionStopped = stopStream();</b>
+<b class="nc"><i>233</i>&nbsp;            requestCloseConnexion();</b>
+<i>234</i>&nbsp;        }
+<b class="nc"><i>235</i>&nbsp;        return acquisitionStopped;</b>
+<i>236</i>&nbsp;    }
+<i>237</i>&nbsp;
+<i>238</i>&nbsp;    @Override
+<i>239</i>&nbsp;    public boolean isConnected() {
+<b class="nc"><i>240</i>&nbsp;        return getCurrentState() == BtState.CONNECTED_AND_READY;</b>
+<i>241</i>&nbsp;    }
+<i>242</i>&nbsp;
+<i>243</i>&nbsp;    @Override
+<i>244</i>&nbsp;    public boolean startStream() {
+<b class="nc"><i>245</i>&nbsp;        final byte[] msg = new DeviceStreamingCommands.StartEEGAcquisition().serialize();</b>
+<b class="nc"><i>246</i>&nbsp;        LogUtils.i(TAG, &quot;Requested to start stream... &quot;+ Arrays.toString(msg));</b>
+<b class="nc"><i>247</i>&nbsp;        if (!isConnected()) {</b>
+<b class="nc"><i>248</i>&nbsp;            LogUtils.i(TAG,&quot;Error Not connected!&quot;);</b>
+<b class="nc"><i>249</i>&nbsp;            return false;</b>
+<i>250</i>&nbsp;        }
+<i>251</i>&nbsp;        else {
+<b class="nc"><i>252</i>&nbsp;            if (sendData(msg)) {</b>
+<b class="nc"><i>253</i>&nbsp;                LogUtils.i(TAG,&quot;Successfully requested to start stream&quot;);</b>
+<b class="nc"><i>254</i>&nbsp;                sendKeepAlive(true);</b>
+<b class="nc"><i>255</i>&nbsp;                notifyStreamStateChanged(StreamState.STARTED);</b>
+<b class="nc"><i>256</i>&nbsp;                isStreaming = true;</b>
+<b class="nc"><i>257</i>&nbsp;                return true;</b>
+<i>258</i>&nbsp;
+<i>259</i>&nbsp;            } else {
+<b class="nc"><i>260</i>&nbsp;                LogUtils.i(TAG,&quot;Error could not send request to start stream!&quot;);</b>
+<b class="nc"><i>261</i>&nbsp;                return false;</b>
+<i>262</i>&nbsp;            }
+<i>263</i>&nbsp;        }
+<i>264</i>&nbsp;    }
+<i>265</i>&nbsp;
+<i>266</i>&nbsp;    private synchronized boolean sendData(@NonNull final byte[] msg) {
+<b class="nc"><i>267</i>&nbsp;        LogUtils.i(TAG, &quot;Send data &quot;+ Arrays.toString(msg));</b>
+<i>268</i>&nbsp;        try {
+<b class="nc"><i>269</i>&nbsp;            if(this.writer != null){</b>
+<b class="nc"><i>270</i>&nbsp;                this.writer.write(msg);</b>
+<b class="nc"><i>271</i>&nbsp;                this.writer.flush();</b>
+<i>272</i>&nbsp;                //LogUtils.i(TAG, &quot;Message sent&quot;);
+<b class="nc"><i>273</i>&nbsp;                return true;</b>
+<i>274</i>&nbsp;            }
+<b class="nc"><i>275</i>&nbsp;            return false;</b>
+<b class="nc"><i>276</i>&nbsp;        } catch (@NonNull final IOException ioe) {</b>
+<b class="nc"><i>277</i>&nbsp;            this.reader = null;</b>
+<b class="nc"><i>278</i>&nbsp;            this.writer = null;</b>
+<b class="nc"><i>279</i>&nbsp;            LogUtils.e(TAG, &quot;Failed to send dataBuffer. IOException -&gt;\n&quot; + ioe.getMessage());</b>
+<b class="nc"><i>280</i>&nbsp;            notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);</b>
+<b class="nc"><i>281</i>&nbsp;            Log.getStackTraceString(ioe);</b>
+<b class="nc"><i>282</i>&nbsp;            return false;</b>
+<i>283</i>&nbsp;        }
+<i>284</i>&nbsp;    }
+<i>285</i>&nbsp;
+<i>286</i>&nbsp;    private void sendKeepAlive(boolean keepAlive) {
+<b class="nc"><i>287</i>&nbsp;        final byte[] msg = new byte[]{0,0,0,0};//new DeviceStreamingCommands.StartEEGAcquisition().serialize();</b>
+<b class="nc"><i>288</i>&nbsp;        if (keepAlive) {</b>
+<b class="nc"><i>289</i>&nbsp;            if (this.keepAliveTimer != null)</b>
+<b class="nc"><i>290</i>&nbsp;                this.keepAliveTimer.cancel();</b>
+<b class="nc"><i>291</i>&nbsp;            this.keepAliveTimer = new Timer(true);</b>
+<b class="nc"><i>292</i>&nbsp;            this.keepAliveTimer.scheduleAtFixedRate(new TimerTask() {</b>
+<i>293</i>&nbsp;                public final void run() {
+<b class="nc"><i>294</i>&nbsp;                    if (!isConnected()) {</b>
+<b class="nc"><i>295</i>&nbsp;                        LogUtils.e(TAG, &quot;Disconnected&quot;);</b>
+<b class="nc"><i>296</i>&nbsp;                        cancel(); // something is wrong</b>
+<b class="nc"><i>297</i>&nbsp;                        return;</b>
+<i>298</i>&nbsp;                    }
+<i>299</i>&nbsp;                    // safe to call
+<b class="nc"><i>300</i>&nbsp;                    sendData(msg);</b>
+<b class="nc"><i>301</i>&nbsp;                    notifyStreamStateChanged(StreamState.STREAMING);</b>
+<i>302</i>&nbsp;
+<b class="nc"><i>303</i>&nbsp;                }</b>
+<i>304</i>&nbsp;            }, 0, 1000);
+<i>305</i>&nbsp;        } else {
+<b class="nc"><i>306</i>&nbsp;            if (this.keepAliveTimer != null)</b>
+<b class="nc"><i>307</i>&nbsp;                this.keepAliveTimer.cancel();</b>
+<i>308</i>&nbsp;        }
+<b class="nc"><i>309</i>&nbsp;    }</b>
+<i>310</i>&nbsp;
+<i>311</i>&nbsp;    final void requestCloseConnexion() {
+<b class="nc"><i>312</i>&nbsp;        if (!isConnected())</b>
+<b class="nc"><i>313</i>&nbsp;            throw new IllegalStateException(&quot;Cannot Stop Services : no services or no ongoing connexion!&quot;);</b>
+<i>314</i>&nbsp;
+<b class="nc"><i>315</i>&nbsp;        this.requestDisconnect = true;</b>
+<i>316</i>&nbsp;
+<i>317</i>&nbsp;        // Now attempting to properly disconnect
+<i>318</i>&nbsp;        try {
+<b class="nc"><i>319</i>&nbsp;            if (this.reader != null) {</b>
+<b class="nc"><i>320</i>&nbsp;                this.reader.close();</b>
+<b class="nc"><i>321</i>&nbsp;                this.reader = null;</b>
+<i>322</i>&nbsp;            }
+<b class="nc"><i>323</i>&nbsp;            if (this.writer != null) {</b>
+<b class="nc"><i>324</i>&nbsp;                this.writer.close();</b>
+<b class="nc"><i>325</i>&nbsp;                this.writer = null;</b>
+<i>326</i>&nbsp;            }
+<b class="nc"><i>327</i>&nbsp;            if (this.btSocket != null) {</b>
+<b class="nc"><i>328</i>&nbsp;                this.btSocket.close();</b>
+<b class="nc"><i>329</i>&nbsp;                this.btSocket = null;</b>
+<i>330</i>&nbsp;            }
+<b class="nc"><i>331</i>&nbsp;            notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);</b>
+<b class="nc"><i>332</i>&nbsp;        } catch (@NonNull final IOException e) {</b>
+<b class="nc"><i>333</i>&nbsp;            LogUtils.e(TAG, &quot;Error while closing streams -&gt; \n&quot; + e.getMessage());</b>
+<b class="nc"><i>334</i>&nbsp;            notifyConnectionStateChanged(BtState.CONNECTION_INTERRUPTED);</b>
+<b class="nc"><i>335</i>&nbsp;            Log.getStackTraceString(e);</b>
+<b class="nc"><i>336</i>&nbsp;        }</b>
+<b class="nc"><i>337</i>&nbsp;    }</b>
+<i>338</i>&nbsp;
+<i>339</i>&nbsp;    private boolean retrieveStreams() {
+<b class="nc"><i>340</i>&nbsp;        if (this.btSocket != null) {</b>
+<i>341</i>&nbsp;            try {
+<b class="nc"><i>342</i>&nbsp;                this.reader = new DataInputStream(this.btSocket.getInputStream());</b>
+<b class="nc"><i>343</i>&nbsp;                this.writer = this.btSocket.getOutputStream();</b>
+<b class="nc"><i>344</i>&nbsp;                boolean is = this.reader!=null &amp;&amp; this.writer != null;</b>
+<b class="nc"><i>345</i>&nbsp;                return (is);</b>
+<b class="nc"><i>346</i>&nbsp;            } catch (@NonNull final IOException ioe) {</b>
+<b class="nc"><i>347</i>&nbsp;                LogUtils.e(TAG, &quot;Failed to retrieve streams ! -&gt; \n&quot; + ioe.getMessage());</b>
+<b class="nc"><i>348</i>&nbsp;                Log.getStackTraceString(ioe);</b>
+<b class="nc"><i>349</i>&nbsp;                notifyConnectionStateChanged(BtState.STREAM_ERROR);</b>
+<i>350</i>&nbsp;            }
+<i>351</i>&nbsp;        }
+<b class="nc"><i>352</i>&nbsp;        return false;</b>
+<i>353</i>&nbsp;    }
+<i>354</i>&nbsp;
+<i>355</i>&nbsp;    public static final int START_FRAME_NB_BYTES = 1;
+<i>356</i>&nbsp;    public static final int PAYLOAD_LENGTH_NB_BYTES = 2;
+<i>357</i>&nbsp;    public static final int COMPRESS_NB_BYTES = 1;
+<i>358</i>&nbsp;    public static final int PACKET_ID_NB_BYTES = 2;
+<i>359</i>&nbsp;    public static final int PAYLOAD_NB_BYTES = 0;
+<i>360</i>&nbsp;    public static final int VERSION_NB_BYTES = 2;
+<i>361</i>&nbsp;    public static final int SERIAL_NUMBER_NB_BYTES = 4;
+<i>362</i>&nbsp;
+<b class="fc"><i>363</i>&nbsp;    @NonNull</b>
+<i>364</i>&nbsp;    byte[] payloadLengthBuffer = new byte[PAYLOAD_LENGTH_NB_BYTES];
+<b class="fc"><i>365</i>&nbsp;    @NonNull</b>
+<i>366</i>&nbsp;    byte[] dataBuffer = new byte[PAYLOAD_NB_BYTES];
+<b class="fc"><i>367</i>&nbsp;    ArrayList&lt;Byte&gt; lostDataBuffer = new ArrayList&lt;&gt;();</b>
+<b class="fc"><i>368</i>&nbsp;    byte[] previousdataBuffer = null;</b>
+<i>369</i>&nbsp;
+<b class="fc"><i>370</i>&nbsp;    private int command = -1;</b>
+<b class="fc"><i>371</i>&nbsp;    private int counter = 0;</b>
+<b class="fc"><i>372</i>&nbsp;    private int payloadSize = -1;</b>
+<b class="fc"><i>373</i>&nbsp;    private boolean unknownByteDetected = false;</b>
+<b class="fc"><i>374</i>&nbsp;    @NonNull</b>
+<i>375</i>&nbsp;    private byte[] packetIdBuffer = new byte[PACKET_ID_NB_BYTES];
+<i>376</i>&nbsp;    private void listenForIncomingMessages() {
+<i>377</i>&nbsp;
+<b class="nc"><i>378</i>&nbsp;        currentStatus = STATE_IDLE;</b>
+<b class="nc"><i>379</i>&nbsp;        while (this.reader != null &amp;&amp; this.writer != null) {</b>
+<i>380</i>&nbsp;            try {
+<i>381</i>&nbsp;
+<b class="nc"><i>382</i>&nbsp;                byte currentByte = reader.readByte();</b>
+<b class="nc"><i>383</i>&nbsp;                switch (currentStatus) {</b>
+<i>384</i>&nbsp;
+<i>385</i>&nbsp;                    case STATE_IDLE:
+<b class="nc"><i>386</i>&nbsp;                        if (currentByte == START_FRAME.getIdentifierCode()) {</b>
+<b class="nc"><i>387</i>&nbsp;                            currentStatus = STATE_LENGTH;</b>
+<i>388</i>&nbsp;                        } else /*if(currentByte != 0)*/ {
+<i>389</i>&nbsp;
+<b class="nc"><i>390</i>&nbsp;                            if(isStreaming) {</b>
+<b class="nc"><i>391</i>&nbsp;                                if (!unknownByteDetected)</b>
+<b class="nc"><i>392</i>&nbsp;                                    unknownByteDetected = true;</b>
+<i>393</i>&nbsp;
+<b class="nc"><i>394</i>&nbsp;                                lostDataBuffer.add(currentByte);</b>
+<b class="nc"><i>395</i>&nbsp;                                Log.w(TAG, &quot;Non header Byte found during acquisition = &quot; + currentByte);</b>
+<i>396</i>&nbsp;                            }
+<i>397</i>&nbsp;                        }
+<i>398</i>&nbsp;                        break;
+<i>399</i>&nbsp;
+<i>400</i>&nbsp;                    case STATE_LENGTH:
+<b class="nc"><i>401</i>&nbsp;                        if(counter &lt; payloadLengthBuffer.length) {</b>
+<b class="nc"><i>402</i>&nbsp;                            payloadLengthBuffer[counter++] = currentByte;</b>
+<i>403</i>&nbsp;
+<b class="nc"><i>404</i>&nbsp;                            if (counter == PAYLOAD_LENGTH_NB_BYTES) {</b>
+<b class="nc"><i>405</i>&nbsp;                                counter = 0;</b>
+<b class="nc"><i>406</i>&nbsp;                                payloadSize = ((payloadLengthBuffer[0] &amp; 0xFF) &lt;&lt; 8) + (payloadLengthBuffer[1] &amp; 0xFF);</b>
+<i>407</i>&nbsp;
+<b class="nc"><i>408</i>&nbsp;                                dataBuffer = new byte[payloadSize + COMPRESS_NB_BYTES + PACKET_ID_NB_BYTES];</b>
+<b class="nc"><i>409</i>&nbsp;                                currentStatus = STATE_COMMAND;</b>
+<i>410</i>&nbsp;                            }
+<i>411</i>&nbsp;                        }else{
+<b class="nc"><i>412</i>&nbsp;                            counter = 0;</b>
+<b class="nc"><i>413</i>&nbsp;                            resetStatus();</b>
+<i>414</i>&nbsp;                        }
+<i>415</i>&nbsp;
+<b class="nc"><i>416</i>&nbsp;                        break;</b>
+<i>417</i>&nbsp;
+<i>418</i>&nbsp;                    case STATE_COMMAND:
+<i>419</i>&nbsp;
+<b class="nc"><i>420</i>&nbsp;                        command = currentByte;</b>
+<i>421</i>&nbsp;
+<b class="nc"><i>422</i>&nbsp;                        currentStatus =</b>
+<b class="nc"><i>423</i>&nbsp;                                ((command != CMD_START_EEG_ACQUISITION.getIdentifierCode()</b>
+<b class="nc"><i>424</i>&nbsp;                                        &amp;&amp; command != CMD_GET_BATTERY_VALUE.getIdentifierCode()</b>
+<b class="nc"><i>425</i>&nbsp;                                        &amp;&amp; command != MBX_GET_EEG_CONFIG.getIdentifierCode()</b>
+<b class="nc"><i>426</i>&nbsp;                                        &amp;&amp; command != CMD_GET_DEVICE_INFO.getIdentifierCode()) ?</b>
+<i>427</i>&nbsp;                                        STATE_IDLE : STATE_COMPRESSION);
+<b class="nc"><i>428</i>&nbsp;                        if (currentStatus == STATE_IDLE)</b>
+<b class="nc"><i>429</i>&nbsp;                            Log.w(TAG, &quot;State IDLE reset for command found : &quot; + command);</b>
+<i>430</i>&nbsp;
+<i>431</i>&nbsp;                        break;
+<i>432</i>&nbsp;
+<i>433</i>&nbsp;                    case STATE_COMPRESSION:
+<b class="nc"><i>434</i>&nbsp;                        if (currentByte == 0x00 || currentByte == 0x01 &amp;&amp; counter &lt; dataBuffer.length) {</b>
+<b class="nc"><i>435</i>&nbsp;                            dataBuffer[counter++] = currentByte;</b>
+<b class="nc"><i>436</i>&nbsp;                            currentStatus = STATE_FRAME_NB;</b>
+<i>437</i>&nbsp;                        } else {
+<b class="nc"><i>438</i>&nbsp;                            counter = 0;</b>
+<b class="nc"><i>439</i>&nbsp;                            resetStatus();</b>
+<b class="nc"><i>440</i>&nbsp;                            Log.w(TAG, &quot;State IDLE reset for currentByte != 0 &amp; != 1 : &quot; + currentByte);</b>
+<i>441</i>&nbsp;                        }
+<b class="nc"><i>442</i>&nbsp;                        break;</b>
+<i>443</i>&nbsp;
+<i>444</i>&nbsp;                    case STATE_FRAME_NB:
+<b class="nc"><i>445</i>&nbsp;                        if(counter &lt; dataBuffer.length){</b>
+<b class="nc"><i>446</i>&nbsp;                            dataBuffer[counter++] = currentByte;</b>
+<b class="nc"><i>447</i>&nbsp;                            if (counter == COMPRESS_NB_BYTES + PACKET_ID_NB_BYTES) {</b>
+<b class="nc"><i>448</i>&nbsp;                                packetIdBuffer[0] = dataBuffer[1];</b>
+<b class="nc"><i>449</i>&nbsp;                                packetIdBuffer[1] = dataBuffer[2];</b>
+<i>450</i>&nbsp;
+<b class="nc"><i>451</i>&nbsp;                                currentStatus = STATE_ACQ;</b>
+<i>452</i>&nbsp;                            }
+<i>453</i>&nbsp;                        }else{
+<b class="nc"><i>454</i>&nbsp;                            counter = 0;</b>
+<b class="nc"><i>455</i>&nbsp;                            resetStatus();</b>
+<i>456</i>&nbsp;                        }
+<b class="nc"><i>457</i>&nbsp;                        break;</b>
+<i>458</i>&nbsp;
+<i>459</i>&nbsp;                    case STATE_ACQ:
+<i>460</i>&nbsp;
+<b class="nc"><i>461</i>&nbsp;                        if (command == CMD_START_EEG_ACQUISITION.getIdentifierCode() &amp;&amp; isStreaming) {</b>
+<i>462</i>&nbsp;
+<b class="nc"><i>463</i>&nbsp;                            if(counter &lt; dataBuffer.length) {</b>
+<b class="nc"><i>464</i>&nbsp;                                dataBuffer[counter++] = currentByte;</b>
+<i>465</i>&nbsp;
+<b class="nc"><i>466</i>&nbsp;                                if (counter == payloadSize + COMPRESS_NB_BYTES + PACKET_ID_NB_BYTES) {</b>
+<b class="nc"><i>467</i>&nbsp;                                    counter = 0;</b>
+<b class="nc"><i>468</i>&nbsp;                                    resetStatus();</b>
+<b class="nc"><i>469</i>&nbsp;                                    final byte[] finalData = dataBuffer.clone();//Arrays.copyOf(dataBuffer, dataBuffer.length);</b>
+<i>470</i>&nbsp;                                    //Log.w(TAG, &quot;Array &quot; + Arrays.toString(previousdataBuffer));
+<i>471</i>&nbsp;
+<b class="nc"><i>472</i>&nbsp;                                    if (previousdataBuffer != null &amp;&amp; !unknownByteDetected)</b>
+<b class="nc"><i>473</i>&nbsp;                                        notifyNewDataAcquired(previousdataBuffer);</b>
+<i>474</i>&nbsp;
+<b class="nc"><i>475</i>&nbsp;                                    previousdataBuffer = finalData;</b>
+<b class="nc"><i>476</i>&nbsp;                                    unknownByteDetected = false;</b>
+<b class="nc"><i>477</i>&nbsp;                                }</b>
+<i>478</i>&nbsp;                            }else{
+<b class="nc"><i>479</i>&nbsp;                                counter = 0;</b>
+<b class="nc"><i>480</i>&nbsp;                                resetStatus();</b>
+<i>481</i>&nbsp;                            }
+<i>482</i>&nbsp;
+<b class="nc"><i>483</i>&nbsp;                        } else if (command == MBX_GET_EEG_CONFIG.getIdentifierCode()</b>
+<b class="nc"><i>484</i>&nbsp;                                || command == CMD_GET_DEVICE_INFO.getIdentifierCode()) {</b>
+<b class="nc"><i>485</i>&nbsp;                            if(counter &lt; dataBuffer.length) {</b>
+<i>486</i>&nbsp;
+<b class="nc"><i>487</i>&nbsp;                                dataBuffer[counter++] = currentByte;</b>
+<i>488</i>&nbsp;
+<b class="nc"><i>489</i>&nbsp;                                if (counter == payloadSize + COMPRESS_NB_BYTES + PACKET_ID_NB_BYTES) {</b>
+<b class="nc"><i>490</i>&nbsp;                                    counter = 0;</b>
+<b class="nc"><i>491</i>&nbsp;                                    resetStatus();</b>
+<i>492</i>&nbsp;
+<b class="nc"><i>493</i>&nbsp;                                    final byte[] finalData = dataBuffer.clone();//Arrays.copyOf(dataBuffer, dataBuffer.length);</b>
+<b class="nc"><i>494</i>&nbsp;                                    AsyncUtils.executeAsync(new Runnable() {</b>
+<i>495</i>&nbsp;                                        @Override
+<i>496</i>&nbsp;                                        public void run() {
+<b class="nc"><i>497</i>&nbsp;                                            if (!isStreaming)</b>
+<b class="nc"><i>498</i>&nbsp;                                                stopWaitingOperation(finalData);</b>
+<i>499</i>&nbsp;                                        }
+<i>500</i>&nbsp;                                    });
+<b class="nc"><i>501</i>&nbsp;                                }</b>
+<i>502</i>&nbsp;                            }else{
+<b class="nc"><i>503</i>&nbsp;                                counter = 0;</b>
+<b class="nc"><i>504</i>&nbsp;                                resetStatus();</b>
+<i>505</i>&nbsp;                            }
+<i>506</i>&nbsp;
+<b class="nc"><i>507</i>&nbsp;                        } else if (command == DeviceCommandEvent.CMD_GET_BATTERY_VALUE.getIdentifierCode()) {</b>
+<b class="nc"><i>508</i>&nbsp;                            LogUtils.i(TAG, &quot;Reading Battery level&quot;);</b>
+<b class="nc"><i>509</i>&nbsp;                            dataBuffer = new byte[payloadSize];</b>
+<b class="nc"><i>510</i>&nbsp;                            counter = 0;</b>
+<b class="nc"><i>511</i>&nbsp;                            resetStatus();</b>
+<b class="nc"><i>512</i>&nbsp;                            int percent = -1;</b>
+<b class="nc"><i>513</i>&nbsp;                            switch ((int) currentByte) {</b>
+<i>514</i>&nbsp;                                case 0:
+<b class="nc"><i>515</i>&nbsp;                                    percent = 0;</b>
+<b class="nc"><i>516</i>&nbsp;                                    break;</b>
+<i>517</i>&nbsp;                                case 1:
+<b class="nc"><i>518</i>&nbsp;                                    percent = 15;</b>
+<b class="nc"><i>519</i>&nbsp;                                    break;</b>
+<i>520</i>&nbsp;                                case 2:
+<b class="nc"><i>521</i>&nbsp;                                    percent = 30;</b>
+<b class="nc"><i>522</i>&nbsp;                                    break;</b>
+<i>523</i>&nbsp;                                case 3:
+<b class="nc"><i>524</i>&nbsp;                                    percent = 50;</b>
+<b class="nc"><i>525</i>&nbsp;                                    break;</b>
+<i>526</i>&nbsp;                                case 4:
+<b class="nc"><i>527</i>&nbsp;                                    percent = 65;</b>
+<b class="nc"><i>528</i>&nbsp;                                    break;</b>
+<i>529</i>&nbsp;                                case 5:
+<b class="nc"><i>530</i>&nbsp;                                    percent = 85;</b>
+<b class="nc"><i>531</i>&nbsp;                                    break;</b>
+<i>532</i>&nbsp;                                case 6:
+<b class="nc"><i>533</i>&nbsp;                                    percent = 100;</b>
+<b class="nc"><i>534</i>&nbsp;                                    break;</b>
+<i>535</i>&nbsp;                                default:
+<i>536</i>&nbsp;                                    break;
+<i>537</i>&nbsp;                            }
+<b class="nc"><i>538</i>&nbsp;                            stopWaitingOperation(percent);</b>
+<i>539</i>&nbsp;
+<b class="nc"><i>540</i>&nbsp;                        } else {</b>
+<i>541</i>&nbsp;                            //Log.w(TAG, &quot;Unknown command found = &quot; + currentByte);
+<b class="nc"><i>542</i>&nbsp;                            resetStatus();</b>
+<i>543</i>&nbsp;                        }
+<i>544</i>&nbsp;                        break;
+<i>545</i>&nbsp;                }
+<i>546</i>&nbsp;
+<b class="nc"><i>547</i>&nbsp;            } catch (@NonNull final Exception e) {</b>
+<b class="nc"><i>548</i>&nbsp;                this.reader = null;</b>
+<b class="nc"><i>549</i>&nbsp;                this.writer = null;</b>
+<b class="nc"><i>550</i>&nbsp;                e.printStackTrace();</b>
+<i>551</i>&nbsp;
+<b class="nc"><i>552</i>&nbsp;                LogUtils.e(TAG, &quot;Failed to listen. Exception -&gt;\n&quot; + e.getMessage());</b>
+<b class="nc"><i>553</i>&nbsp;                Log.getStackTraceString(e);</b>
+<b class="nc"><i>554</i>&nbsp;                if (this.requestDisconnect) {</b>
+<b class="nc"><i>555</i>&nbsp;                    this.requestDisconnect = false; // consumed</b>
+<b class="nc"><i>556</i>&nbsp;                    notifyConnectionStateChanged(BtState.CONNECTION_INTERRUPTED);</b>
+<i>557</i>&nbsp;                } else {
+<b class="nc"><i>558</i>&nbsp;                    disconnect();</b>
+<i>559</i>&nbsp;                    //notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);
+<i>560</i>&nbsp;                }
+<b class="nc"><i>561</i>&nbsp;                break;</b>
+<b class="nc"><i>562</i>&nbsp;            }</b>
+<i>563</i>&nbsp;        }
+<b class="nc"><i>564</i>&nbsp;    }</b>
+<i>565</i>&nbsp;
+<i>566</i>&nbsp;    private void resetStatus(){
+<b class="nc"><i>567</i>&nbsp;        currentStatus = STATE_IDLE;</b>
+<b class="nc"><i>568</i>&nbsp;    }</b>
+<i>569</i>&nbsp;
+<i>570</i>&nbsp;    private byte[] fillBuffer(byte currentByte){
+<b class="nc"><i>571</i>&nbsp;        dataBuffer[counter++] = currentByte;</b>
+<i>572</i>&nbsp;
+<b class="nc"><i>573</i>&nbsp;        if (counter == payloadSize + COMPRESS_NB_BYTES + PACKET_ID_NB_BYTES) {</b>
+<b class="nc"><i>574</i>&nbsp;            counter = 0;</b>
+<b class="nc"><i>575</i>&nbsp;            resetStatus();</b>
+<b class="nc"><i>576</i>&nbsp;            return dataBuffer.clone();//Arrays.copyOf(dataBuffer, dataBuffer.length);</b>
+<i>577</i>&nbsp;        }
+<b class="nc"><i>578</i>&nbsp;        return null;</b>
+<i>579</i>&nbsp;    }
+<i>580</i>&nbsp;
+<i>581</i>&nbsp;    @Override
+<i>582</i>&nbsp;    public boolean stopStream() {
+<b class="nc"><i>583</i>&nbsp;        if(previousdataBuffer != null) {</b>
+<b class="nc"><i>584</i>&nbsp;            notifyNewDataAcquired(previousdataBuffer);</b>
+<b class="nc"><i>585</i>&nbsp;            Log.w(TAG, &quot;Last sent&quot; + Arrays.toString(previousdataBuffer));</b>
+<i>586</i>&nbsp;        }
+<i>587</i>&nbsp;
+<b class="nc"><i>588</i>&nbsp;        final byte[] msg = new DeviceStreamingCommands.StopEEGAcquisition().serialize();</b>
+<b class="nc"><i>589</i>&nbsp;        LogUtils.i(TAG, &quot;Requested to stop stream... &quot;+Arrays.toString(msg));</b>
+<b class="nc"><i>590</i>&nbsp;        if (!isConnected()) {</b>
+<b class="nc"><i>591</i>&nbsp;            LogUtils.i(TAG,&quot;Error Not connected!&quot;);</b>
+<b class="nc"><i>592</i>&nbsp;            return false;</b>
+<i>593</i>&nbsp;
+<i>594</i>&nbsp;        } else {
+<i>595</i>&nbsp;
+<b class="nc"><i>596</i>&nbsp;            if (sendData(msg)) {</b>
+<b class="nc"><i>597</i>&nbsp;                LogUtils.i(TAG,&quot;Successfully requested to stop stream&quot;);</b>
+<b class="nc"><i>598</i>&nbsp;                sendKeepAlive(false);</b>
+<b class="nc"><i>599</i>&nbsp;                isStreaming = false;</b>
+<b class="nc"><i>600</i>&nbsp;                notifyStreamStateChanged(StreamState.STOPPED);</b>
+<b class="nc"><i>601</i>&nbsp;                return true;</b>
+<i>602</i>&nbsp;            } else {
+<b class="nc"><i>603</i>&nbsp;                LogUtils.i(TAG,&quot;Error could not send request to stop stream!&quot;);</b>
+<b class="nc"><i>604</i>&nbsp;                return false;</b>
+<i>605</i>&nbsp;            }
+<i>606</i>&nbsp;        }
+<i>607</i>&nbsp;    }
+<i>608</i>&nbsp;
+<i>609</i>&nbsp;    /**
+<i>610</i>&nbsp;     * Ask to get the battery level
+<i>611</i>&nbsp;     */
+<i>612</i>&nbsp;    @Override
+<i>613</i>&nbsp;    public boolean readBattery() {
+<b class="nc"><i>614</i>&nbsp;        sendCommand(new DeviceCommands.GetBattery());</b>
+<b class="nc"><i>615</i>&nbsp;        return true;</b>
+<i>616</i>&nbsp;    }
+<i>617</i>&nbsp;
+<i>618</i>&nbsp;
+<i>619</i>&nbsp;    @Override
+<i>620</i>&nbsp;    public void sendCommand(CommandInterface.MbtCommand command) {
+<b class="nc"><i>621</i>&nbsp;        Object response = null;</b>
+<i>622</i>&nbsp;
+<b class="nc"><i>623</i>&nbsp;        if (!isConnectedDeviceReadyForCommand()){ //error returned if no headset is connected</b>
+<b class="nc"><i>624</i>&nbsp;            LogUtils.w(TAG, &quot;Command not sent : &quot;+command);</b>
+<b class="nc"><i>625</i>&nbsp;            command.onError(BluetoothError.ERROR_NOT_CONNECTED, null);</b>
+<i>626</i>&nbsp;        } else { //any command is not sent if no device is connected
+<b class="nc"><i>627</i>&nbsp;            if (command.isValid()){//any invalid command is not sent : validity criteria are defined in each Bluetooth implemented class , the onError callback is triggered in the constructor of the command object</b>
+<b class="nc"><i>628</i>&nbsp;                LogUtils.i(TAG, &quot;Send command : &quot;+command);</b>
+<i>629</i>&nbsp;                try {
+<b class="nc"><i>630</i>&nbsp;                    Thread.sleep(200);</b>
+<b class="nc"><i>631</i>&nbsp;                } catch (InterruptedException e) {</b>
+<b class="nc"><i>632</i>&nbsp;                    e.printStackTrace();</b>
+<b class="nc"><i>633</i>&nbsp;                }</b>
+<i>634</i>&nbsp;
+<b class="nc"><i>635</i>&nbsp;                boolean requestSent = sendData((byte[])command.serialize());</b>
+<i>636</i>&nbsp;
+<b class="nc"><i>637</i>&nbsp;                if(!requestSent) {</b>
+<b class="nc"><i>638</i>&nbsp;                    LogUtils.e(TAG, &quot;Command sending failed&quot;);</b>
+<b class="nc"><i>639</i>&nbsp;                    command.onError(BluetoothError.ERROR_REQUEST_OPERATION, null);</b>
+<i>640</i>&nbsp;
+<i>641</i>&nbsp;                }else {
+<b class="nc"><i>642</i>&nbsp;                    command.onRequestSent();</b>
+<i>643</i>&nbsp;
+<b class="nc"><i>644</i>&nbsp;                    if (command.isResponseExpected()) {</b>
+<b class="nc"><i>645</i>&nbsp;                        response = startWaitingOperation(11000);</b>
+<b class="nc"><i>646</i>&nbsp;                        command.onResponseReceived(response);</b>
+<i>647</i>&nbsp;                    }
+<i>648</i>&nbsp;                }
+<b class="nc"><i>649</i>&nbsp;            }else</b>
+<b class="nc"><i>650</i>&nbsp;                LogUtils.w(TAG, &quot;Command not sent : &quot;+command);</b>
+<i>651</i>&nbsp;        }
+<i>652</i>&nbsp;
+<b class="nc"><i>653</i>&nbsp;        mbtBluetoothManager.notifyResponseReceived(response, command);//return null response to the client if request has not been sent</b>
+<b class="nc"><i>654</i>&nbsp;    }</b>
+<i>655</i>&nbsp;
+<i>656</i>&nbsp;
+<i>657</i>&nbsp;    /**
+<i>658</i>&nbsp;     * Assemble all the input codes in a single array
+<i>659</i>&nbsp;     * @param code code to assemble
+<i>660</i>&nbsp;     * @return the assembled array
+<i>661</i>&nbsp;     */
+<i>662</i>&nbsp;    public static byte[] assembleCodes(DeviceCommandEvent code){
+<b class="nc"><i>663</i>&nbsp;        return DeviceCommandEvent.assembleCodes(</b>
+<b class="nc"><i>664</i>&nbsp;                DeviceCommandEvent.START_FRAME.getAssembledCodes(),</b>
+<b class="nc"><i>665</i>&nbsp;                DeviceCommandEvent.PAYLOAD_LENGTH.getAssembledCodes(),</b>
+<b class="nc"><i>666</i>&nbsp;                new byte[]{code.getIdentifierCode()},</b>
+<b class="nc"><i>667</i>&nbsp;                DeviceCommandEvent.COMPRESS.getAssembledCodes(),</b>
+<b class="nc"><i>668</i>&nbsp;                DeviceCommandEvent.PACKET_ID.getAssembledCodes(),</b>
+<b class="nc"><i>669</i>&nbsp;                DeviceCommandEvent.PAYLOAD.getAssembledCodes()</b>
+<i>670</i>&nbsp;        );
+<i>671</i>&nbsp;    }
+<i>672</i>&nbsp;}
+<i>673</i>&nbsp;
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2020-01-08 18:01</div>
+</div>
+</body>
+</html>
