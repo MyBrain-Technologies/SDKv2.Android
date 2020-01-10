@@ -131,7 +131,7 @@ public final class OADManager {
      */
     void init(MbtVersion firmwareVersion, MbtVersion hardwareVersion){
         LogUtils.d(TAG, "Initialize the OAD update for version "+firmwareVersion);
-        oadContext.setOADfilepath(OADExtractionUtils.getFilePathForFirmwareVersion(firmwareVersion.toString()));
+        oadContext.setOADfilepath(OADExtractionUtils.getFilePathForFirmwareVersion(firmwareVersion.toString(), hardwareVersion));
         try {
             byte[] content = OADExtractionUtils.extractFileContent(context.getAssets().open(oadContext.getOADfilepath()));
 

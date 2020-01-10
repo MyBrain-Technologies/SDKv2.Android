@@ -174,7 +174,8 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
     public void onStartOADUpdate(DeviceEvents.StartOADUpdate event) {
         if (oadManager == null && mCurrentConnectedDevice != null) {
             this.oadManager = new OADManager(mContext, this, getmCurrentConnectedDevice().getAudioDeviceAddress() != null);
-            this.oadManager.startOADUpdate(event.getFirmwareVersion());
+            event.setHardwareVersion(mCurrentConnectedDevice.getHardwareVersion());
+            this.oadManager.startOADUpdate(event);
         }
     }
 
