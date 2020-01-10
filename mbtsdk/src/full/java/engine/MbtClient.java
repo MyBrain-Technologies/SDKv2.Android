@@ -16,7 +16,7 @@ import core.MbtManager;
 import core.bluetooth.BtState;
 import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
-import core.device.model.FirmwareVersion;
+import core.device.model.MbtVersion;
 import core.eeg.storage.MbtEEGPacket;
 import engine.clientevents.BaseError;
 import engine.clientevents.BluetoothError;
@@ -313,7 +313,7 @@ public final class MbtClient {
      * @param firmwareVersion is the firmware version to install on the connected headset device.
      * @param stateListener is an optional (nullable) listener that notify the client when the OAD update progress & state change.
      */
-    public void updateFirmware(@NonNull FirmwareVersion firmwareVersion, @Nullable OADStateListener<BaseError> stateListener){
+    public void updateFirmware(@NonNull MbtVersion firmwareVersion, @Nullable OADStateListener<BaseError> stateListener){
         mbtManager.updateFirmware(firmwareVersion, stateListener);
     }
 

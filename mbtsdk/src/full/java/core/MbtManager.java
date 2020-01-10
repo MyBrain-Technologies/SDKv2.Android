@@ -30,7 +30,7 @@ import core.device.event.SaturationEvent;
 import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindsQRDataBase;
-import core.device.model.FirmwareVersion;
+import core.device.model.MbtVersion;
 import core.eeg.MbtEEGManager;
 import core.recording.MbtRecordingManager;
 import engine.SimpleRequestCallback;
@@ -219,7 +219,7 @@ public class MbtManager{
      * @param firmwareVersion is the firmware version to install on the connected headset device.
      * @param stateListener is an optional (nullable) listener that notify the client when the OAD update progress & state change.
      */
-    public void updateFirmware(FirmwareVersion firmwareVersion, OADStateListener<BaseError> stateListener) {
+    public void updateFirmware(MbtVersion firmwareVersion, OADStateListener<BaseError> stateListener) {
         this.oadStateListener = stateListener;
         DeviceEvents.StartOADUpdate event = new DeviceEvents.StartOADUpdate(firmwareVersion);
         MbtEventBus.postEvent(event);

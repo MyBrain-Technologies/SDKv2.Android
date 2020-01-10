@@ -119,11 +119,11 @@ final class MbtJsonBuilder{
 
             jsonWriter.name(HW_VERSION_KEY)
                     .value(device.getHardwareVersion() == null ?
-                        "" : device.getHardwareVersion());
+                        "" : device.getHardwareVersion().toString());
 
             jsonWriter.name(FW_VERSION_KEY)
                     .value(device.getFirmwareVersion() == null ?
-                            "" : device.getFirmwareVersion().getFirmwareVersionAsString());
+                            "" : device.getFirmwareVersion().toString());
 
             jsonWriter.name(SERIAL_NUMBER_KEY)
                     .value(device.getSerialNumber() == null ?

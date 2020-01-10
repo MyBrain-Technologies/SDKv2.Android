@@ -4,7 +4,7 @@ import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
 
-import core.device.model.FirmwareVersion;
+import core.device.model.MbtVersion;
 
 /**
  * Context of an OAD update that stores values related to the firmware to install.
@@ -50,8 +50,8 @@ class OADContext {
     /**
      * Return the version of the firmware to install on the connected headset device.
      */
-    public FirmwareVersion getFirmwareVersion() {
-        return new FirmwareVersion(new String(firmwareVersion));
+    public MbtVersion getFirmwareVersion() {
+        return new MbtVersion(new String(firmwareVersion));
     }
 
     /**

@@ -5,8 +5,6 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
-import org.apache.commons.lang.StringUtils;
-
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,6 +12,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import core.device.model.MbtVersion;
 import core.device.oad.PacketCounter;
 
 /**
@@ -25,9 +24,15 @@ public final class OADExtractionUtils {
     private final static String TAG = OADExtractionUtils.class.getName();;
 
     /**
-     * All the OAD binary files are located in a specific subdirectory of the assets directory
+     * All the OAD binary files subdirectories are located in a specific subdirectory of the assets directory
      */
     private static final String BINARY_FILES_DIRECTORY = "oad";
+
+    /**
+     * All the INDUS OAD binary files are located in a specific subdirectory of the oad directory
+     */
+
+    private static final String INDUS_BINARY_FILES_DIRECTORY = "indus";
 
     /**
      * Prefix included in the name of every OAD binary file name.
@@ -77,7 +82,7 @@ public final class OADExtractionUtils {
     /**
      * Size of the index of a packet of the OAD binary file (chunks of the file that hold the firmware to install)
      */
-    public static final int OAD_INDEX_PACKET_SIZE = 2;
+    private static final int OAD_INDEX_PACKET_SIZE = 2;
 
     /**
      * Size of the content of a packet of the OAD binary file (chunks of the file that hold the firmware to install)
@@ -91,15 +96,35 @@ public final class OADExtractionUtils {
 
     /**
      * Extract the content of an OAD binary file that holds the firmware
+     * @param hardwareVersion must be indus2 (1.0.0) or indus3 (1.1.0)
      * @return the content of the file as a byte array
      */
-    public static final String[] getAvailableFirmwareVersions(@NonNull AssetManager assetManager) {
-        if(assetManager == null)
+    static String getBinaryDirectory(MbtVersion hardwareVersion) {
+        String firmwareDirectory = BINARY_FILES_DIRECTORY + "/" + INDUS_BINARY_FILES_DIRECTORY;
+
+        boolean isIndus3 = new VersionHelper(hardwareVersion.toString()).isValidForFeature(VersionHelper.Feature.INDUS3);
+
+        if(isIndus3){
+            firmwareDirectory += "3";
+        } else {
+            firmwareDirectory += "2";
+        }
+
+        return firmwareDirectory;
+    }
+
+    static String[] getAvailableFirmwareVersions(@NonNull AssetManager assetManager, @NonNull MbtVersion hardwareVersion) {
+        if(assetManager == null || hardwareVersion == null)
             return null;
+
+        String directory = getBinaryDirectory(hardwareVersion);
+        if(directory == null){
+            return null;
+        }
 
         ArrayList<String> availableFirmwareVersions = new ArrayList<>();
         try {
-            for (String oadBinaryFileName : assetManager.list(BINARY_FILES_DIRECTORY)) {
+            for (String oadBinaryFileName : assetManager.list(directory)) {
                 String firmwareVersion = extractFirmwareVersionFromFileName(oadBinaryFileName);
                 availableFirmwareVersions.add(firmwareVersion);
             }
@@ -118,14 +143,14 @@ public final class OADExtractionUtils {
      * @param inputStream is the input stream that read the OAD binary file to extract
      * @return the content of the file as a byte array
      */
-    public static final byte[] extractFileContent(@NonNull final InputStream inputStream) throws IOException {
+    public static byte[] extractFileContent(@NonNull final InputStream inputStream) throws IOException {
         if(inputStream == null)
             throw new FileNotFoundException("File path/name incorrect : "+inputStream);
 
         byte[] fileContent = new byte[EXPECTED_NB_BYTES_BINARY_FILE];
-            // Read the file raw into a buffer
-            inputStream.read(fileContent, 0, fileContent.length);
-            inputStream.close();
+        // Read the file raw into a buffer
+        inputStream.read(fileContent, 0, fileContent.length);
+        inputStream.close();
 
         return fileContent;
     }
@@ -134,9 +159,8 @@ public final class OADExtractionUtils {
      * Returns true if the OAD binary file given in input starts with {@link OADExtractionUtils#BINARY_FILE_PREFIX}
      * and ends with {@link OADExtractionUtils#BINARY_FILE_FORMAT}
      * @param filename the file name to check
-     * @return
      */
-    public static boolean isValidFileFormat(String filename){
+    static boolean isValidFileFormat(String filename){
         return filename.startsWith(BINARY_FILE_PREFIX) && filename.endsWith(BINARY_FILE_FORMAT);
     }
 
@@ -145,8 +169,31 @@ public final class OADExtractionUtils {
      * @param firmwareVersion the firmware version
      * @return the fle name of the OAD binary file that match the firmware version given in input
      */
-    public static String getFilePathForFirmwareVersion(String firmwareVersion){
-        return BINARY_FILES_DIRECTORY + "/" + BINARY_FILE_PREFIX + firmwareVersion.replace(FIRMWARE_VERSION_HELPER_REGEX, FIRMWARE_VERSION_REGEX) + BINARY_FILE_FORMAT;
+    public static String getFilePathForFirmwareVersion(String firmwareVersion, MbtVersion hardwareVersion){
+        String filePath = BINARY_FILES_DIRECTORY + "/" + BINARY_FILE_PREFIX
+                + "%s"
+                + firmwareVersion.replace(FIRMWARE_VERSION_HELPER_REGEX, FIRMWARE_VERSION_REGEX)
+                + BINARY_FILE_FORMAT;
+
+        if(firmwareVersion.contains(FIRMWARE_VERSION_REGEX)){
+            firmwareVersion = firmwareVersion.replace(FIRMWARE_VERSION_REGEX, FIRMWARE_VERSION_HELPER_REGEX);
+        }
+
+        boolean isFirmwareBasedOnHardware = new VersionHelper(firmwareVersion).isValidForFeature(VersionHelper.Feature.FIRMWARE_BASED_ON_HARDWARE);
+        String additionalBinaryFilePrefix = "";
+
+        if(isFirmwareBasedOnHardware){
+            boolean isIndus2 = new VersionHelper(hardwareVersion.toString()).isValidForFeature(VersionHelper.Feature.INDUS2);
+            boolean isIndus3 = new VersionHelper(hardwareVersion.toString()).isValidForFeature(VersionHelper.Feature.INDUS3);
+
+            if(isIndus3){
+                additionalBinaryFilePrefix += ("i" + "3" + "-");
+            } else if(isIndus2){
+                additionalBinaryFilePrefix += ("i" + "2" + "-");
+            }
+        }
+
+        return String.format(filePath,additionalBinaryFilePrefix);
     }
 
     /**
@@ -156,7 +203,7 @@ public final class OADExtractionUtils {
      */
     public static final String extractFirmwareVersionFromFileName(@NonNull final String filename) {
         if(filename == null || filename.isEmpty() || !isValidFileFormat(filename.substring(filename.indexOf("/")+1)))
-                return null;
+            return null;
 
         return filename.substring(filename.indexOf("/")+1)
                 .replace(BINARY_FILE_PREFIX,"") //remove the "mm-ota-" prefix
@@ -225,7 +272,7 @@ public final class OADExtractionUtils {
         try {
             for (String file :  assetManager.list(BINARY_FILES_DIRECTORY)){
                 if(file.equals(filepath.substring(filepath.indexOf("/")+1)));
-                    return true;
+                return true;
             }
         } catch (IOException e) {
             e.printStackTrace();

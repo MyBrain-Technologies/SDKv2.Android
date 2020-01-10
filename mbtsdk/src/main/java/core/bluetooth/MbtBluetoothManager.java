@@ -812,7 +812,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 LogUtils.d(TAG, "device "+device);
                 updateConnectionState(true);//current state is set to QR_CODE_SENDING
                 if (device.getSerialNumber() != null && device.getExternalName() != null && (device.getExternalName().equals(MbtFeatures.MELOMIND_DEVICE_NAME) || device.getExternalName().length() == MbtFeatures.DEVICE_QR_CODE_LENGTH-1) //send the QR code found in the database if the headset do not know its own QR code
-                        && new VersionHelper(device.getFirmwareVersion().getFirmwareVersionAsString()).isValidForFeature(VersionHelper.Feature.REGISTER_EXTERNAL_NAME)) {
+                        && new VersionHelper(device.getFirmwareVersion().toString()).isValidForFeature(VersionHelper.Feature.REGISTER_EXTERNAL_NAME)) {
                     AsyncUtils.executeAsync(new Runnable() {
                         @Override
                         public void run() {
