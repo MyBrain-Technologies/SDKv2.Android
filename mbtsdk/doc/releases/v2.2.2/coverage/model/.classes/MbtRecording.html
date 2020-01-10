@@ -1,0 +1,206 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: MbtRecording</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">model</a> ]
+</div>
+
+<h1>Coverage Summary for Class: MbtRecording (model)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">MbtRecording</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 12)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 41)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package model;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import android.support.annotation.NonNull;
+<i>4</i>&nbsp;import android.support.annotation.Nullable;
+<i>5</i>&nbsp;
+<i>6</i>&nbsp;import java.io.Serializable;
+<i>7</i>&nbsp;import java.util.ArrayList;
+<i>8</i>&nbsp;import java.util.List;
+<i>9</i>&nbsp;
+<i>10</i>&nbsp;import core.eeg.storage.MbtEEGPacket;
+<i>11</i>&nbsp;
+<i>12</i>&nbsp;
+<i>13</i>&nbsp;/**
+<i>14</i>&nbsp; * Created by manon on 10/10/16.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;public class MbtRecording implements Serializable{
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;    @Nullable
+<i>19</i>&nbsp;    private RecordInfo recordInfo;
+<i>20</i>&nbsp;    private long recordingTime;
+<i>21</i>&nbsp;    private int nbPackets;
+<i>22</i>&nbsp;    private int firstPacketID;
+<i>23</i>&nbsp;    private ArrayList&lt;ArrayList&lt;Float&gt;&gt; qualities;
+<i>24</i>&nbsp;    private ArrayList&lt;ArrayList&lt;Float&gt;&gt; eegData;
+<i>25</i>&nbsp;    @Nullable
+<i>26</i>&nbsp;    private ArrayList&lt;Float&gt; status;
+<i>27</i>&nbsp;
+<i>28</i>&nbsp;    public MbtRecording(@NonNull int nbChannels,
+<i>29</i>&nbsp;                        @NonNull final RecordInfo recordInfo,
+<i>30</i>&nbsp;                        @NonNull final long recordingTime,
+<i>31</i>&nbsp;                        @NonNull List&lt;MbtEEGPacket&gt; eegPackets,
+<b class="nc"><i>32</i>&nbsp;                        @NonNull final boolean hasStatus) {</b>
+<i>33</i>&nbsp;
+<b class="nc"><i>34</i>&nbsp;        if(eegPackets == null)</b>
+<i>35</i>&nbsp;            return;
+<i>36</i>&nbsp;
+<b class="nc"><i>37</i>&nbsp;        this.recordingTime = recordingTime;</b>
+<b class="nc"><i>38</i>&nbsp;        this.recordInfo = recordInfo;</b>
+<b class="nc"><i>39</i>&nbsp;        this.firstPacketID = 0;</b>
+<b class="nc"><i>40</i>&nbsp;        this.nbPackets = eegPackets.size();</b>
+<i>41</i>&nbsp;
+<b class="nc"><i>42</i>&nbsp;        this.eegData = new ArrayList&lt;&gt;();</b>
+<b class="nc"><i>43</i>&nbsp;        this.qualities = new ArrayList&lt;&gt;();</b>
+<b class="nc"><i>44</i>&nbsp;        for (int i = 0 ; i &lt; nbChannels ; i++) {</b>
+<b class="nc"><i>45</i>&nbsp;            eegData.add(new ArrayList&lt;&gt;()) ;</b>
+<b class="nc"><i>46</i>&nbsp;            qualities.add(new ArrayList&lt;&gt;()) ;</b>
+<i>47</i>&nbsp;        }
+<b class="nc"><i>48</i>&nbsp;        if(hasStatus)</b>
+<b class="nc"><i>49</i>&nbsp;            this.status = new ArrayList&lt;&gt;();</b>
+<i>50</i>&nbsp;
+<b class="nc"><i>51</i>&nbsp;        assemblePackets(hasStatus, eegPackets);</b>
+<i>52</i>&nbsp;    }
+<i>53</i>&nbsp;
+<i>54</i>&nbsp;
+<i>55</i>&nbsp;    private void assemblePackets(boolean hasStatus, List&lt;MbtEEGPacket&gt; eegPackets){
+<b class="nc"><i>56</i>&nbsp;        if(eegPackets != null &amp;&amp; !eegPackets.isEmpty()) {</b>
+<i>57</i>&nbsp;
+<b class="nc"><i>58</i>&nbsp;            for (MbtEEGPacket eegPacket : eegPackets) {</b>
+<i>59</i>&nbsp;
+<i>60</i>&nbsp;                //RAW EEG
+<b class="nc"><i>61</i>&nbsp;                for(int eegIndex = 0; eegIndex &lt; eegPacket.getChannelsData().size(); eegIndex++){</b>
+<i>62</i>&nbsp;//                    if(eegIndex &gt;= eegData.size())
+<i>63</i>&nbsp;//                        eegData.add(new ArrayList&lt;&gt;());
+<b class="nc"><i>64</i>&nbsp;                    for (Float rawEEG : eegPacket.getChannelsData().get(eegIndex)) {</b>
+<b class="nc"><i>65</i>&nbsp;                        eegData.get(eegIndex).add(rawEEG);</b>
+<b class="nc"><i>66</i>&nbsp;                    }</b>
+<i>67</i>&nbsp;                }
+<i>68</i>&nbsp;
+<i>69</i>&nbsp;                //QUALITIES
+<b class="nc"><i>70</i>&nbsp;                if(eegPacket.getQualities() != null){</b>
+<b class="nc"><i>71</i>&nbsp;                    for (int qualityIndex = 0; qualityIndex &lt; eegPacket.getQualities().size(); qualityIndex++){</b>
+<b class="nc"><i>72</i>&nbsp;                        if(qualityIndex &gt;= qualities.size())</b>
+<b class="nc"><i>73</i>&nbsp;                            qualities.add(new ArrayList&lt;&gt;());</b>
+<b class="nc"><i>74</i>&nbsp;                        qualities.get(qualityIndex).add(eegPacket.getQualities().get(qualityIndex));</b>
+<i>75</i>&nbsp;                    }
+<i>76</i>&nbsp;                }
+<i>77</i>&nbsp;
+<i>78</i>&nbsp;                //STATUS
+<b class="nc"><i>79</i>&nbsp;                if (eegPacket.getStatusData() != null &amp;&amp; hasStatus)</b>
+<b class="nc"><i>80</i>&nbsp;                    status.addAll(eegPacket.getStatusData());</b>
+<i>81</i>&nbsp;
+<b class="nc"><i>82</i>&nbsp;            }</b>
+<i>83</i>&nbsp;        }
+<i>84</i>&nbsp;    }
+<i>85</i>&nbsp;
+<i>86</i>&nbsp;    @NonNull
+<b class="nc"><i>87</i>&nbsp;    public final RecordInfo getRecordInfos() {return recordInfo;}</b>
+<i>88</i>&nbsp;
+<i>89</i>&nbsp;    @NonNull
+<b class="nc"><i>90</i>&nbsp;    public final long getRecordingTime() {return recordingTime;}</b>
+<i>91</i>&nbsp;
+<i>92</i>&nbsp;    @NonNull
+<b class="nc"><i>93</i>&nbsp;    public final int getNbPackets() {return nbPackets;}</b>
+<i>94</i>&nbsp;
+<i>95</i>&nbsp;    @NonNull
+<b class="nc"><i>96</i>&nbsp;    public final int getFirstPacketsId() {return firstPacketID;}</b>
+<i>97</i>&nbsp;
+<i>98</i>&nbsp;    @NonNull
+<b class="nc"><i>99</i>&nbsp;    public final ArrayList&lt;ArrayList&lt;Float&gt;&gt; getQualities() {return qualities;}</b>
+<i>100</i>&nbsp;
+<i>101</i>&nbsp;    @NonNull
+<b class="nc"><i>102</i>&nbsp;    public final ArrayList&lt;ArrayList&lt;Float&gt;&gt; getEegData() {return  eegData;}</b>
+<i>103</i>&nbsp;
+<i>104</i>&nbsp;    @NonNull
+<b class="nc"><i>105</i>&nbsp;    public final ArrayList&lt;Float&gt; getStatus() {return status;}</b>
+<i>106</i>&nbsp;
+<b class="nc"><i>107</i>&nbsp;    public void setNbPackets(@NonNull final int nbPackets) {this.nbPackets = nbPackets;}</b>
+<i>108</i>&nbsp;
+<b class="nc"><i>109</i>&nbsp;    public void setFirstPacketID(@NonNull final int firstPacketID) {this.firstPacketID = firstPacketID;}</b>
+<i>110</i>&nbsp;
+<i>111</i>&nbsp;    @Override
+<i>112</i>&nbsp;    public String toString() {
+<b class="nc"><i>113</i>&nbsp;        return &quot;MbtRecording{&quot; +</b>
+<i>114</i>&nbsp;                &quot;recordInfo=&quot; + recordInfo +
+<i>115</i>&nbsp;                &quot;, recordingTime=&quot; + recordingTime +
+<i>116</i>&nbsp;                &quot;, nbPackets=&quot; + nbPackets +
+<i>117</i>&nbsp;                &quot;, firstPacketID=&quot; + firstPacketID +
+<b class="nc"><i>118</i>&nbsp;                &quot;, qualities=&quot; + (qualities != null ? (qualities.size()+&quot;x&quot;+qualities.get(0).size()) : &quot;null&quot;)+</b>
+<b class="nc"><i>119</i>&nbsp;                &quot;, eegData=&quot; + (eegData != null &amp;&amp; eegData.size() &gt; 0 ? eegData.size()+&quot;x&quot;+eegData.get(0).size() : eegData)+</b>
+<b class="nc"><i>120</i>&nbsp;                &quot;, status=&quot; + (status != null ? status.size() : &quot;null&quot;) +</b>
+<i>121</i>&nbsp;                &#39;}&#39;;
+<i>122</i>&nbsp;    }
+<i>123</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2020-01-08 18:01</div>
+</div>
+</body>
+</html>

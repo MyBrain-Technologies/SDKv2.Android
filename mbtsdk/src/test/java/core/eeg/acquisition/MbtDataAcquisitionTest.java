@@ -37,7 +37,7 @@ public class MbtDataAcquisitionTest {
     @Before
     public void setUp() {
         BtProtocol protocol = BtProtocol.BLUETOOTH_LE;
-        this.dataAcquisition = new MbtDataAcquisition(new MbtEEGManager(context, protocol),protocol);
+        this.dataAcquisition = new MbtDataAcquisition(new MbtEEGManager(context),protocol);
     }
 
     /**
@@ -46,9 +46,9 @@ public class MbtDataAcquisitionTest {
     @Test
     public void handleDataTestNotEnoughData() {
         byte[] data = new byte[]{14, 83, 34, -62, 43, -113, 29, -50, 37, 41, 14, 66, 4, -102, -128, 0, -128, 0};
-        dataAcquisition.handleDataAcquired(data);
+        dataAcquisition.handleDataAcquired(data, 2);
         data = new byte[]{14, 84, 29, -50, 37, 41, 34, -62, 43, -113,  -128, 0, -128, 0, 14, 66, 4, -102};
-        dataAcquisition.handleDataAcquired(data);
+        dataAcquisition.handleDataAcquired(data, 2);
         assertNull("Not enough data for conversion",dataAcquisition.getTestEegMatrix());
     }
 
@@ -59,7 +59,7 @@ public class MbtDataAcquisitionTest {
     @Test
     public void handleDataTestNullStatus() {
         byte[] data = new byte[]{14, 83, 34, -62, 43, -113, 29, -50, 37, 41, 14, 66, 4, -102, -128, 0, -128, 0};
-        dataAcquisition.handleDataAcquired(data);
+        dataAcquisition.handleDataAcquired(data, 2);
         assertNull(dataAcquisition.getTestStatusDataBytes());
     }
 
@@ -106,7 +106,7 @@ public class MbtDataAcquisitionTest {
         byte[] data = new byte[]{14, 83, 34, -62, 43, -113, 29, -50, 37, 41, 14, 66, 4, -102, -128, 0, -128, 0};
         int sizeDataArray = data.length;
 
-        dataAcquisition.handleDataAcquired(data);
+        dataAcquisition.handleDataAcquired(data, 2);
         assertTrue(" previous index= "+dataAcquisition.getPreviousIndex(),dataAcquisition.getPreviousIndex()==3667);
         assertTrue(dataAcquisition.getTestSingleRawEEGList()!=null);
         assertTrue("single raw eeg size "+dataAcquisition.getTestSingleRawEEGList().size(),dataAcquisition.getTestSingleRawEEGList().size() == (sizeDataArray-nbIndexBytes)/(nbBytes*nbChannels));
@@ -123,8 +123,8 @@ public class MbtDataAcquisitionTest {
         dataAcquisition.setTestSingleRawEEGList(new ArrayList<>()); //reset the list
         byte[] data = new byte[]{0, 0, 34, -62, 43, -113, 29, -50, 37, 41, 14, 66, 4, -102, -128, 0, -128, 0};
         byte[] data2 = new byte[]{0, (byte)indexDifference, 34, -62, 43, -113, 29, -50, 37, 41, 14, 66, 4, -102, -128, 0, -128, 0};
-        dataAcquisition.handleDataAcquired(data);
-        dataAcquisition.handleDataAcquired(data2);
+        dataAcquisition.handleDataAcquired(data, 2);
+        dataAcquisition.handleDataAcquired(data2,2);
         ArrayList<RawEEGSample> rawEEGSamples = dataAcquisition.getTestRawEEGSample();
 
         assertTrue(rawEEGSamples.contains(RawEEGSample.LOST_PACKET_INTERPOLATOR));
@@ -148,7 +148,7 @@ public class MbtDataAcquisitionTest {
         int nbBytesIndex =2;
         byte[] data = new byte[]{0, 0, 34, -62, 43, -113, 29, -50, 37, 41, 14, 66, 4, -102, -128, 0, -128, 0};
         int sizeArraydata = data.length;
-        dataAcquisition.handleDataAcquired(data);
+        dataAcquisition.handleDataAcquired(data, 2);
         ArrayList<RawEEGSample> rawEEGSamples = dataAcquisition.getTestRawEEGSample();
 
         assertTrue(!rawEEGSamples.contains(RawEEGSample.LOST_PACKET_INTERPOLATOR));
@@ -170,7 +170,7 @@ public class MbtDataAcquisitionTest {
     public void handleDataAcquiredTestDataInputSize(){
         dataAcquisition.setTestPreviousIndex(-1);
         byte[] data = new byte[]{14};
-        dataAcquisition.handleDataAcquired(data);
+        dataAcquisition.handleDataAcquired(data, 2);
         assertTrue(" previous index= "+dataAcquisition.getPreviousIndex(),dataAcquisition.getPreviousIndex()==-1);
     }
 
@@ -203,7 +203,7 @@ public class MbtDataAcquisitionTest {
             public void run() { //as handledataacquired calls methods that contain an async task where the eeg result matrix is returned, we must wait that the eeg matrix computation is done
 
                 for (int i = 0; i < nbAcquisition; i++) {
-                    dataAcquisition.handleDataAcquired(data[i]);
+                    dataAcquisition.handleDataAcquired(data[i],2);
                     assertTrue(data[i].length == 18);
                 }
             }
@@ -245,7 +245,7 @@ public class MbtDataAcquisitionTest {
             public void run() { //as handledataacquired calls methods that contain an async task where the eeg result matrix is returned, we must wait that the eeg matrix computation is done
 
                 for (int i = 0; i < nbAcquisition; i++) {
-                    dataAcquisition.handleDataAcquired(rawData);
+                    dataAcquisition.handleDataAcquired(rawData,2);
                     assertTrue(rawData.length == 18);
                 }
             }
@@ -286,7 +286,7 @@ public class MbtDataAcquisitionTest {
             public void run() { //as handledataacquired calls methods that contain an async task where the eeg result matrix is returned, we must wait that the eeg matrix computation is done
 
                 for (int i = 0; i < nbAcquisition; i++) {
-                    dataAcquisition.handleDataAcquired(data);
+                    dataAcquisition.handleDataAcquired(data, 2);
                     assertTrue(data.length == 18);
                 }
             }
@@ -324,7 +324,7 @@ public class MbtDataAcquisitionTest {
             @Override
             public void run() { //as handledataacquired calls methods that contain an async task where the eeg result matrix is returned, we must wait that the eeg matrix computation is done
                 for (int i = 0; i < nbAcquisition; i++) {// buffer size = 1000=16*62,5 => matrix size always = 1000/2 (in case nbChannel is 2) = 500
-                    dataAcquisition.handleDataAcquired(data);
+                    dataAcquisition.handleDataAcquired(data, 2);
                 }
             }
         }, Executors.newCachedThreadPool());

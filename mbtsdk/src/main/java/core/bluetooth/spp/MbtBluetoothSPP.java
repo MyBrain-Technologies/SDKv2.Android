@@ -284,7 +284,7 @@ public final class MbtBluetoothSPP
     }
 
     private void sendKeepAlive(boolean keepAlive) {
-        final byte[] msg = new byte[]{0};//new DeviceStreamingCommands.StartEEGAcquisition().serialize();
+        final byte[] msg = new byte[]{0,0,0,0};//new DeviceStreamingCommands.StartEEGAcquisition().serialize();
         if (keepAlive) {
             if (this.keepAliveTimer != null)
                 this.keepAliveTimer.cancel();

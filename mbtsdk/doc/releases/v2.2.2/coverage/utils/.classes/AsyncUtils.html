@@ -1,0 +1,138 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: AsyncUtils</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">utils</a> ]
+</div>
+
+<h1>Coverage Summary for Class: AsyncUtils (utils)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">AsyncUtils</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (2/ 4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    33.3%
+  </span>
+  <span class="absValue">
+    (6/ 18)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package utils;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import android.support.annotation.Keep;
+<i>4</i>&nbsp;import android.support.annotation.Nullable;
+<i>5</i>&nbsp;import android.util.Log;
+<i>6</i>&nbsp;
+<i>7</i>&nbsp;import java.util.concurrent.Callable;
+<i>8</i>&nbsp;import java.util.concurrent.ExecutorService;
+<i>9</i>&nbsp;import java.util.concurrent.Executors;
+<i>10</i>&nbsp;import java.util.concurrent.Future;
+<i>11</i>&nbsp;import java.util.concurrent.RejectedExecutionException;
+<i>12</i>&nbsp;
+<i>13</i>&nbsp;/**
+<i>14</i>&nbsp; * Class helper offering solution to execute any give operations in an asynchronous way thanks
+<i>15</i>&nbsp; * to the usage of threads and threadpools
+<i>16</i>&nbsp; * Created by Vincent on 31/07/2015.
+<i>17</i>&nbsp; */
+<i>18</i>&nbsp;@Keep
+<b class="nc"><i>19</i>&nbsp;public final class AsyncUtils {</b>
+<b class="fc"><i>20</i>&nbsp;    private final static ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());</b>
+<i>21</i>&nbsp;            //Executors.newCachedThreadPool();
+<b class="fc"><i>22</i>&nbsp;    private final static String TAG = AsyncUtils.class.getName();;</b>
+<i>23</i>&nbsp;
+<i>24</i>&nbsp;    /**
+<i>25</i>&nbsp;     * Execute the given runnable in a threadpool internally managed by a &lt;code&gt;ExecutorService&lt;/code&gt;
+<i>26</i>&nbsp;     * which allows asynchronous operations, meaning the code inside the runnable will be performed
+<i>27</i>&nbsp;     * alongside the (current) calling thread
+<i>28</i>&nbsp;     * @param runAsync  the runnable to run as an asynchronous operation - Must not be &lt;code&gt;NULL&lt;/code&gt;!
+<i>29</i>&nbsp;     * @throws  IllegalArgumentException in case the runnable is null
+<i>30</i>&nbsp;     * @see ExecutorService
+<i>31</i>&nbsp;     * @see Executors
+<i>32</i>&nbsp;     */
+<i>33</i>&nbsp;    public static void executeAsync(@Nullable final Runnable runAsync) {
+<b class="fc"><i>34</i>&nbsp;        if (runAsync == null)</b>
+<b class="nc"><i>35</i>&nbsp;            throw new IllegalArgumentException(&quot;runAsync MUST NOT be NULL&quot;);</b>
+<i>36</i>&nbsp;        try{
+<b class="fc"><i>37</i>&nbsp;            executor.execute(runAsync);</b>
+<b class="nc"><i>38</i>&nbsp;        }catch (RejectedExecutionException e){</b>
+<b class="nc"><i>39</i>&nbsp;            Log.e(TAG, &quot;Rejected execution&quot;);</b>
+<b class="fc"><i>40</i>&nbsp;        }</b>
+<b class="fc"><i>41</i>&nbsp;    }</b>
+<i>42</i>&nbsp;
+<i>43</i>&nbsp;    @Nullable
+<i>44</i>&nbsp;    public static &lt;T&gt; Future&lt;T&gt; executeAsync(@Nullable final Callable&lt;T&gt; callable){
+<b class="nc"><i>45</i>&nbsp;        Future&lt;T&gt; asyncResult = null;</b>
+<b class="nc"><i>46</i>&nbsp;        if (callable == null)</b>
+<b class="nc"><i>47</i>&nbsp;            throw new IllegalArgumentException(&quot;callable MUST NOT be NULL&quot;);</b>
+<i>48</i>&nbsp;        try{
+<b class="nc"><i>49</i>&nbsp;           asyncResult = executor.submit(callable);</b>
+<b class="nc"><i>50</i>&nbsp;        }catch (RejectedExecutionException e){</b>
+<b class="nc"><i>51</i>&nbsp;            Log.e(TAG, &quot;Rejected execution&quot;);</b>
+<b class="nc"><i>52</i>&nbsp;        }</b>
+<b class="nc"><i>53</i>&nbsp;        return asyncResult;</b>
+<i>54</i>&nbsp;    }
+<i>55</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2020-01-08 18:01</div>
+</div>
+</body>
+</html>

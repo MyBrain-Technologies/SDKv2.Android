@@ -1,0 +1,275 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: DeviceEvents</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">core.device</a> ]
+</div>
+
+<h1>Coverage Summary for Class: DeviceEvents (core.device)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+  <tr>
+    <td class="name">DeviceEvents$AudioConnectedDeviceEvent</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 4)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">DeviceEvents$AudioDisconnectedDeviceEvent</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 1)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">DeviceEvents$GetDeviceEvent</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">DeviceEvents$PostDeviceEvent</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 4)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">DeviceEvents$RawDeviceMeasure</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 4)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">DeviceEvents$StartOADUpdate</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (1/ 2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (3/ 4)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    20%
+  </span>
+  <span class="absValue">
+    (2/ 10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    22.2%
+  </span>
+  <span class="absValue">
+    (4/ 18)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package core.device;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import android.bluetooth.BluetoothDevice;
+<i>4</i>&nbsp;import android.support.annotation.NonNull;
+<i>5</i>&nbsp;import android.support.annotation.Nullable;
+<i>6</i>&nbsp;
+<i>7</i>&nbsp;import core.device.model.FirmwareVersion;
+<i>8</i>&nbsp;import core.device.model.MbtDevice;
+<i>9</i>&nbsp;import eventbus.MbtEventBus;
+<i>10</i>&nbsp;import features.MbtDeviceType;
+<i>11</i>&nbsp;
+<i>12</i>&nbsp;/**
+<i>13</i>&nbsp; * This interface contains all required object classes to communicate with the DEVICE module using
+<i>14</i>&nbsp; * the {@link MbtEventBus} bus.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;public interface DeviceEvents {
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;
+<i>19</i>&nbsp;    /**
+<i>20</i>&nbsp;     * Creating an instance of this class on the EventBus allows to get the {@link MbtDevice} instance
+<i>21</i>&nbsp;     * out of the Device module. Make sure to have a method in {@link MbtDeviceManager} that {@link org.greenrobot.eventbus.Subscribe}
+<i>22</i>&nbsp;     * to this event.
+<i>23</i>&nbsp;     */
+<b class="fc"><i>24</i>&nbsp;    class GetDeviceEvent {</b>
+<i>25</i>&nbsp;    }
+<i>26</i>&nbsp;
+<i>27</i>&nbsp;    /**
+<i>28</i>&nbsp;     * This object is used to encapsulate the {@link MbtDevice} instance out of the module. The encapsulation
+<i>29</i>&nbsp;     * is mandatory because the {@link MbtDevice} instance be null at some point (for example, before a
+<i>30</i>&nbsp;     * bluetooth connection).
+<i>31</i>&nbsp;     */
+<i>32</i>&nbsp;    class PostDeviceEvent {
+<i>33</i>&nbsp;        @Nullable
+<i>34</i>&nbsp;        private final MbtDevice device;
+<i>35</i>&nbsp;
+<b class="nc"><i>36</i>&nbsp;        public PostDeviceEvent(@Nullable MbtDevice device){</b>
+<b class="nc"><i>37</i>&nbsp;            this.device = device;</b>
+<b class="nc"><i>38</i>&nbsp;        }</b>
+<i>39</i>&nbsp;
+<i>40</i>&nbsp;        @Nullable
+<i>41</i>&nbsp;        public MbtDevice getDevice() {
+<b class="nc"><i>42</i>&nbsp;            return device;</b>
+<i>43</i>&nbsp;        }
+<i>44</i>&nbsp;    }
+<i>45</i>&nbsp;
+<b class="nc"><i>46</i>&nbsp;    class AudioDisconnectedDeviceEvent {    }</b>
+<i>47</i>&nbsp;
+<i>48</i>&nbsp;    class AudioConnectedDeviceEvent {
+<i>49</i>&nbsp;        @Nullable
+<i>50</i>&nbsp;        private final BluetoothDevice device;
+<i>51</i>&nbsp;
+<b class="nc"><i>52</i>&nbsp;        public AudioConnectedDeviceEvent(@Nullable BluetoothDevice device){</b>
+<b class="nc"><i>53</i>&nbsp;            this.device = device;</b>
+<b class="nc"><i>54</i>&nbsp;        }</b>
+<i>55</i>&nbsp;
+<i>56</i>&nbsp;        @Nullable
+<i>57</i>&nbsp;        public BluetoothDevice getDevice() {
+<b class="nc"><i>58</i>&nbsp;            return device;</b>
+<i>59</i>&nbsp;        }
+<i>60</i>&nbsp;
+<i>61</i>&nbsp;    }
+<i>62</i>&nbsp;
+<i>63</i>&nbsp;
+<i>64</i>&nbsp;    /**
+<i>65</i>&nbsp;     * Event that handle DC offset and Saturation raw measures
+<i>66</i>&nbsp;     */
+<i>67</i>&nbsp;    class RawDeviceMeasure {
+<i>68</i>&nbsp;        private byte[] rawMeasure;
+<i>69</i>&nbsp;
+<b class="nc"><i>70</i>&nbsp;        public RawDeviceMeasure(@NonNull byte[] rawMeasure){</b>
+<b class="nc"><i>71</i>&nbsp;            this.rawMeasure = rawMeasure;</b>
+<b class="nc"><i>72</i>&nbsp;        }</b>
+<i>73</i>&nbsp;
+<i>74</i>&nbsp;        byte[] getRawMeasure() {
+<b class="nc"><i>75</i>&nbsp;            return rawMeasure;</b>
+<i>76</i>&nbsp;        }
+<i>77</i>&nbsp;    }
+<i>78</i>&nbsp;
+<i>79</i>&nbsp;    class StartOADUpdate {
+<i>80</i>&nbsp;        private FirmwareVersion firmwareVersion;
+<i>81</i>&nbsp;
+<b class="fc"><i>82</i>&nbsp;        public StartOADUpdate(FirmwareVersion firmwareVersion) {</b>
+<b class="fc"><i>83</i>&nbsp;            this.firmwareVersion = firmwareVersion;</b>
+<b class="fc"><i>84</i>&nbsp;        }</b>
+<i>85</i>&nbsp;
+<i>86</i>&nbsp;        public FirmwareVersion getFirmwareVersion() {
+<b class="nc"><i>87</i>&nbsp;            return firmwareVersion;</b>
+<i>88</i>&nbsp;        }
+<i>89</i>&nbsp;    }
+<i>90</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2020-01-08 18:01</div>
+</div>
+</body>
+</html>

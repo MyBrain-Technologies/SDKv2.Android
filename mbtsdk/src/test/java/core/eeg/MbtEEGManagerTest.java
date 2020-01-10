@@ -39,7 +39,7 @@ public class MbtEEGManagerTest {
             e.printStackTrace();
         }
         MbtManager mbtManager = new MbtManager(context);
-        eegManager = new MbtEEGManager(context, BtProtocol.BLUETOOTH_LE);
+        eegManager = new MbtEEGManager(context);
         dataBuffering = new MbtDataBuffering(eegManager);
     }
 

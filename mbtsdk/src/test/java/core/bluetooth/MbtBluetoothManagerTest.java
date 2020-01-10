@@ -54,9 +54,12 @@ public class MbtBluetoothManagerTest {
         MbtBluetoothManager.RequestThread requestThread = Mockito.mock(MbtBluetoothManager.RequestThread.class);
         bluetoothManager.setRequestThread(requestThread);
         Handler requestHandler = Mockito.spy(Handler.class);
+        MbtBluetoothLE dataBluetooth = Mockito.mock(MbtBluetoothLE.class);
         bluetoothManager.setRequestHandler(requestHandler);
         DisconnectRequestEvent request = Mockito.mock(DisconnectRequestEvent.class);
         Mockito.when(request.isInterrupted()).thenReturn(true);
+        bluetoothManager.setBluetoothForDataStreaming(dataBluetooth);
+        Mockito.when(dataBluetooth.isConnected()).thenReturn(true);
 
         bluetoothManager.onNewBluetoothRequest(request);
 
@@ -385,14 +388,14 @@ public class MbtBluetoothManagerTest {
     public void notifyResponseReceived_DeviceCommand_EegConfig(){
         bluetoothManager.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
         bluetoothManager.requestCurrentConnectedDevice(deviceBeforeUpdate -> {
-            deviceBeforeUpdate.setInternalConfig(new MbtDevice.InternalConfig(new Byte[]{1,2,3,4,5}));
+            deviceBeforeUpdate.setInternalConfig(new MbtDevice.InternalConfig(2));
             MbtBluetoothLE bluetoothLE = Mockito.mock(MbtBluetoothLE.class);
             bluetoothManager.setBluetoothForDataStreaming(bluetoothLE);
             CommandInterface.MbtCommand command = Mockito.mock(DeviceCommand.class);
             bluetoothManager.notifyResponseReceived(RESPONSE_EEG_CONFIG, command);
 
             bluetoothManager.requestCurrentConnectedDevice(deviceAfterUpdate -> {
-                assertEquals(deviceAfterUpdate.getInternalConfig(), new MbtDevice.InternalConfig(ArrayUtils.toObject((RESPONSE_EEG_CONFIG)))); //we check that the internal config has been updated on the Device unit
+                assertEquals(deviceAfterUpdate.getInternalConfig(), new MbtDevice.InternalConfig(2)); //we check that the internal config has been updated on the Device unit
                 assertNotEquals(deviceBeforeUpdate.getInternalConfig(), deviceBeforeUpdate.getInternalConfig());//we compare the internal config before and after the request command
             });
         });
