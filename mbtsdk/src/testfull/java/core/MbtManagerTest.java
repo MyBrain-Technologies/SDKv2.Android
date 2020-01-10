@@ -20,6 +20,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import command.CommandInterface;
 import config.RecordConfig;
 import config.StreamConfig;
+import core.bluetooth.StreamState;
 import core.bluetooth.requests.CommandRequestEvent;
 import core.bluetooth.requests.StreamRequestEvent;
 import core.device.DeviceEvents;
@@ -30,6 +31,7 @@ import engine.SimpleRequestCallback;
 import eventbus.MbtEventBus;
 import engine.clientevents.BaseError;
 import engine.clientevents.EegListener;
+import features.MbtDeviceType;
 
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
@@ -40,8 +42,8 @@ import static org.junit.Assert.assertFalse;
 @PrepareForTest(MbtEventBus.class)
 public class MbtManagerTest {
 
-    Context context ;
-    MbtManager manager ;
+    Context context;
+    MbtManager manager;
 
 
     @Before
@@ -159,7 +161,7 @@ public class MbtManagerTest {
         MbtEventBus.postEvent(new CommandRequestEvent(command));
     }
 
-    public void stopStream_noRecord(){
+    public void stopStream_noRecord() {
         manager.startStream(new StreamConfig.Builder(new EegListener<BaseError>() {
             @Override
             public void onNewPackets(@NonNull MbtEEGPacket eegPackets) {
@@ -167,16 +169,22 @@ public class MbtManagerTest {
             }
 
             @Override
+            public void onNewStreamState(@NonNull StreamState streamState) {
+
+            }
+
+            @Override
             public void onError(BaseError error, String additionalInfo) {
 
             }
-        }).create());
+        }).createForDevice(MbtDeviceType.MELOMIND));
         assertTrue(new StreamRequestEvent(false, false,
                 false, false, null).stopStream());
 
     }
+
     @Test
-    public void stopStream_record(){
+    public void stopStream_record() {
 //        manager.startStream(new StreamConfig.Builder(new EegListener<BaseError>() {
 //            @Override
 //            public void onNewPackets(@NonNull MbtEEGPacket eegPackets) {
@@ -192,8 +200,9 @@ public class MbtManagerTest {
                 false, false, null).stopStream());
 
     }
+
     @Test
-    public void stopRecord_streamStarted(){
+    public void stopRecord_streamStarted() {
 //        manager.startStream(new StreamConfig.Builder(new EegListener<BaseError>() {
 //            @Override
 //            public void onNewPackets(@NonNull MbtEEGPacket eegPackets) {
@@ -210,8 +219,9 @@ public class MbtManagerTest {
                 false, false, null).stopStream());
 
     }
+
     @Test
-    public void startStreamRecord_stopStreamRecord(){
+    public void startStreamRecord_stopStreamRecord() {
 //        manager.startStream(new StreamConfig.Builder(new EegListener<BaseError>() {
 //            @Override
 //            public void onNewPackets(@NonNull MbtEEGPacket eegPackets) {
@@ -229,8 +239,9 @@ public class MbtManagerTest {
                 false, false, null).stopStream());
 
     }
+
     @Test
-    public void startStreamRecord_stopStream(){
+    public void startStreamRecord_stopStream() {
 //        manager.startStream(new StreamConfig.Builder(new EegListener<BaseError>() {
 //            @Override
 //            public void onNewPackets(@NonNull MbtEEGPacket eegPackets) {
@@ -247,6 +258,7 @@ public class MbtManagerTest {
                 false, false, null).stopStream());
 
     }
+
     @Test
     public void requestCurrentConnectedDevice_withValidCallback() {
         Context context = Mockito.mock(Context.class);
@@ -278,7 +290,7 @@ public class MbtManagerTest {
         manager.requestCurrentConnectedDevice(callback);
     }
 
-    public void stopRecord_noStream(){
+    public void stopRecord_noStream() {
         //manager.startRecord(context);
         assertTrue(new StreamRequestEvent(false, false,
                 false, false, null).stopStream());
@@ -286,9 +298,10 @@ public class MbtManagerTest {
     }
 
     @Test
-    public void startRecord_stopStream(){
+    public void startRecord_stopStream() {
         //manager.startRecord(context);
         assertTrue(new StreamRequestEvent(false, false,
                 false, false, null).stopStream());
 
     }
+}
