@@ -1,0 +1,384 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: MbtJsonBuilder</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">core.recording.localstorage</a> ]
+</div>
+
+<h1>Coverage Summary for Class: MbtJsonBuilder (core.recording.localstorage)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">MbtJsonBuilder</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 141)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package core.recording.localstorage;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import android.os.Bundle;
+<i>4</i>&nbsp;import android.support.annotation.NonNull;
+<i>5</i>&nbsp;import android.support.annotation.Nullable;
+<i>6</i>&nbsp;import android.util.JsonWriter;
+<i>7</i>&nbsp;import android.util.Log;
+<i>8</i>&nbsp;
+<i>9</i>&nbsp;import org.json.JSONException;
+<i>10</i>&nbsp;import org.json.JSONObject;
+<i>11</i>&nbsp;
+<i>12</i>&nbsp;import java.io.IOException;
+<i>13</i>&nbsp;import java.io.StringWriter;
+<i>14</i>&nbsp;import java.util.ArrayList;
+<i>15</i>&nbsp;import java.util.List;
+<i>16</i>&nbsp;import java.util.Set;
+<i>17</i>&nbsp;import java.util.UUID;
+<i>18</i>&nbsp;
+<i>19</i>&nbsp;import core.device.model.MbtDevice;
+<i>20</i>&nbsp;import core.eeg.storage.MbtEEGPacket;
+<i>21</i>&nbsp;import core.recording.metadata.Comment;
+<i>22</i>&nbsp;import features.MbtAcquisitionLocations;
+<i>23</i>&nbsp;import model.MbtRecording;
+<i>24</i>&nbsp;import model.RecordInfo;
+<i>25</i>&nbsp;
+<i>26</i>&nbsp;/**
+<i>27</i>&nbsp; * A helper class containing statics methods to serialize and deserialize Objects.
+<i>28</i>&nbsp; * &lt;p&gt;For now, this helper contains methods to serialize and deserialize &lt;code&gt;MBTSession&lt;/code&gt;,
+<i>29</i>&nbsp; * &lt;code&gt;MBTUser&lt;/code&gt; and &lt;code&gt;MbtEEGPacket&lt;/code&gt;&lt;/p&gt;
+<i>30</i>&nbsp; * @author Manon Leterme
+<i>31</i>&nbsp; * @version 1.0
+<i>32</i>&nbsp; */
+<i>33</i>&nbsp;
+<b class="nc"><i>34</i>&nbsp;final class MbtJsonBuilder{</b>
+<i>35</i>&nbsp;
+<b class="nc"><i>36</i>&nbsp;    private final static String TAG = MbtJsonBuilder.class.getName();</b>
+<i>37</i>&nbsp;
+<i>38</i>&nbsp;    private final static String UUID_KEY = &quot;uuidJsonFile&quot;;
+<i>39</i>&nbsp;
+<i>40</i>&nbsp;    private final static String CONTEXT_KEY = &quot;context&quot;;
+<i>41</i>&nbsp;        private final static String OWNER_ID_KEY = &quot;ownerId&quot;;
+<i>42</i>&nbsp;
+<i>43</i>&nbsp;    private final static String RI_ALGO_KEY = &quot;riAlgo&quot;;
+<i>44</i>&nbsp;
+<i>45</i>&nbsp;    private final static String HEADER_KEY = &quot;header&quot;;
+<i>46</i>&nbsp;        private final static String DEVICE_INFO_KEY = &quot;deviceInfo&quot;;
+<i>47</i>&nbsp;            private final static String PRODUCT_NAME_KEY = &quot;productName&quot;;
+<i>48</i>&nbsp;            private final static String HW_VERSION_KEY = &quot;hardwareVersion&quot;;
+<i>49</i>&nbsp;            private final static String FW_VERSION_KEY = &quot;firmwareVersion&quot;;
+<i>50</i>&nbsp;            private final static String SERIAL_NUMBER_KEY = &quot;uniqueDeviceIdentifier&quot;;
+<i>51</i>&nbsp;        final static String RECORDING_NUMBER_KEY = &quot;recordingNb&quot;;
+<i>52</i>&nbsp;        final static String RECORDING_NUMBER_PREFIX = &quot;0x&quot;;
+<i>53</i>&nbsp;        private final static String COMMENTS_KEY = &quot;comments&quot;;
+<i>54</i>&nbsp;        private final static String COMMENT_DATE_KEY = &quot;date&quot;;
+<i>55</i>&nbsp;        private final static String COMMENT_VALUE_KEY = &quot;comment&quot;;
+<i>56</i>&nbsp;        private final static String EEG_PACKET_LENGTH_KEY = &quot;eegPacketLength&quot;;
+<i>57</i>&nbsp;        private final static String SAMP_RATE_KEY = &quot;sampRate&quot;;
+<i>58</i>&nbsp;        private final static String NB_CHANNELS_KEY = &quot;nbChannels&quot;;
+<i>59</i>&nbsp;        private final static String ACQUISITION_LOCATION_KEY = &quot;acquisitionLocation&quot;;
+<i>60</i>&nbsp;        private final static String REFERENCES_LOCATION_KEY = &quot;referencesLocation&quot;;
+<i>61</i>&nbsp;        private final static String GROUND_LOCATION_KEY =  &quot;groundsLocation&quot;;
+<i>62</i>&nbsp;
+<i>63</i>&nbsp;    private final static String RECORDING_KEY = &quot;recording&quot;;
+<i>64</i>&nbsp;        private final static String RECORD_ID_KEY = &quot;recordID&quot;;
+<i>65</i>&nbsp;        private final static String RECORDING_TYPE_KEY = &quot;recordingType&quot;;
+<i>66</i>&nbsp;            private final static String RECORD_TYPE_KEY = &quot;recordType&quot;;
+<i>67</i>&nbsp;            private final static String SP_ALGO_VERSION_KEY = &quot;spVersion&quot;;
+<i>68</i>&nbsp;            private final static String SOURCE_KEY = &quot;source&quot;;
+<i>69</i>&nbsp;            private final static String DATA_TYPE_KEY = &quot;dataType&quot;;
+<i>70</i>&nbsp;        private final static String RECORDING_TIME_KEY = &quot;recordingTime&quot;;
+<i>71</i>&nbsp;        private final static String NB_PACKETS_KEY = &quot;nbPackets&quot;;
+<i>72</i>&nbsp;        private final static String FIRST_PACKET_ID_KEY = &quot;firstPacketId&quot;;
+<i>73</i>&nbsp;        private final static String QUALITIES_KEY = &quot;qualities&quot;;
+<i>74</i>&nbsp;        private final static String CHANNEL_DATA_KEY = &quot;channelData&quot;;
+<i>75</i>&nbsp;        private final static String STATUS_DATA_KEY = &quot;statusData&quot;;
+<i>76</i>&nbsp;        private final static String RECORDING_PARAMS_KEY = &quot;recordingParameters&quot;;
+<i>77</i>&nbsp;
+<i>78</i>&nbsp;    @Nullable
+<i>79</i>&nbsp;    static final String serializeRecording(@NonNull final MbtDevice device,
+<i>80</i>&nbsp;                                                  @NonNull final MbtRecording recording,
+<i>81</i>&nbsp;                                                  @NonNull final int totalRecordingNb,
+<i>82</i>&nbsp;                                                  @Nullable final ArrayList&lt;Comment&gt; comments,
+<i>83</i>&nbsp;                                                  @Nullable final Bundle recordingParams,
+<i>84</i>&nbsp;                                                  @NonNull final String ownerId) {
+<i>85</i>&nbsp;
+<b class="nc"><i>86</i>&nbsp;        if (recording.getNbPackets() == 0)</b>
+<b class="nc"><i>87</i>&nbsp;            throw new IllegalArgumentException(&quot;No recording&quot;);</b>
+<i>88</i>&nbsp;
+<i>89</i>&nbsp;        try {
+<b class="nc"><i>90</i>&nbsp;            final StringWriter stringWriter = new StringWriter();</b>
+<b class="nc"><i>91</i>&nbsp;            final JsonWriter jsonWriter = new JsonWriter(stringWriter);</b>
+<i>92</i>&nbsp;
+<b class="nc"><i>93</i>&nbsp;            jsonWriter.beginObject();</b>
+<i>94</i>&nbsp;            // BEGINNING OF MAIN JSON OBJECT
+<b class="nc"><i>95</i>&nbsp;            jsonWriter.name(UUID_KEY)</b>
+<b class="nc"><i>96</i>&nbsp;                    .value(UUID.randomUUID().toString());</b>
+<i>97</i>&nbsp;
+<b class="nc"><i>98</i>&nbsp;            jsonWriter.name(CONTEXT_KEY);</b>
+<b class="nc"><i>99</i>&nbsp;            jsonWriter.beginObject();</b>
+<i>100</i>&nbsp;
+<b class="nc"><i>101</i>&nbsp;            jsonWriter.name(OWNER_ID_KEY)</b>
+<b class="nc"><i>102</i>&nbsp;                    .value(ownerId);</b>
+<i>103</i>&nbsp;
+<b class="nc"><i>104</i>&nbsp;            if(recordingParams != null &amp;&amp; recordingParams.getString(RI_ALGO_KEY) != null){</b>
+<b class="nc"><i>105</i>&nbsp;                jsonWriter.name(RI_ALGO_KEY)</b>
+<b class="nc"><i>106</i>&nbsp;                        .value(recordingParams.getString(RI_ALGO_KEY));</b>
+<i>107</i>&nbsp;            }
+<i>108</i>&nbsp;
+<b class="nc"><i>109</i>&nbsp;            jsonWriter.endObject();</b>
+<i>110</i>&nbsp;
+<b class="nc"><i>111</i>&nbsp;            jsonWriter.name(HEADER_KEY);</b>
+<b class="nc"><i>112</i>&nbsp;            jsonWriter.beginObject();   // beginning of &quot;header&quot;   object</b>
+<i>113</i>&nbsp;
+<b class="nc"><i>114</i>&nbsp;            jsonWriter.name(DEVICE_INFO_KEY);</b>
+<b class="nc"><i>115</i>&nbsp;            jsonWriter.beginObject();   // beginning of &quot;deviceInfo&quot;        object</b>
+<i>116</i>&nbsp;
+<b class="nc"><i>117</i>&nbsp;            jsonWriter.name(PRODUCT_NAME_KEY)</b>
+<b class="nc"><i>118</i>&nbsp;                    .value(device.getProductName());</b>
+<i>119</i>&nbsp;
+<b class="nc"><i>120</i>&nbsp;            jsonWriter.name(HW_VERSION_KEY)</b>
+<b class="nc"><i>121</i>&nbsp;                    .value(device.getHardwareVersion() == null ?</b>
+<b class="nc"><i>122</i>&nbsp;                        &quot;&quot; : device.getHardwareVersion());</b>
+<i>123</i>&nbsp;
+<b class="nc"><i>124</i>&nbsp;            jsonWriter.name(FW_VERSION_KEY)</b>
+<b class="nc"><i>125</i>&nbsp;                    .value(device.getFirmwareVersion() == null ?</b>
+<b class="nc"><i>126</i>&nbsp;                            &quot;&quot; : device.getFirmwareVersion().getFirmwareVersionAsString());</b>
+<i>127</i>&nbsp;
+<b class="nc"><i>128</i>&nbsp;            jsonWriter.name(SERIAL_NUMBER_KEY)</b>
+<b class="nc"><i>129</i>&nbsp;                    .value(device.getSerialNumber() == null ?</b>
+<b class="nc"><i>130</i>&nbsp;                        &quot;&quot; : device.getSerialNumber());</b>
+<i>131</i>&nbsp;
+<b class="nc"><i>132</i>&nbsp;            jsonWriter.endObject();     // end of       &quot;deviceInfo&quot;        object</b>
+<i>133</i>&nbsp;
+<b class="nc"><i>134</i>&nbsp;            jsonWriter.name(RECORDING_NUMBER_KEY)</b>
+<b class="nc"><i>135</i>&nbsp;                    .value(RECORDING_NUMBER_PREFIX+ String.format(&quot;%02X&quot;,totalRecordingNb));</b>
+<i>136</i>&nbsp;
+<i>137</i>&nbsp;
+<b class="nc"><i>138</i>&nbsp;            if(comments != null &amp;&amp; !comments.isEmpty()){</b>
+<b class="nc"><i>139</i>&nbsp;                jsonWriter.name(COMMENTS_KEY);</b>
+<b class="nc"><i>140</i>&nbsp;                jsonWriter.beginArray();</b>
+<b class="nc"><i>141</i>&nbsp;                for (Comment comment : comments) {</b>
+<b class="nc"><i>142</i>&nbsp;                    jsonWriter.beginObject();</b>
+<i>143</i>&nbsp;
+<b class="nc"><i>144</i>&nbsp;                    jsonWriter.name(COMMENT_DATE_KEY)</b>
+<b class="nc"><i>145</i>&nbsp;                            .value(comment.getTimestamp());</b>
+<i>146</i>&nbsp;
+<b class="nc"><i>147</i>&nbsp;                    jsonWriter.name(COMMENT_VALUE_KEY)</b>
+<b class="nc"><i>148</i>&nbsp;                            .value(comment.getComment());</b>
+<b class="nc"><i>149</i>&nbsp;                    jsonWriter.endObject();</b>
+<b class="nc"><i>150</i>&nbsp;                }</b>
+<b class="nc"><i>151</i>&nbsp;                jsonWriter.endArray();</b>
+<i>152</i>&nbsp;            }
+<i>153</i>&nbsp;
+<b class="nc"><i>154</i>&nbsp;            jsonWriter.name(EEG_PACKET_LENGTH_KEY)</b>
+<b class="nc"><i>155</i>&nbsp;                    .value(device.getEegPacketLength());</b>
+<i>156</i>&nbsp;
+<b class="nc"><i>157</i>&nbsp;            jsonWriter.name(SAMP_RATE_KEY)</b>
+<b class="nc"><i>158</i>&nbsp;                    .value(device.getSampRate());</b>
+<i>159</i>&nbsp;
+<b class="nc"><i>160</i>&nbsp;            jsonWriter.name(NB_CHANNELS_KEY)</b>
+<b class="nc"><i>161</i>&nbsp;                    .value(device.getNbChannels());</b>
+<i>162</i>&nbsp;
+<b class="nc"><i>163</i>&nbsp;            jsonWriter.name(ACQUISITION_LOCATION_KEY);</b>
+<b class="nc"><i>164</i>&nbsp;            jsonWriter.beginArray();</b>
+<i>165</i>&nbsp;
+<b class="nc"><i>166</i>&nbsp;            for (final MbtAcquisitionLocations local : device.getAcquisitionLocations()) {</b>
+<b class="nc"><i>167</i>&nbsp;                jsonWriter.value(local.toString());</b>
+<b class="nc"><i>168</i>&nbsp;            }</b>
+<b class="nc"><i>169</i>&nbsp;            jsonWriter.endArray();</b>
+<i>170</i>&nbsp;
+<b class="nc"><i>171</i>&nbsp;            jsonWriter.name(REFERENCES_LOCATION_KEY);</b>
+<b class="nc"><i>172</i>&nbsp;            jsonWriter.beginArray();</b>
+<i>173</i>&nbsp;
+<b class="nc"><i>174</i>&nbsp;            for (final MbtAcquisitionLocations local : device.getReferencesLocations()) {</b>
+<b class="nc"><i>175</i>&nbsp;                jsonWriter.value(local.toString());</b>
+<b class="nc"><i>176</i>&nbsp;            }</b>
+<b class="nc"><i>177</i>&nbsp;            jsonWriter.endArray();</b>
+<i>178</i>&nbsp;
+<b class="nc"><i>179</i>&nbsp;            jsonWriter.name(GROUND_LOCATION_KEY);</b>
+<b class="nc"><i>180</i>&nbsp;            jsonWriter.beginArray();</b>
+<i>181</i>&nbsp;
+<b class="nc"><i>182</i>&nbsp;            for (final MbtAcquisitionLocations local : device.getGroundsLocation()) {</b>
+<b class="nc"><i>183</i>&nbsp;                jsonWriter.value(local.toString());</b>
+<b class="nc"><i>184</i>&nbsp;            }</b>
+<b class="nc"><i>185</i>&nbsp;            jsonWriter.endArray();</b>
+<i>186</i>&nbsp;
+<b class="nc"><i>187</i>&nbsp;            jsonWriter.endObject();     // end of       &quot;header&quot;   object</b>
+<i>188</i>&nbsp;
+<b class="nc"><i>189</i>&nbsp;            jsonWriter.name(RECORDING_KEY);</b>
+<b class="nc"><i>190</i>&nbsp;            jsonWriter.beginObject();   // beginning of &quot;recording&quot;    object</b>
+<i>191</i>&nbsp;
+<b class="nc"><i>192</i>&nbsp;            jsonWriter.name(RECORD_ID_KEY)</b>
+<b class="nc"><i>193</i>&nbsp;                    .value(recording.getRecordInfos().getRecordId());</b>
+<i>194</i>&nbsp;
+<b class="nc"><i>195</i>&nbsp;            jsonWriter.name(RECORDING_TYPE_KEY);</b>
+<b class="nc"><i>196</i>&nbsp;            jsonWriter.beginObject();</b>
+<i>197</i>&nbsp;
+<b class="nc"><i>198</i>&nbsp;            jsonWriter.name(RECORD_TYPE_KEY)</b>
+<b class="nc"><i>199</i>&nbsp;                    .value(recording.getRecordInfos().getRecordingType().getRecordType().toString());</b>
+<i>200</i>&nbsp;
+<b class="nc"><i>201</i>&nbsp;            jsonWriter.name(SP_ALGO_VERSION_KEY)</b>
+<b class="nc"><i>202</i>&nbsp;                    .value(recording.getRecordInfos().getRecordingType().getSPVersion());</b>
+<i>203</i>&nbsp;
+<b class="nc"><i>204</i>&nbsp;            jsonWriter.name(SOURCE_KEY)</b>
+<b class="nc"><i>205</i>&nbsp;                    .value(recording.getRecordInfos().getRecordingType().getSource().toString());</b>
+<i>206</i>&nbsp;
+<b class="nc"><i>207</i>&nbsp;            jsonWriter.name(DATA_TYPE_KEY)</b>
+<b class="nc"><i>208</i>&nbsp;                    .value(recording.getRecordInfos().getRecordingType().getExerciseType().toString());</b>
+<i>209</i>&nbsp;
+<b class="nc"><i>210</i>&nbsp;            jsonWriter.endObject();</b>
+<i>211</i>&nbsp;
+<b class="nc"><i>212</i>&nbsp;            jsonWriter.name(RECORDING_TIME_KEY)</b>
+<b class="nc"><i>213</i>&nbsp;                    .value(recording.getRecordingTime());</b>
+<i>214</i>&nbsp;
+<b class="nc"><i>215</i>&nbsp;            jsonWriter.name(NB_PACKETS_KEY)</b>
+<b class="nc"><i>216</i>&nbsp;                    .value(recording.getNbPackets());</b>
+<i>217</i>&nbsp;
+<b class="nc"><i>218</i>&nbsp;            jsonWriter.name(FIRST_PACKET_ID_KEY)</b>
+<b class="nc"><i>219</i>&nbsp;                    .value(recording.getFirstPacketsId());</b>
+<i>220</i>&nbsp;
+<b class="nc"><i>221</i>&nbsp;            jsonWriter.name(QUALITIES_KEY);</b>
+<b class="nc"><i>222</i>&nbsp;            jsonWriter.beginArray();    // beginning of &quot;qualities&quot;         array</b>
+<i>223</i>&nbsp;
+<b class="nc"><i>224</i>&nbsp;            for (int it = 0 ; it &lt; recording.getQualities().size() ; it ++) {</b>
+<i>225</i>&nbsp;
+<b class="nc"><i>226</i>&nbsp;                ArrayList&lt;Float&gt; channelsQualities = recording.getQualities().get(it);</b>
+<i>227</i>&nbsp;
+<b class="nc"><i>228</i>&nbsp;                jsonWriter.beginArray(); // we generate an array for each row of the qualities matrix</b>
+<b class="nc"><i>229</i>&nbsp;                for (Float quality : channelsQualities){</b>
+<b class="nc"><i>230</i>&nbsp;                    jsonWriter.value((quality != null &amp;&amp; quality != Float.NaN ) ? quality : null);</b>
+<b class="nc"><i>231</i>&nbsp;                }</b>
+<b class="nc"><i>232</i>&nbsp;                jsonWriter.endArray();  // and we close it here</b>
+<i>233</i>&nbsp;            }
+<b class="nc"><i>234</i>&nbsp;            jsonWriter.endArray();      // end of       &quot;qualities&quot;         array</b>
+<i>235</i>&nbsp;
+<b class="nc"><i>236</i>&nbsp;            jsonWriter.name(CHANNEL_DATA_KEY);</b>
+<b class="nc"><i>237</i>&nbsp;            jsonWriter.beginArray();    // beginning of &quot;channelData&quot;       array</b>
+<i>238</i>&nbsp;
+<b class="nc"><i>239</i>&nbsp;            for (ArrayList&lt;Float&gt; floats : recording.getEegData()) {</b>
+<b class="nc"><i>240</i>&nbsp;                ArrayList&lt;Float&gt; channelSamples = floats;</b>
+<b class="nc"><i>241</i>&nbsp;                jsonWriter.beginArray(); // we generate an array for each row of the EEG data matrix</b>
+<i>242</i>&nbsp;
+<b class="nc"><i>243</i>&nbsp;                for (Float sample : channelSamples)</b>
+<b class="nc"><i>244</i>&nbsp;                    jsonWriter.value(!Float.isNaN(sample) ? sample : null);</b>
+<i>245</i>&nbsp;
+<b class="nc"><i>246</i>&nbsp;                jsonWriter.endArray();  // and we close it here</b>
+<b class="nc"><i>247</i>&nbsp;            }</b>
+<i>248</i>&nbsp;
+<b class="nc"><i>249</i>&nbsp;            jsonWriter.endArray();      // end of       &quot;channelData&quot;       array</b>
+<i>250</i>&nbsp;
+<b class="nc"><i>251</i>&nbsp;            jsonWriter.name(STATUS_DATA_KEY); // beginning of &quot;statusData&quot;       array</b>
+<b class="nc"><i>252</i>&nbsp;            jsonWriter.beginArray();</b>
+<i>253</i>&nbsp;
+<b class="nc"><i>254</i>&nbsp;            if(recording.getStatus() != null){</b>
+<b class="nc"><i>255</i>&nbsp;                for (Float status : recording.getStatus()) {</b>
+<b class="nc"><i>256</i>&nbsp;                    jsonWriter.value(!Float.isNaN(status) ? status : null);</b>
+<b class="nc"><i>257</i>&nbsp;                }</b>
+<i>258</i>&nbsp;            }
+<b class="nc"><i>259</i>&nbsp;            jsonWriter.endArray(); // end of       &quot;statusData&quot;       array</b>
+<i>260</i>&nbsp;
+<i>261</i>&nbsp;            //Using JSONObject wrapper in order to automatically serialize in JSON the recordingParameters and then reinject it in the stringWriter
+<b class="nc"><i>262</i>&nbsp;            if(recordingParams == null){</b>
+<b class="nc"><i>263</i>&nbsp;                jsonWriter.name(RECORDING_PARAMS_KEY)</b>
+<b class="nc"><i>264</i>&nbsp;                        .nullValue();</b>
+<i>265</i>&nbsp;            } else{
+<b class="nc"><i>266</i>&nbsp;                JSONObject json = new JSONObject();</b>
+<b class="nc"><i>267</i>&nbsp;                Set&lt;String&gt; mKeys = recordingParams.keySet();</b>
+<b class="nc"><i>268</i>&nbsp;                for (String mKey : mKeys) {</b>
+<i>269</i>&nbsp;                    try {
+<b class="nc"><i>270</i>&nbsp;                        json.put(mKey, JSONObject.wrap(recordingParams.get(mKey)));</b>
+<b class="nc"><i>271</i>&nbsp;                    } catch(JSONException e) {</b>
+<i>272</i>&nbsp;                        //Handle exception here
+<b class="nc"><i>273</i>&nbsp;                        Log.e(TAG, &quot;Impossible to serialize bundle element with key &quot; + mKey);</b>
+<b class="nc"><i>274</i>&nbsp;                    }</b>
+<b class="nc"><i>275</i>&nbsp;                }</b>
+<b class="nc"><i>276</i>&nbsp;                stringWriter.append(&quot;,&quot;);</b>
+<b class="nc"><i>277</i>&nbsp;                stringWriter.append(&quot;\&quot;&quot;).append(RECORDING_PARAMS_KEY).append(&quot;\&quot;&quot;).append(&quot;:&quot;);</b>
+<b class="nc"><i>278</i>&nbsp;                stringWriter.append(json.toString());</b>
+<i>279</i>&nbsp;            }
+<i>280</i>&nbsp;
+<b class="nc"><i>281</i>&nbsp;            jsonWriter.endObject();     // end of       &quot;recording&quot;    object</b>
+<i>282</i>&nbsp;
+<i>283</i>&nbsp;            // END OF OF MAIN JSON OBJECT
+<b class="nc"><i>284</i>&nbsp;            jsonWriter.endObject();   // end of MAIN JSON   object</b>
+<i>285</i>&nbsp;
+<b class="nc"><i>286</i>&nbsp;            return stringWriter.toString();</b>
+<b class="nc"><i>287</i>&nbsp;        } catch (@NonNull final IOException ioe) {</b>
+<b class="nc"><i>288</i>&nbsp;            Log.e(TAG, &quot;Error while serializing EEG data to JSON -&gt;\n&quot; + ioe.getMessage());</b>
+<b class="nc"><i>289</i>&nbsp;            return null;</b>
+<i>290</i>&nbsp;        }
+<i>291</i>&nbsp;    }
+<i>292</i>&nbsp;
+<i>293</i>&nbsp;
+<i>294</i>&nbsp;    static MbtRecording convertEEGPacketsToRecording(@NonNull int nbChannels,
+<i>295</i>&nbsp;                                                            @NonNull RecordInfo recordInfo,
+<i>296</i>&nbsp;                                                            @NonNull long timestamp,
+<i>297</i>&nbsp;                                                            @NonNull List&lt;MbtEEGPacket&gt; eegPackets,
+<i>298</i>&nbsp;                                                            @NonNull boolean hasStatus){
+<b class="nc"><i>299</i>&nbsp;        return new MbtRecording(nbChannels, recordInfo, timestamp, eegPackets, hasStatus);</b>
+<i>300</i>&nbsp;    }
+<i>301</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2020-01-08 18:01</div>
+</div>
+</body>
+</html>
