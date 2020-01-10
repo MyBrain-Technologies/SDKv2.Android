@@ -47,7 +47,7 @@ public interface OADCommands {
          * @param nbPackets is the number of packets of the binary file that holds the firmware to upload & install on the headset device
          * If you're interested in getting the returned response,
          * sent by the headset to the SDK once the command is received,
-         * call the {@link RequestFirmwareValidation}(FirmwareVersion firmwareVersion, short nbPackets, {@linkCommandCallback<DeviceCommand, byte[]>)} constructor.
+         * call the {@link RequestFirmwareValidation}(MbtVersion firmwareVersion, short nbPackets, {@linkCommandCallback<DeviceCommand, byte[]>)} constructor.
          */
         public RequestFirmwareValidation(byte[] firmwareVersion, short nbPackets) {
             super(DeviceCommandEvent.MBX_START_OTA_TXF);

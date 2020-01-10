@@ -1,8 +1,6 @@
 package core.device.oad;
 
 import android.content.Context;
-import android.os.Handler;
-import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
@@ -16,11 +14,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 import core.device.event.OADEvent;
-import core.device.model.FirmwareVersion;
+import core.device.model.MbtVersion;
 import engine.clientevents.BaseError;
 import engine.clientevents.OADError;
 import eventbus.events.FirmwareUpdateClientEvent;
-import utils.AsyncUtils;
 import utils.BitUtils;
 import utils.LogUtils;
 import utils.MbtAsyncWaitOperation;
@@ -132,9 +129,9 @@ public final class OADManager {
      * - the number of OAD packets (chunks of binary file)
      * @param firmwareVersion is the firmware version to install
      */
-    void init(FirmwareVersion firmwareVersion){
+    void init(MbtVersion firmwareVersion, MbtVersion hardwareVersion){
         LogUtils.d(TAG, "Initialize the OAD update for version "+firmwareVersion);
-        oadContext.setOADfilepath(OADExtractionUtils.getFilePathForFirmwareVersion(firmwareVersion.getFirmwareVersionAsString()));
+        oadContext.setOADfilepath(OADExtractionUtils.getFilePathForFirmwareVersion(firmwareVersion.toString()));
         try {
             byte[] content = OADExtractionUtils.extractFileContent(context.getAssets().open(oadContext.getOADfilepath()));
 
