@@ -16,7 +16,7 @@ android {
         buildConfigField "boolean", "BLUETOOTH_ENABLED", "true"
         buildConfigField "boolean", "DEVICE_ENABLED", "true"
         buildConfigField "boolean", "RECORDING_ENABLED", "true"
-        buildConfigField "String", "FIRMWARE_VERSION", "\"1_7_4\""
+        buildConfigField "String", "FIRMWARE_VERSION", "\"1_7_8\""
         buildConfigField "String", "USE_ALGO_VERSION", "\"2.3.1\""
     }
 

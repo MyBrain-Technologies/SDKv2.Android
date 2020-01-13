@@ -33,7 +33,6 @@ import eventbus.events.ResetBluetoothEvent;
 import utils.LogUtils;
 
 
-
 //todo sections
 /**
  * The Device unit deals with all the actions related to the Headset device (beside Bluetooth).

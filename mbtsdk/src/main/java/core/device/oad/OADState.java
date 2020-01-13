@@ -1,4 +1,5 @@
 package core.device.oad;
+
 import android.support.annotation.IntRange;
 import android.support.annotation.Keep;
 import android.support.annotation.Nullable;
