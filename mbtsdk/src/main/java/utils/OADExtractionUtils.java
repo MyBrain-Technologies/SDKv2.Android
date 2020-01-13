@@ -170,7 +170,7 @@ public final class OADExtractionUtils {
      * @return the fle name of the OAD binary file that match the firmware version given in input
      */
     public static String getFilePathForFirmwareVersion(String firmwareVersion, MbtVersion hardwareVersion){
-        String filePath = BINARY_FILES_DIRECTORY + "/" + BINARY_FILE_PREFIX
+        String filePath = getBinaryDirectory(hardwareVersion) + "/" + BINARY_FILE_PREFIX
                 + "%s"
                 + firmwareVersion.replace(FIRMWARE_VERSION_HELPER_REGEX, FIRMWARE_VERSION_REGEX)
                 + BINARY_FILE_FORMAT;
@@ -201,13 +201,13 @@ public final class OADExtractionUtils {
      * @param filename is the OAD binary file that holds the firmware
      * @return the firmware version as a String
      */
-    public static final String extractFirmwareVersionFromFileName(@NonNull final String filename) {
-        if(filename == null || filename.isEmpty() || !isValidFileFormat(filename.substring(filename.indexOf("/")+1)))
+    public static final String extractFirmwareVersionFromFileName(@NonNull String filename) {
+        if(filename == null || filename.isEmpty() || !isValidFileFormat(filename.substring(filename.lastIndexOf("/")+1)))
             return null;
 
-        return filename.substring(filename.indexOf("/")+1)
-                .replace(BINARY_FILE_PREFIX,"") //remove the "mm-ota-" prefix
-                .replace(BINARY_FILE_FORMAT,"") //remove the ".bin" format
+        filename = filename.replace(BINARY_FILE_FORMAT,"");//remove the ".bin" format
+        return filename
+                .substring(filename.length()-5) // the last 5 characters are the version number
                 .replace(FIRMWARE_VERSION_REGEX, FIRMWARE_VERSION_HELPER_REGEX); //replace the "_" digit splitter with a "." splitter
     }
 
