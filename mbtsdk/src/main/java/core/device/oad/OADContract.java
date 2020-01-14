@@ -1,6 +1,6 @@
 package core.device.oad;
 
-import android.support.annotation.Keep;
+import androidx.annotation.Keep;
 
 import command.OADCommands;
 import core.device.model.MbtVersion;

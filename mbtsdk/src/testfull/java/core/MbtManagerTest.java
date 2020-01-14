@@ -2,10 +2,9 @@ package core;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import org.greenrobot.eventbus.EventBus;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -18,7 +17,6 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 
 import command.CommandInterface;
-import config.RecordConfig;
 import config.StreamConfig;
 import core.bluetooth.StreamState;
 import core.bluetooth.requests.CommandRequestEvent;

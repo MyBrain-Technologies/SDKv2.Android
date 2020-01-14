@@ -16,7 +16,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.ParcelUuid;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import android.util.Log;
 
 import java.lang.reflect.InvocationTargetException;

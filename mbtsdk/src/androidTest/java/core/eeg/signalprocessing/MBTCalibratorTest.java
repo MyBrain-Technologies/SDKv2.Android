@@ -1,19 +1,15 @@
 package core.eeg.signalprocessing;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
-import java.util.Set;
 
-import core.eeg.MbtEEGManager;
 import core.eeg.storage.MbtEEGPacket;
 
 import static org.junit.Assert.*;

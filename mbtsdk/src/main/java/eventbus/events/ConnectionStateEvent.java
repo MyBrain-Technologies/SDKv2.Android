@@ -1,8 +1,8 @@
 package eventbus.events;
 
 import android.bluetooth.BluetoothDevice;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import core.bluetooth.BtState;
 import core.device.model.MbtDevice;
