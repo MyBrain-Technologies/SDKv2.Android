@@ -1,7 +1,7 @@
 package core.recording.localstorage;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -15,8 +15,6 @@ import core.eeg.storage.MbtEEGPacket;
 import engine.clientevents.RecordingError;
 import model.MbtRecording;
 import utils.LogUtils;
-
-import static core.eeg.MbtEEGManager.UNDEFINED_DURATION;
 
 /**
  * MbtRecordBuffering is responsible for storing EEG raw data acquired

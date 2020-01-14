@@ -1,7 +1,7 @@
 package core.eeg;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -15,7 +15,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 
 import core.MbtManager;
-import core.bluetooth.BtProtocol;
 import core.eeg.storage.MbtDataBuffering;
 import core.eeg.storage.MbtEEGPacket;
 import core.eeg.storage.RawEEGSample;

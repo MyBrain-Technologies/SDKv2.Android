@@ -2,8 +2,8 @@ package utils;
 
 import android.content.Context;
 import android.graphics.Point;
-import android.support.annotation.Keep;
-import android.support.annotation.NonNull;
+import androidx.annotation.Keep;
+import androidx.annotation.NonNull;
 import android.view.Display;
 import android.view.WindowManager;
 

@@ -5,8 +5,8 @@ import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.v7.app.AppCompatActivity;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
 
 import android.util.Log;
 import android.view.View;
@@ -32,8 +32,6 @@ import core.device.event.DCOffsetEvent;
 import core.device.event.SaturationEvent;
 import core.bluetooth.BtState;
 import core.device.model.MbtDevice;
-import core.device.model.FirmwareVersion;
-import core.device.oad.OADState;
 import core.eeg.storage.MbtEEGPacket;
 import engine.MbtClient;
 
@@ -44,7 +42,6 @@ import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.BluetoothStateListener;
 import engine.clientevents.DeviceBatteryListener;
 import engine.clientevents.EegListener;
-import engine.clientevents.OADStateListener;
 import features.MbtDeviceType;
 import features.MbtFeatures;
 import utils.AsyncUtils;

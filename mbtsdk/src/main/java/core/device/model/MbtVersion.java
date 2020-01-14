@@ -1,7 +1,7 @@
 package core.device.model;
 
-import android.support.annotation.Keep;
-import android.support.annotation.NonNull;
+import androidx.annotation.Keep;
+import androidx.annotation.NonNull;
 
 import utils.LogUtils;
 import utils.VersionHelper;

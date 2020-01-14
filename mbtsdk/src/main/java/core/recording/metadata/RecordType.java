@@ -1,6 +1,6 @@
 package core.recording.metadata;
 
-import android.support.annotation.Keep;
+import androidx.annotation.Keep;
 
 @Keep
 public enum RecordType {

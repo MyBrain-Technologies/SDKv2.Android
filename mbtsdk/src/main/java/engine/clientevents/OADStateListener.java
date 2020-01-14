@@ -1,9 +1,8 @@
 package engine.clientevents;
 
-import android.support.annotation.IntRange;
-import android.support.annotation.Keep;
+import androidx.annotation.IntRange;
+import androidx.annotation.Keep;
 
-import core.device.oad.OADManager;
 import core.device.oad.OADState;
 
 /**

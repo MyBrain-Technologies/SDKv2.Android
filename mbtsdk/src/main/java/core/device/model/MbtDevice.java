@@ -1,9 +1,9 @@
 package core.device.model;
 
 import android.bluetooth.BluetoothDevice;
-import android.support.annotation.Keep;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.Keep;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
@@ -89,14 +89,7 @@ public abstract class MbtDevice implements Serializable {
     public MbtVersion getFirmwareVersion() {
         return this.firmwareVersion;
     }
-    /**
-     * Gets the version of the firmware
-     * @return the version of the firmware
-     */
-    @NonNull
-    public String getFirmwareVersionAsString() {
-        return this.firmwareVersion.toString();
-    }
+
 
     /**
      * Gets the commercial name of the device/headset - type of hardware

@@ -6,7 +6,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.media.AudioManager;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import android.util.Log;
 
 import java.lang.reflect.InvocationTargetException;
@@ -225,7 +225,7 @@ public final class MbtBluetoothA2DP
                     public void onRequestComplete(MbtDevice device) {
                         if(device == null)
                             return;
-                        if(new VersionHelper(device.getFirmwareVersionAsString()).isValidForFeature(VersionHelper.Feature.A2DP_FROM_HEADSET)){
+                        if(new VersionHelper(device.getFirmwareVersion().toString()).isValidForFeature(VersionHelper.Feature.A2DP_FROM_HEADSET)){
                             mbtBluetoothManager.disconnectA2DPFromBLE();
                             try {
                                 asyncDisconnection.waitOperationResult(MbtConfig.getBluetoothA2DpConnectionTimeout());

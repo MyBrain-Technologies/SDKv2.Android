@@ -1,6 +1,6 @@
 package core.eeg.signalprocessing;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import android.util.Log;
 
 import org.apache.commons.lang.ArrayUtils;

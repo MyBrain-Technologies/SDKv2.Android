@@ -1,6 +1,6 @@
 package command;
 
-import android.support.annotation.Keep;
+import androidx.annotation.Keep;
 
 import core.bluetooth.spp.MbtBluetoothSPP;
 import engine.clientevents.BaseError;
