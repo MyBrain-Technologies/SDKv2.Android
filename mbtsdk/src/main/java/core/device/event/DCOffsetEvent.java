@@ -7,7 +7,7 @@ import java.util.Arrays;
 /**
  * Created by SophieZ on 28/02/2018.
  */
-import android.support.annotation.Keep;
+import androidx.annotation.Keep;
 
 @Keep
 public final class DCOffsetEvent implements Serializable {

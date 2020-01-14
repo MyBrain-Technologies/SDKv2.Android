@@ -1,7 +1,7 @@
 package engine.clientevents;
 
-import android.support.annotation.Keep;
-import android.support.annotation.Nullable;
+import androidx.annotation.Keep;
+import androidx.annotation.Nullable;
 
 import core.bluetooth.BtState;
 import core.device.model.MbtDevice;

@@ -1,7 +1,7 @@
 package core.eeg.signalprocessing;
 
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 /**
  * ContextSP contains some static values related to the signal processing

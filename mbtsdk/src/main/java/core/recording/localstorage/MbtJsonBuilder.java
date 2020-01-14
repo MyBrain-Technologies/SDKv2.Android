@@ -1,8 +1,8 @@
 package core.recording.localstorage;
 
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import android.util.JsonWriter;
 import android.util.Log;
 
@@ -119,11 +119,11 @@ final class MbtJsonBuilder{
 
             jsonWriter.name(HW_VERSION_KEY)
                     .value(device.getHardwareVersion() == null ?
-                        "" : device.getHardwareVersion());
+                        "" : device.getHardwareVersion().toString());
 
             jsonWriter.name(FW_VERSION_KEY)
                     .value(device.getFirmwareVersion() == null ?
-                            "" : device.getFirmwareVersion().getFirmwareVersionAsString());
+                            "" : device.getFirmwareVersion().toString());
 
             jsonWriter.name(SERIAL_NUMBER_KEY)
                     .value(device.getSerialNumber() == null ?

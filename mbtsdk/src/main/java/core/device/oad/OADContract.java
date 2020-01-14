@@ -1,9 +1,9 @@
 package core.device.oad;
 
-import android.support.annotation.Keep;
+import androidx.annotation.Keep;
 
 import command.OADCommands;
-import core.device.model.FirmwareVersion;
+import core.device.model.MbtVersion;
 import eventbus.events.FirmwareUpdateClientEvent;
 
 /**
@@ -45,7 +45,7 @@ public interface OADContract {
      * Return true if the current firmware version is equal to the input firmware version, false otherwise.
      * @return true if the current firmware version is equal to the input firmware version, false otherwise.
      */
-    boolean verifyFirmwareVersion(FirmwareVersion firmwareVersionExpected);
+    boolean verifyFirmwareVersion(MbtVersion mbtVersionExpected);
 
     /**
      * Method to call when the OAD update process is over.

@@ -1,24 +1,23 @@
 package core.device;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
-import android.support.annotation.VisibleForTesting;
+import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 import android.util.Log;
 
 
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
-import command.BluetoothCommands;
 import command.OADCommands;
 import config.ConnectionConfig;
 import core.BaseModuleManager;
 import core.bluetooth.requests.CommandRequestEvent;
 import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
+import core.device.model.MbtVersion;
 import core.device.oad.OADContract;
 import core.device.oad.OADState;
 import eventbus.events.BluetoothResponseEvent;
-import core.device.model.FirmwareVersion;
 import core.device.model.MbtDevice;
 import core.device.event.DCOffsetEvent;
 import core.device.event.SaturationEvent;
@@ -32,7 +31,6 @@ import eventbus.events.DeviceInfoEvent;
 import eventbus.events.FirmwareUpdateClientEvent;
 import eventbus.events.ResetBluetoothEvent;
 import utils.LogUtils;
-
 
 
 //todo sections
@@ -144,7 +142,7 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
                     break;
                 case FW_VERSION:
                     if(event.getInfo() != null)
-                        mCurrentConnectedDevice.setFirmwareVersion(new FirmwareVersion((String)event.getInfo()));
+                        mCurrentConnectedDevice.setFirmwareVersion(new MbtVersion((String)event.getInfo()));
                     break;
                 case HW_VERSION:
                     if(event.getInfo() != null)
@@ -175,7 +173,8 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
     public void onStartOADUpdate(DeviceEvents.StartOADUpdate event) {
         if (oadManager == null && mCurrentConnectedDevice != null) {
             this.oadManager = new OADManager(mContext, this, getmCurrentConnectedDevice().getAudioDeviceAddress() != null);
-            this.oadManager.startOADUpdate(event.getFirmwareVersion());
+            event.setHardwareVersion(mCurrentConnectedDevice.getHardwareVersion());
+            this.oadManager.startOADUpdate(event);
         }
     }
 
@@ -277,7 +276,7 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
     }
 
     @Override
-    public boolean verifyFirmwareVersion(FirmwareVersion firmwareVersionExpected) {
+    public boolean verifyFirmwareVersion(MbtVersion firmwareVersionExpected) {
         return mCurrentConnectedDevice.getFirmwareVersion().equals(firmwareVersionExpected);
     }
 

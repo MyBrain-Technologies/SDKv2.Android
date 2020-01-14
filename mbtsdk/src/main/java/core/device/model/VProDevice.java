@@ -1,10 +1,9 @@
 package core.device.model;
 
 import android.bluetooth.BluetoothDevice;
-import android.support.annotation.Keep;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.util.Log;
+import androidx.annotation.Keep;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import org.apache.commons.lang.ArrayUtils;
 
@@ -12,7 +11,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import config.MbtConfig;
 import core.bluetooth.spp.MbtBluetoothSPP;
 import features.MbtAcquisitionLocations;
 import features.MbtDeviceType;
@@ -37,7 +35,7 @@ public class VProDevice extends MbtDevice{
      * @return the version of the firmware
      */
     @NonNull
-    public final FirmwareVersion getFirmwareVersion() {
+    public final MbtVersion getFirmwareVersion() {
         return this.firmwareVersion;
     }
 
@@ -60,14 +58,6 @@ public class VProDevice extends MbtDevice{
         return this.serialNumber;
     }
 
-    /**
-     * Gets the version of the hardware used
-     * @return the heardware version
-     */
-    @NonNull
-    public final String getHardwareVersion() {
-        return this.hardwareVersion;
-    }
 
     @NonNull
     public final int getSampRate() {return this.getInternalConfig().getSampRate();}
@@ -100,10 +90,6 @@ public class VProDevice extends MbtDevice{
 
     @NonNull
     public final List<MbtAcquisitionLocations> getGroundsLocation() {return this.groundsLocation;}
-
-    public void setHardwareVersion(@NonNull final String hardwareVersion) {this.hardwareVersion = hardwareVersion;}
-
-    public void setFirmwareVersion(@NonNull final FirmwareVersion firmwareVersion) {this.firmwareVersion = firmwareVersion;}
 
     public void setSerialNumber(@NonNull final String deviceId) {this.serialNumber = deviceId;}
 

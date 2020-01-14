@@ -1,6 +1,6 @@
 package eventbus.events;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 
 /**

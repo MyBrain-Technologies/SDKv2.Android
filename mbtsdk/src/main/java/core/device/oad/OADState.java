@@ -1,10 +1,12 @@
 package core.device.oad;
-import android.support.annotation.IntRange;
-import android.support.annotation.Keep;
-import android.support.annotation.Nullable;
+
+import androidx.annotation.IntRange;
+import androidx.annotation.Keep;
+import androidx.annotation.Nullable;
 
 import command.OADCommands;
-import core.device.model.FirmwareVersion;
+import core.device.DeviceEvents;
+import core.device.model.MbtVersion;
 import engine.clientevents.OADError;
 import utils.AsyncUtils;
 import utils.BitUtils;
@@ -29,9 +31,8 @@ public enum OADState {
         public void executeAction(OADManager oadManager, Object actionData) {
             super.executeAction(oadManager, actionData);
 
-            FirmwareVersion firmwareVersion = getFirmwareVersion(actionData);
-            if(firmwareVersion != null)
-                oadManager.init(firmwareVersion);
+            if(actionData instanceof DeviceEvents.StartOADUpdate)
+                oadManager.init(((DeviceEvents.StartOADUpdate)actionData).getFirmwareVersion(), ((DeviceEvents.StartOADUpdate)actionData).getHardwareVersion());
             else
                 oadManager.onError(OADError.ERROR_INVALID_FIRMWARE_VERSION, null);
         }
@@ -46,13 +47,6 @@ public enum OADState {
             return INITIALIZED;
         }
 
-        private FirmwareVersion getFirmwareVersion(Object actionData){
-            if(actionData instanceof String)
-                return new FirmwareVersion((String)actionData);
-            else if (actionData instanceof FirmwareVersion)
-                return (FirmwareVersion) actionData;
-            return null;
-        }
     },
 
     /**
@@ -282,7 +276,7 @@ public enum OADState {
 
             if(isReconnectionSuccess(actionData)){
                 boolean isEqual = oadManager.getOADContract()
-                        .verifyFirmwareVersion( new FirmwareVersion(
+                        .verifyFirmwareVersion( new MbtVersion(
                                 OADExtractionUtils.extractFirmwareVersionFromFileName(oadManager.getOADContext().getOADfilepath())));
                 if(isEqual)
                     oadManager.switchToNextStep(null);

@@ -1,6 +1,6 @@
 package core.bluetooth;
 
-import android.support.annotation.Keep;
+import androidx.annotation.Keep;
 
 /**
  * The differents stream states
