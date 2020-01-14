@@ -1,8 +1,8 @@
 package utils;
 
 import android.content.res.AssetManager;
-import android.support.annotation.Keep;
-import android.support.annotation.NonNull;
+import androidx.annotation.Keep;
+import androidx.annotation.NonNull;
 import android.util.Log;
 
 import java.io.FileNotFoundException;

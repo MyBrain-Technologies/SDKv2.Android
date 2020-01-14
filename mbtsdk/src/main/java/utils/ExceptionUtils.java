@@ -1,6 +1,6 @@
 package utils;
 
-import android.support.annotation.Keep;
+import androidx.annotation.Keep;
 
 /**
  * Created by Vincent on 31/07/2015.
