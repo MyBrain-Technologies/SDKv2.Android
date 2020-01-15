@@ -28,7 +28,7 @@ import core.bluetooth.BtState;
 import core.bluetooth.lowenergy.MbtBluetoothLE;
 import core.device.MbtDeviceManager;
 import core.device.event.OADEvent;
-import core.device.model.FirmwareVersion;
+import core.device.model.MbtVersion;
 import core.device.model.MbtDevice;
 import engine.clientevents.BluetoothError;
 import engine.clientevents.OADError;
@@ -57,9 +57,9 @@ public class OADManagerTest {
     private final String FIRMWARE_SECOND_FILENAME = "oad/mm-ota-1_7_1.bin" ;
     private final String FIRMWARE_VERSION_FIRST_AS_STRING = "1.6.2";
     private final String FIRMWARE_VERSION_SECOND_AS_STRING = "1.7.1";
-    private final FirmwareVersion FIRMWARE_VERSION_VALID_FIRST = new FirmwareVersion(FIRMWARE_VERSION_FIRST_AS_STRING);
-    private final FirmwareVersion FIRMWARE_VERSION_VALID_SECOND = new FirmwareVersion(FIRMWARE_VERSION_SECOND_AS_STRING);
-    private final FirmwareVersion FIRMWARE_VERSION_INVALID_LENGTH = new FirmwareVersion("1.7");
+    private final MbtVersion FIRMWARE_VERSION_VALID_FIRST = new MbtVersion(FIRMWARE_VERSION_FIRST_AS_STRING);
+    private final MbtVersion FIRMWARE_VERSION_VALID_SECOND = new MbtVersion(FIRMWARE_VERSION_SECOND_AS_STRING);
+    private final MbtVersion FIRMWARE_VERSION_INVALID_LENGTH = new MbtVersion("1.7");
     private final int BINARY_FILE_LENGTH_INVALID = 5;
 
     private static byte[] completeExtractedFile = new byte[EXPECTED_NB_BYTES_BINARY_FILE];
@@ -134,7 +134,7 @@ public class OADManagerTest {
             e.printStackTrace();
         }
 
-        oadManager.init(FIRMWARE_VERSION_VALID_SECOND);
+        oadManager.init(FIRMWARE_VERSION_VALID_SECOND, new MbtVersion("1.0.0"));
         assertEquals(oadManager.getCurrentState(), OADState.ABORTED);
         Mockito.verify(contract,times(2)).notifyClient(captor.capture()); //2 times notified : notify client state changed to ABORTED and notify error raised
         List<FirmwareUpdateClientEvent> captured = captor.getAllValues();
@@ -164,7 +164,7 @@ public class OADManagerTest {
             e.printStackTrace();
         }
 
-        oadManager.init(FIRMWARE_VERSION_VALID_FIRST);
+        oadManager.init(FIRMWARE_VERSION_VALID_FIRST, new MbtVersion("1.0.0"));
 
         assertEquals(oadManager.getCurrentState(), OADState.ABORTED);
         Mockito.verify(contract,times(2)).notifyClient(captor.capture());
@@ -196,7 +196,7 @@ public class OADManagerTest {
             e.printStackTrace();
         }
 
-        oadManager.init(FIRMWARE_VERSION_VALID_FIRST);
+        oadManager.init(FIRMWARE_VERSION_VALID_FIRST, new MbtVersion("1.0.0"));
 
         assertEquals(oadManager.getCurrentState(), OADState.ABORTED);
         Mockito.verify(contract,times(2)).notifyClient(captor.capture());
@@ -227,7 +227,7 @@ public class OADManagerTest {
         AsyncUtils.executeAsync(new Runnable() {
             @Override
             public void run() {
-                oadManager.init(FIRMWARE_VERSION_VALID_FIRST);
+                oadManager.init(FIRMWARE_VERSION_VALID_FIRST, new MbtVersion("1.0.0"));
                 assertEquals(oadManager.getCurrentState(), OADState.INITIALIZED);
                 assertNotNull(oadManager.getOADContext().getOADfilepath(),FIRMWARE_FIRST_FILENAME);
                 assertEquals(oadManager.getOADContext().getPacketsToSend().size(), EXPECTED_NB_PACKETS);
@@ -311,7 +311,7 @@ public class OADManagerTest {
             return null;
         }).when(OADExtractionUtils.class, "getFilePathForFirmwareVersion", Mockito.anyString());
 
-        oadManager.init(FIRMWARE_VERSION_VALID_FIRST);
+        oadManager.init(FIRMWARE_VERSION_VALID_FIRST, new MbtVersion("1.0.0"));
 
         assertEquals(oadManager.getCurrentState(), OADState.ABORTED);
         Mockito.verify(contract,times(2)).notifyClient(captor.capture());
@@ -794,7 +794,7 @@ public class OADManagerTest {
     public void reconnect_success() {
         oadManager.setOADContract(contract);
         ArgumentCaptor<FirmwareUpdateClientEvent> captorClient = ArgumentCaptor.forClass(FirmwareUpdateClientEvent.class);
-        ArgumentCaptor<FirmwareVersion> captorFirmware = ArgumentCaptor.forClass(FirmwareVersion.class);
+        ArgumentCaptor<MbtVersion> captorFirmware = ArgumentCaptor.forClass(MbtVersion.class);
         Mockito.doAnswer((Answer<Void>) invocation -> {
             oadManager.onOADEvent(OADEvent.RECONNECTION_PERFORMED.setEventData(true));
             return null;
@@ -906,7 +906,7 @@ public class OADManagerTest {
     @Test
     public void verifyingFirmwareVersion_success(){
         ArgumentCaptor<FirmwareUpdateClientEvent> captorClient = ArgumentCaptor.forClass(FirmwareUpdateClientEvent.class);
-        ArgumentCaptor<FirmwareVersion> captorFirmware = ArgumentCaptor.forClass(FirmwareVersion.class);
+        ArgumentCaptor<MbtVersion> captorFirmware = ArgumentCaptor.forClass(MbtVersion.class);
         oadManager.setOADState(currentState);
         OADContext oadContext = new OADContext();
         oadContext.setOADfilepath(FIRMWARE_FIRST_FILENAME);
@@ -937,7 +937,7 @@ public class OADManagerTest {
         oadContext.setOADfilepath(FIRMWARE_FIRST_FILENAME);
         oadManager.setOADContext(oadContext);
         Mockito.when(currentState.nextState()).thenReturn(OADState.RECONNECTION_PERFORMED);
-        Mockito.when(contract.verifyFirmwareVersion(new FirmwareVersion("1.6.2"))).thenReturn(false);
+        Mockito.when(contract.verifyFirmwareVersion(new MbtVersion("1.6.2"))).thenReturn(false);
 
         oadManager.onOADEvent(OADEvent.RECONNECTION_PERFORMED.setEventData(true));
 

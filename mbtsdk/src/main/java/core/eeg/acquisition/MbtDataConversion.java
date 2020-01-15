@@ -1,15 +1,12 @@
 package core.eeg.acquisition;
 
-import android.support.annotation.NonNull;
-import android.util.Log;
+import androidx.annotation.NonNull;
 
 import java.util.ArrayList;
 
 import config.AmpGainConfig;
 import core.bluetooth.BtProtocol;
 import core.eeg.storage.RawEEGSample;
-import features.MbtDeviceType;
-import features.MbtFeatures;
 
 import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
 

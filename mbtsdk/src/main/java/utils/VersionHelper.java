@@ -2,12 +2,10 @@ package utils;
 
 import android.util.Log;
 
-import java.util.Arrays;
-
 /**
  * Created by Etienne on 2/26/2018.
- * This class wraps the fw version into three parts: main major and minor.
- * A valid fwVersion format is X.Y.Z where
+ * This class wraps the firmware or hardware version into three parts: main major and minor.
+ * A valid version format is X.Y.Z where
  * X = main
  * Y = major
  * Z = minor
@@ -18,44 +16,16 @@ public final class VersionHelper {
     public final static String TAG = VersionHelper.class.getSimpleName();
 
     /**
-     * Regular expression used to split any firmware version given as a string .
+     * Regular expression used to split any firmware or hardware version given as a string .
      */
-    public static final String VERSION_SPLITTER = "\\.";
+    static final String VERSION_SPLITTER = "\\.";
 
     /**
-     * Number of digits of any firmware version given
+     * Number of digits of any firmware / hardware version given
      * as a string (split with {@link VersionHelper#VERSION_SPLITTER}
      * or as an integer array.
      */
     public static final int VERSION_LENGTH = 3;
-
-    private static final int HEADSET_STATUS_MIN_VERSION_MAIN = 1;
-    private static final int HEADSET_STATUS_MIN_VERSION_MAJOR = 5;
-    private static final int HEADSET_STATUS_MIN_VERSION_MINOR = 13;
-
-    private static final int OAD_WITHOUT_REQUEST_PRIORITY_HIGH_MIN_VERSION_MAIN = 1;
-    private static final int OAD_WITHOUT_REQUEST_PRIORITY_HIGH_MIN_VERSION_MAJOR = 5;
-    private static final int OAD_WITHOUT_REQUEST_PRIORITY_HIGH_MIN_VERSION_MINOR = 10;
-
-    private static final int BLE_BONDING_VERSION_MAIN = 1;
-    private static final int BLE_BONDING_VERSION_MAJOR = 6;
-    private static final int BLE_BONDING_VERSION_MINOR = 7;
-
-    private static final int A2DP_FROM_HEADSET_VERSION_MAIN = 1;
-    private static final int A2DP_FROM_HEADSET_VERSION_MAJOR = 6;
-    private static final int A2DP_FROM_HEADSET_VERSION_MINOR = 7;
-
-    private static final int WRITE_EXTERNAL_NAME_VERSION_MAIN = 1;
-    private static final int WRITE_EXTERNAL_NAME_VERSION_MAJOR = 7;
-    private static final int WRITE_EXTERNAL_NAME_VERSION_MINOR = 1;
-
-    private static final int RI_ALGO_SNR_MAIN = 1;
-    private static final int RI_ALGO_SNR_MAJOR = 0;
-    private static final int RI_ALGO_SNR_MINOR = 0;
-
-    private static final int RI_ALGO_RMS_MAIN = 2;
-    private static final int RI_ALGO_RMS_MAJOR = 5;
-    private static final int RI_ALGO_RMS_MINOR = 0;
 
     private final String minor;
     private final String major;
@@ -101,50 +71,17 @@ public final class VersionHelper {
     }
 
     public boolean isValidForFeature(Feature feature){
-        boolean b = false;
-
         if(major == null || minor == null || main == null)
             return false;
 
-        switch (feature){
-            case HEADSET_STATUS:
-                b = verifyFeature(HEADSET_STATUS_MIN_VERSION_MAIN, HEADSET_STATUS_MIN_VERSION_MAJOR, HEADSET_STATUS_MIN_VERSION_MINOR);
-                break;
+        boolean isValid = verifyFeature(feature.main, feature.major, feature.minor);
 
-            case OAD_WITHOUT_CONNECTION_PRIORITY:
-                b = verifyFeature(OAD_WITHOUT_REQUEST_PRIORITY_HIGH_MIN_VERSION_MAIN, OAD_WITHOUT_REQUEST_PRIORITY_HIGH_MIN_VERSION_MAJOR, OAD_WITHOUT_REQUEST_PRIORITY_HIGH_MIN_VERSION_MINOR);
-                break;
-
-            case BLE_BONDING:
-                b = verifyFeature(BLE_BONDING_VERSION_MAIN, BLE_BONDING_VERSION_MAJOR, BLE_BONDING_VERSION_MINOR);
-                break;
-
-            case A2DP_FROM_HEADSET:
-                b = verifyFeature(A2DP_FROM_HEADSET_VERSION_MAIN, A2DP_FROM_HEADSET_VERSION_MAJOR, A2DP_FROM_HEADSET_VERSION_MINOR);
-                break;
-
-            case REGISTER_EXTERNAL_NAME:
-                b = verifyFeature(WRITE_EXTERNAL_NAME_VERSION_MAIN, WRITE_EXTERNAL_NAME_VERSION_MAJOR, WRITE_EXTERNAL_NAME_VERSION_MINOR);
-                break;
-
-            case SNR:
-                b = verifyFeature(RI_ALGO_SNR_MAIN, RI_ALGO_SNR_MAJOR, RI_ALGO_RMS_MINOR);
-                break;
-
-            case RMS:
-                b = verifyFeature(RI_ALGO_RMS_MAIN, RI_ALGO_RMS_MAJOR, RI_ALGO_RMS_MINOR);
-                break;
-
-            default:
-                break;
-        }
-        Log.i(TAG, "feature test for " + feature.toString() + " is " + (b ? "valid" : "invalid"));
-        return b;
+        Log.i(TAG, "feature test for " + feature.toString() + " is " + (isValid ? "valid" : "invalid"));
+        return isValid;
     }
 
-
     /**
-     * Verifies if a specific feature can be enabled on the bt communication based on the firmware version.
+     * Verifies if a specific feature can be enabled on the bt communication based on the firmware / hardware version.
      * @param featureMain the minimum value for the main, ie X in X.Y.Z nomenclature
      * @param featureMajor the minimum value for the major, ie Y in X.Y.Z nomenclature
      * @param featureMinor the minimum value for the minor, ie Z in X.Y.Z nomenclature
@@ -244,14 +181,25 @@ public final class VersionHelper {
     }
 
     public enum Feature {
-        HEADSET_STATUS,
-        OAD_WITHOUT_CONNECTION_PRIORITY,
-        BLE_BONDING,
-        A2DP_FROM_HEADSET,
-        REGISTER_EXTERNAL_NAME,
-        RMS,
-        SNR
+        HEADSET_STATUS                          (1,5,13),
+        OAD_WITHOUT_CONNECTION_PRIORITY         (1,5,10),
+        BLE_BONDING                             (1,6,7),
+        A2DP_FROM_HEADSET                       (1,6,7),
+        REGISTER_EXTERNAL_NAME                  (1,7,1),
+        RMS                                     (2,5,0),
+        SNR                                     (1,0,0),
+        FIRMWARE_BASED_ON_HARDWARE              (1,7,8),
+        INDUS2                                  (1,0,0),
+        INDUS3                                  (1,1,0);
+
+        int main;
+        int major;
+        int minor;
+
+        Feature(int main, int major, int minor){
+            this.main = main;
+            this.major = major;
+            this.minor = minor;
+        }
     }
-
-
 }

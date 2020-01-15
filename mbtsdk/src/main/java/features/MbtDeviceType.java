@@ -1,6 +1,6 @@
 package features;
 
-import android.support.annotation.Keep;
+import androidx.annotation.Keep;
 
 import core.bluetooth.BtProtocol;
 

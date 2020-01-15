@@ -1,6 +1,6 @@
 package utils;
 
-import android.support.annotation.Keep;
+import androidx.annotation.Keep;
 import android.util.Log;
 
 import mbtsdk.com.mybraintech.mbtsdk.BuildConfig;

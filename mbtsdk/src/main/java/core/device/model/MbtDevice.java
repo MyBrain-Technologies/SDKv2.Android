@@ -1,9 +1,9 @@
 package core.device.model;
 
 import android.bluetooth.BluetoothDevice;
-import android.support.annotation.Keep;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.Keep;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
@@ -32,13 +32,13 @@ public abstract class MbtDevice implements Serializable {
     /**
      * Hardware version number
      */
-    String hardwareVersion;
+    MbtVersion hardwareVersion;
 
     /**
      * Firmware version number
      */
     @Nullable
-    FirmwareVersion firmwareVersion;
+    MbtVersion firmwareVersion;
 
     /**
      * Serial number
@@ -77,6 +77,8 @@ public abstract class MbtDevice implements Serializable {
         this.deviceAddress = bluetoothDevice.getAddress();
         this.productName = bluetoothDevice.getName();
         this.eegPacketLength = MbtFeatures.DEFAULT_EEG_PACKET_LENGTH;
+        this.firmwareVersion = new MbtVersion("0.0.0");
+        this.hardwareVersion = new MbtVersion("0.0.0");
     }
 
     /**
@@ -84,17 +86,10 @@ public abstract class MbtDevice implements Serializable {
      * @return the version of the firmware
      */
     @NonNull
-    public FirmwareVersion getFirmwareVersion() {
+    public MbtVersion getFirmwareVersion() {
         return this.firmwareVersion;
     }
-    /**
-     * Gets the version of the firmware
-     * @return the version of the firmware
-     */
-    @NonNull
-    public String getFirmwareVersionAsString() {
-        return this.firmwareVersion.getFirmwareVersionAsString();
-    }
+
 
     /**
      * Gets the commercial name of the device/headset - type of hardware
@@ -120,7 +115,7 @@ public abstract class MbtDevice implements Serializable {
      * @return the hardware version
      */
     @Nullable
-    public String getHardwareVersion() {
+    public MbtVersion getHardwareVersion() {
         return this.hardwareVersion;
     }
 
@@ -150,9 +145,10 @@ public abstract class MbtDevice implements Serializable {
     @NonNull
     public List<MbtAcquisitionLocations> getGroundsLocation() {return this.groundsLocation;}
 
-    public void setHardwareVersion(@NonNull final String hardwareVersion) {this.hardwareVersion = hardwareVersion;}
+    public void setHardwareVersion(@NonNull final String hardwareVersion) {this.hardwareVersion = new MbtVersion(hardwareVersion);}
+    public void setHardwareVersion(@NonNull final MbtVersion hardwareVersion) {this.hardwareVersion = hardwareVersion;}
 
-    public void setFirmwareVersion(@NonNull final FirmwareVersion firmwareVersion) {this.firmwareVersion = firmwareVersion;}
+    public void setFirmwareVersion(@NonNull final MbtVersion firmwareVersion) {this.firmwareVersion = firmwareVersion;}
 
     public void setSerialNumber(@NonNull final String serialNumber) {this.serialNumber = serialNumber;}
 

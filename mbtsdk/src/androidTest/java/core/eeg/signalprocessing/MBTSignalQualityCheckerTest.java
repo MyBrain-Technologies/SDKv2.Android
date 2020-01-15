@@ -1,16 +1,14 @@
 package core.eeg.signalprocessing;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.awt.font.TextAttribute;
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -19,7 +17,7 @@ import java.util.Arrays;
 
 import core.eeg.Log;
 
-import static android.support.test.InstrumentationRegistry.getContext;
+import static androidx.test.platform.app.InstrumentationRegistry.getContext;
 import static org.junit.Assert.*;
 
 public class MBTSignalQualityCheckerTest {

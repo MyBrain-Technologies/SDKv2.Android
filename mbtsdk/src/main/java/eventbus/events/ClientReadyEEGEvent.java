@@ -1,8 +1,6 @@
 package eventbus.events;
 
-import android.support.annotation.NonNull;
-
-import java.util.ArrayList;
+import androidx.annotation.NonNull;
 
 import core.eeg.storage.MbtEEGPacket;
 

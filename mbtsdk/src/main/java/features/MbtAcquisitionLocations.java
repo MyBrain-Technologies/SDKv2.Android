@@ -1,6 +1,6 @@
 package features;
 
-import android.support.annotation.Keep;
+import androidx.annotation.Keep;
 
 @Keep
 public enum MbtAcquisitionLocations {

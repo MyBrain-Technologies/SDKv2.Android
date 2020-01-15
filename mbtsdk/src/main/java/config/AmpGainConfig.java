@@ -1,6 +1,6 @@
 package config;
 
-import android.support.annotation.Keep;
+import androidx.annotation.Keep;
 
 @Keep
 public enum AmpGainConfig {

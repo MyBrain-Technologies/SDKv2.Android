@@ -1,7 +1,7 @@
 package command;
 
-import android.support.annotation.IntRange;
-import android.support.annotation.Keep;
+import androidx.annotation.IntRange;
+import androidx.annotation.Keep;
 
 import engine.clientevents.BaseError;
 
