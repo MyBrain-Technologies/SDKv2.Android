@@ -281,13 +281,14 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         }
 
         private void initBluetoothParameters(StartOrContinueConnectionRequestEvent event) {
+          Log.d(TAG, "initBluetoothParameters");
             connectAudioIfDeviceCompatible = event.connectAudioIfDeviceCompatible();
             deviceTypeRequested = event.getTypeOfDeviceRequested();
             deviceQrCodeRequested = event.getQrCodeOfDeviceRequested();
             deviceNameRequested = event.getNameOfDeviceRequested();
             mtu = event.getMtu();
 
-            if (event.isClientUserRequest()) {
+            if (event.isClientUserRequest() && bluetoothForDataStreaming == null) {
                 if (deviceTypeRequested.equals(MbtDeviceType.MELOMIND)) {
                     bluetoothForDataStreaming = new MbtBluetoothLE(mContext, MbtBluetoothManager.this);
                     if (connectAudioIfDeviceCompatible)
@@ -463,6 +464,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         }
         return isAlreadyConnected;
     }
+
     /**
      * Check the bluetooth prerequisites before starting any bluetooth operation.
      * The started Bluetooth connection process is stopped if the prerequisites are not valid.
@@ -471,6 +473,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         connectionRetryCounter = 0;
         //Request sent to the BUS in order to get device from the device manager : the BUS should return a null object if it's the first connection, or return a non null object if the user requests connection whereas a headset is already connected
         LogUtils.i(TAG, "Checking Bluetooth Prerequisites and initialize");
+
         requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
             @Override
             public void onRequestComplete(MbtDevice device) { //when the BUS has returned the device object

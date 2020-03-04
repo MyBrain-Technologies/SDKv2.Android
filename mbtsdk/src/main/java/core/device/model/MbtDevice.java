@@ -71,6 +71,16 @@ public abstract class MbtDevice implements Serializable {
 
     private InternalConfig internalConfig;
 
+    MbtDevice(String address, String name, @NonNull MbtDeviceType deviceType, int nbChannels){
+        this.internalConfig = new InternalConfig(nbChannels);
+        this.deviceType = deviceType;
+        this.deviceAddress = address;
+        this.productName = name;
+        this.eegPacketLength = MbtFeatures.DEFAULT_EEG_PACKET_LENGTH;
+        this.firmwareVersion = new MbtVersion("0.0.0");
+        this.hardwareVersion = new MbtVersion("0.0.0");
+    }
+
     MbtDevice(BluetoothDevice bluetoothDevice, @NonNull MbtDeviceType deviceType, int nbChannels){
         this.internalConfig = new InternalConfig(nbChannels);
         this.deviceType = deviceType;
@@ -220,6 +230,7 @@ public abstract class MbtDevice implements Serializable {
 
         public InternalConfig(int nbChannels) {
             this.nbChannels = nbChannels;
+            this.sampRate = MbtFeatures.DEFAULT_SAMPLE_RATE;
         }
 
         public InternalConfig(int nbChannels, byte notchFilterConfig, byte bandPassFilterConfig, byte gainValue, byte statusBytes, byte nbPackets, int sampRate) {

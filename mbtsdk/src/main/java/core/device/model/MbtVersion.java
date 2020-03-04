@@ -3,6 +3,8 @@ package core.device.model;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 
+import java.io.Serializable;
+
 import utils.LogUtils;
 import utils.VersionHelper;
 
@@ -11,7 +13,7 @@ import utils.VersionHelper;
  * in order to facilitate the version manipulation.
  */
 @Keep
-public class MbtVersion {
+public class MbtVersion implements Serializable {
 
     public final static String TAG = MbtVersion.class.getSimpleName();
 
