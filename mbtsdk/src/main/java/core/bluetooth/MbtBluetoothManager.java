@@ -569,6 +569,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private void connect(BtProtocol protocol){
         boolean isConnectionSuccessful = false;
         this.isConnectionInterrupted = false; // resetting the flag when starting a new connection
+
         switch (protocol){
             case BLUETOOTH_LE:
             case BLUETOOTH_SPP:
@@ -783,17 +784,15 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                         updateConnectionState(BtState.CONNECTED);
                 }
             });
-            if(getCurrentState().equals(BtState.BONDING)) { //at this point : current state should be BONDED if bonding succeeded
-                if (getCurrentDevice().getBondState() == BluetoothDevice.BOND_BONDED)
-                    updateConnectionState(false); //current state is set to BONDED
-                else
-                    updateConnectionState(BtState.BONDING_FAILURE);
-            }
 
             try {
                 Thread.sleep(500);
             } catch (InterruptedException e) {
                 e.printStackTrace();
+            }
+
+            if(getCurrentState().equals(BtState.BONDING)) { //at this point : current state should be BONDED if bonding succeeded
+               updateConnectionState(BtState.BONDING_FAILURE);
             }
 
             try {
@@ -1145,7 +1144,13 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     void notifyDeviceInfoReceived(DeviceInfo deviceInfo, String deviceValue){
         Log.d(TAG," Device info returned by the headset "+deviceInfo+ " : "+deviceValue);
         setRequestAsProcessed();
-        MbtEventBus.postEvent(new DeviceInfoEvent<>(deviceInfo, deviceValue));
+
+        if(deviceInfo.equals(DeviceInfo.BATTERY) && getCurrentState().equals(BtState.BONDING)){
+            updateConnectionState(false); //current state is set to BONDED
+            switchToNextConnectionStep();
+        } else {
+            MbtEventBus.postEvent(new DeviceInfoEvent<>(deviceInfo, deviceValue));
+        }
     }
 
     /**
