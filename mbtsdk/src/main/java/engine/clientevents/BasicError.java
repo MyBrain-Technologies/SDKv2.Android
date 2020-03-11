@@ -21,7 +21,7 @@ public final class BasicError extends BaseError{
     public static BasicError ERROR_UNSUPPORTED_FEATURE                   = new BasicError(CODE_RANGE+7, "This feature is not supported.");
     public static BasicError ERROR_UNKNOWN                               = new BasicError(CODE_RANGE+8, "Unknown cause.");
 
-    private BasicError(int code, String exception) {
+    public BasicError(int code, String exception) {
         super(DOMAIN, code, exception);
     }
 }

@@ -21,6 +21,7 @@ import utils.CommandUtils;
 import utils.LogUtils;
 import utils.BitUtils;
 
+import static android.bluetooth.BluetoothGatt.GATT_INSUFFICIENT_AUTHENTICATION;
 import static command.DeviceCommandEvent.*;
 import static core.bluetooth.lowenergy.MelomindCharacteristics.CHARAC_HEADSET_STATUS;
 import static core.bluetooth.lowenergy.MelomindCharacteristics.CHARAC_INFO_FIRMWARE_VERSION;
@@ -204,29 +205,35 @@ final class MbtGattController extends BluetoothGattCallback {
             mbtBluetoothLE.notifyDeviceInfoReceived(DeviceInfo.MODEL_NUMBER, new String(characteristic.getValue()));
 
         if (characteristic.getUuid().compareTo(CHARAC_MEASUREMENT_BATTERY_LEVEL) == 0) {
-            short level = -1;
-            if (characteristic.getValue() != null) {
-                if (characteristic.getValue().length < 4) {
-                    final StringBuffer sb = new StringBuffer();
-                    for (final byte value : characteristic.getValue()) {
-                        sb.append(value);
-                        sb.append(';');
-                    }
-                    LogUtils.e(TAG, "Error: received a [onCharacteristicRead] callback for battery level request " +
-                            "but the payload of the characteristic is invalid ! \nValue(s) received -> " + sb.toString());
-                    return;
-                }
 
-                level = MelomindDevice.getBatteryPercentageFromByteValue(characteristic.getValue()[0]);
-                if (level == -1) {
-                    LogUtils.e(TAG, "Error: received a [onCharacteristicRead] callback for battery level request " +
+            if (status == GATT_INSUFFICIENT_AUTHENTICATION) {
+                LogUtils.w(TAG, "Insufficient authentication to read the battery level");
+                mbtBluetoothLE.bond();
+            } else {
+                short level = -1;
+                if (characteristic.getValue() != null) {
+                    if (characteristic.getValue().length < 4) {
+                        final StringBuffer sb = new StringBuffer();
+                        for (final byte value : characteristic.getValue()) {
+                            sb.append(value);
+                            sb.append(';');
+                        }
+                        LogUtils.e(TAG, "Error: received a [onCharacteristicRead] callback for battery level request " +
+                            "but the payload of the characteristic is invalid ! \nValue(s) received -> " + sb.toString());
+                        return;
+                    }
+
+                    level = MelomindDevice.getBatteryPercentageFromByteValue(characteristic.getValue()[0]);
+                    if (level == -1) {
+                        LogUtils.e(TAG, "Error: received a [onCharacteristicRead] callback for battery level request " +
                             "but the returned value could not be decoded ! " +
                             "Byte value received -> " + characteristic.getValue()[3]);
-                }
-                LogUtils.i(TAG, "Received a [onCharacteristicRead] callback for battery level request. " +
+                    }
+                    LogUtils.i(TAG, "Received a [onCharacteristicRead] callback for battery level request. " +
                         "Value -> " + level);
+                }
+                mbtBluetoothLE.notifyBatteryReceived(level);
             }
-            mbtBluetoothLE.notifyBatteryReceived(level);
         }
     }
 

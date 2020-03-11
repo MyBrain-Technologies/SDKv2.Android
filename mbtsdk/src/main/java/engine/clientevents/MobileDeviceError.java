@@ -17,7 +17,7 @@ public class MobileDeviceError extends BaseError {
     public static MobileDeviceError ERROR_STORAGE_PERMISSION            = new MobileDeviceError( CODE_RANGE+3,  "This operation could not be started : Storage permission not granted.");
     public static MobileDeviceError ERROR_NO_FREE_SPACE                 = new MobileDeviceError( CODE_RANGE+4,  "No Free Space on the Mobile Device : impossible to store data.");
 
-    private MobileDeviceError(int code, String exception){
+    public MobileDeviceError(int code, String exception){
         super(DOMAIN, code, exception);
     }
 }

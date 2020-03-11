@@ -17,6 +17,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 
+import androidx.core.util.Pair;
 import core.device.model.DeviceInfo;
 
 import utils.LogUtils;
@@ -40,6 +41,7 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
     private StreamState streamState = StreamState.IDLE; //todo streamState variable can be inherited from Stream abstract class instead of IStream interface that just implements methods
 
     private volatile BtState currentState = BtState.IDLE; //todo add @NonNull annotation + rename into bluetoothState
+    protected Pair<String, Long> batteryValueAtTimestamp = null;
 
     protected boolean isUpdating; //todo remove useless
 
@@ -112,6 +114,7 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
     }
 
     protected void notifyBatteryReceived(int value){
+        batteryValueAtTimestamp = Pair.create(String.valueOf(value), System.currentTimeMillis());
         mbtBluetoothManager.notifyDeviceInfoReceived(DeviceInfo.BATTERY, String.valueOf(value));//todo keep battery value as integer ?
     }
 
