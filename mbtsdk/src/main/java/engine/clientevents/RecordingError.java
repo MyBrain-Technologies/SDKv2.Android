@@ -19,7 +19,7 @@ public final class RecordingError extends BaseError{
     public static RecordingError ERROR_INVALID_PATH     = new RecordingError(CODE_RANGE+5, "Invalid Recording / JSON file path.");
     public static RecordingError ERROR_TOO_BIG          = new RecordingError(CODE_RANGE+6, "Maximum Recording size reached : the Recording has been stopped.");
 
-    private RecordingError(int code, String exception) {
+    public RecordingError(int code, String exception) {
         super(DOMAIN, code, exception);
     }
 }

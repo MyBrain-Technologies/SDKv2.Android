@@ -27,7 +27,7 @@ public final class ConfigError extends BaseError{
     public static ConfigError ERROR_GAIN                    = new ConfigError(CODE_RANGE+6, "Failed to change amplifier gain configuration value.");
     public static ConfigError ERROR_CALLBACK                = new ConfigError(CODE_RANGE+6, "Failed to change amplifier gain configuration value.");
 
-    private ConfigError(int code, String exception) {
+    public ConfigError(int code, String exception) {
         super(DOMAIN, code, exception);
     }
 }

@@ -21,7 +21,7 @@ public final class ServerError extends BaseError{
     public static ServerError ERROR_INTERNAL_ERROR              = new ServerError(CODE_RANGE+7, "The server encountered an internal error.");
     public static ServerError ERROR_ALREADY_SENT                = new ServerError(CODE_RANGE+8, "Request already sent to the server.");
 
-    private ServerError(int code, String exception) {
+    public ServerError(int code, String exception) {
         super(DOMAIN, code, exception);
     }
 }
