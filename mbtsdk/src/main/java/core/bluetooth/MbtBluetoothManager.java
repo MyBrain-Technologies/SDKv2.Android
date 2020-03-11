@@ -281,7 +281,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         }
 
         private void initBluetoothParameters(StartOrContinueConnectionRequestEvent event) {
-          Log.d(TAG, "initBluetoothParameters");
             connectAudioIfDeviceCompatible = event.connectAudioIfDeviceCompatible();
             deviceTypeRequested = event.getTypeOfDeviceRequested();
             deviceQrCodeRequested = event.getQrCodeOfDeviceRequested();
