@@ -1120,9 +1120,13 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
             case DEVICE_FOUND:
                 MbtEventBus.postEvent(new ConnectionStateEvent(newState, getCurrentDevice(), deviceTypeRequested));
-                if(connectAudioIfDeviceCompatible && bluetoothForAudioStreaming.currentDevice != null)
-                    MbtEventBus.postEvent(new DeviceEvents.AudioConnectedDeviceEvent(bluetoothForAudioStreaming.currentDevice));
-                break;
+                if(connectAudioIfDeviceCompatible){
+                    if(bluetoothForAudioStreaming == null){
+                        bluetoothForAudioStreaming = new MbtBluetoothA2DP(mContext, MbtBluetoothManager.this);
+                    } else if (bluetoothForAudioStreaming.currentDevice != null) {
+                        MbtEventBus.postEvent(new DeviceEvents.AudioConnectedDeviceEvent(bluetoothForAudioStreaming.currentDevice));
+                    }
+                }
         }
 
         requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
