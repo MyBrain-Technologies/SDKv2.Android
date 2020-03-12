@@ -287,7 +287,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             deviceNameRequested = event.getNameOfDeviceRequested();
             mtu = event.getMtu();
 
-            if (event.isClientUserRequest()) {
+            if (event.isClientUserRequest() && bluetoothForDataStreaming == null) {
                 if (deviceTypeRequested.equals(MbtDeviceType.MELOMIND)) {
                     bluetoothForDataStreaming = new MbtBluetoothLE(mContext, MbtBluetoothManager.this);
                     if (connectAudioIfDeviceCompatible)
@@ -463,6 +463,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         }
         return isAlreadyConnected;
     }
+
     /**
      * Check the bluetooth prerequisites before starting any bluetooth operation.
      * The started Bluetooth connection process is stopped if the prerequisites are not valid.
@@ -471,6 +472,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         connectionRetryCounter = 0;
         //Request sent to the BUS in order to get device from the device manager : the BUS should return a null object if it's the first connection, or return a non null object if the user requests connection whereas a headset is already connected
         LogUtils.i(TAG, "Checking Bluetooth Prerequisites and initialize");
+
         requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
             @Override
             public void onRequestComplete(MbtDevice device) { //when the BUS has returned the device object
@@ -566,6 +568,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private void connect(BtProtocol protocol){
         boolean isConnectionSuccessful = false;
         this.isConnectionInterrupted = false; // resetting the flag when starting a new connection
+
         switch (protocol){
             case BLUETOOTH_LE:
             case BLUETOOTH_SPP:
@@ -780,17 +783,15 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                         updateConnectionState(BtState.CONNECTED);
                 }
             });
-            if(getCurrentState().equals(BtState.BONDING)) { //at this point : current state should be BONDED if bonding succeeded
-                if (getCurrentDevice().getBondState() == BluetoothDevice.BOND_BONDED)
-                    updateConnectionState(false); //current state is set to BONDED
-                else
-                    updateConnectionState(BtState.BONDING_FAILURE);
-            }
 
             try {
                 Thread.sleep(500);
             } catch (InterruptedException e) {
                 e.printStackTrace();
+            }
+
+            if(getCurrentState().equals(BtState.BONDING)) { //at this point : current state should be BONDED if bonding succeeded
+               updateConnectionState(BtState.BONDING_FAILURE);
             }
 
             try {
@@ -1119,9 +1120,13 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
             case DEVICE_FOUND:
                 MbtEventBus.postEvent(new ConnectionStateEvent(newState, getCurrentDevice(), deviceTypeRequested));
-                if(connectAudioIfDeviceCompatible && bluetoothForAudioStreaming.currentDevice != null)
-                    MbtEventBus.postEvent(new DeviceEvents.AudioConnectedDeviceEvent(bluetoothForAudioStreaming.currentDevice));
-                break;
+                if(connectAudioIfDeviceCompatible){
+                    if(bluetoothForAudioStreaming == null){
+                        bluetoothForAudioStreaming = new MbtBluetoothA2DP(mContext, MbtBluetoothManager.this);
+                    } else if (bluetoothForAudioStreaming.currentDevice != null) {
+                        MbtEventBus.postEvent(new DeviceEvents.AudioConnectedDeviceEvent(bluetoothForAudioStreaming.currentDevice));
+                    }
+                }
         }
 
         requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
@@ -1142,7 +1147,13 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     void notifyDeviceInfoReceived(DeviceInfo deviceInfo, String deviceValue){
         Log.d(TAG," Device info returned by the headset "+deviceInfo+ " : "+deviceValue);
         setRequestAsProcessed();
-        MbtEventBus.postEvent(new DeviceInfoEvent<>(deviceInfo, deviceValue));
+
+        if(deviceInfo.equals(DeviceInfo.BATTERY) && getCurrentState().equals(BtState.BONDING)){
+            updateConnectionState(false); //current state is set to BONDED
+            switchToNextConnectionStep();
+        } else {
+            MbtEventBus.postEvent(new DeviceInfoEvent<>(deviceInfo, deviceValue));
+        }
     }
 
     /**
