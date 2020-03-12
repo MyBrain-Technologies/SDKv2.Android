@@ -6,6 +6,7 @@ SDKv2.Android v2.2.4:
 # General  
 
 - Bonding refactored
+- Connection crash fix
 
 
 
@@ -16,6 +17,7 @@ SDKv2.Android v2.2.4:
 
 * [[SDK-249](https://mybrain.atlassian.net/browse/SDK-249)] - SDK state machine go to bonded state without bonded confirmation
 * [[SDK-134](https://mybrain.atlassian.net/browse/SDK134)] - Client battery listener callback is triggered during the connection process (bonding)
+* [[SDK-250](https://mybrain.atlassian.net/browse/SDK250)] - A crash occurs when a device is found during bluetooth connection
 
 
 
