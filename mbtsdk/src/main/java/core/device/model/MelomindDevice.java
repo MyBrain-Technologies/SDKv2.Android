@@ -23,6 +23,15 @@ import features.MbtFeatures;
 @Keep
 public class MelomindDevice extends MbtDevice{
 
+    public MelomindDevice(@NonNull final String address, final String name){
+        super(address, name, MbtDeviceType.MELOMIND, MbtFeatures.MELOMIND_NB_CHANNELS);
+        this.acquisitionLocations = Arrays.asList(MbtAcquisitionLocations.P3, MbtAcquisitionLocations.P4);
+        this.groundsLocation = Arrays.asList(MbtAcquisitionLocations.M2);
+        this.referencesLocations = Arrays.asList(MbtAcquisitionLocations.M1);
+        this.serialNumber = "0000000000";
+        this.externalName = MbtFeatures.MELOMIND_DEVICE_NAME;
+    }
+
     public MelomindDevice(@NonNull final BluetoothDevice device){
         super(device, MbtDeviceType.MELOMIND, MbtFeatures.MELOMIND_NB_CHANNELS);
         this.acquisitionLocations = Arrays.asList(MbtAcquisitionLocations.P3, MbtAcquisitionLocations.P4);

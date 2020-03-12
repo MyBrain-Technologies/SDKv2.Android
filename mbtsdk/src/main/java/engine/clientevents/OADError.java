@@ -26,7 +26,7 @@ public final class OADError extends BaseError{
     public static OADError ERROR_LOST_CONNECTION               = new OADError( CODE_RANGE+12,  "Lost Headset connection.");
 
 
-    private OADError(int code, String exception) {
+    public OADError(int code, String exception) {
         super(DOMAIN, code, exception);
     }
 }

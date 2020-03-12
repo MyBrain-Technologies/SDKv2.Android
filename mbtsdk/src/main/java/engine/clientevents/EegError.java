@@ -26,7 +26,7 @@ public final class EegError extends BaseError{
     public static EegError ERROR_MATRIX_INVERTED                    = new EegError(CODE_RANGE+10, "This processing operation failed : EEG data Matrix must be inverted.");
     public static EegError ERROR_ALREADY_STREAMING                          = new EegError(CODE_RANGE+11, "Already streaming");
 
-    private EegError(int code, String exception) {
+    public EegError(int code, String exception) {
         super(DOMAIN, code, exception);
     }
 }

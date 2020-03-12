@@ -14,6 +14,7 @@ import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Handler;
 import android.os.ParcelUuid;
 import androidx.annotation.NonNull;
@@ -791,6 +792,11 @@ public class MbtBluetoothLE
      */
     public void bond() {
         LogUtils.i(TAG, "start bonding");
+        boolean isBondRetry = getCurrentState().equals(BtState.BONDING);
+        if(isBondRetry && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+            LogUtils.d(TAG, "Retry not necessary : Android will retry the read operation itself after bonding has completed"); //However, on Android 6 & 7 you will have to retry the operation yourself
+            return;
+        }
         if(getCurrentState().equals(BtState.READING_SUCCESS))
             updateConnectionState(false); //current state is set to BONDING
         mbtBluetoothManager.startReadOperation(DeviceInfo.BATTERY); //trigger bonding indirectly

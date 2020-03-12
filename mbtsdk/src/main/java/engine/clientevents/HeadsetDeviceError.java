@@ -27,7 +27,7 @@ public class HeadsetDeviceError extends BaseError {
     public static HeadsetDeviceError ERROR_SENSORS                          = new HeadsetDeviceError( CODE_RANGE+13,  "This operation encountered a problem : check that the electrodes are plugged.");
     public static HeadsetDeviceError ERROR_MATCHING                         = new HeadsetDeviceError( CODE_RANGE+14,  "No match found between the QR code and the headset name.");
 
-    private HeadsetDeviceError(int code, String exception){
+    public HeadsetDeviceError(int code, String exception){
         super(DOMAIN, code, exception);
     }
 }

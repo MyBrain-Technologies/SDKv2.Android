@@ -15,11 +15,16 @@ public abstract class BaseError extends RuntimeException{
     private int code;
     private String message;
 
-    BaseError(String domain, int code, String exception){
+   public BaseError(String domain, int code, String exception){
         super(exception);
         this.domain = domain;
         this.code = code;
         this.message = exception;
+    }
+
+    public BaseError setMessage(String message){
+       this.message = message;
+       return this;
     }
 
     @Override
