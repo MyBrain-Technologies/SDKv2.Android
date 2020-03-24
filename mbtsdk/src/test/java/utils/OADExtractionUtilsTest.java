@@ -37,7 +37,7 @@ public class OADExtractionUtilsTest {
     @Test
     public void extractFileContent_valid_readSuccess() throws IOException {
         byte[] content = OADExtractionUtils.extractFileContent(
-                this.getClass().getClassLoader().getResourceAsStream("oad/indus2/mm-ota-i2-1_7_9.bin"));
+                this.getClass().getClassLoader().getResourceAsStream("oad/indus2/mm-ota-i2-1_7_12.bin"));
 
         assertNotNull(content);
         assertEquals(content.length, EXPECTED_NB_BYTES_BINARY_FILE);
@@ -113,10 +113,10 @@ public class OADExtractionUtilsTest {
      */
     @Test
     public void getFileNameForFirmwareVersion_firmwareBasedOnHardware() {
-        assertEquals("oad/indus2/mm-ota-i2-1_7_9.bin",OADExtractionUtils.getFilePathForFirmwareVersion("1_7_9", new MbtVersion("1.0.0")));
-        assertEquals("oad/indus3/mm-ota-i3-1_7_9.bin",OADExtractionUtils.getFilePathForFirmwareVersion("1_7_9", new MbtVersion("1.1.0")));
-        assertEquals("oad/indus2/mm-ota-i2-1_7_9.bin",OADExtractionUtils.getFilePathForFirmwareVersion("1.7.9", new MbtVersion("1.0.0")));
-        assertEquals("oad/indus3/mm-ota-i3-1_7_9.bin",OADExtractionUtils.getFilePathForFirmwareVersion("1.7.9", new MbtVersion("1.1.0")));
+        assertEquals("oad/indus2/mm-ota-i2-1_7_12.bin",OADExtractionUtils.getFilePathForFirmwareVersion("1_7_12", new MbtVersion("1.0.0")));
+        assertEquals("oad/indus3/mm-ota-i3-1_7_12.bin",OADExtractionUtils.getFilePathForFirmwareVersion("1_7_12", new MbtVersion("1.1.0")));
+        assertEquals("oad/indus2/mm-ota-i2-1_7_12.bin",OADExtractionUtils.getFilePathForFirmwareVersion("1.7.12", new MbtVersion("1.0.0")));
+        assertEquals("oad/indus3/mm-ota-i3-1_7_12.bin",OADExtractionUtils.getFilePathForFirmwareVersion("1.7.12", new MbtVersion("1.1.0")));
 
         assertEquals("oad/indus2/mm-ota-1_7_4.bin",OADExtractionUtils.getFilePathForFirmwareVersion("1_7_4", new MbtVersion("1.0.0")));
         assertEquals("oad/indus3/mm-ota-1_7_4.bin",OADExtractionUtils.getFilePathForFirmwareVersion("1_7_4", new MbtVersion("1.1.0")));
@@ -158,10 +158,10 @@ public class OADExtractionUtilsTest {
         assertEquals(OADExtractionUtils.extractFirmwareVersionFromFileName("mm-ota-1_7_4.bin"),"1.7.4");
         assertEquals(OADExtractionUtils.extractFirmwareVersionFromFileName("mm-ota-i2-1_7_4.bin"),"1.7.4");
         assertEquals(OADExtractionUtils.extractFirmwareVersionFromFileName("mm-ota-i3-1_7_4.bin"),"1.7.4");
-        assertEquals(OADExtractionUtils.extractFirmwareVersionFromFileName("mm-ota-i2-1_7_9.bin"),"1.7.9");
-        assertEquals(OADExtractionUtils.extractFirmwareVersionFromFileName("mm-ota-i3-1_7_9.bin"),"1.7.9");
-        assertEquals(OADExtractionUtils.extractFirmwareVersionFromFileName("mm-ota-i2-1_7_9.bin"),"1.7.9");
-        assertEquals(OADExtractionUtils.extractFirmwareVersionFromFileName("mm-ota-i3-1_7_9.bin"),"1.7.9");
+        assertEquals(OADExtractionUtils.extractFirmwareVersionFromFileName("mm-ota-i2-1_7_12.bin"),"1.7.12");
+        assertEquals(OADExtractionUtils.extractFirmwareVersionFromFileName("mm-ota-i3-1_7_12.bin"),"1.7.12");
+        assertEquals(OADExtractionUtils.extractFirmwareVersionFromFileName("mm-ota-i2-1_7_12.bin"),"1.7.12");
+        assertEquals(OADExtractionUtils.extractFirmwareVersionFromFileName("mm-ota-i3-1_7_12.bin"),"1.7.12");
     }
 
     /**
