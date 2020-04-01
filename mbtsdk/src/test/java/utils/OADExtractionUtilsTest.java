@@ -37,7 +37,8 @@ public class OADExtractionUtilsTest {
     @Test
     public void extractFileContent_valid_readSuccess() throws IOException {
         byte[] content = OADExtractionUtils.extractFileContent(
-                this.getClass().getClassLoader().getResourceAsStream("oad/indus2/mm-ota-i2-1_7_12.bin"));
+                this.getClass().getClassLoader().getResourceAsStream("oad"
+                                                                     + "/indus2/mm-ota-i2-1_7_14.bin"));
 
         assertNotNull(content);
         assertEquals(content.length, EXPECTED_NB_BYTES_BINARY_FILE);
@@ -50,7 +51,9 @@ public class OADExtractionUtilsTest {
     @Test(expected = FileNotFoundException.class)
     public void extractFileContent_valid_readFailure() throws IOException {
         assertNull(OADExtractionUtils.extractFileContent(
-                this.getClass().getClassLoader().getResourceAsStream("mm-ota-1_7_7.bin")));
+                this.getClass().getClassLoader().getResourceAsStream("mm-ota"
+                                                                     +
+                                                                     "-1_7_14.bin")));
     }
 
 //    /**
@@ -63,7 +66,8 @@ public class OADExtractionUtilsTest {
 //        AssetManager assetManager = Mockito.mock(AssetManager.class);
 //        Mockito.doReturn(assetManager).when(context).getAssets();
 //        try {
-//            Mockito.doReturn(new String[]{"ota-1_6_2.bin","mm-ota-1_7_1.bin"}).when(assetManager).list("oad");
+//            Mockito.doReturn(new String[]{"ota-1_6_2.bin","mm-ota-1_7_14
+//            .bin"}).when(assetManager).list("oad");
 //        } catch (IOException e) {
 //            e.printStackTrace();
 //        }
@@ -113,15 +117,27 @@ public class OADExtractionUtilsTest {
      */
     @Test
     public void getFileNameForFirmwareVersion_firmwareBasedOnHardware() {
-        assertEquals("oad/indus2/mm-ota-i2-1_7_12.bin",OADExtractionUtils.getFilePathForFirmwareVersion("1_7_12", new MbtVersion("1.0.0")));
-        assertEquals("oad/indus3/mm-ota-i3-1_7_12.bin",OADExtractionUtils.getFilePathForFirmwareVersion("1_7_12", new MbtVersion("1.1.0")));
-        assertEquals("oad/indus2/mm-ota-i2-1_7_12.bin",OADExtractionUtils.getFilePathForFirmwareVersion("1.7.12", new MbtVersion("1.0.0")));
-        assertEquals("oad/indus3/mm-ota-i3-1_7_12.bin",OADExtractionUtils.getFilePathForFirmwareVersion("1.7.12", new MbtVersion("1.1.0")));
+        assertEquals("oad/indus2/mm-ota-i2-1_7_14.bin",
+                     OADExtractionUtils.getFilePathForFirmwareVersion("1_7_14", new MbtVersion("1.0.0")));
+        assertEquals("oad/indus3/mm-ota-i3-1_7_14.bin",
+                     OADExtractionUtils.getFilePathForFirmwareVersion("1_7_14", new MbtVersion("1.1.0")));
+        assertEquals("oad/indus2/mm-ota-i2-1_7_14.bin",
+                     OADExtractionUtils.getFilePathForFirmwareVersion("1.7"
+                                                                      + ".14", new MbtVersion("1.0.0")));
+        assertEquals("oad/indus3/mm-ota-i3-1_7_14.bin",
+                     OADExtractionUtils.getFilePathForFirmwareVersion("1.7"
+                                                                      + ".14", new MbtVersion("1.1.0")));
 
-        assertEquals("oad/indus2/mm-ota-1_7_4.bin",OADExtractionUtils.getFilePathForFirmwareVersion("1_7_4", new MbtVersion("1.0.0")));
-        assertEquals("oad/indus3/mm-ota-1_7_4.bin",OADExtractionUtils.getFilePathForFirmwareVersion("1_7_4", new MbtVersion("1.1.0")));
-        assertEquals("oad/indus2/mm-ota-1_7_4.bin",OADExtractionUtils.getFilePathForFirmwareVersion("1.7.4", new MbtVersion("1.0.0")));
-        assertEquals("oad/indus3/mm-ota-1_7_4.bin",OADExtractionUtils.getFilePathForFirmwareVersion("1.7.4", new MbtVersion("1.1.0")));
+        assertEquals("oad/indus2/mm-ota-1_7_14.bin",
+                     OADExtractionUtils.getFilePathForFirmwareVersion("1_7_14", new MbtVersion("1.0.0")));
+        assertEquals("oad/indus3/mm-ota-1_7_14.bin",
+                     OADExtractionUtils.getFilePathForFirmwareVersion("1_7_14", new MbtVersion("1.1.0")));
+        assertEquals("oad/indus2/mm-ota-1_7_14.bin",
+                     OADExtractionUtils.getFilePathForFirmwareVersion("1.7"
+                                                                      + ".14", new MbtVersion("1.0.0")));
+        assertEquals("oad/indus3/mm-ota-1_7_14.bin",
+                     OADExtractionUtils.getFilePathForFirmwareVersion("1.7"
+                                                                      + ".14", new MbtVersion("1.1.0")));
     }
 
     /**
@@ -291,7 +307,7 @@ public class OADExtractionUtilsTest {
         AssetManager assetManager = Mockito.mock(AssetManager.class);
         Mockito.doReturn(assetManager).when(context).getAssets();
         try {
-            Mockito.doReturn(new String[]{"mm-ota-1_7_4.bin"}).when(assetManager).list("oad/indus2");
+            Mockito.doReturn(new String[]{"mm-ota-1_7_14.bin"}).when(assetManager).list("oad/indus2");
         } catch (IOException e) {
             e.printStackTrace();
         }

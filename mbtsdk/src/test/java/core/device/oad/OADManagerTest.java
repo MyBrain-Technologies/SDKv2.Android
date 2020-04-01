@@ -54,7 +54,7 @@ import static utils.OADExtractionUtils.OAD_PACKET_SIZE;
 public class OADManagerTest {
 
     private final String FIRMWARE_FIRST_FILENAME = "oad/mm-ota-1_6_2.bin" ;
-    private final String FIRMWARE_SECOND_FILENAME = "oad/mm-ota-1_7_1.bin" ;
+    private final String FIRMWARE_SECOND_FILENAME = "oad/mm-ota-1_7_14.bin" ;
     private final String FIRMWARE_VERSION_FIRST_AS_STRING = "1.6.2";
     private final String FIRMWARE_VERSION_SECOND_AS_STRING = "1.7.1";
     private final MbtVersion FIRMWARE_VERSION_VALID_FIRST = new MbtVersion(FIRMWARE_VERSION_FIRST_AS_STRING);
