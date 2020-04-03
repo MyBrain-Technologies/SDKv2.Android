@@ -8,6 +8,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import androidx.annotation.Keep;
+
+@Keep
 public final class MbtAsyncWaitOperation<T> {
 
     public static final Object CANCEL = null;
