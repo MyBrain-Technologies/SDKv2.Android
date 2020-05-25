@@ -2,6 +2,7 @@ package core.bluetooth.lowenergy;
 
 
 import android.Manifest;
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
@@ -208,7 +209,7 @@ public class MbtBluetoothLE
     @Override
     public void stopScan() {
         LogUtils.i(TAG, "Stopping Low Energy scan");
-        if(this.bluetoothLeScanner != null)
+        if(this.bluetoothLeScanner != null && isAdapterReady())
             this.bluetoothLeScanner.stopScan(this.leScanCallback);
         if(!getCurrentState().equals(BtState.DEVICE_FOUND) && !getCurrentState().equals(BtState.DATA_BT_CONNECTING))
             currentDevice = null;
@@ -442,7 +443,6 @@ public class MbtBluetoothLE
     public boolean isConnected() {
         return (getCurrentState() == BtState.CONNECTED_AND_READY || getCurrentState() == BtState.CONNECTED);
     }
-
 
     public boolean isConnectedDeviceReadyForCommand() {
         return (getCurrentState().ordinal() >= BtState.DATA_BT_CONNECTION_SUCCESS.ordinal());

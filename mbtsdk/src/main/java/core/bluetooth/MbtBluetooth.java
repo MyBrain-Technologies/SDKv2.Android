@@ -180,6 +180,12 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
         }
     }
 
+    protected boolean isAdapterReady() {
+        return bluetoothAdapter != null &&
+            bluetoothAdapter.isEnabled() &&
+            bluetoothAdapter.getState() == BluetoothAdapter.STATE_ON;
+    }
+
     protected boolean isConnectedDeviceReadyForCommand() {
         return (currentState.ordinal() >= BtState.DATA_BT_CONNECTION_SUCCESS.ordinal());
     }

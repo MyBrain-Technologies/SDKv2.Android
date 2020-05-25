@@ -939,6 +939,9 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      */
 
     private void sendCommand(@NonNull CommandInterface.MbtCommand command) {
+        if (bluetoothForDataStreaming == null) {
+            return;
+        }
         bluetoothForDataStreaming.sendCommand(command);
     }
 
