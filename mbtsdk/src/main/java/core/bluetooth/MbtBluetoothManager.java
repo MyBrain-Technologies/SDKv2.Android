@@ -129,7 +129,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             if(action != null){
                 final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 Log.d(TAG, " received intent " + action + " for device " + (device != null ? device.getName() : null));
-                if(connectAudioIfDeviceCompatible && action.equals(BluetoothAdapter.ACTION_STATE_CHANGED))
+                if(bluetoothForAudioStreaming != null && connectAudioIfDeviceCompatible && action.equals(BluetoothAdapter.ACTION_STATE_CHANGED))
                     ((MbtBluetoothA2DP)bluetoothForAudioStreaming).resetA2dpProxy(intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1));
             }
         }
