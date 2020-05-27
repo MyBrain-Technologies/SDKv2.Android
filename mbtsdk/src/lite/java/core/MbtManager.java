@@ -136,7 +136,8 @@ public class MbtManager{
         }else if(deviceQrCodeRequested != null && deviceNameRequested != null && !deviceNameRequested.equals(new MelomindsQRDataBase(mContext,  true).get(deviceQrCodeRequested))){
             this.connectionStateListener.onError(HeadsetDeviceError.ERROR_MATCHING, mContext.getString(R.string.aborted_connection));
         }else{
-            MbtEventBus.postEvent(new StartOrContinueConnectionRequestEvent(true, deviceNameRequested, deviceQrCodeRequested, deviceTypeRequested, mtu, connectAudioIfDeviceCompatible));
+            BluetoothContext bluetoothContext = new BluetoothContext(mContext, deviceTypeRequested, connectAudioIfDeviceCompatible, deviceNameRequested, deviceQrCodeRequested, mtu);
+            MbtEventBus.postEvent(new StartOrContinueConnectionRequestEvent(true, bluetoothContext));
         }
     }
 

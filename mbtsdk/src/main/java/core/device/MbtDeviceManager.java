@@ -12,6 +12,7 @@ import org.greenrobot.eventbus.ThreadMode;
 import command.OADCommands;
 import config.ConnectionConfig;
 import core.BaseModuleManager;
+import core.bluetooth.BluetoothContext;
 import core.bluetooth.requests.CommandRequestEvent;
 import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
 import core.device.model.MbtVersion;
@@ -266,12 +267,14 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
 
         ConnectionConfig connectionConfig = connectionConfigBuilder.createForDevice(mCurrentConnectedDevice.getDeviceType());
 
-        MbtEventBus.postEvent(new StartOrContinueConnectionRequestEvent(true,
-                connectionConfig.getDeviceName(),
-                connectionConfig.getDeviceQrCode(),
-                connectionConfig.getDeviceType(),
-                connectionConfig.getMtu(),
-                reconnectAudio));
+        BluetoothContext bluetoothContext = new BluetoothContext(mContext,
+            connectionConfig.getDeviceType(),
+            reconnectAudio,
+            connectionConfig.getDeviceName(),
+            connectionConfig.getDeviceQrCode(),
+            connectionConfig.getMtu());
+
+        MbtEventBus.postEvent(new StartOrContinueConnectionRequestEvent(true, bluetoothContext));
 
     }
 

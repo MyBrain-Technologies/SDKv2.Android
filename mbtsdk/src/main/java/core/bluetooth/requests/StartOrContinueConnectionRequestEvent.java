@@ -1,6 +1,7 @@
 package core.bluetooth.requests;
 
 
+import core.bluetooth.BluetoothContext;
 import features.MbtDeviceType;
 
 /**
@@ -13,24 +14,15 @@ public class StartOrContinueConnectionRequestEvent extends BluetoothRequests {
     private String qrCodeOfDeviceRequested;
     private MbtDeviceType typeOfDeviceRequested;
     private int mtu;
-    private boolean connectAudioIfDeviceCompatible = false;
+    private boolean connectAudioIfDeviceCompatible;
 
-    public StartOrContinueConnectionRequestEvent(boolean isClientUserRequest, String nameOfDeviceRequested, String qrCodeOfDeviceRequested, MbtDeviceType typeOfDeviceRequested, int mtu, boolean connectAudioIfDeviceCompatible ){
+    public StartOrContinueConnectionRequestEvent(boolean isClientUserRequest, BluetoothContext context){
             this.isClientUserRequest = isClientUserRequest;
-            this.nameOfDeviceRequested = nameOfDeviceRequested;
-            this.qrCodeOfDeviceRequested = qrCodeOfDeviceRequested;
-            this.typeOfDeviceRequested = typeOfDeviceRequested;
-            this.mtu = mtu;
-            this.connectAudioIfDeviceCompatible = typeOfDeviceRequested.equals(MbtDeviceType.MELOMIND) && connectAudioIfDeviceCompatible;
-    }
-
-    public StartOrContinueConnectionRequestEvent(boolean isClientUserRequest, String nameOfDeviceRequested, String qrCodeOfDeviceRequested, MbtDeviceType typeOfDeviceRequested, int mtu ){
-            this.isClientUserRequest = isClientUserRequest;
-            this.nameOfDeviceRequested = nameOfDeviceRequested;
-            this.qrCodeOfDeviceRequested = qrCodeOfDeviceRequested;
-            this.typeOfDeviceRequested = typeOfDeviceRequested;
-            this.mtu = mtu;
-            this.connectAudioIfDeviceCompatible = false;
+            this.nameOfDeviceRequested = context.getDeviceNameRequested();
+            this.qrCodeOfDeviceRequested = context.getDeviceQrCodeRequested();
+            this.typeOfDeviceRequested = context.getDeviceTypeRequested();
+            this.mtu = context.getMtu();
+            this.connectAudioIfDeviceCompatible = typeOfDeviceRequested.equals(MbtDeviceType.MELOMIND) && context.getConnectAudioIfDeviceCompatible();
     }
 
     public boolean isClientUserRequest() {
