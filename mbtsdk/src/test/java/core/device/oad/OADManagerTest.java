@@ -24,7 +24,7 @@ import java.util.concurrent.TimeoutException;
 
 import command.DeviceCommandEvent;
 import command.OADCommands;
-import core.bluetooth.BtState;
+import core.bluetooth.BluetoothState;
 import core.bluetooth.lowenergy.MbtBluetoothLE;
 import core.device.MbtDeviceManager;
 import core.device.event.OADEvent;
@@ -307,7 +307,7 @@ public class OADManagerTest {
         PowerMockito.spy(OADExtractionUtils.class);
 
         PowerMockito.doAnswer((Answer<Void>) invocation -> { //triggers a disconnection during the init method
-            bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);
+            bluetoothLE.notifyConnectionStateChanged(BluetoothState.DATA_BT_DISCONNECTED);
             return null;
         }).when(OADExtractionUtils.class, "getFilePathForFirmwareVersion", Mockito.anyString());
 
@@ -450,7 +450,7 @@ public class OADManagerTest {
         PowerMockito.spy(OADExtractionUtils.class);
 
         PowerMockito.doAnswer((Answer<Void>) invocation -> { //triggers a disconnection during the init method
-            bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);
+            bluetoothLE.notifyConnectionStateChanged(BluetoothState.DATA_BT_DISCONNECTED);
             return null;
         }).when(OADExtractionUtils.class, "getFilePathForFirmwareVersion", Mockito.anyString());
 
@@ -566,7 +566,7 @@ public class OADManagerTest {
         oadManager.setPacketCounter(packetCounter);
 
         PowerMockito.doAnswer((Answer<Void>) invocation -> { //triggers a disconnection during the init method
-            bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);
+            bluetoothLE.notifyConnectionStateChanged(BluetoothState.DATA_BT_DISCONNECTED);
             return null;
         }).doReturn((short)1).when(packetCounter).getIndexOfNextPacket();
 

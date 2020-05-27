@@ -9,7 +9,26 @@ import android.os.Build
 import androidx.core.content.ContextCompat
 
 class BluetoothInitializer{
+
     /**
+     * Return null if bluetooth is ready for connection
+     */
+    fun getBluetoothPrerequisitesState(bluetoothContext: BluetoothContext): BluetoothState? {
+        if (isBluetoothDisabled()) { //assert that Bluetooth is on
+            return BluetoothState.BLUETOOTH_DISABLED
+        }
+
+        if (bluetoothContext.deviceTypeRequested.useLowEnergyProtocol()) {
+            if (isLocationNotGranted(bluetoothContext.context)) { //assert that Location is on and Location permissions are granted
+                return BluetoothState.LOCATION_PERMISSION_NOT_GRANTED
+            }
+            if (isLocationDisabled(bluetoothContext.context)) { //assert that Location is on and Location permissions are granted
+                return BluetoothState.LOCATION_DISABLED
+            }
+        }
+        return BluetoothState.READY_FOR_BLUETOOTH_OPERATION
+    }
+        /**
      * As headset transmits its sensed data to the SDK using Bluetooth,
      * the mobile device Bluetooth must be currently enabled and ready for use.
      * The Bluetooth Manager must always check this prerequisite before starting any connection operation by calling the isBluetoothDisabled() method.

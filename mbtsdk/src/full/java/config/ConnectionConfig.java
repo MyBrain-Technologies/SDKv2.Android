@@ -6,6 +6,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import command.BluetoothCommands;
+import core.bluetooth.BluetoothState;
 import engine.clientevents.BaseError;
 import engine.clientevents.ConnectionStateListener;
 import features.MbtDeviceType;
@@ -196,9 +197,9 @@ public final class ConnectionConfig {
 
         /**
          * Use this method to specify a custom scan duration in <b>milliseconds</b>. By default, it is set to {{@link MbtFeatures#DEFAULT_MAX_SCAN_DURATION_IN_MILLIS}}.
-         * When a scan is starting, the user is notified with the state {@link core.bluetooth.BtState#SCAN_STARTED}
+         * When a scan is starting, the user is notified with the state {@link BluetoothState#SCAN_STARTED}
          * If the maximum duration is reached without being able to find any device, the user is notified with the state
-         * {@link core.bluetooth.BtState#SCAN_TIMEOUT}
+         * {@link BluetoothState#SCAN_TIMEOUT}
          *
          * <p>Warning, minimum input must be equal to 10000ms</p>
          *

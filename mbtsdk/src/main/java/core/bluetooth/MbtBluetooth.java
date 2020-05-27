@@ -40,7 +40,7 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
     @NonNull
     private StreamState streamState = StreamState.IDLE; //todo streamState variable can be inherited from Stream abstract class instead of IStream interface that just implements methods
 
-    private volatile BtState currentState = BtState.IDLE; //todo add @NonNull annotation + rename into bluetoothState
+    private volatile BluetoothState currentState = BluetoothState.IDLE; //todo add @NonNull annotation + rename into bluetoothState
     protected Pair<String, Long> batteryValueAtTimestamp = null;
 
     protected boolean isUpdating; //todo remove useless
@@ -83,17 +83,17 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
      * The {@link MbtBluetoothManager#updateConnectionState(boolean)}  method with no parameter should be call if nothing went wrong and user wants to continue the connection process
      */
     @Override
-    public void notifyConnectionStateChanged(@NonNull BtState newState) {
+    public void notifyConnectionStateChanged(@NonNull BluetoothState newState) {
 
-        if(!newState.equals(currentState) && !(newState.isAFailureState() && currentState.equals(BtState.DATA_BT_DISCONNECTED))){
-            BtState previousState = currentState;
+        if(!newState.equals(currentState) && !(newState.isAFailureState() && currentState.equals(BluetoothState.DATA_BT_DISCONNECTED))){
+            BluetoothState previousState = currentState;
             currentState = newState;
             LogUtils.i(TAG," current state is now  =  "+currentState);
             mbtBluetoothManager.notifyConnectionStateChanged(newState);
 
             if(currentState.isResettableState(previousState)) {  //if a disconnection occurred
                 resetCurrentState();//reset the current connection state to IDLE
-                if(this instanceof MbtBluetoothA2DP && !currentState.equals(BtState.UPGRADING))
+                if(this instanceof MbtBluetoothA2DP && !currentState.equals(BluetoothState.UPGRADING))
                     mbtBluetoothManager.disconnectAllBluetooth(false); //audio has failed to connect : we disconnect BLE
             }if(currentState.isDisconnectableState())  //if a failure occurred //todo check if a "else" is not missing here
                 disconnect(); //disconnect if a headset is connected
@@ -102,10 +102,10 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
     }
 
     private void resetCurrentState(){
-        notifyConnectionStateChanged(BtState.IDLE);
+        notifyConnectionStateChanged(BluetoothState.IDLE);
     }
 
-    public void notifyConnectionStateChanged(BtState newState, boolean notifyManager){
+    public void notifyConnectionStateChanged(BluetoothState newState, boolean notifyManager){
         if(notifyManager)
             notifyConnectionStateChanged(newState);
         else {
@@ -172,9 +172,9 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
         return currentDevice;
     }
 
-    public BtState getCurrentState() { return currentState; }//todo rename getBluetoothState
+    public BluetoothState getCurrentState() { return currentState; }//todo rename getBluetoothState
 
-    void setCurrentState(BtState currentState) {//todo rename setBluetoothState
+    void setCurrentState(BluetoothState currentState) {//todo rename setBluetoothState
         if(!this.currentState.equals(currentState)){
             this.currentState = currentState;
         }
@@ -187,7 +187,7 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
     }
 
     protected boolean isConnectedDeviceReadyForCommand() {
-        return (currentState.ordinal() >= BtState.DATA_BT_CONNECTION_SUCCESS.ordinal());
+        return (currentState.ordinal() >= BluetoothState.DATA_BT_CONNECTION_SUCCESS.ordinal());
     }
 
     /**

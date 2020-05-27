@@ -18,9 +18,6 @@ import org.apache.commons.lang.ArrayUtils;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
-
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -29,7 +26,6 @@ import command.BluetoothCommand;
 import command.BluetoothCommands;
 import command.CommandInterface;
 import command.DeviceCommand;
-
 
 import command.DeviceCommandEvent;
 import command.OADCommands;
@@ -58,7 +54,6 @@ import eventbus.events.BluetoothEEGEvent;
 import eventbus.events.EEGConfigEvent;
 import eventbus.events.ConnectionStateEvent;
 import eventbus.events.DeviceInfoEvent;
-import eventbus.events.ResetBluetoothEvent;
 import features.MbtDeviceType;
 import features.MbtFeatures;
 import utils.AsyncUtils;
@@ -86,14 +81,14 @@ import static utils.MbtAsyncWaitOperation.CANCEL;
 
 public final class MbtBluetoothManager extends BaseModuleManager{
     private final static String TAG = MbtBluetoothManager.class.getSimpleName();
+    private BluetoothContext bluetoothContext;
+    private BluetoothInitializer bluetoothInitializer;
 
     private MbtDataBluetooth bluetoothForDataStreaming;
     private MbtAudioBluetooth bluetoothForAudioStreaming;
-    private BluetoothInitializer bluetoothInitializer;
 
-    @NonNull
-    private final Queue<BluetoothRequests> pendingRequests; //TODO see if still necessary
     private boolean requestBeingProcessed = false;
+    private boolean isRequestCompleted = false;
 
     private RequestThread requestThread;
     /**
@@ -102,13 +97,11 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private Handler requestHandler;
 
     private boolean isConnectionInterrupted = false;
-    private boolean isRequestCompleted = false;
 
     private MbtAsyncWaitOperation asyncOperation = new MbtAsyncWaitOperation<Boolean>();
     private MbtAsyncWaitOperation asyncSwitchOperation = new MbtAsyncWaitOperation<Boolean>();
-    private BluetoothContext bluetoothContext;
     private int connectionRetryCounter = 0;
-    private final int MAX_CONNECTION_RETRY;
+    private final int MAX_CONNECTION_RETRY = 2;
 
     private ConnectionStateReceiver receiver = new ConnectionStateReceiver() {
         @Override
@@ -132,8 +125,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      */
     public MbtBluetoothManager(@NonNull Context context){
         super(context);
-        //save client side objects in variables
-        this.pendingRequests = new LinkedList<>();
 
         //Init thread that will handle messages synchronously. Using HandlerThread looks like it is the best way for CPU consomption as infinite loop in async thread was too heavy for cpu
         requestThread = new RequestThread("requestThread", Thread.MAX_PRIORITY);
@@ -141,7 +132,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         requestHandler = new Handler(requestThread.getLooper());
 
         BroadcastUtils.registerReceiverIntents(context, receiver, BluetoothAdapter.ACTION_STATE_CHANGED);
-        MAX_CONNECTION_RETRY = 2;
     }
 
     /**
@@ -194,9 +184,9 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 notifyDeviceInfoReceived(DeviceInfo.BATTERY, Integer.toString((Integer) response));
 
             }else if(command instanceof OADCommands) {
-                updateConnectionState(BtState.UPGRADING);
+                updateConnectionState(BluetoothState.UPGRADING);
                 if(bluetoothForAudioStreaming != null)
-                    bluetoothForAudioStreaming.setCurrentState(BtState.UPGRADING);
+                    bluetoothForAudioStreaming.setCurrentState(BluetoothState.UPGRADING);
                 notifyEventReceived(command.getIdentifier(), response);
             }
         }
@@ -373,7 +363,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
     private void switchToNextConnectionStep(){
         setRequestAsProcessed();
-        if(!getCurrentState().isAFailureState() && !isConnectionInterrupted && !getCurrentState().equals(BtState.IDLE)) {  //if nothing went wrong during the current step of the connection process, we continue the process
+        if(!getCurrentState().isAFailureState() && !isConnectionInterrupted && !getCurrentState().equals(BluetoothState.IDLE)) {  //if nothing went wrong during the current step of the connection process, we continue the process
             onNewBluetoothRequest(new StartOrContinueConnectionRequestEvent(false, bluetoothContext));
         }
     }
@@ -389,9 +379,9 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         boolean isAlreadyConnected = false;
         if(isConnected()){
             if(!isAlreadyConnectedToRequestedDevice(bluetoothContext.getDeviceNameRequested(), currentConnectedDevice)) {
-                updateConnectionState(BtState.ANOTHER_DEVICE_CONNECTED);
+                updateConnectionState(BluetoothState.ANOTHER_DEVICE_CONNECTED);
             }else
-                updateConnectionState(BtState.CONNECTED_AND_READY);
+                updateConnectionState(BluetoothState.CONNECTED_AND_READY);
             isAlreadyConnected = true;
         }
         return isAlreadyConnected;
@@ -413,26 +403,16 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                     return;
 
                 bluetoothInitializer = new BluetoothInitializer();
-                if (bluetoothInitializer.isBluetoothDisabled()) { //assert that Bluetooth is on
-                    updateConnectionState(BtState.BLUETOOTH_DISABLED);
+                BluetoothState state = bluetoothInitializer.getBluetoothPrerequisitesState(bluetoothContext);
+                if (state != BluetoothState.READY_FOR_BLUETOOTH_OPERATION) { //assert that Bluetooth is on, Location is on, Location permission is granted
+                    updateConnectionState(state);
                     return;
-                }
-
-                if(bluetoothContext.getDeviceTypeRequested().useLowEnergyProtocol()) {
-                    if (bluetoothInitializer.isLocationNotGranted(mContext)) { //assert that Location is on and Location permissions are granted
-                        updateConnectionState(BtState.LOCATION_PERMISSION_NOT_GRANTED);
-                        return;
-                    }
-                    if (bluetoothInitializer.isLocationDisabled(mContext)) { //assert that Location is on and Location permissions are granted
-                        updateConnectionState(BtState.LOCATION_DISABLED);
-                        return;
-                    }
                 }
 
                 if(bluetoothForAudioStreaming != null && bluetoothForAudioStreaming instanceof MbtBluetoothA2DP)
                     ((MbtBluetoothA2DP)bluetoothForAudioStreaming).initA2dpProxy(); //initialization to check if a Melomind is already connected in A2DP : as the next step is the scanning, the SDK is able to filter on the name of this device
 
-                if (getCurrentState().equals(BtState.IDLE))
+                if (getCurrentState().equals(BluetoothState.IDLE))
                     updateConnectionState(false); //current state is set to READY_FOR_BLUETOOTH_OPERATION
                 switchToNextConnectionStep();
             }
@@ -449,7 +429,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * The started Bluetooth connection process is stopped if the prerequisites are not valid.
      */
     private void startScan(){
-        BtState newState = BtState.SCAN_FAILURE;
+        BluetoothState newState = BluetoothState.SCAN_FAILURE;
         try {
             AsyncUtils.executeAsync(new Runnable() {
                 @Override
@@ -460,14 +440,14 @@ public final class MbtBluetoothManager extends BaseModuleManager{
             asyncOperation.waitOperationResult(MbtConfig.getBluetoothScanTimeout());
         } catch (CancellationException | InterruptedException | ExecutionException | TimeoutException e) {
             if(e instanceof TimeoutException )
-                newState = BtState.SCAN_TIMEOUT ; //stop the current Bluetooth connection process
+                newState = BluetoothState.SCAN_TIMEOUT ; //stop the current Bluetooth connection process
             else if(e instanceof CancellationException )
                 asyncOperation.resetWaitingOperation();
             LogUtils.w(TAG, "Exception raised during scanning : \n " + e.toString());
         } finally {
             stopScan();
         }
-        if(getCurrentState().equals(BtState.SCAN_STARTED)) ////at this point : current state should be DEVICE_FOUND if scan succeeded
+        if(getCurrentState().equals(BluetoothState.SCAN_STARTED)) ////at this point : current state should be DEVICE_FOUND if scan succeeded
             updateConnectionState(newState); //scan failure or timeout
         switchToNextConnectionStep();
     }
@@ -504,8 +484,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         }finally {
             asyncOperation.stopWaitingOperation(CANCEL);
         }
-        if(!getCurrentState().equals(BtState.CONNECTED_AND_READY) && !getCurrentState().equals(BtState.DATA_BT_CONNECTION_SUCCESS) && !getCurrentState().equals(BtState.IDLE))
-            updateConnectionState(BtState.CONNECTION_FAILURE);
+        if(!getCurrentState().equals(BluetoothState.CONNECTED_AND_READY) && !getCurrentState().equals(BluetoothState.DATA_BT_CONNECTION_SUCCESS) && !getCurrentState().equals(BluetoothState.IDLE))
+            updateConnectionState(BluetoothState.CONNECTION_FAILURE);
         switchToNextConnectionStep();
     }
 
@@ -544,7 +524,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private void startDiscoveringServices(){
         if(bluetoothForDataStreaming instanceof MbtBluetoothLE) {
             LogUtils.i(TAG, "start discovering services ");
-            if (getCurrentState().ordinal() >= BtState.DATA_BT_CONNECTION_SUCCESS.ordinal()) { //if connection is in progress and BLE is at least connected, we can discover services
+            if (getCurrentState().ordinal() >= BluetoothState.DATA_BT_CONNECTION_SUCCESS.ordinal()) { //if connection is in progress and BLE is at least connected, we can discover services
                 try {
                     AsyncUtils.executeAsync(new Runnable() {
                         @Override
@@ -561,8 +541,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                     asyncOperation.stopWaitingOperation(CANCEL);
                 }
 
-                if (!getCurrentState().equals(BtState.DISCOVERING_SUCCESS)) {////at this point : current state should be DISCOVERING_SUCCESS if discovery succeeded
-                    updateConnectionState(BtState.DISCOVERING_FAILURE);
+                if (!getCurrentState().equals(BluetoothState.DISCOVERING_SUCCESS)) {////at this point : current state should be DISCOVERING_SUCCESS if discovery succeeded
+                    updateConnectionState(BluetoothState.DISCOVERING_FAILURE);
                 }
                 switchToNextConnectionStep();
             }
@@ -589,20 +569,20 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
         switch(deviceInfo){
             case FW_VERSION:
-                if(!getCurrentState().equals(BtState.READING_FIRMWARE_VERSION_SUCCESS)) //at this point : current state should be READING...SUCCESS if reading succeeded
-                    updateConnectionState(BtState.READING_FAILURE);
+                if(!getCurrentState().equals(BluetoothState.READING_FIRMWARE_VERSION_SUCCESS)) //at this point : current state should be READING...SUCCESS if reading succeeded
+                    updateConnectionState(BluetoothState.READING_FAILURE);
                 break;
             case HW_VERSION:
-                if(!getCurrentState().equals(BtState.READING_HARDWARE_VERSION_SUCCESS))//at this point : current state should be READING...SUCCESS if reading succeeded
-                    updateConnectionState(BtState.READING_FAILURE);
+                if(!getCurrentState().equals(BluetoothState.READING_HARDWARE_VERSION_SUCCESS))//at this point : current state should be READING...SUCCESS if reading succeeded
+                    updateConnectionState(BluetoothState.READING_FAILURE);
                 break;
             case SERIAL_NUMBER:
-                if(!getCurrentState().equals(BtState.READING_SERIAL_NUMBER_SUCCESS))//at this point : current state should be READING...SUCCESS if reading succeeded
-                    updateConnectionState(BtState.READING_FAILURE);
+                if(!getCurrentState().equals(BluetoothState.READING_SERIAL_NUMBER_SUCCESS))//at this point : current state should be READING...SUCCESS if reading succeeded
+                    updateConnectionState(BluetoothState.READING_FAILURE);
                 break;
             case MODEL_NUMBER:
-                if(!getCurrentState().equals(BtState.READING_SUCCESS))//at this point : current state should be READING...SUCCESS if reading succeeded
-                    updateConnectionState(BtState.READING_FAILURE);
+                if(!getCurrentState().equals(BluetoothState.READING_SUCCESS))//at this point : current state should be READING...SUCCESS if reading succeeded
+                    updateConnectionState(BluetoothState.READING_FAILURE);
                 break;
         }
         switchToNextConnectionStep();
@@ -708,7 +688,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                             AsyncUtils.executeAsync(new Runnable() {
                                 @Override
                                 public void run() {
-                                    if(getCurrentState() == BtState.BONDING) //avoid double bond if several requestCurrentConnectedDevice are called at the same moment
+                                    if(getCurrentState() == BluetoothState.BONDING) //avoid double bond if several requestCurrentConnectedDevice are called at the same moment
                                         return;
 
                                     ((MbtBluetoothLE)bluetoothForDataStreaming).bond();
@@ -724,7 +704,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                         }
 
                     } else  //if firmware version bonding is older than 1.6.7, the connection process is considered completed
-                        updateConnectionState(BtState.CONNECTED);
+                        updateConnectionState(BluetoothState.CONNECTED);
                 }
             });
 
@@ -734,8 +714,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                 e.printStackTrace();
             }
 
-            if(getCurrentState().equals(BtState.BONDING)) { //at this point : current state should be BONDED if bonding succeeded
-               updateConnectionState(BtState.BONDING_FAILURE);
+            if(getCurrentState().equals(BluetoothState.BONDING)) { //at this point : current state should be BONDED if bonding succeeded
+               updateConnectionState(BluetoothState.BONDING_FAILURE);
             }
 
             try {
@@ -794,7 +774,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                                         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P || (((MbtBluetoothA2DP)bluetoothForAudioStreaming).isPairedDevice(getCurrentDevice())))
                                             connect(BLUETOOTH_A2DP);
                                         else
-                                            notifyConnectionStateChanged(BtState.AUDIO_CONNECTION_UNSUPPORTED);
+                                            notifyConnectionStateChanged(BluetoothState.AUDIO_CONNECTION_UNSUPPORTED);
                                     }
                                 }
                             });
@@ -821,8 +801,8 @@ public final class MbtBluetoothManager extends BaseModuleManager{
                     startConnectionForAudioStreaming();
                 } else {
                     connectionRetryCounter = 0;
-                    bluetoothForAudioStreaming.notifyConnectionStateChanged(BtState.CONNECTION_FAILURE); //at this point : current state should be AUDIO_CONNECTED if audio connection succeeded
-                    bluetoothForDataStreaming.notifyConnectionStateChanged(BtState.CONNECTION_FAILURE);
+                    bluetoothForAudioStreaming.notifyConnectionStateChanged(BluetoothState.CONNECTION_FAILURE); //at this point : current state should be AUDIO_CONNECTED if audio connection succeeded
+                    bluetoothForDataStreaming.notifyConnectionStateChanged(BluetoothState.CONNECTION_FAILURE);
                 }
             }
 
@@ -991,7 +971,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     }
 
     /**
-     * Stops current pending connection according to its current {@link BtState state}.
+     * Stops current pending connection according to its current {@link BluetoothState state}.
      * It can be either stop scan or connection process interruption
      */
     private void cancelPendingConnection(boolean isClientUserAbortion) {
@@ -1001,7 +981,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
         if(isClientUserAbortion){
             isConnectionInterrupted = true;
-            updateConnectionState(BtState.CONNECTION_INTERRUPTED);
+            updateConnectionState(BluetoothState.CONNECTION_INTERRUPTED);
         }
         asyncOperation.stopWaitingOperation(CANCEL);
     }
@@ -1024,10 +1004,10 @@ public final class MbtBluetoothManager extends BaseModuleManager{
 
     /**
      * This method is called from Bluetooth classes and is meant to post an event to the main manager
-     * that contains the new {@link BtState}
-     * @param newState the new {@link BtState}
+     * that contains the new {@link BluetoothState}
+     * @param newState the new {@link BluetoothState}
      */
-    public void notifyConnectionStateChanged(@NonNull BtState newState) {
+    public void notifyConnectionStateChanged(@NonNull BluetoothState newState) {
         setRequestAsProcessed();
 
         switch (newState) { //This event is sent to device module if registered
@@ -1095,7 +1075,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         Log.d(TAG," Device info returned by the headset "+deviceInfo+ " : "+deviceValue);
         setRequestAsProcessed();
 
-        if(deviceInfo.equals(DeviceInfo.BATTERY) && getCurrentState().equals(BtState.BONDING)){
+        if(deviceInfo.equals(DeviceInfo.BATTERY) && getCurrentState().equals(BluetoothState.BONDING)){
             updateConnectionState(false); //current state is set to BONDED
             switchToNextConnectionStep();
         } else {
@@ -1137,11 +1117,11 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * and notify the bluetooth manager of this change.
      * This method should be called :
      * - if something went wrong during the connection process
-     * - or if the new state does not correspond to the state that follow the current state in chronological order ({@link BtState} enum order)
+     * - or if the new state does not correspond to the state that follow the current state in chronological order ({@link BluetoothState} enum order)
      * The updateConnectionState(boolean) method with no parameter should be call if nothing went wrong and user wants to continue the connection process
      */
-    private void updateConnectionState(BtState state){
-        if(state != null && !state.isAudioState() && bluetoothContext != null && (!isConnectionInterrupted || state.equals(BtState.CONNECTION_INTERRUPTED))){
+    private void updateConnectionState(BluetoothState state){
+        if(state != null && !state.isAudioState() && bluetoothContext != null && (!isConnectionInterrupted || state.equals(BluetoothState.CONNECTION_INTERRUPTED))){
             bluetoothForDataStreaming.notifyConnectionStateChanged(state);
         }
     }
@@ -1152,9 +1132,9 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * This method should be called if no error occured.
      */
     public void updateConnectionState(boolean isCompleted){
-        BtState nextStep = getCurrentState().getNextConnectionStep();
+        BluetoothState nextStep = getCurrentState().getNextConnectionStep();
         if(!isConnectionInterrupted)
-            updateConnectionState(nextStep != BtState.IDLE ? nextStep : null);
+            updateConnectionState(nextStep != BluetoothState.IDLE ? nextStep : null);
 
         if(isCompleted)
             asyncOperation.stopWaitingOperation(false);
@@ -1164,7 +1144,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
      * Return true if the user has requested connection with an already connected device, false otherwise
      */
     private boolean isAlreadyConnectedToRequestedDevice(String nameDeviceToConnect, MbtDevice deviceConnected){
-        return (nameDeviceToConnect != null && deviceConnected != null && deviceConnected.getExternalName().equals(nameDeviceToConnect));
+        return (deviceConnected != null && deviceConnected.getExternalName() != null && deviceConnected.getExternalName().equals(nameDeviceToConnect));
     }
 
     /**
@@ -1195,7 +1175,7 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     /**
      * Gets current state according to bluetooth protocol value
      */
-    private BtState getCurrentState(){
+    private BluetoothState getCurrentState(){
         return bluetoothForDataStreaming.getCurrentState();
     }
 
@@ -1220,12 +1200,12 @@ public final class MbtBluetoothManager extends BaseModuleManager{
     private void connectBLEFromA2DP(@NonNull String newDeviceBleName) {
         LogUtils.i(TAG, "connect BLE from a2dp ");
         if(isAudioBluetoothConnected()){
-            BtState currentStateBeforeDisconnection = getCurrentState();
+            BluetoothState currentStateBeforeDisconnection = getCurrentState();
             if(bluetoothForDataStreaming.isConnected() && !((MbtBluetoothLE)bluetoothForDataStreaming).isCurrentDeviceNameEqual(newDeviceBleName)) //Disconnecting another melomind if already one connected in BLE
                 bluetoothForDataStreaming.disconnect();
 
             bluetoothContext.setDeviceNameRequested(newDeviceBleName);
-            if(!currentStateBeforeDisconnection.equals(BtState.IDLE)) {
+            if(!currentStateBeforeDisconnection.equals(BluetoothState.IDLE)) {
                 try {
                     asyncSwitchOperation.waitOperationResult(8000);
                 }catch (CancellationException | InterruptedException | ExecutionException | TimeoutException e) {
@@ -1249,21 +1229,6 @@ public final class MbtBluetoothManager extends BaseModuleManager{
         if(displayLog)
             LogUtils.d(TAG, "Request processed");
         requestBeingProcessed = false;
-    }
-
-    /**
-     * Handle a request of an external unit to enable and disable the mobile device bluetooth
-     * and reset the pairing keys of the previously connected device.
-     * @param event the reset event that holds the name of the device previously connected
-     */
-    @Subscribe
-    public void onResetBluetooth(ResetBluetoothEvent event) {
-        if (bluetoothForDataStreaming instanceof MbtBluetoothLE) {
-            bluetoothForDataStreaming.resetMobileDeviceBluetoothAdapter();
-            ((MbtBluetoothLE)bluetoothForDataStreaming).clearMobileDeviceCache();
-            ((MbtBluetoothLE)bluetoothForDataStreaming).unpairDevice(getCurrentDevice());
-        }
-        MbtEventBus.postEvent(new BluetoothResponseEvent(DeviceCommandEvent.OTA_BLUETOOTH_RESET, null));
     }
 
     /**

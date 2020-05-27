@@ -23,7 +23,7 @@ import engine.clientevents.MobileDeviceError;
  * Created by Vincent on 02/02/2016.
  */
 @Keep
-public enum BtState {
+public enum BluetoothState {
 
 
 
@@ -295,13 +295,13 @@ public enum BtState {
      * which returns the ordinal of this enumeration constant (its position in its enum declaration, where the initial constant is assigned an ordinal of zero).
      * For example, the IDLE state is the initial state so its order value is 0.
      */
-    BtState() { }
+    BluetoothState() { }
 
     /**
      * This constructor is used for the states that are considered as a failure state
      * @param error is the Error to return to the SDK user
      */
-    BtState(@Nullable BaseError error) {
+    BluetoothState(@Nullable BaseError error) {
         this.associatedError = error;
     }
 
@@ -325,8 +325,8 @@ public enum BtState {
     /**
      * A reset to IDLE state need to be performed if headset is disconnect, or if the connection process failed before having reached the DATA_BT_CONNECTION_SUCCESS state
      */
-    public boolean isResettableState(BtState previousState){
-        return (this.equals(DATA_BT_DISCONNECTED) || (this.isDisconnectableState() && previousState.ordinal() < BtState.DATA_BT_CONNECTION_SUCCESS.ordinal()));
+    public boolean isResettableState(BluetoothState previousState){
+        return (this.equals(DATA_BT_DISCONNECTED) || (this.isDisconnectableState() && previousState.ordinal() < BluetoothState.DATA_BT_CONNECTION_SUCCESS.ordinal()));
     }
 
     /**
@@ -347,8 +347,8 @@ public enum BtState {
     /**
      * @return the step that follow (in chronological order, based on the enum value) the current step
      */
-    public BtState getNextConnectionStep(){
-        return (!this.isAFailureState() && this.isConnectionInProgress()) ? BtState.values()[this.ordinal()+1]: IDLE;
+    public BluetoothState getNextConnectionStep(){
+        return (!this.isAFailureState() && this.isConnectionInProgress()) ? BluetoothState.values()[this.ordinal()+1]: IDLE;
     }
 
     public boolean isAudioState(){
