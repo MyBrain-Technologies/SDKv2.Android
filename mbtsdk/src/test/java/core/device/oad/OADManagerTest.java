@@ -24,7 +24,7 @@ import java.util.concurrent.TimeoutException;
 
 import command.DeviceCommandEvent;
 import command.OADCommands;
-import core.bluetooth.BtState;
+import core.bluetooth.BluetoothState;
 import core.bluetooth.lowenergy.MbtBluetoothLE;
 import core.device.MbtDeviceManager;
 import core.device.event.OADEvent;
@@ -307,7 +307,7 @@ public class OADManagerTest {
         PowerMockito.spy(OADExtractionUtils.class);
 
         PowerMockito.doAnswer((Answer<Void>) invocation -> { //triggers a disconnection during the init method
-            bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);
+            bluetoothLE.notifyConnectionStateChanged(BluetoothState.DATA_BT_DISCONNECTED);
             return null;
         }).when(OADExtractionUtils.class, "getFilePathForFirmwareVersion", Mockito.anyString());
 
@@ -450,7 +450,7 @@ public class OADManagerTest {
         PowerMockito.spy(OADExtractionUtils.class);
 
         PowerMockito.doAnswer((Answer<Void>) invocation -> { //triggers a disconnection during the init method
-            bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);
+            bluetoothLE.notifyConnectionStateChanged(BluetoothState.DATA_BT_DISCONNECTED);
             return null;
         }).when(OADExtractionUtils.class, "getFilePathForFirmwareVersion", Mockito.anyString());
 
@@ -566,7 +566,7 @@ public class OADManagerTest {
         oadManager.setPacketCounter(packetCounter);
 
         PowerMockito.doAnswer((Answer<Void>) invocation -> { //triggers a disconnection during the init method
-            bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);
+            bluetoothLE.notifyConnectionStateChanged(BluetoothState.DATA_BT_DISCONNECTED);
             return null;
         }).doReturn((short)1).when(packetCounter).getIndexOfNextPacket();
 
@@ -858,7 +858,7 @@ public class OADManagerTest {
 
         oadManager.onOADStateChanged(OADState.RECONNECTING, FIRMWARE_VERSION_VALID_FIRST);
 
-        //contract.onConnectionStateChanged(new ConnectionStateEvent(BtState.SCAN_TIMEOUT, null, null));
+        //contract.onConnectionStateChanged(new ConnectionStateEvent(BluetoothState.SCAN_TIMEOUT, null, null));
 
         Mockito.verify(contract,times(3)).notifyClient(captor.capture()); //2 times notified : notify client state changed to ABORTED and notify error raised
         List<FirmwareUpdateClientEvent> captured = captor.getAllValues();
@@ -885,7 +885,7 @@ public class OADManagerTest {
 
         oadManager.onOADStateChanged(OADState.RECONNECTING, FIRMWARE_VERSION_VALID_FIRST);
 
-        //contract.onConnectionStateChanged(new ConnectionStateEvent(BtState.SCAN_TIMEOUT, null, null));
+        //contract.onConnectionStateChanged(new ConnectionStateEvent(BluetoothState.SCAN_TIMEOUT, null, null));
 
         Mockito.verify(contract,times(3)).notifyClient(captor.capture()); //2 times notified : notify client state changed to ABORTED and notify error raised
         List<FirmwareUpdateClientEvent> captured = captor.getAllValues();

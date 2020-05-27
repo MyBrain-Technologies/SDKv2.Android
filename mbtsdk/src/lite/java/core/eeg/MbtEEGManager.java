@@ -14,7 +14,7 @@ import java.util.Arrays;
 import core.BaseModuleManager;
 import core.MbtManager;
 import core.bluetooth.BtProtocol;
-import core.bluetooth.BtState;
+import core.bluetooth.BluetoothState;
 import core.bluetooth.StreamState;
 import core.bluetooth.requests.StreamRequestEvent;
 import core.device.model.MbtDevice;
@@ -229,7 +229,7 @@ public final class MbtEEGManager extends BaseModuleManager {
         if(connectionStateEvent.getDevice() == null) {
             protocol = null;
         }else {
-            if(connectionStateEvent.getNewState().equals(BtState.CONNECTED_AND_READY)){
+            if(connectionStateEvent.getNewState().equals(BluetoothState.CONNECTED_AND_READY)){
                 protocol = connectionStateEvent.getDevice().getDeviceType().getProtocol();
                 nbChannels = connectionStateEvent.getDevice().getNbChannels();
             }

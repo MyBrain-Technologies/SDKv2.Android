@@ -30,7 +30,7 @@ import java.util.Objects;
 import core.bluetooth.StreamState;
 import core.device.event.DCOffsetEvent;
 import core.device.event.SaturationEvent;
-import core.bluetooth.BtState;
+import core.bluetooth.BluetoothState;
 import core.device.model.MbtDevice;
 import core.eeg.storage.MbtEEGPacket;
 import engine.MbtClient;
@@ -209,7 +209,7 @@ public class DeviceActivity extends AppCompatActivity {
     private void initConnectionStateListener() {
         bluetoothStateListener = new BluetoothStateListener() {
             @Override
-            public void onNewState(BtState newState, MbtDevice device) {
+            public void onNewState(BluetoothState newState, MbtDevice device) {
             }
 
             @Override

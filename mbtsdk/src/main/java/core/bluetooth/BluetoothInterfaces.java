@@ -47,13 +47,13 @@ public interface BluetoothInterfaces {
 
         /**
          * Method used to notify that the connection state has changed
-         * @param newState The new bluetooth connection state. Refer to @{@link BtState}
+         * @param newState The new bluetooth connection state. Refer to @{@link BluetoothState}
          * for the complete list of states.
          */
-        void notifyConnectionStateChanged(@NonNull final BtState newState);
+        void notifyConnectionStateChanged(@NonNull final BluetoothState newState);
 
         /**
-         * @return whether or not the device is correctly connected, ie if current state is {@link BtState#CONNECTED_AND_READY}
+         * @return whether or not the device is correctly connected, ie if current state is {@link BluetoothState#CONNECTED_AND_READY}
          */
         boolean isConnected();
 

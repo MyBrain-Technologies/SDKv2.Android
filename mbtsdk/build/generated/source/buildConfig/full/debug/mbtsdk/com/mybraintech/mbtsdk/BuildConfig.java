@@ -13,8 +13,8 @@ public final class BuildConfig {
   public static final String APPLICATION_ID = "mbtsdk.com.mybraintech.mbtsdk";
   public static final String BUILD_TYPE = "debug";
   public static final String FLAVOR = "full";
-  public static final int VERSION_CODE = 16;
-  public static final String VERSION_NAME = "2.2.5";
+  public static final int VERSION_CODE = 17;
+  public static final String VERSION_NAME = "2.2.6";
   // Fields from default config.
   public static final boolean BLUETOOTH_ENABLED = true;
   public static final boolean DEVICE_ENABLED = true;
