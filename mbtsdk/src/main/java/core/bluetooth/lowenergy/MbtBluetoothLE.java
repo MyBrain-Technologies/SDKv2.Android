@@ -2,7 +2,6 @@ package core.bluetooth.lowenergy;
 
 
 import android.Manifest;
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
@@ -35,9 +34,9 @@ import command.DeviceCommand;
 import command.DeviceCommandEvent;
 import command.OADCommands;
 import config.MbtConfig;
-import core.bluetooth.BtProtocol;
-import core.bluetooth.BluetoothState;
+import core.bluetooth.BluetoothProtocol;
 import core.bluetooth.BluetoothInterfaces;
+import core.bluetooth.BluetoothState;
 import core.bluetooth.MbtBluetoothManager;
 import core.bluetooth.MbtDataBluetooth;
 import core.bluetooth.StreamState;
@@ -55,6 +54,8 @@ import utils.LogUtils;
 import static command.DeviceCommandEvent.CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED;
 import static command.DeviceCommandEvent.CMD_CODE_CONNECT_IN_A2DP_SUCCESS;
 import static command.DeviceCommandEvent.MBX_CONNECT_IN_A2DP;
+import static core.bluetooth.BluetoothState.*;
+import static mbtutils.PermissionUtils.hasPermissions;
 
 /**
  *
@@ -105,7 +106,7 @@ public class MbtBluetoothLE
                         new Handler().postDelayed(new Runnable() {
                             @Override
                             public void run() {
-                                if (getCurrentState().equals(BluetoothState.BONDING))
+                                if (getCurrentState().equals(BONDING))
                                     updateConnectionState(true); //current state is set to BONDED & and future is completed
                             }
                         }, 1000);
@@ -122,7 +123,7 @@ public class MbtBluetoothLE
     private ScanCallback leScanCallback = new ScanCallback() {
 
         public void onScanResult(int callbackType, @NonNull ScanResult result) { //Callback when a BLE advertisement has been found.
-            if(getCurrentState().equals(BluetoothState.SCAN_STARTED)){
+            if(getCurrentState().equals(SCAN_STARTED)){
                 super.onScanResult(callbackType, result);
                 final BluetoothDevice device = result.getDevice();
                 LogUtils.i(TAG, String.format("Stopping Low Energy Scan -> device detected " + "with name '%s' and MAC address '%s' ", device.getName(), device.getAddress()));
@@ -139,7 +140,7 @@ public class MbtBluetoothLE
                 notifyConnectionStateChanged(BluetoothState.SCAN_FAILED_ALREADY_STARTED);
             }else{
                 msg += "Scan failed. No more details.";
-                notifyConnectionStateChanged(BluetoothState.SCAN_FAILURE);
+                notifyConnectionStateChanged(SCAN_FAILURE);
             }
             LogUtils.e(TAG, msg);
         }
@@ -153,7 +154,7 @@ public class MbtBluetoothLE
      * @param mbtBluetoothManager the Bluetooth manager that performs requests and receives results.
      */
     public MbtBluetoothLE(@NonNull Context context, MbtBluetoothManager mbtBluetoothManager) {
-        super(context, BtProtocol.BLUETOOTH_LE, mbtBluetoothManager);
+        super(context, BluetoothProtocol.LOW_ENERGY, mbtBluetoothManager);
         this.mbtGattController = new MbtGattController(context, this);
     }
 
@@ -172,7 +173,7 @@ public class MbtBluetoothLE
 
         if (super.bluetoothAdapter == null || super.bluetoothAdapter.getBluetoothLeScanner() == null){
             Log.e(TAG, "Unable to get LE scanner");
-            notifyConnectionStateChanged(BluetoothState.SCAN_FAILURE);
+            notifyConnectionStateChanged(SCAN_FAILURE);
             return false;
         }else
             this.bluetoothLeScanner = super.bluetoothAdapter.getBluetoothLeScanner();
@@ -196,7 +197,7 @@ public class MbtBluetoothLE
 
         LogUtils.i(TAG, String.format("Starting Low Energy Scan with filtering on name '%s' and service UUID '%s'", mbtBluetoothManager.getDeviceNameRequested(), MelomindCharacteristics.SERVICE_MEASUREMENT));
         this.bluetoothLeScanner.startScan(mFilters, settings, this.leScanCallback);
-        if(getCurrentState().equals(BluetoothState.READY_FOR_BLUETOOTH_OPERATION))
+        if(getCurrentState().equals(READY_FOR_BLUETOOTH_OPERATION))
             mbtBluetoothManager.updateConnectionState(false); //current state is set to SCAN_STARTED
         return true; //true : scan is started
 
@@ -209,9 +210,11 @@ public class MbtBluetoothLE
     @Override
     public void stopScan() {
         LogUtils.i(TAG, "Stopping Low Energy scan");
-        if(this.bluetoothLeScanner != null && isAdapterReady())
+        if(this.bluetoothLeScanner != null
+            && isAdapterReady()
+            && hasPermissions(context, Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION))
             this.bluetoothLeScanner.stopScan(this.leScanCallback);
-        if(!getCurrentState().equals(BluetoothState.DEVICE_FOUND) && !getCurrentState().equals(BluetoothState.DATA_BT_CONNECTING))
+        if(!getCurrentState().equals(DEVICE_FOUND) && !getCurrentState().equals(DATA_BT_CONNECTING))
             currentDevice = null;
     }
 
@@ -307,7 +310,7 @@ public class MbtBluetoothLE
      * or <code>false</code> for any error
      */
     synchronized boolean enableOrDisableNotificationsOnCharacteristic(boolean enableNotification, @NonNull BluetoothGattCharacteristic characteristic) {
-        if(!isConnected() && !getCurrentState().equals(BluetoothState.SENDIND_QR_CODE))
+        if(!isConnected() && !getCurrentState().equals(SENDIND_QR_CODE))
             return false;
 
         LogUtils.i(TAG, "Now enabling local notification for characteristic: " + characteristic.getUuid());
@@ -441,11 +444,11 @@ public class MbtBluetoothLE
 
     @Override
     public boolean isConnected() {
-        return (getCurrentState() == BluetoothState.CONNECTED_AND_READY || getCurrentState() == BluetoothState.CONNECTED);
+        return (getCurrentState() == CONNECTED_AND_READY || getCurrentState() == CONNECTED);
     }
 
     public boolean isConnectedDeviceReadyForCommand() {
-        return (getCurrentState().ordinal() >= BluetoothState.DATA_BT_CONNECTION_SUCCESS.ordinal());
+        return (getCurrentState().ordinal() >= DATA_BT_CONNECTION_SUCCESS.ordinal());
     }
 
     /**
@@ -455,9 +458,9 @@ public class MbtBluetoothLE
      * arted correctly
      */
     boolean startReadOperation(@NonNull UUID characteristic){
-        if(!isConnected() && !getCurrentState().equals(BluetoothState.DISCOVERING_SUCCESS) && !getCurrentState().isReadingDeviceInfoState() && !getCurrentState().equals(BluetoothState.BONDING)) {
-            notifyConnectionStateChanged( getCurrentState().equals(BluetoothState.BONDING) ?
-                    BluetoothState.BONDING_FAILURE : BluetoothState.READING_FAILURE);
+        if(!isConnected() && !getCurrentState().equals(DISCOVERING_SUCCESS) && !getCurrentState().isReadingDeviceInfoState() && !getCurrentState().equals(BONDING)) {
+            notifyConnectionStateChanged( getCurrentState().equals(BONDING) ?
+                    BONDING_FAILURE : READING_FAILURE);
             return false;
         }
         UUID service = (characteristic.equals(MelomindCharacteristics.CHARAC_INFO_FIRMWARE_VERSION)
@@ -467,16 +470,16 @@ public class MbtBluetoothLE
                 MelomindCharacteristics.SERVICE_DEVICE_INFOS : MelomindCharacteristics.SERVICE_MEASUREMENT;
 
         if(!checkServiceAndCharacteristicValidity(service, characteristic)) {
-            notifyConnectionStateChanged( getCurrentState().equals(BluetoothState.BONDING) ?
-                    BluetoothState.BONDING_FAILURE : BluetoothState.READING_FAILURE);
+            notifyConnectionStateChanged( getCurrentState().equals(BONDING) ?
+                    BONDING_FAILURE : READING_FAILURE);
             return false;
         }
 
         if (!this.gatt.readCharacteristic(gatt.getService(service).getCharacteristic(characteristic))) {
             LogUtils.e(TAG, "Error: failed to initiate read characteristic operation");
-            if(getCurrentState().equals(BluetoothState.BONDING) || getCurrentState().isReadingDeviceInfoState())
-                notifyConnectionStateChanged( getCurrentState().equals(BluetoothState.BONDING) ? // bonding is triggered by a reading battery operation
-                        BluetoothState.BONDING_FAILURE : BluetoothState.READING_FAILURE);
+            if(getCurrentState().equals(BONDING) || getCurrentState().isReadingDeviceInfoState())
+                notifyConnectionStateChanged( getCurrentState().equals(BONDING) ? // bonding is triggered by a reading battery operation
+                        BONDING_FAILURE : READING_FAILURE);
             return false;
         }
         //if(getCurrentState().isReadingDeviceInfoState())
@@ -601,26 +604,26 @@ public class MbtBluetoothLE
      * @param gatt
      */
     void onStateDisconnected(@NonNull BluetoothGatt gatt) {
-        if(gatt != null && getCurrentState().ordinal() >= BluetoothState.CONNECTED_AND_READY.ordinal())
+        if(gatt != null && getCurrentState().ordinal() >= CONNECTED_AND_READY.ordinal())
             gatt.close();
 
-        notifyConnectionStateChanged(BluetoothState.DATA_BT_DISCONNECTED);
+        notifyConnectionStateChanged(DATA_BT_DISCONNECTED);
     }
 
     void onStateDisconnecting() {
-        notifyConnectionStateChanged(BluetoothState.DISCONNECTING);
+        notifyConnectionStateChanged(DISCONNECTING);
     }
 
     void onStateConnecting() {
-        if (getCurrentState().equals(BluetoothState.DEVICE_FOUND))
+        if (getCurrentState().equals(DEVICE_FOUND))
             this.updateConnectionState(false);//current state is set to DATA_BT_CONNECTING
     }
 
     void onStateConnected() {
-        if (getCurrentState().equals(BluetoothState.DATA_BT_CONNECTING) || getCurrentState().equals(BluetoothState.SCAN_STARTED))
+        if (getCurrentState().equals(DATA_BT_CONNECTING) || getCurrentState().equals(SCAN_STARTED))
             updateConnectionState(true);//current state is set to DATA_BT_CONNECTION_SUCCESS and future is completed
-        else if(getCurrentState().equals(BluetoothState.IDLE) || getCurrentState().equals(BluetoothState.UPGRADING))
-            this.notifyConnectionStateChanged(BluetoothState.CONNECTED_AND_READY);
+        else if(getCurrentState().equals(IDLE) || getCurrentState().equals(UPGRADING))
+            this.notifyConnectionStateChanged(CONNECTED_AND_READY);
     }
 
     /**
@@ -631,7 +634,7 @@ public class MbtBluetoothLE
     public void notifyConnectionStateChanged(@NonNull BluetoothState newState) {
         super.notifyConnectionStateChanged(newState);
 
-        if (newState.equals(BluetoothState.DATA_BT_DISCONNECTED)) {
+        if (newState.equals(DATA_BT_DISCONNECTED)) {
             if (isStreaming())
                 notifyStreamStateChanged(StreamState.DISCONNECTED);
             BroadcastUtils.unregisterReceiver(context, receiver);
@@ -657,12 +660,12 @@ public class MbtBluetoothLE
 
         if(mailboxEvent == DeviceCommandEvent.MBX_CONNECT_IN_A2DP){
             if(BitUtils.areByteEquals(MBX_CONNECT_IN_A2DP.getResponseCodeForKey(CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED), mailboxResponse))
-                mbtBluetoothManager.notifyConnectionStateChanged(BluetoothState.JACK_CABLE_CONNECTED);
+                mbtBluetoothManager.notifyConnectionStateChanged(JACK_CABLE_CONNECTED);
 
             else if(BitUtils.areByteEquals(MBX_CONNECT_IN_A2DP.getResponseCodeForKey(CMD_CODE_CONNECT_IN_A2DP_SUCCESS), mailboxResponse))
-                mbtBluetoothManager.notifyConnectionStateChanged(BluetoothState.AUDIO_BT_CONNECTION_SUCCESS);
+                mbtBluetoothManager.notifyConnectionStateChanged(AUDIO_BT_CONNECTION_SUCCESS);
         }else
-            mbtBluetoothManager.notifyConnectionStateChanged(BluetoothState.AUDIO_BT_DISCONNECTED);
+            mbtBluetoothManager.notifyConnectionStateChanged(AUDIO_BT_DISCONNECTED);
     }
 
     void updateConnectionState(boolean isCompleted){
@@ -779,7 +782,7 @@ public class MbtBluetoothLE
         LogUtils.i(TAG, "start discover services");
         updateConnectionState(false); //current state is set to DISCOVERING_SERVICES
         if(!gatt.discoverServices()){
-            notifyConnectionStateChanged(BluetoothState.DISCOVERING_FAILURE);
+            notifyConnectionStateChanged(DISCOVERING_FAILURE);
             LogUtils.i(TAG, " discover services failed");
         }
     }
@@ -792,12 +795,12 @@ public class MbtBluetoothLE
      */
     public void bond() {
         LogUtils.i(TAG, "start bonding");
-        boolean isBondRetry = getCurrentState().equals(BluetoothState.BONDING);
+        boolean isBondRetry = getCurrentState().equals(BONDING);
         if(isBondRetry && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
             LogUtils.d(TAG, "Retry not necessary : Android will retry the read operation itself after bonding has completed"); //However, on Android 6 & 7 you will have to retry the operation yourself
             return;
         }
-        if(getCurrentState().equals(BluetoothState.READING_SUCCESS))
+        if(getCurrentState().equals(READING_SUCCESS))
             updateConnectionState(false); //current state is set to BONDING
         mbtBluetoothManager.startReadOperation(DeviceInfo.BATTERY); //trigger bonding indirectly
     }
@@ -809,7 +812,7 @@ public class MbtBluetoothLE
     }
 
     protected void notifyBatteryReceived(int value) {
-        if (getCurrentState().equals(BluetoothState.BONDING))
+        if (getCurrentState().equals(BONDING))
             updateConnectionState(true); //current state is set to BONDED
         if(value != -1)
             super.notifyBatteryReceived(value);

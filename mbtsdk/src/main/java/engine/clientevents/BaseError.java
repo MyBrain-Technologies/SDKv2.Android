@@ -10,7 +10,7 @@ import androidx.annotation.Keep;
  * This will be used in {@link BaseErrorEvent} callbacks.
  */
 @Keep
-public abstract class BaseError extends RuntimeException{
+public abstract class BaseError extends Exception{
     private String domain;
     private int code;
     private String message;
@@ -20,6 +20,9 @@ public abstract class BaseError extends RuntimeException{
         this.domain = domain;
         this.code = code;
         this.message = exception;
+    }
+   public BaseError(Exception exception){
+        super(exception);
     }
 
     public BaseError setMessage(String message){

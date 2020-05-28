@@ -5,10 +5,10 @@ import androidx.annotation.NonNull;
 import java.util.ArrayList;
 
 import config.AmpGainConfig;
-import core.bluetooth.BtProtocol;
+import core.bluetooth.BluetoothProtocol;
 import core.eeg.storage.RawEEGSample;
 
-import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
+import static core.bluetooth.BluetoothProtocol.LOW_ENERGY;
 
 /**
  * MbtDataConversion is responsible for managing conversion from raw EEG data acquired by the Bluetooth headset into readable EEG values
@@ -40,11 +40,11 @@ public class MbtDataConversion {
      * @return the eeg data as float lists, with NaN values for missing data
      */
     @NonNull
-    public static ArrayList<ArrayList<Float>> convertRawDataToEEG(@NonNull ArrayList<RawEEGSample> rawEEGdataList, @NonNull BtProtocol protocol, int nbChannels) {
+    public static ArrayList<ArrayList<Float>> convertRawDataToEEG(@NonNull ArrayList<RawEEGSample> rawEEGdataList, @NonNull BluetoothProtocol protocol, int nbChannels) {
 
         if (rawEEGdataList == null)
             return null;
-        if (protocol == null || protocol.equals(BtProtocol.BLUETOOTH_A2DP))
+        if (protocol == null || protocol.equals(BluetoothProtocol.A2DP))
             return null;
 
         ArrayList<ArrayList<Float>> eegData = new ArrayList<>();
@@ -63,10 +63,10 @@ public class MbtDataConversion {
                 for (byte[] bytes : singleRawEEGdata.getBytesEEG()) {
                     int temp = 0x0000000;
                     for (int i = 0; i < bytes.length; i++){
-                        temp |= (bytes[i] & 0xFF) << ((protocol.equals(BLUETOOTH_LE)) ? (SHIFT_BLE - i*8) : (16 - i*8));
+                        temp |= (bytes[i] & 0xFF) << ((protocol.equals(LOW_ENERGY)) ? (SHIFT_BLE - i*8) : (16 - i*8));
                     }
-                    temp = ((temp & ((protocol.equals(BLUETOOTH_LE)) ? CHECK_SIGN_BLE : CHECK_SIGN_SPP)) > 0) ? (temp | ((protocol.equals(BLUETOOTH_LE)) ? NEGATIVE_MASK_BLE : NEGATIVE_MASK_SPP )) : (temp & ((protocol.equals(BLUETOOTH_LE)) ? POSITIVE_MASK_BLE : POSITIVE_MASK_SPP));
-                    consolidatedEEGSample.add(temp * ((protocol.equals(BLUETOOTH_LE)) ? VOLTAGE_BLE : VOLTAGE_SPP)); //fill the EEG data matrix with the converted EEG data
+                    temp = ((temp & ((protocol.equals(LOW_ENERGY)) ? CHECK_SIGN_BLE : CHECK_SIGN_SPP)) > 0) ? (temp | ((protocol.equals(LOW_ENERGY)) ? NEGATIVE_MASK_BLE : NEGATIVE_MASK_SPP )) : (temp & ((protocol.equals(LOW_ENERGY)) ? POSITIVE_MASK_BLE : POSITIVE_MASK_SPP));
+                    consolidatedEEGSample.add(temp * ((protocol.equals(LOW_ENERGY)) ? VOLTAGE_BLE : VOLTAGE_SPP)); //fill the EEG data matrix with the converted EEG data
 
                     //Here are data from sensors, whom need to be transformed to float
                 }

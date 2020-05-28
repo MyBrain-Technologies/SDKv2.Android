@@ -55,11 +55,11 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
 
     protected MbtBluetoothManager mbtBluetoothManager;
 
-    protected BtProtocol protocol;
+    protected BluetoothProtocol protocol;
 
     private MbtAsyncWaitOperation lock = new MbtAsyncWaitOperation<>();
 
-    public MbtBluetooth(Context context, BtProtocol protocol, MbtBluetoothManager mbtBluetoothManager) {
+    public MbtBluetooth(Context context, BluetoothProtocol protocol, MbtBluetoothManager mbtBluetoothManager) {
         this.context = context.getApplicationContext();
         this.protocol = protocol;
         this.mbtBluetoothManager = mbtBluetoothManager;

@@ -14,7 +14,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 
 import config.MbtConfig;
-import core.bluetooth.BtProtocol;
+import core.bluetooth.BluetoothProtocol;
 import core.eeg.MbtEEGManager;
 import core.eeg.storage.RawEEGSample;
 import features.MbtFeatures;
@@ -36,7 +36,7 @@ public class MbtDataAcquisitionTest {
 
     @Before
     public void setUp() {
-        BtProtocol protocol = BtProtocol.BLUETOOTH_LE;
+        BluetoothProtocol protocol = BluetoothProtocol.LOW_ENERGY;
         this.dataAcquisition = new MbtDataAcquisition(new MbtEEGManager(context),protocol);
     }
 
@@ -99,8 +99,8 @@ public class MbtDataAcquisitionTest {
     @Test
     public void handleDataAcquiredTestInput(){
         int nbChannels = MbtFeatures.getNbChannels(MbtDeviceType.MELOMIND);
-        int nbBytes = MbtFeatures.getEEGByteSize(BtProtocol.BLUETOOTH_LE);
-        int nbIndexBytes = MbtFeatures.getRawDataIndexSize(BtProtocol.BLUETOOTH_LE);
+        int nbBytes = MbtFeatures.getEEGByteSize(BluetoothProtocol.LOW_ENERGY);
+        int nbIndexBytes = MbtFeatures.getRawDataIndexSize(BluetoothProtocol.LOW_ENERGY);
         dataAcquisition.setTestPreviousIndex(-1);
         dataAcquisition.setTestSingleRawEEGList(null);
         byte[] data = new byte[]{14, 83, 34, -62, 43, -113, 29, -50, 37, 41, 14, 66, 4, -102, -128, 0, -128, 0};
