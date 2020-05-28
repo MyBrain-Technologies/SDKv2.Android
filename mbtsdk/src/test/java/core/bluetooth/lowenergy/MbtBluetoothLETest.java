@@ -21,7 +21,7 @@ import command.CommandInterface;
 import command.DeviceCommandEvent;
 import command.DeviceCommands;
 import config.MbtConfig;
-import core.bluetooth.BtState;
+import core.bluetooth.BluetoothState;
 import core.bluetooth.MbtBluetoothManager;
 import core.bluetooth.StreamState;
 import core.bluetooth.spp.MbtBluetoothSPP;
@@ -113,7 +113,7 @@ public class MbtBluetoothLETest {
     @Test
     public void startStream_StreamStoppedAfterDisconnection() {
         bluetoothLE.notifyStreamStateChanged(StreamState.STARTED);
-        bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.DATA_BT_DISCONNECTED);
         assertFalse(bluetoothLE.isStreaming());
         assertFalse(bluetoothLE.startStream());
     }
@@ -159,7 +159,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void startStream_HeadsetNotReady() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.CONNECTED_AND_READY);
         assertFalse(bluetoothLE.startStream());
     }
 
@@ -168,7 +168,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void startStream_Connecting() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_CONNECTING);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.DATA_BT_CONNECTING);
         assertFalse(bluetoothLE.startStream());
     }
 
@@ -177,7 +177,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void startStream_Disconnecting() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DISCONNECTING);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.DISCONNECTING);
         assertFalse(bluetoothLE.startStream());
     }
 
@@ -186,7 +186,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void startStream_ConnectionFailed() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTION_FAILURE);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.CONNECTION_FAILURE);
         assertFalse(bluetoothLE.startStream());
     }
 
@@ -195,7 +195,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void startStream_NotConnectedBluetoothDisabled() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.BLUETOOTH_DISABLED);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.BLUETOOTH_DISABLED);
         assertFalse(bluetoothLE.startStream());
     }
 
@@ -204,7 +204,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void startStream_NotConnectedBluetoothNotSupported() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.NO_BLUETOOTH);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.NO_BLUETOOTH);
         assertFalse(bluetoothLE.startStream());
     }
 
@@ -213,7 +213,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void startStream_NotConnectedLocationDisabled() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.LOCATION_DISABLED);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.LOCATION_DISABLED);
         assertFalse(bluetoothLE.startStream());
     }
 
@@ -222,7 +222,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void startStream_NotConnectedLocationPermissionNotGranted() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.LOCATION_PERMISSION_NOT_GRANTED);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.LOCATION_PERMISSION_NOT_GRANTED);
         assertFalse(bluetoothLE.startStream());
     }
 
@@ -231,7 +231,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void startStream_ConnectionInterrupted() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTION_INTERRUPTED);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.CONNECTION_INTERRUPTED);
         assertFalse(bluetoothLE.startStream());
     }
 
@@ -240,7 +240,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void startStream_DiscoveringServices() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DISCOVERING_SERVICES);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.DISCOVERING_SERVICES);
         assertFalse(bluetoothLE.startStream());
     }
 
@@ -249,7 +249,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void startStream_DiscoveringFailed() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DISCOVERING_FAILURE);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.DISCOVERING_FAILURE);
         assertFalse(bluetoothLE.startStream());
     }
 
@@ -258,7 +258,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void startStream_ReadingDeviceInfo() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.READING_FIRMWARE_VERSION);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.READING_FIRMWARE_VERSION);
         assertFalse(bluetoothLE.startStream());
     }
 
@@ -267,7 +267,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void startStream_ReadingFailed() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.READING_FAILURE);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.READING_FAILURE);
         assertFalse(bluetoothLE.startStream());
     }
 
@@ -276,7 +276,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void startStream_Bonding() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.BONDING);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.BONDING);
         assertFalse(bluetoothLE.startStream());
     }
 
@@ -285,7 +285,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void startStream_BondingFailed() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.BONDING_FAILURE);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.BONDING_FAILURE);
         assertFalse(bluetoothLE.startStream());
     }
 
@@ -294,7 +294,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void startStream_Upgrading() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.UPGRADING);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.UPGRADING);
         assertFalse(bluetoothLE.startStream());
     }
 
@@ -303,7 +303,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void startStream_UpgradingFailed() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.UPGRADING_FAILURE);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.UPGRADING_FAILURE);
         assertFalse(bluetoothLE.startStream());
     }
 
@@ -321,7 +321,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void activateDeviceStatusMonitoring_Disconnected() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.DATA_BT_DISCONNECTED);
         assertFalse(bluetoothLE.activateDeviceStatusMonitoring());
     }
 
@@ -391,7 +391,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void stopStream_DisablingNotificationFail() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.CONNECTED_AND_READY);
         bluetoothLE.notifyStreamStateChanged(StreamState.STARTED);
         when(gatt.getService(SERVICE)).thenReturn(gattService);
         when(gattService.getUuid()).thenReturn(SERVICE);
@@ -407,7 +407,7 @@ public class MbtBluetoothLETest {
     @Test
     public void stopStream_DisableNotificationWorking() {
         bluetoothLE.notifyStreamStateChanged(StreamState.STARTED);
-        bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.CONNECTED_AND_READY);
         when(gatt.getService(SERVICE)).thenReturn(gattService);
         when(gattService.getUuid()).thenReturn(SERVICE);
         when(gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG)).thenReturn(characteristic);
@@ -529,7 +529,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void enableOrDisableNotificationsOnCharacteristic_DisconnectedEnable() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.DATA_BT_DISCONNECTED);
         assertFalse(bluetoothLE.enableOrDisableNotificationsOnCharacteristic(true, null));
 
     }
@@ -539,7 +539,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void enableOrDisableNotificationsOnCharacteristic_DisconnectedDisable() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.DATA_BT_DISCONNECTED);
         assertFalse(bluetoothLE.enableOrDisableNotificationsOnCharacteristic(false, null));
 
     }
@@ -549,7 +549,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void enableOrDisableNotificationsOnCharacteristic_ConnectedReadyEnable() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.CONNECTED_AND_READY);
         when(gatt.getService(SERVICE)).thenReturn(gattService);
         when(gattService.getUuid()).thenReturn(SERVICE);
         when(gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG)).thenReturn(characteristic);
@@ -571,7 +571,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void enableOrDisableNotificationsOnCharacteristic_ConnectedReadyDisable() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.CONNECTED_AND_READY);
         when(gatt.getService(SERVICE)).thenReturn(gattService);
         when(gattService.getUuid()).thenReturn(SERVICE);
         when(gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG)).thenReturn(characteristic);
@@ -592,13 +592,13 @@ public class MbtBluetoothLETest {
     @Test
     public void startLowEnergyScan_FailedNullNameFilterOn() {
         assertFalse(bluetoothLE.startScan());
-        assertNotEquals(bluetoothLE.getCurrentState(), BtState.SCAN_FAILURE);
+        assertNotEquals(bluetoothLE.getCurrentState(), BluetoothState.SCAN_FAILURE);
     }
 
     @Test
     public void startLowEnergyScan_FailedNotNullNameFilterOn() {
         assertFalse(bluetoothLE.startScan());
-        assertNotEquals(bluetoothLE.getCurrentState(), BtState.SCAN_FAILURE);
+        assertNotEquals(bluetoothLE.getCurrentState(), BluetoothState.SCAN_FAILURE);
     }
 
     /**
@@ -607,7 +607,7 @@ public class MbtBluetoothLETest {
     @Test
     public void stopLowEnergyScan_StateIsNotScanStarted() {
         bluetoothLE.stopScan();
-        assertNotEquals(bluetoothLE.getCurrentState(), BtState.SCAN_STARTED);
+        assertNotEquals(bluetoothLE.getCurrentState(), BluetoothState.SCAN_STARTED);
     }
 
     /**
@@ -616,7 +616,7 @@ public class MbtBluetoothLETest {
     @Test
     public void stopLowEnergyScan_StateIsIdle() {
         bluetoothLE.stopScan();
-        assertEquals(bluetoothLE.getCurrentState(), BtState.IDLE);
+        assertEquals(bluetoothLE.getCurrentState(), BluetoothState.IDLE);
     }
 
     /**
@@ -679,183 +679,183 @@ public class MbtBluetoothLETest {
 
     @Test
     public void isConnected_ConnectedAndReady() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED_AND_READY, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.CONNECTED_AND_READY, true);
         assertTrue(bluetoothLE.isConnected());
     }
 
     @Test
     public void isConnected_Connected() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_CONNECTION_SUCCESS, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.DATA_BT_CONNECTION_SUCCESS, true);
         assertFalse(bluetoothLE.isConnected());
     }
 
     @Test
     public void isConnected_Disconnected() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.DATA_BT_DISCONNECTED, true);
         assertFalse(bluetoothLE.isConnected());
     }
 
     @Test
     public void isConnected_ScanFailed() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.SCAN_FAILURE, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.SCAN_FAILURE, true);
         assertFalse(bluetoothLE.isConnected());
     }
 
     @Test
     public void isConnected_AudioConnected() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.AUDIO_BT_CONNECTION_SUCCESS, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.AUDIO_BT_CONNECTION_SUCCESS, true);
         assertFalse(bluetoothLE.isConnected());
     }
 
     @Test
     public void isConnected_ConnectionFailure() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTION_FAILURE, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.CONNECTION_FAILURE, true);
         assertFalse(bluetoothLE.isConnected());
     }
 
     @Test
     public void isConnected_ConnectionInterrupted() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTION_INTERRUPTED, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.CONNECTION_INTERRUPTED, true);
         assertFalse(bluetoothLE.isConnected());
     }
 
     @Test
     public void isConnected_InternalFailure() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.INTERNAL_FAILURE, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.INTERNAL_FAILURE, true);
         assertFalse(bluetoothLE.isConnected());
     }
 
     @Test
     public void isConnected_BluetoothDisabled() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.BLUETOOTH_DISABLED, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.BLUETOOTH_DISABLED, true);
         assertFalse(bluetoothLE.isConnected());
     }
 
     @Test
     public void isConnected_ReadingDeviceInfo() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.READING_FIRMWARE_VERSION, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.READING_FIRMWARE_VERSION, true);
         assertFalse(bluetoothLE.isConnected());
     }
 
     @Test
     public void isConnected_ReadingFailure() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.READING_FAILURE, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.READING_FAILURE, true);
         assertFalse(bluetoothLE.isConnected());
     }
 
     @Test
     public void isConnected_ScanTimeout() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.SCAN_TIMEOUT, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.SCAN_TIMEOUT, true);
         assertFalse(bluetoothLE.isConnected());
     }
 
     @Test
     public void isConnected_Bonding() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.BONDING, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.BONDING, true);
         assertFalse(bluetoothLE.isConnected());
     }
 
     @Test
     public void isConnected_AnotherDeviceConnected() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.ANOTHER_DEVICE_CONNECTED, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.ANOTHER_DEVICE_CONNECTED, true);
         assertFalse(bluetoothLE.isConnected());
     }
 
     @Test
     public void isConnected_BondingFailure() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.BONDING_FAILURE, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.BONDING_FAILURE, true);
         assertFalse(bluetoothLE.isConnected());
     }
 
     @Test
     public void isConnected_Connecting() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_CONNECTING, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.DATA_BT_CONNECTING, true);
         assertFalse(bluetoothLE.isConnected());
     }
 
     @Test
     public void isConnected_DeviceFound() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DEVICE_FOUND, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.DEVICE_FOUND, true);
         assertFalse(bluetoothLE.isConnected());
     }
 
     @Test
     public void isConnected_Disconnecting() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DISCONNECTING, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.DISCONNECTING, true);
         assertFalse(bluetoothLE.isConnected());
     }
 
     @Test
     public void isConnected_DiscoveringFailed() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DISCOVERING_FAILURE, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.DISCOVERING_FAILURE, true);
         assertFalse(bluetoothLE.isConnected());
     }
 
     @Test
     public void isConnected_Discovering() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DISCOVERING_SERVICES, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.DISCOVERING_SERVICES, true);
         assertFalse(bluetoothLE.isConnected());
     }
 
     @Test
     public void isConnected_Idle() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.IDLE, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.IDLE, true);
         assertFalse(bluetoothLE.isConnected());
     }
 
     @Test
     public void isConnected_LocationIsRequired() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.LOCATION_DISABLED, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.LOCATION_DISABLED, true);
         assertFalse(bluetoothLE.isConnected());
     }
 
     @Test
     public void isConnected_LocationPermission() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.LOCATION_PERMISSION_NOT_GRANTED, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.LOCATION_PERMISSION_NOT_GRANTED, true);
         assertFalse(bluetoothLE.isConnected());
     }
 
     @Test
     public void isConnected_BluetoothNotSupported() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.NO_BLUETOOTH, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.NO_BLUETOOTH, true);
         assertFalse(bluetoothLE.isConnected());
     }
 
     @Test
     public void isConnected_ScanFailedAlreadyStarted() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.SCAN_FAILED_ALREADY_STARTED, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.SCAN_FAILED_ALREADY_STARTED, true);
         assertFalse(bluetoothLE.isConnected());
     }
 
     @Test
     public void isConnected_ScanInterrupted() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.SCAN_INTERRUPTED, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.SCAN_INTERRUPTED, true);
         assertFalse(bluetoothLE.isConnected());
     }
 
     @Test
     public void isConnected_ScanStarted() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.SCAN_STARTED, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.SCAN_STARTED, true);
         assertFalse(bluetoothLE.isConnected());
     }
 
     @Test
     public void isConnected_UpgradingFailed() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.UPGRADING_FAILURE, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.UPGRADING_FAILURE, true);
         assertFalse(bluetoothLE.isConnected());
     }
 
     @Test
     public void isConnected_Upgrading() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.UPGRADING, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.UPGRADING, true);
         assertFalse(bluetoothLE.isConnected());
     }
 
     @Test
     public void startReadOperation_ConnectedNotReady() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_CONNECTION_SUCCESS, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.DATA_BT_CONNECTION_SUCCESS, true);
         assertFalse(bluetoothLE.startReadOperation(MelomindCharacteristics.CHARAC_INFO_FIRMWARE_VERSION));
-        assertEquals(bluetoothLE.getCurrentState(), BtState.READING_FAILURE);
+        assertEquals(bluetoothLE.getCurrentState(), BluetoothState.READING_FAILURE);
     }
 
     @Test
@@ -1038,9 +1038,9 @@ public class MbtBluetoothLETest {
 
     @Test
     public void readBattery_ConnectedNotReady() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_CONNECTION_SUCCESS, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.DATA_BT_CONNECTION_SUCCESS, true);
         assertFalse(bluetoothLE.readBattery());
-        assertEquals(bluetoothLE.getCurrentState(), BtState.READING_FAILURE);
+        assertEquals(bluetoothLE.getCurrentState(), BluetoothState.READING_FAILURE);
     }
 
     @Test
@@ -1056,9 +1056,9 @@ public class MbtBluetoothLETest {
 
     @Test
     public void readFwVersion_ConnectedNotReady() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_CONNECTION_SUCCESS, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.DATA_BT_CONNECTION_SUCCESS, true);
         assertFalse(bluetoothLE.readFwVersion());
-        assertEquals(bluetoothLE.getCurrentState(), BtState.READING_FAILURE);
+        assertEquals(bluetoothLE.getCurrentState(), BluetoothState.READING_FAILURE);
     }
 
     @Test
@@ -1074,9 +1074,9 @@ public class MbtBluetoothLETest {
 
     @Test
     public void readHwVersion_ConnectedNotReady() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_CONNECTION_SUCCESS, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.DATA_BT_CONNECTION_SUCCESS, true);
         assertFalse(bluetoothLE.readHwVersion());
-        assertEquals(bluetoothLE.getCurrentState(), BtState.READING_FAILURE);
+        assertEquals(bluetoothLE.getCurrentState(), BluetoothState.READING_FAILURE);
     }
 
     @Test
@@ -1093,9 +1093,9 @@ public class MbtBluetoothLETest {
 
     @Test
     public void readSerialNumber_ConnectedNotReady() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_CONNECTION_SUCCESS, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.DATA_BT_CONNECTION_SUCCESS, true);
         assertFalse(bluetoothLE.readSerialNumber());
-        assertEquals(bluetoothLE.getCurrentState(), BtState.READING_FAILURE);
+        assertEquals(bluetoothLE.getCurrentState(), BluetoothState.READING_FAILURE);
     }
 
     @Test
@@ -1137,7 +1137,7 @@ public class MbtBluetoothLETest {
     public void notifyConnectionStateChanged_DisconnectionDuringStreaming() {
         bluetoothLE.notifyStreamStateChanged(StreamState.STARTED);
         assertTrue(bluetoothLE.isStreaming());
-        bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.DATA_BT_DISCONNECTED, true);
         assertFalse(bluetoothLE.isStreaming());
     }
 
@@ -1147,7 +1147,7 @@ public class MbtBluetoothLETest {
     @Test
     public void notifyConnectionStateChanged_ConnectionWhileStreaming() {
         bluetoothLE.notifyStreamStateChanged(StreamState.STARTED);
-        bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_CONNECTION_SUCCESS, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.DATA_BT_CONNECTION_SUCCESS, true);
         assertTrue(bluetoothLE.isStreaming());
     }
 
@@ -1157,7 +1157,7 @@ public class MbtBluetoothLETest {
     @Test
     public void notifyConnectionStateChanged_DisconnectionDuringStoppedStream() {
         bluetoothLE.notifyStreamStateChanged(StreamState.STOPPED);
-        bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED, true);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.DATA_BT_DISCONNECTED, true);
         assertFalse(bluetoothLE.isStreaming());
     }
 
@@ -1233,23 +1233,23 @@ public class MbtBluetoothLETest {
 
     @Test
     public void notifyConnectionStateChanged_notifyClientConnected() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_CONNECTION_SUCCESS);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.DATA_BT_CONNECTION_SUCCESS);
 
-        assertEquals(bluetoothLE.getCurrentState(), BtState.DATA_BT_CONNECTION_SUCCESS);
+        assertEquals(bluetoothLE.getCurrentState(), BluetoothState.DATA_BT_CONNECTION_SUCCESS);
     }
 
     @Test
     public void notifyConnectionStateChanged_doNotNotifyClientConnected() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_CONNECTION_SUCCESS);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.DATA_BT_CONNECTION_SUCCESS);
 
-        assertEquals(bluetoothLE.getCurrentState(), BtState.DATA_BT_CONNECTION_SUCCESS);
+        assertEquals(bluetoothLE.getCurrentState(), BluetoothState.DATA_BT_CONNECTION_SUCCESS);
     }
 
     @Test
     public void notifyConnectionStateChanged_notifyClientDisconnected() {
-        bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.DATA_BT_DISCONNECTED);
 
-        assertEquals(bluetoothLE.getCurrentState(), BtState.IDLE);
+        assertEquals(bluetoothLE.getCurrentState(), BluetoothState.IDLE);
     }
 
     @Test
@@ -1264,7 +1264,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void sendCommand_invalidConnectionState(){
-        bluetoothLE.notifyConnectionStateChanged(BtState.DATA_BT_CONNECTING);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.DATA_BT_CONNECTING);
         when(gatt.getService(SERVICE)).thenReturn(gattService);
         when(gattService.getUuid()).thenReturn(SERVICE);
         when(gattService.getCharacteristic(CHARACTERISTIC_MAILBOX)).thenReturn(characteristic);
@@ -1287,7 +1287,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void sendCommand_invalidCommand(){
-        bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.CONNECTED);
         when(command.isValid()).thenReturn(false);
 
         bluetoothLE.sendCommand(command);
@@ -1306,7 +1306,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void sendCommand_failureSendRequestData(){
-        bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.CONNECTED);
         when(command.isValid()).thenReturn(true);
 
         bluetoothLE.sendCommand(command);
@@ -1328,7 +1328,7 @@ public class MbtBluetoothLETest {
         final int mtu = 47;
         final int timeout = 11000;
         command = Mockito.mock(BluetoothCommands.Mtu.class);
-        bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.CONNECTED);
         bluetoothLE.setLock(asyncOperation); //if this setter is not called, the async configuration mock is not called
         when(command.isValid()).thenReturn(true);
         when(command.serialize()).thenReturn(mtu);
@@ -1354,7 +1354,7 @@ public class MbtBluetoothLETest {
     public void sendCommand_SuccessNoResponse(){
         final int timeout = 11000;
         command = Mockito.mock(DeviceCommands.Reboot.class);
-        bluetoothLE.notifyConnectionStateChanged(BtState.CONNECTED);
+        bluetoothLE.notifyConnectionStateChanged(BluetoothState.CONNECTED);
         when(command.isValid()).thenReturn(true);
         when(command.serialize()).thenReturn(BYTE_REQUEST);
         when(gatt.getService(SERVICE)).thenReturn(gattService);

@@ -12,7 +12,7 @@ import engine.clientevents.MobileDeviceError;
 
 /**
  * The Bluetooth current state describes the state of connection between a headset device and a mobile device.
- * As the SDK needs to perform specific operations according to the value of the current connection state, the BtState enum provides all the possible states to the Bluetooth unit Manager.
+ * As the SDK needs to perform specific operations according to the value of the current connection state, the BluetoothState enum provides all the possible states to the Bluetooth unit Manager.
  * All the states are classified in a chronological order in this Enum, except those that we consider as a "failure state".
  * These failure states are assigned if something went wrong during the Bluetooth connection process,
  * In this case, the operation is stopped and the headset is disconnected.
@@ -23,7 +23,7 @@ import engine.clientevents.MobileDeviceError;
  * Created by Vincent on 02/02/2016.
  */
 @Keep
-public enum BtState {
+public enum BluetoothState {
 
 
 
@@ -291,17 +291,17 @@ public enum BtState {
 
     /**
      * This constructor is used for the states that are not considered as a failure state (more explanation are available on the description of the associatedError variable)
-     * It is included between 0 and the value of BtState.CONNECTED_AND_READY.ordinal(),
+     * It is included between 0 and the value of BluetoothState.CONNECTED_AND_READY.ordinal(),
      * which returns the ordinal of this enumeration constant (its position in its enum declaration, where the initial constant is assigned an ordinal of zero).
      * For example, the IDLE state is the initial state so its order value is 0.
      */
-    BtState() { }
+    BluetoothState() { }
 
     /**
      * This constructor is used for the states that are considered as a failure state
      * @param error is the Error to return to the SDK user
      */
-    BtState(@Nullable BaseError error) {
+    BluetoothState(@Nullable BaseError error) {
         this.associatedError = error;
     }
 
@@ -325,8 +325,8 @@ public enum BtState {
     /**
      * A reset to IDLE state need to be performed if headset is disconnect, or if the connection process failed before having reached the DATA_BT_CONNECTION_SUCCESS state
      */
-    public boolean isResettableState(BtState previousState){
-        return (this.equals(DATA_BT_DISCONNECTED) || (this.isDisconnectableState() && previousState.ordinal() < BtState.DATA_BT_CONNECTION_SUCCESS.ordinal()));
+    public boolean isResettableState(BluetoothState previousState){
+        return (this.equals(DATA_BT_DISCONNECTED) || (this.isDisconnectableState() && previousState.ordinal() < BluetoothState.DATA_BT_CONNECTION_SUCCESS.ordinal()));
     }
 
     /**
@@ -347,8 +347,8 @@ public enum BtState {
     /**
      * @return the step that follow (in chronological order, based on the enum value) the current step
      */
-    public BtState getNextConnectionStep(){
-        return (!this.isAFailureState() && this.isConnectionInProgress()) ? BtState.values()[this.ordinal()+1]: IDLE;
+    public BluetoothState getNextConnectionStep(){
+        return (!this.isAFailureState() && this.isConnectionInProgress()) ? BluetoothState.values()[this.ordinal()+1]: IDLE;
     }
 
     public boolean isAudioState(){

@@ -14,7 +14,7 @@ import android.util.Log;
 import java.util.Arrays;
 
 import command.DeviceCommandEvent;
-import core.bluetooth.BtState;
+import core.bluetooth.BluetoothState;
 import core.device.model.DeviceInfo;
 import core.device.model.MelomindDevice;
 import utils.CommandUtils;
@@ -113,7 +113,7 @@ final class MbtGattController extends BluetoothGattCallback {
                 break;
 
             default:
-                this.mbtBluetoothLE.notifyConnectionStateChanged(BtState.INTERNAL_FAILURE);
+                this.mbtBluetoothLE.notifyConnectionStateChanged(BluetoothState.INTERNAL_FAILURE);
                 gatt.close();
                 msg += "Unknown value " + newState;
         }
@@ -134,8 +134,8 @@ final class MbtGattController extends BluetoothGattCallback {
 
         // Checking if services were indeed discovered or not : getServices should be not null and contains values at this point
         if (gatt.getServices() == null || gatt.getServices().isEmpty() || status != BluetoothGatt.GATT_SUCCESS) {
-            if (mbtBluetoothLE.getCurrentState().equals(BtState.DISCOVERING_SERVICES))
-                this.mbtBluetoothLE.notifyConnectionStateChanged(BtState.DISCOVERING_FAILURE);
+            if (mbtBluetoothLE.getCurrentState().equals(BluetoothState.DISCOVERING_SERVICES))
+                this.mbtBluetoothLE.notifyConnectionStateChanged(BluetoothState.DISCOVERING_FAILURE);
             gatt.disconnect();
 
 
@@ -175,8 +175,8 @@ final class MbtGattController extends BluetoothGattCallback {
                 || this.fwVersion == null || this.hwVersion == null || this.serialNumber == null || this.oadPacketsCharac == null || this.mailBox == null || this.headsetStatus == null) {
             LogUtils.e(TAG, "error, not all characteristics have been found");
             gatt.disconnect();
-            this.mbtBluetoothLE.notifyConnectionStateChanged(BtState.DISCOVERING_FAILURE);
-        } else if (mbtBluetoothLE.getCurrentState().equals(BtState.DISCOVERING_SERVICES))
+            this.mbtBluetoothLE.notifyConnectionStateChanged(BluetoothState.DISCOVERING_FAILURE);
+        } else if (mbtBluetoothLE.getCurrentState().equals(BluetoothState.DISCOVERING_SERVICES))
             mbtBluetoothLE.updateConnectionState(true); //current state is set to DISCOVERING_SUCCESS and future is completed
     }
 
