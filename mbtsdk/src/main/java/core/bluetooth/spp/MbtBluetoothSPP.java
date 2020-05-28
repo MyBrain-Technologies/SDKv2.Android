@@ -30,7 +30,7 @@ import command.DeviceCommandEvent;
 
 import command.DeviceCommands;
 import command.DeviceStreamingCommands;
-import core.bluetooth.BtProtocol;
+import core.bluetooth.BluetoothProtocol;
 import core.bluetooth.BluetoothState;
 import core.bluetooth.MbtBluetoothManager;
 import core.bluetooth.MbtDataBluetooth;
@@ -118,13 +118,13 @@ public final class MbtBluetoothSPP
     };
 
     public MbtBluetoothSPP(@NonNull final Context context, @NonNull MbtBluetoothManager mbtBluetoothManager) {
-        super(context, BtProtocol.BLUETOOTH_SPP, mbtBluetoothManager);
+        super(context, BluetoothProtocol.SPP, mbtBluetoothManager);
         final BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
         this.bluetoothAdapter = (manager!=null) ? manager.getAdapter() : null;
     }
 
     public MbtBluetoothSPP(@NonNull final Context context, @NonNull final String deviceAddress,@NonNull MbtBluetoothManager mbtBluetoothManager) {
-        super(context, BtProtocol.BLUETOOTH_SPP, mbtBluetoothManager);
+        super(context, BluetoothProtocol.SPP, mbtBluetoothManager);
         final BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
         this.bluetoothAdapter = manager.getAdapter();
         this.deviceAddress = deviceAddress;
@@ -199,7 +199,7 @@ public final class MbtBluetoothSPP
             this.btSocket = toConnect.createRfcommSocketToServiceRecord(SERVER_UUID);
             this.btSocket.connect();
             if (retrieveStreams()) {
-                AsyncUtils.executeAsync(new Runnable() {
+                AsyncUtils.Companion.executeAsync(new Runnable() {
                     @Override
                     public void run() {
                         listenForIncomingMessages();
@@ -489,7 +489,7 @@ public final class MbtBluetoothSPP
                                     resetStatus();
 
                                     final byte[] finalData = dataBuffer.clone();//Arrays.copyOf(dataBuffer, dataBuffer.length);
-                                    AsyncUtils.executeAsync(new Runnable() {
+                                    AsyncUtils.Companion.executeAsync(new Runnable() {
                                         @Override
                                         public void run() {
                                             if (!isStreaming)

@@ -5,13 +5,12 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
+import androidx.annotation.IntegerRes
 import androidx.annotation.VisibleForTesting
-import androidx.core.content.ContextCompat
 import command.BluetoothCommand
 import command.BluetoothCommands.Mtu
 import command.CommandInterface.MbtCommand
@@ -25,6 +24,8 @@ import core.BaseModuleManager
 import core.bluetooth.BluetoothInterfaces.IDeviceInfoMonitor
 import core.bluetooth.lowenergy.MbtBluetoothLE
 import core.bluetooth.requests.*
+import core.bluetooth.BluetoothProtocol.*
+import core.bluetooth.BluetoothState.*
 import core.bluetooth.spp.MbtBluetoothSPP
 import core.device.DeviceEvents.*
 import core.device.model.DeviceInfo
@@ -32,10 +33,12 @@ import core.device.model.MbtDevice
 import core.device.model.MelomindsQRDataBase
 import engine.SimpleRequestCallback
 import engine.clientevents.BaseError
+import engine.clientevents.BaseErrorEvent
+import engine.clientevents.BasicError
 import engine.clientevents.ConnectionStateReceiver
 import eventbus.MbtEventBus
 import eventbus.events.*
-import features.MbtDeviceType
+import features.MbtDeviceType.*
 import features.MbtFeatures
 import org.apache.commons.lang.ArrayUtils
 import org.greenrobot.eventbus.Subscribe
@@ -58,7 +61,7 @@ import java.util.concurrent.TimeoutException
 class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
     private lateinit var bluetoothContext: BluetoothContext
     private lateinit var bluetoothInitializer: BluetoothInitializer
-    private lateinit var bluetoothForDataStreaming: MbtDataBluetooth 
+    private lateinit var bluetoothForDataStreaming: MbtDataBluetooth
     private var bluetoothForAudioStreaming: MbtAudioBluetooth? = null
     private var requestBeingProcessed = false
     private var isRequestCompleted = false
@@ -149,10 +152,10 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
                     event.qrCodeOfDeviceRequested,
                     event.mtu)
             if (event.isClientUserRequest && !::bluetoothForDataStreaming.isInitialized) {
-                if ((bluetoothContext.deviceTypeRequested == MbtDeviceType.MELOMIND)) {
+                if ((bluetoothContext.deviceTypeRequested == MELOMIND)) {
                     bluetoothForDataStreaming = MbtBluetoothLE(mContext, this@MbtBluetoothManager)
                     if (bluetoothContext.connectAudioIfDeviceCompatible) bluetoothForAudioStreaming = MbtBluetoothA2DP(mContext, this@MbtBluetoothManager)
-                } else if ((bluetoothContext.deviceTypeRequested == MbtDeviceType.VPRO)) bluetoothForDataStreaming = MbtBluetoothSPP(mContext, this@MbtBluetoothManager)
+                } else if ((bluetoothContext.deviceTypeRequested == VPRO)) bluetoothForDataStreaming = MbtBluetoothSPP(mContext, this@MbtBluetoothManager)
             }
         }
 
@@ -172,18 +175,18 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
             if (!isConnectionInterrupted) {
                 LogUtils.d(TAG, "State is $currentState")
                 when (currentState) {
-                    BluetoothState.IDLE, BluetoothState.DATA_BT_DISCONNECTED -> getReadyForBluetoothOperation()
-                    BluetoothState.READY_FOR_BLUETOOTH_OPERATION -> startScan()
-                    BluetoothState.DEVICE_FOUND, BluetoothState.DATA_BT_CONNECTING -> startConnectionForDataStreaming()
-                    BluetoothState.DATA_BT_CONNECTION_SUCCESS -> startDiscoveringServices()
-                    BluetoothState.DISCOVERING_SUCCESS -> startReadingDeviceInfo(DeviceInfo.FW_VERSION) // read all device info (except battery) : first device info to read is firmware version
-                    BluetoothState.READING_FIRMWARE_VERSION_SUCCESS -> startReadingDeviceInfo(DeviceInfo.HW_VERSION) // read next device info : second device info to read is hardware version
-                    BluetoothState.READING_HARDWARE_VERSION_SUCCESS -> startReadingDeviceInfo(DeviceInfo.SERIAL_NUMBER) // read next device info : third device info to read is serial number (device ID)
-                    BluetoothState.READING_SERIAL_NUMBER_SUCCESS -> startReadingDeviceInfo(DeviceInfo.MODEL_NUMBER) // read next device info : fourth device info to read is model number
-                    BluetoothState.READING_SUCCESS -> startBonding()
-                    BluetoothState.BONDED -> changeMTU()
-                    BluetoothState.BT_PARAMETERS_CHANGED -> startSendingExternalName()
-                    BluetoothState.CONNECTED -> startConnectionForAudioStreaming()
+                    IDLE, DATA_BT_DISCONNECTED -> getReadyForBluetoothOperation()
+                    READY_FOR_BLUETOOTH_OPERATION -> startScan()
+                    DEVICE_FOUND, DATA_BT_CONNECTING -> startConnectionForDataStreaming()
+                    DATA_BT_CONNECTION_SUCCESS -> startDiscoveringServices()
+                    DISCOVERING_SUCCESS -> startReadingDeviceInfo(DeviceInfo.FW_VERSION) // read all device info (except battery) : first device info to read is firmware version
+                    READING_FIRMWARE_VERSION_SUCCESS -> startReadingDeviceInfo(DeviceInfo.HW_VERSION) // read next device info : second device info to read is hardware version
+                    READING_HARDWARE_VERSION_SUCCESS -> startReadingDeviceInfo(DeviceInfo.SERIAL_NUMBER) // read next device info : third device info to read is serial number (device ID)
+                    READING_SERIAL_NUMBER_SUCCESS -> startReadingDeviceInfo(DeviceInfo.MODEL_NUMBER) // read next device info : fourth device info to read is model number
+                    READING_SUCCESS -> startBonding()
+                    BONDED -> changeMTU()
+                    BT_PARAMETERS_CHANGED -> startSendingExternalName()
+                    CONNECTED -> startConnectionForAudioStreaming()
                     else -> setRequestAsProcessed()
                 }
             } else setRequestAsProcessed()
@@ -202,7 +205,7 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
 
     private fun switchToNextConnectionStep() {
         setRequestAsProcessed()
-        if (!currentState.isAFailureState && !isConnectionInterrupted && currentState != BluetoothState.IDLE) {  //if nothing went wrong during the current step of the connection process, we continue the process
+        if (!currentState.isAFailureState && !isConnectionInterrupted && currentState != IDLE) {  //if nothing went wrong during the current step of the connection process, we continue the process
             onNewBluetoothRequest(StartOrContinueConnectionRequestEvent(false, bluetoothContext))
         }
     }
@@ -216,37 +219,37 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
     private fun isAlreadyConnected(currentConnectedDevice: MbtDevice): Boolean {
         if (isConnected) {
             if (!isAlreadyConnectedToRequestedDevice(bluetoothContext.deviceNameRequested, currentConnectedDevice)) {
-                updateConnectionState(BluetoothState.ANOTHER_DEVICE_CONNECTED)
-            } else updateConnectionState(BluetoothState.CONNECTED_AND_READY)
+                updateConnectionState(ANOTHER_DEVICE_CONNECTED)
+            } else updateConnectionState(CONNECTED_AND_READY)
             return true
         }
         return false
-    }//assert that Bluetooth is on, Location is on, Location permission is granted
-    //initialization to check if a Melomind is already connected in A2DP : as the next step is the scanning, the SDK is able to filter on the name of this device
-    //current state is set to READY_FOR_BLUETOOTH_OPERATION
-// assert that headset is not already connected//when the BUS has returned the device object//Request sent to the BUS in order to get device from the device manager : the BUS should return a null object if it's the first connection, or return a non null object if the user requests connection whereas a headset is already connected
+    }
 
     /**
      * Check the bluetooth prerequisites before starting any bluetooth operation.
      * The started Bluetooth connection process is stopped if the prerequisites are not valid.
      */
-    private fun getReadyForBluetoothOperation(){
-            connectionRetryCounter = 0
-            //Request sent to the BUS in order to get device from the device manager : the BUS should return a null object if it's the first connection, or return a non null object if the user requests connection whereas a headset is already connected
-            LogUtils.i(TAG, "Checking Bluetooth Prerequisites and initialize")
-            requestCurrentConnectedDevice(SimpleRequestCallback<MbtDevice> { device ->
-                if (device != null && isAlreadyConnected(device)) // assert that headset is not already connected
-                    return@SimpleRequestCallback
-                val state = bluetoothInitializer.getBluetoothPrerequisitesState((bluetoothContext))
-                if (state != BluetoothState.READY_FOR_BLUETOOTH_OPERATION) { //assert that Bluetooth is on, Location is on, Location permission is granted
-                    updateConnectionState(state)
-                    return@SimpleRequestCallback
-                }
-                if (bluetoothForAudioStreaming != null && bluetoothForAudioStreaming is MbtBluetoothA2DP) (bluetoothForAudioStreaming as MbtBluetoothA2DP).initA2dpProxy() //initialization to check if a Melomind is already connected in A2DP : as the next step is the scanning, the SDK is able to filter on the name of this device
-                if ((currentState == BluetoothState.IDLE)) updateConnectionState(false) //current state is set to READY_FOR_BLUETOOTH_OPERATION
-                switchToNextConnectionStep()
-            })
-        }
+    private fun getReadyForBluetoothOperation() {
+        connectionRetryCounter = 0
+        //Request sent to the BUS in order to get device from the device manager : the BUS should return a null object if it's the first connection, or return a non null object if the user requests connection whereas a headset is already connected
+        LogUtils.i(TAG, "Checking Bluetooth Prerequisites and initialize")
+        requestCurrentConnectedDevice(SimpleRequestCallback<MbtDevice> { device ->
+            if (device != null && isAlreadyConnected(device)) // assert that headset is not already connected
+                return@SimpleRequestCallback
+            val state = bluetoothInitializer.getBluetoothPrerequisitesState((bluetoothContext)) //check that Bluetooth is on, Location is on, Location permission is granted
+
+            if (state != READY_FOR_BLUETOOTH_OPERATION) { //assert that Bluetooth is on, Location is on, Location permission is granted
+                updateConnectionState(state)
+                return@SimpleRequestCallback
+            }
+
+            if (bluetoothForAudioStreaming != null && bluetoothForAudioStreaming is MbtBluetoothA2DP) (bluetoothForAudioStreaming as MbtBluetoothA2DP).initA2dpProxy() //initialization to check if a Melomind is already connected in A2DP : as the next step is the scanning, the SDK is able to filter on the name of this device
+            if ((currentState == IDLE)) updateConnectionState(false) //current state is set to READY_FOR_BLUETOOTH_OPERATION
+            switchToNextConnectionStep()
+        })
+    }
+
 
     /**
      * This method starts a bluetooth scan operation, loooking for a single device by filtering on its name.
@@ -259,20 +262,26 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
      * The started Bluetooth connection process is stopped if the prerequisites are not valid.
      */
     private fun startScan() {
-        var newState: BluetoothState = BluetoothState.SCAN_FAILURE
-        try {
-            AsyncUtils.executeAsync { bluetoothForDataStreaming.startScan() }
-            asyncOperation.waitOperationResult(MbtConfig.getBluetoothScanTimeout())
-        } catch (e: Exception) {
-            if (e is TimeoutException)
-                newState = BluetoothState.SCAN_TIMEOUT //stop the current Bluetooth connection process
-            else if (e is CancellationException)
-                asyncOperation.resetWaitingOperation()
-            LogUtils.w(TAG, "Exception raised during scanning : \n $e")
-        } finally {
-            stopScan()
-        }
-        if ((currentState == BluetoothState.SCAN_STARTED)) ////at this point : current state should be DEVICE_FOUND if scan succeeded
+        var newState: BluetoothState = SCAN_FAILURE
+        asyncOperation.tryOperation({ bluetoothForDataStreaming.startScan() },
+            BaseErrorEvent { exception, _ ->
+                if (exception is TimeoutException) newState = SCAN_TIMEOUT //stop the current Bluetooth connection process
+                else if (exception is CancellationException) asyncOperation.resetWaitingOperation() },
+            { stopScan() },
+            MbtConfig.getBluetoothScanTimeout())
+//        try {
+//            AsyncUtils.executeAsync { bluetoothForDataStreaming.startScan() }
+//            asyncOperation.waitOperationResult(MbtConfig.getBluetoothScanTimeout())
+//        } catch (e: Exception) {
+//            if (e is TimeoutException)
+//                newState = SCAN_TIMEOUT //stop the current Bluetooth connection process
+//            else if (e is CancellationException)
+//                asyncOperation.resetWaitingOperation()
+//            LogUtils.w(TAG, "Exception raised during scanning : \n $e")
+//        } finally {
+//            stopScan()
+//        }
+        if ((currentState == SCAN_STARTED)) ////at this point : current state should be DEVICE_FOUND if scan succeeded
             updateConnectionState(newState) //scan failure or timeout
         switchToNextConnectionStep()
     }
@@ -282,9 +291,7 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
      */
     private fun stopScan() {
         asyncOperation.stopWaitingOperation(null)
-        if (ContextCompat.checkSelfPermission(mContext,
-                        Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(mContext,
-                        Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) bluetoothForDataStreaming.stopScan()
+        bluetoothForDataStreaming.stopScan()
     }
 
     /**
@@ -294,7 +301,7 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
     private fun startConnectionForDataStreaming() {
         LogUtils.i(TAG, "start connection data streaming")
         try {
-            AsyncUtils.executeAsync { connect(bluetoothContext.deviceTypeRequested.protocol) }
+            AsyncUtils.Companion.executeAsync { connect(bluetoothContext.deviceTypeRequested.protocol) }
             asyncOperation.waitOperationResult(MbtConfig.getBluetoothConnectionTimeout()) // blocked until the futureOperation.complete() is called or until timeout
         } catch (e: Exception) {
             LogUtils.w(TAG, "Exception raised during connection : \n $e")
@@ -302,19 +309,18 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
         } finally {
             asyncOperation.stopWaitingOperation(null)
         }
-        if (currentState != BluetoothState.CONNECTED_AND_READY && currentState != BluetoothState.DATA_BT_CONNECTION_SUCCESS && currentState != BluetoothState.IDLE) updateConnectionState(BluetoothState.CONNECTION_FAILURE)
+        if (currentState != CONNECTED_AND_READY && currentState != DATA_BT_CONNECTION_SUCCESS && currentState != IDLE) updateConnectionState(CONNECTION_FAILURE)
         switchToNextConnectionStep()
     }
 
-    private fun connect(protocol: BtProtocol) {
-        var isConnectionSuccessful = false
+    private fun connect(protocol: BluetoothProtocol) {
         isConnectionInterrupted = false // resetting the flag when starting a new connection
-        when (protocol) {
-            BtProtocol.BLUETOOTH_LE, BtProtocol.BLUETOOTH_SPP -> isConnectionSuccessful = bluetoothForDataStreaming.connect(mContext, currentDevice)
-            BtProtocol.BLUETOOTH_A2DP -> if (bluetoothForAudioStreaming != null) isConnectionSuccessful = bluetoothForAudioStreaming!!.connect(mContext, currentDevice)
+        val isConnectionSuccessful = when (protocol) {
+            LOW_ENERGY, SPP -> bluetoothForDataStreaming.connect(mContext, currentDevice)
+            A2DP -> bluetoothForAudioStreaming?.connect(mContext, currentDevice)?:false
         }
         if (isConnectionSuccessful) {
-            if ((protocol == BtProtocol.BLUETOOTH_A2DP)) {
+            if (protocol == A2DP) {
                 if (isAudioBluetoothConnected) asyncOperation.stopWaitingOperation(false)
             } else updateConnectionState(isDataBluetoothConnected)
         }
@@ -332,9 +338,9 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
     private fun startDiscoveringServices() {
         if (bluetoothForDataStreaming is MbtBluetoothLE) {
             LogUtils.i(TAG, "start discovering services ")
-            if (currentState.ordinal >= BluetoothState.DATA_BT_CONNECTION_SUCCESS.ordinal) { //if connection is in progress and BLE is at least connected, we can discover services
+            if (currentState.ordinal >= DATA_BT_CONNECTION_SUCCESS.ordinal) { //if connection is in progress and BLE is at least connected, we can discover services
                 try {
-                    AsyncUtils.executeAsync { (bluetoothForDataStreaming as MbtBluetoothLE).discoverServices() }
+                    AsyncUtils.Companion.executeAsync { (bluetoothForDataStreaming as MbtBluetoothLE).discoverServices() }
                     asyncOperation.waitOperationResult(MbtConfig.getBluetoothDiscoverTimeout())
                 } catch (e: Exception) {
                     if (e is CancellationException) asyncOperation.resetWaitingOperation()
@@ -343,8 +349,8 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
                 } finally {
                     asyncOperation.stopWaitingOperation(null)
                 }
-                if (currentState != BluetoothState.DISCOVERING_SUCCESS) { ////at this point : current state should be DISCOVERING_SUCCESS if discovery succeeded
-                    updateConnectionState(BluetoothState.DISCOVERING_FAILURE)
+                if (currentState != DISCOVERING_SUCCESS) { ////at this point : current state should be DISCOVERING_SUCCESS if discovery succeeded
+                    updateConnectionState(DISCOVERING_FAILURE)
                 }
                 switchToNextConnectionStep()
             }
@@ -354,7 +360,7 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
     private fun startReadingDeviceInfo(deviceInfo: DeviceInfo) {
         updateConnectionState(false) //current state is set to READING_FIRMWARE_VERSION or READING_HARDWARE_VERSION or READING_SERIAL_NUMBER or READING_MODEL_NUMBER
         try {
-            AsyncUtils.executeAsync { startReadOperation(deviceInfo) }
+            AsyncUtils.Companion.executeAsync { startReadOperation(deviceInfo) }
             asyncOperation.waitOperationResult(MbtConfig.getBluetoothReadingTimeout())
         } catch (e: Exception) {
             LogUtils.w(TAG, "Exception raised during reading device info : \n $e")
@@ -363,14 +369,11 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
             asyncOperation.stopWaitingOperation(null)
         }
         when (deviceInfo) {
-            DeviceInfo.FW_VERSION -> if (currentState != BluetoothState.READING_FIRMWARE_VERSION_SUCCESS) //at this point : current state should be READING...SUCCESS if reading succeeded
-                updateConnectionState(BluetoothState.READING_FAILURE)
-            DeviceInfo.HW_VERSION -> if (currentState != BluetoothState.READING_HARDWARE_VERSION_SUCCESS) //at this point : current state should be READING...SUCCESS if reading succeeded
-                updateConnectionState(BluetoothState.READING_FAILURE)
-            DeviceInfo.SERIAL_NUMBER -> if (currentState != BluetoothState.READING_SERIAL_NUMBER_SUCCESS) //at this point : current state should be READING...SUCCESS if reading succeeded
-                updateConnectionState(BluetoothState.READING_FAILURE)
-            DeviceInfo.MODEL_NUMBER -> if (currentState != BluetoothState.READING_SUCCESS) //at this point : current state should be READING...SUCCESS if reading succeeded
-                updateConnectionState(BluetoothState.READING_FAILURE)
+            DeviceInfo.FW_VERSION -> if (currentState != READING_FIRMWARE_VERSION_SUCCESS) updateConnectionState(READING_FAILURE)//at this point : current state should be READING...SUCCESS if reading succeeded
+            DeviceInfo.HW_VERSION -> if (currentState != READING_HARDWARE_VERSION_SUCCESS) updateConnectionState(READING_FAILURE) //at this point : current state should be READING...SUCCESS if reading succeeded
+            DeviceInfo.SERIAL_NUMBER -> if (currentState != READING_SERIAL_NUMBER_SUCCESS) updateConnectionState(READING_FAILURE)//at this point : current state should be READING...SUCCESS if reading succeeded
+            DeviceInfo.MODEL_NUMBER -> if (currentState != READING_SUCCESS) updateConnectionState(READING_FAILURE)//at this point : current state should be READING...SUCCESS if reading succeeded
+
         }
         switchToNextConnectionStep()
     }
@@ -380,74 +383,20 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
      * is called to parse which read operation is to be executed according to the [DeviceInfo].
      * @param deviceInfo the [DeviceInfo] info that determine which read to operation to execute.
      */
-    fun startReadOperation(deviceInfo: DeviceInfo?) {
-        when (deviceInfo) {
-            DeviceInfo.BATTERY -> readBattery()
-            DeviceInfo.FW_VERSION -> readFwVersion()
-            DeviceInfo.HW_VERSION -> readHwVersion()
-            DeviceInfo.SERIAL_NUMBER -> readSerialNumber()
-            DeviceInfo.MODEL_NUMBER -> readModelNumber()
+    fun startReadOperation(deviceInfo: DeviceInfo) {
+        val hasOperationFailed = when (deviceInfo) {
+            DeviceInfo.BATTERY -> bluetoothForDataStreaming.readBattery() //Initiates a read battery operation on this correct BtProtocol.
+            DeviceInfo.FW_VERSION -> (bluetoothForDataStreaming as IDeviceInfoMonitor).readFwVersion() //Initiates a read firmware version operation on this correct BtProtocol
+            DeviceInfo.HW_VERSION -> (bluetoothForDataStreaming as IDeviceInfoMonitor).readHwVersion() //Initiates a read hardware version operation on this correct BtProtocol
+            DeviceInfo.SERIAL_NUMBER -> (bluetoothForDataStreaming as IDeviceInfoMonitor).readSerialNumber() //Initiates a read serial number operation on this correct BtProtocol
+            DeviceInfo.MODEL_NUMBER -> (bluetoothForDataStreaming as IDeviceInfoMonitor).readModelNumber() //Initiates a read model number operation on this correct BtProtocol
             else -> {
+                false
             }
         }
-    }
-
-    /**
-     * Initiates a read battery operation on this correct BtProtocol.
-     * In case of failure during read process, an event with error is posted to the main manager.
-     */
-    private fun readBattery() {
-        if (!bluetoothForDataStreaming.readBattery()) {
+        if (hasOperationFailed) {
             setRequestAsProcessed()
-            MbtEventBus.postEvent(DeviceInfoEvent<Any>(DeviceInfo.BATTERY, null))
-        }
-    }
-
-    /**
-     * Initiates a read firmware version operation on this correct BtProtocol
-     * In case of failure during read process, an event with error is posted to the main manager.
-     */
-    private fun readFwVersion() {
-        if ((bluetoothForDataStreaming is IDeviceInfoMonitor
-                        && !(bluetoothForDataStreaming as IDeviceInfoMonitor).readFwVersion())) {
-            setRequestAsProcessed()
-            MbtEventBus.postEvent(DeviceInfoEvent<Any>(DeviceInfo.FW_VERSION, null))
-        }
-    }
-
-    /**
-     * Initiates a read hardware version operation on this correct BtProtocol
-     * In case of failure during read process, an event with error is posted to the main manager.
-     */
-    private fun readHwVersion() {
-        if ((bluetoothForDataStreaming is IDeviceInfoMonitor
-                        && !(bluetoothForDataStreaming as IDeviceInfoMonitor).readHwVersion())) {
-            setRequestAsProcessed()
-            MbtEventBus.postEvent(DeviceInfoEvent<Any>(DeviceInfo.HW_VERSION, null))
-        }
-    }
-
-    /**
-     * Initiates a read serial number operation on this correct BtProtocol
-     * In case of failure during read process, an event with error is posted to the main manager.
-     */
-    private fun readSerialNumber() {
-        if ((bluetoothForDataStreaming is IDeviceInfoMonitor
-                        && !(bluetoothForDataStreaming as IDeviceInfoMonitor).readSerialNumber())) {
-            setRequestAsProcessed()
-            MbtEventBus.postEvent(DeviceInfoEvent<Any>(DeviceInfo.SERIAL_NUMBER, null))
-        }
-    }
-
-    /**
-     * Initiates a read model number operation on this correct BtProtocol
-     * In case of failure during read process, an event with error is posted to the main manager.
-     */
-    private fun readModelNumber() {
-        if ((bluetoothForDataStreaming is IDeviceInfoMonitor
-                        && !(bluetoothForDataStreaming as IDeviceInfoMonitor).readModelNumber())) {
-            setRequestAsProcessed()
-            MbtEventBus.postEvent(DeviceInfoEvent<Any>(DeviceInfo.MODEL_NUMBER, null))
+            MbtEventBus.postEvent(DeviceInfoEvent<Any>(deviceInfo, null))
         }
     }
 
@@ -458,8 +407,8 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
                 val isBondingSupported = VersionHelper(device.firmwareVersion.toString()).isValidForFeature(VersionHelper.Feature.BLE_BONDING)
                 if (isBondingSupported) { //if firmware version bonding is higher than 1.6.7, the bonding is launched
                     try {
-                        AsyncUtils.executeAsync(Runnable {
-                            if (currentState == BluetoothState.BONDING) //avoid double bond if several requestCurrentConnectedDevice are called at the same moment
+                        AsyncUtils.Companion.executeAsync(Runnable {
+                            if (currentState == BONDING) //avoid double bond if several requestCurrentConnectedDevice are called at the same moment
                                 return@Runnable
                             (bluetoothForDataStreaming as MbtBluetoothLE).bond()
                         })
@@ -471,15 +420,15 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
                         asyncOperation.stopWaitingOperation(null)
                     }
                 } else  //if firmware version bonding is older than 1.6.7, the connection process is considered completed
-                    updateConnectionState(BluetoothState.CONNECTED)
+                    updateConnectionState(CONNECTED)
             })
             try {
                 Thread.sleep(500)
             } catch (e: InterruptedException) {
                 e.printStackTrace()
             }
-            if ((currentState == BluetoothState.BONDING)) { //at this point : current state should be BONDED if bonding succeeded
-                updateConnectionState(BluetoothState.BONDING_FAILURE)
+            if ((currentState == BONDING)) { //at this point : current state should be BONDED if bonding succeeded
+                updateConnectionState(BONDING_FAILURE)
             }
             try {
                 Thread.sleep(1000)
@@ -495,9 +444,9 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
         requestCurrentConnectedDevice(SimpleRequestCallback<MbtDevice> { device ->
             LogUtils.d(TAG, "device $device")
             updateConnectionState(true) //current state is set to QR_CODE_SENDING
-            if (((device.serialNumber != null) && (device.externalName != null) && ((device.externalName == MbtFeatures.MELOMIND_DEVICE_NAME) || device.externalName!!.length == MbtFeatures.DEVICE_QR_CODE_LENGTH - 1) //send the QR code found in the database if the headset do not know its own QR code
+            if (((device.serialNumber != null) && (device.externalName != null) && ((device.externalName == MbtFeatures.MELOMIND_DEVICE_NAME) || device.externalName?.length == MbtFeatures.DEVICE_QR_CODE_LENGTH - 1) //send the QR code found in the database if the headset do not know its own QR code
                             && VersionHelper(device.firmwareVersion.toString()).isValidForFeature(VersionHelper.Feature.REGISTER_EXTERNAL_NAME))) {
-                AsyncUtils.executeAsync {
+                AsyncUtils.Companion.executeAsync {
                     val externalName = MelomindsQRDataBase(mContext, false)[device.serialNumber]
                     sendCommand(UpdateExternalName(externalName))
                 }
@@ -518,10 +467,10 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
                     isRequestCompleted = true
                     val connectionFromBleAvailable = VersionHelper(device.firmwareVersion.toString()).isValidForFeature(VersionHelper.Feature.A2DP_FROM_HEADSET)
                     try {
-                        AsyncUtils.executeAsync {
+                        AsyncUtils.Companion.executeAsync {
                             if (connectionFromBleAvailable) //A2DP cannot be connected from BLE if BLE connection state is not CONNECTED_AND_READY or CONNECTED
                                 sendCommand(ConnectAudio()) else { // if connectA2DPFromBLE failed or is not supported by the headset firmware version
-                                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P || ((bluetoothForAudioStreaming as MbtBluetoothA2DP?)!!.isPairedDevice(currentDevice))) connect(BtProtocol.BLUETOOTH_A2DP) else notifyConnectionStateChanged(BluetoothState.AUDIO_CONNECTION_UNSUPPORTED)
+                                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P || ((bluetoothForAudioStreaming as MbtBluetoothA2DP?)?.isPairedDevice(currentDevice) == true)) connect(A2DP) else notifyConnectionStateChanged(AUDIO_CONNECTION_UNSUPPORTED)
                             }
                         }
                         asyncOperation.waitOperationResult(MbtConfig.getBluetoothA2DpConnectionTimeout())
@@ -533,7 +482,7 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
                     }
                 }
             })
-            if (!bluetoothForAudioStreaming!!.isConnected) {
+            if (bluetoothForAudioStreaming?.isConnected != true) {
                 if (connectionRetryCounter < MAX_CONNECTION_RETRY) {
                     connectionRetryCounter++
                     try {
@@ -544,8 +493,8 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
                     startConnectionForAudioStreaming()
                 } else {
                     connectionRetryCounter = 0
-                    bluetoothForAudioStreaming!!.notifyConnectionStateChanged(BluetoothState.CONNECTION_FAILURE) //at this point : current state should be AUDIO_CONNECTED if audio connection succeeded
-                    bluetoothForDataStreaming.notifyConnectionStateChanged(BluetoothState.CONNECTION_FAILURE)
+                    bluetoothForAudioStreaming?.notifyConnectionStateChanged(CONNECTION_FAILURE) //at this point : current state should be AUDIO_CONNECTED if audio connection succeeded
+                    bluetoothForDataStreaming.notifyConnectionStateChanged(CONNECTION_FAILURE)
                 }
             }
         }
@@ -596,7 +545,7 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
         }
         if (enableDeviceStatusMonitoring && bluetoothForDataStreaming is MbtBluetoothLE) (bluetoothForDataStreaming as MbtBluetoothLE).activateDeviceStatusMonitoring()
         try {
-            AsyncUtils.executeAsync(Runnable {
+            AsyncUtils.Companion.executeAsync(Runnable {
                 if (!bluetoothForDataStreaming.startStream()) {
                     MbtEventBus.postEvent(StreamState.FAILED)
                 }
@@ -620,7 +569,7 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
             return
         }
         try {
-            AsyncUtils.executeAsync(Runnable {
+            AsyncUtils.Companion.executeAsync(Runnable {
                 if (!bluetoothForDataStreaming.stopStream()) {
                     asyncOperation.stopWaitingOperation(false)
                     bluetoothForDataStreaming.notifyStreamStateChanged(StreamState.FAILED)
@@ -637,20 +586,20 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
     }
 
     /**
-     * Start the disconnect operation on the currently connected bluetooth device according to the [BtProtocol] currently used.
+     * Start the disconnect operation on the currently connected bluetooth device according to the [BluetoothProtocol] currently used.
      */
-    private fun disconnect(protocol: BtProtocol) {
+    private fun disconnect(protocol: BluetoothProtocol) {
         if (isAudioBluetoothConnected || isDataBluetoothConnected || currentState.isConnectionInProgress) {
             when (protocol) {
-                BtProtocol.BLUETOOTH_LE, BtProtocol.BLUETOOTH_SPP -> bluetoothForDataStreaming.disconnect()
-                BtProtocol.BLUETOOTH_A2DP -> if (bluetoothForAudioStreaming != null) bluetoothForAudioStreaming?.disconnect()
+                LOW_ENERGY, SPP -> bluetoothForDataStreaming.disconnect()
+                A2DP -> bluetoothForAudioStreaming?.disconnect()
             }
         }
     }
 
     fun disconnectAllBluetooth(disconnectAudioIfConnected: Boolean) {
         LogUtils.i(TAG, "Disconnect all bluetooth")
-        if (isAudioBluetoothConnected && disconnectAudioIfConnected) disconnect(BtProtocol.BLUETOOTH_A2DP)
+        if (isAudioBluetoothConnected && disconnectAudioIfConnected) disconnect(A2DP)
         bluetoothContext.deviceTypeRequested.protocol?.let { disconnect(it) }
     }
 
@@ -664,7 +613,7 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
         disconnectAllBluetooth(!asyncSwitchOperation.isWaiting)
         if (isClientUserAbortion) {
             isConnectionInterrupted = true
-            updateConnectionState(BluetoothState.CONNECTION_INTERRUPTED)
+            updateConnectionState(CONNECTION_INTERRUPTED)
         }
         asyncOperation.stopWaitingOperation(null)
     }
@@ -693,36 +642,53 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
     fun notifyConnectionStateChanged(newState: BluetoothState) {
         setRequestAsProcessed()
         when (newState) {
-            BluetoothState.DATA_BT_DISCONNECTED -> if (asyncSwitchOperation.isWaiting) asyncSwitchOperation.stopWaitingOperation(false) //a new a2dp connection was detected while an other headset was connected : here the last device has been well disconnected so we can connect BLE from A2DP
-            else cancelPendingConnection(false) //a disconnection occurred
-            BluetoothState.AUDIO_BT_DISCONNECTED -> {
-                if (bluetoothForAudioStreaming != null) bluetoothForAudioStreaming?.notifyConnectionStateChanged(newState, false)
-                MbtEventBus.postEvent(AudioDisconnectedDeviceEvent())
-            }
-            BluetoothState.AUDIO_BT_CONNECTION_SUCCESS -> if (bluetoothForAudioStreaming != null) {
-                bluetoothForAudioStreaming?.notifyConnectionStateChanged(newState, false)
-                asyncOperation.stopWaitingOperation(false)
-                if (bluetoothForAudioStreaming?.getCurrentDevice() != null && bluetoothForDataStreaming is MbtBluetoothLE) {
-                    val bleDeviceName = (bluetoothForDataStreaming as MbtBluetoothLE).getBleDeviceNameFromA2dp(bluetoothForAudioStreaming?.getCurrentDevice()?.name, mContext)
-                    if (!isDataBluetoothConnected || !(bluetoothForDataStreaming as MbtBluetoothLE).isCurrentDeviceNameEqual(bleDeviceName)) connectBLEFromA2DP(bleDeviceName)
-                    MbtEventBus.postEvent(AudioConnectedDeviceEvent(bluetoothForAudioStreaming?.getCurrentDevice()))
-                }
-            }
-            BluetoothState.JACK_CABLE_CONNECTED -> if (asyncOperation.isWaiting) asyncOperation.stopWaitingOperation(false)
-            BluetoothState.DEVICE_FOUND -> {
-                MbtEventBus.postEvent(ConnectionStateEvent(newState, currentDevice, bluetoothContext.deviceTypeRequested))
-                if (bluetoothContext.connectAudioIfDeviceCompatible) {
-                    if (bluetoothForAudioStreaming == null) {
-                        bluetoothForAudioStreaming = MbtBluetoothA2DP(mContext, this@MbtBluetoothManager)
-                    } else if (bluetoothForAudioStreaming?.currentDevice != null) {
-                        MbtEventBus.postEvent(AudioConnectedDeviceEvent(bluetoothForAudioStreaming?.currentDevice))
-                    }
-                }
-            }
+            DATA_BT_DISCONNECTED -> notifyDataBluetoothDisconnected() //a disconnection occurred
+            AUDIO_BT_DISCONNECTED -> notifyAudioBluetoothDisconnected(newState)
+            AUDIO_BT_CONNECTION_SUCCESS -> notifyAudioBluetoothConnected(newState)
+            JACK_CABLE_CONNECTED -> notifyJackCableConnected()
+            DEVICE_FOUND -> notifyDeviceFound(newState)
         }
         requestCurrentConnectedDevice(SimpleRequestCallback {
             MbtEventBus.postEvent(ConnectionStateEvent(newState, it)) //This event is sent to MbtManager for user notifications and to MbtDeviceManager
         })
+    }
+
+    private fun notifyDataBluetoothDisconnected() {
+        if (asyncSwitchOperation.isWaiting) asyncSwitchOperation.stopWaitingOperation(false) //a new a2dp connection was detected while an other headset was connected : here the last device has been well disconnected so we can connect BLE from A2DP
+        else cancelPendingConnection(false)
+    }
+
+    private fun notifyAudioBluetoothDisconnected(newState: BluetoothState) {
+        bluetoothForAudioStreaming?.notifyConnectionStateChanged(newState, false)
+        MbtEventBus.postEvent(AudioDisconnectedDeviceEvent())
+    }
+
+    private fun notifyAudioBluetoothConnected(newState: BluetoothState) {
+        if (bluetoothForAudioStreaming == null) { return }
+
+        bluetoothForAudioStreaming?.notifyConnectionStateChanged(newState, false)
+        asyncOperation.stopWaitingOperation(false)
+        if (bluetoothForAudioStreaming?.getCurrentDevice() != null && bluetoothForDataStreaming is MbtBluetoothLE) {
+            val bleDeviceName = (bluetoothForDataStreaming as MbtBluetoothLE).getBleDeviceNameFromA2dp(bluetoothForAudioStreaming?.getCurrentDevice()?.name, mContext)
+            if (!isDataBluetoothConnected || !(bluetoothForDataStreaming as MbtBluetoothLE).isCurrentDeviceNameEqual(bleDeviceName)) connectBLEFromA2DP(bleDeviceName)
+            MbtEventBus.postEvent(AudioConnectedDeviceEvent(bluetoothForAudioStreaming?.getCurrentDevice()))
+        }
+
+    }
+
+    private fun notifyJackCableConnected() {
+        if (asyncOperation.isWaiting) asyncOperation.stopWaitingOperation(false)
+    }
+
+    private fun notifyDeviceFound(newState: BluetoothState) {
+        MbtEventBus.postEvent(ConnectionStateEvent(newState, currentDevice, bluetoothContext.deviceTypeRequested))
+        if (bluetoothContext.connectAudioIfDeviceCompatible) {
+            if (bluetoothForAudioStreaming == null) {
+                bluetoothForAudioStreaming = MbtBluetoothA2DP(mContext, this@MbtBluetoothManager)
+            } else if (bluetoothForAudioStreaming?.currentDevice != null) {
+                MbtEventBus.postEvent(AudioConnectedDeviceEvent(bluetoothForAudioStreaming?.currentDevice))
+            }
+        }
     }
 
     /**
@@ -734,7 +700,7 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
     fun notifyDeviceInfoReceived(deviceInfo: DeviceInfo, deviceValue: String) {
         Log.d(TAG, " Device info returned by the headset $deviceInfo : $deviceValue")
         setRequestAsProcessed()
-        if ((deviceInfo == DeviceInfo.BATTERY) && (currentState == BluetoothState.BONDING)) {
+        if ((deviceInfo == DeviceInfo.BATTERY) && (currentState == BONDING)) {
             updateConnectionState(false) //current state is set to BONDED
             switchToNextConnectionStep()
         } else {
@@ -756,7 +722,6 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
     fun notifyNewHeadsetStatus(payload: ByteArray) {
         MbtEventBus.postEvent(RawDeviceMeasure(payload))
     }
-
 
     /**
      * Notify the DeviceManager and the EEGManager that the headset returned its stored configuration
@@ -787,35 +752,39 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
 
     private fun notifyDeviceResponseReceived(response: Any?, command: DeviceCommand<*, *>) {
         if (response != null) {
-            if (command is EegConfig) {
-                notifyDeviceConfigReceived(ArrayUtils.toObject(response as ByteArray?))
-            } else if (command is UpdateSerialNumber) {
-                notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER, String((response as ByteArray?)!!))
-            } else if (command is GetDeviceInfo) {
-                notifyDeviceInfoReceived(DeviceInfo.FW_VERSION, String(ArrayUtils.subarray(response as ByteArray?, 0, MbtBluetoothSPP.VERSION_NB_BYTES)))
-                notifyDeviceInfoReceived(DeviceInfo.HW_VERSION, String(ArrayUtils.subarray(response as ByteArray?, MbtBluetoothSPP.VERSION_NB_BYTES, MbtBluetoothSPP.VERSION_NB_BYTES + MbtBluetoothSPP.VERSION_NB_BYTES)))
-                notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER, String(ArrayUtils.subarray(response as ByteArray?, MbtBluetoothSPP.VERSION_NB_BYTES + MbtBluetoothSPP.VERSION_NB_BYTES, MbtBluetoothSPP.VERSION_NB_BYTES + MbtBluetoothSPP.VERSION_NB_BYTES + MbtBluetoothSPP.SERIAL_NUMBER_NB_BYTES)))
-            } else if (command is UpdateExternalName) {
-                notifyDeviceInfoReceived(DeviceInfo.MODEL_NUMBER, String((response as ByteArray?)!!))
-            } else if (command is GetBattery) {
-                notifyDeviceInfoReceived(DeviceInfo.BATTERY, Integer.toString((response as Int?)!!))
-            } else if (command is OADCommands) {
-                updateConnectionState(BluetoothState.UPGRADING)
-                if (bluetoothForAudioStreaming != null) bluetoothForAudioStreaming!!.currentState = BluetoothState.UPGRADING
-                notifyEventReceived(command.identifier, response)
+            when (command) {
+                is EegConfig -> notifyDeviceConfigReceived(ArrayUtils.toObject(response as ByteArray?))
+
+                is UpdateSerialNumber -> (response as ByteArray?)?.let { String(it) }?.let { notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER, it) }
+
+                is GetDeviceInfo -> {
+                    notifyDeviceInfoReceived(DeviceInfo.FW_VERSION, String(ArrayUtils.subarray(response as ByteArray?, 0, MbtBluetoothSPP.VERSION_NB_BYTES)))
+                    notifyDeviceInfoReceived(DeviceInfo.HW_VERSION, String(ArrayUtils.subarray(response as ByteArray?, MbtBluetoothSPP.VERSION_NB_BYTES, MbtBluetoothSPP.VERSION_NB_BYTES + MbtBluetoothSPP.VERSION_NB_BYTES)))
+                    notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER, String(ArrayUtils.subarray(response as ByteArray?, MbtBluetoothSPP.VERSION_NB_BYTES + MbtBluetoothSPP.VERSION_NB_BYTES, MbtBluetoothSPP.VERSION_NB_BYTES + MbtBluetoothSPP.VERSION_NB_BYTES + MbtBluetoothSPP.SERIAL_NUMBER_NB_BYTES)))
+                }
+                is UpdateExternalName ->
+                    (response as ByteArray?)?.let { String(it) }?.let { notifyDeviceInfoReceived(DeviceInfo.MODEL_NUMBER, it) }
+
+                is GetBattery ->
+                    (response as Int?)?.toString()?.let { notifyDeviceInfoReceived(DeviceInfo.BATTERY, it) }
+
+                is OADCommands -> {
+                    updateConnectionState(UPGRADING)
+                    bluetoothForAudioStreaming?.currentState = UPGRADING
+                    notifyEventReceived(command.identifier, response)
+                }
             }
         }
     }
 
     fun requestCurrentConnectedDevice(callback: SimpleRequestCallback<MbtDevice>) {
-        MbtEventBus.postEvent(GetDeviceEvent(),
-            object : MbtEventBus.Callback<PostDeviceEvent> {
-                @Subscribe
-                override fun onEventCallback (event: PostDeviceEvent): Unit? {
-                    MbtEventBus.registerOrUnregister(false, this)
-                    callback.onRequestComplete(event.device)
-                    return null
-                }
+        MbtEventBus.postEvent(GetDeviceEvent(), object : MbtEventBus.Callback<PostDeviceEvent> {
+            @Subscribe
+            override fun onEventCallback(event: PostDeviceEvent): Unit? {
+                MbtEventBus.registerOrUnregister(false, this)
+                callback.onRequestComplete(event.device)
+                return null
+            }
         })
     }
 
@@ -828,7 +797,7 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
      * The updateConnectionState(boolean) method with no parameter should be call if nothing went wrong and user wants to continue the connection process
      */
     private fun updateConnectionState(state: BluetoothState?) {
-        if ((state != null) && !state.isAudioState && (!isConnectionInterrupted || (state == BluetoothState.CONNECTION_INTERRUPTED))) {
+        if ((state != null) && !state.isAudioState && (!isConnectionInterrupted || (state == CONNECTION_INTERRUPTED))) {
             bluetoothForDataStreaming.notifyConnectionStateChanged(state)
         }
     }
@@ -840,7 +809,7 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
      */
     fun updateConnectionState(isCompleted: Boolean) {
         val nextStep = currentState.nextConnectionStep
-        if (!isConnectionInterrupted) updateConnectionState(if (nextStep != BluetoothState.IDLE) nextStep else null)
+        if (!isConnectionInterrupted) updateConnectionState(if (nextStep != IDLE) nextStep else null)
         if (isCompleted) asyncOperation.stopWaitingOperation(false)
     }
 
@@ -864,16 +833,16 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
      * @return `true` if connected, `false` otherwise
      */
     private val isAudioBluetoothConnected: Boolean
-        get() = bluetoothForAudioStreaming?.isConnected?:false
+        get() = bluetoothForAudioStreaming?.isConnected ?: false
 
     /**
      * Tells whether or not the end-user device is currently connected to the headset both in Low Energy and A2DP.
      * @return `true` if connected, `false` otherwise
      */
     val isConnected: Boolean
-        get() = (if (bluetoothContext.connectAudioIfDeviceCompatible) 
-            (isDataBluetoothConnected && isAudioBluetoothConnected) 
-        else 
+        get() = (if (bluetoothContext.connectAudioIfDeviceCompatible)
+            (isDataBluetoothConnected && isAudioBluetoothConnected)
+        else
             isDataBluetoothConnected)
 
     /**
@@ -903,7 +872,7 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
             if (bluetoothForDataStreaming.isConnected && !(bluetoothForDataStreaming as MbtBluetoothLE).isCurrentDeviceNameEqual(newDeviceBleName)) //Disconnecting another melomind if already one connected in BLE
                 bluetoothForDataStreaming.disconnect()
             bluetoothContext.deviceNameRequested = newDeviceBleName
-            if (currentStateBeforeDisconnection != BluetoothState.IDLE) {
+            if (currentStateBeforeDisconnection != IDLE) {
                 try {
                     asyncSwitchOperation.waitOperationResult(8000)
                 } catch (e: Exception) {
@@ -913,6 +882,7 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
             }
         }
     }
+
 
     private fun setRequestAsProcessing() {
         Log.d(TAG, "Processing request")
@@ -927,7 +897,6 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
         if (displayLog) LogUtils.d(TAG, "Request processed")
         requestBeingProcessed = false
     }
-
 
     //CALLBACKS
 
@@ -950,12 +919,8 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
      * @param request the new [BluetoothRequests] to execute
      */
     @Subscribe(threadMode = ThreadMode.ASYNC)
-    fun onNewBluetoothRequest(request: BluetoothRequests) {
-        //Specific case: disconnection has main priority so we don't add it to queue
-        if (request is DisconnectRequestEvent && request.isInterrupted) cancelPendingConnection(request.isInterrupted) else requestHandler.post(Runnable
-        // enqueue a Runnable object to be called by the Handler message queue when they are received
-        {
-            requestThread.parseRequest(request) //When posting or sending to a Handler, the item is processed as soon as the message queue is ready to do so
-        })
+    fun onNewBluetoothRequest(request: BluetoothRequests) {//Specific case: disconnection has main priority so we don't add it to queue
+        if (request is DisconnectRequestEvent && request.isInterrupted) cancelPendingConnection(request.isInterrupted)
+        else requestHandler.post(Runnable { requestThread.parseRequest(request) }) // enqueue a Runnable object to be called by the Handler message queue when they are received. When posting or sending to a Handler, the item is processed as soon as the message queue is ready to do so
     }
 }

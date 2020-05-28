@@ -11,7 +11,6 @@ import org.robolectric.RuntimeEnvironment;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import core.bluetooth.BtProtocol;
 import core.eeg.MbtEEGManager;
 
 import static features.MbtFeatures.DEFAULT_MAX_PENDING_RAW_DATA_BUFFER_SIZE;

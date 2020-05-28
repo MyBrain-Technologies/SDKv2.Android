@@ -7,15 +7,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 
-import core.bluetooth.BtProtocol;
+import core.bluetooth.BluetoothProtocol;
 import core.eeg.MbtEEGManager;
 import core.eeg.storage.RawEEGSample;
 import utils.BitUtils;
 import utils.ConversionUtils;
 import utils.LogUtils;
 
-import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
-import static core.bluetooth.BtProtocol.BLUETOOTH_SPP;
+import static core.bluetooth.BluetoothProtocol.LOW_ENERGY;
+import static core.bluetooth.BluetoothProtocol.SPP;
 import static features.MbtFeatures.DEFAULT_SAMPLE_PER_PACKET;
 import static features.MbtFeatures.DEFAULT_SPP_NB_STATUS_BYTES;
 import static features.MbtFeatures.getEEGByteSize;
@@ -44,9 +44,9 @@ public class MbtDataAcquisition {
     private byte[] statusDataBytes;
 
 
-    private BtProtocol protocol;
+    private BluetoothProtocol protocol;
 
-    public MbtDataAcquisition(@NonNull MbtEEGManager eegManager, @NonNull BtProtocol bluetoothProtocol) {
+    public MbtDataAcquisition(@NonNull MbtEEGManager eegManager, @NonNull BluetoothProtocol bluetoothProtocol) {
         this.protocol = bluetoothProtocol;
         this.eegManager = eegManager;
     }
@@ -64,7 +64,7 @@ public class MbtDataAcquisition {
             return;
 
         //1st step : check index
-        final int currentIndex = (data[protocol == BLUETOOTH_LE ? 0 : 1] & 0xff) << 8 | (data[protocol == BLUETOOTH_LE ? 1 : 2] & 0xff); //index bytes are the 2 first bytes for BLE only
+        final int currentIndex = (data[protocol == LOW_ENERGY ? 0 : 1] & 0xff) << 8 | (data[protocol == LOW_ENERGY ? 1 : 2] & 0xff); //index bytes are the 2 first bytes for BLE only
 
         if(previousIndex == -1){
             previousIndex = currentIndex -1;
@@ -97,10 +97,10 @@ public class MbtDataAcquisition {
      * @param input the bluetooth raw byte array.
      */
     private void fillSingleDataEEGList(int numberOfChannels, boolean isInterpolationEEGSample, byte[] input) {
-        if (protocol.equals(BLUETOOTH_LE)){
+        if (protocol.equals(LOW_ENERGY)){
             statusDataBytes = (getNbStatusBytes(protocol) > 0) ? (Arrays.copyOfRange(input, getRawDataIndexSize(protocol), getRawDataIndexSize(protocol) + getNbStatusBytes(protocol))) : null;
             fillBLESingleDataEEGList(numberOfChannels, isInterpolationEEGSample, input);
-        }else if (protocol.equals(BLUETOOTH_SPP))
+        }else if (protocol.equals(SPP))
                 fillSPPSingleDataEEGList(numberOfChannels, isInterpolationEEGSample, input);
         }
 

@@ -6,10 +6,10 @@ import androidx.annotation.NonNull;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import core.bluetooth.BtProtocol;
+import core.bluetooth.BluetoothProtocol;
 import core.device.model.MelomindsQRDataBase;
 
-import static core.bluetooth.BtProtocol.BLUETOOTH_LE;
+import static core.bluetooth.BluetoothProtocol.LOW_ENERGY;
 import static features.MbtDeviceType.MELOMIND;
 
 
@@ -108,12 +108,12 @@ public final class MbtFeatures{
 
     @NonNull
     public static ArrayList<MbtAcquisitionLocations> getLocations(MbtDeviceType device){
-        return (device.equals(BLUETOOTH_LE) ? MELOMIND_LOCATIONS : VPRO_LOCATIONS);
+        return (device.equals(LOW_ENERGY) ? MELOMIND_LOCATIONS : VPRO_LOCATIONS);
     }
 
     @NonNull
     public static ArrayList<MbtAcquisitionLocations> getReferences(MbtDeviceType device){
-        return (device.equals(BLUETOOTH_LE) ? MELOMIND_REFERENCES : VPRO_REFERENCES);
+        return (device.equals(LOW_ENERGY) ? MELOMIND_REFERENCES : VPRO_REFERENCES);
     }
 
     @NonNull
@@ -129,23 +129,23 @@ public final class MbtFeatures{
      * Gets the number of bytes for a EEG raw data in case the Bluetooth protocol used is Bluetooth Low Energy
      * @return the number of bytes for a EEG raw data in case the Bluetooth protocol used is Bluetooth Low Energy
      */
-    public static int getEEGByteSize(BtProtocol protocol) {
-        return (protocol.equals(BLUETOOTH_LE) ? DEFAULT_BLE_NB_BYTES : DEFAULT_SPP_NB_BYTES);
+    public static int getEEGByteSize(BluetoothProtocol protocol) {
+        return (protocol.equals(LOW_ENERGY) ? DEFAULT_BLE_NB_BYTES : DEFAULT_SPP_NB_BYTES);
     }
 
     /**
      * Gets the raw data packet size
      * @return the raw data packet size
      */
-    public static int getRawDataPacketSize(BtProtocol protocol) {
+    public static int getRawDataPacketSize(BluetoothProtocol protocol) {
         if(packetSize == -1)
-            packetSize = (protocol.equals(BLUETOOTH_LE))? DEFAULT_BLE_RAW_DATA_PACKET_SIZE : DEFAULT_SPP_RAW_DATA_PACKET_SIZE;
+            packetSize = (protocol.equals(LOW_ENERGY))? DEFAULT_BLE_RAW_DATA_PACKET_SIZE : DEFAULT_SPP_RAW_DATA_PACKET_SIZE;
         return packetSize;
     }
 
 
-    public static void setPacketSize(BtProtocol protocol, int samplePerNotif) {
-        MbtFeatures.packetSize = samplePerNotif * (protocol.equals(BLUETOOTH_LE) ?
+    public static void setPacketSize(BluetoothProtocol protocol, int samplePerNotif) {
+        MbtFeatures.packetSize = samplePerNotif * (protocol.equals(LOW_ENERGY) ?
                 DEFAULT_BLE_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES : DEFAULT_SPP_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES);
     }
 
@@ -153,33 +153,33 @@ public final class MbtFeatures{
      * Gets the raw data buffer size
      * @return the raw data buffer size
      */
-    public static int getRawDataBufferSize(BtProtocol protocol) {
-        return (protocol.equals(BLUETOOTH_LE))? DEFAULT_BLE_RAW_DATA_BUFFER_SIZE : DEFAULT_SPP_RAW_DATA_BUFFER_SIZE;
+    public static int getRawDataBufferSize(BluetoothProtocol protocol) {
+        return (protocol.equals(LOW_ENERGY))? DEFAULT_BLE_RAW_DATA_BUFFER_SIZE : DEFAULT_SPP_RAW_DATA_BUFFER_SIZE;
     }
 
     /**
      * Gets the raw data index size
      * @return the raw data index size
      */
-    public static int getRawDataIndexSize(BtProtocol protocol) {
-        return (protocol.equals(BLUETOOTH_LE))? DEFAULT_BLE_RAW_DATA_INDEX_SIZE : DEFAULT_SPP_RAW_DATA_INDEX_SIZE;
+    public static int getRawDataIndexSize(BluetoothProtocol protocol) {
+        return (protocol.equals(LOW_ENERGY))? DEFAULT_BLE_RAW_DATA_INDEX_SIZE : DEFAULT_SPP_RAW_DATA_INDEX_SIZE;
     }
 
     /**
      * Gets the number of bytes of a EEG raw data per whole channels samples
      * @return the number of bytes of a EEG raw data per whole channels samples
      */
-    public static int getRawDataBytesPerWholeChannelsSamples(BtProtocol protocol) {
-        return (protocol.equals(BLUETOOTH_LE))? DEFAULT_BLE_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES : DEFAULT_SPP_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES;
+    public static int getRawDataBytesPerWholeChannelsSamples(BluetoothProtocol protocol) {
+        return (protocol.equals(LOW_ENERGY))? DEFAULT_BLE_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES : DEFAULT_SPP_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES;
     }
 
     /**
      * Gets the number of bytes corresponding to one status data
      * @return the number of bytes corresponding to one status data
      */
-    public static int getNbStatusBytes(BtProtocol protocol) {
+    public static int getNbStatusBytes(BluetoothProtocol protocol) {
         if(nbStatusBytes == -1)
-            nbStatusBytes = (protocol.equals(BLUETOOTH_LE))? DEFAULT_BLE_NB_STATUS_BYTES : DEFAULT_SPP_NB_STATUS_BYTES;
+            nbStatusBytes = (protocol.equals(LOW_ENERGY))? DEFAULT_BLE_NB_STATUS_BYTES : DEFAULT_SPP_NB_STATUS_BYTES;
         return nbStatusBytes;
     }
 

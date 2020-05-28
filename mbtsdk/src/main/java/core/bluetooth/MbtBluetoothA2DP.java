@@ -48,7 +48,7 @@ public final class MbtBluetoothA2DP
     private MbtAsyncWaitOperation asyncDisconnection = new MbtAsyncWaitOperation<Boolean>();
 
     public MbtBluetoothA2DP(@NonNull Context context, MbtBluetoothManager mbtBluetoothManager) {
-        super(context, BtProtocol.BLUETOOTH_A2DP, mbtBluetoothManager);
+        super(context, BluetoothProtocol.A2DP, mbtBluetoothManager);
     }
 
     /**

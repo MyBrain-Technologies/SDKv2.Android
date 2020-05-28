@@ -224,7 +224,7 @@ public class OADManagerTest {
         PowerMockito.doReturn(completeExtractedFile)
                 .when(OADExtractionUtils.class, "extractFileContent", inputStream);
 
-        AsyncUtils.executeAsync(new Runnable() {
+        AsyncUtils.Companion.executeAsync(new Runnable() {
             @Override
             public void run() {
                 oadManager.init(FIRMWARE_VERSION_VALID_FIRST, new MbtVersion("1.0.0"));
@@ -267,7 +267,7 @@ public class OADManagerTest {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        AsyncUtils.executeAsync(new Runnable() {
+        AsyncUtils.Companion.executeAsync(new Runnable() {
             @Override
             public void run() {
                 oadManager.onOADStateChanged(OADState.INITIALIZING, FIRMWARE_VERSION_VALID_FIRST);
@@ -408,7 +408,7 @@ public class OADManagerTest {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        AsyncUtils.executeAsync(new Runnable() {
+        AsyncUtils.Companion.executeAsync(new Runnable() {
             @Override
             public void run() {
                 oadManager.onOADStateChanged(OADState.INITIALIZED, null);
@@ -480,7 +480,7 @@ public class OADManagerTest {
                 .thenReturn((short) 1);
         Mockito.when(oadContext.getPacketsToSend())
                 .thenReturn(new ArrayList<>());
-        AsyncUtils.executeAsync(new Runnable() {
+        AsyncUtils.Companion.executeAsync(new Runnable() {
                                     @Override
                                     public void run() {
                                         oadManager.transferOADFile();
@@ -616,7 +616,7 @@ public class OADManagerTest {
         oadManager.setPacketCounter(packetCounter);
 
         when(packetCounter.areAllPacketsCounted()).thenReturn(true);
-        AsyncUtils.executeAsync(new Runnable() {
+        AsyncUtils.Companion.executeAsync(new Runnable() {
             @Override
             public void run() {
                 oadManager.onOADStateChanged(OADState.TRANSFERRING, true);
@@ -636,7 +636,7 @@ public class OADManagerTest {
         oadManager.setOADContract(contract);
         ArgumentCaptor<FirmwareUpdateClientEvent> captorClient = ArgumentCaptor.forClass(FirmwareUpdateClientEvent.class);
         Mockito.when(lock.waitOperationResult(20000)).thenReturn(true);
-        AsyncUtils.executeAsync(new Runnable() {
+        AsyncUtils.Companion.executeAsync(new Runnable() {
             @Override
             public void run() {
                 oadManager.onOADStateChanged(OADState.AWAITING_DEVICE_REBOOT, new byte[]{1});
@@ -740,7 +740,7 @@ public class OADManagerTest {
             return null;
         }).when(contract).reconnect(false);
         Mockito.when(lock.waitOperationResult(200000)).thenReturn(true);
-        AsyncUtils.executeAsync(new Runnable() {
+        AsyncUtils.Companion.executeAsync(new Runnable() {
             @Override
             public void run() {
                 oadManager.onOADStateChanged(OADState.AWAITING_DEVICE_REBOOT, new byte[]{(byte) 1});
@@ -771,7 +771,7 @@ public class OADManagerTest {
 
         oadManager.setOADContract(contract);
         ArgumentCaptor<FirmwareUpdateClientEvent> captor = ArgumentCaptor.forClass(FirmwareUpdateClientEvent.class);
-        AsyncUtils.executeAsync(new Runnable() {
+        AsyncUtils.Companion.executeAsync(new Runnable() {
             @Override
             public void run() {
                 oadManager.onOADStateChanged(OADState.AWAITING_DEVICE_REBOOT, new byte[]{(byte) 1});
@@ -801,7 +801,7 @@ public class OADManagerTest {
         }).when(contract).reconnect(false);
         Mockito.when(oadContext.getOADfilepath()).thenReturn(FIRMWARE_FIRST_FILENAME);
         Mockito.when(contract.verifyFirmwareVersion(captorFirmware.capture())).thenReturn(true);
-        AsyncUtils.executeAsync(new Runnable() {
+        AsyncUtils.Companion.executeAsync(new Runnable() {
             @Override
             public void run() {
                 oadManager.onOADStateChanged(OADState.RECONNECTING, null);
