@@ -355,4 +355,12 @@ public enum BluetoothState {
         return (this.equals(AUDIO_BT_CONNECTION_SUCCESS) || this.equals(AUDIO_BT_DISCONNECTED));
     }
 
+    public boolean notEquals(BluetoothState... states){
+        for (BluetoothState state : states) {
+           if(state == this)
+               return false;
+        }
+        return true;
+    }
+
 }

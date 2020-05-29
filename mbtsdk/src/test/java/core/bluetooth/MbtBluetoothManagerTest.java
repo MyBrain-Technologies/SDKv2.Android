@@ -2,7 +2,6 @@ package core.bluetooth;
 
 import android.content.Context;
 
-import org.apache.commons.lang.ArrayUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -215,7 +214,7 @@ public class MbtBluetoothManagerTest {
         MbtBluetoothLE bluetoothLE = Mockito.mock(MbtBluetoothLE.class);
         bluetoothManager.setBluetoothForDataStreaming(bluetoothLE);
         StreamRequestEvent request = Mockito.mock(StreamRequestEvent.class);
-        Mockito.when(request.isStart()).thenReturn(true);
+        Mockito.when(request.isStartStream()).thenReturn(true);
         Mockito.when(bluetoothLE.isConnected()).thenReturn(true);
         Mockito.when(bluetoothLE.isStreaming()).thenReturn(false);
 
@@ -235,7 +234,7 @@ public class MbtBluetoothManagerTest {
         MbtBluetoothLE bluetoothLE = Mockito.mock(MbtBluetoothLE.class);
         bluetoothManager.setBluetoothForDataStreaming(bluetoothLE);
         StreamRequestEvent request = Mockito.mock(StreamRequestEvent.class);
-        Mockito.when(request.isStart()).thenReturn(false);
+        Mockito.when(request.isStartStream()).thenReturn(false);
         Mockito.when(bluetoothLE.isStreaming()).thenReturn(true);
 
         bluetoothManager.getRequestThread().parseRequest(request);

@@ -177,7 +177,7 @@ public class MbtManagerTest {
             }
         }).createForDevice(MbtDeviceType.MELOMIND));
         assertTrue(new StreamRequestEvent(false, false,
-                false, false, null).stopStream());
+                false, false, null).isStopStream());
 
     }
 
@@ -195,7 +195,7 @@ public class MbtManagerTest {
 //            }
 //        }).recordData(new RecordConfig.Builder(context).create()).create());
         assertTrue(new StreamRequestEvent(false, false,
-                false, false, null).stopStream());
+                false, false, null).isStopStream());
 
     }
 
@@ -214,7 +214,7 @@ public class MbtManagerTest {
 //        }).create());
 //        manager.startRecord(context);
         assertFalse(new StreamRequestEvent(false, true,
-                false, false, null).stopStream());
+                false, false, null).isStopStream());
 
     }
 
@@ -234,7 +234,7 @@ public class MbtManagerTest {
 //        manager.startRecord(context);
 //        manager.stopRecord(null);
         assertTrue(new StreamRequestEvent(false, false,
-                false, false, null).stopStream());
+                false, false, null).isStopStream());
 
     }
 
@@ -253,7 +253,7 @@ public class MbtManagerTest {
 //        }).create());
 //        manager.startRecord(context);
         assertTrue(new StreamRequestEvent(false, false,
-                false, false, null).stopStream());
+                false, false, null).isStopStream());
 
     }
 
@@ -291,7 +291,7 @@ public class MbtManagerTest {
     public void stopRecord_noStream() {
         //manager.startRecord(context);
         assertTrue(new StreamRequestEvent(false, false,
-                false, false, null).stopStream());
+                false, false, null).isStopStream());
 
     }
 
@@ -299,7 +299,7 @@ public class MbtManagerTest {
     public void startRecord_stopStream() {
         //manager.startRecord(context);
         assertTrue(new StreamRequestEvent(false, false,
-                false, false, null).stopStream());
+                false, false, null).isStopStream());
 
     }
 }

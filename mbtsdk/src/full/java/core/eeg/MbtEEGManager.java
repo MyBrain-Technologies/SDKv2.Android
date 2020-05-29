@@ -359,7 +359,7 @@ public final class MbtEEGManager extends BaseModuleManager {
                 initQualityChecker();
             }
         }
-        else if(event.stopStream() && !ContextSP.SP_VERSION.equals("0.0.0"))
+        else if(event.isStopStream() && !ContextSP.SP_VERSION.equals("0.0.0"))
             deinitQualityChecker();
 
     }
