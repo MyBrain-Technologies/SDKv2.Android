@@ -432,6 +432,7 @@ public class MbtBluetoothLE
         return false;
     }
 
+    @Override
     public boolean isCurrentDeviceNameEqual(String deviceName){
         return (gatt != null && gatt.getDevice() != null && gatt.getDevice().getName().equals(deviceName));
     }

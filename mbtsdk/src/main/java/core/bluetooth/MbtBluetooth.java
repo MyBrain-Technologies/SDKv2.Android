@@ -43,8 +43,6 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
     private volatile BluetoothState currentState = BluetoothState.IDLE; //todo add @NonNull annotation + rename into bluetoothState
     protected Pair<String, Long> batteryValueAtTimestamp = null;
 
-    protected boolean isUpdating; //todo remove useless
-
 
     @Nullable
     protected BluetoothAdapter bluetoothAdapter;
@@ -178,6 +176,10 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
         if(!this.currentState.equals(currentState)){
             this.currentState = currentState;
         }
+    }
+
+    public boolean isCurrentDeviceNameEqual(String deviceName){
+        return currentDevice.getName().equals(deviceName);
     }
 
     protected boolean isAdapterReady() {

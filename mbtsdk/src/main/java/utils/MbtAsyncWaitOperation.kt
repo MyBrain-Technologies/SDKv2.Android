@@ -78,16 +78,32 @@ class MbtAsyncWaitOperation<T> {
         get() = !isReset && !isTerminated && !isCancelled
 
 
-    public fun tryOperation(operation: ()-> Unit, catchCallback: BaseErrorEvent<BaseError>?, finally: (()-> Unit)?, timeout: Int) {
+    fun tryOperation(operation: ()-> Unit, timeout: Int) {
+        tryOperationForResult(operation,
+                BaseErrorEvent { exception, _ -> if (exception is CancellationException) resetWaitingOperation() },
+                null,
+                timeout)
+    }
+    fun tryOperation(operation: ()-> Unit, catchCallback: BaseErrorEvent<BaseError>?, finally: (()-> Unit)?, timeout: Int) {
+        tryOperationForResult (operation, catchCallback, finally, timeout)
+    }
+
+    fun tryOperationForResult(operation: ()-> Unit, catchCallback: BaseErrorEvent<BaseError>?, finally: (()-> Unit)?, timeout: Int) : T? {
+        var result : T? = null
         try {
-            AsyncUtils.Companion.executeAsync ( Runnable { operation.invoke() } )
-            waitOperationResult(timeout)
+            AsyncUtils.executeAsync ( Runnable { operation.invoke() } )
+            result = waitOperationResult(timeout)
         } catch (exception: Exception) {
-            LogUtils.e(TAG, "Exception raised : \n $exception")
+            LogUtils.e(TAG, "Exception raised during operation: \n $exception")
+            if (exception is CancellationException) {
+                resetWaitingOperation()
+            }
             catchCallback?.onError(BasicError(exception), null)
         } finally {
+            stopWaitingOperation(null)
             finally?.invoke()
         }
+        return result
     }
 
 }
