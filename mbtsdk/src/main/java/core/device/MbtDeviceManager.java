@@ -136,7 +136,7 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
     @Subscribe(threadMode = ThreadMode.POSTING)
     public void onDeviceInfoEvent(DeviceInfoEvent event){
         if(mCurrentConnectedDevice != null){
-            switch(event.getInfotype()){
+            switch(event.getDeviceInfo()){
                 case BATTERY:
                     LogUtils.d(TAG, "received " + event.getInfo() + " for battery level");
                     break;

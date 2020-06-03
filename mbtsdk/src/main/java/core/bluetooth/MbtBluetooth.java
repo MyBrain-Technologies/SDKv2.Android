@@ -51,34 +51,36 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
 
     protected BluetoothDevice currentDevice;
 
-    protected MbtBluetoothManager mbtBluetoothManager;
+    protected MbtBluetoothManager manager;
 
     protected BluetoothProtocol protocol;
 
     private MbtAsyncWaitOperation lock = new MbtAsyncWaitOperation<>();
 
-    public MbtBluetooth(Context context, BluetoothProtocol protocol, MbtBluetoothManager mbtBluetoothManager) {
+
+    public MbtBluetooth(BluetoothProtocol protocol, MbtBluetoothManager manager) {
+        this.manager = manager;
+        Context context = manager.getContext().getContext();
         this.context = context.getApplicationContext();
         this.protocol = protocol;
-        this.mbtBluetoothManager = mbtBluetoothManager;
 
-        final BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-        if (manager != null)
-            this.bluetoothAdapter = manager.getAdapter();
+        final BluetoothManager bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+        if (bluetoothManager != null)
+            this.bluetoothAdapter = bluetoothManager.getAdapter();
 
         if(this.bluetoothAdapter == null)
             this.bluetoothAdapter = BluetoothAdapter.getDefaultAdapter(); //try another way to get the adapter
     }
 
     public void notifyDeviceInfoReceived(@NonNull DeviceInfo deviceInfo, @NonNull String deviceValue){ // This method will be called when a DeviceInfoReceived is posted (fw or hw or serial number) by MbtBluetoothLE or MbtBluetoothSPP
-        mbtBluetoothManager.notifyDeviceInfoReceived(deviceInfo, deviceValue);
+        manager.reader.notifyDeviceInfoReceived(deviceInfo, deviceValue);
     }
 
     /**
      * Set the current bluetooth connection state to the value given in parameter
      * and notify the bluetooth manager of this change.
      * This method should be called if something went wrong during the connection process, as it stops the connection prccess.
-     * The {@link MbtBluetoothManager#updateConnectionState(boolean)}  method with no parameter should be call if nothing went wrong and user wants to continue the connection process
+     * The {@link MbtBluetoothConnecter#updateConnectionState(boolean)}  method with no parameter should be call if nothing went wrong and user wants to continue the connection process
      */
     @Override
     public void notifyConnectionStateChanged(@NonNull BluetoothState newState) {
@@ -87,12 +89,12 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
             BluetoothState previousState = currentState;
             currentState = newState;
             LogUtils.i(TAG," current state is now  =  "+currentState);
-            mbtBluetoothManager.notifyConnectionStateChanged(newState);
+            manager.connecter.notifyConnectionStateChanged(newState);
 
             if(currentState.isResettableState(previousState)) {  //if a disconnection occurred
                 resetCurrentState();//reset the current connection state to IDLE
                 if(this instanceof MbtBluetoothA2DP && !currentState.equals(BluetoothState.UPGRADING))
-                    mbtBluetoothManager.disconnectAllBluetooth(false); //audio has failed to connect : we disconnect BLE
+                    manager.connecter.disconnectAllBluetooth(false); //audio has failed to connect : we disconnect BLE
             }if(currentState.isDisconnectableState())  //if a failure occurred //todo check if a "else" is not missing here
                 disconnect(); //disconnect if a headset is connected
 
@@ -113,7 +115,7 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
 
     protected void notifyBatteryReceived(int value){
         batteryValueAtTimestamp = Pair.create(String.valueOf(value), System.currentTimeMillis());
-        mbtBluetoothManager.notifyDeviceInfoReceived(DeviceInfo.BATTERY, String.valueOf(value));//todo keep battery value as integer ?
+        manager.reader.notifyDeviceInfoReceived(DeviceInfo.BATTERY, String.valueOf(value));//todo keep battery value as integer ?
     }
 
     void notifyHeadsetStatusEvent(byte code, int value){ //todo : only available in Melomind to this day > see if vpro will need it
@@ -131,11 +133,11 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
     // Events Registration
 
     public void notifyNewDataAcquired(@NonNull final byte[] data) {//todo call this method to notify the device manager (and all the managers in general) when the bluetooth receives data from the headset (saturation & offset for example instead of notifyNewHeadsetStatus located in the MbtBluetoothLe)
-        mbtBluetoothManager.handleDataAcquired(data);
+        manager.notifyDataAcquired(data);
     }
 
-    public MbtBluetoothManager getMbtBluetoothManager() {
-        return mbtBluetoothManager;
+    public MbtBluetoothManager getManager() {
+        return manager;
     }
 
     public synchronized final boolean enableBluetoothOnDevice(){
@@ -235,7 +237,7 @@ public abstract class MbtBluetooth implements BluetoothInterfaces.IConnect, Blue
         LogUtils.i(TAG, "new stream state " + newStreamState.toString());
 
         streamState = newStreamState;
-        mbtBluetoothManager.notifyStreamStateChanged(newStreamState);
+        manager.notifyStreamStateChanged(newStreamState);
     }
 
     /**

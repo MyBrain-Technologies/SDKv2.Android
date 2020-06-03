@@ -7,6 +7,7 @@ import androidx.annotation.Nullable;
 import core.device.model.MbtVersion;
 import core.device.model.MbtDevice;
 import eventbus.MbtEventBus;
+import eventbus.events.IEvent;
 
 /**
  * This interface contains all required object classes to communicate with the DEVICE module using
@@ -20,7 +21,7 @@ public interface DeviceEvents {
      * out of the Device module. Make sure to have a method in {@link MbtDeviceManager} that {@link org.greenrobot.eventbus.Subscribe}
      * to this event.
      */
-    class GetDeviceEvent {
+    class GetDeviceEvent implements IEvent {
     }
 
     /**
@@ -28,7 +29,7 @@ public interface DeviceEvents {
      * is mandatory because the {@link MbtDevice} instance be null at some point (for example, before a
      * bluetooth connection).
      */
-    class PostDeviceEvent {
+    class PostDeviceEvent implements IEvent{
         @Nullable
         private final MbtDevice device;
 
@@ -42,9 +43,9 @@ public interface DeviceEvents {
         }
     }
 
-    class AudioDisconnectedDeviceEvent {    }
+    class AudioDisconnectedDeviceEvent implements IEvent{    }
 
-    class AudioConnectedDeviceEvent {
+    class AudioConnectedDeviceEvent implements IEvent{
         @Nullable
         private final BluetoothDevice device;
 
@@ -63,7 +64,7 @@ public interface DeviceEvents {
     /**
      * Event that handle DC offset and Saturation raw measures
      */
-    class RawDeviceMeasure {
+    class RawDeviceMeasure implements IEvent{
         private byte[] rawMeasure;
 
         public RawDeviceMeasure(@NonNull byte[] rawMeasure){
@@ -75,7 +76,7 @@ public interface DeviceEvents {
         }
     }
 
-    class StartOADUpdate {
+    class StartOADUpdate implements IEvent{
         private MbtVersion firmwareVersion;
         private MbtVersion hardwareVersion;
 

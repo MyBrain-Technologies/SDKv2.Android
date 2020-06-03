@@ -273,7 +273,7 @@ public class MbtManager{
      */
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onDeviceInfoEvent(DeviceInfoEvent event){
-        if(event.getInfotype().equals(DeviceInfo.BATTERY)){
+        if(event.getDeviceInfo().equals(DeviceInfo.BATTERY)){
             LogUtils.i(TAG," manager received battery level "+event.getInfo());
             if(deviceInfoListener != null){
                 if(event.getInfo() == null )
