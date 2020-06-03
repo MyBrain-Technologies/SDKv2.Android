@@ -1,4 +1,4 @@
-package mbtutils;
+package utils;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
