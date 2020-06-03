@@ -1,16 +1,17 @@
 package core.bluetooth
 
 import android.content.Context
+import androidx.annotation.VisibleForTesting
 import core.device.model.MelomindsQRDataBase
 import features.MbtDeviceType
 
 class BluetoothContext (val context: Context,
                         val deviceTypeRequested: MbtDeviceType,
-                            val connectAudioIfDeviceCompatible: Boolean,
-                            var deviceNameRequested: String?,
-                            var deviceQrCodeRequested: String?,
-                            val mtu: Int
-){
+                        val connectAudio: Boolean,
+                        var deviceNameRequested: String?,
+                        var deviceQrCodeRequested: String?,
+                        val mtu: Int){
+
     init {
         val qrCode = deviceQrCodeRequested
         if (qrCode != null) {
