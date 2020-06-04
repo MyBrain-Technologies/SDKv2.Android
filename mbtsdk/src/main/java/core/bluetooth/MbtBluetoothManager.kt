@@ -53,25 +53,21 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
   // SET UP
   //----------------------------------------------------------------------------
   fun changeBluetoothParameters(event: StartOrContinueConnectionRequestEvent) {
-    context = BluetoothContext(mContext,
-        event.typeOfDeviceRequested,
-        event.connectAudioIfDeviceCompatible(),
-        event.nameOfDeviceRequested,
-        event.qrCodeOfDeviceRequested,
-        event.mtu)
+    context = event.context
 
-    if (event.isClientUserRequest && !MbtDataBluetooth.isInitialized()) {
+    if (event.isClientUserRequest) {
       initBluetoothOperators()
     }
   }
 
   fun initBluetoothOperators(){
-    when (context.deviceTypeRequested) {
-      MELOMIND -> {
-        MbtDataBluetooth.instance = MbtBluetoothLE.initInstance(this)
-        if (context.connectAudio) MbtAudioBluetooth.instance = MbtBluetoothA2DP.initInstance(this)
-      }
-      VPRO -> MbtDataBluetooth.instance = MbtBluetoothSPP.initInstance(this)
+    MbtAudioBluetooth.instance =
+        if (context.connectAudio) MbtBluetoothA2DP.initInstance(this)
+        else null
+
+    MbtDataBluetooth.instance = when (context.deviceTypeRequested) {
+      MELOMIND -> MbtBluetoothLE.initInstance(this)
+      VPRO -> MbtBluetoothSPP.initInstance(this)
     }
 
     connecter = MbtBluetoothConnecter(this)
@@ -220,7 +216,7 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
     if (!context.connectAudio) { return }
 
     if (MbtAudioBluetooth.instance == null) {
-      MbtAudioBluetooth.instance = MbtBluetoothA2DP(this)
+      MbtAudioBluetooth.instance = MbtBluetoothA2DP.initInstance(this)
     } else if (MbtAudioBluetooth.instance?.currentDevice != null) {
       notifyEvent(DeviceEvents.AudioConnectedDeviceEvent(MbtAudioBluetooth.instance?.currentDevice))
     }
