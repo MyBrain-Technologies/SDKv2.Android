@@ -72,10 +72,10 @@ public class MbtBluetoothLETest {
 
         context = Mockito.mock(Context.class);
         bluetoothManager = Mockito.mock(MbtBluetoothManager.class);
-        bluetoothLE = new MbtBluetoothLE(context, bluetoothManager);
+        bluetoothLE = new MbtBluetoothLE(bluetoothManager);
 
         gatt = Mockito.mock(BluetoothGatt.class);
-        bluetoothLE.gatt = gatt;
+        bluetoothLE.setGatt(gatt);
         gattService = Mockito.mock(BluetoothGattService.class);
         characteristic = Mockito.mock(BluetoothGattCharacteristic.class);
         descriptor = Mockito.mock(BluetoothGattDescriptor.class);
@@ -93,7 +93,7 @@ public class MbtBluetoothLETest {
 //        when(gattService.getUuid()).thenReturn(MelomindCharacteristics.SERVICE_MEASUREMENT);
 //        BluetoothGattCharacteristic characteristic = Mockito.mock(BluetoothGattCharacteristic.class);
 //        when(gattService.getCharacteristics()).thenReturn(Arrays.asList(characteristic));
-//        bluetoothLE.gatt = gatt;
+//        bluetoothLE.setGatt(gatt;
 //        assertTrue(bluetoothLE.startStream());
 //
 //    }
@@ -150,7 +150,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void startStream_GattNull() {
-        bluetoothLE.gatt = null;
+        bluetoothLE.setGatt(null);
         assertFalse(bluetoothLE.startStream());
     }
 
@@ -312,7 +312,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void activateDeviceStatusMonitoring_GattNull() {
-        bluetoothLE.gatt = null;
+        bluetoothLE.setGatt(null);
         assertFalse(bluetoothLE.activateDeviceStatusMonitoring());
     }
 
@@ -359,7 +359,7 @@ public class MbtBluetoothLETest {
     public void stopStream_UnknownService() {
         bluetoothLE.notifyStreamStateChanged(StreamState.STARTED);
         when(gatt.getService(SERVICE)).thenReturn(null);
-        bluetoothLE.gatt = gatt;
+        bluetoothLE.setGatt(gatt);
         assertFalse(bluetoothLE.stopStream());
     }
 
@@ -372,7 +372,7 @@ public class MbtBluetoothLETest {
         when(gatt.getService(SERVICE)).thenReturn(gattService);
         when(gattService.getUuid()).thenReturn(SERVICE);
         when(gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG)).thenReturn(null);
-        bluetoothLE.gatt = gatt;
+        bluetoothLE.setGatt(gatt);
         assertFalse(bluetoothLE.stopStream());
     }
 
@@ -382,7 +382,7 @@ public class MbtBluetoothLETest {
     @Test
     public void stopStream_NullGatt() {
         bluetoothLE.notifyStreamStateChanged(StreamState.STARTED);
-        bluetoothLE.gatt = null;
+        bluetoothLE.setGatt(null);
         assertFalse(bluetoothLE.stopStream());
     }
 
@@ -397,7 +397,7 @@ public class MbtBluetoothLETest {
         when(gattService.getUuid()).thenReturn(SERVICE);
         when(gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG)).thenReturn(characteristic);
         when(gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG).getDescriptor(DESCRIPTOR)).thenReturn(null);
-        bluetoothLE.gatt = gatt;
+        bluetoothLE.setGatt(gatt);
         assertFalse(bluetoothLE.stopStream());
     }
 
@@ -415,7 +415,7 @@ public class MbtBluetoothLETest {
         when(gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG).getDescriptor(DESCRIPTOR)).thenReturn(descriptor);
 
 
-        bluetoothLE.gatt = gatt;
+        bluetoothLE.setGatt(gatt);
         //assertNull(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
         //assertTrue(bluetoothLE.stopStream());
     }
@@ -462,7 +462,7 @@ public class MbtBluetoothLETest {
     @Test
     public void notifyStreamStateChanged_Vpro() {
         MbtConfig.setDeviceType(MbtDeviceType.VPRO);
-        MbtBluetoothSPP bluetoothSPP = new MbtBluetoothSPP(context, bluetoothManager);
+        MbtBluetoothSPP bluetoothSPP = new MbtBluetoothSPP(bluetoothManager);
         bluetoothSPP.notifyStreamStateChanged(StreamState.STARTED);
         assertFalse(bluetoothLE.isStreaming());
     }
@@ -519,7 +519,7 @@ public class MbtBluetoothLETest {
     @Test
     public void isStreaming_Vpro() {
         MbtConfig.setDeviceType(MbtDeviceType.VPRO);
-        MbtBluetoothSPP bluetoothSPP = new MbtBluetoothSPP(context, bluetoothManager);
+        MbtBluetoothSPP bluetoothSPP = new MbtBluetoothSPP(bluetoothManager);
         bluetoothSPP.notifyStreamStateChanged(StreamState.STARTED);
         assertFalse(bluetoothLE.isConnected());
     }
@@ -560,9 +560,9 @@ public class MbtBluetoothLETest {
         when(gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG).getDescriptor(DESCRIPTOR).setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)).thenReturn(true);
         when(gatt.writeDescriptor(gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG).getDescriptor(DESCRIPTOR))).thenReturn(true);
 
-        bluetoothLE.gatt = gatt;
+        bluetoothLE.setGatt(gatt);
 
-        assertTrue(bluetoothLE.enableOrDisableNotificationsOnCharacteristic(true, bluetoothLE.gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG)));
+        assertTrue(bluetoothLE.enableOrDisableNotificationsOnCharacteristic(true, bluetoothLE.getGatt().getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG)));
 
     }
 
@@ -582,9 +582,9 @@ public class MbtBluetoothLETest {
         when(gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG).getDescriptor(DESCRIPTOR).setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)).thenReturn(true);
         when(gatt.writeDescriptor(gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG).getDescriptor(DESCRIPTOR))).thenReturn(true);
 
-        bluetoothLE.gatt = gatt;
+        bluetoothLE.setGatt(gatt);
 
-        assertTrue(bluetoothLE.enableOrDisableNotificationsOnCharacteristic(false, bluetoothLE.gatt.getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG)));
+        assertTrue(bluetoothLE.enableOrDisableNotificationsOnCharacteristic(false, bluetoothLE.getGatt().getService(SERVICE).getCharacteristic(CHARACTERISTIC_EEG)));
 
     }
 
@@ -633,20 +633,20 @@ public class MbtBluetoothLETest {
     public void connect_NonNullContext() {
         BluetoothDevice device = Mockito.mock(BluetoothDevice.class);
         assertTrue(bluetoothLE.connect(context, device));
-        assertNull(bluetoothLE.gatt);
+        assertNull(bluetoothLE.getGatt());
     }
 
     @Test
     public void connect_NullContext() {
         BluetoothDevice device = Mockito.mock(BluetoothDevice.class);
         assertFalse(bluetoothLE.connect(null, device));
-        assertNotNull(bluetoothLE.gatt);
+        assertNotNull(bluetoothLE.getGatt());
     }
 
     @Test
     public void connect_NullDevice() {
         assertFalse(bluetoothLE.connect(context, null));
-        assertNotNull(bluetoothLE.gatt);
+        assertNotNull(bluetoothLE.getGatt());
     }
 
 
@@ -663,7 +663,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void disconnect_GattNull() {
-        bluetoothLE.gatt = null;
+        bluetoothLE.setGatt(null);
         assertFalse(bluetoothLE.disconnect());
     }
 
@@ -672,9 +672,9 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void disconnect_GattNotNull() {
-        bluetoothLE.gatt = gatt;
+        bluetoothLE.setGatt(gatt);
         assertFalse(bluetoothLE.disconnect());
-        assertNull(bluetoothLE.gatt);
+        assertNull(bluetoothLE.getGatt());
     }
 
     @Test
@@ -860,7 +860,7 @@ public class MbtBluetoothLETest {
 
     @Test
     public void startReadOperation_GattNull() {
-        bluetoothLE.gatt = null;
+        bluetoothLE.setGatt(null);
         assertFalse(bluetoothLE.startReadOperation(MelomindCharacteristics.CHARAC_INFO_FIRMWARE_VERSION));
     }
 
@@ -874,7 +874,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void startWriteOperation_GattInvalid() {
-        bluetoothLE.gatt = null;
+        bluetoothLE.setGatt(null);
         byte[] code = {DeviceCommandEvent.MBX_GET_EEG_CONFIG.getIdentifierCode()};
         assertFalse(bluetoothLE.startWriteOperation(SERVICE, CHARACTERISTIC_MAILBOX, code));
     }
@@ -885,7 +885,7 @@ public class MbtBluetoothLETest {
     @Test
     public void startWriteOperation_ServiceInvalid() {
         byte[] code = {DeviceCommandEvent.MBX_GET_EEG_CONFIG.getIdentifierCode()};
-        bluetoothLE.gatt = gatt;
+        bluetoothLE.setGatt(gatt);
         when(gatt.getService(SERVICE)).thenReturn(null);
 
         assertFalse(bluetoothLE.startWriteOperation(SERVICE, CHARACTERISTIC_MAILBOX, code));
@@ -973,7 +973,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void checkServiceAndCharacteristicValidity_InvalidGatt() {
-        bluetoothLE.gatt = null;
+        bluetoothLE.setGatt(null);
         assertFalse(bluetoothLE.checkServiceAndCharacteristicValidity(SERVICE, CHARACTERISTIC_EEG));
     }
 
@@ -983,7 +983,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void isNotificationEnabledOnCharacteristic_InvalidGatt() {
-        bluetoothLE.gatt = null;
+        bluetoothLE.setGatt(null);
         assertFalse(bluetoothLE.isNotificationEnabledOnCharacteristic(SERVICE, CHARACTERISTIC_MAILBOX));
     }
 
@@ -1045,7 +1045,7 @@ public class MbtBluetoothLETest {
 
     @Test
     public void readBattery_GattNull() {
-        bluetoothLE.gatt = null;
+        bluetoothLE.setGatt(null);
         assertFalse(bluetoothLE.readBattery());
     }
 
@@ -1063,7 +1063,7 @@ public class MbtBluetoothLETest {
 
     @Test
     public void readFwVersion_GattNull() {
-        bluetoothLE.gatt = null;
+        bluetoothLE.setGatt(null);
         assertFalse(bluetoothLE.readFwVersion());
     }
 
@@ -1081,7 +1081,7 @@ public class MbtBluetoothLETest {
 
     @Test
     public void readHwVersion_GattNull() {
-        bluetoothLE.gatt = null;
+        bluetoothLE.setGatt(null);
         assertFalse(bluetoothLE.readHwVersion());
     }
 
@@ -1100,7 +1100,7 @@ public class MbtBluetoothLETest {
 
     @Test
     public void readSerialNumber_GattNull() {
-        bluetoothLE.gatt = null;
+        bluetoothLE.setGatt(null);
         assertFalse(bluetoothLE.readSerialNumber());
     }
 
@@ -1166,7 +1166,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void changeMTU_GattNull() {
-        bluetoothLE.gatt = null;
+        bluetoothLE.setGatt(null);
         assertFalse(bluetoothLE.changeMTU(47));
     }
 
@@ -1193,7 +1193,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void disconnectHeadsetAlreadyConnected_DisconnectionSuccess() {
-//        bluetoothLE.gatt = gatt; //todo mock gatt.getdevice.getname
+//        bluetoothLE.setGatt(gatt; //todo mock gatt.getdevice.getname
 //        bluetoothLE.disconnectHeadsetAlreadyConnected(DEVICE_NAME,true);
 //        assertFalse(bluetoothLE.gatt.discoverServices());
     }
@@ -1203,7 +1203,7 @@ public class MbtBluetoothLETest {
      */
     @Test
     public void disconnectHeadsetAlreadyConnected_DisconnectionFailed() {
-//        bluetoothLE.gatt = gatt; //todo mock gatt.getdevice.getname
+//        bluetoothLE.setGatt(gatt; //todo mock gatt.getdevice.getname
 //        bluetoothLE.disconnectHeadsetAlreadyConnected(DEVICE_NAME,false);
 //        assertFalse(bluetoothLE.gatt.discoverServices());
     }
@@ -1215,7 +1215,7 @@ public class MbtBluetoothLETest {
 
     @Test
     public void disconnectA2DPFromBLE_NullGatt() {
-        bluetoothLE.gatt = null;
+        bluetoothLE.setGatt(null);
         //assertFalse(bluetoothLE.disconnectA2DPFromBLE());
     }
 
@@ -1278,7 +1278,7 @@ public class MbtBluetoothLETest {
         Mockito.verify(command).onError(BluetoothError.ERROR_NOT_CONNECTED, null);
         Mockito.verifyZeroInteractions(gatt); //a valid command interacts with gatt to write the characteristic/request the mtu
         Mockito.verifyZeroInteractions(asyncOperation); //a valid command interacts with an asyncOperation that wait until the response is received (or until timeout)
-        Mockito.verify(bluetoothManager).notifyResponseReceived(null, command); //null response is supposed to be returned to notify the bluetooth manager that the command has failed to be sent
+        Mockito.verify(bluetoothManager).reader.notifyResponseReceived(null, command); //null response is supposed to be returned to notify the bluetooth manager that the command has failed to be sent
     }
 
     /**
@@ -1294,7 +1294,7 @@ public class MbtBluetoothLETest {
 
         Mockito.verifyZeroInteractions(gatt); //a valid command interact with gatt to write the characteristic/request the mtu
         Mockito.verifyZeroInteractions(asyncOperation); //a valid command interacts with an asyncOperation that wait until the response is received (or until timeout)
-        Mockito.verify(bluetoothManager).notifyResponseReceived(null, command); //null response is supposed to be returned to notify the bluetooth manager that the command has failed to be sent
+        Mockito.verify(bluetoothManager).reader.notifyResponseReceived(null, command); //null response is supposed to be returned to notify the bluetooth manager that the command has failed to be sent
 
     }
 
@@ -1313,7 +1313,7 @@ public class MbtBluetoothLETest {
 
         Mockito.verify(command).onError(BluetoothError.ERROR_REQUEST_OPERATION, null);
         Mockito.verifyZeroInteractions(asyncOperation); //a valid command interacts with an asyncOperation that wait until the response is received (or until timeout)
-        Mockito.verify(bluetoothManager).notifyResponseReceived(null, command); //null response is supposed to be returned to notify the bluetooth manager that the command has failed to be sent
+        Mockito.verify(bluetoothManager).reader.notifyResponseReceived(null, command); //null response is supposed to be returned to notify the bluetooth manager that the command has failed to be sent
     }
 
 
@@ -1343,7 +1343,7 @@ public class MbtBluetoothLETest {
         Mockito.verify(command).onRequestSent();
         Mockito.verify(asyncOperation).waitOperationResult(timeout);
         Mockito.verify(command).onResponseReceived(mtu);
-        Mockito.verify(bluetoothManager).notifyResponseReceived(mtu, command); //non null response is supposed to be returned to notify the bluetooth manager that the command has succeeded to be sent
+        Mockito.verify(bluetoothManager).reader.notifyResponseReceived(mtu, command); //non null response is supposed to be returned to notify the bluetooth manager that the command has succeeded to be sent
     }
 
     /**
@@ -1375,7 +1375,7 @@ public class MbtBluetoothLETest {
         Mockito.verify(command).onRequestSent();
         Mockito.verify(command).isResponseExpected();
         Mockito.verifyZeroInteractions(asyncOperation); // no response is expected so the async operation does not wait for any response
-        Mockito.verify(bluetoothManager).notifyResponseReceived(null, command); //null response is supposed to be returned to notify the bluetooth manager that the command has failed to be sent
+        Mockito.verify(bluetoothManager).reader.notifyResponseReceived(null, command); //null response is supposed to be returned to notify the bluetooth manager that the command has failed to be sent
     }
 
 }
