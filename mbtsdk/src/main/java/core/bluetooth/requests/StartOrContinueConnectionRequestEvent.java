@@ -40,10 +40,13 @@ public class StartOrContinueConnectionRequestEvent extends BluetoothRequests {
     this.qrCodeOfDeviceRequested = context.getDeviceQrCodeRequested();
     this.typeOfDeviceRequested = context.getDeviceTypeRequested();
     this.mtu = context.getMtu();
-    this.connectAudioIfDeviceCompatible = typeOfDeviceRequested.equals(MbtDeviceType.MELOMIND) && context.getConnectAudioIfDeviceCompatible();
+    this.connectAudioIfDeviceCompatible = typeOfDeviceRequested.equals(MbtDeviceType.MELOMIND) && context.getConnectAudio();
   }
 
   public boolean isClientUserRequest() {
+    return isClientUserRequest;
+  }
+  public boolean shouldReset() {
     return isClientUserRequest;
   }
 

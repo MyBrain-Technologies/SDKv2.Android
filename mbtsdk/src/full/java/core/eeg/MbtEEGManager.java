@@ -379,11 +379,10 @@ public final class MbtEEGManager extends BaseModuleManager {
 
     @Subscribe
     public void onConfigurationChanged(EEGConfigEvent configEEGEvent){
-        LogUtils.d(TAG, "new config "+ configEEGEvent.getConfig().toString());
-        sampRate = configEEGEvent.getDevice().getInternalConfig().getSampRate();
-        packetLength = configEEGEvent.getDevice().getEegPacketLength();
-
         MbtDevice.InternalConfig internalConfig = configEEGEvent.getConfig();
+        LogUtils.d(TAG, "new config "+ internalConfig.toString());
+        sampRate = internalConfig.getSampRate();
+        packetLength = configEEGEvent.getDevice().getEegPacketLength();
         nbChannels = internalConfig.getNbChannels();
         resetBuffers(internalConfig.getNbPackets(), internalConfig.getStatusBytes(), internalConfig.getGainValue());
     }

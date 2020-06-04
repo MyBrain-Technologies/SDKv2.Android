@@ -57,7 +57,7 @@ import static core.bluetooth.spp.MessageStatus.STATE_LENGTH;
  */
 
 public final class MbtBluetoothSPP
-        extends MbtDataBluetooth {
+        extends MbtDataBluetooth.MainBluetooth {
 
     private final static String TAG = MbtBluetoothSPP.class.getName();
 
@@ -99,12 +99,12 @@ public final class MbtBluetoothSPP
 
                     LogUtils.i(TAG, String.format("Discovery Scan -> device detected " +
                             "with name '%s' and MAC address '%s' ", deviceNameFound, device.getAddress()));
-                    if (mbtBluetoothManager.getDeviceNameRequested() != null
-                            && (deviceNameFound.equals(mbtBluetoothManager.getDeviceNameRequested()) || deviceNameFound.contains(mbtBluetoothManager.getDeviceNameRequested()))) {
-                        LogUtils.i(TAG, "Device " + mbtBluetoothManager.getDeviceNameRequested() +" found. Cancelling discovery & connecting");
+                    if (manager.context.getDeviceNameRequested() != null
+                            && (deviceNameFound.equals(manager.context.getDeviceNameRequested()) || deviceNameFound.contains(manager.context.getDeviceNameRequested()))) {
+                        LogUtils.i(TAG, "Device " + manager.context.getDeviceNameRequested() +" found. Cancelling discovery & connecting");
                         currentDevice = device;
                         bluetoothAdapter.cancelDiscovery();
-                        mbtBluetoothManager.updateConnectionState(true); //current state is set to DEVICE_FOUND and future is completed
+                        manager.connecter.updateConnectionState(true); //current state is set to DEVICE_FOUND and future is completed
 
                     }
                     break;
@@ -116,17 +116,21 @@ public final class MbtBluetoothSPP
 
         }
     };
-
-    public MbtBluetoothSPP(@NonNull final Context context, @NonNull MbtBluetoothManager mbtBluetoothManager) {
-        super(context, BluetoothProtocol.SPP, mbtBluetoothManager);
-        final BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-        this.bluetoothAdapter = (manager!=null) ? manager.getAdapter() : null;
+    static MbtBluetoothSPP instance = null;
+    public static MbtDataBluetooth.MainBluetooth initInstance(MbtBluetoothManager manager) {
+        return instance = new MbtBluetoothSPP(manager);
     }
 
-    public MbtBluetoothSPP(@NonNull final Context context, @NonNull final String deviceAddress,@NonNull MbtBluetoothManager mbtBluetoothManager) {
-        super(context, BluetoothProtocol.SPP, mbtBluetoothManager);
-        final BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-        this.bluetoothAdapter = manager.getAdapter();
+    public MbtBluetoothSPP(@NonNull MbtBluetoothManager manager) {
+        super(BluetoothProtocol.SPP, manager);
+        final BluetoothManager bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+        this.bluetoothAdapter = bluetoothManager.getAdapter();
+    }
+
+    public MbtBluetoothSPP(@NonNull final String deviceAddress,@NonNull MbtBluetoothManager manager) {
+        super(BluetoothProtocol.SPP, manager);
+        final BluetoothManager bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+        this.bluetoothAdapter = bluetoothManager.getAdapter();
         this.deviceAddress = deviceAddress;
     }
 
@@ -144,7 +148,7 @@ public final class MbtBluetoothSPP
         isScanStarted = bluetoothAdapter.startDiscovery();
         LogUtils.i(TAG, "Scan started.");
         if(isScanStarted && getCurrentState().equals(BluetoothState.READY_FOR_BLUETOOTH_OPERATION)){
-            mbtBluetoothManager.updateConnectionState(false); //current state is set to SCAN_STARTED
+            manager.connecter.updateConnectionState(false); //current state is set to SCAN_STARTED
         }
         return isScanStarted;
     }
@@ -648,7 +652,7 @@ public final class MbtBluetoothSPP
                 LogUtils.w(TAG, "Command not sent : "+command);
         }
 
-        mbtBluetoothManager.notifyResponseReceived(response, command);//return null response to the client if request has not been sent
+        manager.reader.notifyResponseReceived(response, command);//return null response to the client if request has not been sent
     }
 
 

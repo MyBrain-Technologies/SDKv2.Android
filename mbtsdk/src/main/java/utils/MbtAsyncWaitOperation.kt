@@ -93,8 +93,8 @@ class MbtAsyncWaitOperation<T> {
         try {
             AsyncUtils.executeAsync ( Runnable { operation.invoke() } )
             result = waitOperationResult(timeout)
+            LogUtils.d(TAG, "Result : $result")
         } catch (exception: Exception) {
-            LogUtils.e(TAG, "Exception raised during operation: \n $exception")
             if (exception is CancellationException) {
                 resetWaitingOperation()
             }
