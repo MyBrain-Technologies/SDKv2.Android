@@ -7,10 +7,12 @@ import features.MbtDeviceType
 
 class BluetoothContext (val context: Context,
                         val deviceTypeRequested: MbtDeviceType,
-                        val connectAudio: Boolean,
+                        connectAudio: Boolean,
                         var deviceNameRequested: String?,
                         var deviceQrCodeRequested: String?,
                         val mtu: Int){
+
+    val connectAudio: Boolean = connectAudio && deviceTypeRequested == MbtDeviceType.MELOMIND
 
     init {
         val qrCode = deviceQrCodeRequested
