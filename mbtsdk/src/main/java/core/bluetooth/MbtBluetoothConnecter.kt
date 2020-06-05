@@ -398,10 +398,10 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
     manager.setRequestProcessing(false)
     when (newState) {
       DATA_BT_DISCONNECTED -> manager.notifyDataBluetoothDisconnected() //a disconnection occurred
-      AUDIO_BT_DISCONNECTED -> manager.notifyAudioBluetoothDisconnected(newState)
-      AUDIO_BT_CONNECTION_SUCCESS -> manager.notifyAudioBluetoothConnected(newState)
+      AUDIO_BT_DISCONNECTED -> manager.notifyAudioBluetoothDisconnected()
+      AUDIO_BT_CONNECTION_SUCCESS -> manager.notifyAudioBluetoothConnected()
       JACK_CABLE_CONNECTED -> manager.stopWaitingOperation(false)
-      DEVICE_FOUND -> manager.notifyDeviceFound(newState)
+      DEVICE_FOUND -> manager.notifyDeviceFound()
     }
     manager.notifyEvent(ConnectionStateEvent(newState, connectedDevice))
   }

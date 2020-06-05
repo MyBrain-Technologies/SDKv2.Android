@@ -10,6 +10,7 @@ import command.BluetoothCommands.Mtu
 import core.BaseModuleManager
 import core.bluetooth.lowenergy.MbtBluetoothLE
 import core.bluetooth.requests.*
+import core.bluetooth.BluetoothState.*
 import core.bluetooth.spp.MbtBluetoothSPP
 import core.device.DeviceEvents
 import engine.clientevents.BaseError
@@ -211,8 +212,8 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
     setRequestProcessing(false)
   }
 
-  fun notifyDeviceFound(newState: BluetoothState) {
-    notifyEvent(ConnectionStateEvent(newState, MbtDataBluetooth.instance.currentDevice, context.deviceTypeRequested))
+  fun notifyDeviceFound() {
+    notifyEvent(ConnectionStateEvent(DEVICE_FOUND, MbtDataBluetooth.instance.currentDevice, context.deviceTypeRequested))
     if (!context.connectAudio) { return }
 
     if (MbtAudioBluetooth.instance == null) {
@@ -228,17 +229,17 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
     connecter.onDeviceDisconnected()
   }
 
-  fun notifyAudioBluetoothDisconnected(newState: BluetoothState) {
-    MbtAudioBluetooth.instance?.notifyConnectionStateChanged(newState, false)
+  fun notifyAudioBluetoothDisconnected() {
+    MbtAudioBluetooth.instance?.notifyConnectionStateChanged(AUDIO_BT_DISCONNECTED, false)
     notifyEvent(DeviceEvents.AudioDisconnectedDeviceEvent())
   }
 
-  fun notifyAudioBluetoothConnected(newState: BluetoothState) {
+  fun notifyAudioBluetoothConnected() {
     if (MbtAudioBluetooth.instance == null) {
       return
     }
 
-    MbtAudioBluetooth.instance?.notifyConnectionStateChanged(newState, false)
+    MbtAudioBluetooth.instance?.notifyConnectionStateChanged(AUDIO_BT_CONNECTION_SUCCESS, false)
     stopWaitingOperation(false)
     val audioDevice = MbtAudioBluetooth.instance?.currentDevice
     if (audioDevice == null || MbtDataBluetooth.instance !is MbtBluetoothLE) {
