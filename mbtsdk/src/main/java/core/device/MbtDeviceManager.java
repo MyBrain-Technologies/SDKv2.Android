@@ -170,6 +170,7 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
 
   @Subscribe
   public void onGetDevice(DeviceEvents.GetDeviceEvent event) {
+    Log.d(TAG, "Device is "+(mCurrentConnectedDevice == null ? "null" : mCurrentConnectedDevice.toString()));
     MbtEventBus.postEvent(new DeviceEvents.PostDeviceEvent(mCurrentConnectedDevice));
   }
 

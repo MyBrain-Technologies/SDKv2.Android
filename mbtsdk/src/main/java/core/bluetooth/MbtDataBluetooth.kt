@@ -12,8 +12,8 @@ companion object{
 
 
 abstract class MainBluetooth(
-    protocol: BluetoothProtocol?,
-    manager: MbtBluetoothManager?) :
+    protocol: BluetoothProtocol,
+    manager: MbtBluetoothManager) :
 
     MbtBluetooth(
     protocol,

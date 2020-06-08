@@ -66,7 +66,6 @@ private constructor(subscriber: Any) // non empty constructor for subscriber
      */
     @JvmStatic
     fun postEvent(event: Any?, callback: Any?) {
-      Log.d(TAG, "Eventbus posts event with callback $event")
       if (callback == null || event == null) return
       BUS.register(callback)
       BUS.post(event)

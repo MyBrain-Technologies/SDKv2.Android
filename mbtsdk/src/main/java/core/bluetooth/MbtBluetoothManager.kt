@@ -247,9 +247,12 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
     }
 
     val bleDeviceName = (MbtDataBluetooth.instance as MbtBluetoothLE).getBleDeviceNameFromA2dp(audioDevice.name)
-    if (!connecter.isDataBluetoothConnected || !MbtDataBluetooth.instance.isCurrentDeviceNameEqual(bleDeviceName)) {
-      bleDeviceName?.let { connecter.connectBLEFromA2DP(it) }
-    }
+      bleDeviceName?.let {
+        if (!connecter.isDataBluetoothConnected || !MbtDataBluetooth.instance.isCurrentDeviceNameEqual(it)) {
+          connecter.connectBLEFromA2DP(it)
+        }
+      }
+
     notifyEvent(DeviceEvents.AudioConnectedDeviceEvent(audioDevice))
   }
 

@@ -142,7 +142,7 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
   fun switchToNextConnectionStep() {
     manager.setRequestProcessing(false)
     val currentState = MbtDataBluetooth.instance.currentState
-    if (!currentState.isAFailureState && !isConnectionInterrupted && currentState != IDLE) {  //if nothing went wrong during the current step of the connection process, we continue the process
+    if (!currentState.isAFailureState() && !isConnectionInterrupted && currentState != IDLE) {  //if nothing went wrong during the current step of the connection process, we continue the process
       manager.onNewBluetoothRequest(StartOrContinueConnectionRequestEvent(false, getBluetoothContext()))
     }
   }
@@ -163,7 +163,7 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
     }
 
     if (MbtAudioBluetooth.instance is MbtBluetoothA2DP) (MbtAudioBluetooth.instance as MbtBluetoothA2DP).initA2dpProxy() //initialization to check if a Melomind is already connected in A2DP : as the next step is the scanning, the SDK is able to filter on the name of this device
-    if ((MbtDataBluetooth.instance.currentState == IDLE)) updateConnectionState(false) //current state is set to READY_FOR_BLUETOOTH_OPERATION
+    if (MbtDataBluetooth.instance.currentState == IDLE) updateConnectionState(false) //current state is set to READY_FOR_BLUETOOTH_OPERATION
     switchToNextConnectionStep()
   }
 
@@ -203,7 +203,7 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
     isConnectionInterrupted = false // resetting the flag when starting a new connection
     val context = getBluetoothContext().context
     val currentDevice = MbtDataBluetooth.instance.currentDevice
-    val isConnectionSuccessful = when (protocol) {
+    val isConnectionSuccessful = currentDevice != null && when (protocol) {
       LOW_ENERGY, SPP -> MbtDataBluetooth.instance.connect(context, currentDevice)
       A2DP -> MbtAudioBluetooth.instance?.connect(context, currentDevice) ?: false
     }
@@ -342,7 +342,7 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
 
     /** Start the disconnect operation on the currently connected bluetooth device according to the [BluetoothProtocol] currently used. */
   fun disconnect(protocol: BluetoothProtocol) {
-    if (isAudioBluetoothConnected || isDataBluetoothConnected || MbtDataBluetooth.instance.currentState.isConnectionInProgress) {
+    if (isAudioBluetoothConnected || isDataBluetoothConnected || MbtDataBluetooth.instance.currentState.isConnectionInProgress()) {
       when (protocol) {
         LOW_ENERGY, SPP -> MbtDataBluetooth.instance.disconnect()
         A2DP -> MbtAudioBluetooth.instance?.disconnect()
@@ -410,7 +410,7 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
    * and notify the bluetooth manager of this change.
    * This method should be called if no error occurred. */
   fun updateConnectionState(isCompleted: Boolean) {
-    val nextStep = MbtDataBluetooth.instance.currentState.nextConnectionStep
+    val nextStep = MbtDataBluetooth.instance.currentState.getNextConnectionStep()
     if (!isConnectionInterrupted) updateConnectionState(if (nextStep != IDLE) nextStep else null)
     if (isCompleted) manager.stopWaitingOperation(false)
   }
@@ -428,7 +428,7 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
   }
 
   fun BluetoothState.shouldBeNotified() : Boolean{
-    return (!isAudioState
+    return (!isAudioState()
         && getBluetoothContext().deviceTypeRequested != null
         && (!isConnectionInterrupted || this == CONNECTION_INTERRUPTED))
   }

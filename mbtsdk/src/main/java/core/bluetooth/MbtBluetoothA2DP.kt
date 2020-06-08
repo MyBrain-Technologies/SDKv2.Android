@@ -299,11 +299,11 @@ class MbtBluetoothA2DP(manager: MbtBluetoothManager) : ExtraBluetooth(BluetoothP
 
     //if QR code contains only 9 digits
     private val isCurrentDeviceNameValid: Boolean
-      private get() {
-        if (currentDevice.name.startsWith(MelomindsQRDataBase.QR_PREFIX) && currentDevice.name.length == MelomindsQRDataBase.QR_LENGTH - 1) //if QR code contains only 9 digits
-          currentDevice.name + MelomindsQRDataBase.QR_SUFFIX
-        return (currentDevice.name.startsWith(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX) || currentDevice.name.startsWith(MbtFeatures.A2DP_DEVICE_NAME_PREFIX) //if device name is a valid BLE name
-            || currentDevice.name.startsWith(MelomindsQRDataBase.QR_PREFIX) && currentDevice.name.length == MelomindsQRDataBase.QR_LENGTH //or if device name is a valid QR Code name
+      get() {
+        if (currentDevice?.name?.startsWith(MelomindsQRDataBase.QR_PREFIX) == true && currentDevice?.name?.length == MelomindsQRDataBase.QR_LENGTH - 1) //if QR code contains only 9 digits
+          currentDevice?.name + MelomindsQRDataBase.QR_SUFFIX
+        return (currentDevice?.name?.startsWith(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX) == true || currentDevice?.name?.startsWith(MbtFeatures.A2DP_DEVICE_NAME_PREFIX) == true//if device name is a valid BLE name
+            || currentDevice?.name?.startsWith(MelomindsQRDataBase.QR_PREFIX) == true && currentDevice?.name?.length == MelomindsQRDataBase.QR_LENGTH //or if device name is a valid QR Code name
             )
       }
 
@@ -311,11 +311,11 @@ class MbtBluetoothA2DP(manager: MbtBluetoothManager) : ExtraBluetooth(BluetoothP
       override fun run() {
         if (connectedA2DpDevices != a2DPcurrentDevices) { //It means that something has changed. Now we need to find out what changed (getAD2PcurrentDevices returns the connected devices for this specific profile.)
           if (connectedA2DpDevices.size < a2DPcurrentDevices.size) { //Here, we have a new A2DP connection then we notify bluetooth manager
-            val previouscurrentDevice = currentDevice
+            val previousDevice = currentDevice
             currentDevice = a2DPcurrentDevices[a2DPcurrentDevices.size - 1] //As one a2dp output is possible at a time on android, it is possible to consider that last item in list is the current one
-            if (hasA2DPDeviceConnected() && currentDevice != null && currentDevice.name != null && isCurrentDeviceNameValid) { //if a Bluetooth A2DP audio peripheral is connected to a device whose name is not null.
-              LogUtils.d(TAG, "Detected connected device " + currentDevice.name + " address is " + currentDevice.address)
-              if (previouscurrentDevice == null || previouscurrentDevice != null && currentDevice != null && currentDevice !== previouscurrentDevice) notifyConnectionStateChanged(BluetoothState.AUDIO_BT_CONNECTION_SUCCESS, true)
+            if (hasA2DPDeviceConnected() &&  currentDevice?.name != null && isCurrentDeviceNameValid) { //if a Bluetooth A2DP audio peripheral is connected to a device whose name is not null.
+              LogUtils.d(TAG, "Detected connected device " + currentDevice?.name + " address is " + currentDevice?.address)
+              if (previousDevice == null || currentDevice != null && currentDevice !== previousDevice) notifyConnectionStateChanged(BluetoothState.AUDIO_BT_CONNECTION_SUCCESS, true)
               asyncInit.stopWaitingOperation(false)
             }
           } else  //Here, either the A2DP connection has dropped or a new A2DP device is connecting.
