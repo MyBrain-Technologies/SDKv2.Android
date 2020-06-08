@@ -7,7 +7,7 @@ class MbtAudioBluetooth {
     var instance : ExtraBluetooth? = null
   }
   abstract class ExtraBluetooth internal constructor(
-      protocol: BluetoothProtocol?,
+      protocol: BluetoothProtocol,
       mbtBluetoothManager: MbtBluetoothManager) :
 
       MbtBluetooth(

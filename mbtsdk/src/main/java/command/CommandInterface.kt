@@ -24,7 +24,7 @@ interface CommandInterface<E : BaseError?> : BaseErrorEvent<E> {
 
   @Keep
   interface MbtResponse<N> {
-    fun onResponseReceived(request: MbtCommand<*>?, response: N)
+    fun onResponseReceived(request: MbtCommand<*>?, response: N?)
   }
 
   @Keep
@@ -90,7 +90,7 @@ interface CommandInterface<E : BaseError?> : BaseErrorEvent<E> {
       if (commandCallback != null) commandCallback!!.onRequestSent(this)
     }
 
-    open fun onResponseReceived(response: Any) {
+    open fun onResponseReceived(response: Any?) {
       Log.d(TAG, "Response received $this")
       if (commandCallback != null && commandCallback is CommandCallback<*>) (commandCallback as CommandCallback<Any>).onResponseReceived(this, response)
     }

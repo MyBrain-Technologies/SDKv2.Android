@@ -87,7 +87,7 @@ interface BluetoothInterfaces {
      * Called whenever the stream state has changed.
      * @param streamState the new StreamState
      */
-    fun notifyStreamStateChanged(streamState: StreamState?)
+    fun notifyStreamStateChanged(streamState: StreamState)
 
     /**
      *

@@ -203,7 +203,7 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
     isConnectionInterrupted = false // resetting the flag when starting a new connection
     val context = getBluetoothContext().context
     val currentDevice = MbtDataBluetooth.instance.currentDevice
-    val isConnectionSuccessful = when (protocol) {
+    val isConnectionSuccessful = currentDevice != null && when (protocol) {
       LOW_ENERGY, SPP -> MbtDataBluetooth.instance.connect(context, currentDevice)
       A2DP -> MbtAudioBluetooth.instance?.connect(context, currentDevice) ?: false
     }

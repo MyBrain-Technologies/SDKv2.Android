@@ -99,17 +99,17 @@ public final class MbtBluetoothSPP
 
                     LogUtils.i(TAG, String.format("Discovery Scan -> device detected " +
                             "with name '%s' and MAC address '%s' ", deviceNameFound, device.getAddress()));
-                    if (manager.context.getDeviceNameRequested() != null
-                            && (deviceNameFound.equals(manager.context.getDeviceNameRequested()) || deviceNameFound.contains(manager.context.getDeviceNameRequested()))) {
-                        LogUtils.i(TAG, "Device " + manager.context.getDeviceNameRequested() +" found. Cancelling discovery & connecting");
-                        currentDevice = device;
-                        bluetoothAdapter.cancelDiscovery();
-                        manager.connecter.updateConnectionState(true); //current state is set to DEVICE_FOUND and future is completed
+                    if (getManager().context.getDeviceNameRequested() != null
+                            && (deviceNameFound.equals(getManager().context.getDeviceNameRequested()) || deviceNameFound.contains(getManager().context.getDeviceNameRequested()))) {
+                        LogUtils.i(TAG, "Device " + getManager().context.getDeviceNameRequested() +" found. Cancelling discovery & connecting");
+                        setCurrentDevice(device);
+                        getBluetoothAdapter().cancelDiscovery();
+                        getManager().connecter.updateConnectionState(true); //current state is set to DEVICE_FOUND and future is completed
 
                     }
                     break;
                 case BluetoothAdapter.ACTION_DISCOVERY_FINISHED:
-                    bluetoothAdapter.startDiscovery();
+                    getBluetoothAdapter().startDiscovery();
 
                     break;
             }
@@ -124,39 +124,39 @@ public final class MbtBluetoothSPP
     public MbtBluetoothSPP(@NonNull MbtBluetoothManager manager) {
         super(BluetoothProtocol.SPP, manager);
         final BluetoothManager bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-        this.bluetoothAdapter = bluetoothManager.getAdapter();
+        setBluetoothAdapter(bluetoothManager.getAdapter());
     }
 
     public MbtBluetoothSPP(@NonNull final String deviceAddress,@NonNull MbtBluetoothManager manager) {
         super(BluetoothProtocol.SPP, manager);
         final BluetoothManager bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-        this.bluetoothAdapter = bluetoothManager.getAdapter();
+        setBluetoothAdapter(bluetoothManager.getAdapter());
         this.deviceAddress = deviceAddress;
     }
 
     @Override
     public boolean startScan() {
         boolean isScanStarted = false;
-        if(bluetoothAdapter == null)
+        if(getBluetoothAdapter() == null)
             return isScanStarted;
 
         // at this point, device was not found among bonded devices so let's start a discovery scan
         LogUtils.i(TAG, "Starting Classic Bluetooth Discovery Scan");
         final IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+        filter.addAction(getBluetoothAdapter().ACTION_DISCOVERY_FINISHED);
         context.registerReceiver(scanReceiver, filter);
-        isScanStarted = bluetoothAdapter.startDiscovery();
+        isScanStarted = getBluetoothAdapter().startDiscovery();
         LogUtils.i(TAG, "Scan started.");
         if(isScanStarted && getCurrentState().equals(BluetoothState.READY_FOR_BLUETOOTH_OPERATION)){
-            manager.connecter.updateConnectionState(false); //current state is set to SCAN_STARTED
+            getManager().connecter.updateConnectionState(false); //current state is set to SCAN_STARTED
         }
         return isScanStarted;
     }
 
     @Override
     public void stopScan() {
-        if(bluetoothAdapter != null && bluetoothAdapter.isDiscovering())
-            bluetoothAdapter.cancelDiscovery();
+        if(getBluetoothAdapter() != null && getBluetoothAdapter().isDiscovering())
+            getBluetoothAdapter().cancelDiscovery();
         context.unregisterReceiver(scanReceiver);
     }
 
@@ -184,12 +184,12 @@ public final class MbtBluetoothSPP
             notifyConnectionStateChanged(BluetoothState.CONNECTED_AND_READY);
             return false;
         }
-        if (!this.bluetoothAdapter.isEnabled()) {
+        if (!this.getBluetoothAdapter().isEnabled()) {
             notifyConnectionStateChanged(BluetoothState.BLUETOOTH_DISABLED);
             return false;
         }
 
-        for (final BluetoothDevice bonded : this.bluetoothAdapter.getBondedDevices())
+        for (final BluetoothDevice bonded : this.getBluetoothAdapter().getBondedDevices())
             if (bonded.getAddress().equals(device.getAddress())) {
                 toConnect = bonded;
                 break;
@@ -652,7 +652,7 @@ public final class MbtBluetoothSPP
                 LogUtils.w(TAG, "Command not sent : "+command);
         }
 
-        manager.reader.notifyResponseReceived(response, command);//return null response to the client if request has not been sent
+        getManager().reader.notifyResponseReceived(response, command);//return null response to the client if request has not been sent
     }
 
 

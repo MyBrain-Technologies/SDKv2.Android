@@ -114,9 +114,8 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
     override fun onScanResult(callbackType: Int, result: ScanResult) { //Callback when a BLE advertisement has been found.
       if (currentState == BluetoothState.SCAN_STARTED) {
         super.onScanResult(callbackType, result)
-        val device = result.device
-        LogUtils.i(TAG, String.format("Stopping Low Energy Scan -> device detected " + "with name '%s' and MAC address '%s' ", device.name, device.address))
-        currentDevice = device
+        currentDevice = result.device
+        LogUtils.i(TAG, String.format("Stopping Low Energy Scan -> device detected " + "with name '%s' and MAC address '%s' ", currentDevice?.name, currentDevice?.address))
         updateConnectionState(true) //current state is set to DEVICE_FOUND and future is completed
       }
     }
@@ -317,11 +316,7 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
 
   override val isConnected: Boolean
     get() = currentState == BluetoothState.CONNECTED_AND_READY || currentState == BluetoothState.CONNECTED
-
-  public override fun isConnectedDeviceReadyForCommand(): Boolean {
-    return currentState.ordinal >= BluetoothState.DATA_BT_CONNECTION_SUCCESS.ordinal
-  }
-
+  
   /** Starts a read operation on a specific characteristic
    * @param characteristic the characteristic to read
    * @return immediatly false on error, true true if read operation has started correctly
