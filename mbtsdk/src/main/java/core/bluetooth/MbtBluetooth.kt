@@ -55,7 +55,7 @@ abstract class MbtBluetooth(protocol: BluetoothProtocol, protected var manager: 
    * The [MbtBluetoothConnecter.updateConnectionState]  method with no parameter should be call if nothing went wrong and user wants to continue the connection process
    */
   override fun notifyConnectionStateChanged(newState: BluetoothState) {
-    if (newState != currentState && !(newState.isAFailureState && currentState == BluetoothState.DATA_BT_DISCONNECTED)) {
+    if (newState != currentState && !(newState.isAFailureState() && currentState == BluetoothState.DATA_BT_DISCONNECTED)) {
       val previousState = currentState
       currentState = newState
       LogUtils.i(TAG, " current state is now  =  $currentState")
@@ -64,7 +64,7 @@ abstract class MbtBluetooth(protocol: BluetoothProtocol, protected var manager: 
         resetCurrentState() //reset the current connection state to IDLE
         if (this is MbtBluetoothA2DP && currentState != BluetoothState.UPGRADING) manager.connecter.disconnectAllBluetooth(false) //audio has failed to connect : we disconnect BLE
       }
-      if (currentState.isDisconnectableState) //if a failure occurred //todo check if a "else" is not missing here
+      if (currentState.isDisconnectableState()) //if a failure occurred //todo check if a "else" is not missing here
         disconnect() //disconnect if a headset is connected
     }
   }

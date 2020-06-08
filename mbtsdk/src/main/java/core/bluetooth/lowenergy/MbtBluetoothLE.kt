@@ -13,6 +13,9 @@ import command.BluetoothCommands.Mtu
 import command.CommandInterface.MbtCommand
 import command.DeviceCommand
 import command.DeviceCommandEvent
+import command.DeviceCommandEvent.MBX_CONNECT_IN_A2DP
+import command.DeviceCommandEvent.Companion.CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED
+import command.DeviceCommandEvent.Companion.CMD_CODE_CONNECT_IN_A2DP_SUCCESS
 import command.OADCommands.TransferPacket
 import config.MbtConfig
 import core.bluetooth.BluetoothInterfaces.IDeviceInfoMonitor
@@ -30,11 +33,7 @@ import engine.clientevents.BluetoothError
 import engine.clientevents.ConnectionStateReceiver
 import eventbus.events.BluetoothResponseEvent
 import features.MbtFeatures
-import utils.BitUtils
-import utils.BroadcastUtils
-import utils.LogUtils
-import utils.PermissionUtils
-import java.lang.reflect.InvocationTargetException
+import utils.*
 import java.util.*
 
 /** This class contains all required methods to interact with a LE bluetooth peripheral, such as Melomind.
@@ -43,7 +42,7 @@ import java.util.*
  * Created by Etienne on 08/02/2018.  */
 class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProtocol.LOW_ENERGY, manager), IDeviceInfoMonitor {
   /** An internal event used to notify MbtBluetoothLE that A2DP has disconnected. */
-  private val mbtGattController: MbtGattController = MbtGattController(context, this)
+  private val mbtGattController: MbtGattController = MbtGattController(this)
   lateinit var bluetoothLeScanner: BluetoothLeScanner
   var gatt: BluetoothGatt? = null
 
@@ -87,7 +86,7 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
     val filterOnDeviceService = true
     LogUtils.i(TAG, " start low energy scan on device " + manager.context.deviceNameRequested)
     val mFilters: MutableList<ScanFilter> = ArrayList()
-    if (super.bluetoothAdapter == null || super.bluetoothAdapter!!.bluetoothLeScanner == null) {
+    if (super.bluetoothAdapter == null || super.bluetoothAdapter?.bluetoothLeScanner == null) {
       Log.e(TAG, "Unable to get LE scanner")
       notifyConnectionStateChanged(BluetoothState.SCAN_FAILURE)
       return false
@@ -112,12 +111,14 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
   /** callback used when scanning using bluetooth Low Energy scanner. */
   private val scanCallback: ScanCallback = object : ScanCallback() {
     override fun onScanResult(callbackType: Int, result: ScanResult) { //Callback when a BLE advertisement has been found.
-      if (currentState == BluetoothState.SCAN_STARTED) {
-        super.onScanResult(callbackType, result)
-        currentDevice = result.device
-        LogUtils.i(TAG, String.format("Stopping Low Energy Scan -> device detected " + "with name '%s' and MAC address '%s' ", currentDevice?.name, currentDevice?.address))
-        updateConnectionState(true) //current state is set to DEVICE_FOUND and future is completed
-      }
+      AsyncUtils.executeAsync(Runnable {
+        if (currentState == BluetoothState.SCAN_STARTED) {
+          super.onScanResult(callbackType, result)
+          currentDevice = result.device
+          LogUtils.i(TAG, String.format("Stopping Low Energy Scan -> device detected " + "with name '%s' and MAC address '%s' ", currentDevice?.name, currentDevice?.address))
+          updateConnectionState(true) //current state is set to DEVICE_FOUND and future is completed
+        }
+      })
     }
 
     override fun onScanFailed(errorCode: Int) { //Callback when scan could not be started.
@@ -322,7 +323,7 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
    * @return immediatly false on error, true true if read operation has started correctly
    */
   fun startReadOperation(characteristic: UUID): Boolean {
-    if (!isConnected && currentState != BluetoothState.DISCOVERING_SUCCESS && !currentState.isReadingDeviceInfoState && currentState != BluetoothState.BONDING) {
+    if (!isConnected && currentState != BluetoothState.DISCOVERING_SUCCESS && !currentState.isReadingDeviceInfoState() && currentState != BluetoothState.BONDING) {
       notifyConnectionStateChanged(if (currentState == BluetoothState.BONDING) BluetoothState.BONDING_FAILURE else BluetoothState.READING_FAILURE)
       return false
     }
@@ -333,7 +334,7 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
     }
     if (!gatt!!.readCharacteristic(gatt!!.getService(service).getCharacteristic(characteristic))) {
       LogUtils.e(TAG, "Error: failed to initiate read characteristic operation")
-      if (currentState == BluetoothState.BONDING || currentState.isReadingDeviceInfoState) notifyConnectionStateChanged(if (currentState == BluetoothState.BONDING) BluetoothState.BONDING_FAILURE else BluetoothState.READING_FAILURE)
+      if (currentState == BluetoothState.BONDING || currentState.isReadingDeviceInfoState()) notifyConnectionStateChanged(if (currentState == BluetoothState.BONDING) BluetoothState.BONDING_FAILURE else BluetoothState.READING_FAILURE)
       return false
     }
     //if(getCurrentState().isReadingDeviceInfoState())
@@ -481,9 +482,14 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
       LogUtils.e(TAG, "Error : received response is not related to Bluetooth connection")
       return
     }
-    LogUtils.i(TAG, "Received response for " + (if (mailboxEvent == DeviceCommandEvent.MBX_CONNECT_IN_A2DP) "connection" else "disconnection") + " : " + mailboxResponse)
-    if (mailboxEvent == DeviceCommandEvent.MBX_CONNECT_IN_A2DP) {
-      if (BitUtils.areByteEquals(DeviceCommandEvent.MBX_CONNECT_IN_A2DP.getResponseCodeForKey(DeviceCommandEvent.CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED), mailboxResponse)) updateConnectionState(BluetoothState.JACK_CABLE_CONNECTED) else if (BitUtils.areByteEquals(DeviceCommandEvent.MBX_CONNECT_IN_A2DP.getResponseCodeForKey(DeviceCommandEvent.CMD_CODE_CONNECT_IN_A2DP_SUCCESS), mailboxResponse)) updateConnectionState(BluetoothState.AUDIO_BT_CONNECTION_SUCCESS)
+    LogUtils.i(TAG, "Received response for " + (if (mailboxEvent == MBX_CONNECT_IN_A2DP) "connection" else "disconnection") + " : " + mailboxResponse)
+    if (mailboxEvent == MBX_CONNECT_IN_A2DP) {
+      val jackConnectedResponseCode = MBX_CONNECT_IN_A2DP.getResponseCodeForKey(CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED)
+      val successResponseCode = MBX_CONNECT_IN_A2DP.getResponseCodeForKey(CMD_CODE_CONNECT_IN_A2DP_SUCCESS)
+      if (jackConnectedResponseCode?.let { BitUtils.areByteEquals(it, mailboxResponse) } == true)
+        updateConnectionState(BluetoothState.JACK_CABLE_CONNECTED)
+      else if (successResponseCode?.let { BitUtils.areByteEquals(it, mailboxResponse) } == true)
+        updateConnectionState(BluetoothState.AUDIO_BT_CONNECTION_SUCCESS)
     } else updateConnectionState(BluetoothState.AUDIO_BT_DISCONNECTED)
   }
 
@@ -597,7 +603,7 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
 
   override fun notifyDeviceInfoReceived(deviceInfo: DeviceInfo, deviceValue: String) { // This method will be called when a DeviceInfoReceived is posted (fw or hw or serial number) by MbtBluetoothLE or MbtBluetoothSPP
     super.notifyDeviceInfoReceived(deviceInfo, deviceValue)
-    if (currentState.isReadingDeviceInfoState) updateConnectionState(true) //current state is set to READING_FIRMWARE_VERSION_SUCCESS or READING_HARDWARE_VERSION_SUCCESS or READING_SERIAL_NUMBER_SUCCESS or READING_SUCCESS if reading device info and future is completed
+    if (currentState.isReadingDeviceInfoState()) updateConnectionState(true) //current state is set to READING_FIRMWARE_VERSION_SUCCESS or READING_HARDWARE_VERSION_SUCCESS or READING_SERIAL_NUMBER_SUCCESS or READING_SUCCESS if reading device info and future is completed
   }
 
   public override fun notifyBatteryReceived(value: Int) {

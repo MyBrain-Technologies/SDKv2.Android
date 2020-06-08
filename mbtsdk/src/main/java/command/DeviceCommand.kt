@@ -54,7 +54,7 @@ abstract class DeviceCommand<T, U : BaseError> internal constructor(
 
     if (headerCodes != null) bufferSize += headerCodes!!.size
     if (identifier != null) bufferSize += 1
-    if (identifier != null && identifier?.additionalCodes != null) bufferSize += identifier!!.additionalCodes.size
+    if (identifier != null && identifier?.additionalCodes != null) bufferSize += identifier?.additionalCodes?.size?:0
     if (data != null) bufferSize += data!!.size//get data returns the optional data specific to the implemented class
 
     rawDataBuffer = ByteBuffer.allocate(bufferSize)
@@ -70,7 +70,7 @@ abstract class DeviceCommand<T, U : BaseError> internal constructor(
     }
     if (identifier != null) {
       rawDataBuffer?.put(identifier!!.identifierCode)
-      if (identifier?.additionalCodes != null) for (singleCode in identifier!!.additionalCodes) {
+      if (identifier?.additionalCodes != null) for (singleCode in identifier?.additionalCodes!!) {
         rawDataBuffer?.put(singleCode)
       }
     }
