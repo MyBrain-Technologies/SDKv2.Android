@@ -231,7 +231,9 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
       return false
     }
     LogUtils.i(TAG, "Now enabling remote notification for characteristic: " + characteristic.uuid)
-    if (!notificationDescriptor.setValue(if (enableNotification) BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE else BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)) {
+    if (!notificationDescriptor.setValue(
+      if (enableNotification) BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+      else BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)) {
       val sb = StringBuilder()
       for (value in if (enableNotification) BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE else BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE) {
         sb.append(value.toInt())
@@ -247,7 +249,7 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
     } catch (e: InterruptedException) {
       e.printStackTrace()
     }
-    if (!gatt!!.writeDescriptor(notificationDescriptor)) {
+    if (gatt?.writeDescriptor(notificationDescriptor) == false) {
       LogUtils.e(TAG, "Error: failed to initiate write descriptor operation in order to remotely " +
           "enable notification for characteristic: " + characteristic.uuid)
       return false
@@ -277,7 +279,6 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
    * @return true if operation has correctly started, false otherwise.
    */
   override fun connect(context: Context, device: BluetoothDevice): Boolean {
-    if (device == null || context == null) return false
     LogUtils.i(TAG, " connect in Low Energy " + device.name + " address is " + device.address)
     BroadcastUtils.registerReceiverIntents(context, receiver, BluetoothDevice.ACTION_BOND_STATE_CHANGED)
 
@@ -287,7 +288,7 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
           .getMethod(CONNECT_GATT_METHOD,
               Context::class.java, Boolean::class.javaPrimitiveType, BluetoothGattCallback::class.java, Int::class.javaPrimitiveType)
       val transport = device.javaClass.getDeclaredField("TRANSPORT_LE").getInt(null)
-      gatt = connectGattMethod.invoke(device, context, false, mbtGattController, transport) as BluetoothGatt
+      gatt = connectGattMethod.invoke(device, context, false, mbtGattController, transport) as BluetoothGatt?
       return true
     } catch (e: Exception) {
       val errorMsg = " -> " + e.message
@@ -538,9 +539,14 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
   }
 
   fun sendRequestData(command: MbtCommand<*>): Boolean {
-    if (command is Mtu) return changeMTU(command.serialize()!!) else if (command is DeviceCommand<*, *>) return writeCharacteristic((command.serialize() as ByteArray?)!!,
+    if (command is Mtu)
+      return changeMTU(command.serialize())
+
+    if (command is DeviceCommand<*, *>)
+      return writeCharacteristic((command.serialize() as ByteArray),
         MelomindCharacteristics.SERVICE_MEASUREMENT,
-        if (command is TransferPacket) MelomindCharacteristics.CHARAC_MEASUREMENT_OAD_PACKETS_TRANSFER else MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX,
+        if (command is TransferPacket) MelomindCharacteristics.CHARAC_MEASUREMENT_OAD_PACKETS_TRANSFER
+        else MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX,
         command !is TransferPacket)
     return false
   }

@@ -14,11 +14,9 @@ import core.bluetooth.requests.DisconnectRequestEvent
 import core.bluetooth.requests.StartOrContinueConnectionRequestEvent
 import core.bluetooth.spp.MbtBluetoothSPP
 import engine.clientevents.BaseError
-import eventbus.events.FirmwareUpdateClientEvent
 import features.MbtDeviceType
 import org.junit.Before
 import org.junit.Test
-import org.mockito.ArgumentCaptor
 import org.mockito.Mockito
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
@@ -47,20 +45,11 @@ class MbtBluetoothManagerTest {
    * Check that changeBluetoothParameters has well set up the parameters for a Melomind Config
    */
   @Test fun changeBluetoothParameters_MelomindInitialization() {
-    val context = Mockito.mock(Context::class.java)
-    manager.changeBluetoothParameters(
-        StartOrContinueConnectionRequestEvent(true,
-            BluetoothContext(context,
-                MbtDeviceType.MELOMIND,
-                true,
-                "deviceName",
-                "deviceQrCode",
-                47
-            )))
+    initMelomind()
     assert(manager.context.deviceTypeRequested == MbtDeviceType.MELOMIND)
     assert(manager.context.connectAudio)
-    assert(manager.context.deviceNameRequested == "deviceName")
-    assert(manager.context.deviceQrCodeRequested == "deviceQrCode")
+    assert(manager.context.deviceNameRequested == "melo_12345678")
+    assert(manager.context.deviceQrCodeRequested == "MM102345678")
     assert(manager.context.mtu == 47)
     assert(MbtDataBluetooth.isInitialized())
     assert(MbtDataBluetooth.instance is MbtBluetoothLE)
@@ -71,22 +60,7 @@ class MbtBluetoothManagerTest {
    */
   @Test
   fun changeBluetoothParameters_VproInitialization() {
-    val context = Mockito.mock(Context::class.java)
-    val applicationContext = Mockito.mock(Context::class.java)
-    val bluetoothManager = Mockito.mock(BluetoothManager::class.java)
-    val bluetoothAdapter = Mockito.mock(BluetoothAdapter::class.java)
-    Mockito.`when`(context.applicationContext).thenReturn(applicationContext)
-    Mockito.`when`(applicationContext.getSystemService(Context.BLUETOOTH_SERVICE)).thenReturn(bluetoothManager)
-    Mockito.`when`(bluetoothManager.adapter).thenReturn(bluetoothAdapter)
-    manager.changeBluetoothParameters(
-        StartOrContinueConnectionRequestEvent(true,
-            BluetoothContext(context,
-                MbtDeviceType.VPRO,
-                true,
-                "vpro",
-                null,
-                47
-            )))
+    initVpro()
     assert(manager.context.deviceTypeRequested == MbtDeviceType.VPRO)
     assert(!manager.context.connectAudio)
     assert(manager.context.deviceNameRequested == "vpro")
@@ -102,16 +76,7 @@ class MbtBluetoothManagerTest {
    */
   @Test
   fun changeBluetoothParameters_MelomindThenVproInitialization() {
-    val context = Mockito.mock(Context::class.java)
-    manager.changeBluetoothParameters(
-        StartOrContinueConnectionRequestEvent(true,
-            BluetoothContext(context,
-                MbtDeviceType.MELOMIND,
-                true,
-                "melo_12345678",
-                "MM102345678",
-                47
-            )))
+    initMelomind()
     assert(manager.context.deviceTypeRequested == MbtDeviceType.MELOMIND)
     assert(manager.context.connectAudio)
     assert(manager.context.deviceNameRequested == "melo_12345678")
@@ -120,21 +85,9 @@ class MbtBluetoothManagerTest {
     assert(MbtDataBluetooth.isInitialized())
     assert(MbtDataBluetooth.instance is MbtBluetoothLE)
     assert(MbtAudioBluetooth.instance != null)
-    val applicationContext = Mockito.mock(Context::class.java)
-    val bluetoothManager = Mockito.mock(BluetoothManager::class.java)
-    val bluetoothAdapter = Mockito.mock(BluetoothAdapter::class.java)
-    Mockito.`when`(context.applicationContext).thenReturn(applicationContext)
-    Mockito.`when`(applicationContext.getSystemService(Context.BLUETOOTH_SERVICE)).thenReturn(bluetoothManager)
-    Mockito.`when`(bluetoothManager.adapter).thenReturn(bluetoothAdapter)
-    manager.changeBluetoothParameters(
-        StartOrContinueConnectionRequestEvent(true,
-            BluetoothContext(context,
-                MbtDeviceType.VPRO,
-                true,
-                "vpro",
-                null,
-                47
-            )))
+    assert(MbtAudioBluetooth.instance is MbtBluetoothA2DP)
+
+    initVpro()
    assert(manager.context.deviceTypeRequested == MbtDeviceType.VPRO)
     assert(!manager.context.connectAudio)
     assert(manager.context.deviceNameRequested == "vpro")
@@ -144,58 +97,12 @@ class MbtBluetoothManagerTest {
     assert(MbtDataBluetooth.instance is MbtBluetoothSPP)
     assert(MbtAudioBluetooth.instance == null)
   }
-  /**
-   * Check that changeBluetoothParameters has not changed the bluetooth operators if it was already initialized
-   */
-  @Test fun changeBluetoothParameters_alreadyInitialized() {
-    val context = Mockito.mock(Context::class.java)
-    val applicationContext = Mockito.mock(Context::class.java)
-    val bluetoothManager = Mockito.mock(BluetoothManager::class.java)
-    val bluetoothAdapter = Mockito.mock(BluetoothAdapter::class.java)
-    Mockito.`when`(context.applicationContext).thenReturn(applicationContext)
-    Mockito.`when`(applicationContext.getSystemService(Context.BLUETOOTH_SERVICE)).thenReturn(bluetoothManager)
-    Mockito.`when`(bluetoothManager.adapter).thenReturn(bluetoothAdapter)
-    manager.context = BluetoothContext(context,
-        MbtDeviceType.MELOMIND,
-        true,
-        "melo_12345678",
-        "MM102345678",
-        47
-    )
-    MbtDataBluetooth.instance = MbtBluetoothLE(manager)
-    MbtAudioBluetooth.instance = MbtBluetoothA2DP(manager)
-    val dataBluetoothBefore = MbtDataBluetooth.instance
-    val audioBluetoothBefore = MbtAudioBluetooth.instance
-    Mockito.`when`(context.getSystemService(Context.BLUETOOTH_SERVICE)).thenReturn(bluetoothManager)
-    manager.changeBluetoothParameters(
-        StartOrContinueConnectionRequestEvent(false,
-            BluetoothContext(context,
-                MbtDeviceType.VPRO,
-                true,
-                "vpro",
-                null,
-                47
-            )))
-    val dataBluetoothAfter = MbtDataBluetooth.instance
-    val audioBluetoothAfter = MbtAudioBluetooth.instance
-    assert(dataBluetoothBefore == dataBluetoothAfter)
-    assert(audioBluetoothBefore == audioBluetoothAfter)
-
-  }
 
   /**
    * Check that changeBluetoothParameters has well set up the parameters for a Melomind Config
    */
   @Test fun initBluetoothOperators_MelomindInitialization() {
-    val context = Mockito.mock(Context::class.java)
-    manager.context = BluetoothContext(context,
-        MbtDeviceType.MELOMIND,
-        true,
-        "melo_12345678",
-        "MM102345678",
-        47
-    )
-    manager.initBluetoothOperators()
+   initMelomind()
     assert(MbtDataBluetooth.isInitialized())
     assert(MbtDataBluetooth.instance is MbtBluetoothLE)
     assert(MbtDataBluetooth.instance !is MbtBluetoothSPP)
@@ -206,21 +113,7 @@ class MbtBluetoothManagerTest {
    */
   @Test
   fun initBluetoothOperators_VproInitialization() {
-    val context = Mockito.mock(Context::class.java)
-    val applicationContext = Mockito.mock(Context::class.java)
-    val bluetoothManager = Mockito.mock(BluetoothManager::class.java)
-    val bluetoothAdapter = Mockito.mock(BluetoothAdapter::class.java)
-    Mockito.`when`(context.applicationContext).thenReturn(applicationContext)
-    Mockito.`when`(applicationContext.getSystemService(Context.BLUETOOTH_SERVICE)).thenReturn(bluetoothManager)
-    Mockito.`when`(bluetoothManager.adapter).thenReturn(bluetoothAdapter)
-    manager.context = BluetoothContext(context,
-        MbtDeviceType.VPRO,
-        true,
-        "vpro",
-        null,
-        47
-    )
-    manager.initBluetoothOperators()
+    initVpro()
 
     assert(MbtDataBluetooth.isInitialized())
     assert(MbtDataBluetooth.instance is MbtBluetoothSPP)
@@ -230,6 +123,9 @@ class MbtBluetoothManagerTest {
 
   fun initMelomind(){
     val context = Mockito.mock(Context::class.java)
+    val applicationContext = Mockito.mock(Context::class.java)
+    val bluetoothManager = Mockito.mock(BluetoothManager::class.java)
+    val bluetoothAdapter = Mockito.mock(BluetoothAdapter::class.java)
     manager.context = BluetoothContext(context,
         MbtDeviceType.MELOMIND,
         true,
@@ -237,6 +133,29 @@ class MbtBluetoothManagerTest {
         "MM102345678",
         47
     )
+    Mockito.`when`(context.applicationContext).thenReturn(applicationContext)
+    Mockito.`when`(context.getSystemService(Context.BLUETOOTH_SERVICE)).thenReturn(bluetoothManager)
+    Mockito.`when`(applicationContext.getSystemService(Context.BLUETOOTH_SERVICE)).thenReturn(bluetoothManager)
+    Mockito.`when`(bluetoothManager.adapter).thenReturn(bluetoothAdapter)
+    manager.initBluetoothOperators()
+  }
+
+  fun initVpro(){
+    val context = Mockito.mock(Context::class.java)
+    val applicationContext = Mockito.mock(Context::class.java)
+    val bluetoothManager = Mockito.mock(BluetoothManager::class.java)
+    val bluetoothAdapter = Mockito.mock(BluetoothAdapter::class.java)
+    manager.context = BluetoothContext(context,
+        MbtDeviceType.VPRO,
+        true,
+        "vpro",
+        null,
+        47
+    )
+    Mockito.`when`(context.applicationContext).thenReturn(applicationContext)
+    Mockito.`when`(context.getSystemService(Context.BLUETOOTH_SERVICE)).thenReturn(bluetoothManager)
+    Mockito.`when`(applicationContext.getSystemService(Context.BLUETOOTH_SERVICE)).thenReturn(bluetoothManager)
+    Mockito.`when`(bluetoothManager.adapter).thenReturn(bluetoothAdapter)
     manager.initBluetoothOperators()
   }
   /**
@@ -257,7 +176,7 @@ class MbtBluetoothManagerTest {
   @Test
   fun isSwitchOperationWaiting() {
     initMelomind()
-    assert(!manager.isSwitchOperationWaiting())
+   assert(!manager.isSwitchOperationWaiting())
     manager.requestProcessor.asyncSwitchOperation.tryOperation({assert(manager.isSwitchOperationWaiting())},1000)
     assert(!manager.isSwitchOperationWaiting())
   }
@@ -274,7 +193,7 @@ class MbtBluetoothManagerTest {
   }
   class BluetoothCommandTest() : BluetoothCommand<Unit, BaseError>() {
     override fun getData() {}
-    override fun serialize(): Any? {return null}
+    override fun serialize(): Any {return true}
     override val isValid: Boolean
       get() = true
     override val invalidityError: String?

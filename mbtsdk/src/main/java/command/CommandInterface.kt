@@ -143,7 +143,7 @@ interface CommandInterface<E : BaseError?> : BaseErrorEvent<E> {
      * for the write characteristic operation / request
      * @return the bundled data in a object
      */
-    abstract fun serialize(): Any?
+    abstract fun serialize(): Any
 
     companion object {
       private val TAG = MbtCommand::class.java.name

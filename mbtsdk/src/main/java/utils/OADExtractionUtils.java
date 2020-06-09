@@ -206,8 +206,12 @@ public final class OADExtractionUtils {
             return null;
 
         filename = filename.replace(BINARY_FILE_FORMAT,"");//remove the ".bin" format
+        if(filename.contains("i2-"))
+            filename = filename.replace("i2-","");
+        if(filename.contains("i3-"))
+            filename = filename.replace("i3-","");
         return filename
-                .substring(filename.length()-5) // the last 5 characters are the version number
+                .substring(BINARY_FILE_PREFIX.length(), filename.length()) // the last 5 characters are the version number
                 .replace(FIRMWARE_VERSION_REGEX, FIRMWARE_VERSION_HELPER_REGEX); //replace the "_" digit splitter with a "." splitter
     }
 

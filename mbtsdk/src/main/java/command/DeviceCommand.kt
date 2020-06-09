@@ -13,7 +13,7 @@ import java.nio.ByteBuffer
  * It provides a callback used to return a raw response sent by the headset to the SDK
  */
 @Keep
-abstract class DeviceCommand<T, U : BaseError> internal constructor(
+abstract class DeviceCommand<T : Any, U : BaseError> internal constructor(
     /**
      * Unique identifier of the command.
      * This code is sent to the headset in the write characteristic operation.

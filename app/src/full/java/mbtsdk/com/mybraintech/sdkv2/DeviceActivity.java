@@ -121,7 +121,7 @@ public class DeviceActivity extends AppCompatActivity {
             public void onNewPackets(@NonNull final MbtEEGPacket mbtEEGPackets) {
                 Log.d(TAG, " onNewPacket "+mbtEEGPackets.toString());
                 if(eegGraph == null)
-                    AsyncUtils.executeAsync(new Runnable() {
+                    AsyncUtils.Companion.executeAsync(new Runnable() {
                         @Override
                         public void run() {
                             sdkClient.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
