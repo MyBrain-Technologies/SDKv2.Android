@@ -213,7 +213,7 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
   }
 
   fun notifyDeviceFound() {
-    notifyEvent(ConnectionStateEvent(DEVICE_FOUND, MbtDataBluetooth.instance.currentDevice, context.deviceTypeRequested))
+    notifyEvent(MbtDataBluetooth.instance.currentDevice?.let { ConnectionStateEvent(DEVICE_FOUND, it, context.deviceTypeRequested) })
     if (!context.connectAudio) { return }
 
     if (MbtAudioBluetooth.instance == null) {

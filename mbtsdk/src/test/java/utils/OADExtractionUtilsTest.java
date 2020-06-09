@@ -122,22 +122,15 @@ public class OADExtractionUtilsTest {
         assertEquals("oad/indus3/mm-ota-i3-1_7_14.bin",
                      OADExtractionUtils.getFilePathForFirmwareVersion("1_7_14", new MbtVersion("1.1.0")));
         assertEquals("oad/indus2/mm-ota-i2-1_7_14.bin",
-                     OADExtractionUtils.getFilePathForFirmwareVersion("1.7"
-                                                                      + ".14", new MbtVersion("1.0.0")));
+                     OADExtractionUtils.getFilePathForFirmwareVersion("1.7.14", new MbtVersion("1.0.0")));
         assertEquals("oad/indus3/mm-ota-i3-1_7_14.bin",
-                     OADExtractionUtils.getFilePathForFirmwareVersion("1.7"
-                                                                      + ".14", new MbtVersion("1.1.0")));
-
-        assertEquals("oad/indus2/mm-ota-1_7_14.bin",
+                     OADExtractionUtils.getFilePathForFirmwareVersion("1.7.14", new MbtVersion("1.1.0")));
+        assertEquals("oad/indus2/mm-ota-i2-1_7_14.bin",
                      OADExtractionUtils.getFilePathForFirmwareVersion("1_7_14", new MbtVersion("1.0.0")));
-        assertEquals("oad/indus3/mm-ota-1_7_14.bin",
+        assertEquals("oad/indus3/mm-ota-i3-1_7_14.bin",
                      OADExtractionUtils.getFilePathForFirmwareVersion("1_7_14", new MbtVersion("1.1.0")));
-        assertEquals("oad/indus2/mm-ota-1_7_14.bin",
-                     OADExtractionUtils.getFilePathForFirmwareVersion("1.7"
-                                                                      + ".14", new MbtVersion("1.0.0")));
-        assertEquals("oad/indus3/mm-ota-1_7_14.bin",
-                     OADExtractionUtils.getFilePathForFirmwareVersion("1.7"
-                                                                      + ".14", new MbtVersion("1.1.0")));
+        assertEquals("oad/indus2/mm-ota-1_7_4.bin",
+                     OADExtractionUtils.getFilePathForFirmwareVersion("1.7.4", new MbtVersion("1.0.0")));
     }
 
     /**

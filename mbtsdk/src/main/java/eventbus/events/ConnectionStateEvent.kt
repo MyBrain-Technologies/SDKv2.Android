@@ -24,9 +24,9 @@ class ConnectionStateEvent : IEvent {
     this.device = device
   }
 
-  constructor(newState: BluetoothState, device: BluetoothDevice?, deviceType: MbtDeviceType) {
+  constructor(newState: BluetoothState, device: BluetoothDevice, deviceType: MbtDeviceType) {
     this.newState = newState
-    this.device = if (deviceType == MbtDeviceType.MELOMIND) MelomindDevice(device!!) else VProDevice(device!!)
+    this.device = if (deviceType == MbtDeviceType.MELOMIND) MelomindDevice(device) else VProDevice(device)
   }
 
   constructor(newState: BluetoothState, additionalInfo: String?) {
