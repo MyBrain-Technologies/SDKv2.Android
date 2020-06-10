@@ -34,13 +34,12 @@ class MbtBluetoothA2DP(manager: MbtBluetoothManager) : ExtraBluetooth(BluetoothP
    * This method can handle the case where the end-user device is already connected to the melomind via
    * the A2DP protocol or to another device in which case it will disconnected (Android support only
    * one A2DP headset at the time).
-   * @param deviceToConnect    the device to connect to
+   * @param device    the device to connect to
    * @param context   the application context
    * @return          `true` upon success, `false otherwise`
    */
-  override fun connect(context: Context, deviceToConnect: BluetoothDevice): Boolean {
-    if (deviceToConnect == null) return false
-    LogUtils.d(TAG, "Attempting to connect A2DP to " + deviceToConnect.name + " address is " + deviceToConnect.address)
+  override fun connect(context: Context, device: BluetoothDevice): Boolean {
+    LogUtils.d(TAG, "Attempting to connect A2DP to " + device.name + " address is " + device.address)
 
     // First we retrieve the Audio Manager that will help monitor the A2DP status
     // and then the instance of Bluetooth A2DP to make the necessaries calls
@@ -60,7 +59,7 @@ class MbtBluetoothA2DP(manager: MbtBluetoothManager) : ExtraBluetooth(BluetoothP
 
       // we assume there is only one, because Android can only support one at the time
       val deviceConnected = a2dpProxy!!.connectedDevices[0]
-      if (deviceConnected.address == deviceToConnect.address) { // already connected to the Melomind !
+      if (deviceConnected.address == device.address) { // already connected to the Melomind !
         LogUtils.d(TAG, "Already connected to the melomind.")
         notifyConnectionStateChanged(BluetoothState.AUDIO_BT_CONNECTION_SUCCESS)
         return true
@@ -86,14 +85,14 @@ class MbtBluetoothA2DP(manager: MbtBluetoothManager) : ExtraBluetooth(BluetoothP
           }, 100, 500)
           var status: Boolean? = false
           try {
-            status = asyncConnection.waitOperationResult(5000) as Boolean?
+            status = asyncConnection.waitOperationResult(5000) 
           } catch (e: Exception) {
             if (e is CancellationException) asyncConnection.resetWaitingOperation()
           }
           return if (status != null && status) {
             LogUtils.i(TAG, "successfully disconnected from A2DP device -> " + deviceConnected.name)
-            LogUtils.i(TAG, "Now connecting A2DP to " + deviceToConnect.address)
-            connect(context, deviceToConnect)
+            LogUtils.i(TAG, "Now connecting A2DP to " + device.address)
+            connect(context, device)
           } else {
             LogUtils.e(TAG, "failed to connect A2DP! future has timed out...")
             //notifyConnectionStateChanged(BluetoothState.CONNECTION_FAILURE);
@@ -111,7 +110,7 @@ class MbtBluetoothA2DP(manager: MbtBluetoothManager) : ExtraBluetooth(BluetoothP
       try {
         val result = a2dpProxy!!.javaClass
             .getMethod(CONNECT_METHOD, BluetoothDevice::class.java)
-            .invoke(a2dpProxy, deviceToConnect) as Boolean
+            .invoke(a2dpProxy, device) as Boolean
         if (!result) { // according to doc : "false on immediate error, true otherwise"
           notifyConnectionStateChanged(BluetoothState.CONNECTION_FAILURE)
           return false
@@ -128,20 +127,20 @@ class MbtBluetoothA2DP(manager: MbtBluetoothManager) : ExtraBluetooth(BluetoothP
         }, 100, 1500)
 
         // we give 20 seconds to the user to accepting bonding request
-        val timeout = if (deviceToConnect.bondState == BluetoothDevice.BOND_BONDED) MbtConfig.getBluetoothA2DpConnectionTimeout() else 25000
+        val timeout = if (device.bondState == BluetoothDevice.BOND_BONDED) MbtConfig.getBluetoothA2DpConnectionTimeout() else 25000
         var status: Boolean? = false
         try {
-          status = asyncConnection.waitOperationResult(timeout) as Boolean?
+          status = asyncConnection.waitOperationResult(timeout) 
         } catch (e: Exception) {
           if (e is CancellationException) asyncConnection.resetWaitingOperation()
           LogUtils.i(TAG, " A2dp Connection failed: $e")
         }
         return if (status != null && status) {
-          LogUtils.i(TAG, "Successfully connected via A2DP to " + deviceToConnect.address)
+          LogUtils.i(TAG, "Successfully connected via A2DP to " + device.address)
           notifyConnectionStateChanged(BluetoothState.AUDIO_BT_CONNECTION_SUCCESS)
           true
         } else {
-          LogUtils.i(TAG, "Cannot connect to A2DP device " + deviceToConnect.address)
+          LogUtils.i(TAG, "Cannot connect to A2DP device " + device.address)
           notifyConnectionStateChanged(BluetoothState.CONNECTION_FAILURE)
           false
         }
@@ -206,13 +205,13 @@ class MbtBluetoothA2DP(manager: MbtBluetoothManager) : ExtraBluetooth(BluetoothP
     // First we retrieve the Audio Manager that will help monitor the A2DP status
     // and then the instance of Bluetooth A2DP to make the necessaries calls
     val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        ?: return false
+        
     // First we check if the end-user device is currently connected to an A2DP device
     return audioManager.isBluetoothA2dpOn
   }
 
   private val a2DPcurrentDevices: List<BluetoothDevice>
-    private get() = if (a2dpProxy == null) emptyList() else a2dpProxy!!.connectedDevices
+    get() = if (a2dpProxy == null) emptyList() else a2dpProxy!!.connectedDevices
 
   override val isConnected: Boolean
     get() = currentState == BluetoothState.AUDIO_BT_CONNECTION_SUCCESS
