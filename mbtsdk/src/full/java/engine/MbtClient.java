@@ -13,7 +13,7 @@ import config.MbtConfig;
 import config.RecordConfig;
 import config.StreamConfig;
 import core.MbtManager;
-import core.bluetooth.BtState;
+import core.bluetooth.BluetoothState;
 import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
 import core.device.model.MbtVersion;
@@ -275,7 +275,7 @@ public final class MbtClient {
 
     /**
      * Stops a pending connection process. If successful,
-     * the new state {@link core.bluetooth.BtState#CONNECTION_INTERRUPTED} is sent to the user in the {@link BluetoothStateListener#onNewState(BtState)} callback
+     * the new state {@link core.bluetooth.BluetoothState#CONNECTION_INTERRUPTED} is sent to the user in the {@link BluetoothStateListener#onNewState(BluetoothState)} callback
      * <p>If the device is already connected, it simply disconnects the device.</p>
      */
     public void cancelConnection() {

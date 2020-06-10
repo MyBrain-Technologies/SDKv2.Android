@@ -1,0 +1,155 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: MbtBluetoothWriter</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">core.bluetooth</a> ]
+</div>
+
+<h1>Coverage Summary for Class: MbtBluetoothWriter (core.bluetooth)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">MbtBluetoothWriter</td>
+<td class="coverageStat">
+  <span class="percent">
+    40%
+  </span>
+  <span class="absValue">
+    (2/ 5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    16,7%
+  </span>
+  <span class="absValue">
+    (2/ 12)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">MbtBluetoothWriter$Companion</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (3/ 6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    23,1%
+  </span>
+  <span class="absValue">
+    (3/ 13)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package core.bluetooth
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import command.DeviceCommands.UpdateExternalName
+<i>4</i>&nbsp;import core.bluetooth.requests.CommandRequestEvent
+<i>5</i>&nbsp;import core.device.model.MbtDevice
+<i>6</i>&nbsp;import core.device.model.MelomindsQRDataBase
+<i>7</i>&nbsp;import features.MbtFeatures
+<i>8</i>&nbsp;import utils.AsyncUtils
+<i>9</i>&nbsp;import utils.LogUtils
+<i>10</i>&nbsp;import utils.VersionHelper
+<i>11</i>&nbsp;
+<i>12</i>&nbsp;/** Created by Sophie on 02/06/2020.
+<i>13</i>&nbsp; * This class contains all necessary methods to manage the Bluetooth write operation with the myBrain peripheral devices.
+<i>14</i>&nbsp; * A write operation is any value update/change request sent to the headset device
+<i>15</i>&nbsp; */
+<b class="fc"><i>16</i>&nbsp;class MbtBluetoothWriter(private val manager: MbtBluetoothManager) {</b>
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;
+<b class="fc"><i>19</i>&nbsp;  companion object {</b>
+<b class="fc"><i>20</i>&nbsp;    private val TAG = MbtBluetoothWriter::class.java.simpleName</b>
+<i>21</i>&nbsp;  }
+<i>22</i>&nbsp;
+<i>23</i>&nbsp;  private fun MbtDevice.shouldSendExternalName(): Boolean {
+<b class="nc"><i>24</i>&nbsp;    return (serialNumber != null</b>
+<b class="nc"><i>25</i>&nbsp;        &amp;&amp; (externalName == MbtFeatures.MELOMIND_DEVICE_NAME</b>
+<b class="nc"><i>26</i>&nbsp;        || externalName?.length == MbtFeatures.DEVICE_QR_CODE_LENGTH - 1) //send the QR code found in the database if the headset do not know its own QR code</b>
+<b class="nc"><i>27</i>&nbsp;        &amp;&amp; VersionHelper(firmwareVersion.toString()).isValidForFeature(VersionHelper.Feature.REGISTER_EXTERNAL_NAME))</b>
+<i>28</i>&nbsp;  }
+<i>29</i>&nbsp;
+<i>30</i>&nbsp;  private fun MbtDevice.findExternalName(): String? {
+<b class="nc"><i>31</i>&nbsp;    val bluetoothContext = manager.context</b>
+<b class="nc"><i>32</i>&nbsp;    return MelomindsQRDataBase(bluetoothContext.context, false)[serialNumber]</b>
+<i>33</i>&nbsp;  }
+<i>34</i>&nbsp;
+<i>35</i>&nbsp;  fun startSendingExternalName(device: MbtDevice) {
+<b class="nc"><i>36</i>&nbsp;    LogUtils.i(TAG, &quot;start sending QR code if supported for device $device&quot;)</b>
+<b class="nc"><i>37</i>&nbsp;    if (device.shouldSendExternalName()) {</b>
+<b class="nc"><i>38</i>&nbsp;      AsyncUtils.executeAsync {</b>
+<i>39</i>&nbsp;        val externalName = device.findExternalName()
+<i>40</i>&nbsp;        val request = CommandRequestEvent(UpdateExternalName(externalName))
+<i>41</i>&nbsp;        manager.parseRequest(request)
+<i>42</i>&nbsp;      }
+<i>43</i>&nbsp;    }
+<b class="nc"><i>44</i>&nbsp;  }</b>
+<i>45</i>&nbsp;
+<i>46</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2020-06-10 10:26</div>
+</div>
+</body>
+</html>
