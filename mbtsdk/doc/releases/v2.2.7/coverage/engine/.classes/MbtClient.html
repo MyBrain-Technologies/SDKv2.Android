@@ -1,0 +1,486 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: MbtClient</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">engine</a> ]
+</div>
+
+<h1>Coverage Summary for Class: MbtClient (engine)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">MbtClient</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 26)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 46)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">MbtClient$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 2)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">MbtClient$MbtClientBuilder</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 6)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 32)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 54)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package engine;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import android.content.BroadcastReceiver;
+<i>4</i>&nbsp;import android.content.Context;
+<i>5</i>&nbsp;import androidx.annotation.Keep;
+<i>6</i>&nbsp;import androidx.annotation.NonNull;
+<i>7</i>&nbsp;import androidx.annotation.Nullable;
+<i>8</i>&nbsp;
+<i>9</i>&nbsp;import command.CommandInterface;
+<i>10</i>&nbsp;import command.DeviceCommands;
+<i>11</i>&nbsp;import config.ConnectionConfig;
+<i>12</i>&nbsp;import config.MbtConfig;
+<i>13</i>&nbsp;import config.RecordConfig;
+<i>14</i>&nbsp;import config.StreamConfig;
+<i>15</i>&nbsp;import core.MbtManager;
+<i>16</i>&nbsp;import core.bluetooth.BluetoothState;
+<i>17</i>&nbsp;import core.device.model.DeviceInfo;
+<i>18</i>&nbsp;import core.device.model.MbtDevice;
+<i>19</i>&nbsp;import core.device.model.MbtVersion;
+<i>20</i>&nbsp;import core.eeg.storage.MbtEEGPacket;
+<i>21</i>&nbsp;import engine.clientevents.BaseError;
+<i>22</i>&nbsp;import engine.clientevents.BluetoothError;
+<i>23</i>&nbsp;import engine.clientevents.BluetoothStateListener;
+<i>24</i>&nbsp;import engine.clientevents.ConfigError;
+<i>25</i>&nbsp;import engine.clientevents.ConnectionStateListener;
+<i>26</i>&nbsp;import engine.clientevents.DeviceBatteryListener;
+<i>27</i>&nbsp;import engine.clientevents.EegListener;
+<i>28</i>&nbsp;
+<i>29</i>&nbsp;import engine.clientevents.OADStateListener;
+<i>30</i>&nbsp;import features.MbtFeatures;
+<i>31</i>&nbsp;import features.MbtDeviceType;
+<i>32</i>&nbsp;
+<i>33</i>&nbsp;/**
+<i>34</i>&nbsp; * Created by Etienne on 08/02/2018.
+<i>35</i>&nbsp; */
+<i>36</i>&nbsp;
+<i>37</i>&nbsp;@Keep
+<b class="nc"><i>38</i>&nbsp;public final class MbtClient {</b>
+<i>39</i>&nbsp;
+<b class="nc"><i>40</i>&nbsp;    private static final String TAG = MbtClient.class.getName();</b>
+<i>41</i>&nbsp;
+<i>42</i>&nbsp;    /**
+<i>43</i>&nbsp;     * The MbtManager is responsible for managing all the package managers
+<i>44</i>&nbsp;     */
+<i>45</i>&nbsp;    private final MbtManager mbtManager;
+<i>46</i>&nbsp;
+<i>47</i>&nbsp;    private static MbtClient clientInstance;
+<i>48</i>&nbsp;
+<i>49</i>&nbsp;    /**
+<i>50</i>&nbsp;     * Initializes the MbtClient instance
+<i>51</i>&nbsp;     * @param context the context of the single, global Application object of the current process.
+<i>52</i>&nbsp;     * @return the initialized MbtClient instance to the application
+<i>53</i>&nbsp;     */
+<i>54</i>&nbsp;    public static MbtClient init(@NonNull Context context){
+<b class="nc"><i>55</i>&nbsp;        if(clientInstance == null) {</b>
+<b class="nc"><i>56</i>&nbsp;            clientInstance = new MbtClientBuilder()</b>
+<b class="nc"><i>57</i>&nbsp;                    .setContext(context)</b>
+<b class="nc"><i>58</i>&nbsp;                    .setMbtManager(new MbtManager(context))</b>
+<b class="nc"><i>59</i>&nbsp;                    .create();</b>
+<i>60</i>&nbsp;        }
+<b class="nc"><i>61</i>&nbsp;        return clientInstance;</b>
+<i>62</i>&nbsp;    }
+<i>63</i>&nbsp;
+<i>64</i>&nbsp;    /**
+<i>65</i>&nbsp;     * @return The current instance of the client. Init() must have been called first
+<i>66</i>&nbsp;     */
+<i>67</i>&nbsp;    public static MbtClient getClientInstance(){
+<b class="nc"><i>68</i>&nbsp;        return clientInstance;</b>
+<i>69</i>&nbsp;    }
+<i>70</i>&nbsp;
+<i>71</i>&nbsp;    /**
+<i>72</i>&nbsp;     * Set the current instance of the client instance to null
+<i>73</i>&nbsp;     */
+<i>74</i>&nbsp;    public static void resetClientInstance(){
+<b class="nc"><i>75</i>&nbsp;        clientInstance = null;</b>
+<i>76</i>&nbsp;    }
+<i>77</i>&nbsp;    /**
+<i>78</i>&nbsp;     * Constructor that use the MbtClientBuilder
+<i>79</i>&nbsp;     * @param builder object for creating the MbtClient instance with a setters syntax.
+<i>80</i>&nbsp;     */
+<b class="nc"><i>81</i>&nbsp;    private MbtClient(MbtClientBuilder builder){</b>
+<i>82</i>&nbsp;        //mContext = builder.mContext;
+<b class="nc"><i>83</i>&nbsp;        this.mbtManager = builder.mbtManager;</b>
+<i>84</i>&nbsp;    }
+<i>85</i>&nbsp;
+<i>86</i>&nbsp;    /**
+<i>87</i>&nbsp;     * Call this method to establish a bluetooth connection with a remote device.
+<i>88</i>&nbsp;     * It is possible to connect either a Melomind or a VPro device through this method. You need to specify
+<i>89</i>&nbsp;     * the device type in the {@link ConnectionConfig} input instance with the {@link MbtDeviceType} type.
+<i>90</i>&nbsp;     * &lt;p&gt;If the parameters are invalid, the method returns immediately and {@link BluetoothStateListener#onError(engine.clientevents.BaseError, String)} method is called&lt;/p&gt;
+<i>91</i>&nbsp;     *
+<i>92</i>&nbsp;     * @param config the {@link ConnectionConfig} instance that holds all the configuration parameters inside.
+<i>93</i>&nbsp;     */
+<i>94</i>&nbsp;    @SuppressWarnings(&quot;unchecked&quot;)
+<i>95</i>&nbsp;    public void connectBluetooth(@NonNull ConnectionConfig config){
+<b class="nc"><i>96</i>&nbsp;        MbtConfig.setBluetoothScanTimeout(config.getMaxScanDuration());</b>
+<i>97</i>&nbsp;
+<b class="nc"><i>98</i>&nbsp;        if(!config.isDeviceNameValid(config.getDeviceType())) {</b>
+<b class="nc"><i>99</i>&nbsp;            config.getConnectionStateListener().onError(ConfigError.ERROR_INVALID_PARAMS, &quot; Device name must start with the &quot; + MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX + &quot; and contain 10 digits &quot;);</b>
+<i>100</i>&nbsp;            return;
+<i>101</i>&nbsp;        }
+<i>102</i>&nbsp;
+<b class="nc"><i>103</i>&nbsp;        if(!config.isDeviceQrCodeValid()){</b>
+<b class="nc"><i>104</i>&nbsp;            config.getConnectionStateListener().onError(ConfigError.ERROR_INVALID_PARAMS, &quot; Device QR code must start with &quot; + MbtFeatures.QR_CODE_NAME_PREFIX + &quot; and contain &quot;+ MbtFeatures.DEVICE_QR_CODE_LENGTH+ &quot; digits &quot;);</b>
+<i>105</i>&nbsp;            return;
+<i>106</i>&nbsp;        }
+<i>107</i>&nbsp;
+<b class="nc"><i>108</i>&nbsp;        if(!config.isScanDurationValid()){</b>
+<b class="nc"><i>109</i>&nbsp;            config.getConnectionStateListener().onError(ConfigError.ERROR_INVALID_PARAMS,ConfigError.SCANNING_MINIMUM_DURATION);</b>
+<i>110</i>&nbsp;            return;
+<i>111</i>&nbsp;        }
+<i>112</i>&nbsp;
+<b class="nc"><i>113</i>&nbsp;        if(config.getDeviceType() == MbtDeviceType.VPRO &amp;&amp; config.connectAudio()){</b>
+<b class="nc"><i>114</i>&nbsp;            config.getConnectionStateListener().onError(BluetoothError.ERROR_A2DP_CONNECT_FAILED,&quot;Impossible to connect a VPRO headset for audio streaming.&quot;);</b>
+<i>115</i>&nbsp;        }
+<i>116</i>&nbsp;
+<b class="nc"><i>117</i>&nbsp;        if(!config.isMtuValid()){</b>
+<b class="nc"><i>118</i>&nbsp;            config.getConnectionStateListener().onError(ConfigError.ERROR_INVALID_PARAMS,&quot;MTU must be included between 23 and 121&quot;);</b>
+<i>119</i>&nbsp;            return;
+<i>120</i>&nbsp;        }
+<i>121</i>&nbsp;
+<b class="nc"><i>122</i>&nbsp;        this.mbtManager.connectBluetooth(config.getConnectionStateListener(),config.connectAudio(), config.getDeviceName(), config.getDeviceQrCode(), config.getDeviceType(), config.getMtu());</b>
+<i>123</i>&nbsp;    }
+<i>124</i>&nbsp;
+<i>125</i>&nbsp;    /**
+<i>126</i>&nbsp;     * Call this method to attempt to disconnect from the currently connected bluetooth device.
+<i>127</i>&nbsp;     */
+<i>128</i>&nbsp;    public void disconnectBluetooth(){
+<b class="nc"><i>129</i>&nbsp;        this.mbtManager.disconnectBluetooth(false);</b>
+<i>130</i>&nbsp;    }
+<i>131</i>&nbsp;
+<i>132</i>&nbsp;    /**
+<i>133</i>&nbsp;     * Call this method in order to get the battery level from the remote bluetooth device.
+<i>134</i>&nbsp;     * The values returned are the following:
+<i>135</i>&nbsp;     * &lt;p&gt;100%&lt;/p&gt;
+<i>136</i>&nbsp;     * &lt;p&gt;85%&lt;/p&gt;
+<i>137</i>&nbsp;     * &lt;p&gt;65%&lt;/p&gt;
+<i>138</i>&nbsp;     * &lt;p&gt;50%&lt;/p&gt;
+<i>139</i>&nbsp;     * &lt;p&gt;30%&lt;/p&gt;
+<i>140</i>&nbsp;     * &lt;p&gt;15%&lt;/p&gt;
+<i>141</i>&nbsp;     * &lt;p&gt;0%&lt;/p&gt;
+<i>142</i>&nbsp;     */
+<i>143</i>&nbsp;    public void readBattery(DeviceBatteryListener listener) {
+<b class="nc"><i>144</i>&nbsp;        mbtManager.readBluetooth(DeviceInfo.BATTERY, listener);</b>
+<i>145</i>&nbsp;    }
+<i>146</i>&nbsp;
+<i>147</i>&nbsp;    /**
+<i>148</i>&nbsp;     * Initiates an EEG streaming ie, send a message to the headset to deliver EEG to the application.
+<i>149</i>&nbsp;     *
+<i>150</i>&nbsp;     * &lt;p&gt;You can customize some parameters in the {@link StreamConfig}class.&lt;/p&gt;
+<i>151</i>&nbsp;     *
+<i>152</i>&nbsp;     * &lt;p&gt;If the parameters are incorrect, the function returns directly and the {@link EegListener#onError} method is called&lt;/p&gt;
+<i>153</i>&nbsp;     * If something wrong happens during the operation, {@link EegListener#onError} method is called.
+<i>154</i>&nbsp;     *
+<i>155</i>&nbsp;     * &lt;p&gt;If everything went well, the EEG will be available in the {@link EegListener#onNewPackets(MbtEEGPacket)} callback.&lt;/p&gt;
+<i>156</i>&nbsp;     *
+<i>157</i>&nbsp;     * @param streamConfig the configuration to pass to the streaming.
+<i>158</i>&nbsp;     */
+<i>159</i>&nbsp;    @SuppressWarnings(&quot;unchecked&quot;)
+<i>160</i>&nbsp;    public void startStream(@NonNull StreamConfig streamConfig){
+<i>161</i>&nbsp;
+<b class="nc"><i>162</i>&nbsp;        if(!streamConfig.isNotificationConfigCorrect())</b>
+<b class="nc"><i>163</i>&nbsp;            streamConfig.getEegListener().onError(ConfigError.ERROR_INVALID_PARAMS, streamConfig.shouldComputeQualities() ?</b>
+<i>164</i>&nbsp;                    ConfigError.NOTIFICATION_PERIOD_RANGE_QUALITIES : ConfigError.NOTIFICATION_PERIOD_RANGE);
+<i>165</i>&nbsp;        else
+<b class="nc"><i>166</i>&nbsp;            requestCurrentConnectedDevice(new SimpleRequestCallback&lt;MbtDevice&gt;() {</b>
+<i>167</i>&nbsp;                @Override
+<i>168</i>&nbsp;                public void onRequestComplete(MbtDevice device) {
+<b class="nc"><i>169</i>&nbsp;                    MbtConfig.setEegBufferLengthClientNotif(streamConfig.getNotificationPeriod());</b>
+<i>170</i>&nbsp;                }
+<i>171</i>&nbsp;            });
+<i>172</i>&nbsp;
+<b class="nc"><i>173</i>&nbsp;        mbtManager.startStream(streamConfig);</b>
+<i>174</i>&nbsp;    }
+<i>175</i>&nbsp;
+<i>176</i>&nbsp;    /**
+<i>177</i>&nbsp;     * Stops the currently running eeg stream. This stops bluetooth acquisition and
+<i>178</i>&nbsp;     * reinit all internal buffering system.
+<i>179</i>&nbsp;     */
+<i>180</i>&nbsp;    public void stopStream(){
+<b class="nc"><i>181</i>&nbsp;        mbtManager.stopStream(null);</b>
+<i>182</i>&nbsp;    }
+<i>183</i>&nbsp;
+<i>184</i>&nbsp;    /**
+<i>185</i>&nbsp;     * Stops the currently running eeg stream. This stops bluetooth acquisition and
+<i>186</i>&nbsp;     * reinit all internal buffering system.
+<i>187</i>&nbsp;     */
+<i>188</i>&nbsp;    public void stopStream(RecordConfig recordConfig){
+<b class="nc"><i>189</i>&nbsp;        mbtManager.stopStream(recordConfig);</b>
+<i>190</i>&nbsp;    }
+<i>191</i>&nbsp;
+<i>192</i>&nbsp;    public void startRecord(Context context){
+<b class="nc"><i>193</i>&nbsp;        mbtManager.startRecord(context);</b>
+<i>194</i>&nbsp;    }
+<i>195</i>&nbsp;
+<i>196</i>&nbsp;    public void stopRecord(@NonNull RecordConfig recordConfig){
+<b class="nc"><i>197</i>&nbsp;        mbtManager.stopRecord(recordConfig);</b>
+<i>198</i>&nbsp;    }
+<i>199</i>&nbsp;
+<i>200</i>&nbsp;    /**
+<i>201</i>&nbsp;     * Sends a command to the connected headset to change its current serial number
+<i>202</i>&nbsp;     * The new serial number is stored and returned by the headset if the command succeeds.
+<i>203</i>&nbsp;     * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
+<i>204</i>&nbsp;     * This response contains the new serial number in a byte array
+<i>205</i>&nbsp;     * @param serialNumber is the new value to set to the serial number
+<i>206</i>&nbsp;     * @param commandCallback returns the headset raw response in the onRequestComplete callback if the command has been well sent
+<i>207</i>&nbsp;     * A non null requestCallback instance is mandatory if you want to get the headset response
+<i>208</i>&nbsp;     * The onError callback provided by the requestCallback is triggered if an error occurred during the request sending.
+<i>209</i>&nbsp;     */
+<i>210</i>&nbsp;    public void updateSerialNumber(@NonNull String serialNumber, @Nullable CommandInterface.CommandCallback&lt; byte[]&gt; commandCallback){
+<b class="nc"><i>211</i>&nbsp;        mbtManager.sendCommand(new DeviceCommands.UpdateSerialNumber(serialNumber, commandCallback));</b>
+<i>212</i>&nbsp;    }
+<i>213</i>&nbsp;
+<i>214</i>&nbsp;    /**
+<i>215</i>&nbsp;     * Sends a command to the connected headset to change its current external name
+<i>216</i>&nbsp;     * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
+<i>217</i>&nbsp;     * This response contains the new external name in a byte array
+<i>218</i>&nbsp;     * @param externalName is the new value to set to the external name
+<i>219</i>&nbsp;     * @param commandCallback returns the headset raw response in the onRequestComplete callback if the command has been well sent
+<i>220</i>&nbsp;     * A non null requestCallback instance is mandatory if you want to get the headset response
+<i>221</i>&nbsp;     * The onError callback provided by the requestCallback is triggered if an error occurred during the request sending.
+<i>222</i>&nbsp;     */
+<i>223</i>&nbsp;    public void updateExternalName(@NonNull String externalName, @Nullable CommandInterface.CommandCallback&lt;byte[]&gt; commandCallback){
+<b class="nc"><i>224</i>&nbsp;        mbtManager.sendCommand(new DeviceCommands.UpdateExternalName(externalName, commandCallback));</b>
+<i>225</i>&nbsp;    }
+<i>226</i>&nbsp;
+<i>227</i>&nbsp;    /**
+<i>228</i>&nbsp;     * Sends a command to the connected headset to establish an audio Bluetooth A2DP connection
+<i>229</i>&nbsp;     * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
+<i>230</i>&nbsp;     * This response contains the connection status in a byte array
+<i>231</i>&nbsp;     * @param commandCallback returns the headset raw response in the onRequestComplete callback if the command has been well sent
+<i>232</i>&nbsp;     * A non null requestCallback instance is mandatory if you want to get the headset response
+<i>233</i>&nbsp;     * The onError callback provided by the requestCallback is triggered if an error occurred during the request sending.
+<i>234</i>&nbsp;     */
+<i>235</i>&nbsp;    public void connectAudio(@Nullable CommandInterface.CommandCallback&lt;byte[]&gt; commandCallback){
+<b class="nc"><i>236</i>&nbsp;        mbtManager.sendCommand(new DeviceCommands.ConnectAudio(commandCallback));</b>
+<i>237</i>&nbsp;    }
+<i>238</i>&nbsp;
+<i>239</i>&nbsp;    /**
+<i>240</i>&nbsp;     * Sends a command to the connected headset to establish an audio Bluetooth A2DP disconnection
+<i>241</i>&nbsp;     * The headset returns a response that can be retrieved in the onRequestComplete callback of the requestCallback input
+<i>242</i>&nbsp;     * This response contains the disconnection status in a byte array
+<i>243</i>&nbsp;     * @param commandCallback returns the headset raw response in the onRequestComplete callback if the command has been well sent
+<i>244</i>&nbsp;     * A non null requestCallback instance is mandatory if you want to get the headset response
+<i>245</i>&nbsp;     * The onError callback provided by the requestCallback is triggered if an error occurred during the request sending.
+<i>246</i>&nbsp;     */
+<i>247</i>&nbsp;    public void disconnectAudio(@Nullable CommandInterface.CommandCallback&lt;byte[]&gt; commandCallback){
+<b class="nc"><i>248</i>&nbsp;        mbtManager.sendCommand(new DeviceCommands.DisconnectAudio(commandCallback));</b>
+<i>249</i>&nbsp;    }
+<i>250</i>&nbsp;
+<i>251</i>&nbsp;    /**
+<i>252</i>&nbsp;     * Sends a command to the connected headset to get its system status
+<i>253</i>&nbsp;     * The system status is returned as a byte array in the onRequestComplete callback of the requestCallback
+<i>254</i>&nbsp;     * @param commandCallback returns the headset raw response in the onRequestComplete callback if the command has been well sent
+<i>255</i>&nbsp;     * A non null requestCallback instance is mandatory if you want to get the headset response
+<i>256</i>&nbsp;     * The onError callback provided by the requestCallback is triggered if an error occurred during the request sending.
+<i>257</i>&nbsp;     */
+<i>258</i>&nbsp;    public void getDeviceSystemStatus(@NonNull CommandInterface.CommandCallback&lt;byte[]&gt; commandCallback){
+<b class="nc"><i>259</i>&nbsp;        mbtManager.sendCommand(new DeviceCommands.GetSystemStatus(commandCallback));</b>
+<i>260</i>&nbsp;    }
+<i>261</i>&nbsp;
+<i>262</i>&nbsp;    /**
+<i>263</i>&nbsp;     * Sends a command to reboot the connected headset
+<i>264</i>&nbsp;     * @param simpleCommandCallback returns the headset raw response in the onRequestComplete callback if the command has been well sent
+<i>265</i>&nbsp;     * The onError callback provided by the requestCallback is triggered if an error occurred during the request sending.
+<i>266</i>&nbsp;     * A non null requestCallback instance is mandatory to be notified if an error occurred during the request sending.
+<i>267</i>&nbsp;     * The onRequestComplete callback provided by the requestCallback is never called
+<i>268</i>&nbsp;     * It is useless to enter a CommandCallback Object for the commandCallback input :
+<i>269</i>&nbsp;     * as no response is expected, you have to enter a ICommandCallback Object.
+<i>270</i>&nbsp;     * The onError callback is triggered in case you enter a CommandCallback and the device command is not sent.
+<i>271</i>&nbsp;     */
+<i>272</i>&nbsp;    public void rebootDevice(@Nullable CommandInterface.SimpleCommandCallback simpleCommandCallback) {
+<b class="nc"><i>273</i>&nbsp;        mbtManager.sendCommand(new DeviceCommands.Reboot(simpleCommandCallback));</b>
+<i>274</i>&nbsp;    }
+<i>275</i>&nbsp;
+<i>276</i>&nbsp;    /**
+<i>277</i>&nbsp;     * Stops a pending connection process. If successful,
+<i>278</i>&nbsp;     * the new state {@link core.bluetooth.BluetoothState#CONNECTION_INTERRUPTED} is sent to the user in the {@link BluetoothStateListener#onNewState(BluetoothState)} callback
+<i>279</i>&nbsp;     * &lt;p&gt;If the device is already connected, it simply disconnects the device.&lt;/p&gt;
+<i>280</i>&nbsp;     */
+<i>281</i>&nbsp;    public void cancelConnection() {
+<b class="nc"><i>282</i>&nbsp;        this.mbtManager.disconnectBluetooth(true);</b>
+<i>283</i>&nbsp;    }
+<i>284</i>&nbsp;
+<i>285</i>&nbsp;    /**
+<i>286</i>&nbsp;     * Sets the {@link BroadcastReceiver} to the connectionStateReceiver value
+<i>287</i>&nbsp;     * @param connectionStateListener the new {@link BroadcastReceiver}. Set it to null if you want to reset the listener
+<i>288</i>&nbsp;     */
+<i>289</i>&nbsp;    public void setConnectionStateListener(ConnectionStateListener&lt;BaseError&gt; connectionStateListener){
+<b class="nc"><i>290</i>&nbsp;        this.mbtManager.setConnectionStateListener(connectionStateListener);</b>
+<i>291</i>&nbsp;    }
+<i>292</i>&nbsp;
+<i>293</i>&nbsp;    /**
+<i>294</i>&nbsp;     * Sets the {@link EegListener} to the connectionStateListener value
+<i>295</i>&nbsp;     * @param eegListener the new {@link EegListener}. Set it to null if you want to reset the listener
+<i>296</i>&nbsp;     */
+<i>297</i>&nbsp;    public void setEEGListener(EegListener&lt;BaseError&gt; eegListener){
+<b class="nc"><i>298</i>&nbsp;        this.mbtManager.setEEGListener(eegListener);</b>
+<i>299</i>&nbsp;    }
+<i>300</i>&nbsp;
+<i>301</i>&nbsp;    /**
+<i>302</i>&nbsp;     * Perform a request to retrieve the currently connected device. The operation is done in the background
+<i>303</i>&nbsp;     * and returned in the main thread with the associated callback.
+<i>304</i>&nbsp;     * @param callback the callback which will hold the {@link MbtDevice} instance. Careful,
+<i>305</i>&nbsp;     *                 the instance can be null, if no device is currently connected.
+<i>306</i>&nbsp;     */
+<i>307</i>&nbsp;    public void requestCurrentConnectedDevice(SimpleRequestCallback&lt;MbtDevice&gt; callback){
+<b class="nc"><i>308</i>&nbsp;        mbtManager.requestCurrentConnectedDevice(callback);</b>
+<i>309</i>&nbsp;    }
+<i>310</i>&nbsp;
+<i>311</i>&nbsp;    /**
+<i>312</i>&nbsp;     * Perform a request to start an OAD firmware update.
+<i>313</i>&nbsp;     * @param firmwareVersion is the firmware version to install on the connected headset device.
+<i>314</i>&nbsp;     * @param stateListener is an optional (nullable) listener that notify the client when the OAD update progress &amp; state change.
+<i>315</i>&nbsp;     */
+<i>316</i>&nbsp;    public void updateFirmware(@NonNull MbtVersion firmwareVersion, @Nullable OADStateListener&lt;BaseError&gt; stateListener){
+<b class="nc"><i>317</i>&nbsp;        mbtManager.updateFirmware(firmwareVersion, stateListener);</b>
+<i>318</i>&nbsp;    }
+<i>319</i>&nbsp;
+<i>320</i>&nbsp;    /**
+<i>321</i>&nbsp;     * Apply a bandpass filter to the input signal to keep frequencies included between
+<i>322</i>&nbsp;     * @param minFrequency and
+<i>323</i>&nbsp;     * @param maxFrequency .
+<i>324</i>&nbsp;     * @param size is the number of EEG data of one channel
+<i>325</i>&nbsp;     * @param inputData is the array of EEG data to filter for one channel
+<i>326</i>&nbsp;     * @param resultCallback is the callback that returns the filtered signal
+<i>327</i>&nbsp;     */
+<i>328</i>&nbsp;    public void bandpassFilter(float minFrequency, float maxFrequency, int size,@NonNull float[] inputData,@NonNull SimpleRequestCallback&lt;float[]&gt; resultCallback){
+<b class="nc"><i>329</i>&nbsp;        mbtManager.bandpassFilter(minFrequency, maxFrequency, size, inputData, resultCallback);</b>
+<i>330</i>&nbsp;    }
+<i>331</i>&nbsp;
+<i>332</i>&nbsp;
+<i>333</i>&nbsp;    @Keep
+<b class="nc"><i>334</i>&nbsp;    private static class MbtClientBuilder {</b>
+<i>335</i>&nbsp;        private Context mContext;
+<i>336</i>&nbsp;        private MbtManager mbtManager;
+<i>337</i>&nbsp;
+<i>338</i>&nbsp;        @NonNull
+<i>339</i>&nbsp;        public MbtClientBuilder setContext(final Context context){
+<b class="nc"><i>340</i>&nbsp;            this.mContext = context;</b>
+<b class="nc"><i>341</i>&nbsp;            return this;</b>
+<i>342</i>&nbsp;        }
+<i>343</i>&nbsp;
+<i>344</i>&nbsp;
+<i>345</i>&nbsp;        @NonNull
+<i>346</i>&nbsp;        MbtClientBuilder setMbtManager(final MbtManager mbtManager){
+<b class="nc"><i>347</i>&nbsp;            this.mbtManager = mbtManager;</b>
+<b class="nc"><i>348</i>&nbsp;            return this;</b>
+<i>349</i>&nbsp;        }
+<i>350</i>&nbsp;
+<i>351</i>&nbsp;        @NonNull
+<i>352</i>&nbsp;        public MbtClient create(){
+<b class="nc"><i>353</i>&nbsp;            return new MbtClient(this);</b>
+<i>354</i>&nbsp;        }
+<i>355</i>&nbsp;    }
+<i>356</i>&nbsp;
+<i>357</i>&nbsp;}
+<i>358</i>&nbsp;
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2020-06-10 10:26</div>
+</div>
+</body>
+</html>

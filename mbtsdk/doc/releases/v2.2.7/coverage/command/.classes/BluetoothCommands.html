@@ -1,0 +1,180 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: BluetoothCommands</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">command</a> ]
+</div>
+
+<h1>Coverage Summary for Class: BluetoothCommands (command)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+  <tr>
+    <td class="name">BluetoothCommands$Mtu</td>
+<td class="coverageStat">
+  <span class="percent">
+    33,3%
+  </span>
+  <span class="absValue">
+    (2/ 6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    38,5%
+  </span>
+  <span class="absValue">
+    (5/ 13)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    33,3%
+  </span>
+  <span class="absValue">
+    (2/ 6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    38,5%
+  </span>
+  <span class="absValue">
+    (5/ 13)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package command;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import androidx.annotation.IntRange;
+<i>4</i>&nbsp;import androidx.annotation.Keep;
+<i>5</i>&nbsp;
+<i>6</i>&nbsp;import engine.clientevents.BaseError;
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;/**
+<i>9</i>&nbsp; * Device commands sent from the SDK to the headset
+<i>10</i>&nbsp; * and related to EEG streaming
+<i>11</i>&nbsp; * in order to configure a parameter,
+<i>12</i>&nbsp; * or get values stored by the headset
+<i>13</i>&nbsp; * or ask the headset to perform an action.
+<i>14</i>&nbsp; */
+<i>15</i>&nbsp;@Keep
+<i>16</i>&nbsp;public interface BluetoothCommands {
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;    /**
+<i>19</i>&nbsp;     * Command sent from the SDK to the connected headset
+<i>20</i>&nbsp;     * in order to change its Maximum Transmission Unit
+<i>21</i>&nbsp;     * (maximum size of the data sent by the headset to the SDK).
+<i>22</i>&nbsp;     */
+<i>23</i>&nbsp;    @Keep
+<i>24</i>&nbsp;    class Mtu extends BluetoothCommand&lt;Integer, BaseError&gt;{ //Replace BaseError by a specific CommandError &amp; refactor to make the Mtu extends an interface common to all the classes defined in this file
+<i>25</i>&nbsp;
+<i>26</i>&nbsp;        /**
+<i>27</i>&nbsp;         * The new Maximum Transmission Unit
+<i>28</i>&nbsp;         * (maximum size of the data sent by the headset to the SDK)
+<i>29</i>&nbsp;         * to set
+<i>30</i>&nbsp;         */
+<i>31</i>&nbsp;        private int mtu;
+<i>32</i>&nbsp;
+<i>33</i>&nbsp;        public final static int MINIMUM = 23;
+<i>34</i>&nbsp;        public final static int MAXIMUM = 121;
+<i>35</i>&nbsp;        public final static int DEFAULT = 47;
+<i>36</i>&nbsp;
+<i>37</i>&nbsp;        /**
+<i>38</i>&nbsp;         * Command sent from the SDK to the connected headset
+<i>39</i>&nbsp;         * in order to change its Maximum Transmission Unit
+<i>40</i>&nbsp;         * (maximum size of the data sent by the headset to the SDK).
+<i>41</i>&nbsp;         * The new serial number is stored and returned by the headset if the command succeeds.
+<i>42</i>&nbsp;         * @param mtu is the new Maximum Transmission Unit
+<i>43</i>&nbsp;         */
+<b class="fc"><i>44</i>&nbsp;        public Mtu(@IntRange(from = MINIMUM, to = MAXIMUM) int mtu) {</b>
+<b class="fc"><i>45</i>&nbsp;            this.mtu = mtu;</b>
+<b class="fc"><i>46</i>&nbsp;            this.init();</b>
+<b class="fc"><i>47</i>&nbsp;        }</b>
+<i>48</i>&nbsp;
+<i>49</i>&nbsp;        /**
+<i>50</i>&nbsp;         * Command sent from the SDK to the connected headset
+<i>51</i>&nbsp;         * in order to change its Maximum Transmission Unit
+<i>52</i>&nbsp;         * (maximum size of the data sent by the headset to the SDK).
+<i>53</i>&nbsp;         * The new serial number is stored and returned by the headset if the command succeeds.
+<i>54</i>&nbsp;         * @param mtu is the new Maximum Transmission Unit
+<i>55</i>&nbsp;         * @param commandCallback is a {@link CommandInterface.CommandCallback} object
+<i>56</i>&nbsp;         * that provides a callback for the returned raw response
+<i>57</i>&nbsp;         * sent by the headset to the SDK once the configuration command is received.
+<i>58</i>&nbsp;         * This raw response is a byte array that has be to converted to be readable.
+<i>59</i>&nbsp;         * If you&#39;re not interested in getting the returned response,
+<i>60</i>&nbsp;         * call the {@link Mtu}(int mtu) constructor
+<i>61</i>&nbsp;         * The onRequestSent callback is triggered if the command has successfully been sent.
+<i>62</i>&nbsp;         */
+<b class="nc"><i>63</i>&nbsp;        public Mtu(@IntRange(from = MINIMUM, to = MAXIMUM) int mtu, CommandInterface.CommandCallback&lt;Integer&gt; commandCallback) { //todo add @NonNull annotation and throw exception is a null commandCallback is passed in input</b>
+<b class="nc"><i>64</i>&nbsp;            this.mtu = mtu;</b>
+<b class="nc"><i>65</i>&nbsp;            this.commandCallback = commandCallback;</b>
+<b class="nc"><i>66</i>&nbsp;            this.init();</b>
+<b class="nc"><i>67</i>&nbsp;        }</b>
+<i>68</i>&nbsp;
+<i>69</i>&nbsp;        @Override
+<i>70</i>&nbsp;        public Integer serialize() {
+<b class="nc"><i>71</i>&nbsp;            return getData();</b>
+<i>72</i>&nbsp;        }
+<i>73</i>&nbsp;
+<i>74</i>&nbsp;        @Override
+<i>75</i>&nbsp;        public boolean isValid() {
+<b class="fc"><i>76</i>&nbsp;            return mtu &gt;= MINIMUM &amp;&amp; mtu &lt;= MAXIMUM ;</b>
+<i>77</i>&nbsp;        }
+<i>78</i>&nbsp;
+<i>79</i>&nbsp;        @Override
+<i>80</i>&nbsp;        public String getInvalidityError() {
+<b class="nc"><i>81</i>&nbsp;            return &quot;You are not allowed to provide a MTU lower than &quot;+ MINIMUM + &quot; and higher than &quot;+ MAXIMUM +&quot; in the &quot;+this.getClass().getSimpleName()+ &quot; constructor.&quot;;</b>
+<i>82</i>&nbsp;        }
+<i>83</i>&nbsp;
+<i>84</i>&nbsp;        @Override
+<i>85</i>&nbsp;        public Integer getData() {
+<b class="nc"><i>86</i>&nbsp;            return mtu;</b>
+<i>87</i>&nbsp;        }
+<i>88</i>&nbsp;
+<i>89</i>&nbsp;    }
+<i>90</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2020-06-10 10:26</div>
+</div>
+</body>
+</html>
