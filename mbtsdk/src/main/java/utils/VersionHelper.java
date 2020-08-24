@@ -2,6 +2,8 @@ package utils;
 
 import android.util.Log;
 
+import androidx.annotation.Keep;
+
 /**
  * Created by Etienne on 2/26/2018.
  * This class wraps the firmware or hardware version into three parts: main major and minor.
@@ -11,6 +13,7 @@ import android.util.Log;
  * Z = minor
  * Each Xs Ys and Zs are numbers
  */
+@Keep
 public final class VersionHelper {
 
     public final static String TAG = VersionHelper.class.getSimpleName();

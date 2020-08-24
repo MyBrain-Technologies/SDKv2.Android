@@ -8,6 +8,8 @@ import androidx.annotation.Nullable;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import features.MbtAcquisitionLocations;
@@ -20,75 +22,84 @@ import features.MbtFeatures;
 @Keep
 public abstract class MbtDevice implements Serializable {
 
+    public static final String DEFAULT_PRODUCT_NAME = "melomind";
+    public static final String DEFAULT_HW_VERSION = "0.0.0";
     public static final String DEFAULT_FW_VERSION = "0.0.0";
+    public static final String DEFAULT_DEVICEID = "1010100000";
 
-    public MbtDeviceType deviceType;
+    private static final int DEFAULT_NB_CHANNEL = 2;
+
+    private final static ArrayList<MbtAcquisitionLocations> DEFAULT_LOCATIONS = new ArrayList<>(Arrays.asList(MbtAcquisitionLocations.P3, MbtAcquisitionLocations.P4));
+    private final static ArrayList<MbtAcquisitionLocations> DEFAULT_REFERENCES = new ArrayList<>(Arrays.asList(MbtAcquisitionLocations.M1));
+    private final static ArrayList<MbtAcquisitionLocations> DEFAULT_GROUNDS = new ArrayList<>(Arrays.asList(MbtAcquisitionLocations.M2));
+
+    protected MbtDeviceType deviceType;
 
     /**
      * Bluetooth Low Energy name
      */
-    String productName;
+    protected String productName = DEFAULT_PRODUCT_NAME;
     @Nullable
     /**
      * Hardware version number
      */
-    MbtVersion hardwareVersion;
+    protected MbtVersion hardwareVersion = new MbtVersion(DEFAULT_HW_VERSION);
 
     /**
      * Firmware version number
      */
     @Nullable
-    MbtVersion firmwareVersion;
+    protected MbtVersion firmwareVersion = new MbtVersion(DEFAULT_FW_VERSION);
 
     /**
      * Serial number
      */
     @Nullable
-    String serialNumber;
+    protected String serialNumber;
 
     /**
      * Bluetooth A2DP /external name (QR code)
      */
     @Nullable
-    String externalName;
+    protected String externalName = DEFAULT_PRODUCT_NAME;
 
     /**
      * Bluetooth Low energy device address
      */
-    String deviceAddress;
+    protected String deviceAddress;
+    protected String deviceId = DEFAULT_DEVICEID;
 
     /**
      * Bluetooth A2DP device address
      */
     @Nullable
-    private String audioDeviceAddress;
+    protected String audioDeviceAddress;
 
-    private int eegPacketLength;
+    protected int eegPacketLength = MbtFeatures.DEFAULT_EEG_PACKET_LENGTH;
 
-    List<MbtAcquisitionLocations> acquisitionLocations;
-    List<MbtAcquisitionLocations> referencesLocations;
-    List<MbtAcquisitionLocations> groundsLocation;
+    protected List<MbtAcquisitionLocations> acquisitionLocations = DEFAULT_LOCATIONS;
+    protected List<MbtAcquisitionLocations> referencesLocations = DEFAULT_REFERENCES;
+    protected List<MbtAcquisitionLocations> groundsLocation = DEFAULT_GROUNDS;
 
-    private InternalConfig internalConfig;
+    protected InternalConfig internalConfig;
 
-    MbtDevice(String address, String name, @NonNull MbtDeviceType deviceType, int nbChannels){
+    MbtDevice(){
+        this.internalConfig = new InternalConfig(DEFAULT_NB_CHANNEL);
+        this.internalConfig.sampRate = MbtFeatures.DEFAULT_SAMPLE_RATE;
+    }
+
+    public MbtDevice(String address, String name, @NonNull MbtDeviceType deviceType, int nbChannels){
         this.internalConfig = new InternalConfig(nbChannels);
         this.deviceType = deviceType;
         this.deviceAddress = address;
-        this.productName = name;
-        this.eegPacketLength = MbtFeatures.DEFAULT_EEG_PACKET_LENGTH;
-        this.firmwareVersion = new MbtVersion("0.0.0");
-        this.hardwareVersion = new MbtVersion("0.0.0");
+        this.productName = name;;
     }
 
-    MbtDevice(BluetoothDevice bluetoothDevice, @NonNull MbtDeviceType deviceType, int nbChannels){
+    public MbtDevice(BluetoothDevice bluetoothDevice, @NonNull MbtDeviceType deviceType, int nbChannels){
         this.internalConfig = new InternalConfig(nbChannels);
         this.deviceType = deviceType;
         this.deviceAddress = bluetoothDevice.getAddress();
-        this.productName = bluetoothDevice.getName();
-        this.eegPacketLength = MbtFeatures.DEFAULT_EEG_PACKET_LENGTH;
-        this.firmwareVersion = new MbtVersion("0.0.0");
-        this.hardwareVersion = new MbtVersion("0.0.0");
+        this.productName = bluetoothDevice.getName();;
     }
 
     /**
@@ -209,6 +220,10 @@ public abstract class MbtDevice implements Serializable {
         return audioDeviceAddress;
     }
 
+    public String getDeviceId() {
+        return deviceId;
+    }
+
     public void setAudioDeviceAddress(String audioDeviceAddress) {
         this.audioDeviceAddress = audioDeviceAddress;
     }
@@ -220,13 +235,13 @@ public abstract class MbtDevice implements Serializable {
     public static class InternalConfig implements Serializable{
         public final byte DEFAULT = -1;
 
-        byte notchFilterConfig;
+         byte notchFilterConfig;
         byte bandPassFilterConfig;
         byte gainValue;
         byte statusBytes;
         byte nbPackets;
-        int sampRate;
-        int nbChannels;
+        protected int sampRate;
+        protected int nbChannels;
 
         public InternalConfig(int nbChannels) {
             this.nbChannels = nbChannels;
