@@ -91,7 +91,7 @@ class MbtAsyncWaitOperation<T> {
     fun tryOperationForResult(operation: ()-> Unit, catchCallback: BaseErrorEvent<BaseError>?, finally: (()-> Unit)?, timeout: Int) : T? {
         var result : T? = null
         try {
-            AsyncUtils.executeAsync ( Runnable { operation.invoke() } )
+            AsyncUtils.Companion.executeAsync ( Runnable { operation.invoke() } )
             result = waitOperationResult(timeout)
             LogUtils.d(TAG, "Result : $result")
         } catch (exception: Exception) {

@@ -13,9 +13,9 @@ import command.BluetoothCommands.Mtu
 import command.CommandInterface.MbtCommand
 import command.DeviceCommand
 import command.DeviceCommandEvent
-import command.DeviceCommandEvent.MBX_CONNECT_IN_A2DP
 import command.DeviceCommandEvent.Companion.CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED
 import command.DeviceCommandEvent.Companion.CMD_CODE_CONNECT_IN_A2DP_SUCCESS
+import command.DeviceCommandEvent.MBX_CONNECT_IN_A2DP
 import command.OADCommands.TransferPacket
 import config.MbtConfig
 import core.bluetooth.BluetoothInterfaces.IDeviceInfoMonitor
@@ -70,6 +70,8 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
     private const val STOP = false
     private const val CONNECT_GATT_METHOD = "connectGatt"
     private const val REMOVE_BOND_METHOD = "removeBond"
+    private const val REFRESH_METHOD = "refresh"
+
     var instance: MbtBluetoothLE? = null
     fun initInstance(manager: MbtBluetoothManager): MainBluetooth {
       return MbtBluetoothLE(manager).also { instance = it }
@@ -111,7 +113,7 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
   /** callback used when scanning using bluetooth Low Energy scanner. */
   private val scanCallback: ScanCallback = object : ScanCallback() {
     override fun onScanResult(callbackType: Int, result: ScanResult) { //Callback when a BLE advertisement has been found.
-      AsyncUtils.executeAsync(Runnable {
+      AsyncUtils.Companion.executeAsync(Runnable {
         if (currentState == BluetoothState.SCAN_STARTED) {
           super.onScanResult(callbackType, result)
           currentDevice = result.device
@@ -232,8 +234,8 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
     }
     LogUtils.i(TAG, "Now enabling remote notification for characteristic: " + characteristic.uuid)
     if (!notificationDescriptor.setValue(
-      if (enableNotification) BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-      else BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)) {
+            if (enableNotification) BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+            else BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)) {
       val sb = StringBuilder()
       for (value in if (enableNotification) BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE else BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE) {
         sb.append(value.toInt())
@@ -258,6 +260,32 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
         "enable notification... now waiting for confirmation from headset.")
     val result = startWaitingOperation(MbtConfig.getBluetoothA2DpConnectionTimeout())
     return (if (result == null || result !is Boolean) false else result)
+  }
+
+  /**
+   * Reset Bluetooth
+   */
+  fun resetBluetooth() {
+    clearMobileDeviceCache()
+    currentDevice?.let { unpairDevice(it) }
+  }
+
+  /**
+   * This method uses reflexion to get the refresh hidden method from BluetoothGatt class. Is is used
+   * to clean up the cache that Android system uses when connecting to a known BluetoothGatt peripheral.
+   * It is recommanded to use it right after updating the firmware, especially when the bluetooth
+   * characteristics have been updated.
+   * @return true if method invocation worked, false otherwise
+   */
+  private fun clearMobileDeviceCache(): Boolean {
+    LogUtils.d(TAG, "Clear the cache")
+    try {
+      val localMethod = gatt?.javaClass?.getMethod(REFRESH_METHOD)
+      localMethod?.let{ return it.invoke(gatt) as Boolean }
+    } catch (localException: Exception) {
+      Log.e(TAG, "An exception occurred while refreshing device")
+    }
+    return false
   }
 
   /** This method removes bonding of the device.  */
@@ -544,10 +572,10 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
 
     if (command is DeviceCommand<*, *>)
       return writeCharacteristic((command.serialize() as ByteArray),
-        MelomindCharacteristics.SERVICE_MEASUREMENT,
-        if (command is TransferPacket) MelomindCharacteristics.CHARAC_MEASUREMENT_OAD_PACKETS_TRANSFER
-        else MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX,
-        command !is TransferPacket)
+          MelomindCharacteristics.SERVICE_MEASUREMENT,
+          if (command is TransferPacket) MelomindCharacteristics.CHARAC_MEASUREMENT_OAD_PACKETS_TRANSFER
+          else MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX,
+          command !is TransferPacket)
     return false
   }
 

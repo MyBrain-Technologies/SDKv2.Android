@@ -7,18 +7,18 @@ import android.util.Log
 import androidx.annotation.VisibleForTesting
 import command.BluetoothCommand
 import command.BluetoothCommands.Mtu
+import command.DeviceCommandEvent
 import core.BaseModuleManager
+import core.bluetooth.BluetoothState.*
 import core.bluetooth.lowenergy.MbtBluetoothLE
 import core.bluetooth.requests.*
-import core.bluetooth.BluetoothState.*
 import core.bluetooth.spp.MbtBluetoothSPP
 import core.device.DeviceEvents
 import engine.clientevents.BaseError
 import engine.clientevents.BaseErrorEvent
 import eventbus.MbtEventBus
-import eventbus.events.BluetoothEEGEvent
-import eventbus.events.ConnectionStateEvent
-import eventbus.events.EEGConfigEvent
+import eventbus.MbtEventBus.Companion.postEvent
+import eventbus.events.*
 import features.MbtDeviceType.MELOMIND
 import features.MbtDeviceType.VPRO
 import org.greenrobot.eventbus.Subscribe
@@ -145,11 +145,11 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
     fun isOperationWaiting(): Boolean { return asyncOperation.isWaiting }
     fun isSwitchOperationWaiting(): Boolean { return asyncSwitchOperation.isWaiting }
     fun stopWaitingOperation(isCancel: Boolean?) {  asyncOperation.stopWaitingOperation(isCancel) }
-    fun startSwitchWaitingOperation(timeout : Int) { try { asyncSwitchOperation.waitOperationResult(timeout) } catch (e: Exception) { }}
+    fun startSwitchWaitingOperation(timeout: Int) { try { asyncSwitchOperation.waitOperationResult(timeout) } catch (e: Exception) { }}
     fun stopSwitchWaitingOperation() { asyncSwitchOperation.stopWaitingOperation(false) }
 
     fun parseRequest(request: BluetoothRequests){
-      requestHandler.post (Runnable { requestThread.parseRequest(request) })
+      requestHandler.post(Runnable { requestThread.parseRequest(request) })
     }
   }
 
@@ -175,6 +175,20 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
     else parseRequest(request) // enqueue a Runnable object to be called by the Handler message queue when they are received. When posting or sending to a Handler, the item is processed as soon as the message queue is ready to do so
   }
 
+  /**
+   * Handle a request of an external unit to enable and disable the mobile device bluetooth
+   * and reset the pairing keys of the previously connected device.
+   * @param event the reset event that holds the name of the device previously connected
+   */
+  @Subscribe
+  fun onResetBluetooth(event: ResetBluetoothEvent?) {
+    MbtDataBluetooth.instance.resetMobileDeviceBluetoothAdapter()
+    if (MbtDataBluetooth.instance is MbtBluetoothLE) {
+      (MbtDataBluetooth.instance as MbtBluetoothLE).resetBluetooth()
+     }
+    postEvent(BluetoothResponseEvent(DeviceCommandEvent.OTA_BLUETOOTH_RESET, null))
+  }
+
   //----------------------------------------------------------------------------
   // COMMUNICATION WITHIN THE BLUETOOTH UNIT
   //----------------------------------------------------------------------------
@@ -188,18 +202,18 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
 
   fun stopWaitingOperation(isCancel: Boolean?) { if (isOperationWaiting()) requestProcessor.stopWaitingOperation(isCancel) }
   fun stopSwitchWaitingOperation() { if (isSwitchOperationWaiting()) requestProcessor.stopSwitchWaitingOperation() }
-  fun startSwitchWaitingOperation(timeout : Int) { requestProcessor.startSwitchWaitingOperation(timeout) }
+  fun startSwitchWaitingOperation(timeout: Int) { requestProcessor.startSwitchWaitingOperation(timeout) }
 
   fun parseRequest(request: BluetoothRequests){
     requestProcessor.parseRequest(request)
   }
-  fun tryOperation(operation: ()-> Unit, timeout: Int) {
+  fun tryOperation(operation: () -> Unit, timeout: Int) {
     requestProcessor.asyncOperation.tryOperation(operation, timeout)
   }
-  fun tryOperation(operation: ()-> Unit, catchCallback: BaseErrorEvent<BaseError>?, finally: (()-> Unit)?, timeout: Int) {
+  fun tryOperation(operation: () -> Unit, catchCallback: BaseErrorEvent<BaseError>?, finally: (() -> Unit)?, timeout: Int) {
     requestProcessor.asyncOperation.tryOperation(operation, catchCallback, finally, timeout)
   }
-  fun tryOperationForResult(operation: ()-> Unit, catchCallback: BaseErrorEvent<BaseError>?, finally: (()-> Unit)?, timeout: Int) : Boolean? {
+  fun tryOperationForResult(operation: () -> Unit, catchCallback: BaseErrorEvent<BaseError>?, finally: (() -> Unit)?, timeout: Int) : Boolean? {
     return requestProcessor.asyncOperation.tryOperationForResult(operation, catchCallback, finally, timeout)
   }
 
