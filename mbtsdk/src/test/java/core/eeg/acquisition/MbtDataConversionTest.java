@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 
-import core.bluetooth.BtProtocol;
+import core.bluetooth.BluetoothProtocol;
 import core.eeg.signalprocessing.ContextSP;
 import core.eeg.storage.RawEEGSample;
 import mbtsdk.com.mybraintech.mbtsdk.BuildConfig;
@@ -37,7 +37,7 @@ public class MbtDataConversionTest {
      */
     @Test
     public void convertRawDataToEEGTestSizeReturnedMatrix() {
-        BtProtocol protocol = BtProtocol.BLUETOOTH_LE;
+        BluetoothProtocol protocol = BluetoothProtocol.LOW_ENERGY;
         int nbData = 18;
         int nbChannels = 2;
         int nbBytesData = 2;
@@ -73,7 +73,7 @@ public class MbtDataConversionTest {
      */
     @Test
     public void convertRawDataToEEGTestContentReturnedMatrix() {
-        BtProtocol protocol = BtProtocol.BLUETOOTH_LE;
+        BluetoothProtocol protocol = BluetoothProtocol.LOW_ENERGY;
         int nbData = 18;
         int nbChannels = 2;
         int nbBytesData = 2;
@@ -117,7 +117,7 @@ public class MbtDataConversionTest {
     @Test
     public void convertRawDataToEEGNullDataTest() {
         ArrayList<RawEEGSample> data = null;  //check that IllegalArgumentException is raised if data is null
-        BtProtocol protocol = BtProtocol.BLUETOOTH_LE;
+        BluetoothProtocol protocol = BluetoothProtocol.LOW_ENERGY;
         assertNull(MbtDataConversion.convertRawDataToEEG(data, protocol,2));
     }
 
@@ -127,7 +127,7 @@ public class MbtDataConversionTest {
     @Test
     public void convertRawDataToEEGNullProtocolTest() {
         ArrayList<RawEEGSample> data = new ArrayList<>();  //check that IllegalArgumentException is raised if data is null
-        BtProtocol protocol = null;
+        BluetoothProtocol protocol = null;
         assertNull(MbtDataConversion.convertRawDataToEEG(data, protocol,2));
     }
 
@@ -137,7 +137,7 @@ public class MbtDataConversionTest {
     @Test
     public void convertRawDataToEEGBadProtocolTest() {
         ArrayList<RawEEGSample> data = new ArrayList<>();  //check that IllegalArgumentException is raised if data is null
-        BtProtocol protocol = BtProtocol.BLUETOOTH_A2DP;
+        BluetoothProtocol protocol = BluetoothProtocol.A2DP;
         assertNull(MbtDataConversion.convertRawDataToEEG(data, protocol,2));
     }
 
@@ -148,7 +148,7 @@ public class MbtDataConversionTest {
     public void convertRawDataToEEGEmptyDataTest() {
         ArrayList<RawEEGSample> data = new ArrayList<>(); // check that the method will return empty result if input data is empty
         data.add(new RawEEGSample(new ArrayList<>(),null));
-        BtProtocol protocol = BtProtocol.BLUETOOTH_LE;
+        BluetoothProtocol protocol = BluetoothProtocol.LOW_ENERGY;
         ArrayList<ArrayList<Float>> eegData = MbtDataConversion.convertRawDataToEEG(data, protocol,2);
         assertTrue(eegData.size()==1);
         assertTrue(eegData.get(0).isEmpty());

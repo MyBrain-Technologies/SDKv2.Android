@@ -16,6 +16,7 @@ import utils.VersionHelper;
 public class MbtVersion implements Serializable {
 
     public final static String TAG = MbtVersion.class.getSimpleName();
+    public static final String DEFAULT_FW_VERSION = "0.0.0";
 
     private String versionAsString;
 
@@ -61,6 +62,9 @@ public class MbtVersion implements Serializable {
      */
     public boolean equals(MbtVersion mbtVersion) {
         return this.toString().equals(mbtVersion.versionAsString);
+    }
+    public boolean equals(String mbtVersion) {
+        return this.toString().equals(mbtVersion);
     }
 
 }

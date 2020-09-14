@@ -10,7 +10,7 @@ import java.util.ArrayList;
  *
  * @author Vincent on 25/11/2015.
  */
-final class MBTSignalProcessingUtils {
+public final class MBTSignalProcessingUtils {
     /**
      * Merges the provided channels into a matrix (a 2D array). The height of the matrix is defined by the number
      * of provided channels and its width is defined by the samprate of each channel which must be consistent.
@@ -77,7 +77,7 @@ final class MBTSignalProcessingUtils {
      * @exception IllegalArgumentException if there are no channels to merge and if the samprate is inconsistent
      */
     @NonNull
-    static float[][] channelsToMatrixFloat(@Nullable ArrayList<ArrayList<Float>> channels) {
+    public static float[][] channelsToMatrixFloat(@Nullable ArrayList<ArrayList<Float>> channels) {
         if (channels == null || channels.size() == 0) {
             throw new IllegalArgumentException("there MUST be at least ONE or MORE channel(s) !");
         }

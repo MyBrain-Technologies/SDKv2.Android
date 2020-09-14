@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import config.ConnectionConfig;
-import core.bluetooth.BtState;
+import core.bluetooth.BluetoothState;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindDevice;
 import engine.MbtClient;
@@ -173,8 +173,8 @@ public class HomeActivity extends AppCompatActivity{
          * Callback used to receive a notification when the Bluetooth connection state changes
          */
         @Override
-        public void onNewState(BtState newState, MbtDevice device) {
-            if(newState.equals(BtState.READING_SUCCESS)){
+        public void onNewState(BluetoothState newState, MbtDevice device) {
+            if(newState.equals(BluetoothState.READING_SUCCESS)){
                 sdkClient.requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
                     @Override
                     public void onRequestComplete(final MbtDevice melomindDevice) {

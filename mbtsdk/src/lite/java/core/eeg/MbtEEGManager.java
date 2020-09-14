@@ -14,7 +14,7 @@ import java.util.Arrays;
 import core.BaseModuleManager;
 import core.MbtManager;
 import core.bluetooth.BtProtocol;
-import core.bluetooth.BtState;
+import core.bluetooth.BluetoothState;
 import core.bluetooth.StreamState;
 import core.bluetooth.requests.StreamRequestEvent;
 import core.device.model.MbtDevice;
@@ -124,7 +124,7 @@ public final class MbtEEGManager extends BaseModuleManager {
      */
     public void convertToEEG(@NonNull final ArrayList<RawEEGSample> toDecodeRawEEG) {
 
-        AsyncUtils.executeAsync(new Runnable() {
+        AsyncUtils.Companion.executeAsync(new Runnable() {
             @Override
             public void run() {
                 consolidatedEEG = new ArrayList<>();
@@ -153,7 +153,7 @@ public final class MbtEEGManager extends BaseModuleManager {
     public void notifyEEGDataIsReady(@NonNull final MbtEEGPacket eegPackets) {
         Log.d(TAG, "notify EEG Data Is Ready ");
 
-        AsyncUtils.executeAsync(new Runnable() {
+        AsyncUtils.Companion.executeAsync(new Runnable() {
             @Override
             public void run() {
                 if (hasQualities) {
@@ -229,7 +229,7 @@ public final class MbtEEGManager extends BaseModuleManager {
         if(connectionStateEvent.getDevice() == null) {
             protocol = null;
         }else {
-            if(connectionStateEvent.getNewState().equals(BtState.CONNECTED_AND_READY)){
+            if(connectionStateEvent.getNewState().equals(BluetoothState.CONNECTED_AND_READY)){
                 protocol = connectionStateEvent.getDevice().getDeviceType().getProtocol();
                 nbChannels = connectionStateEvent.getDevice().getNbChannels();
             }

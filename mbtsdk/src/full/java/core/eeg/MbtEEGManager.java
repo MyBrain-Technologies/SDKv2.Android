@@ -16,8 +16,8 @@ import java.util.Iterator;
 
 import core.BaseModuleManager;
 import core.MbtManager;
-import core.bluetooth.BtProtocol;
-import core.bluetooth.BtState;
+import core.bluetooth.BluetoothProtocol;
+import core.bluetooth.BluetoothState;
 import core.bluetooth.StreamState;
 import core.bluetooth.requests.StreamRequestEvent;
 import core.device.model.MbtDevice;
@@ -73,7 +73,7 @@ public final class MbtEEGManager extends BaseModuleManager {
     private MbtDataBuffering dataBuffering;
     private ArrayList<ArrayList<Float>> consolidatedEEG;
 
-    private BtProtocol protocol;
+    private BluetoothProtocol protocol;
 
     private boolean hasQualities = false;
 
@@ -126,7 +126,7 @@ public final class MbtEEGManager extends BaseModuleManager {
      */
     public void convertToEEG(@NonNull final ArrayList<RawEEGSample> toDecodeRawEEG) {
 
-        AsyncUtils.executeAsync(new Runnable() {
+        AsyncUtils.Companion.executeAsync(new Runnable() {
             @Override
             public void run() {
                 consolidatedEEG = new ArrayList<>();
@@ -154,7 +154,7 @@ public final class MbtEEGManager extends BaseModuleManager {
     public void notifyEEGDataIsReady(@NonNull final MbtEEGPacket eegPackets) {
         LogUtils.d(TAG, "New packet: "+eegPackets.toString());
 
-        AsyncUtils.executeAsync(new Runnable() {
+        AsyncUtils.Companion.executeAsync(new Runnable() {
             @Override
             public void run() {
                 if (hasQualities) {
@@ -219,10 +219,10 @@ public final class MbtEEGManager extends BaseModuleManager {
             float[] qualities = new float[nbChannels];
             Arrays.fill(qualities, -1f);
             try{
-                if(protocol.equals(BtProtocol.BLUETOOTH_LE)){
+                if(protocol.equals(BluetoothProtocol.LOW_ENERGY)){
                     qualities = MBTSignalQualityChecker.computeQualitiesForPacketNew(sampRate, packetLength, MatrixUtils.invertFloatMatrix(packet.getChannelsData()));
 
-                }else if(protocol.equals(BtProtocol.BLUETOOTH_SPP)){
+                }else if(protocol.equals(BluetoothProtocol.SPP)){
                     ArrayList<Float> qualitiesList = new ArrayList<>();
                     ArrayList<ArrayList<Float>> temp = new  ArrayList<ArrayList<Float>>();
                     //WARNING : quality checker C++ algo only takes into account 2 channels
@@ -320,7 +320,7 @@ public final class MbtEEGManager extends BaseModuleManager {
         if(connectionStateEvent.getDevice() == null) {
             protocol = null;
         }else {
-            if(connectionStateEvent.getNewState().equals(BtState.CONNECTED_AND_READY)){
+            if(connectionStateEvent.getNewState().equals(BluetoothState.CONNECTED_AND_READY)){
                 protocol = connectionStateEvent.getDevice().getDeviceType().getProtocol();
                 nbChannels = connectionStateEvent.getDevice().getNbChannels();
             }
@@ -359,7 +359,7 @@ public final class MbtEEGManager extends BaseModuleManager {
                 initQualityChecker();
             }
         }
-        else if(event.stopStream() && !ContextSP.SP_VERSION.equals("0.0.0"))
+        else if(event.isStopStream() && !ContextSP.SP_VERSION.equals("0.0.0"))
             deinitQualityChecker();
 
     }
@@ -379,11 +379,10 @@ public final class MbtEEGManager extends BaseModuleManager {
 
     @Subscribe
     public void onConfigurationChanged(EEGConfigEvent configEEGEvent){
-        LogUtils.d(TAG, "new config "+ configEEGEvent.getConfig().toString());
-        sampRate = configEEGEvent.getDevice().getInternalConfig().getSampRate();
-        packetLength = configEEGEvent.getDevice().getEegPacketLength();
-
         MbtDevice.InternalConfig internalConfig = configEEGEvent.getConfig();
+        LogUtils.d(TAG, "new config "+ internalConfig.toString());
+        sampRate = internalConfig.getSampRate();
+        packetLength = configEEGEvent.getDevice().getEegPacketLength();
         nbChannels = internalConfig.getNbChannels();
         resetBuffers(internalConfig.getNbPackets(), internalConfig.getStatusBytes(), internalConfig.getGainValue());
     }

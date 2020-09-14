@@ -184,7 +184,7 @@ public final class FileManager {
         Map tmp = new HashMap(savedRecordings);
         tmp.keySet().removeAll(savedMap.keySet());
         savedMap.putAll(tmp);
-        AsyncUtils.executeAsync(new Runnable() {
+        AsyncUtils.Companion.executeAsync(new Runnable() {
             @Override
             public void run() {
                 for (String filepath : savedMap.keySet()) {

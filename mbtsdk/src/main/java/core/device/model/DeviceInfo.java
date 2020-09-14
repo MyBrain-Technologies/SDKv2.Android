@@ -36,6 +36,6 @@ public enum DeviceInfo {
      * Correspond to a call to model number value, which is supposed to contain the external identifier (QR Code)
      * The associated characteristic might not be available for some headsets
      */
-    MODEL_NUMBER;
+    MODEL_NUMBER
 }
 

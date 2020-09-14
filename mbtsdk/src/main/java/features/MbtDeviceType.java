@@ -2,7 +2,7 @@ package features;
 
 import androidx.annotation.Keep;
 
-import core.bluetooth.BtProtocol;
+import core.bluetooth.BluetoothProtocol;
 
 /**
  * This enum contains all MBT devices that can be scanned by this SDK.
@@ -18,25 +18,25 @@ public enum MbtDeviceType {
     /**
      *
      */
-    MELOMIND(BtProtocol.BLUETOOTH_LE),
+    MELOMIND(BluetoothProtocol.LOW_ENERGY),
 
     /**
      *
      */
-    VPRO(BtProtocol.BLUETOOTH_SPP);
+    VPRO(BluetoothProtocol.SPP);
 
 
-    private BtProtocol protocol;
+    private BluetoothProtocol protocol;
 
-    MbtDeviceType(BtProtocol protocol) {
+    MbtDeviceType(BluetoothProtocol protocol) {
         this.protocol = protocol;
     }
 
-    public BtProtocol getProtocol() {
+    public BluetoothProtocol getProtocol() {
         return protocol;
     }
 
     public boolean useLowEnergyProtocol(){
-        return this.protocol.equals(BtProtocol.BLUETOOTH_LE);
+        return this.protocol.equals(BluetoothProtocol.LOW_ENERGY);
     }
 }

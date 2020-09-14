@@ -49,7 +49,7 @@ public final class MbtRecordingManager extends BaseModuleManager {
     public void onStreamRequest(final StreamRequestEvent request) {
         recordConfig = request.getRecordConfig();
 
-        if (request.isStart()) { //start streaming
+        if (request.isStartStream()) { //start streaming
 
             if(recordBuffering != null)
                 recordBuffering.resetPacketsBuffer();

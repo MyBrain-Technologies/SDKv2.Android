@@ -12,7 +12,7 @@ import config.MbtConfig;
 import config.RecordConfig;
 import config.StreamConfig;
 import core.MbtManager;
-import core.bluetooth.BtState;
+import core.bluetooth.BluetoothState;
 import core.device.model.MbtDevice;
 import core.eeg.storage.MbtEEGPacket;
 import core.device.model.DeviceInfo;
@@ -199,7 +199,7 @@ public final class MbtClient {
 
     /**
      * Stops a pending connection process. If successful,
-     * the new state {@link core.bluetooth.BtState#CONNECTION_INTERRUPTED} is sent to the user in the {@link BluetoothStateListener#onNewState(BtState, MbtDevice)}} callback
+     * the new state {@link core.bluetooth.BluetoothState#CONNECTION_INTERRUPTED} is sent to the user in the {@link BluetoothStateListener#onNewState(BluetoothState, MbtDevice)}} callback
      * {@link ConnectionStateReceiver#onReceive(Context, Intent)} callback.
      *
      * <p>If the device is already connected, it simply disconnects the device.</p>

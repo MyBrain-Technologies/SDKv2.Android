@@ -1,0 +1,218 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: MbtRecordBuffering</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">core.recording.localstorage</a> ]
+</div>
+
+<h1>Coverage Summary for Class: MbtRecordBuffering (core.recording.localstorage)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">MbtRecordBuffering</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 61)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package core.recording.localstorage;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import android.content.Context;
+<i>4</i>&nbsp;import androidx.annotation.NonNull;
+<i>5</i>&nbsp;
+<i>6</i>&nbsp;import java.io.File;
+<i>7</i>&nbsp;import java.util.ArrayList;
+<i>8</i>&nbsp;import java.util.HashMap;
+<i>9</i>&nbsp;import java.util.Map;
+<i>10</i>&nbsp;
+<i>11</i>&nbsp;import config.RecordConfig;
+<i>12</i>&nbsp;import core.device.model.MbtDevice;
+<i>13</i>&nbsp;import core.eeg.signalprocessing.ContextSP;
+<i>14</i>&nbsp;import core.eeg.storage.MbtEEGPacket;
+<i>15</i>&nbsp;import engine.clientevents.RecordingError;
+<i>16</i>&nbsp;import model.MbtRecording;
+<i>17</i>&nbsp;import utils.LogUtils;
+<i>18</i>&nbsp;
+<i>19</i>&nbsp;/**
+<i>20</i>&nbsp; * MbtRecordBuffering is responsible for storing EEG raw data acquired
+<i>21</i>&nbsp; * in a temporary buffer if a recording is started.
+<i>22</i>&nbsp; * The whole buffer is saved in a JSON file when a streaming is stopped.
+<i>23</i>&nbsp; *
+<i>24</i>&nbsp; * @author Sophie ZECRI on 10/09/2018
+<i>25</i>&nbsp; */
+<i>26</i>&nbsp;public class MbtRecordBuffering {
+<i>27</i>&nbsp;
+<b class="nc"><i>28</i>&nbsp;    private static String TAG = MbtRecordBuffering.class.getName();</b>
+<i>29</i>&nbsp;
+<i>30</i>&nbsp;    /**
+<i>31</i>&nbsp;     * Temporary buffer of EEG packets recorded.
+<i>32</i>&nbsp;     * This EEG packets are stored in a JSON file
+<i>33</i>&nbsp;     */
+<i>34</i>&nbsp;    private ArrayList&lt;MbtEEGPacket&gt; eegPacketsBuffer;
+<i>35</i>&nbsp;
+<i>36</i>&nbsp;    /**
+<i>37</i>&nbsp;     * Map that stores the path of the recording as a JSON file and its associated ID
+<i>38</i>&nbsp;     */
+<i>39</i>&nbsp;    private Map&lt;String, String&gt; recordingsBuffer;
+<i>40</i>&nbsp;
+<i>41</i>&nbsp;    private final Context mContext;
+<i>42</i>&nbsp;
+<b class="nc"><i>43</i>&nbsp;    public MbtRecordBuffering(Context mContext) {</b>
+<b class="nc"><i>44</i>&nbsp;        LogUtils.d(TAG, &quot; Start recording &quot;);</b>
+<b class="nc"><i>45</i>&nbsp;        this.mContext = mContext;</b>
+<b class="nc"><i>46</i>&nbsp;        recordingsBuffer = new HashMap&lt;&gt;();</b>
+<b class="nc"><i>47</i>&nbsp;        eegPacketsBuffer = new ArrayList&lt;&gt;();</b>
+<b class="nc"><i>48</i>&nbsp;    }</b>
+<i>49</i>&nbsp;
+<i>50</i>&nbsp;    public void resetPacketsBuffer(){
+<b class="nc"><i>51</i>&nbsp;        eegPacketsBuffer = new ArrayList&lt;&gt;();</b>
+<b class="nc"><i>52</i>&nbsp;    }</b>
+<i>53</i>&nbsp;
+<i>54</i>&nbsp;    public boolean storeRecordBuffer(@NonNull MbtDevice device, @NonNull RecordConfig recordConfig) {
+<b class="nc"><i>55</i>&nbsp;        if (eegPacketsBuffer == null || eegPacketsBuffer.isEmpty()){</b>
+<b class="nc"><i>56</i>&nbsp;            LogUtils.w(TAG,&quot; JSON file not created: null or empty buffer of EEG packets&quot;);</b>
+<b class="nc"><i>57</i>&nbsp;            return false;</b>
+<i>58</i>&nbsp;        }
+<i>59</i>&nbsp;
+<b class="nc"><i>60</i>&nbsp;        if (recordConfig == null || device == null){</b>
+<b class="nc"><i>61</i>&nbsp;            LogUtils.w(TAG,&quot; JSON file not created : null device or record config &quot;);</b>
+<b class="nc"><i>62</i>&nbsp;            return false;</b>
+<i>63</i>&nbsp;        }
+<b class="nc"><i>64</i>&nbsp;        ArrayList&lt;MbtEEGPacket&gt; eegPacketsClone = (ArrayList&lt;MbtEEGPacket&gt;) eegPacketsBuffer.clone();</b>
+<b class="nc"><i>65</i>&nbsp;        resetPacketsBuffer();</b>
+<i>66</i>&nbsp;
+<b class="nc"><i>67</i>&nbsp;        if(recordConfig.getDuration() &gt; 0 &amp;&amp; eegPacketsClone.size() &gt; recordConfig.getDuration())</b>
+<b class="nc"><i>68</i>&nbsp;            eegPacketsClone = new ArrayList&lt;&gt;(eegPacketsClone.subList(0,recordConfig.getDuration()));</b>
+<i>69</i>&nbsp;
+<b class="nc"><i>70</i>&nbsp;        LogUtils.d(TAG,&quot; Saving buffer of &quot;+ eegPacketsClone.size()+ &quot; packets.&quot;);</b>
+<i>71</i>&nbsp;
+<b class="nc"><i>72</i>&nbsp;        if (recordConfig.getFilename() == null)</b>
+<b class="nc"><i>73</i>&nbsp;            recordConfig.setFilename(FileManager.createFilename(recordConfig.getTimestamp(),</b>
+<b class="nc"><i>74</i>&nbsp;                    recordConfig.getProjectName(),</b>
+<b class="nc"><i>75</i>&nbsp;                    device.getProductName(),</b>
+<b class="nc"><i>76</i>&nbsp;                    recordConfig.getSubjectID(),</b>
+<b class="nc"><i>77</i>&nbsp;                    recordConfig.getCondition()));</b>
+<i>78</i>&nbsp;
+<b class="nc"><i>79</i>&nbsp;        LogUtils.d(TAG, &quot;JSON(Folder: &quot; + recordConfig.getDirectory() + &quot; Filename: &quot; + recordConfig.getFilename() + &quot;)&quot; + &quot; External storage: &quot; + recordConfig.useExternalStorage() + &quot;)&quot;);</b>
+<i>80</i>&nbsp;
+<b class="nc"><i>81</i>&nbsp;        File file = FileManager.createFile(mContext,</b>
+<b class="nc"><i>82</i>&nbsp;                recordConfig.getDirectory(),</b>
+<b class="nc"><i>83</i>&nbsp;                recordConfig.getFilename(),</b>
+<b class="nc"><i>84</i>&nbsp;                recordConfig.useExternalStorage());</b>
+<b class="nc"><i>85</i>&nbsp;        if (file == null) {</b>
+<b class="nc"><i>86</i>&nbsp;            LogUtils.e(TAG, RecordingError.ERROR_CREATE.getMessage());</b>
+<b class="nc"><i>87</i>&nbsp;            return false;</b>
+<i>88</i>&nbsp;        }
+<i>89</i>&nbsp;
+<b class="nc"><i>90</i>&nbsp;        MbtRecording recording = MbtJsonBuilder.convertEEGPacketsToRecording(</b>
+<b class="nc"><i>91</i>&nbsp;                device.getNbChannels(),</b>
+<b class="nc"><i>92</i>&nbsp;                recordConfig.getRecordInfo().setSPVersion(ContextSP.SP_VERSION),</b>
+<b class="nc"><i>93</i>&nbsp;                recordConfig.getTimestamp(), eegPacketsClone,</b>
+<b class="nc"><i>94</i>&nbsp;                device.getInternalConfig().getStatusBytes() &gt; 0);</b>
+<b class="nc"><i>95</i>&nbsp;        LogUtils.d(TAG, &quot;New recording created : &quot; + recording.toString());</b>
+<i>96</i>&nbsp;
+<b class="nc"><i>97</i>&nbsp;        device.setAcquisitionLocations(recordConfig.getAcquisitionLocations());</b>
+<b class="nc"><i>98</i>&nbsp;        device.setReferencesLocations(recordConfig.getReferenceLocations());</b>
+<b class="nc"><i>99</i>&nbsp;        device.setGroundsLocation(recordConfig.getGroundLocations());</b>
+<b class="nc"><i>100</i>&nbsp;        LogUtils.d(TAG, &quot;Device &quot; + device.toString());</b>
+<i>101</i>&nbsp;
+<b class="nc"><i>102</i>&nbsp;        String recordingPath = FileManager.storeRecordingInFile(mContext,</b>
+<i>103</i>&nbsp;                file,
+<b class="nc"><i>104</i>&nbsp;                recordConfig.getSubjectID(),</b>
+<i>105</i>&nbsp;                device,
+<i>106</i>&nbsp;                recording,
+<b class="nc"><i>107</i>&nbsp;                recordConfig.getRecordingParameters(),</b>
+<b class="nc"><i>108</i>&nbsp;                recordingsBuffer.size()+1,</b>
+<b class="nc"><i>109</i>&nbsp;                recordConfig.getHeaderComments());</b>
+<i>110</i>&nbsp;
+<b class="nc"><i>111</i>&nbsp;        LogUtils.d(TAG, &quot;Recording stored in file: &quot; + recordingPath);</b>
+<i>112</i>&nbsp;
+<b class="nc"><i>113</i>&nbsp;        if (recordingPath != null) {</b>
+<b class="nc"><i>114</i>&nbsp;            recordingsBuffer.put(recordingPath, recordConfig.getRecordInfo().getRecordId());</b>
+<i>115</i>&nbsp;            //Check if Recordings map is empty or not to update the number of recording in each recording JSON file
+<b class="nc"><i>116</i>&nbsp;            if (recordingsBuffer.size() &gt; 1)</b>
+<b class="nc"><i>117</i>&nbsp;                FileManager.updateJSONWithCurrentRecordNb(recordingsBuffer);</b>
+<i>118</i>&nbsp;        }
+<i>119</i>&nbsp;
+<b class="nc"><i>120</i>&nbsp;        if(!recordConfig.enableMultipleRecordings())</b>
+<b class="nc"><i>121</i>&nbsp;            recordingsBuffer = null;</b>
+<i>122</i>&nbsp;
+<b class="nc"><i>123</i>&nbsp;        return recordingPath != null;</b>
+<i>124</i>&nbsp;    }
+<i>125</i>&nbsp;
+<i>126</i>&nbsp;    public void record(MbtEEGPacket eegPacket){
+<b class="nc"><i>127</i>&nbsp;        if(eegPacketsBuffer != null) {</b>
+<b class="nc"><i>128</i>&nbsp;            eegPacketsBuffer.add(eegPacket);</b>
+<i>129</i>&nbsp;        }
+<b class="nc"><i>130</i>&nbsp;    }</b>
+<i>131</i>&nbsp;
+<i>132</i>&nbsp;    public boolean isEegPacketsBufferEmpty() {
+<b class="nc"><i>133</i>&nbsp;        return (eegPacketsBuffer == null || eegPacketsBuffer.isEmpty());</b>
+<i>134</i>&nbsp;    }
+<i>135</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2020-06-10 10:26</div>
+</div>
+</body>
+</html>

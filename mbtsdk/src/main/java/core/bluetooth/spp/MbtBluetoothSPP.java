@@ -30,8 +30,8 @@ import command.DeviceCommandEvent;
 
 import command.DeviceCommands;
 import command.DeviceStreamingCommands;
-import core.bluetooth.BtProtocol;
-import core.bluetooth.BtState;
+import core.bluetooth.BluetoothProtocol;
+import core.bluetooth.BluetoothState;
 import core.bluetooth.MbtBluetoothManager;
 import core.bluetooth.MbtDataBluetooth;
 import core.bluetooth.StreamState;
@@ -57,7 +57,7 @@ import static core.bluetooth.spp.MessageStatus.STATE_LENGTH;
  */
 
 public final class MbtBluetoothSPP
-        extends MbtDataBluetooth {
+        extends MbtDataBluetooth.MainBluetooth {
 
     private final static String TAG = MbtBluetoothSPP.class.getName();
 
@@ -99,60 +99,64 @@ public final class MbtBluetoothSPP
 
                     LogUtils.i(TAG, String.format("Discovery Scan -> device detected " +
                             "with name '%s' and MAC address '%s' ", deviceNameFound, device.getAddress()));
-                    if (mbtBluetoothManager.getDeviceNameRequested() != null
-                            && (deviceNameFound.equals(mbtBluetoothManager.getDeviceNameRequested()) || deviceNameFound.contains(mbtBluetoothManager.getDeviceNameRequested()))) {
-                        LogUtils.i(TAG, "Device " + mbtBluetoothManager.getDeviceNameRequested() +" found. Cancelling discovery & connecting");
-                        currentDevice = device;
-                        bluetoothAdapter.cancelDiscovery();
-                        mbtBluetoothManager.updateConnectionState(true); //current state is set to DEVICE_FOUND and future is completed
+                    if (getManager().context.getDeviceNameRequested() != null
+                            && (deviceNameFound.equals(getManager().context.getDeviceNameRequested()) || deviceNameFound.contains(getManager().context.getDeviceNameRequested()))) {
+                        LogUtils.i(TAG, "Device " + getManager().context.getDeviceNameRequested() +" found. Cancelling discovery & connecting");
+                        setCurrentDevice(device);
+                        getBluetoothAdapter().cancelDiscovery();
+                        getManager().connecter.updateConnectionState(true); //current state is set to DEVICE_FOUND and future is completed
 
                     }
                     break;
                 case BluetoothAdapter.ACTION_DISCOVERY_FINISHED:
-                    bluetoothAdapter.startDiscovery();
+                    getBluetoothAdapter().startDiscovery();
 
                     break;
             }
 
         }
     };
-
-    public MbtBluetoothSPP(@NonNull final Context context, @NonNull MbtBluetoothManager mbtBluetoothManager) {
-        super(context, BtProtocol.BLUETOOTH_SPP, mbtBluetoothManager);
-        final BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-        this.bluetoothAdapter = (manager!=null) ? manager.getAdapter() : null;
+    static MbtBluetoothSPP instance = null;
+    public static MbtDataBluetooth.MainBluetooth initInstance(MbtBluetoothManager manager) {
+        return instance = new MbtBluetoothSPP(manager);
     }
 
-    public MbtBluetoothSPP(@NonNull final Context context, @NonNull final String deviceAddress,@NonNull MbtBluetoothManager mbtBluetoothManager) {
-        super(context, BtProtocol.BLUETOOTH_SPP, mbtBluetoothManager);
-        final BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-        this.bluetoothAdapter = manager.getAdapter();
+    public MbtBluetoothSPP(@NonNull MbtBluetoothManager manager) {
+        super(BluetoothProtocol.SPP, manager);
+        final BluetoothManager bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+        setBluetoothAdapter(bluetoothManager.getAdapter());
+    }
+
+    public MbtBluetoothSPP(@NonNull final String deviceAddress,@NonNull MbtBluetoothManager manager) {
+        super(BluetoothProtocol.SPP, manager);
+        final BluetoothManager bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+        setBluetoothAdapter(bluetoothManager.getAdapter());
         this.deviceAddress = deviceAddress;
     }
 
     @Override
     public boolean startScan() {
         boolean isScanStarted = false;
-        if(bluetoothAdapter == null)
+        if(getBluetoothAdapter() == null)
             return isScanStarted;
 
         // at this point, device was not found among bonded devices so let's start a discovery scan
         LogUtils.i(TAG, "Starting Classic Bluetooth Discovery Scan");
         final IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+        filter.addAction(getBluetoothAdapter().ACTION_DISCOVERY_FINISHED);
         context.registerReceiver(scanReceiver, filter);
-        isScanStarted = bluetoothAdapter.startDiscovery();
+        isScanStarted = getBluetoothAdapter().startDiscovery();
         LogUtils.i(TAG, "Scan started.");
-        if(isScanStarted && getCurrentState().equals(BtState.READY_FOR_BLUETOOTH_OPERATION)){
-            mbtBluetoothManager.updateConnectionState(false); //current state is set to SCAN_STARTED
+        if(isScanStarted && getCurrentState().equals(BluetoothState.READY_FOR_BLUETOOTH_OPERATION)){
+            getManager().connecter.updateConnectionState(false); //current state is set to SCAN_STARTED
         }
         return isScanStarted;
     }
 
     @Override
     public void stopScan() {
-        if(bluetoothAdapter != null && bluetoothAdapter.isDiscovering())
-            bluetoothAdapter.cancelDiscovery();
+        if(getBluetoothAdapter() != null && getBluetoothAdapter().isDiscovering())
+            getBluetoothAdapter().cancelDiscovery();
         context.unregisterReceiver(scanReceiver);
     }
 
@@ -177,15 +181,15 @@ public final class MbtBluetoothSPP
         BluetoothDevice toConnect = null;
         if (isConnected()) {
             LogUtils.i(TAG,"Already connected");
-            notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
+            notifyConnectionStateChanged(BluetoothState.CONNECTED_AND_READY);
             return false;
         }
-        if (!this.bluetoothAdapter.isEnabled()) {
-            notifyConnectionStateChanged(BtState.BLUETOOTH_DISABLED);
+        if (!this.getBluetoothAdapter().isEnabled()) {
+            notifyConnectionStateChanged(BluetoothState.BLUETOOTH_DISABLED);
             return false;
         }
 
-        for (final BluetoothDevice bonded : this.bluetoothAdapter.getBondedDevices())
+        for (final BluetoothDevice bonded : this.getBluetoothAdapter().getBondedDevices())
             if (bonded.getAddress().equals(device.getAddress())) {
                 toConnect = bonded;
                 break;
@@ -195,26 +199,26 @@ public final class MbtBluetoothSPP
             toConnect = device;
 
         try {
-            notifyConnectionStateChanged(BtState.DATA_BT_CONNECTING);
+            notifyConnectionStateChanged(BluetoothState.DATA_BT_CONNECTING);
             this.btSocket = toConnect.createRfcommSocketToServiceRecord(SERVER_UUID);
             this.btSocket.connect();
             if (retrieveStreams()) {
-                AsyncUtils.executeAsync(new Runnable() {
+                AsyncUtils.Companion.executeAsync(new Runnable() {
                     @Override
                     public void run() {
                         listenForIncomingMessages();
                     }
                 });
-                notifyConnectionStateChanged(BtState.CONNECTED_AND_READY);
+                notifyConnectionStateChanged(BluetoothState.CONNECTED_AND_READY);
                 notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER, toConnect.getAddress());
                 sendCommand(new DeviceCommands.GetDeviceInfo());
                 LogUtils.i(TAG,toConnect.getName() + " Connected");
                 return true;
             }else
-                notifyConnectionStateChanged(BtState.CONNECTION_FAILURE);
+                notifyConnectionStateChanged(BluetoothState.CONNECTION_FAILURE);
 
         } catch (@NonNull final IOException ioe) {
-            notifyConnectionStateChanged(BtState.CONNECTION_FAILURE);
+            notifyConnectionStateChanged(BluetoothState.CONNECTION_FAILURE);
             LogUtils.e(TAG, "Exception while connecting ->" + ioe.getMessage());
             Log.getStackTraceString(ioe);
         }
@@ -235,7 +239,7 @@ public final class MbtBluetoothSPP
 
     @Override
     public boolean isConnected() {
-        return getCurrentState() == BtState.CONNECTED_AND_READY;
+        return getCurrentState() == BluetoothState.CONNECTED_AND_READY;
     }
 
     @Override
@@ -275,7 +279,7 @@ public final class MbtBluetoothSPP
             this.reader = null;
             this.writer = null;
             LogUtils.e(TAG, "Failed to send dataBuffer. IOException ->\n" + ioe.getMessage());
-            notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);
+            notifyConnectionStateChanged(BluetoothState.DATA_BT_DISCONNECTED);
             Log.getStackTraceString(ioe);
             return false;
         }
@@ -326,10 +330,10 @@ public final class MbtBluetoothSPP
                 this.btSocket.close();
                 this.btSocket = null;
             }
-            notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);
+            notifyConnectionStateChanged(BluetoothState.DATA_BT_DISCONNECTED);
         } catch (@NonNull final IOException e) {
             LogUtils.e(TAG, "Error while closing streams -> \n" + e.getMessage());
-            notifyConnectionStateChanged(BtState.CONNECTION_INTERRUPTED);
+            notifyConnectionStateChanged(BluetoothState.CONNECTION_INTERRUPTED);
             Log.getStackTraceString(e);
         }
     }
@@ -344,7 +348,7 @@ public final class MbtBluetoothSPP
             } catch (@NonNull final IOException ioe) {
                 LogUtils.e(TAG, "Failed to retrieve streams ! -> \n" + ioe.getMessage());
                 Log.getStackTraceString(ioe);
-                notifyConnectionStateChanged(BtState.STREAM_ERROR);
+                notifyConnectionStateChanged(BluetoothState.STREAM_ERROR);
             }
         }
         return false;
@@ -489,7 +493,7 @@ public final class MbtBluetoothSPP
                                     resetStatus();
 
                                     final byte[] finalData = dataBuffer.clone();//Arrays.copyOf(dataBuffer, dataBuffer.length);
-                                    AsyncUtils.executeAsync(new Runnable() {
+                                    AsyncUtils.Companion.executeAsync(new Runnable() {
                                         @Override
                                         public void run() {
                                             if (!isStreaming)
@@ -551,10 +555,10 @@ public final class MbtBluetoothSPP
                 Log.getStackTraceString(e);
                 if (this.requestDisconnect) {
                     this.requestDisconnect = false; // consumed
-                    notifyConnectionStateChanged(BtState.CONNECTION_INTERRUPTED);
+                    notifyConnectionStateChanged(BluetoothState.CONNECTION_INTERRUPTED);
                 } else {
                     disconnect();
-                    //notifyConnectionStateChanged(BtState.DATA_BT_DISCONNECTED);
+                    //notifyConnectionStateChanged(BluetoothState.DATA_BT_DISCONNECTED);
                 }
                 break;
             }
@@ -648,7 +652,7 @@ public final class MbtBluetoothSPP
                 LogUtils.w(TAG, "Command not sent : "+command);
         }
 
-        mbtBluetoothManager.notifyResponseReceived(response, command);//return null response to the client if request has not been sent
+        getManager().reader.notifyResponseReceived(response, command);//return null response to the client if request has not been sent
     }
 
 
