@@ -11,13 +11,10 @@ import java.util.HashMap;
  * @author Vincent on 26/11/2015.
  */
 public final class MBTCalibrationParameters {
-    @Nullable
     private final HashMap<String, float[]> params;
-    ArrayList<float[]> valuesAsList;
+    private ArrayList<float[]> valuesAsList;
 
-    public MBTCalibrationParameters(@Nullable final HashMap<String, float[]> params){
-        if (params == null || params.size() == 0)
-            throw new IllegalArgumentException("calib params MUST NOT be NULL or EMPTY");
+    public MBTCalibrationParameters(final HashMap<String, float[]> params){
         this.params = params;
         if(this.params != null && !this.params.isEmpty()){
             valuesAsList = new ArrayList<>();
@@ -26,7 +23,6 @@ public final class MBTCalibrationParameters {
     }
 
 
-    @Nullable
     public final HashMap<String, float[]> getParamsAsMap(){
         return params;
     }
@@ -46,5 +42,17 @@ public final class MBTCalibrationParameters {
             throw new IllegalArgumentException("invalid index");
 
         return valuesAsList.get(index);
+    }
+
+
+    public boolean isValidCalibration() {
+        if (params == null){
+            return false;
+        }
+        if (ContextSP.SP_VERSION.equals("2.1.0"))
+            return params.get("BestChannel").length > 0 && params.get("BestChannel")[0] >= 0f;
+
+        return params.get("errorMsg").length > 0 && params.get("errorMsg")[0] >= 0f;
+
     }
 }

@@ -11,7 +11,7 @@ public final class ServerError extends BaseError{
 
     public static String ERROR_LABEL = DOMAIN + " Error :";
 
-    public static ServerError ERROR_CONNECTION                  = new ServerError(CODE_RANGE, "Server operation failed");
+    public static ServerError ERROR_OPERATION_FAILED                  = new ServerError(CODE_RANGE, "Server operation failed");
     public static ServerError ERROR_AUTHENTICATION              = new ServerError(CODE_RANGE+1, "Authentication failed.");
     public static ServerError ERROR_TOKEN                       = new ServerError(CODE_RANGE+2, "Invalid or expired authentication token.");
     public static ServerError ERROR_INTERNET_CONNECTION         = new ServerError(CODE_RANGE+3, "Cannot sync : no internet connection.");

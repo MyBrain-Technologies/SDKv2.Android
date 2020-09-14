@@ -2,6 +2,7 @@ package core.eeg.signalprocessing;
 
 
 import androidx.annotation.NonNull;
+import utils.VersionHelper;
 
 /**
  * ContextSP contains some static values related to the signal processing
@@ -28,4 +29,26 @@ public final class ContextSP {
 
     public final static int smoothingDuration = 4;
 
+    public static int HISTORY_SIZE = 1;
+
+    /**
+     * The neurofeedback algorithm used to be based on SNR on versions lower than 2.4.0 and is based on RMS now
+     */
+
+    public static RelaxIndexComputationType getRelaxIndexComputationType(String version){
+        return new VersionHelper(version).isValidForFeature(VersionHelper.Feature.RMS)? RelaxIndexComputationType.RMS : RelaxIndexComputationType.SNR;
+    }
+
+    public enum RelaxIndexComputationType{
+
+        /**
+         * Signal to Noise ratio
+         */
+        SNR,
+
+        /**
+         * Root mean squared value
+         */
+        RMS
+    }
 }
