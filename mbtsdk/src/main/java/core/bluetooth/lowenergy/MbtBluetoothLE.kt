@@ -5,6 +5,7 @@ import android.bluetooth.*
 import android.bluetooth.le.*
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.Build
 import android.os.Handler
 import android.os.ParcelUuid
@@ -308,7 +309,7 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
    */
   override fun connect(context: Context, device: BluetoothDevice): Boolean {
     LogUtils.i(TAG, " connect in Low Energy " + device.name + " address is " + device.address)
-    BroadcastUtils.registerReceiverIntents(context, receiver, BluetoothDevice.ACTION_BOND_STATE_CHANGED)
+    context.registerReceiver(receiver, IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED))
 
     //Using reflexion here because min API is 21 and transport layer is not available publicly until API 23
     try {
@@ -493,7 +494,7 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
     super.notifyConnectionStateChanged(newState)
     if (newState == BluetoothState.DATA_BT_DISCONNECTED) {
       if (isStreaming) notifyStreamStateChanged(StreamState.DISCONNECTED)
-      BroadcastUtils.unregisterReceiver(context, receiver)
+      context.unregisterReceiver(receiver)
     }
   }
 
@@ -641,8 +642,10 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
   }
 
   public override fun notifyBatteryReceived(value: Int) {
-    if (currentState == BluetoothState.BONDING) updateConnectionState(true) //current state is set to BONDED
-    if (value != -1) super.notifyBatteryReceived(value)
+    if (value != -1) {
+      if (currentState == BluetoothState.BONDING) updateConnectionState(true) //current state is set to BONDED
+      super.notifyBatteryReceived(value)
+    }
   }
 
 }

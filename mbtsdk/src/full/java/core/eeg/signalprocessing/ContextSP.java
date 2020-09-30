@@ -1,6 +1,7 @@
 package core.eeg.signalprocessing;
 
 
+import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import utils.VersionHelper;
 
@@ -9,7 +10,7 @@ import utils.VersionHelper;
  *
  * @author Vincent on 30/03/2016.
  */
-
+@Keep
 public final class ContextSP {
     /**
      * The current set of calibration parameters
