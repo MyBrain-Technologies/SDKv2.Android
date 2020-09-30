@@ -1,5 +1,6 @@
 package core.eeg.signalprocessing;
 
+import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -10,6 +11,7 @@ import java.util.ArrayList;
  *
  * @author Vincent on 25/11/2015.
  */
+ @Keep
 public final class MBTSignalProcessingUtils {
     /**
      * Merges the provided channels into a matrix (a 2D array). The height of the matrix is defined by the number

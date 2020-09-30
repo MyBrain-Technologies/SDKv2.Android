@@ -1,0 +1,183 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: MBTSignalProcessingUtils</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">core.eeg.signalprocessing</a> ]
+</div>
+
+<h1>Coverage Summary for Class: MBTSignalProcessingUtils (core.eeg.signalprocessing)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">MBTSignalProcessingUtils</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (3/ 4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    70,3%
+  </span>
+  <span class="absValue">
+    (26/ 37)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package core.eeg.signalprocessing;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import androidx.annotation.NonNull;
+<i>4</i>&nbsp;import androidx.annotation.Nullable;
+<i>5</i>&nbsp;
+<i>6</i>&nbsp;import java.util.ArrayList;
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;/**
+<i>9</i>&nbsp; * MBTSignalProcessingUtils contains methods for converting the channels into Float or Double Matrix
+<i>10</i>&nbsp; *
+<i>11</i>&nbsp; * @author Vincent on 25/11/2015.
+<i>12</i>&nbsp; */
+<b class="nc"><i>13</i>&nbsp;final class MBTSignalProcessingUtils {</b>
+<i>14</i>&nbsp;    /**
+<i>15</i>&nbsp;     * Merges the provided channels into a matrix (a 2D array). The height of the matrix is defined by the number
+<i>16</i>&nbsp;     * of provided channels and its width is defined by the samprate of each channel which must be consistent.
+<i>17</i>&nbsp;     * In the end, each line of the matrix represents a channel in the order the channels were provided
+<i>18</i>&nbsp;     * @param channels the channels to transform into a matrix
+<i>19</i>&nbsp;     * @return the matrix if successful
+<i>20</i>&nbsp;     * @exception IllegalArgumentException if there are no channels to merge and if the samprate is inconsistent
+<i>21</i>&nbsp;     */
+<i>22</i>&nbsp;    @NonNull
+<i>23</i>&nbsp;    static double[][] channelsToMatrixDouble(@Nullable Float[]... channels) {
+<b class="fc"><i>24</i>&nbsp;        if (channels == null || channels.length == 0){</b>
+<b class="fc"><i>25</i>&nbsp;            throw new IllegalArgumentException(&quot;there MUST be at least ONE or MORE channel(s) !&quot;);</b>
+<i>26</i>&nbsp;        }
+<i>27</i>&nbsp;
+<b class="fc"><i>28</i>&nbsp;        final int height = channels.length;</b>
+<b class="fc"><i>29</i>&nbsp;        final int samprate = channels[0].length;</b>
+<i>30</i>&nbsp;
+<b class="fc"><i>31</i>&nbsp;        final double[][] matrix = new double[height][samprate];</b>
+<i>32</i>&nbsp;
+<b class="fc"><i>33</i>&nbsp;        for (int it = 0; it &lt; height; it++) {</b>
+<b class="fc"><i>34</i>&nbsp;            final Float[] current = channels[it];</b>
+<b class="fc"><i>35</i>&nbsp;            if (current.length != samprate)</b>
+<b class="fc"><i>36</i>&nbsp;                throw new IllegalArgumentException(&quot;ERRROR : samprate not consistent in all provided channels!&quot;);</b>
+<b class="fc"><i>37</i>&nbsp;            for (int it2 = 0; it2 &lt; samprate; it2++)</b>
+<b class="fc"><i>38</i>&nbsp;                matrix[it][it2] = current[it2];</b>
+<i>39</i>&nbsp;        }
+<b class="fc"><i>40</i>&nbsp;        return matrix;</b>
+<i>41</i>&nbsp;    }
+<i>42</i>&nbsp;
+<i>43</i>&nbsp;    /**
+<i>44</i>&nbsp;     * Merges the provided channels into a matrix (a 2D array). The height of the matrix is defined by the number
+<i>45</i>&nbsp;     * of provided channels and its width is defined by the samprate of each channel which must be consistent.
+<i>46</i>&nbsp;     * In the end, each line of the matrix represents a channel in the order the channels were provided
+<i>47</i>&nbsp;     * @param channels the channels to transform into a matrix
+<i>48</i>&nbsp;     * @return the matrix if successful
+<i>49</i>&nbsp;     * @exception IllegalArgumentException if there are no channels to merge and if the samprate is inconsistent
+<i>50</i>&nbsp;     */
+<i>51</i>&nbsp;    @NonNull
+<i>52</i>&nbsp;    static float[][] channelsToMatrixFloat(@Nullable Float[]... channels) {
+<b class="fc"><i>53</i>&nbsp;        if (channels == null || channels.length == 0) {</b>
+<b class="fc"><i>54</i>&nbsp;            throw new IllegalArgumentException(&quot;there MUST be at least ONE or MORE channel(s) !&quot;);</b>
+<i>55</i>&nbsp;        }
+<b class="fc"><i>56</i>&nbsp;        final int height = channels.length;</b>
+<b class="fc"><i>57</i>&nbsp;        final int samprate = channels[0].length;</b>
+<i>58</i>&nbsp;
+<b class="fc"><i>59</i>&nbsp;        final float[][] matrix = new float[height][samprate];</b>
+<i>60</i>&nbsp;
+<b class="fc"><i>61</i>&nbsp;        for (int it = 0; it &lt; height; it++) {</b>
+<b class="fc"><i>62</i>&nbsp;            final Float[] current = channels[it];</b>
+<b class="fc"><i>63</i>&nbsp;            if (current.length != samprate)</b>
+<b class="fc"><i>64</i>&nbsp;                throw new IllegalArgumentException(&quot;ERRROR : samprate not consistent in all provided channels!&quot;);</b>
+<b class="fc"><i>65</i>&nbsp;            for (int it2 = 0; it2 &lt; samprate; it2++)</b>
+<b class="fc"><i>66</i>&nbsp;                matrix[it][it2] = current[it2];</b>
+<i>67</i>&nbsp;        }
+<b class="fc"><i>68</i>&nbsp;        return matrix;</b>
+<i>69</i>&nbsp;    }
+<i>70</i>&nbsp;
+<i>71</i>&nbsp;    /**
+<i>72</i>&nbsp;     * Merges the provided channels into a matrix (a 2D array). The height of the matrix is defined by the number
+<i>73</i>&nbsp;     * of provided channels and its width is defined by the samprate of each channel which must be consistent.
+<i>74</i>&nbsp;     * In the end, each line of the matrix represents a channel in the order the channels were provided
+<i>75</i>&nbsp;     * @param channels the channels to transform into a matrix
+<i>76</i>&nbsp;     * @return the matrix if successful
+<i>77</i>&nbsp;     * @exception IllegalArgumentException if there are no channels to merge and if the samprate is inconsistent
+<i>78</i>&nbsp;     */
+<i>79</i>&nbsp;    @NonNull
+<i>80</i>&nbsp;    static float[][] channelsToMatrixFloat(@Nullable ArrayList&lt;ArrayList&lt;Float&gt;&gt; channels) {
+<b class="fc"><i>81</i>&nbsp;        if (channels == null || channels.size() == 0) {</b>
+<b class="fc"><i>82</i>&nbsp;            throw new IllegalArgumentException(&quot;there MUST be at least ONE or MORE channel(s) !&quot;);</b>
+<i>83</i>&nbsp;        }
+<b class="nc"><i>84</i>&nbsp;        final int height = channels.size();</b>
+<b class="nc"><i>85</i>&nbsp;        final int samprate = channels.get(0).size();</b>
+<i>86</i>&nbsp;
+<b class="nc"><i>87</i>&nbsp;        final float[][] matrix = new float[height][samprate];</b>
+<i>88</i>&nbsp;
+<b class="nc"><i>89</i>&nbsp;        for (int it = 0; it &lt; height; it++) {</b>
+<b class="nc"><i>90</i>&nbsp;            final ArrayList&lt;Float&gt; current = channels.get(it);</b>
+<b class="nc"><i>91</i>&nbsp;            if (current.size() != samprate)</b>
+<b class="nc"><i>92</i>&nbsp;                throw new IllegalArgumentException(&quot;ERRROR : samprate not consistent in all provided channels!&quot;);</b>
+<b class="nc"><i>93</i>&nbsp;            for (int it2 = 0; it2 &lt; samprate; it2++)</b>
+<b class="nc"><i>94</i>&nbsp;                matrix[it][it2] = current.get(it2);</b>
+<i>95</i>&nbsp;        }
+<b class="nc"><i>96</i>&nbsp;        return matrix;</b>
+<i>97</i>&nbsp;    }
+<i>98</i>&nbsp;
+<i>99</i>&nbsp;
+<i>100</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2020-06-10 10:26</div>
+</div>
+</body>
+</html>

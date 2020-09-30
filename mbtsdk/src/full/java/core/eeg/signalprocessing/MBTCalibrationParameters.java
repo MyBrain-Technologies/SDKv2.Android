@@ -1,5 +1,6 @@
 package core.eeg.signalprocessing;
 
+import androidx.annotation.Keep;
 import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
@@ -10,6 +11,7 @@ import java.util.HashMap;
  *
  * @author Vincent on 26/11/2015.
  */
+@Keep
 public final class MBTCalibrationParameters {
     private final HashMap<String, float[]> params;
     private ArrayList<float[]> valuesAsList;

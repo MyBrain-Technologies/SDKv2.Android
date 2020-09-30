@@ -1,0 +1,101 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: OADContract</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">core.device.oad</a> ]
+</div>
+
+<h1>Coverage Summary for Class: OADContract (core.device.oad)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+</tr>
+<tr>
+  <td class="name">OADContract</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package core.device.oad;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import androidx.annotation.Keep;
+<i>4</i>&nbsp;
+<i>5</i>&nbsp;import command.OADCommands;
+<i>6</i>&nbsp;import core.device.model.MbtVersion;
+<i>7</i>&nbsp;import eventbus.events.FirmwareUpdateClientEvent;
+<i>8</i>&nbsp;
+<i>9</i>&nbsp;/**
+<i>10</i>&nbsp; * Contract used to perform an action in the contracter class when an OAD event occurs
+<i>11</i>&nbsp; */
+<i>12</i>&nbsp;@Keep
+<i>13</i>&nbsp;public interface OADContract {
+<i>14</i>&nbsp;
+<i>15</i>&nbsp;    /**
+<i>16</i>&nbsp;     * Method to call when the OAD update process need to get the firmware validation of the new firmware
+<i>17</i>&nbsp;     */
+<i>18</i>&nbsp;    void requestFirmwareValidation(OADCommands.RequestFirmwareValidation requestFirmwareValidation);
+<i>19</i>&nbsp;
+<i>20</i>&nbsp;    /**
+<i>21</i>&nbsp;     * Method to call when the OAD update process need to send an OAD binary file packet to the current firmware
+<i>22</i>&nbsp;     * @param packetToSend the OAD packet to send
+<i>23</i>&nbsp;     */
+<i>24</i>&nbsp;    void transferPacket(byte[] packetToSend);
+<i>25</i>&nbsp;
+<i>26</i>&nbsp;    /**
+<i>27</i>&nbsp;     * Method to call when the OAD update process state and/or progress changes,
+<i>28</i>&nbsp;     * or when the SDK raises an error.
+<i>29</i>&nbsp;     * @param event the OAD packet to send
+<i>30</i>&nbsp;     */
+<i>31</i>&nbsp;    void notifyClient(FirmwareUpdateClientEvent event);
+<i>32</i>&nbsp;
+<i>33</i>&nbsp;    /**
+<i>34</i>&nbsp;     * Method to call when the OAD update process need to clear the mobile device bluetooth
+<i>35</i>&nbsp;     */
+<i>36</i>&nbsp;    void clearBluetooth();
+<i>37</i>&nbsp;
+<i>38</i>&nbsp;    /**
+<i>39</i>&nbsp;     * Method to call when the OAD update process need to reconnect the updated headset device.
+<i>40</i>&nbsp;     */
+<i>41</i>&nbsp;    void reconnect(boolean reconnectAudio);
+<i>42</i>&nbsp;
+<i>43</i>&nbsp;    /**
+<i>44</i>&nbsp;     * Method to call when the OAD update process need to get the firmware validation of the new firmware.
+<i>45</i>&nbsp;     * Return true if the current firmware version is equal to the input firmware version, false otherwise.
+<i>46</i>&nbsp;     * @return true if the current firmware version is equal to the input firmware version, false otherwise.
+<i>47</i>&nbsp;     */
+<i>48</i>&nbsp;    boolean verifyFirmwareVersion(MbtVersion mbtVersionExpected);
+<i>49</i>&nbsp;
+<i>50</i>&nbsp;    /**
+<i>51</i>&nbsp;     * Method to call when the OAD update process is over.
+<i>52</i>&nbsp;     */
+<i>53</i>&nbsp;    void stopOADUpdate();
+<i>54</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2020-06-10 10:26</div>
+</div>
+</body>
+</html>
