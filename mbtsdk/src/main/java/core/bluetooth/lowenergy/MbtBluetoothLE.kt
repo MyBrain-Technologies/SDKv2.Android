@@ -309,7 +309,7 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
    */
   override fun connect(context: Context, device: BluetoothDevice): Boolean {
     LogUtils.i(TAG, " connect in Low Energy " + device.name + " address is " + device.address)
-    context.registerReceiver(receiver, IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED))
+    BroadcastUtils.registerReceiverIntents(context, receiver, BluetoothDevice.ACTION_BOND_STATE_CHANGED)
 
     //Using reflexion here because min API is 21 and transport layer is not available publicly until API 23
     try {
@@ -494,7 +494,7 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
     super.notifyConnectionStateChanged(newState)
     if (newState == BluetoothState.DATA_BT_DISCONNECTED) {
       if (isStreaming) notifyStreamStateChanged(StreamState.DISCONNECTED)
-      context.unregisterReceiver(receiver)
+      BroadcastUtils.unregisterReceiver(context, receiver)
     }
   }
 
