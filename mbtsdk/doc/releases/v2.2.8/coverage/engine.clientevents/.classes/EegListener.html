@@ -1,0 +1,76 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: EegListener</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">engine.clientevents</a> ]
+</div>
+
+<h1>Coverage Summary for Class: EegListener (engine.clientevents)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+</tr>
+<tr>
+  <td class="name">EegListener</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package engine.clientevents;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;
+<i>4</i>&nbsp;import androidx.annotation.Keep;
+<i>5</i>&nbsp;import androidx.annotation.NonNull;
+<i>6</i>&nbsp;
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;import core.bluetooth.StreamState;
+<i>9</i>&nbsp;import core.eeg.storage.MbtEEGPacket;
+<i>10</i>&nbsp;
+<i>11</i>&nbsp;/**
+<i>12</i>&nbsp; * callback for eeg acquisition. This is often called &quot;streaming&quot;
+<i>13</i>&nbsp; *
+<i>14</i>&nbsp; * @param &lt;U&gt;
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;@Keep
+<i>17</i>&nbsp;public interface EegListener&lt;U extends BaseError&gt; extends BaseErrorEvent&lt;U&gt;{
+<i>18</i>&nbsp;
+<i>19</i>&nbsp;    /**
+<i>20</i>&nbsp;     * Callback triggered when the input eeg buffer is full, ie when raw buffer contains enough data to compute a new MBTEEGPacket.
+<i>21</i>&nbsp;     * This event is triggered from the EEG module when buffer is full.
+<i>22</i>&nbsp;     * @param eegPackets the eeg data as an MbtEEGPacket object. call {@link MbtEEGPacket#getChannelsData()} to get eeg as a matrix.
+<i>23</i>&nbsp;     * &lt;p&gt;Warning: the matrix is configured as follow : (EEG, channel)&lt;/p&gt;
+<i>24</i>&nbsp;     *
+<i>25</i>&nbsp;     */
+<i>26</i>&nbsp;    void onNewPackets(@NonNull MbtEEGPacket eegPackets);
+<i>27</i>&nbsp;
+<i>28</i>&nbsp;    void onNewStreamState(@NonNull StreamState streamState);
+<i>29</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2020-06-10 10:26</div>
+</div>
+</body>
+</html>
