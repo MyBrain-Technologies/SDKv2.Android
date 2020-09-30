@@ -129,8 +129,8 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
 
           is StreamRequestEvent -> {
             when {
-              request.isStartStream -> reader.startStreamOperation(request.monitorDeviceStatus())
-              request.isStopStream -> reader.stopStreamOperation()
+              request.isStartStream -> if(this@MbtBluetoothManager::reader.isInitialized) reader.startStreamOperation(request.monitorDeviceStatus())
+              request.isStopStream -> if(this@MbtBluetoothManager::reader.isInitialized) reader.stopStreamOperation()
               else -> isRequestProcessing = false
             }
           }

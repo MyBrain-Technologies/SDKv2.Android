@@ -5,6 +5,7 @@ import android.bluetooth.*
 import android.bluetooth.le.*
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.Build
 import android.os.Handler
 import android.os.ParcelUuid
@@ -641,8 +642,10 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
   }
 
   public override fun notifyBatteryReceived(value: Int) {
-    if (currentState == BluetoothState.BONDING) updateConnectionState(true) //current state is set to BONDED
-    if (value != -1) super.notifyBatteryReceived(value)
+    if (value != -1) {
+      if (currentState == BluetoothState.BONDING) updateConnectionState(true) //current state is set to BONDED
+      super.notifyBatteryReceived(value)
+    }
   }
 
 }
