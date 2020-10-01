@@ -141,7 +141,7 @@ internal class MbtGattController(private val mbtBluetoothLE: MbtBluetoothLE) : B
     if (characteristic.uuid.compareTo(CHARAC_INFO_SERIAL_NUMBER) == 0) mbtBluetoothLE.notifyDeviceInfoReceived(DeviceInfo.SERIAL_NUMBER, String(characteristic.value))
     if (characteristic.uuid.compareTo(CHARAC_INFO_MODEL_NUMBER) == 0) mbtBluetoothLE.notifyDeviceInfoReceived(DeviceInfo.MODEL_NUMBER, String(characteristic.value))
     if (characteristic.uuid.compareTo(CHARAC_MEASUREMENT_BATTERY_LEVEL) == 0) {
-      if (status == BluetoothGatt.GATT_INSUFFICIENT_AUTHENTICATION) {
+      if (status == BluetoothGatt.GATT_INSUFFICIENT_AUTHENTICATION || characteristic.value == null) {
         LogUtils.w(TAG, "Insufficient authentication to read the battery level")
         mbtBluetoothLE.bond()
       } else {
