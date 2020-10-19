@@ -80,7 +80,11 @@ class MbtAsyncWaitOperation<T> {
 
     fun tryOperation(operation: ()-> Unit, timeout: Int) {
         tryOperationForResult(operation,
-                BaseErrorEvent { exception, _ -> if (exception is CancellationException) resetWaitingOperation() },
+            object : BaseErrorEvent<BaseError> {
+                override fun onError(error: BaseError, additionalInfo: String?) {
+                    if (error is CancellationException) resetWaitingOperation()
+                }
+            },
                 null,
                 timeout)
     }
