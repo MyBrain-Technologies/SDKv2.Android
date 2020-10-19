@@ -177,8 +177,10 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
   fun startScan() {
     var newState: BluetoothState = SCAN_FAILURE
     manager.tryOperation({ MbtDataBluetooth.instance.startScan() },
-        BaseErrorEvent { exception, _ ->
-          if (exception is TimeoutException) newState = SCAN_TIMEOUT
+        object : BaseErrorEvent<BaseError> {
+          override fun onError(error: BaseError, additionalInfo: String?) {
+            if (error is TimeoutException) newState = SCAN_TIMEOUT
+          }
         },//stop the current Bluetooth connection process
         { MbtDataBluetooth.instance.stopScan() },
         MbtConfig.getBluetoothScanTimeout())
@@ -436,7 +438,7 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
   //----------------------------------------------------------------------------
   // CALLBACKS
   //----------------------------------------------------------------------------
-  override fun onError(error: BaseError, additionalInfo: String) {}
+  override fun onError(error: BaseError, additionalInfo: String?) {}
   override fun onReceive(context: Context, intent: Intent) {
     val action = intent.action
     if (action != null) {

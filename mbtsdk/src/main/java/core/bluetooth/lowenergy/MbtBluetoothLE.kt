@@ -48,7 +48,7 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
   var gatt: BluetoothGatt? = null
 
   private val receiver: ConnectionStateReceiver = object : ConnectionStateReceiver() {
-    override fun onError(error: BaseError, additionalInfo: String) {}
+    override fun onError(error: BaseError, additionalInfo: String?) {}
     override fun onReceive(context: Context, intent: Intent) {
       val action = intent.action
       if (action != null) {
@@ -630,6 +630,7 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
     val isBondRetry = currentState == BluetoothState.BONDING
     if (isBondRetry && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       LogUtils.d(TAG, "Retry not necessary : Android will retry the read operation itself after bonding has completed") //However, on Android 6 & 7 you will have to retry the operation yourself
+      updateConnectionState(true)
       return
     }
     if (currentState == BluetoothState.READING_SUCCESS) updateConnectionState(false) //current state is set to BONDING

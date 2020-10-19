@@ -17,6 +17,7 @@ import core.bluetooth.spp.MbtBluetoothSPP
 import core.device.model.DeviceInfo
 import core.device.model.DeviceInfo.*
 import core.bluetooth.StreamState.*
+import engine.clientevents.BaseError
 import engine.clientevents.BaseErrorEvent
 import engine.clientevents.BluetoothError
 import eventbus.events.BluetoothResponseEvent
@@ -85,7 +86,11 @@ class MbtBluetoothReader(private val manager: MbtBluetoothManager) {
             throw BluetoothError.ERROR_WRITE_CHARACTERISTIC_OPERATION
           }
         },
-        BaseErrorEvent { _, _ -> MbtDataBluetooth.instance.notifyStreamStateChanged(FAILED) },
+        object : BaseErrorEvent<BaseError> {
+          override fun onError(error: BaseError, additionalInfo: String?) {
+            MbtDataBluetooth.instance.notifyStreamStateChanged(FAILED)
+          }
+        },
         { manager.setRequestProcessing(false)},
         6000
     )
@@ -103,7 +108,11 @@ class MbtBluetoothReader(private val manager: MbtBluetoothManager) {
         { if (!MbtDataBluetooth.instance.stopStream()) {
             throw BluetoothError.ERROR_WRITE_CHARACTERISTIC_OPERATION
           } },
-        BaseErrorEvent { _, _ -> MbtDataBluetooth.instance.notifyStreamStateChanged(FAILED) },
+        object : BaseErrorEvent<BaseError> {
+          override fun onError(error: BaseError, additionalInfo: String?) {
+            MbtDataBluetooth.instance.notifyStreamStateChanged(FAILED)
+          }
+        },
         { manager.setRequestProcessing(false)},
         6000
     )
