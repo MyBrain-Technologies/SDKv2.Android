@@ -30,7 +30,8 @@ class BluetoothContext (val context: Context,
 
             //if a device name has been specified but no QR code
         } else if (deviceNameRequested != null && (deviceTypeRequested == MbtDeviceType.MELOMIND)) {
-            deviceQrCodeRequested = MelomindsQRDataBase(context, false).get(deviceNameRequested) //retrieve the QR code from BLE name using QR code database
+            deviceQrCodeRequested =
+                MelomindsQRDataBase(context, false)[deviceNameRequested.toString()] //retrieve the QR code from BLE name using QR code database
         }
     }
 

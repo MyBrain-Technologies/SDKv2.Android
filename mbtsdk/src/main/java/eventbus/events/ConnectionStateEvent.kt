@@ -10,7 +10,7 @@ import features.MbtDeviceType
 class ConnectionStateEvent : IEvent {
   var newState: BluetoothState
     private set
-  var additionalInfo: String? = null
+  var additionalInfo: String = ""
     private set
   var device: MbtDevice? = null
     private set
@@ -31,7 +31,7 @@ class ConnectionStateEvent : IEvent {
 
   constructor(newState: BluetoothState, additionalInfo: String?) {
     this.newState = newState
-    this.additionalInfo = additionalInfo
+    this.additionalInfo = additionalInfo ?: ""
   }
 
 }

@@ -287,8 +287,9 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
       },
           MbtConfig.getBluetoothBondingTimeout()
       )
-      sleep(500)
+      sleep(1000)
       if ((MbtDataBluetooth.instance.currentState == BONDING)) { //at this point : current state should be BONDED if bonding succeeded
+        Log.e(TAG, "Timeout on bonding")
         updateConnectionState(BONDING_FAILURE)
       }
       sleep(1000)

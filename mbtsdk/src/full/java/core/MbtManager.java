@@ -293,10 +293,10 @@ public class MbtManager {
       LogUtils.i(TAG, " manager received battery level " + event.getInfo());
       if (deviceInfoListener != null) {
         if (event.getInfo() == null)
-          deviceInfoListener.onError(HeadsetDeviceError.ERROR_TIMEOUT_BATTERY, null);
+          deviceInfoListener.onError(HeadsetDeviceError.ERROR_TIMEOUT_BATTERY, "");
         else {
           if (event.getInfo().equals(-1))
-            deviceInfoListener.onError(HeadsetDeviceError.ERROR_DECODE_BATTERY, null);
+            deviceInfoListener.onError(HeadsetDeviceError.ERROR_DECODE_BATTERY, "");
           else
             deviceInfoListener.onBatteryLevelReceived((String) event.getInfo());
         }
@@ -317,7 +317,7 @@ public class MbtManager {
         connectionStateListener.onDeviceConnected(connectionStateEvent.getDevice());
         break;
       case DATA_BT_DISCONNECTED:
-        connectionStateListener.onDeviceDisconnected(connectionStateEvent.getDevice());
+        connectionStateListener.onDeviceDisconnected();
         break;
       default:
         if (connectionStateEvent.getNewState().isAFailureState())

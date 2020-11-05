@@ -12,5 +12,5 @@ public interface ConnectionStateListener<U extends BaseError> extends BaseErrorE
          * See {@link BluetoothState} for all possible states
          */
         void onDeviceConnected(MbtDevice device);
-        void onDeviceDisconnected(MbtDevice device);
+        void onDeviceDisconnected();
     }

@@ -628,13 +628,17 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
    * If the headset is not already bonded, it will bond and return an authentication failed status code (0x89 GATT_AUTH_FAIL)
    * in the [MbtGattController.onCharacteristicRead]onCharacteristicRead callback  */
   fun bond() {
-    LogUtils.i(TAG, "start bonding")
+    LogUtils.i(TAG, "start bonding : $currentState")
     val isBondRetry = currentState == BluetoothState.BONDING
     if (isBondRetry && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       LogUtils.d(TAG, "Retry not necessary : Android will retry the read operation itself after bonding has completed") //However, on Android 6 & 7 you will have to retry the operation yourself
       updateConnectionState(true)
       return
     }
+//    if (isBondRetry && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//      LogUtils.d(TAG, "Retry not necessary : Android will retry the read operation itself after bonding has completed") //However, on Android 6 & 7 you will have to retry the operation yourself
+//      return
+//    }
     if (currentState == BluetoothState.READING_SUCCESS) updateConnectionState(false) //current state is set to BONDING
     manager.reader.startReadOperation(DeviceInfo.BATTERY) //trigger bonding indirectly
   }
