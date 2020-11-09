@@ -215,6 +215,7 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
   }
 
   private void onDeviceFound(MbtDevice foundDevice) {
+    Log.d(TAG, "on device found "+foundDevice);
     setmCurrentConnectedDevice(foundDevice);
   }
 
@@ -225,6 +226,10 @@ public class MbtDeviceManager extends BaseModuleManager implements OADContract {
   }
 
   private void onDeviceDisconnected() {
+    Log.d(TAG, "on device disconnected ");
+    if(oadManager != null)
+      Log.d(TAG, "oad manager state :" + oadManager.getCurrentState());
+
     if (oadManager != null) {
       switch (oadManager.getCurrentState()) {
         case AWAITING_DEVICE_REBOOT: //reboot success

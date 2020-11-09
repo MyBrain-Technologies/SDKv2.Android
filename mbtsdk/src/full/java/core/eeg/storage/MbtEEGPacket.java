@@ -99,8 +99,9 @@ public final class MbtEEGPacket {
     @Override
     public String toString() {
         return "MbtEEGPacket{" +
-                "EEG Data =" + (channelsData != null && !channelsData.isEmpty() ? (channelsData.size()+"x"+channelsData.get(0).size()) : channelsData) +
-                ", statusData=\n" + (statusData != null ? "size: " +statusData.size() + " content: ["+ statusData.toString()+"]" : null) +
+                "EEG=" + (channelsData != null && !channelsData.isEmpty() ? (channelsData.size()+"x"+channelsData.get(0).size()) : channelsData) +
+                ",\n quality= [" + (qualities != null ? (qualities.get(0) + "," +qualities.get(1)) : null+"]") +
+                "\\n, statusData=" + (statusData != null ? "size: " +statusData.size() : null) +
                 ",\n timestamp=" + timestamp +
                 '}';
     }

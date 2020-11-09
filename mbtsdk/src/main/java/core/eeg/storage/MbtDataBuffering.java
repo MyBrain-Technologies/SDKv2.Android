@@ -112,7 +112,7 @@ public class MbtDataBuffering {
      */
     public void resetBuffers(){
 
-        pendingRawData.clear(); //init the buffer that we will use for handle/convert EEG raw data //TODO see if mandatory to reinit this buffer
+        pendingRawData.clear(); //init the buffer that we will use for handle/convert EEG raw data //TODO see if mandatory to reset this buffer
         mbtEEGPacketsBuffer = new MbtEEGPacket();
 
     }

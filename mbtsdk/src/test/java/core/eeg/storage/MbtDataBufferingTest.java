@@ -144,7 +144,7 @@ public class MbtDataBufferingTest {
      * Check that all the buffers have been cleared and that the EEG packet buffer have been recreated by checking the timestamp
      */
     @Test
-    public void reinitBuffersTest(){
+    public void resetBuffersTest(){
         ArrayList<ArrayList<Float>> matrix = new ArrayList<>();
         matrix.add(new ArrayList<>(Arrays.asList(-0.001773772f, 0.009991123f)));
         matrix.add(new ArrayList<>(Arrays.asList(0.013030159f, -1.30416E-4f)));

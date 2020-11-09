@@ -189,10 +189,8 @@ abstract class MbtBluetooth(protocol: BluetoothProtocol, protected var manager: 
     return enableBluetoothOnDevice()
   }
 
-  companion object {
-    //todo refactor interfaces > abstract classes : see streamstate comments to understand
-    private val TAG = MbtBluetooth::class.java.name
-  }
+private val TAG = this::class.java.simpleName
+
 
   init {
     val context = manager.context.context

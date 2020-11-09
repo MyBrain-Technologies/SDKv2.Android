@@ -17,6 +17,7 @@ import core.bluetooth.spp.MbtBluetoothSPP
 import core.device.model.DeviceInfo
 import core.device.model.DeviceInfo.*
 import core.bluetooth.StreamState.*
+import engine.clientevents.BaseError
 import engine.clientevents.BaseErrorEvent
 import engine.clientevents.BluetoothError
 import eventbus.events.BluetoothResponseEvent
@@ -29,9 +30,8 @@ import utils.LogUtils
  * A read operation is any value read/stream request sent to the headset device */
 class MbtBluetoothReader(private val manager: MbtBluetoothManager) {
 
-  companion object {
-    private val TAG = MbtBluetoothReader::class.java.simpleName
-  }
+  private val TAG = this::class.java.simpleName
+
 
   fun startReadingDeviceInfo(deviceInfo: DeviceInfo) : BluetoothState? {
     manager.tryOperation({ startReadOperation(deviceInfo) },
@@ -85,7 +85,11 @@ class MbtBluetoothReader(private val manager: MbtBluetoothManager) {
             throw BluetoothError.ERROR_WRITE_CHARACTERISTIC_OPERATION
           }
         },
-        BaseErrorEvent { _, _ -> MbtDataBluetooth.instance.notifyStreamStateChanged(FAILED) },
+        object : BaseErrorEvent<BaseError> {
+          override fun onError(error: BaseError, additionalInfo: String?) {
+            MbtDataBluetooth.instance.notifyStreamStateChanged(FAILED)
+          }
+        },
         { manager.setRequestProcessing(false)},
         6000
     )
@@ -103,7 +107,11 @@ class MbtBluetoothReader(private val manager: MbtBluetoothManager) {
         { if (!MbtDataBluetooth.instance.stopStream()) {
             throw BluetoothError.ERROR_WRITE_CHARACTERISTIC_OPERATION
           } },
-        BaseErrorEvent { _, _ -> MbtDataBluetooth.instance.notifyStreamStateChanged(FAILED) },
+        object : BaseErrorEvent<BaseError> {
+          override fun onError(error: BaseError, additionalInfo: String?) {
+            MbtDataBluetooth.instance.notifyStreamStateChanged(FAILED)
+          }
+        },
         { manager.setRequestProcessing(false)},
         6000
     )
