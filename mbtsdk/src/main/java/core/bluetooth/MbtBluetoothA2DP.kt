@@ -210,7 +210,7 @@ class MbtBluetoothA2DP(manager: MbtBluetoothManager) : ExtraBluetooth(BluetoothP
     return audioManager.isBluetoothA2dpOn
   }
 
-  private val a2DPcurrentDevices: List<BluetoothDevice>
+  private val connectedDevices: List<BluetoothDevice>
     get() = if (a2dpProxy == null) emptyList() else a2dpProxy!!.connectedDevices
 
   override val isConnected: Boolean
@@ -230,7 +230,8 @@ class MbtBluetoothA2DP(manager: MbtBluetoothManager) : ExtraBluetooth(BluetoothP
 
   override fun notifyConnectionStateChanged(newState: BluetoothState, notifyManager: Boolean) {
     currentState = newState
-    if (newState == BluetoothState.AUDIO_BT_DISCONNECTED && asyncDisconnection.isWaiting) asyncDisconnection.stopWaitingOperation(false) else if (newState == BluetoothState.AUDIO_BT_CONNECTION_SUCCESS) {
+    if (newState == BluetoothState.AUDIO_BT_DISCONNECTED && asyncDisconnection.isWaiting) asyncDisconnection.stopWaitingOperation(false)
+    else if (newState == BluetoothState.AUDIO_BT_CONNECTION_SUCCESS) {
       if (asyncConnection.isWaiting) asyncConnection.stopWaitingOperation(false)
       if (notifyManager) //if audio is connected (and BLE is not) when the user request connection to a headset
         manager.connecter.notifyConnectionStateChanged(BluetoothState.AUDIO_BT_CONNECTION_SUCCESS)
@@ -281,7 +282,7 @@ class MbtBluetoothA2DP(manager: MbtBluetoothManager) : ExtraBluetooth(BluetoothP
    */
   internal inner class A2DPMonitor {
     private var pollingTimer: Timer? = null
-    private var connectedA2DpDevices: List<BluetoothDevice>
+    private var currentKnownDevices: List<BluetoothDevice>
     fun start(pollingMillis: Int) {
       pollingTimer = Timer()
       pollingTimer!!.scheduleAtFixedRate(Task(), 200, pollingMillis.toLong())
@@ -308,10 +309,10 @@ class MbtBluetoothA2DP(manager: MbtBluetoothManager) : ExtraBluetooth(BluetoothP
 
     private inner class Task : TimerTask() {
       override fun run() {
-        if (connectedA2DpDevices != a2DPcurrentDevices) { //It means that something has changed. Now we need to find out what changed (getAD2PcurrentDevices returns the connected devices for this specific profile.)
-          if (connectedA2DpDevices.size < a2DPcurrentDevices.size) { //Here, we have a new A2DP connection then we notify bluetooth manager
+        if (currentKnownDevices != connectedDevices) { //It means that something has changed. Now we need to find out what changed (getAD2PcurrentDevices returns the connected devices for this specific profile.)
+          if (currentKnownDevices.size < connectedDevices.size) { //Here, we have a new A2DP connection then we notify bluetooth manager
             val previousDevice = currentDevice
-            currentDevice = a2DPcurrentDevices[a2DPcurrentDevices.size - 1] //As one a2dp output is possible at a time on android, it is possible to consider that last item in list is the current one
+            currentDevice = connectedDevices.last() //As one a2dp output is possible at a time on android, it is possible to consider that last item in list is the current one
             if (hasA2DPDeviceConnected() &&  currentDevice?.name != null && isCurrentDeviceNameValid) { //if a Bluetooth A2DP audio peripheral is connected to a device whose name is not null.
               LogUtils.d(TAG, "Detected connected device " + currentDevice?.name + " address is " + currentDevice?.address)
               if (previousDevice == null || currentDevice != null && currentDevice !== previousDevice) notifyConnectionStateChanged(BluetoothState.AUDIO_BT_CONNECTION_SUCCESS, true)
@@ -319,18 +320,19 @@ class MbtBluetoothA2DP(manager: MbtBluetoothManager) : ExtraBluetooth(BluetoothP
             }
           } else  //Here, either the A2DP connection has dropped or a new A2DP device is connecting.
             notifyConnectionStateChanged(BluetoothState.AUDIO_BT_DISCONNECTED)
-          connectedA2DpDevices = a2DPcurrentDevices //In any case, it is mandatory to updated our local connected A2DP list
+
+          currentKnownDevices = connectedDevices //In any case, it is mandatory to updated our local connected A2DP list
         }
       }
     }
 
     init {
-      connectedA2DpDevices = emptyList()
+      currentKnownDevices = emptyList()
     }
   }
+  private val TAG = this::class.java.simpleName
 
   companion object {
-    private val TAG = MbtBluetoothA2DP::class.java.simpleName
     private const val CONNECT_METHOD = "connect"
     private const val DISCONNECT_METHOD = "disconnect"
     var instance: MbtBluetoothA2DP? = null

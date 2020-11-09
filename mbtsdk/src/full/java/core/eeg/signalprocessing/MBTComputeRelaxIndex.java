@@ -71,7 +71,7 @@ public final class MBTComputeRelaxIndex {
     }
 
 
-    public static void reinitRelaxIndexVariables(){
+    public static void resetRelaxIndexVariables(){
         nativeReinitRelaxIndexVariables();
     }
 

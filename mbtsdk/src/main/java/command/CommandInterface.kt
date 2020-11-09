@@ -145,8 +145,7 @@ interface CommandInterface<E : BaseError> : BaseErrorEvent<E> {
      */
     abstract fun serialize(): Any
 
-    companion object {
-      private val TAG = MbtCommand::class.java.name
-    }
+    private val TAG = this::class.java.simpleName
+
   }
 }

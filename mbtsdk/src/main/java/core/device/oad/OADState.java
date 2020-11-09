@@ -63,7 +63,7 @@ public enum OADState {
             OADCommands.RequestFirmwareValidation requestFirmwareValidation = new OADCommands.RequestFirmwareValidation(
                     oadManager.getOADContext().getFirmwareVersionAsByteArray(),
                     oadManager.getOADContext().getNbPacketsToSend());
-            AsyncUtils.Companion.executeAsync(new Runnable() {
+            AsyncUtils.executeAsync(new Runnable() {
                 @Override
                 public void run() {
                     oadManager.getOADContract().requestFirmwareValidation(requestFirmwareValidation);
@@ -125,7 +125,7 @@ public enum OADState {
         public void executeAction(OADManager oadManager, Object actionData) {
             super.executeAction(oadManager, actionData);
 
-            AsyncUtils.Companion.executeAsync(new Runnable() {
+            AsyncUtils.executeAsync(new Runnable() {
                 @Override
                 public void run() {
                     boolean isTransferSuccess = oadManager.waitUntilTimeout(getMaximumDuration());
@@ -161,7 +161,7 @@ public enum OADState {
         public void executeAction(OADManager oadManager, Object actionData) {
             super.executeAction(oadManager, actionData);
 
-            AsyncUtils.Companion.executeAsync(new Runnable() {
+            AsyncUtils.executeAsync(new Runnable() {
                 @Override
                 public void run() {
                     boolean isSuccess = oadManager.waitUntilTimeout(getMaximumDuration());

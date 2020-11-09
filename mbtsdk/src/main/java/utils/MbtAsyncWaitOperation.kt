@@ -11,11 +11,11 @@ import java.util.concurrent.*
 class MbtAsyncWaitOperation<T> {
     private var lockOperation: MbtLock<T>? = null
     private var futureOperation: Future<T>? = null
+    private val TAG = this::class.java.name
 
     companion object {
         @JvmField
         val CANCEL: Any? = null
-        private val TAG = MbtAsyncWaitOperation::class.java.name
     }
 
     init {
@@ -95,7 +95,7 @@ class MbtAsyncWaitOperation<T> {
     fun tryOperationForResult(operation: ()-> Unit, catchCallback: BaseErrorEvent<BaseError>?, finally: (()-> Unit)?, timeout: Int) : T? {
         var result : T? = null
         try {
-            AsyncUtils.Companion.executeAsync ( Runnable { operation.invoke() } )
+            AsyncUtils.executeAsync ( Runnable { operation.invoke() } )
             result = waitOperationResult(timeout)
             LogUtils.d(TAG, "Result : $result")
         } catch (exception: Exception) {

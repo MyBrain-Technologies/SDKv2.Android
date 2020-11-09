@@ -21,6 +21,7 @@ private constructor(subscriber: Any) // non empty constructor for subscriber
   interface Callback<T> {
     fun onEventCallback(`object`: T): Any?
   }
+  private val TAG = this::class.java.simpleName
 
   companion object {
     /**
@@ -29,7 +30,6 @@ private constructor(subscriber: Any) // non empty constructor for subscriber
      */
     @JvmField
     var BUS = EventBus.getDefault()
-    private val TAG = MbtEventBus::class.java.simpleName
 
     /**
      * Registers or unregisters the given subscriber class to receive events from the Events Bus.

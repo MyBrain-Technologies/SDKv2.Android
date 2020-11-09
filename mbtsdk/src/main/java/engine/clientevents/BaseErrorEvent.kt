@@ -8,5 +8,5 @@ interface BaseErrorEvent<U : BaseError> {
    * Method called when an error occured during process execution
    * @param error
    */
-  fun onError(error: U, additionalInfo: String?)
+  fun onError(error: U, additionalInfo: String? = null)
 }

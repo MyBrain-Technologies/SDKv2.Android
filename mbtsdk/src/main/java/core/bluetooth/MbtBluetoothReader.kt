@@ -30,9 +30,8 @@ import utils.LogUtils
  * A read operation is any value read/stream request sent to the headset device */
 class MbtBluetoothReader(private val manager: MbtBluetoothManager) {
 
-  companion object {
-    private val TAG = MbtBluetoothReader::class.java.simpleName
-  }
+  private val TAG = this::class.java.simpleName
+
 
   fun startReadingDeviceInfo(deviceInfo: DeviceInfo) : BluetoothState? {
     manager.tryOperation({ startReadOperation(deviceInfo) },

@@ -119,7 +119,7 @@ public final class FileManager {
 
             return (file.createNewFile() ? file : null);
         } catch (IOException e) {
-            Log.e(TAG,"Failed to create file");
+            Log.e(TAG,"Create file failed "+e.toString());
             return null;
         }
     }
@@ -184,7 +184,7 @@ public final class FileManager {
         Map tmp = new HashMap(savedRecordings);
         tmp.keySet().removeAll(savedMap.keySet());
         savedMap.putAll(tmp);
-        AsyncUtils.Companion.executeAsync(new Runnable() {
+        AsyncUtils.executeAsync(new Runnable() {
             @Override
             public void run() {
                 for (String filepath : savedMap.keySet()) {

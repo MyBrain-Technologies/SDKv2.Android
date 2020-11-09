@@ -124,7 +124,7 @@ public final class MbtEEGManager extends BaseModuleManager {
      */
     public void convertToEEG(@NonNull final ArrayList<RawEEGSample> toDecodeRawEEG) {
 
-        AsyncUtils.Companion.executeAsync(new Runnable() {
+        AsyncUtils.executeAsync(new Runnable() {
             @Override
             public void run() {
                 consolidatedEEG = new ArrayList<>();
@@ -153,7 +153,7 @@ public final class MbtEEGManager extends BaseModuleManager {
     public void notifyEEGDataIsReady(@NonNull final MbtEEGPacket eegPackets) {
         Log.d(TAG, "notify EEG Data Is Ready ");
 
-        AsyncUtils.Companion.executeAsync(new Runnable() {
+        AsyncUtils.executeAsync(new Runnable() {
             @Override
             public void run() {
                 if (hasQualities) {
