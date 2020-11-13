@@ -124,10 +124,14 @@ class MbtBluetoothReader(private val manager: MbtBluetoothManager) {
   fun notifyDeviceInfoReceived(deviceInfo: DeviceInfo, deviceValue: String?) {
     Log.d(TAG, " Device info returned by the headset $deviceInfo : $deviceValue")
     manager.setRequestProcessing(false)
-    if (deviceInfo == BATTERY && MbtDataBluetooth.instance.currentState == BONDING) {
-      val connecter = manager.connecter
-      connecter.updateConnectionState(false) //current state is set to BONDED
-      connecter.switchToNextConnectionStep()
+    if (deviceInfo == BATTERY) {
+      if (MbtDataBluetooth.instance.currentState == BONDING) {
+        val connecter = manager.connecter
+        connecter.updateConnectionState(false) //current state is set to BONDED
+        connecter.switchToNextConnectionStep()
+      } else if(deviceValue != null)
+        manager.notifyEvent(DeviceInfoEvent(deviceInfo, deviceValue))
+
     } else {
       manager.notifyEvent(DeviceInfoEvent(deviceInfo, deviceValue))
     }
