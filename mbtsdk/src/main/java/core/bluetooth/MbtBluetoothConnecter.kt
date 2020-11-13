@@ -341,7 +341,7 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
       connectionRetryCounter++
       sleep(200)
       startConnectionForAudioStreaming()
-    } else {
+    } else if(!isConnected){
       connectionRetryCounter = 0
       MbtAudioBluetooth.instance?.notifyConnectionStateChanged(CONNECTION_FAILURE) //at this point : current state should be AUDIO_CONNECTED if audio connection succeeded
       MbtDataBluetooth.instance.notifyConnectionStateChanged(CONNECTION_FAILURE)
