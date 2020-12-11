@@ -1,0 +1,219 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: DeviceCommand</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">command</a> ]
+</div>
+
+<h1>Coverage Summary for Class: DeviceCommand (command)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">DeviceCommand</td>
+<td class="coverageStat">
+  <span class="percent">
+    28,6%
+  </span>
+  <span class="absValue">
+    (2/ 7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    7,7%
+  </span>
+  <span class="absValue">
+    (2/ 26)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">DeviceCommand$Companion</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    37,5%
+  </span>
+  <span class="absValue">
+    (3/ 8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    11,1%
+  </span>
+  <span class="absValue">
+    (3/ 27)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package command
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import androidx.annotation.Keep
+<i>4</i>&nbsp;import command.CommandInterface.MbtCommand
+<i>5</i>&nbsp;import engine.clientevents.BaseError
+<i>6</i>&nbsp;import java.nio.ByteBuffer
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;/**
+<i>9</i>&nbsp; * Mailbox command sent from the SDK to the headset
+<i>10</i>&nbsp; * in order to configure a parameter,
+<i>11</i>&nbsp; * or get values stored by the headset
+<i>12</i>&nbsp; * or ask the headset to perform an action.
+<i>13</i>&nbsp; * It provides a callback used to return a raw response sent by the headset to the SDK
+<i>14</i>&nbsp; */
+<i>15</i>&nbsp;@Keep
+<b class="fc"><i>16</i>&nbsp;abstract class DeviceCommand&lt;T : Any, U : BaseError&gt; internal constructor(</b>
+<i>17</i>&nbsp;    /**
+<i>18</i>&nbsp;     * Unique identifier of the command.
+<i>19</i>&nbsp;     * This code is sent to the headset in the write characteristic operation.
+<i>20</i>&nbsp;     */
+<b class="fc"><i>21</i>&nbsp;    var identifier: DeviceCommandEvent?) : MbtCommand&lt;U&gt;() {</b>
+<i>22</i>&nbsp;  
+<b class="fc"><i>23</i>&nbsp;  companion object {</b>
+<i>24</i>&nbsp;    const val ENABLE: Byte = 0x01
+<i>25</i>&nbsp;    const val DISABLE: Byte = 0x00
+<i>26</i>&nbsp;  }
+<i>27</i>&nbsp;  
+<i>28</i>&nbsp;  /**
+<i>29</i>&nbsp;   * Optional header codes
+<i>30</i>&nbsp;   */
+<i>31</i>&nbsp;  private var headerCodes: ByteArray? = null
+<i>32</i>&nbsp;
+<i>33</i>&nbsp;  /**
+<i>34</i>&nbsp;   * Buffer that hold the identifier code,
+<i>35</i>&nbsp;   * additional codes
+<i>36</i>&nbsp;   * and all the data specific to the implemented class
+<i>37</i>&nbsp;   */
+<i>38</i>&nbsp;  private var rawDataBuffer: ByteBuffer? = null
+<i>39</i>&nbsp;
+<i>40</i>&nbsp;  /**
+<i>41</i>&nbsp;   * Change the unique identifier of the command
+<i>42</i>&nbsp;   */
+<i>43</i>&nbsp;  fun setCommandEvent(commandEvent: DeviceCommandEvent?) {
+<b class="nc"><i>44</i>&nbsp;    identifier = commandEvent</b>
+<b class="nc"><i>45</i>&nbsp;  }</b>
+<i>46</i>&nbsp;
+<i>47</i>&nbsp;  /**
+<i>48</i>&nbsp;   * Allocate a buffer that bundle all the data to send to the headset
+<i>49</i>&nbsp;   * for the write characteristic operation
+<i>50</i>&nbsp;   */
+<i>51</i>&nbsp;  private fun allocateBuffer() {
+<b class="nc"><i>52</i>&nbsp;    rawDataBuffer = null //reset the temporary buffer</b>
+<b class="nc"><i>53</i>&nbsp;    var bufferSize = 0 //the buffer contains at least the identifier device command identifier code</b>
+<i>54</i>&nbsp;
+<b class="nc"><i>55</i>&nbsp;    if (headerCodes != null) bufferSize += headerCodes!!.size</b>
+<b class="nc"><i>56</i>&nbsp;    if (identifier != null) bufferSize += 1</b>
+<b class="nc"><i>57</i>&nbsp;    if (identifier != null &amp;&amp; identifier?.additionalCodes != null) bufferSize += identifier?.additionalCodes?.size?:0</b>
+<b class="nc"><i>58</i>&nbsp;    if (data != null) bufferSize += data!!.size//get data returns the optional data specific to the implemented class</b>
+<i>59</i>&nbsp;
+<b class="nc"><i>60</i>&nbsp;    rawDataBuffer = ByteBuffer.allocate(bufferSize)</b>
+<b class="nc"><i>61</i>&nbsp;  }</b>
+<i>62</i>&nbsp;
+<i>63</i>&nbsp;  /**
+<i>64</i>&nbsp;   * Add the identifier code and the additional codes
+<i>65</i>&nbsp;   * to the raw data buffer to send to the headset
+<i>66</i>&nbsp;   */
+<i>67</i>&nbsp;  private fun fillHeader() {
+<b class="nc"><i>68</i>&nbsp;    if (headerCodes != null) for (singleCode in headerCodes!!) {</b>
+<b class="nc"><i>69</i>&nbsp;      rawDataBuffer?.put(singleCode)</b>
+<i>70</i>&nbsp;    }
+<b class="nc"><i>71</i>&nbsp;    if (identifier != null) {</b>
+<b class="nc"><i>72</i>&nbsp;      rawDataBuffer?.put(identifier!!.identifierCode)</b>
+<b class="nc"><i>73</i>&nbsp;      if (identifier?.additionalCodes != null) for (singleCode in identifier?.additionalCodes!!) {</b>
+<b class="nc"><i>74</i>&nbsp;        rawDataBuffer?.put(singleCode)</b>
+<i>75</i>&nbsp;      }
+<i>76</i>&nbsp;    }
+<b class="nc"><i>77</i>&nbsp;  }</b>
+<i>78</i>&nbsp;
+<i>79</i>&nbsp;  /**
+<i>80</i>&nbsp;   * Add the optional data specific to the implemented class
+<i>81</i>&nbsp;   * to the raw data buffer to send to the headset
+<i>82</i>&nbsp;   * @return the complete buffer (identifier + additional codes + optional data)
+<i>83</i>&nbsp;   */
+<i>84</i>&nbsp;  private fun fillPayload(): T {
+<b class="nc"><i>85</i>&nbsp;    if (data != null) {</b>
+<b class="nc"><i>86</i>&nbsp;      for (singleData in data!!) {</b>
+<b class="nc"><i>87</i>&nbsp;        rawDataBuffer?.put(singleData)</b>
+<i>88</i>&nbsp;      }
+<i>89</i>&nbsp;    }
+<b class="nc"><i>90</i>&nbsp;    return rawDataBuffer?.array() as T</b>
+<i>91</i>&nbsp;  }
+<i>92</i>&nbsp;
+<i>93</i>&nbsp;  /**
+<i>94</i>&nbsp;   * Bundles the data to send to the headset
+<i>95</i>&nbsp;   * for the write characteristic operation / request
+<i>96</i>&nbsp;   * @return the bundled data in a object
+<i>97</i>&nbsp;   */
+<i>98</i>&nbsp;  override fun serialize(): T {
+<b class="nc"><i>99</i>&nbsp;    allocateBuffer()</b>
+<b class="nc"><i>100</i>&nbsp;    fillHeader()</b>
+<b class="nc"><i>101</i>&nbsp;    return fillPayload()</b>
+<i>102</i>&nbsp;  }
+<i>103</i>&nbsp;
+<i>104</i>&nbsp;  /**
+<i>105</i>&nbsp;   * Returns the optional data specific to the implemented class
+<i>106</i>&nbsp;   * @return the optional data specific to the implemented class
+<i>107</i>&nbsp;   */
+<i>108</i>&nbsp;  abstract /*T*/ val data: ByteArray?
+<i>109</i>&nbsp;
+<i>110</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2020-06-10 10:26</div>
+</div>
+</body>
+</html>
