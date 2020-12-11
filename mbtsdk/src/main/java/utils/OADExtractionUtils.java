@@ -47,7 +47,7 @@ public final class OADExtractionUtils {
     /**
      * Regular expression used in every OAD binary file name to separate each digit of the firmware version number.
      */
-    private final static String FIRMWARE_VERSION_REGEX = "_";
+    public final static String FIRMWARE_VERSION_REGEX = "_";
 
     /**
      * Regular expression used in the version helper for file name to separate each digit of the firmware version number.
