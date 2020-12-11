@@ -16,9 +16,8 @@ import utils.VersionHelper
 class MbtBluetoothWriter(private val manager: MbtBluetoothManager) {
 
 
-  companion object {
-    private val TAG = MbtBluetoothWriter::class.java.simpleName
-  }
+  private val TAG = this::class.java.simpleName
+
 
   private fun MbtDevice.shouldSendExternalName(): Boolean {
     return (serialNumber != null
@@ -35,7 +34,7 @@ class MbtBluetoothWriter(private val manager: MbtBluetoothManager) {
   fun startSendingExternalName(device: MbtDevice) {
     LogUtils.i(TAG, "start sending QR code if supported for device $device")
     if (device.shouldSendExternalName()) {
-      AsyncUtils.Companion.executeAsync {
+      AsyncUtils.executeAsync {
         val externalName = device.findExternalName()
         val request = CommandRequestEvent(UpdateExternalName(externalName))
         manager.parseRequest(request)

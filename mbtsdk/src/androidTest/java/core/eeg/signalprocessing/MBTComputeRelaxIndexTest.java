@@ -136,13 +136,13 @@ public class MBTComputeRelaxIndexTest {
     }
 
     @Test
-    public void reinitRelaxIndexVariablesTest() {
+    public void resetRelaxIndexVariablesTest() {
         Map<String, float[]> expectedOutput = new HashMap<>();
         expectedOutput.put("rawRelaxIndexes",new float[]{});
         expectedOutput.put("smoothedRelaxIndexes",new float[]{});
         expectedOutput.put("histFrequencies",new float[]{});
 
-        MBTComputeRelaxIndex.reinitRelaxIndexVariables();
+        MBTComputeRelaxIndex.resetRelaxIndexVariables();
         Map<String, float[]> computedOutput = MBTComputeRelaxIndex.getSessionMetadata();
         assertTrue(computedOutput.get("rawRelaxIndexes").length==0); // check that the pastRelaxIndex has been cleared
         assertTrue(computedOutput.get("smoothedRelaxIndexes").length==0);// check that the smoothedRelaxIndex has been cleared

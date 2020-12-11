@@ -36,10 +36,10 @@ public class MelomindsQRDataBase extends ConcurrentHashMap<String, String> {
 
     public void storeNewCouple(Context context, Pair<String, String> couple){
         this.put(couple.first, couple.second);
-        saveToPreferences(context);
+        saveToCache(context);
     }
 
-    private void saveToPreferences(Context context){
+    private void saveToCache(Context context){
         Log.d(TAG, "store qrcode map to preferences");
         SharedPreferences mPrefs = context.getSharedPreferences("melomind_qr_coupling",MODE_PRIVATE);
         SharedPreferences.Editor prefsEditor = mPrefs.edit();

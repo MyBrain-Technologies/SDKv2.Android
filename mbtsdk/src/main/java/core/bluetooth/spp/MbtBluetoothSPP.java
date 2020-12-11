@@ -203,7 +203,7 @@ public final class MbtBluetoothSPP
             this.btSocket = toConnect.createRfcommSocketToServiceRecord(SERVER_UUID);
             this.btSocket.connect();
             if (retrieveStreams()) {
-                AsyncUtils.Companion.executeAsync(new Runnable() {
+                AsyncUtils.executeAsync(new Runnable() {
                     @Override
                     public void run() {
                         listenForIncomingMessages();
@@ -493,7 +493,7 @@ public final class MbtBluetoothSPP
                                     resetStatus();
 
                                     final byte[] finalData = dataBuffer.clone();//Arrays.copyOf(dataBuffer, dataBuffer.length);
-                                    AsyncUtils.Companion.executeAsync(new Runnable() {
+                                    AsyncUtils.executeAsync(new Runnable() {
                                         @Override
                                         public void run() {
                                             if (!isStreaming)

@@ -175,7 +175,7 @@ public final class MbtClient {
 
     /**
      * Stops the currently running eeg stream. This stops bluetooth acquisition and
-     * reinit all internal buffering system.
+     * reset all internal buffering system.
      */
     public void stopStream(){
         mbtManager.stopStream(null);
@@ -183,7 +183,7 @@ public final class MbtClient {
 
     /**
      * Stops the currently running eeg stream. This stops bluetooth acquisition and
-     * reinit all internal buffering system.
+     * reset all internal buffering system.
      */
     public void stopStream(RecordConfig recordConfig){
         mbtManager.stopStream(recordConfig);

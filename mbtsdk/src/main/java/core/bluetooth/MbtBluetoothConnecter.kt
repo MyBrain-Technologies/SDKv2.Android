@@ -18,6 +18,7 @@ import core.bluetooth.requests.CommandRequestEvent
 import core.bluetooth.requests.StartOrContinueConnectionRequestEvent
 import core.device.DeviceEvents.GetDeviceEvent
 import core.device.DeviceEvents.PostDeviceEvent
+import core.device.MbtDeviceManager
 import core.device.model.DeviceInfo
 import core.device.model.DeviceInfo.*
 import core.device.model.MbtDevice
@@ -40,8 +41,8 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
   //----------------------------------------------------------------------------
   // Properties
   //----------------------------------------------------------------------------
+  val TAG = this::class.java.simpleName
   companion object {
-    val TAG = MbtBluetoothConnecter::class.java.simpleName
     private const val MAX_CONNECTION_RETRY = 2
   }
   
@@ -120,6 +121,7 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
     if (!isConnectionInterrupted) {
       val currentState = MbtDataBluetooth.instance.currentState
 
+
       LogUtils.d(TAG, "State is $currentState")
       when (currentState) {
         IDLE, DATA_BT_DISCONNECTED -> getReadyForBluetoothOperation()
@@ -177,8 +179,10 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
   fun startScan() {
     var newState: BluetoothState = SCAN_FAILURE
     manager.tryOperation({ MbtDataBluetooth.instance.startScan() },
-        BaseErrorEvent { exception, _ ->
-          if (exception is TimeoutException) newState = SCAN_TIMEOUT
+        object : BaseErrorEvent<BaseError> {
+          override fun onError(error: BaseError, additionalInfo: String?) {
+            if (error is TimeoutException) newState = SCAN_TIMEOUT
+          }
         },//stop the current Bluetooth connection process
         { MbtDataBluetooth.instance.stopScan() },
         MbtConfig.getBluetoothScanTimeout())
@@ -267,6 +271,10 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
     if (MbtDataBluetooth.instance !is MbtBluetoothLE) {
       return
     }
+    if(connectedDevice == null){
+      disconnect(LOW_ENERGY)
+      return
+    }
     val isBondingSupported = VersionHelper(connectedDevice?.firmwareVersion.toString()).isValidForFeature(VersionHelper.Feature.BLE_BONDING)
     LogUtils.i(TAG, "start bonding if supported $isBondingSupported")
 
@@ -333,7 +341,7 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
       connectionRetryCounter++
       sleep(200)
       startConnectionForAudioStreaming()
-    } else {
+    } else if(!isConnected){
       connectionRetryCounter = 0
       MbtAudioBluetooth.instance?.notifyConnectionStateChanged(CONNECTION_FAILURE) //at this point : current state should be AUDIO_CONNECTED if audio connection succeeded
       MbtDataBluetooth.instance.notifyConnectionStateChanged(CONNECTION_FAILURE)
@@ -342,7 +350,8 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
 
     /** Start the disconnect operation on the currently connected bluetooth device according to the [BluetoothProtocol] currently used. */
   fun disconnect(protocol: BluetoothProtocol) {
-    if (isAudioBluetoothConnected || isDataBluetoothConnected || MbtDataBluetooth.instance.currentState.isConnectionInProgress()) {
+      Log.d(TAG,"disconnect")
+      if (isAudioBluetoothConnected || isDataBluetoothConnected || MbtDataBluetooth.instance.currentState.isConnectionInProgress()) {
       when (protocol) {
         LOW_ENERGY, SPP -> MbtDataBluetooth.instance.disconnect()
         A2DP -> MbtAudioBluetooth.instance?.disconnect()
@@ -403,6 +412,7 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
       JACK_CABLE_CONNECTED -> manager.stopWaitingOperation(false)
       DEVICE_FOUND -> manager.notifyDeviceFound()
     }
+    Log.d(TAG, "notify event with state $newState, device is $connectedDevice")
     manager.notifyEvent(ConnectionStateEvent(newState, connectedDevice))
   }
 
@@ -436,7 +446,7 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
   //----------------------------------------------------------------------------
   // CALLBACKS
   //----------------------------------------------------------------------------
-  override fun onError(error: BaseError, additionalInfo: String) {}
+  override fun onError(error: BaseError, additionalInfo: String?) {}
   override fun onReceive(context: Context, intent: Intent) {
     val action = intent.action
     if (action != null) {
@@ -447,6 +457,7 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
   }
 
   fun onDeviceDisconnected(){
+    Log.d(TAG, "on device disconnected ")
     connectedDevice = null
   }
 }

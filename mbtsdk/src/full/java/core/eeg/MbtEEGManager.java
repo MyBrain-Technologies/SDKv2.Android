@@ -126,7 +126,7 @@ public final class MbtEEGManager extends BaseModuleManager {
      */
     public void convertToEEG(@NonNull final ArrayList<RawEEGSample> toDecodeRawEEG) {
 
-        AsyncUtils.Companion.executeAsync(new Runnable() {
+        AsyncUtils.executeAsync(new Runnable() {
             @Override
             public void run() {
                 consolidatedEEG = new ArrayList<>();
@@ -152,9 +152,8 @@ public final class MbtEEGManager extends BaseModuleManager {
      * @param eegPackets the list that contains EEG packets ready to use for the client.
      */
     public void notifyEEGDataIsReady(@NonNull final MbtEEGPacket eegPackets) {
-        LogUtils.d(TAG, "New packet: "+eegPackets.toString());
 
-        AsyncUtils.Companion.executeAsync(new Runnable() {
+        AsyncUtils.executeAsync(new Runnable() {
             @Override
             public void run() {
                 if (hasQualities) {
@@ -171,7 +170,7 @@ public final class MbtEEGManager extends BaseModuleManager {
                 MbtEventBus.postEvent(new ClientReadyEEGEvent(eegPackets));
             }
         });
-
+        LogUtils.d(TAG, "New packet: "+eegPackets.toString());
     }
     private final String FREQUENCY_BAND_FEATURES_VERSION = "2.3.1";
 
@@ -296,8 +295,8 @@ public final class MbtEEGManager extends BaseModuleManager {
     /**
      * Resets the relaxation index.
      */
-    private void reinitRelaxIndexVariables() {
-        MBTComputeRelaxIndex.reinitRelaxIndexVariables();
+    private void resetRelaxIndexVariables() {
+        MBTComputeRelaxIndex.resetRelaxIndexVariables();
     }
 
     /**

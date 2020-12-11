@@ -13,7 +13,6 @@ import java.util.UUID;
 
 import core.recording.metadata.Comment;
 import core.recording.metadata.MelomindExerciseSource;
-import core.recording.metadata.RecordType;
 import core.recording.metadata.MelomindExerciseType;
 import features.MbtAcquisitionLocations;
 import features.MbtFeatures;
@@ -99,7 +98,7 @@ public final class RecordConfig {
     /**
      * Record information that holds the type & source of the EEG data, and the used signal processing algorithms version.
      * Default values are :
-     * {@link RecordType#RAWDATA} for the record type
+     * {@link RAWDATA} for the record type
      * {@link MelomindExerciseType#DEFAULT} for the exercise type
      * {@link MelomindExerciseSource#DEFAULT} for the source
      */
@@ -219,7 +218,7 @@ public final class RecordConfig {
     /**
      * Record information that holds the type & source of the EEG data, and the used signal processing algorithms version.
      * Default values are :
-     * {@link RecordType#RAWDATA} for the record type
+     * {@link RAWDATA} for the record type
      * {@link MelomindExerciseType#DEFAULT} for the exercise type
      * {@link MelomindExerciseSource#DEFAULT} for the source
      */
@@ -338,7 +337,7 @@ public final class RecordConfig {
         /**
          * Record information that holds the type & source of the EEG data, and the used signal processing algorithms version.
          * Default values are :
-         * {@link RecordType#RAWDATA} for the record type
+         * {@link RAWDATA} for the record type
          * {@link MelomindExerciseType#DEFAULT} for the exercise type
          * {@link MelomindExerciseSource#DEFAULT} for the source
          */
@@ -514,9 +513,9 @@ public final class RecordConfig {
 
         /**
          * Record type is the type of task performed by the subject who's EEG is recorded
-         * Default value is {@link RecordType#RAWDATA}.
+         * Default value is {@link RAWDATA}.
          */
-        public Builder recordType(RecordType recordType) {
+        public Builder recordType(String recordType) {
             if(this.recordInfo == null)
                 this.recordInfo = new RecordInfo(UUID.randomUUID().toString());
             this.recordInfo.getRecordingType().setRecordType(recordType);

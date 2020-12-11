@@ -267,9 +267,7 @@ internal class MbtGattController(private val mbtBluetoothLE: MbtBluetoothLE) : B
         || (inProgressResponseCode?.let { BitUtils.areByteEquals(it, response[0]) }  == false//wait another response until timeout if the connection is not in progress
         && linkkeyInvalidResponseCode?.let { BitUtils.areByteEquals(it, response[0]) } == false)) //wait another response until timeout if the linkkey invalid response is returned
   }
+  private val TAG = this::class.java.simpleName
 
-  companion object {
-    private val TAG = MbtGattController::class.java.simpleName
-  }
 
 }
