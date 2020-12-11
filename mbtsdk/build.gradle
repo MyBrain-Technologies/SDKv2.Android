@@ -10,15 +10,15 @@ android {
         minSdkVersion 22
         targetSdkVersion 28
 
-        versionCode 20
-        versionName '2.2.9'
+        versionCode 21
+        versionName '2.2.10'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
 
         buildConfigField "boolean", "EEG_ENABLED", "true"
         buildConfigField "boolean", "BLUETOOTH_ENABLED", "true"
         buildConfigField "boolean", "DEVICE_ENABLED", "true"
         buildConfigField "boolean", "RECORDING_ENABLED", "true"
-        buildConfigField "String", "FIRMWARE_VERSION", "\"1_7_14\""
+        buildConfigField "String", "FIRMWARE_VERSION", "\"1_7_24\""
         buildConfigField "String", "USE_ALGO_VERSION", "\"2.3.1\""
     }
 
