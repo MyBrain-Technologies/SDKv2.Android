@@ -68,7 +68,7 @@ public class MbtDataAcquisitionTest {
      */
     /*@Test
     public void handleDataTestNonNullStatusSPP() {
-        BtProtocol protocol = BtProtocol.BLUETOOTH_SPP;
+        BluetoothProtocol protocol = BluetoothProtocol.BLUETOOTH_SPP;
         MbtConfig.setDeviceType(MbtDeviceType.VPRO);
         assertTrue(" vpro ? "+getDeviceType(),getDeviceType() == MbtDeviceType.VPRO);
         assertTrue(" nb status bytes"+MbtFeatures.getNbStatusBytes(),MbtFeatures.getNbStatusBytes() == DEFAULT_SPP_NB_STATUS_BYTES);

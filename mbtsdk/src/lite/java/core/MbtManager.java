@@ -15,6 +15,7 @@ import command.CommandInterface;
 import command.DeviceCommand;
 import config.RecordConfig;
 import config.StreamConfig;
+import core.bluetooth.BluetoothContext;
 import core.bluetooth.StreamState;
 import core.bluetooth.requests.CommandRequestEvent;
 import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
@@ -69,7 +70,7 @@ public class MbtManager{
     private static final boolean STOP = false;
 
     /**
-     * Contains the currently reigstered module managers.
+     * Contains the currently registered module managers.
      */
     private Set<BaseModuleManager> registeredModuleManagers;
 
@@ -136,8 +137,14 @@ public class MbtManager{
         }else if(deviceQrCodeRequested != null && deviceNameRequested != null && !deviceNameRequested.equals(new MelomindsQRDataBase(mContext,  true).get(deviceQrCodeRequested))){
             this.connectionStateListener.onError(HeadsetDeviceError.ERROR_MATCHING, mContext.getString(R.string.aborted_connection));
         }else{
-            MbtEventBus.postEvent(new StartOrContinueConnectionRequestEvent(true, deviceNameRequested, deviceQrCodeRequested, deviceTypeRequested, mtu, connectAudioIfDeviceCompatible));
-        }
+
+            MbtEventBus.postEvent(new StartOrContinueConnectionRequestEvent(true,
+                new BluetoothContext(mContext,
+                    deviceTypeRequested,
+                    connectAudioIfDeviceCompatible,
+                    deviceNameRequested,
+                    deviceQrCodeRequested,
+                    mtu)));        }
     }
 
     /**
@@ -213,7 +220,7 @@ public class MbtManager{
      */
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onDeviceInfoEvent(DeviceInfoEvent event){
-        if(event.getInfotype().equals(DeviceInfo.BATTERY)){
+        if(event.getDeviceInfo().equals(DeviceInfo.BATTERY)){
             LogUtils.i(TAG," manager received battery level "+event.getInfo());
             if(deviceInfoListener != null){
                 if(event.getInfo() == null )

@@ -439,7 +439,7 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
     return startReadOperation(MelomindCharacteristics.CHARAC_INFO_SERIAL_NUMBER)
   }
 
-  /** Initiates a read model number operation on this correct BtProtocol  */
+  /** Initiates a read model number operation on this correct BluetoothProtocol  */
   override fun readModelNumber(): Boolean {
     LogUtils.i(TAG, "read product name")
     return startReadOperation(MelomindCharacteristics.CHARAC_INFO_MODEL_NUMBER)
