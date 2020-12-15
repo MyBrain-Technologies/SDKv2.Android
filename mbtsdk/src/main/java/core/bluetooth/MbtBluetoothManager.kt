@@ -46,9 +46,8 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
 
   var requestProcessor: RequestProcessor //processes all bluetooth requests in a thread that will handle messages synchronously, taking care of CPU consumption as infinite loop in async thread was too heavy for cpu
 
-  companion object {
-    private val TAG = MbtBluetoothManager::class.java.simpleName
-  }
+  private val TAG = this::class.java.simpleName
+
 
   //----------------------------------------------------------------------------
   // SET UP

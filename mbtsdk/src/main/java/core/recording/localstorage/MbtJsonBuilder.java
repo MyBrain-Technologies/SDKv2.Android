@@ -196,7 +196,7 @@ final class MbtJsonBuilder{
             jsonWriter.beginObject();
 
             jsonWriter.name(RECORD_TYPE_KEY)
-                    .value(recording.getRecordInfos().getRecordingType().getRecordType().toString());
+                    .value(recording.getRecordInfos().getRecordingType().getRecordType());
 
             jsonWriter.name(SP_ALGO_VERSION_KEY)
                     .value(recording.getRecordInfos().getRecordingType().getSPVersion());

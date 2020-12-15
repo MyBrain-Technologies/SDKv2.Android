@@ -44,11 +44,11 @@ import java.util.*
 class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProtocol.LOW_ENERGY, manager), IDeviceInfoMonitor {
   /** An internal event used to notify MbtBluetoothLE that A2DP has disconnected. */
   private val mbtGattController: MbtGattController = MbtGattController(this)
-  lateinit var bluetoothLeScanner: BluetoothLeScanner
+  private lateinit var bluetoothLeScanner: BluetoothLeScanner
   var gatt: BluetoothGatt? = null
 
   private val receiver: ConnectionStateReceiver = object : ConnectionStateReceiver() {
-    override fun onError(error: BaseError, additionalInfo: String) {}
+    override fun onError(error: BaseError, additionalInfo: String?) {}
     override fun onReceive(context: Context, intent: Intent) {
       val action = intent.action
       if (action != null) {
@@ -64,9 +64,9 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
       }
     }
   }
+  private val TAG = this::class.java.simpleName
 
   companion object {
-    private val TAG = MbtBluetoothLE::class.java.simpleName
     private const val START = true
     private const val STOP = false
     private const val CONNECT_GATT_METHOD = "connectGatt"
@@ -114,7 +114,7 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
   /** callback used when scanning using bluetooth Low Energy scanner. */
   private val scanCallback: ScanCallback = object : ScanCallback() {
     override fun onScanResult(callbackType: Int, result: ScanResult) { //Callback when a BLE advertisement has been found.
-      AsyncUtils.Companion.executeAsync(Runnable {
+      AsyncUtils.executeAsync(Runnable {
         if (currentState == BluetoothState.SCAN_STARTED) {
           super.onScanResult(callbackType, result)
           currentDevice = result.device
@@ -514,13 +514,14 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
     }
     LogUtils.i(TAG, "Received response for " + (if (mailboxEvent == MBX_CONNECT_IN_A2DP) "connection" else "disconnection") + " : " + mailboxResponse)
     if (mailboxEvent == MBX_CONNECT_IN_A2DP) {
-      val jackConnectedResponseCode = MBX_CONNECT_IN_A2DP.getResponseCodeForKey(CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED)
-      val successResponseCode = MBX_CONNECT_IN_A2DP.getResponseCodeForKey(CMD_CODE_CONNECT_IN_A2DP_SUCCESS)
-      if (jackConnectedResponseCode?.let { BitUtils.areByteEquals(it, mailboxResponse) } == true)
+      val jackConnected = MBX_CONNECT_IN_A2DP.getResponseCodeForKey(CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED)
+      val success = MBX_CONNECT_IN_A2DP.getResponseCodeForKey(CMD_CODE_CONNECT_IN_A2DP_SUCCESS)
+      if (jackConnected?.let { BitUtils.areByteEquals(it, mailboxResponse) } == true)
         updateConnectionState(BluetoothState.JACK_CABLE_CONNECTED)
-      else if (successResponseCode?.let { BitUtils.areByteEquals(it, mailboxResponse) } == true)
-        updateConnectionState(BluetoothState.AUDIO_BT_CONNECTION_SUCCESS)
-    } else updateConnectionState(BluetoothState.AUDIO_BT_DISCONNECTED)
+      else if (success?.let { BitUtils.areByteEquals(success, mailboxResponse) } == true)
+        manager.connecter.updateConnectionState(true)
+    } else
+      updateConnectionState(BluetoothState.AUDIO_BT_DISCONNECTED)
   }
 
   fun updateConnectionState(isCompleted: Boolean) {
@@ -528,6 +529,7 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
   }
 
   fun updateConnectionState(newState: BluetoothState?) {
+    LogUtils.i(TAG, "update connection state $newState")
     manager.connecter.updateConnectionState(newState) //do nothing if the current state is CONNECTED_AND_READY
   }
 
@@ -630,6 +632,7 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
     val isBondRetry = currentState == BluetoothState.BONDING
     if (isBondRetry && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       LogUtils.d(TAG, "Retry not necessary : Android will retry the read operation itself after bonding has completed") //However, on Android 6 & 7 you will have to retry the operation yourself
+      updateConnectionState(true)
       return
     }
     if (currentState == BluetoothState.READING_SUCCESS) updateConnectionState(false) //current state is set to BONDING

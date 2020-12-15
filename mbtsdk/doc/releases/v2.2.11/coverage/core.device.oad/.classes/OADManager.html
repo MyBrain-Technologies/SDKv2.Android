@@ -1,0 +1,458 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: OADManager</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">core.device.oad</a> ]
+</div>
+
+<h1>Coverage Summary for Class: OADManager (core.device.oad)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">OADManager</td>
+<td class="coverageStat">
+  <span class="percent">
+    88,5%
+  </span>
+  <span class="absValue">
+    (23/ 26)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    69,9%
+  </span>
+  <span class="absValue">
+    (79/ 113)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">OADManager$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    88,9%
+  </span>
+  <span class="absValue">
+    (24/ 27)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    70,2%
+  </span>
+  <span class="absValue">
+    (80/ 114)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package core.device.oad;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import android.content.Context;
+<i>4</i>&nbsp;import androidx.annotation.NonNull;
+<i>5</i>&nbsp;import androidx.annotation.Nullable;
+<i>6</i>&nbsp;import androidx.annotation.VisibleForTesting;
+<i>7</i>&nbsp;import android.util.Log;
+<i>8</i>&nbsp;
+<i>9</i>&nbsp;import java.io.IOException;
+<i>10</i>&nbsp;import java.nio.ByteBuffer;
+<i>11</i>&nbsp;import java.nio.ByteOrder;
+<i>12</i>&nbsp;import java.util.ArrayList;
+<i>13</i>&nbsp;import java.util.concurrent.ExecutionException;
+<i>14</i>&nbsp;import java.util.concurrent.TimeoutException;
+<i>15</i>&nbsp;
+<i>16</i>&nbsp;import core.device.event.OADEvent;
+<i>17</i>&nbsp;import core.device.model.MbtVersion;
+<i>18</i>&nbsp;import engine.clientevents.BaseError;
+<i>19</i>&nbsp;import engine.clientevents.OADError;
+<i>20</i>&nbsp;import eventbus.events.FirmwareUpdateClientEvent;
+<i>21</i>&nbsp;import utils.BitUtils;
+<i>22</i>&nbsp;import utils.LogUtils;
+<i>23</i>&nbsp;import utils.MbtAsyncWaitOperation;
+<i>24</i>&nbsp;import utils.OADExtractionUtils;
+<i>25</i>&nbsp;
+<i>26</i>&nbsp;import static utils.OADExtractionUtils.EXPECTED_NB_BYTES_BINARY_FILE;
+<i>27</i>&nbsp;import static utils.OADExtractionUtils.OAD_PAYLOAD_PACKET_SIZE;
+<i>28</i>&nbsp;
+<i>29</i>&nbsp;/**
+<i>30</i>&nbsp; * OAD Manager class is responsible for managing the OAD (Over the Air Download) update process.
+<i>31</i>&nbsp; * This process contains several steps that are handled one after another (no parallel tasks).
+<i>32</i>&nbsp; * Each of these steps are represented with a state machine so that we can know which step is the current step at any moment.
+<i>33</i>&nbsp; * This process uses Bluetooth to transfer a binary file that contains a firmware to the peripheral headset device.
+<i>34</i>&nbsp; * The peripheral headset device can then install the received firmware.
+<i>35</i>&nbsp; * As the whole file can not be sent in a single request, the OAD Manager prepares &amp; chunks it into small packets that are sent one after another.
+<i>36</i>&nbsp; * It also communicates with the current firmware
+<i>37</i>&nbsp; */
+<i>38</i>&nbsp;public final class OADManager {
+<i>39</i>&nbsp;
+<b class="fc"><i>40</i>&nbsp;    private final static String TAG = OADManager.class.getName();</b>
+<i>41</i>&nbsp;
+<i>42</i>&nbsp;    private final Context context;
+<i>43</i>&nbsp;
+<i>44</i>&nbsp;    /**
+<i>45</i>&nbsp;     * Interface used to notify its listener when an OAD event occurs
+<i>46</i>&nbsp;     */
+<i>47</i>&nbsp;    private OADContract oadContract;
+<i>48</i>&nbsp;
+<i>49</i>&nbsp;    /**
+<i>50</i>&nbsp;     * Return the current state of the current OAD update process.
+<i>51</i>&nbsp;     * Each step of the OAD update process is represented with a state machine
+<i>52</i>&nbsp;     * so that we can know which step is the current step at any moment of the update process.
+<i>53</i>&nbsp;     */
+<i>54</i>&nbsp;    private OADState currentState;
+<i>55</i>&nbsp;
+<i>56</i>&nbsp;    /**
+<i>57</i>&nbsp;     * Packet counter that is incremented at every sent OAD packet (chunk of file that holds the firmware to install)
+<i>58</i>&nbsp;     */
+<i>59</i>&nbsp;    private PacketCounter packetCounter;
+<i>60</i>&nbsp;
+<i>61</i>&nbsp;    /**
+<i>62</i>&nbsp;     * Context of an OAD update that stores values related to the firmware to install.
+<i>63</i>&nbsp;     */
+<i>64</i>&nbsp;    private OADContext oadContext;
+<i>65</i>&nbsp;
+<i>66</i>&nbsp;    /**
+<i>67</i>&nbsp;     * Object that waits and blocks the current thread until the {@link MbtAsyncWaitOperation#stopWaitingOperation(Object)}} method is called
+<i>68</i>&nbsp;     */
+<i>69</i>&nbsp;    private MbtAsyncWaitOperation&lt;Boolean&gt; lock;
+<i>70</i>&nbsp;
+<i>71</i>&nbsp;    /**
+<i>72</i>&nbsp;     * Boolean flag used to know if the audio has to be reconnected in Bluetooth after the reboot step
+<i>73</i>&nbsp;     */
+<i>74</i>&nbsp;    private boolean reconnectAudio;
+<i>75</i>&nbsp;
+<b class="fc"><i>76</i>&nbsp;    public OADManager(@NonNull Context context, @NonNull OADContract oadContract, boolean reconnectAudio) {</b>
+<b class="fc"><i>77</i>&nbsp;        if(oadContract == null || context == null)</b>
+<b class="nc"><i>78</i>&nbsp;            throw new IllegalArgumentException(&quot;Impossible to initialize the OAD Manager : one of the provided arguments is null.&quot;);</b>
+<i>79</i>&nbsp;
+<b class="fc"><i>80</i>&nbsp;        this.context = context;</b>
+<b class="fc"><i>81</i>&nbsp;        this.oadContext = new OADContext();</b>
+<b class="fc"><i>82</i>&nbsp;        this.oadContract = oadContract;</b>
+<b class="fc"><i>83</i>&nbsp;        this.reconnectAudio = reconnectAudio;</b>
+<b class="fc"><i>84</i>&nbsp;    }</b>
+<i>85</i>&nbsp;
+<i>86</i>&nbsp;    /**
+<i>87</i>&nbsp;     * Method to call when the OAD update process can be started.
+<i>88</i>&nbsp;     */
+<i>89</i>&nbsp;    public void startOADUpdate(Object initData){
+<b class="nc"><i>90</i>&nbsp;        onOADStateChanged(OADState.INITIALIZING, initData);</b>
+<b class="nc"><i>91</i>&nbsp;    }</b>
+<i>92</i>&nbsp;
+<i>93</i>&nbsp;    /**
+<i>94</i>&nbsp;     * Switch to the OAD update state that follow the current state
+<i>95</i>&nbsp;     * @param actionData is an optional data associated to the action to perform
+<i>96</i>&nbsp;     */
+<i>97</i>&nbsp;    void switchToNextStep(@Nullable Object actionData) {
+<b class="fc"><i>98</i>&nbsp;        LogUtils.d(TAG, &quot;Switch to next step&quot;);</b>
+<b class="fc"><i>99</i>&nbsp;        onOADStateChanged(getCurrentState().nextState(), actionData);</b>
+<b class="fc"><i>100</i>&nbsp;    }</b>
+<i>101</i>&nbsp;
+<i>102</i>&nbsp;    /**
+<i>103</i>&nbsp;     * Change the current state, execute the associated action, and notify the client of this change
+<i>104</i>&nbsp;     * @param state the new state
+<i>105</i>&nbsp;     * @param actionData the associated data
+<i>106</i>&nbsp;     * Throws null pointer exception if the state is null
+<i>107</i>&nbsp;     */
+<i>108</i>&nbsp;    void onOADStateChanged(@NonNull OADState state, @Nullable Object actionData) {
+<b class="fc"><i>109</i>&nbsp;        LogUtils.d(TAG, &quot;OAD State changed : &quot;+currentState +</b>
+<b class="fc"><i>110</i>&nbsp;                &quot;(&quot;+(currentState != null ? currentState.convertToProgress() : null)+ &quot;) &gt; &quot;+state + &quot;(&quot; +state.convertToProgress() +&quot;)&quot;);</b>
+<i>111</i>&nbsp;
+<b class="fc"><i>112</i>&nbsp;        currentState = state;</b>
+<b class="fc"><i>113</i>&nbsp;        oadContract.notifyClient(new FirmwareUpdateClientEvent(currentState));</b>
+<b class="fc"><i>114</i>&nbsp;        currentState.executeAction(this, actionData);</b>
+<i>115</i>&nbsp;
+<b class="fc"><i>116</i>&nbsp;    }</b>
+<i>117</i>&nbsp;
+<i>118</i>&nbsp;    /**
+<i>119</i>&nbsp;     * Abort the current OAD update
+<i>120</i>&nbsp;     */
+<i>121</i>&nbsp;    void abort() {
+<b class="fc"><i>122</i>&nbsp;        onOADStateChanged(OADState.ABORTED, null);</b>
+<b class="fc"><i>123</i>&nbsp;    }</b>
+<i>124</i>&nbsp;
+<i>125</i>&nbsp;    /**
+<i>126</i>&nbsp;     * Initialize the OAD update process
+<i>127</i>&nbsp;     * Extract from the binary file that holds the new firmware:
+<i>128</i>&nbsp;     * - the firmware version
+<i>129</i>&nbsp;     * - the number of OAD packets (chunks of binary file)
+<i>130</i>&nbsp;     * @param firmwareVersion is the firmware version to install
+<i>131</i>&nbsp;     */
+<i>132</i>&nbsp;    void init(MbtVersion firmwareVersion, MbtVersion hardwareVersion){
+<b class="fc"><i>133</i>&nbsp;        LogUtils.d(TAG, &quot;Initialize the OAD update for version &quot;+firmwareVersion);</b>
+<b class="fc"><i>134</i>&nbsp;        oadContext.setOADfilepath(OADExtractionUtils.getFilePathForFirmwareVersion(firmwareVersion.toString(), hardwareVersion));</b>
+<i>135</i>&nbsp;        try {
+<b class="fc"><i>136</i>&nbsp;            byte[] content = OADExtractionUtils.extractFileContent(context.getAssets().open(oadContext.getOADfilepath()));</b>
+<i>137</i>&nbsp;
+<b class="nc"><i>138</i>&nbsp;            if (content == null) {//Check that the OAD file content extracted is valid to start the OAD update</b>
+<b class="nc"><i>139</i>&nbsp;                onError(OADError.ERROR_INIT_FAILED, &quot;Impossible to read the OAD binary file.&quot;);</b>
+<b class="nc"><i>140</i>&nbsp;                return;</b>
+<b class="nc"><i>141</i>&nbsp;            } else if (content.length != EXPECTED_NB_BYTES_BINARY_FILE) {</b>
+<b class="nc"><i>142</i>&nbsp;                onError(OADError.ERROR_INIT_FAILED, &quot;Expected length is &quot; + EXPECTED_NB_BYTES_BINARY_FILE + &quot;, but found length was &quot; + content.length + &quot;.&quot;);</b>
+<b class="nc"><i>143</i>&nbsp;                return;</b>
+<i>144</i>&nbsp;            }
+<i>145</i>&nbsp;
+<b class="nc"><i>146</i>&nbsp;            packetCounter = new PacketCounter(OADExtractionUtils.getTotalNbPackets(OAD_PAYLOAD_PACKET_SIZE, content.length));</b>
+<i>147</i>&nbsp;
+<b class="nc"><i>148</i>&nbsp;            ArrayList&lt;byte[]&gt; oadPackets = OADExtractionUtils.extractOADPackets(content);</b>
+<b class="nc"><i>149</i>&nbsp;            if(oadPackets == null || oadPackets.isEmpty()){</b>
+<b class="nc"><i>150</i>&nbsp;                onError(OADError.ERROR_INIT_FAILED, &quot;Impossible to extract the OAD packets&quot;);</b>
+<b class="nc"><i>151</i>&nbsp;                return;</b>
+<i>152</i>&nbsp;            }
+<b class="nc"><i>153</i>&nbsp;            oadContext.setPacketsToSend(oadPackets);</b>
+<i>154</i>&nbsp;
+<b class="nc"><i>155</i>&nbsp;            byte[] firmwareVersionFromContent = OADExtractionUtils.extractFirmwareVersionFromContent(content);</b>
+<b class="nc"><i>156</i>&nbsp;            if(firmwareVersionFromContent == null || firmwareVersionFromContent.length == 0){</b>
+<b class="nc"><i>157</i>&nbsp;                onError(OADError.ERROR_INIT_FAILED, &quot;Impossible to extract the firmware version from content of OAD binary file.&quot;);</b>
+<b class="nc"><i>158</i>&nbsp;                return;</b>
+<i>159</i>&nbsp;            }
+<b class="nc"><i>160</i>&nbsp;            oadContext.setFirmwareVersion(firmwareVersionFromContent);</b>
+<b class="nc"><i>161</i>&nbsp;            switchToNextStep(null);</b>
+<b class="fc"><i>162</i>&nbsp;        } catch (IOException e) {</b>
+<b class="fc"><i>163</i>&nbsp;            onError(OADError.ERROR_INIT_FAILED, e.getMessage());</b>
+<b class="nc"><i>164</i>&nbsp;        }</b>
+<b class="fc"><i>165</i>&nbsp;    }</b>
+<i>166</i>&nbsp;
+<i>167</i>&nbsp;    /**
+<i>168</i>&nbsp;     *  The whole OAD binary file previously chucked in packets is sent to the current firmware
+<i>169</i>&nbsp;     *  The packets are sent one after another using the WRITE_NO_RESPONSE capability.
+<i>170</i>&nbsp;     *  This means that the firmware will not notify the client that the packet is correctly received.
+<i>171</i>&nbsp;     */
+<i>172</i>&nbsp;    void transferOADFile(){
+<b class="fc"><i>173</i>&nbsp;        Log.d(TAG, &quot;Transfer starts&quot;);</b>
+<b class="fc"><i>174</i>&nbsp;        sendOADPacket(packetCounter.getIndexOfNextPacket());</b>
+<b class="nc"><i>175</i>&nbsp;        switchToNextStep(null);</b>
+<b class="nc"><i>176</i>&nbsp;    }</b>
+<i>177</i>&nbsp;
+<i>178</i>&nbsp;    /**
+<i>179</i>&nbsp;     * Send an OAD packet to the peripheral headset device a Bluetooth write characteristic operation.
+<i>180</i>&nbsp;     * @param packetIndex is the index of the packet to send
+<i>181</i>&nbsp;     */
+<i>182</i>&nbsp;    private void sendOADPacket(int packetIndex) {
+<b class="fc"><i>183</i>&nbsp;        LogUtils.d(TAG, &quot;Transfer packet &quot;+packetIndex);</b>
+<i>184</i>&nbsp;
+<b class="fc"><i>185</i>&nbsp;        if(oadContract != null)</b>
+<b class="fc"><i>186</i>&nbsp;            oadContract.transferPacket(oadContext.getPacketsToSend().get(packetIndex));</b>
+<b class="nc"><i>187</i>&nbsp;    }</b>
+<i>188</i>&nbsp;
+<i>189</i>&nbsp;    /**
+<i>190</i>&nbsp;     * Method triggered when an OAD packet has been well sent in Bluetooth to the peripheral headset device.
+<i>191</i>&nbsp;     */
+<i>192</i>&nbsp;    private void onOADPacketSent(){
+<b class="fc"><i>193</i>&nbsp;        onProgressChanged();</b>
+<b class="fc"><i>194</i>&nbsp;        if(packetCounter.areAllPacketsCounted()) {</b>
+<b class="fc"><i>195</i>&nbsp;            LogUtils.d(TAG, &quot;Last packet sent&quot;);</b>
+<b class="fc"><i>196</i>&nbsp;            stopWaiting(true);</b>
+<i>197</i>&nbsp;        }else
+<b class="nc"><i>198</i>&nbsp;            sendOADPacket(packetCounter.getIndexOfNextPacket());</b>
+<b class="fc"><i>199</i>&nbsp;    }</b>
+<i>200</i>&nbsp;
+<i>201</i>&nbsp;    /**
+<i>202</i>&nbsp;     * Wait an OAD event to be triggered until timeout
+<i>203</i>&nbsp;     */
+<i>204</i>&nbsp;    boolean waitUntilTimeout(int timeout){
+<i>205</i>&nbsp;        try {
+<b class="fc"><i>206</i>&nbsp;            lock = new MbtAsyncWaitOperation&lt;&gt;();</b>
+<b class="fc"><i>207</i>&nbsp;            Boolean result = lock.waitOperationResult(timeout);</b>
+<b class="fc"><i>208</i>&nbsp;            return result != null ? result : false;</b>
+<i>209</i>&nbsp;
+<b class="nc"><i>210</i>&nbsp;        } catch (InterruptedException | ExecutionException | TimeoutException e) {</b>
+<b class="nc"><i>211</i>&nbsp;            LogUtils.e(TAG,&quot;&quot;+e);</b>
+<i>212</i>&nbsp;        }
+<b class="nc"><i>213</i>&nbsp;        return false;</b>
+<i>214</i>&nbsp;    }
+<i>215</i>&nbsp;
+<i>216</i>&nbsp;    /**
+<i>217</i>&nbsp;     * Stop the current lock instance
+<i>218</i>&nbsp;     * @param isSuccess is the status/response provided by the stopWaiting caller
+<i>219</i>&nbsp;     */
+<i>220</i>&nbsp;    private void stopWaiting(boolean isSuccess){
+<b class="fc"><i>221</i>&nbsp;        LogUtils.d(TAG, &quot;stop waiting&quot;);</b>
+<b class="fc"><i>222</i>&nbsp;        lock.stopWaitingOperation(isSuccess);</b>
+<b class="fc"><i>223</i>&nbsp;    }</b>
+<i>224</i>&nbsp;
+<i>225</i>&nbsp;    /**
+<i>226</i>&nbsp;     * Method triggered when a message/response of the headset device
+<i>227</i>&nbsp;     * related to the OAD update process
+<i>228</i>&nbsp;     * is received by the Device unit Manager
+<i>229</i>&nbsp;     */
+<i>230</i>&nbsp;    public void onOADEvent(OADEvent event) {
+<b class="fc"><i>231</i>&nbsp;        switch (event){</b>
+<i>232</i>&nbsp;            case LOST_PACKET:
+<b class="fc"><i>233</i>&nbsp;                if(currentState.equals(OADState.TRANSFERRING)) {</b>
+<i>234</i>&nbsp;                    try {
+<b class="fc"><i>235</i>&nbsp;                        short index = ByteBuffer.wrap(event.getEventDataAsByteArray()).order(ByteOrder.LITTLE_ENDIAN).getShort();</b>
+<b class="fc"><i>236</i>&nbsp;                        packetCounter.resetTo(index); //Packet index is set back to the requested value</b>
+<b class="fc"><i>237</i>&nbsp;                    } catch (Exception e) {</b>
+<b class="fc"><i>238</i>&nbsp;                        LogUtils.e(TAG, &quot;Exception due to invalid reset index: &quot; + e);</b>
+<b class="fc"><i>239</i>&nbsp;                    }</b>
+<i>240</i>&nbsp;                }
+<i>241</i>&nbsp;                break;
+<i>242</i>&nbsp;
+<i>243</i>&nbsp;            case DISCONNECTED:
+<b class="nc"><i>244</i>&nbsp;                onError(OADError.ERROR_LOST_CONNECTION, null);</b>
+<b class="nc"><i>245</i>&nbsp;                break;</b>
+<i>246</i>&nbsp;
+<i>247</i>&nbsp;            case PACKET_TRANSFERRED:
+<b class="fc"><i>248</i>&nbsp;            if(currentState.equals(OADState.TRANSFERRING))</b>
+<b class="fc"><i>249</i>&nbsp;                if(BitUtils.isZero(event.getEventDataAsByteArray()[0]))</b>
+<b class="nc"><i>250</i>&nbsp;                    sendOADPacket(packetCounter.getCurrentPacketIndex());</b>
+<i>251</i>&nbsp;                else
+<b class="fc"><i>252</i>&nbsp;                    onOADPacketSent();</b>
+<i>253</i>&nbsp;            break;
+<i>254</i>&nbsp;
+<i>255</i>&nbsp;            default:
+<b class="fc"><i>256</i>&nbsp;                if(lock != null &amp;&amp; lock.isWaiting())</b>
+<b class="fc"><i>257</i>&nbsp;                    stopWaiting(true);</b>
+<b class="fc"><i>258</i>&nbsp;                switchToNextStep(event.getEventData());</b>
+<i>259</i>&nbsp;                break;
+<i>260</i>&nbsp;        }
+<b class="fc"><i>261</i>&nbsp;    }</b>
+<i>262</i>&nbsp;
+<i>263</i>&nbsp;    /**
+<i>264</i>&nbsp;     * Increment the current OAD update progress and notify the client of this change
+<i>265</i>&nbsp;     */
+<i>266</i>&nbsp;    private void onProgressChanged(){
+<b class="fc"><i>267</i>&nbsp;        currentState.incrementProgress();</b>
+<b class="fc"><i>268</i>&nbsp;        oadContract.notifyClient(new FirmwareUpdateClientEvent(currentState.convertToProgress()));</b>
+<b class="fc"><i>269</i>&nbsp;    }</b>
+<i>270</i>&nbsp;
+<i>271</i>&nbsp;    /**
+<i>272</i>&nbsp;     * Raise an error and abort the OAD update
+<i>273</i>&nbsp;     */
+<i>274</i>&nbsp;    void onError(BaseError error, String additionalInfo){
+<b class="fc"><i>275</i>&nbsp;        oadContract.notifyClient(new FirmwareUpdateClientEvent(error, additionalInfo));</b>
+<b class="fc"><i>276</i>&nbsp;        abort();</b>
+<b class="fc"><i>277</i>&nbsp;    }</b>
+<i>278</i>&nbsp;
+<i>279</i>&nbsp;    /**
+<i>280</i>&nbsp;     * Reconnect the updated headset device in Bluetooth
+<i>281</i>&nbsp;     */
+<i>282</i>&nbsp;    void reconnect(int timeout){
+<b class="fc"><i>283</i>&nbsp;        oadContract.reconnect(reconnectAudio);</b>
+<i>284</i>&nbsp;
+<b class="fc"><i>285</i>&nbsp;        boolean isSuccess = waitUntilTimeout(timeout);</b>
+<b class="fc"><i>286</i>&nbsp;        if(!isSuccess)</b>
+<b class="fc"><i>287</i>&nbsp;            onError(OADError.ERROR_TIMEOUT_UPDATE, &quot;Reconnection timed out.&quot;);</b>
+<b class="fc"><i>288</i>&nbsp;    }</b>
+<i>289</i>&nbsp;
+<i>290</i>&nbsp;    /**
+<i>291</i>&nbsp;     * Return the current state of the current OAD update process.
+<i>292</i>&nbsp;     * Each step of the OAD update process is represented with a state machine
+<i>293</i>&nbsp;     * so that we can know which step is the current step at any moment of the update process.
+<i>294</i>&nbsp;     */
+<i>295</i>&nbsp;    public OADState getCurrentState(){
+<b class="fc"><i>296</i>&nbsp;        return currentState;</b>
+<i>297</i>&nbsp;    }
+<i>298</i>&nbsp;
+<i>299</i>&nbsp;    /**
+<i>300</i>&nbsp;     * Returns the OAD context
+<i>301</i>&nbsp;     * @return the OAD context
+<i>302</i>&nbsp;     */
+<i>303</i>&nbsp;    OADContext getOADContext() {
+<b class="fc"><i>304</i>&nbsp;        return oadContext;</b>
+<i>305</i>&nbsp;    }
+<i>306</i>&nbsp;
+<i>307</i>&nbsp;    /**
+<i>308</i>&nbsp;     * Return the OAD contract
+<i>309</i>&nbsp;     * @return the OAD contract
+<i>310</i>&nbsp;     */
+<i>311</i>&nbsp;    OADContract getOADContract() {
+<b class="fc"><i>312</i>&nbsp;        return oadContract;</b>
+<i>313</i>&nbsp;    }
+<i>314</i>&nbsp;
+<i>315</i>&nbsp;    @VisibleForTesting
+<i>316</i>&nbsp;    PacketCounter getPacketCounter() {
+<b class="nc"><i>317</i>&nbsp;        return packetCounter;</b>
+<i>318</i>&nbsp;    }
+<i>319</i>&nbsp;
+<i>320</i>&nbsp;    @VisibleForTesting
+<i>321</i>&nbsp;    void setOADContract(OADContract oadContract) {
+<b class="fc"><i>322</i>&nbsp;        this.oadContract = oadContract;</b>
+<b class="fc"><i>323</i>&nbsp;    }</b>
+<i>324</i>&nbsp;
+<i>325</i>&nbsp;    @VisibleForTesting
+<i>326</i>&nbsp;    void setPacketCounter(PacketCounter packetCounter) {
+<b class="fc"><i>327</i>&nbsp;        this.packetCounter = packetCounter;</b>
+<b class="fc"><i>328</i>&nbsp;    }</b>
+<i>329</i>&nbsp;
+<i>330</i>&nbsp;    @VisibleForTesting
+<i>331</i>&nbsp;    void setOADState(OADState state) {
+<b class="fc"><i>332</i>&nbsp;        this.currentState = state;</b>
+<b class="fc"><i>333</i>&nbsp;    }</b>
+<i>334</i>&nbsp;
+<i>335</i>&nbsp;    @VisibleForTesting
+<i>336</i>&nbsp;    void setOADContext(OADContext oadContext) {
+<b class="fc"><i>337</i>&nbsp;        this.oadContext = oadContext;</b>
+<b class="fc"><i>338</i>&nbsp;    }</b>
+<i>339</i>&nbsp;
+<i>340</i>&nbsp;    @VisibleForTesting
+<i>341</i>&nbsp;    MbtAsyncWaitOperation getLock() {
+<b class="nc"><i>342</i>&nbsp;        return this.lock;</b>
+<i>343</i>&nbsp;    }
+<i>344</i>&nbsp;
+<i>345</i>&nbsp;    @VisibleForTesting
+<i>346</i>&nbsp;    void setLock(MbtAsyncWaitOperation&lt;Boolean&gt; lock) {
+<b class="fc"><i>347</i>&nbsp;        this.lock = lock;</b>
+<b class="fc"><i>348</i>&nbsp;    }</b>
+<i>349</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2020-06-10 10:26</div>
+</div>
+</body>
+</html>

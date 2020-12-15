@@ -11,7 +11,7 @@ import engine.clientevents.ConfigError
  * Created by Etienne on 08/02/2018.
  */
 @Keep
-interface CommandInterface<E : BaseError?> : BaseErrorEvent<E> {
+interface CommandInterface<E : BaseError> : BaseErrorEvent<E> {
   /**
    * A MbtRequest implementation object is a request
    * that is sent in suitables conditions to define when you extend this interface.
@@ -145,8 +145,7 @@ interface CommandInterface<E : BaseError?> : BaseErrorEvent<E> {
      */
     abstract fun serialize(): Any
 
-    companion object {
-      private val TAG = MbtCommand::class.java.name
-    }
+    private val TAG = this::class.java.simpleName
+
   }
 }

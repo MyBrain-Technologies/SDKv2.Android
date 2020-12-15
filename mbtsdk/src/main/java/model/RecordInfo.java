@@ -5,7 +5,9 @@ import androidx.annotation.NonNull;
 
 import core.recording.metadata.MelomindExerciseSource;
 import core.recording.metadata.MelomindExerciseType;
-import core.recording.metadata.RecordType;
+
+import static core.recording.metadata.MelomindExerciseType.DEFAULT;
+import static core.recording.metadata.SessionMetaDataKt.RAWDATA;
 
 /**
  * Created by manon on 19/10/16.
@@ -56,29 +58,29 @@ public class RecordInfo {
      * Inner class for recording type.
      */
     public class RecordingType{
-        private RecordType recordType;
+        private String recordType;
         private String spVersion;
         private MelomindExerciseSource source;
         private MelomindExerciseType exerciseType;
 
         public RecordingType(){
-            this.exerciseType = MelomindExerciseType.DEFAULT;
+            this.exerciseType = DEFAULT;
             this.source = MelomindExerciseSource.DEFAULT;
-            this.recordType = RecordType.RAWDATA;
+            this.recordType = RAWDATA;
         }
 
-        public RecordingType(@NonNull RecordType recordType, @NonNull String spVersion, @NonNull MelomindExerciseSource dataSource, @NonNull MelomindExerciseType exerciseType){
+        public RecordingType(@NonNull String recordType, @NonNull String spVersion, @NonNull MelomindExerciseSource dataSource, @NonNull MelomindExerciseType exerciseType){
             this.exerciseType = exerciseType;
             this.source = dataSource;
             this.spVersion = spVersion;
             this.recordType = recordType;
         }
 
-        public RecordType getRecordType() {
+        public String getRecordType() {
             return recordType;
         }
 
-        public void setRecordType(RecordType recordType) {
+        public void setRecordType(String recordType) {
             this.recordType = recordType;
         }
 

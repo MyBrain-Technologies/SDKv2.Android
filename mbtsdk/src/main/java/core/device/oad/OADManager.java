@@ -64,7 +64,7 @@ public final class OADManager {
     private OADContext oadContext;
 
     /**
-     * Object that waits and blocks the current thread until the {@link MbtAsyncWaitOperation#stopWaitingOperation(Object)}} method is called
+     * Object that waits and blocks the current thread until the {@link MbtAsyncWaitOperation#stopWaitingOperation(java.util.List)}} method is called
      */
     private MbtAsyncWaitOperation<Boolean> lock;
 

@@ -21,6 +21,7 @@ public final class BasicError extends BaseError{
     public static BasicError ERROR_UNSUPPORTED_FEATURE                   = new BasicError(CODE_RANGE+7, "This feature is not supported.");
     public static BasicError ERROR_UNKNOWN                               = new BasicError(CODE_RANGE+8, "Unknown cause.");
     public static BasicError ERROR_CANCELED                              = new BasicError(CODE_RANGE+9, "Cancel operation.");
+    public static BasicError NO_INTERNET                                 = new BasicError(CODE_RANGE+10, "Application is offline");
 
     public BasicError(Exception exception) {
         super(exception);
