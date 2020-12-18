@@ -13,7 +13,7 @@ import java.util.Arrays;
 
 import core.BaseModuleManager;
 import core.MbtManager;
-import core.bluetooth.BtProtocol;
+import core.bluetooth.BluetoothProtocol;
 import core.bluetooth.BluetoothState;
 import core.bluetooth.StreamState;
 import core.bluetooth.requests.StreamRequestEvent;
@@ -64,7 +64,7 @@ public final class MbtEEGManager extends BaseModuleManager {
     private MbtDataBuffering dataBuffering;
     private ArrayList<ArrayList<Float>> consolidatedEEG;
 
-    private BtProtocol protocol;
+    private BluetoothProtocol protocol;
 
     private boolean hasQualities = false;
 
@@ -269,7 +269,7 @@ public final class MbtEEGManager extends BaseModuleManager {
                 initQualityChecker();
             }
         }
-        else if(event.stopStream() && !ContextSP.SP_VERSION.equals("0.0.0"))
+        else if(event.isStopStream() && !ContextSP.SP_VERSION.equals("0.0.0"))
             deinitQualityChecker();
 
     }
