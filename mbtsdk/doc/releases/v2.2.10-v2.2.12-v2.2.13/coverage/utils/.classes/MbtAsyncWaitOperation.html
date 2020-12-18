@@ -1,0 +1,280 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+    <title>Coverage Report :: MbtAsyncWaitOperation</title>
+    <style type="text/css">
+    @import "../../.css/coverage.css";
+
+    </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+    <div class="breadCrumbs">
+        [ <a href="../../index.html">all classes</a> ]
+        [ <a href="../index.html">utils</a> ]
+    </div>
+
+    <h1>Coverage Summary for Class: MbtAsyncWaitOperation (utils)</h1>
+
+    <table class="coverageStats">
+
+        <tr>
+            <th class="name">Class</th>
+            <th class="coverageStat
+">
+                Method, %
+            </th>
+            <th class="coverageStat
+">
+                Line, %
+            </th>
+        </tr>
+        <tr>
+            <td class="name">MbtAsyncWaitOperation</td>
+            <td class="coverageStat">
+  <span class="percent">
+    83,3%
+  </span>
+                <span class="absValue">
+    (10/ 12)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    72,1%
+  </span>
+                <span class="absValue">
+    (31/ 43)
+  </span>
+            </td>
+        </tr>
+        <tr>
+            <td class="name">MbtAsyncWaitOperation$Companion</td>
+            <td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+                <span class="absValue">
+    (1/ 1)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+                <span class="absValue">
+    (1/ 1)
+  </span>
+            </td>
+        </tr>
+        <tr>
+            <td class="name">MbtAsyncWaitOperation$tryOperation$1</td>
+            <td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+                <span class="absValue">
+    (0/ 1)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+                <span class="absValue">
+    (0/ 1)
+  </span>
+            </td>
+        </tr>
+        <tr>
+            <td class="name">MbtAsyncWaitOperation$tryOperationForResult$1</td>
+            <td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+                <span class="absValue">
+    (1/ 1)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+                <span class="absValue">
+    (1/ 1)
+  </span>
+            </td>
+        </tr>
+        <tr>
+            <td class="name"><strong>total</strong></td>
+            <td class="coverageStat">
+  <span class="percent">
+    80%
+  </span>
+                <span class="absValue">
+    (12/ 15)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    71,7%
+  </span>
+                <span class="absValue">
+    (33/ 46)
+  </span>
+            </td>
+        </tr>
+    </table>
+
+    <br/>
+    <br/>
+
+
+    <div class="sourceCode"><i>1</i>&nbsp;package utils
+        <i>2</i>&nbsp;
+        <i>3</i>&nbsp;import android.os.Build
+        <i>4</i>&nbsp;import androidx.annotation.Keep
+        <i>5</i>&nbsp;import engine.clientevents.BaseError
+        <i>6</i>&nbsp;import engine.clientevents.BaseErrorEvent
+        <i>7</i>&nbsp;import engine.clientevents.BasicError
+        <i>8</i>&nbsp;import java.util.concurrent.*
+        <i>9</i>&nbsp;
+        <i>10</i>&nbsp;@Keep
+        <b class="fc"><i>11</i>&nbsp;class MbtAsyncWaitOperation&lt;T&gt; {</b>
+        <i>12</i>&nbsp; private var lockOperation: MbtLock&lt;T&gt;? = null
+        <i>13</i>&nbsp; private var futureOperation: Future&lt;T&gt;? = null
+        <i>14</i>&nbsp;
+        <b class="fc"><i>15</i>&nbsp; companion object {</b>
+        <i>16</i>&nbsp; @JvmField
+        <i>17</i>&nbsp; val CANCEL: Any? = null
+        <b class="fc"><i>18</i>&nbsp; private val TAG = MbtAsyncWaitOperation::class.java.name</b>
+        <i>19</i>&nbsp; }
+        <i>20</i>&nbsp;
+        <i>21</i>&nbsp; init {
+        <b class="fc"><i>22</i>&nbsp; if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.N)
+            futureOperation = CompletableFuture() else lockOperation = MbtLock()</b>
+        <b class="fc"><i>23</i>&nbsp; }</b>
+        <i>24</i>&nbsp;
+        <i>25</i>&nbsp; /**
+        <i>26</i>&nbsp; * Wait and block the current thread until the
+        [MbtAsyncWaitOperation.stopWaitingOperation] method is called
+        <i>27</i>&nbsp; * @param timeout maximum amount of time to wait for
+        [MbtAsyncWaitOperation.stopWaitingOperation] method call
+        <i>28</i>&nbsp; * For MbtAsyncWaitOperation&lt;Object&gt; :
+        <i>29</i>&nbsp; * @return the result of waiting operation if the
+        [MbtAsyncWaitOperation.stopWaitingOperation] method has been called within the allocated
+        amount of time
+        <i>30</i>&nbsp; * For MbtAsyncWaitOperation&lt;Boolean&gt; :
+        <i>31</i>&nbsp; * @return true if the waiting operation succeeded : in other words, if the
+        [MbtAsyncWaitOperation.stopWaitingOperation] method has been called within the allocated
+        amount of time
+        <i>32</i>&nbsp; * return false if the waiting operation timed out (the
+        [MbtAsyncWaitOperation.stopWaitingOperation] method has never been called) or has been
+        cancelled
+        <i>33</i>&nbsp; * @throws ExecutionException
+        <i>34</i>&nbsp; * @throws TimeoutException
+        <i>35</i>&nbsp; &lt;/Boolean&gt;&lt;/Object&gt; */
+        <i>36</i>&nbsp; @Throws(InterruptedException::class, ExecutionException::class,
+        TimeoutException::class)
+        <i>37</i>&nbsp; fun waitOperationResult(timeout: Int): T? {
+        <b class="fc"><i>38</i>&nbsp; val result: T?</b>
+        <b class="fc"><i>39</i>&nbsp; if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.N) {</b>
+        <b class="nc"><i>40</i>&nbsp; futureOperation = CompletableFuture()</b>
+        <b class="nc"><i>41</i>&nbsp; result = futureOperation?.get(timeout.toLong(),
+            TimeUnit.MILLISECONDS)</b>
+        <i>42</i>&nbsp; } else {
+        <b class="fc"><i>43</i>&nbsp; lockOperation = MbtLock()</b>
+        <b class="fc"><i>44</i>&nbsp; result = lockOperation?.waitAndGetResult(timeout.toLong())</b>
+        <b class="fc"><i>45</i>&nbsp; }</b>
+        <b class="fc"><i>46</i>&nbsp; return result</b>
+        <i>47</i>&nbsp; }
+        <i>48</i>&nbsp;
+        <i>49</i>&nbsp; /**
+        <i>50</i>&nbsp; * Set the value of the current waiting instance to null
+        <i>51</i>&nbsp; */
+        <i>52</i>&nbsp; fun resetWaitingOperation() {
+        <b class="nc"><i>53</i>&nbsp; if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.N)
+            futureOperation = null else lockOperation = null</b>
+        <b class="nc"><i>54</i>&nbsp; }</b>
+        <i>55</i>&nbsp;
+        <i>56</i>&nbsp; /**
+        <i>57</i>&nbsp; * Complete or cancel the waiting process
+        <i>58</i>&nbsp; * @param result must be set to null ([) to cancel the waiting process (if
+        something went wrong and the expected result has not been
+        retrieved).][MbtAsyncWaitOperation.CANCEL]
+        <i>59</i>&nbsp; */
+        <i>60</i>&nbsp; fun stopWaitingOperation(result: T?) {
+        <b class="fc"><i>61</i>&nbsp; if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.N) {</b>
+        <b class="nc"><i>62</i>&nbsp; if (futureOperation != null &amp;&amp; futureOperation?.isDone
+            != true &amp;&amp; futureOperation?.isCancelled != true) {</b>
+        <b class="nc"><i>63</i>&nbsp; if (result === CANCEL) futureOperation?.cancel(true) else
+            (futureOperation as CompletableFuture&lt;T&gt;).complete(result)</b>
+        <i>64</i>&nbsp; }
+        <b class="fc"><i>65</i>&nbsp; } else if (lockOperation != null &amp;&amp;
+            lockOperation?.isWaiting == true) lockOperation?.setResultAndNotify(result)</b>
+        <b class="fc"><i>66</i>&nbsp; }</b>
+        <i>67</i>&nbsp;
+        <i>68</i>&nbsp; private val isTerminated: Boolean
+        <b class="fc"><i>69</i>&nbsp; get() = if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.N)
+            futureOperation!!.isDone else !lockOperation!!.isWaiting</b>
+        <i>70</i>&nbsp;
+        <i>71</i>&nbsp; private val isReset: Boolean
+        <b class="fc"><i>72</i>&nbsp; get() = if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.N)
+            futureOperation == null else lockOperation == null</b>
+        <i>73</i>&nbsp;
+        <i>74</i>&nbsp; private val isCancelled: Boolean
+        <b class="fc"><i>75</i>&nbsp; get() = if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.N)
+            futureOperation?.isCancelled == true else isReset</b>
+        <i>76</i>&nbsp;
+        <i>77</i>&nbsp; val isWaiting: Boolean
+        <b class="fc"><i>78</i>&nbsp; get() = !isReset &amp;&amp; !isTerminated &amp;&amp;
+            !isCancelled</b>
+        <i>79</i>&nbsp;
+        <i>80</i>&nbsp;
+        <i>81</i>&nbsp; fun tryOperation(operation: ()-&gt; Unit, timeout: Int) {
+        <b class="fc"><i>82</i>&nbsp; tryOperationForResult(operation,</b>
+        <b class="pc"><i>83</i>&nbsp; BaseErrorEvent { exception, _ -&gt; if (exception is
+            CancellationException) resetWaitingOperation() },</b>
+        <b class="fc"><i>84</i>&nbsp; null,</b>
+        <b class="fc"><i>85</i>&nbsp; timeout)</b>
+        <b class="fc"><i>86</i>&nbsp; }</b>
+        <i>87</i>&nbsp; fun tryOperation(operation: ()-&gt; Unit, catchCallback: BaseErrorEvent&lt;BaseError&gt;?,
+        finally: (()-&gt; Unit)?, timeout: Int) {
+        <b class="nc"><i>88</i>&nbsp; tryOperationForResult (operation, catchCallback, finally,
+            timeout)</b>
+        <b class="nc"><i>89</i>&nbsp; }</b>
+        <i>90</i>&nbsp;
+        <i>91</i>&nbsp; fun tryOperationForResult(operation: ()-&gt; Unit, catchCallback:
+        BaseErrorEvent&lt;BaseError&gt;?, finally: (()-&gt; Unit)?, timeout: Int) : T? {
+        <b class="fc"><i>92</i>&nbsp; var result : T? = null</b>
+        <b class="fc"><i>93</i>&nbsp; try {</b>
+        <b class="fc"><i>94</i>&nbsp; AsyncUtils.executeAsync ( Runnable { operation.invoke() }
+            )</b>
+        <b class="fc"><i>95</i>&nbsp; result = waitOperationResult(timeout)</b>
+        <b class="fc"><i>96</i>&nbsp; LogUtils.d(TAG, &quot;Result : $result&quot;)</b>
+        <b class="nc"><i>97</i>&nbsp; } catch (exception: Exception) {</b>
+        <b class="nc"><i>98</i>&nbsp; if (exception is CancellationException) {</b>
+        <b class="nc"><i>99</i>&nbsp; resetWaitingOperation()</b>
+        <i>100</i>&nbsp; }
+        <b class="nc"><i>101</i>&nbsp; catchCallback?.onError(BasicError(exception), null)</b>
+        <i>102</i>&nbsp; } finally {
+        <b class="fc"><i>103</i>&nbsp; stopWaitingOperation(null)</b>
+        <b class="fc"><i>104</i>&nbsp; finally?.invoke()</b>
+        <b class="fc"><i>105</i>&nbsp; }</b>
+        <b class="fc"><i>106</i>&nbsp; return result</b>
+        <i>107</i>&nbsp; }
+        <i>108</i>&nbsp;
+        <i>109</i>&nbsp;}
+    </div>
+</div>
+
+<div class="footer">
+
+    <div style="float:right;">generated on 2020-06-10 10:26</div>
+</div>
+</body>
+</html>

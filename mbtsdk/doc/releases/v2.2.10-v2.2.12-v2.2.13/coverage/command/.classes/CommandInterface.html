@@ -1,0 +1,337 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+    <title>Coverage Report :: CommandInterface</title>
+    <style type="text/css">
+    @import "../../.css/coverage.css";
+
+    </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+    <div class="breadCrumbs">
+        [ <a href="../../index.html">all classes</a> ]
+        [ <a href="../index.html">command</a> ]
+    </div>
+
+    <h1>Coverage Summary for Class: CommandInterface (command)</h1>
+
+    <table class="coverageStats">
+
+        <tr>
+            <th class="name">Class</th>
+            <th class="coverageStat
+">
+                Method, %
+            </th>
+            <th class="coverageStat
+">
+                Line, %
+            </th>
+        </tr>
+        <tr>
+            <td class="name">CommandInterface$CommandBaseErrorEvent</td>
+        </tr>
+        <tr>
+            <td class="name">CommandInterface$CommandCallback</td>
+        </tr>
+        <tr>
+            <td class="name">CommandInterface$ICommandCallback</td>
+        </tr>
+        <tr>
+            <td class="name">CommandInterface$MbtCommand</td>
+            <td class="coverageStat">
+  <span class="percent">
+    44,4%
+  </span>
+                <span class="absValue">
+    (4/ 9)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    42,9%
+  </span>
+                <span class="absValue">
+    (9/ 21)
+  </span>
+            </td>
+        </tr>
+        <tr>
+            <td class="name">CommandInterface$MbtCommand$Companion</td>
+            <td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+                <span class="absValue">
+    (1/ 1)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+                <span class="absValue">
+    (1/ 1)
+  </span>
+            </td>
+        </tr>
+        <tr>
+            <td class="name">CommandInterface$MbtCommand$init$1</td>
+            <td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+                <span class="absValue">
+    (2/ 4)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+                <span class="absValue">
+    (2/ 4)
+  </span>
+            </td>
+        </tr>
+        <tr>
+            <td class="name">CommandInterface$MbtCommand$MockitoMock$1335848940</td>
+        </tr>
+        <tr>
+            <td class="name">CommandInterface$MbtCommand$MockitoMock$1335848940$auxiliary$cfg0O5GB
+            </td>
+        </tr>
+        <tr>
+            <td class="name">CommandInterface$MbtCommand$MockitoMock$381449270</td>
+        </tr>
+        <tr>
+            <td class="name">CommandInterface$MbtCommand$MockitoMock$381449270$auxiliary$WK7KbCIO
+            </td>
+        </tr>
+        <tr>
+            <td class="name">CommandInterface$MbtRequest</td>
+        </tr>
+        <tr>
+            <td class="name">CommandInterface$MbtResponse</td>
+        </tr>
+        <tr>
+            <td class="name">CommandInterface$SimpleCommandCallback</td>
+        </tr>
+        <tr>
+            <td class="name"><strong>total</strong></td>
+            <td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+                <span class="absValue">
+    (7/ 14)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    46,2%
+  </span>
+                <span class="absValue">
+    (12/ 26)
+  </span>
+            </td>
+        </tr>
+    </table>
+
+    <br/>
+    <br/>
+
+
+    <div class="sourceCode"><i>1</i>&nbsp;package command
+        <i>2</i>&nbsp;
+        <i>3</i>&nbsp;import android.util.Log
+        <i>4</i>&nbsp;import androidx.annotation.Keep
+        <i>5</i>&nbsp;import command.CommandInterface.MbtCommand
+        <i>6</i>&nbsp;import engine.clientevents.BaseError
+        <i>7</i>&nbsp;import engine.clientevents.BaseErrorEvent
+        <i>8</i>&nbsp;import engine.clientevents.ConfigError
+        <i>9</i>&nbsp;
+        <i>10</i>&nbsp;/**
+        <i>11</i>&nbsp; * Created by Etienne on 08/02/2018.
+        <i>12</i>&nbsp; */
+        <i>13</i>&nbsp;@Keep
+        <i>14</i>&nbsp;interface CommandInterface&lt;E : BaseError?&gt; : BaseErrorEvent&lt;E&gt; {
+        <i>15</i>&nbsp; /**
+        <i>16</i>&nbsp; * A MbtRequest implementation object is a request
+        <i>17</i>&nbsp; * that is sent in suitables conditions to define when you extend this
+        interface.
+        <i>18</i>&nbsp; * It means that the request can fail to be sent to a receiver (peripheral
+        object/device/class).
+        <i>19</i>&nbsp; */
+        <i>20</i>&nbsp; @Keep
+        <i>21</i>&nbsp; interface MbtRequest {
+        <i>22</i>&nbsp; fun onRequestSent(request: MbtCommand&lt;*&gt;?)
+        <i>23</i>&nbsp; }
+        <i>24</i>&nbsp;
+        <i>25</i>&nbsp; @Keep
+        <i>26</i>&nbsp; interface MbtResponse&lt;N&gt; {
+        <i>27</i>&nbsp; fun onResponseReceived(request: MbtCommand&lt;*&gt;?, response: N?)
+        <i>28</i>&nbsp; }
+        <i>29</i>&nbsp;
+        <i>30</i>&nbsp; @Keep
+        <i>31</i>&nbsp; interface CommandBaseErrorEvent {
+        <i>32</i>&nbsp; fun onError(request: MbtCommand&lt;*&gt;?, error: BaseError?,
+        additionalInfo: String?)
+        <i>33</i>&nbsp; }
+        <i>34</i>&nbsp;
+        <i>35</i>&nbsp; /**
+        <i>36</i>&nbsp; * A ICommandCallback implementation object is a request
+        <i>37</i>&nbsp; * that is sent in suitables conditions to define when you extend this
+        interface.
+        <i>38</i>&nbsp; * It means that the request can fail to be sent to a receiver (peripheral
+        object/device/class).
+        <i>39</i>&nbsp; * In case of failure, the onError callback is triggered to return the info
+        associated to the failure
+        <i>40</i>&nbsp; */
+        <i>41</i>&nbsp; @Keep
+        <i>42</i>&nbsp; interface ICommandCallback : MbtRequest, CommandBaseErrorEvent
+        <i>43</i>&nbsp;
+        <i>44</i>&nbsp; /**
+        <i>45</i>&nbsp; * A CommandCallback implementation object is a request
+        <i>46</i>&nbsp; * that is sent in suitables conditions to define when you extend this
+        interface.
+        <i>47</i>&nbsp; * It means that the request can fail to be sent to a receiver (peripheral
+        object/device/class).
+        <i>48</i>&nbsp; * In case of failure, the onError callback is triggered to return the info
+        associated to the failure
+        <i>49</i>&nbsp; */
+        <i>50</i>&nbsp; @Keep
+        <i>51</i>&nbsp; interface SimpleCommandCallback : ICommandCallback
+        <i>52</i>&nbsp;
+        <i>53</i>&nbsp; /**
+        <i>54</i>&nbsp; * A CommandCallback implementation object is a request
+        <i>55</i>&nbsp; * that is sent in suitables conditions to define when you extend this
+        interface.
+        <i>56</i>&nbsp; * It means that the request can fail to be sent to a receiver (peripheral
+        object/device/class).
+        <i>57</i>&nbsp; * In case of failure, the onError callback is triggered to return the info
+        associated to the failure
+        <i>58</i>&nbsp; * If it succeeded to be sent, the MbtRequest implementation object
+        <i>59</i>&nbsp; * receives in return a response sent by the receiver
+        <i>60</i>&nbsp; * @param &lt;N&gt; the response Object type returned by the receiver
+        <i>61</i>&nbsp; &lt;/N&gt; */
+        <i>62</i>&nbsp; @Keep
+        <i>63</i>&nbsp; interface CommandCallback&lt;N&gt; : ICommandCallback, MbtResponse&lt;N&gt;
+        <i>64</i>&nbsp;
+        <i>65</i>&nbsp; /**
+        <i>66</i>&nbsp; * Command abstact class that holds a callback used to
+        <i>67</i>&nbsp; * perform a request and notify the client when
+        <i>68</i>&nbsp; * the request has been sent
+        <i>69</i>&nbsp; * If the client is interested in getting the response associated to the
+        request,
+        <i>70</i>&nbsp; * it also notify the client when this response is caught by the SDK.
+        <i>71</i>&nbsp; * A Command can be seen as a package that hold the request and its
+        associated optional response.
+        <i>72</i>&nbsp; * @param &lt;E&gt; the expected Error Object
+        <i>73</i>&nbsp; &lt;/E&gt; */
+        <i>74</i>&nbsp; @Keep
+        <b class="fc"><i>75</i>&nbsp; abstract class MbtCommand&lt;E : BaseError&gt; {</b>
+        <i>76</i>&nbsp; /**
+        <i>77</i>&nbsp; * Get the callback that returns the raw response of the headset to the SDK
+        <i>78</i>&nbsp; * @return the callback that returns the raw response of the headset to the
+        SDK
+        <i>79</i>&nbsp; */
+        <i>80</i>&nbsp; @JvmField
+        <i>81</i>&nbsp; var commandCallback: ICommandCallback? = null
+        <i>82</i>&nbsp;
+        <i>83</i>&nbsp; fun onError(error: E, additionalInfo: String?) {
+        <b class="nc"><i>84</i>&nbsp; Log.d(TAG, &quot;Error: $error&quot;)</b>
+        <b class="nc"><i>85</i>&nbsp; if (commandCallback != null) commandCallback!!.onError(this,
+            error, additionalInfo)</b>
+        <b class="nc"><i>86</i>&nbsp; }</b>
+        <i>87</i>&nbsp;
+        <i>88</i>&nbsp; fun onRequestSent() {
+        <b class="nc"><i>89</i>&nbsp; Log.d(TAG, &quot;Command sent $this&quot;)</b>
+        <b class="nc"><i>90</i>&nbsp; if (commandCallback != null)
+            commandCallback!!.onRequestSent(this)</b>
+        <b class="nc"><i>91</i>&nbsp; }</b>
+        <i>92</i>&nbsp;
+        <i>93</i>&nbsp; open fun onResponseReceived(response: Any?) {
+        <b class="nc"><i>94</i>&nbsp; Log.d(TAG, &quot;Response received $this&quot;)</b>
+        <b class="nc"><i>95</i>&nbsp; if (commandCallback != null &amp;&amp; commandCallback is
+            CommandCallback&lt;*&gt;) (commandCallback as CommandCallback&lt;Any&gt;).onResponseReceived(this,
+            response)</b>
+        <b class="nc"><i>96</i>&nbsp; }</b>
+        <i>97</i>&nbsp;
+        <i>98</i>&nbsp; val isResponseExpected: Boolean
+        <b class="nc"><i>99</i>&nbsp; get() = commandCallback is CommandCallback&lt;*&gt;</b>
+        <i>100</i>&nbsp; /**
+        <i>101</i>&nbsp; * Init the command to send to the headset
+        <i>102</i>&nbsp; * Init a command callback that handle responses if
+        <i>103</i>&nbsp; * @param responseExpected is true.
+        <i>104</i>&nbsp; * No response can be retrieved in the onResponseReceived callback if
+        responseExcepted is false.
+        <i>105</i>&nbsp; */
+        <i>106</i>&nbsp; /**
+        <i>107</i>&nbsp; * Init the command to send to the headset
+        <i>108</i>&nbsp; */
+        <i>109</i>&nbsp; protected fun init() {
+        <b class="fc"><i>110</i>&nbsp; init(true)</b>
+        <b class="fc"><i>111</i>&nbsp; }</b>
+        <b class="nc"><i>112</i>&nbsp; protected fun init(responseExpected: Boolean = true) {</b>
+        <b class="fc"><i>113</i>&nbsp; if (commandCallback == null) {</b>
+        <b class="fc"><i>114</i>&nbsp; commandCallback = if (responseExpected) //if a response is
+            expected once the request is sent, we use a CommandCallback object (other object that
+            extend MbtResponse)</b>
+        <b class="fc"><i>115</i>&nbsp; object : CommandCallback&lt;Any?&gt; {</b>
+        <b class="fc"><i>116</i>&nbsp; override fun onError(request: MbtCommand&lt;*&gt;?, error:
+            BaseError?, additionalInfo: String?) {}</b>
+        <b class="nc"><i>117</i>&nbsp; override fun onRequestSent(request: MbtCommand&lt;*&gt;?) {}</b>
+        <b class="nc"><i>118</i>&nbsp; override fun onResponseReceived(request: MbtCommand&lt;*&gt;?,
+            response: Any?) {}</b>
+        <b class="nc"><i>119</i>&nbsp; } else object : ICommandCallback {</b>
+        <i>120</i>&nbsp; //if no response is expected once the request is sent, we use a
+        ICommandCallback object (other object that does not extend MbtResponse)
+        <i>121</i>&nbsp; override fun onError(request: MbtCommand&lt;*&gt;?, error: BaseError?,
+        additionalInfo: String?) {}
+        <i>122</i>&nbsp; override fun onRequestSent(request: MbtCommand&lt;*&gt;?) {}
+        <i>123</i>&nbsp; }
+        <i>124</i>&nbsp; }
+        <b class="fc"><i>125</i>&nbsp; if (!isValid) commandCallback!!.onError(this,
+            ConfigError.ERROR_INVALID_PARAMS, invalidityError)</b>
+        <b class="fc"><i>126</i>&nbsp; }</b>
+        <i>127</i>&nbsp;
+        <i>128</i>&nbsp; /**
+        <i>129</i>&nbsp; * Returns true if the client inputs
+        <i>130</i>&nbsp; * are valid for sending the command
+        <i>131</i>&nbsp; */
+        <i>132</i>&nbsp; abstract val isValid: Boolean
+        <i>133</i>&nbsp;
+        <i>134</i>&nbsp; /**
+        <i>135</i>&nbsp; * Returns a String message that contain the reason of invalidity input.
+        <i>136</i>&nbsp; * Returns null if the input is valid (isValid returns true)
+        <i>137</i>&nbsp; * @return the reason of invalidity input as a String
+        <i>138</i>&nbsp; */
+        <i>139</i>&nbsp; abstract val invalidityError: String?
+        <i>140</i>&nbsp;
+        <i>141</i>&nbsp; /**
+        <i>142</i>&nbsp; * Bundles the data to send to the headset
+        <i>143</i>&nbsp; * for the write characteristic operation / request
+        <i>144</i>&nbsp; * @return the bundled data in a object
+        <i>145</i>&nbsp; */
+        <i>146</i>&nbsp; abstract fun serialize(): Any
+        <i>147</i>&nbsp;
+        <b class="fc"><i>148</i>&nbsp; companion object {</b>
+        <b class="fc"><i>149</i>&nbsp; private val TAG = MbtCommand::class.java.name</b>
+        <i>150</i>&nbsp; }
+        <i>151</i>&nbsp; }
+        <i>152</i>&nbsp;}
+    </div>
+</div>
+
+<div class="footer">
+
+    <div style="float:right;">generated on 2020-06-10 10:26</div>
+</div>
+</body>
+</html>

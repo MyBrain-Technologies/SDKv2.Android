@@ -1,0 +1,747 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+    <title>Coverage Report :: HomeActivity</title>
+    <style type="text/css">
+    @import "../../.css/coverage.css";
+
+    </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+    <div class="breadCrumbs">
+        [ <a href="../../index.html">all classes</a> ]
+        [ <a href="../index.html">mbtsdk.com.mybraintech.sdkv2</a> ]
+    </div>
+
+    <h1>Coverage Summary for Class: HomeActivity (mbtsdk.com.mybraintech.sdkv2)</h1>
+
+    <table class="coverageStats">
+
+        <tr>
+            <th class="name">Class</th>
+            <th class="coverageStat
+">
+                Method, %
+            </th>
+            <th class="coverageStat
+">
+                Line, %
+            </th>
+        </tr>
+        <tr>
+            <td class="name">HomeActivity</td>
+            <td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+                <span class="absValue">
+    (0/ 24)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+                <span class="absValue">
+    (0/ 94)
+  </span>
+            </td>
+        </tr>
+        <tr>
+            <td class="name">HomeActivity$1</td>
+            <td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+                <span class="absValue">
+    (0/ 5)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+                <span class="absValue">
+    (0/ 17)
+  </span>
+            </td>
+        </tr>
+        <tr>
+            <td class="name">HomeActivity$1$1</td>
+            <td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+                <span class="absValue">
+    (0/ 2)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+                <span class="absValue">
+    (0/ 3)
+  </span>
+            </td>
+        </tr>
+        <tr>
+            <td class="name">HomeActivity$1$1$1</td>
+            <td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+                <span class="absValue">
+    (0/ 2)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+                <span class="absValue">
+    (0/ 4)
+  </span>
+            </td>
+        </tr>
+        <tr>
+            <td class="name">HomeActivity$2</td>
+            <td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+                <span class="absValue">
+    (0/ 2)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+                <span class="absValue">
+    (0/ 13)
+  </span>
+            </td>
+        </tr>
+        <tr>
+            <td class="name"><strong>total</strong></td>
+            <td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+                <span class="absValue">
+    (0/ 35)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+                <span class="absValue">
+    (0/ 131)
+  </span>
+            </td>
+        </tr>
+    </table>
+
+    <br/>
+    <br/>
+
+
+    <div class="sourceCode"><i>1</i>&nbsp;package mbtsdk.com.mybraintech.sdkv2;
+        <i>2</i>&nbsp;
+        <i>3</i>&nbsp;import android.Manifest;
+        <i>4</i>&nbsp;import android.content.Context;
+        <i>5</i>&nbsp;import android.content.Intent;
+        <i>6</i>&nbsp;import android.content.pm.PackageManager;
+        <i>7</i>&nbsp;import android.graphics.Color;
+        <i>8</i>&nbsp;import android.graphics.drawable.ColorDrawable;
+        <i>9</i>&nbsp;import android.os.Build;
+        <i>10</i>&nbsp;import android.os.Bundle;
+        <i>11</i>&nbsp;import androidx.core.app.ActivityCompat;
+        <i>12</i>&nbsp;import androidx.appcompat.app.AppCompatActivity;
+        <i>13</i>&nbsp;import android.util.Log;
+        <i>14</i>&nbsp;import android.view.View;
+        <i>15</i>&nbsp;import android.widget.ArrayAdapter;
+        <i>16</i>&nbsp;import android.widget.Button;
+        <i>17</i>&nbsp;import android.widget.EditText;
+        <i>18</i>&nbsp;import android.widget.Spinner;
+        <i>19</i>&nbsp;import android.widget.Switch;
+        <i>20</i>&nbsp;import android.widget.Toast;
+        <i>21</i>&nbsp;
+        <i>22</i>&nbsp;import java.util.ArrayList;
+        <i>23</i>&nbsp;import java.util.Arrays;
+        <i>24</i>&nbsp;
+        <i>25</i>&nbsp;import config.ConnectionConfig;
+        <i>26</i>&nbsp;import core.bluetooth.BluetoothState;
+        <i>27</i>&nbsp;import core.device.model.MbtDevice;
+        <i>28</i>&nbsp;import core.device.model.MelomindDevice;
+        <i>29</i>&nbsp;import engine.MbtClient;
+        <i>30</i>&nbsp;import engine.SimpleRequestCallback;
+        <i>31</i>&nbsp;import engine.clientevents.BaseError;
+        <i>32</i>&nbsp;import engine.clientevents.BluetoothStateListener;
+        <i>33</i>&nbsp;import features.MbtDeviceType;
+        <i>34</i>&nbsp;import features.MbtFeatures;
+        <i>35</i>&nbsp;
+        <i>36</i>&nbsp;import static features.MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX;
+        <i>37</i>&nbsp;import static features.MbtFeatures.QR_CODE_NAME_PREFIX;
+        <i>38</i>&nbsp;import static features.MbtFeatures.VPRO_DEVICE_NAME_PREFIX;
+        <i>39</i>&nbsp;
+        <i>40</i>&nbsp;/**
+        <i>41</i>&nbsp; * First View displayed when you launch the application
+        <i>42</i>&nbsp; */
+        <b class="nc"><i>43</i>&nbsp;public class HomeActivity extends AppCompatActivity{</b>
+        <i>44</i>&nbsp;
+        <b class="nc"><i>45</i>&nbsp; private static String TAG = HomeActivity.class.getName();</b>
+        <i>46</i>&nbsp;
+        <i>47</i>&nbsp; /**
+        <i>48</i>&nbsp; * Maximum duration allocated to find a headset
+        <i>49</i>&nbsp; */
+        <i>50</i>&nbsp; private final static int SCAN_DURATION = 20000;
+        <i>51</i>&nbsp;
+        <i>52</i>&nbsp; /**
+        <i>53</i>&nbsp; * Extra keys used to share data to the next started activity
+        <i>54</i>&nbsp; */
+        <i>55</i>&nbsp;
+        <i>56</i>&nbsp; public final static String PREVIOUS_ACTIVITY_EXTRA = &quot;PREVIOUS_ACTIVITY_EXTRA&quot;;
+        <i>57</i>&nbsp;
+        <i>58</i>&nbsp; /**
+        <i>59</i>&nbsp; * Instance of SDK client used to access all the SDK features
+        <i>60</i>&nbsp; */
+        <i>61</i>&nbsp; private MbtClient sdkClient;
+        <i>62</i>&nbsp;
+        <i>63</i>&nbsp; /**
+        <i>64</i>&nbsp; * Device name field used to enter a specific headset name on the application
+        for Bluetooth connection
+        <i>65</i>&nbsp; */
+        <i>66</i>&nbsp; private EditText deviceNameField;
+        <i>67</i>&nbsp;
+        <i>68</i>&nbsp; /**
+        <i>69</i>&nbsp; * Device name value stored from the value of the {@link
+        HomeActivity#deviceNameField}
+        <i>70</i>&nbsp; */
+        <i>71</i>&nbsp; private String deviceName;
+        <i>72</i>&nbsp;
+        <i>73</i>&nbsp; /**
+        <i>74</i>&nbsp; * Instance of Headset device returned by the {@link
+        engine.clientevents.ConnectionStateListener#onDeviceConnected(MbtDevice)} callback once a
+        new device is connected
+        <i>75</i>&nbsp; */
+        <i>76</i>&nbsp; private MbtDevice device;
+        <i>77</i>&nbsp;
+        <i>78</i>&nbsp; /**
+        <i>79</i>&nbsp; * Device QR code field used to enter a specific headset QR code on the
+        application for Bluetooth connection
+        <i>80</i>&nbsp; */
+        <i>81</i>&nbsp; private EditText deviceQrCodeField;
+        <i>82</i>&nbsp;
+        <i>83</i>&nbsp; /**
+        <i>84</i>&nbsp; * Device QR code value stored from the value of the {@link
+        HomeActivity#deviceQrCodeField}
+        <i>85</i>&nbsp; */
+        <i>86</i>&nbsp; private String deviceQrCode;
+        <i>87</i>&nbsp;
+        <i>88</i>&nbsp; /**
+        <i>89</i>&nbsp; * Spinner used to select one of the possible Melomind device name prefixs
+        <i>90</i>&nbsp; */
+        <i>91</i>&nbsp; private Spinner deviceNamePrefixSpinner;
+        <i>92</i>&nbsp;
+        <i>93</i>&nbsp; /**
+        <i>94</i>&nbsp; * Device name prefix value stored from the value of the {@link
+        HomeActivity#deviceNamePrefixSpinner}
+        <i>95</i>&nbsp; */
+        <i>96</i>&nbsp; private String deviceNamePrefix;
+        <i>97</i>&nbsp;
+        <i>98</i>&nbsp; /**
+        <i>99</i>&nbsp; * Possible device name prefix values for {@link
+        HomeActivity#deviceNamePrefixSpinner}
+        <i>100</i>&nbsp; */
+        <i>101</i>&nbsp; private ArrayList&lt;String&gt; prefixNameList;
+        <i>102</i>&nbsp;
+        <i>103</i>&nbsp; /**
+        <i>104</i>&nbsp; * Adapter that uses {@link HomeActivity#prefixNameList} to initialize the
+        {@link HomeActivity#deviceNamePrefixSpinner}
+        <i>105</i>&nbsp; */
+        <i>106</i>&nbsp; private ArrayAdapter&lt;String&gt; prefixNameArrayAdapter;
+        <i>107</i>&nbsp;
+        <i>108</i>&nbsp; /**
+        <i>109</i>&nbsp; * Spinner used to select one of the possible Melomind device QR code
+        prefixs
+        <i>110</i>&nbsp; */
+        <i>111</i>&nbsp; private Spinner deviceQrCodePrefixSpinner;
+        <i>112</i>&nbsp;
+        <i>113</i>&nbsp; /**
+        <i>114</i>&nbsp; * Device QR code prefix value stored from the value of the {@link
+        HomeActivity#deviceQrCodePrefixSpinner}
+        <i>115</i>&nbsp; */
+        <i>116</i>&nbsp; private String deviceQrCodePrefix;
+        <i>117</i>&nbsp;
+        <i>118</i>&nbsp; /**
+        <i>119</i>&nbsp; * Possible QR code prefix values for deviceQrCodePrefixSpinner
+        <i>120</i>&nbsp; */
+        <i>121</i>&nbsp; private ArrayList&lt;String&gt; prefixQrCodeList;
+        <i>122</i>&nbsp;
+        <i>123</i>&nbsp; /**
+        <i>124</i>&nbsp; * Adapter that uses {@link HomeActivity#prefixQrCodeList} to initialize the
+        {@link HomeActivity#deviceQrCodePrefixSpinner}
+        <i>125</i>&nbsp; */
+        <i>126</i>&nbsp; private ArrayAdapter&lt;String&gt; prefixQrCodeArrayAdapter;
+        <i>127</i>&nbsp;
+        <i>128</i>&nbsp; /**
+        <i>129</i>&nbsp; * Switch used to enable or disable Bluetooth audio connection.
+        <i>130</i>&nbsp; */
+        <i>131</i>&nbsp; private Switch connectAudioSwitch;
+        <i>132</i>&nbsp;
+        <i>133</i>&nbsp; /**
+        <i>134</i>&nbsp; * Boolean value stored from the value of the {@link
+        HomeActivity#connectAudioSwitch} :
+        <i>135</i>&nbsp; * Audio Bluetooth connection is enabled if {@link
+        HomeActivity#connectAudioIfDeviceCompatible} is true.
+        <i>136</i>&nbsp; * Audio Bluetooth connection is disabled if {@link
+        HomeActivity#connectAudioIfDeviceCompatible} is false.
+        <i>137</i>&nbsp; */
+        <b class="nc"><i>138</i>&nbsp; private boolean connectAudioIfDeviceCompatible = false;</b>
+        <i>139</i>&nbsp;
+        <i>140</i>&nbsp; /**
+        <i>141</i>&nbsp; * Device type stored to distinguish Melomind and Vpro headset
+        <i>142</i>&nbsp; */
+        <i>143</i>&nbsp; private MbtDeviceType deviceType;
+        <i>144</i>&nbsp;
+        <i>145</i>&nbsp; /**
+        <i>146</i>&nbsp; * Button used to initiate the Bluetooth connection with a Melomind headset
+        on click
+        <i>147</i>&nbsp; */
+        <i>148</i>&nbsp; private Button scanButton;
+        <i>149</i>&nbsp;
+        <i>150</i>&nbsp; /**
+        <i>151</i>&nbsp; * Boolean value stored for Bluetooth connection cancel :
+        <i>152</i>&nbsp; * A Bluetooth connection in progress can be cancelled by the user within
+        the {@link HomeActivity#SCAN_DURATION} duration by clicking on the {@link
+        HomeActivity#scanButton}
+        <i>153</i>&nbsp; * If no Bluetooth connection is in progress, clicking on the {@link
+        HomeActivity#scanButton} starts a Bluetooth connection
+        <i>154</i>&nbsp; */
+        <b class="nc"><i>155</i>&nbsp; private boolean isCancelled = false;</b>
+        <i>156</i>&nbsp;
+        <i>157</i>&nbsp; /**
+        <i>158</i>&nbsp; * Boolean value stored for Bluetooth connection error :
+        <i>159</i>&nbsp; * A Bluetooth connection in progress can be cancelled by the SDK if it
+        returns an error
+        <i>160</i>&nbsp; */
+        <b class="nc"><i>161</i>&nbsp; private boolean isErrorRaised = false;</b>
+        <i>162</i>&nbsp;
+        <i>163</i>&nbsp; /**
+        <i>164</i>&nbsp; * Toast used to notify the user by displaying a temporary message on the
+        foreground of the screen
+        <i>165</i>&nbsp; */
+        <i>166</i>&nbsp; private Toast toast;
+        <i>167</i>&nbsp;
+        <i>168</i>&nbsp; /**
+        <i>169</i>&nbsp; * Listener used to receive a notification when the Bluetooth connection
+        state changes
+        <i>170</i>&nbsp; */
+        <b class="nc"><i>171</i>&nbsp; private BluetoothStateListener bluetoothStateListener = new
+            BluetoothStateListener() {</b>
+        <i>172</i>&nbsp; /**
+        <i>173</i>&nbsp; * Callback used to receive a notification when the Bluetooth connection
+        state changes
+        <i>174</i>&nbsp; */
+        <i>175</i>&nbsp; @Override
+        <i>176</i>&nbsp; public void onNewState(BluetoothState newState, MbtDevice device) {
+        <b class="nc"><i>177</i>&nbsp; if(newState.equals(BluetoothState.READING_SUCCESS)){</b>
+        <b class="nc"><i>178</i>&nbsp; sdkClient.requestCurrentConnectedDevice(new
+            SimpleRequestCallback&lt;MbtDevice&gt;() {</b>
+        <i>179</i>&nbsp; @Override
+        <i>180</i>&nbsp; public void onRequestComplete(final MbtDevice melomindDevice) {
+        <b class="nc"><i>181</i>&nbsp; if(melomindDevice != null) {</b>
+        <b class="nc"><i>182</i>&nbsp; runOnUiThread(new Runnable() {</b>
+        <i>183</i>&nbsp; @Override
+        <i>184</i>&nbsp; public void run() {
+        <b class="nc"><i>185</i>&nbsp; showDeviceName(melomindDevice);</b>
+        <b class="nc"><i>186</i>&nbsp; showDeviceQrCode(melomindDevice);</b>
+        <b class="nc"><i>187</i>&nbsp; deviceType = ( melomindDevice instanceof MelomindDevice ?
+            MbtDeviceType.MELOMIND : MbtDeviceType.VPRO);</b>
+        <i>188</i>&nbsp; }
+        <i>189</i>&nbsp; });
+        <i>190</i>&nbsp; }
+        <i>191</i>&nbsp; }
+        <i>192</i>&nbsp; });
+        <i>193</i>&nbsp; }
+        <i>194</i>&nbsp; }
+        <i>195</i>&nbsp;
+        <i>196</i>&nbsp; /**
+        <i>197</i>&nbsp; * Callback used to receive a notification when the Bluetooth connection is
+        aborted if the SDK returns an error
+        <i>198</i>&nbsp; */
+        <i>199</i>&nbsp; @Override
+        <i>200</i>&nbsp; public void onError(BaseError error, String additionalInfo) {
+        <b class="nc"><i>201</i>&nbsp; Log.e(&quot;HomeActivity&quot;, &quot;onError received &quot;+error.getMessage()+
+            (additionalInfo != null ? additionalInfo : &quot;&quot;));</b>
+        <b class="nc"><i>202</i>&nbsp; isErrorRaised = true;</b>
+        <b class="nc"><i>203</i>&nbsp; updateScanning(false);</b>
+        <b class="nc"><i>204</i>&nbsp; toast = Toast.makeText(HomeActivity.this, error.getMessage()+
+            (additionalInfo != null ? additionalInfo : &quot;&quot;), Toast.LENGTH_LONG);</b>
+        <b class="nc"><i>205</i>&nbsp; toast.show();</b>
+        <i>206</i>&nbsp; }
+        <i>207</i>&nbsp;
+        <i>208</i>&nbsp; /**
+        <i>209</i>&nbsp; * Callback used to receive a notification when the Bluetooth connection is
+        established
+        <i>210</i>&nbsp; */
+        <i>211</i>&nbsp; @Override
+        <i>212</i>&nbsp; public void onDeviceConnected(MbtDevice connectedDevice) {
+        <b class="nc"><i>213</i>&nbsp; device = connectedDevice;</b>
+        <b class="nc"><i>214</i>&nbsp; deviceName = device.getProductName();</b>
+        <b class="nc"><i>215</i>&nbsp; toast.cancel();</b>
+        <b class="nc"><i>216</i>&nbsp; deinitCurrentActivity();</b>
+        <i>217</i>&nbsp; }
+        <i>218</i>&nbsp;
+        <i>219</i>&nbsp; /**
+        <i>220</i>&nbsp; * Callback used to receive a notification when a connected headset is
+        disconnected
+        <i>221</i>&nbsp; */
+        <i>222</i>&nbsp;
+        <i>223</i>&nbsp; @Override
+        <i>224</i>&nbsp; public void onDeviceDisconnected(MbtDevice device) {
+        <b class="nc"><i>225</i>&nbsp; device = null;</b>
+        <b class="nc"><i>226</i>&nbsp; if(!toast.getView().isShown())</b>
+        <b class="nc"><i>227</i>&nbsp; notifyUser(getString(R.string.no_connected_headset));</b>
+        <b class="nc"><i>228</i>&nbsp; if(isCancelled)</b>
+        <b class="nc"><i>229</i>&nbsp; updateScanning(false);</b>
+        <i>230</i>&nbsp; }
+        <i>231</i>&nbsp; };
+        <i>232</i>&nbsp;
+        <i>233</i>&nbsp; /**
+        <i>234</i>&nbsp; * Method called to display the name of the connecting headset in the device
+        name field
+        <i>235</i>&nbsp; */
+        <i>236</i>&nbsp; private void showDeviceName(final MbtDevice melomindDevice){
+        <b class="nc"><i>237</i>&nbsp; deviceName = melomindDevice.getProductName();</b>
+        <b class="nc"><i>238</i>&nbsp; String deviceNameToDisplay =
+            deviceName.replace(MELOMIND_DEVICE_NAME_PREFIX,&quot;&quot;);</b>
+        <b class="nc"><i>239</i>&nbsp; deviceNameField.setText(deviceNameToDisplay);</b>
+        <b class="nc"><i>240</i>&nbsp; for(String prefix : prefixNameList){</b>
+        <b class="nc"><i>241</i>&nbsp; if(melomindDevice.getSerialNumber() != null &amp;&amp;
+            melomindDevice.getProductName().startsWith(prefix))</b>
+        <b class="nc"><i>242</i>&nbsp;
+            deviceNamePrefixSpinner.setSelection(prefixNameArrayAdapter.getPosition(prefix));</b>
+        <b class="nc"><i>243</i>&nbsp; }</b>
+        <i>244</i>&nbsp; }
+        <i>245</i>&nbsp;
+        <i>246</i>&nbsp; /**
+        <i>247</i>&nbsp; * Method called to display the QR code of the connecting headset in the QR
+        code field
+        <i>248</i>&nbsp; */
+        <i>249</i>&nbsp; private void showDeviceQrCode(final MbtDevice melomindDevice){
+        <b class="nc"><i>250</i>&nbsp; deviceQrCode = melomindDevice.getExternalName();</b>
+        <b class="nc"><i>251</i>&nbsp; String deviceQrCodeToDisplay =
+            deviceQrCode.replace(QR_CODE_NAME_PREFIX,&quot;&quot;);</b>
+        <b class="nc"><i>252</i>&nbsp; deviceQrCodeField.setText(deviceQrCodeToDisplay);</b>
+        <b class="nc"><i>253</i>&nbsp; for(String prefix : prefixQrCodeList){</b>
+        <b class="nc"><i>254</i>&nbsp; if(melomindDevice.getExternalName() != null &amp;&amp;
+            melomindDevice.getExternalName().startsWith(prefix))</b>
+        <b class="nc"><i>255</i>&nbsp;
+            deviceQrCodePrefixSpinner.setSelection(prefixQrCodeArrayAdapter.getPosition(prefix));</b>
+        <b class="nc"><i>256</i>&nbsp; }</b>
+        <i>257</i>&nbsp; }
+        <i>258</i>&nbsp;
+        <i>259</i>&nbsp; /**
+        <i>260</i>&nbsp; * Method called by default when the Activity is started
+        <i>261</i>&nbsp; * It initializes all the views, SDK client, and permissions.
+        <i>262</i>&nbsp; */
+        <i>263</i>&nbsp; @Override
+        <i>264</i>&nbsp; protected void onCreate(Bundle savedInstanceState) {
+        <b class="nc"><i>265</i>&nbsp; super.onCreate(savedInstanceState);</b>
+        <b class="nc"><i>266</i>&nbsp; setContentView(R.layout.activity_home);</b>
+        <i>267</i>&nbsp;
+        <b class="nc"><i>268</i>&nbsp; toast = Toast.makeText(HomeActivity.this, &quot;&quot;,
+            Toast.LENGTH_LONG);</b>
+        <b class="nc"><i>269</i>&nbsp; sdkClient = MbtClient.init(getApplicationContext());</b>
+        <b class="nc"><i>270</i>&nbsp; isCancelled = false;</b>
+        <i>271</i>&nbsp;
+        <b class="nc"><i>272</i>&nbsp;
+            if(getIntent().hasExtra(HomeActivity.PREVIOUS_ACTIVITY_EXTRA)){</b>
+        <b class="nc"><i>273</i>&nbsp;
+            if(getIntent().getStringExtra(HomeActivity.PREVIOUS_ACTIVITY_EXTRA) != null)</b>
+        <b class="nc"><i>274</i>&nbsp; sdkClient.setConnectionStateListener(bluetoothStateListener);</b>
+        <i>275</i>&nbsp; }
+        <i>276</i>&nbsp;
+        <b class="nc"><i>277</i>&nbsp; initToolBar();</b>
+        <b class="nc"><i>278</i>&nbsp; initDeviceNameField();</b>
+        <b class="nc"><i>279</i>&nbsp; initDeviceNamePrefix();</b>
+        <b class="nc"><i>280</i>&nbsp; initDeviceQrCodeField();</b>
+        <b class="nc"><i>281</i>&nbsp; initDeviceQrCodePrefix();</b>
+        <b class="nc"><i>282</i>&nbsp; initConnectAudioSwitch();</b>
+        <b class="nc"><i>283</i>&nbsp; initScanButton();</b>
+        <b class="nc"><i>284</i>&nbsp; initPermissions();</b>
+        <i>285</i>&nbsp; }
+        <i>286</i>&nbsp;
+        <i>287</i>&nbsp; /**
+        <i>288</i>&nbsp; * Method used to initialize the top tool bar view
+        <i>289</i>&nbsp; */
+        <i>290</i>&nbsp; private void initToolBar(){
+        <b class="nc"><i>291</i>&nbsp; getSupportActionBar().setDisplayShowHomeEnabled(true);</b>
+        <b class="nc"><i>292</i>&nbsp; getSupportActionBar().setIcon(R.drawable.logo);</b>
+        <b class="nc"><i>293</i>&nbsp; if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.M) {</b>
+        <b class="nc"><i>294</i>&nbsp; getSupportActionBar().setBackgroundDrawable(new
+            ColorDrawable(getColor(R.color.light_blue)));</b>
+        <i>295</i>&nbsp; }
+        <i>296</i>&nbsp; }
+        <i>297</i>&nbsp;
+        <i>298</i>&nbsp; /**
+        <i>299</i>&nbsp; * Method used to initialize the device name field
+        <i>300</i>&nbsp; */
+        <i>301</i>&nbsp; private void initDeviceNameField() {
+        <b class="nc"><i>302</i>&nbsp; deviceNameField = findViewById(R.id.deviceNameField);</b>
+        <i>303</i>&nbsp; }
+        <i>304</i>&nbsp;
+        <i>305</i>&nbsp; /**
+        <i>306</i>&nbsp; * Method used to initialize the device name prefix spinner
+        <i>307</i>&nbsp; */
+        <i>308</i>&nbsp; private void initDeviceNamePrefix() {
+        <b class="nc"><i>309</i>&nbsp; deviceNamePrefixSpinner =
+            findViewById(R.id.deviceNamePrefix);</b>
+        <b class="nc"><i>310</i>&nbsp; prefixNameList = new ArrayList&lt;&gt;();</b>
+        <b class="nc"><i>311</i>&nbsp; prefixNameList.add(MELOMIND_DEVICE_NAME_PREFIX);</b>
+        <b class="nc"><i>312</i>&nbsp; prefixNameList.add(VPRO_DEVICE_NAME_PREFIX);</b>
+        <b class="nc"><i>313</i>&nbsp; prefixNameArrayAdapter = new ArrayAdapter&lt;&gt;(this,
+            android.R.layout.simple_spinner_item, prefixNameList);</b>
+        <i>314</i>&nbsp;
+        <b class="nc"><i>315</i>&nbsp;
+            prefixNameArrayAdapter.setDropDownViewResource(R.layout.spinner_item);</b>
+        <b class="nc"><i>316</i>&nbsp;
+            deviceNamePrefixSpinner.setAdapter(prefixNameArrayAdapter);</b>
+        <i>317</i>&nbsp; }
+        <i>318</i>&nbsp;
+        <i>319</i>&nbsp; /**
+        <i>320</i>&nbsp; * Method used to initialize the device QR code field
+        <i>321</i>&nbsp; */
+        <i>322</i>&nbsp; private void initDeviceQrCodeField() {
+        <b class="nc"><i>323</i>&nbsp; deviceQrCodeField = findViewById(R.id.deviceQrCodeField);</b>
+        <i>324</i>&nbsp; }
+        <i>325</i>&nbsp;
+        <i>326</i>&nbsp; /**
+        <i>327</i>&nbsp; * Method used to initialize the device QR code prefix spinner
+        <i>328</i>&nbsp; */
+        <i>329</i>&nbsp; private void initDeviceQrCodePrefix() {
+        <b class="nc"><i>330</i>&nbsp; deviceQrCodePrefixSpinner =
+            findViewById(R.id.deviceQrCodePrefix);</b>
+        <b class="nc"><i>331</i>&nbsp; prefixQrCodeList = new ArrayList&lt;&gt;(Arrays.asList(QR_CODE_NAME_PREFIX));</b>
+        <b class="nc"><i>332</i>&nbsp; prefixQrCodeArrayAdapter = new ArrayAdapter&lt;&gt;(this,</b>
+        <i>333</i>&nbsp; android.R.layout.simple_spinner_item, prefixQrCodeList);
+        <b class="nc"><i>334</i>&nbsp;
+            prefixQrCodeArrayAdapter.setDropDownViewResource(R.layout.spinner_item);</b>
+        <b class="nc"><i>335</i>&nbsp;
+            deviceQrCodePrefixSpinner.setAdapter(prefixQrCodeArrayAdapter);</b>
+        <b class="nc"><i>336</i>&nbsp;
+            deviceQrCodePrefixSpinner.setSelection(prefixQrCodeArrayAdapter.getPosition(QR_CODE_NAME_PREFIX));</b>
+        <i>337</i>&nbsp; }
+        <i>338</i>&nbsp;
+        <i>339</i>&nbsp; /**
+        <i>340</i>&nbsp; * Method used to initialize the audio connection switch
+        <i>341</i>&nbsp; */
+        <i>342</i>&nbsp; private void initConnectAudioSwitch() {
+        <b class="nc"><i>343</i>&nbsp; connectAudioSwitch = findViewById(R.id.connectAudio);</b>
+        <i>344</i>&nbsp; }
+        <i>345</i>&nbsp;
+        <i>346</i>&nbsp; /**
+        <i>347</i>&nbsp; * Method used to initialize the scan button
+        <i>348</i>&nbsp; */
+        <i>349</i>&nbsp;
+        <i>350</i>&nbsp; private void initScanButton(){
+        <b class="nc"><i>351</i>&nbsp; scanButton = findViewById(R.id.scanButton);</b>
+        <i>352</i>&nbsp;
+        <b class="nc"><i>353</i>&nbsp; scanButton.setOnClickListener(new View.OnClickListener()
+            {</b>
+        <i>354</i>&nbsp; @Override
+        <i>355</i>&nbsp; public void onClick(View v) {
+        <b class="nc"><i>356</i>&nbsp; notifyUser(getString(R.string.scan_in_progress));</b>
+        <b class="nc"><i>357</i>&nbsp; deviceNamePrefix =
+            String.valueOf(deviceNamePrefixSpinner.getSelectedItem()); //get the prefix chosen by
+            the user in the Spinner</b>
+        <b class="nc"><i>358</i>&nbsp; deviceName =
+            deviceNamePrefix+deviceNameField.getText().toString(); //get the name entered by the
+            user in the EditText</b>
+        <i>359</i>&nbsp;
+        <b class="nc"><i>360</i>&nbsp; deviceQrCodePrefix =
+            String.valueOf(deviceQrCodePrefixSpinner.getSelectedItem()); //get the prefix chosen by
+            the user in the Spinner</b>
+        <b class="nc"><i>361</i>&nbsp; deviceQrCode =
+            deviceQrCodePrefix+deviceQrCodeField.getText().toString(); //get the name entered by the
+            user in the EditText</b>
+        <i>362</i>&nbsp;
+        <b class="nc"><i>363</i>&nbsp; deviceType = isMelomindDevice() ? MbtDeviceType.MELOMIND :
+            MbtDeviceType.VPRO;</b>
+        <b class="nc"><i>364</i>&nbsp; connectAudioIfDeviceCompatible =
+            connectAudioSwitch.isChecked();</b>
+        <i>365</i>&nbsp;
+        <b class="nc"><i>366</i>&nbsp; if(isCancelled) //Scan in progress : a second click means
+            that the user is trying to cancel the scan</b>
+        <b class="nc"><i>367</i>&nbsp; cancelScan();</b>
+        <i>368</i>&nbsp;
+        <i>369</i>&nbsp; else // Scan is not in progress : starting a new scan in order to connect
+        to a Mbt Device
+        <b class="nc"><i>370</i>&nbsp; startScan();</b>
+        <b class="nc"><i>371</i>&nbsp; if(!isErrorRaised)</b>
+        <b class="nc"><i>372</i>&nbsp; updateScanning(!isCancelled);</b>
+        <i>373</i>&nbsp; }
+        <i>374</i>&nbsp; });
+        <i>375</i>&nbsp; }
+        <i>376</i>&nbsp;
+        <i>377</i>&nbsp; /**
+        <i>378</i>&nbsp; * Method used to initialize the required application permissions :
+        <i>379</i>&nbsp; * A system popup appears on the foreground if the permissions are not
+        granted
+        <i>380</i>&nbsp; * /!\ Bluetooth Low Energy requires Location permission to find an
+        available device
+        <i>381</i>&nbsp; */
+        <i>382</i>&nbsp; private void initPermissions() {
+        <b class="nc"><i>383</i>&nbsp; int PERMISSION_ALL = 1;</b>
+        <b class="nc"><i>384</i>&nbsp; String[] PERMISSIONS = new
+            String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.ACCESS_FINE_LOCATION};</b>
+        <b class="nc"><i>385</i>&nbsp; if(!hasPermissions(getApplicationContext(), PERMISSIONS))</b>
+        <b class="nc"><i>386</i>&nbsp; ActivityCompat.requestPermissions(HomeActivity.this,
+            PERMISSIONS, PERMISSION_ALL);</b>
+        <i>387</i>&nbsp; }
+        <i>388</i>&nbsp;
+        <i>389</i>&nbsp; /**
+        <i>390</i>&nbsp; * Method used to check if required permissions are granted :
+        <i>391</i>&nbsp; * it returns true if permissions are granted, false otherwise
+        <i>392</i>&nbsp; */
+        <i>393</i>&nbsp; public static boolean hasPermissions(Context context, String...
+        permissions) {
+        <b class="nc"><i>394</i>&nbsp; if (android.os.Build.VERSION.SDK_INT &gt;=
+            Build.VERSION_CODES.M &amp;&amp; context != null &amp;&amp; permissions != null) {</b>
+        <b class="nc"><i>395</i>&nbsp; for (String permission : permissions) {</b>
+        <b class="nc"><i>396</i>&nbsp; if (ActivityCompat.checkSelfPermission(context, permission)
+            != PackageManager.PERMISSION_GRANTED) {</b>
+        <b class="nc"><i>397</i>&nbsp; return false;</b>
+        <i>398</i>&nbsp; }
+        <i>399</i>&nbsp; }
+        <i>400</i>&nbsp; }
+        <b class="nc"><i>401</i>&nbsp; return true;</b>
+        <i>402</i>&nbsp; }
+        <i>403</i>&nbsp;
+        <i>404</i>&nbsp; /**
+        <i>405</i>&nbsp; * Method used to start a Bluetooth scan if order to find an available
+        headset and initiate connection
+        <i>406</i>&nbsp; * If a device name is entered, the SDK connects the corresponding headset.
+        <i>407</i>&nbsp; * If no device name is entered, the SDK connects the first found available
+        headset.
+        <i>408</i>&nbsp; * The SDK stops the scan after {@link HomeActivity#SCAN_DURATION} seconds
+        if no headset is found
+        <i>409</i>&nbsp; */
+        <i>410</i>&nbsp; private void startScan() {
+        <b class="nc"><i>411</i>&nbsp; isErrorRaised = false;</b>
+        <b class="nc"><i>412</i>&nbsp; ConnectionConfig.Builder builder = new
+            ConnectionConfig.Builder(bluetoothStateListener)</b>
+        <b class="nc"><i>413</i>&nbsp; .deviceName(((deviceName != null) &amp;&amp;
+            deviceName.equals(MELOMIND_DEVICE_NAME_PREFIX)) ? //if no name has been entered by the
+            user, the default device name is the headset prefix</b>
+        <i>414</i>&nbsp; null : deviceName ) //null is given in parameters if no name has been
+        entered by the user
+        <b class="nc"><i>415</i>&nbsp; .deviceQrCode(((deviceQrCode != null) &amp;&amp;
+            (deviceQrCode.equals(QR_CODE_NAME_PREFIX)) ) ? //if no QR code has been entered by the
+            user, the default device name is the headset prefix</b>
+        <i>416</i>&nbsp; null : deviceQrCode )
+        <b class="nc"><i>417</i>&nbsp; .maxScanDuration(SCAN_DURATION);</b>
+        <b class="nc"><i>418</i>&nbsp; if(connectAudioIfDeviceCompatible) {</b>
+        <b class="nc"><i>419</i>&nbsp; builder.connectAudioIfDeviceCompatible();</b>
+        <i>420</i>&nbsp; }
+        <b class="nc"><i>421</i>&nbsp;
+            sdkClient.connectBluetooth(builder.createForDevice(deviceType));</b>
+        <i>422</i>&nbsp; }
+        <i>423</i>&nbsp;
+        <i>424</i>&nbsp; /**
+        <i>425</i>&nbsp; * Method used to cancel a Bluetooth scan or connection in progress
+        <i>426</i>&nbsp; */
+        <i>427</i>&nbsp; private void cancelScan(){
+        <b class="nc"><i>428</i>&nbsp; sdkClient.cancelConnection();</b>
+        <i>429</i>&nbsp; }
+        <i>430</i>&nbsp;
+        <i>431</i>&nbsp; /**
+        <i>432</i>&nbsp; * Method used to update the scanning state boolean and the Scan button text
+        <i>433</i>&nbsp; * The Scan button text is changed into into &quot;Cancel&quot; if scanning
+        is launched
+        <i>434</i>&nbsp; * or into &quot;Find a device&quot; if scanning is cancelled
+        <i>435</i>&nbsp; */
+        <i>436</i>&nbsp; private void updateScanning(boolean isCancelled){
+        <b class="nc"><i>437</i>&nbsp; this.isCancelled = isCancelled;</b>
+        <i>438</i>&nbsp;
+        <b class="nc"><i>439</i>&nbsp; if(!isCancelled)</b>
+        <b class="nc"><i>440</i>&nbsp; toast.cancel();</b>
+        <b class="nc"><i>441</i>&nbsp; if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.M)</b>
+        <b class="nc"><i>442</i>&nbsp; scanButton.setBackgroundColor((isCancelled ? Color.LTGRAY :
+            getColor(R.color.light_blue)));</b>
+        <i>443</i>&nbsp;
+        <b class="nc"><i>444</i>&nbsp; scanButton.setText((isCancelled ? R.string.cancel :
+            R.string.scan));</b>
+        <i>445</i>&nbsp; }
+        <i>446</i>&nbsp;
+        <i>447</i>&nbsp; /**
+        <i>448</i>&nbsp; * Returns true if the device name contains &quot;melo_&quot; or &quot;vpro_&quot;,
+        false otherwise
+        <i>449</i>&nbsp; * @return true if the device name contains &quot;melo_&quot; or &quot;vpro_&quot;,
+        false otherwise
+        <i>450</i>&nbsp; */
+        <i>451</i>&nbsp; private boolean isMbtDeviceName(){
+        <b class="nc"><i>452</i>&nbsp; return isMelomindDevice() || isVproDevice();</b>
+        <i>453</i>&nbsp; }
+        <i>454</i>&nbsp;
+        <i>455</i>&nbsp; private boolean isMelomindDevice(){
+        <b class="nc"><i>456</i>&nbsp; return
+            deviceName.startsWith(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX);</b>
+        <i>457</i>&nbsp; }
+        <i>458</i>&nbsp;
+        <i>459</i>&nbsp; private boolean isVproDevice(){
+        <b class="nc"><i>460</i>&nbsp; return deviceName.startsWith(VPRO_DEVICE_NAME_PREFIX);</b>
+        <i>461</i>&nbsp; }
+        <i>462</i>&nbsp;
+        <i>463</i>&nbsp; /**
+        <i>464</i>&nbsp; * Method used to notify the user by showing a temporary message on the
+        foreground
+        <i>465</i>&nbsp; */
+        <i>466</i>&nbsp; private void notifyUser(String message){
+        <b class="nc"><i>467</i>&nbsp; toast.setText(&quot;&quot;);</b>
+        <b class="nc"><i>468</i>&nbsp; toast.show();</b>
+        <b class="nc"><i>469</i>&nbsp; toast.setText(message);</b>
+        <b class="nc"><i>470</i>&nbsp; toast.show();</b>
+        <i>471</i>&nbsp; }
+        <i>472</i>&nbsp;
+        <i>473</i>&nbsp; /**
+        <i>474</i>&nbsp; * Method called by default when the Android device back buttton is clicked
+        :
+        <i>475</i>&nbsp; * the listener is set to null to avoid memory leaks
+        <i>476</i>&nbsp; */
+        <i>477</i>&nbsp; @Override
+        <i>478</i>&nbsp; public void onBackPressed() {
+        <b class="nc"><i>479</i>&nbsp; bluetoothStateListener = null;</b>
+        <i>480</i>&nbsp; }
+        <i>481</i>&nbsp;
+        <i>482</i>&nbsp; /**
+        <i>483</i>&nbsp; * Method called when the {@link HomeActivity} is closed
+        <i>484</i>&nbsp; */
+        <i>485</i>&nbsp; private void deinitCurrentActivity(){
+        <b class="nc"><i>486</i>&nbsp; bluetoothStateListener = null;</b>
+        <b class="nc"><i>487</i>&nbsp; final Intent intent = new Intent(HomeActivity.this,
+            DeviceActivity.class);</b>
+        <b class="nc"><i>488</i>&nbsp; startActivity(intent);</b>
+        <b class="nc"><i>489</i>&nbsp; finish();</b>
+        <i>490</i>&nbsp; }
+        <i>491</i>&nbsp;}
+    </div>
+</div>
+
+<div class="footer">
+
+    <div style="float:right;">generated on 2020-06-10 10:26</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+    <title>Coverage Report :: SignalProcessingEvent</title>
+    <style type="text/css">
+    @import "../../.css/coverage.css";
+
+    </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+    <div class="breadCrumbs">
+        [ <a href="../../index.html">all classes</a> ]
+        [ <a href="../index.html">eventbus.events</a> ]
+    </div>
+
+    <h1>Coverage Summary for Class: SignalProcessingEvent (eventbus.events)</h1>
+
+    <table class="coverageStats">
+
+        <tr>
+            <th class="name">Class</th>
+            <th class="coverageStat
+">
+                Method, %
+            </th>
+            <th class="coverageStat
+">
+                Line, %
+            </th>
+        </tr>
+        <tr>
+            <td class="name">SignalProcessingEvent$GetBandpassFilter</td>
+            <td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+                <span class="absValue">
+    (0/ 1)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+                <span class="absValue">
+    (0/ 1)
+  </span>
+            </td>
+        </tr>
+        <tr>
+            <td class="name"><strong>total</strong></td>
+            <td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+                <span class="absValue">
+    (0/ 1)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+                <span class="absValue">
+    (0/ 1)
+  </span>
+            </td>
+        </tr>
+    </table>
+
+    <br/>
+    <br/>
+
+
+    <div class="sourceCode"><i>1</i>&nbsp;package eventbus.events
+        <i>2</i>&nbsp;
+        <i>3</i>&nbsp;/**
+        <i>4</i>&nbsp; * Event posted when a raw EEG data array has to be filtered using a bandpass
+        filter
+        <i>5</i>&nbsp; * Event data contains the bounds of the bandpass filter
+        <i>6</i>&nbsp; *
+        <i>7</i>&nbsp; * @author Sophie Zecri on 24/05/2018
+        <i>8</i>&nbsp; */
+        <i>9</i>&nbsp;interface SignalProcessingEvent : IEvent {
+        <i>10</i>&nbsp; /**
+        <i>11</i>&nbsp; * Request to apply a bandpass filter to the input signal to keep frequencies
+        included between
+        <i>12</i>&nbsp; */
+        <i>13</i>&nbsp; class GetBandpassFilter
+        <i>14</i>&nbsp; /**
+        <i>15</i>&nbsp; * Apply a bandpass filter to the input signal to keep frequencies included
+        between
+        <i>16</i>&nbsp; * @param minFrequency and
+        <i>17</i>&nbsp; * @param maxFrequency .
+        <i>18</i>&nbsp; * @param size is the number of EEG data of one channel
+        <i>19</i>&nbsp; * @param inputData is the array of EEG data to filter for one channel
+        <b class="nc"><i>20</i>&nbsp; */(val minFrequency: Float, val maxFrequency: Float, val
+            inputSignal: FloatArray, val size: Int)</b>
+        <i>21</i>&nbsp;
+        <i>22</i>&nbsp; /**
+        <i>23</i>&nbsp; * Return the result of a bandpass filter operation on a signal
+        <i>24</i>&nbsp; */
+        <i>25</i>&nbsp; class PostBandpassFilter(val outputSignal: FloatArray)
+        <i>26</i>&nbsp;}
+    </div>
+</div>
+
+<div class="footer">
+
+    <div style="float:right;">generated on 2020-06-10 10:26</div>
+</div>
+</body>
+</html>
