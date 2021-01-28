@@ -50,11 +50,11 @@ class MbtBluetoothReader(private val manager: MbtBluetoothManager) {
    * @param deviceInfo the [DeviceInfo] info that determine which read to operation to execute */
   fun startReadOperation(deviceInfo: DeviceInfo) {
     val hasOperationFailed = when (deviceInfo) {
-      BATTERY -> MbtDataBluetooth.instance.readBattery() //Initiates a read battery operation on this correct BtProtocol.
-      FW_VERSION -> (MbtDataBluetooth.instance as IDeviceInfoMonitor).readFwVersion() //Initiates a read firmware version operation on this correct BtProtocol
-      HW_VERSION -> (MbtDataBluetooth.instance as IDeviceInfoMonitor).readHwVersion() //Initiates a read hardware version operation on this correct BtProtocol
-      SERIAL_NUMBER -> (MbtDataBluetooth.instance as IDeviceInfoMonitor).readSerialNumber() //Initiates a read serial number operation on this correct BtProtocol
-      MODEL_NUMBER -> (MbtDataBluetooth.instance as IDeviceInfoMonitor).readModelNumber() //Initiates a read model number operation on this correct BtProtocol
+      BATTERY -> MbtDataBluetooth.instance.readBattery() //Initiates a read battery operation on this correct BluetoothProtocol.
+      FW_VERSION -> (MbtDataBluetooth.instance as IDeviceInfoMonitor).readFwVersion() //Initiates a read firmware version operation on this correct BluetoothProtocol
+      HW_VERSION -> (MbtDataBluetooth.instance as IDeviceInfoMonitor).readHwVersion() //Initiates a read hardware version operation on this correct BluetoothProtocol
+      SERIAL_NUMBER -> (MbtDataBluetooth.instance as IDeviceInfoMonitor).readSerialNumber() //Initiates a read serial number operation on this correct BluetoothProtocol
+      MODEL_NUMBER -> (MbtDataBluetooth.instance as IDeviceInfoMonitor).readModelNumber() //Initiates a read model number operation on this correct BluetoothProtocol
       else -> {
         false
       }
@@ -65,7 +65,7 @@ class MbtBluetoothReader(private val manager: MbtBluetoothManager) {
     }
   }
 
-  /** Initiates the acquisition of EEG data. This method chooses between the correct BtProtocol.
+  /** Initiates the acquisition of EEG data. This method chooses between the correct BluetoothProtocol.
    * If there is already a streaming session in progress, nothing happens and the method returns silently. */
   fun startStreamOperation(enableDeviceStatusMonitoring: Boolean) {
     Log.d(TAG, "Bluetooth reader starts streaming")
@@ -95,7 +95,7 @@ class MbtBluetoothReader(private val manager: MbtBluetoothManager) {
     )
   }
 
-  /** Initiates the acquisition of EEG data from the correct BtProtocol
+  /** Initiates the acquisition of EEG data from the correct BluetoothProtocol
    * If there is no streaming session in progress, nothing happens and the method returns silently. */
   fun stopStreamOperation() {
     Log.d(TAG, "Bluetooth reader stops streaming")

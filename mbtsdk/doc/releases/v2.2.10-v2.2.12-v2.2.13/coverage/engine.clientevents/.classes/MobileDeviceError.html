@@ -1,0 +1,115 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+    <title>Coverage Report :: MobileDeviceError</title>
+    <style type="text/css">
+    @import "../../.css/coverage.css";
+
+    </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+    <div class="breadCrumbs">
+        [ <a href="../../index.html">all classes</a> ]
+        [ <a href="../index.html">engine.clientevents</a> ]
+    </div>
+
+    <h1>Coverage Summary for Class: MobileDeviceError (engine.clientevents)</h1>
+
+    <table class="coverageStats">
+        <tr>
+            <th class="name">Class</th>
+            <th class="coverageStat
+">
+                Class, %
+            </th>
+            <th class="coverageStat
+">
+                Method, %
+            </th>
+            <th class="coverageStat
+">
+                Line, %
+            </th>
+        </tr>
+        <tr>
+            <td class="name">MobileDeviceError</td>
+            <td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+                <span class="absValue">
+    (1/ 1)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+                <span class="absValue">
+    (2/ 2)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+                <span class="absValue">
+    (9/ 9)
+  </span>
+            </td>
+        </tr>
+
+    </table>
+
+    <br/>
+    <br/>
+
+
+    <div class="sourceCode"><i>1</i>&nbsp;package engine.clientevents;
+        <i>2</i>&nbsp;
+        <i>3</i>&nbsp;import androidx.annotation.Keep;
+        <i>4</i>&nbsp;
+        <i>5</i>&nbsp;@Keep
+        <i>6</i>&nbsp;public class MobileDeviceError extends BaseError {
+        <i>7</i>&nbsp;
+        <i>8</i>&nbsp; private static final String DOMAIN = &quot;MobileDevice&quot;;
+        <i>9</i>&nbsp;
+        <b class="fc"><i>10</i>&nbsp; private static int CODE_RANGE = 1500;</b>
+        <i>11</i>&nbsp;
+        <b class="fc"><i>12</i>&nbsp; public static String ERROR_LABEL = DOMAIN + &quot; Error :&quot;;</b>
+        <i>13</i>&nbsp;
+        <b class="fc"><i>14</i>&nbsp; public static MobileDeviceError ERROR_GPS_DISABLED = new
+            MobileDeviceError( CODE_RANGE, &quot;This operation could not be started : GPS disabled.&quot;);</b>
+        <b class="fc"><i>15</i>&nbsp; public static MobileDeviceError ERROR_LOCATION_PERMISSION =
+            new MobileDeviceError( CODE_RANGE+1, &quot;This operation could not be started :
+            Location permission not granted.&quot;);</b>
+        <b class="fc"><i>16</i>&nbsp; public static MobileDeviceError ERROR_BLUETOOTH_DISABLED = new
+            MobileDeviceError( CODE_RANGE+2, &quot;This operation could not be started : Bluetooth
+            is disabled.&quot;);</b>
+        <b class="fc"><i>17</i>&nbsp; public static MobileDeviceError ERROR_STORAGE_PERMISSION = new
+            MobileDeviceError( CODE_RANGE+3, &quot;This operation could not be started : Storage
+            permission not granted.&quot;);</b>
+        <b class="fc"><i>18</i>&nbsp; public static MobileDeviceError ERROR_NO_FREE_SPACE = new
+            MobileDeviceError( CODE_RANGE+4, &quot;No Free Space on the Mobile Device : impossible
+            to store data.&quot;);</b>
+        <i>19</i>&nbsp;
+        <i>20</i>&nbsp; public MobileDeviceError(int code, String exception){
+        <b class="fc"><i>21</i>&nbsp; super(DOMAIN, code, exception);</b>
+        <b class="fc"><i>22</i>&nbsp; }</b>
+        <i>23</i>&nbsp;}
+        <i>24</i>&nbsp;
+        <i>25</i>&nbsp;
+    </div>
+</div>
+
+<div class="footer">
+
+    <div style="float:right;">generated on 2020-06-10 10:26</div>
+</div>
+</body>
+</html>

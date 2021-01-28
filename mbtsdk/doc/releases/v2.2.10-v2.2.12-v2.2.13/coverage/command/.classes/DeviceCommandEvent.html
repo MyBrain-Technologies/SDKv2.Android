@@ -1,0 +1,413 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+    <title>Coverage Report :: DeviceCommandEvent</title>
+    <style type="text/css">
+    @import "../../.css/coverage.css";
+
+    </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+    <div class="breadCrumbs">
+        [ <a href="../../index.html">all classes</a> ]
+        [ <a href="../index.html">command</a> ]
+    </div>
+
+    <h1>Coverage Summary for Class: DeviceCommandEvent (command)</h1>
+
+    <table class="coverageStats">
+
+        <tr>
+            <th class="name">Class</th>
+            <th class="coverageStat
+">
+                Method, %
+            </th>
+            <th class="coverageStat
+">
+                Line, %
+            </th>
+        </tr>
+        <tr>
+            <td class="name">DeviceCommandEvent</td>
+            <td class="coverageStat">
+  <span class="percent">
+    80%
+  </span>
+                <span class="absValue">
+    (8/ 10)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    96,4%
+  </span>
+                <span class="absValue">
+    (53/ 55)
+  </span>
+            </td>
+        </tr>
+        <tr>
+            <td class="name">DeviceCommandEvent$1</td>
+            <td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+                <span class="absValue">
+    (1/ 1)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+                <span class="absValue">
+    (4/ 4)
+  </span>
+            </td>
+        </tr>
+        <tr>
+            <td class="name">DeviceCommandEvent$2</td>
+            <td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+                <span class="absValue">
+    (1/ 1)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+                <span class="absValue">
+    (9/ 9)
+  </span>
+            </td>
+        </tr>
+        <tr>
+            <td class="name">DeviceCommandEvent$3</td>
+            <td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+                <span class="absValue">
+    (1/ 1)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+                <span class="absValue">
+    (4/ 4)
+  </span>
+            </td>
+        </tr>
+        <tr>
+            <td class="name">DeviceCommandEvent$Companion</td>
+            <td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+                <span class="absValue">
+    (3/ 3)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    93,3%
+  </span>
+                <span class="absValue">
+    (14/ 15)
+  </span>
+            </td>
+        </tr>
+        <tr>
+            <td class="name"><strong>total</strong></td>
+            <td class="coverageStat">
+  <span class="percent">
+    87,5%
+  </span>
+                <span class="absValue">
+    (14/ 16)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    96,6%
+  </span>
+                <span class="absValue">
+    (84/ 87)
+  </span>
+            </td>
+        </tr>
+    </table>
+
+    <br/>
+    <br/>
+
+
+    <div class="sourceCode"><i>1</i>&nbsp;package command
+        <i>2</i>&nbsp;
+        <i>3</i>&nbsp;import java.nio.ByteBuffer
+        <i>4</i>&nbsp;import java.util.*
+        <i>5</i>&nbsp;
+        <i>6</i>&nbsp;/**
+        <i>7</i>&nbsp; * A class that contains all currently used device commands (mailbox &amp;
+        other commands) codes.
+        <i>8</i>&nbsp; * One code has one specific functionality.
+        <i>9</i>&nbsp; */
+        <b class="nc"><i>10</i>&nbsp;enum class DeviceCommandEvent {</b>
+        <i>11</i>&nbsp; /**
+        <i>12</i>&nbsp; * Event codes related to OAD Events
+        <i>13</i>&nbsp; */
+        <b class="fc"><i>14</i>&nbsp; MBX_START_OTA_TXF(0x03.toByte()), // Used by appli to request
+            an OTA update (provides software major and minor in payload)</b>
+        <b class="fc"><i>15</i>&nbsp; MBX_OTA_IDX_RESET_EVT(0x06.toByte()), // Notifies appli that
+            we request a packet Idx reset</b>
+        <b class="fc"><i>16</i>&nbsp; MBX_OTA_STATUS_EVT(0x07.toByte()), // Notifies appli with the
+            status of the OTA transfer.</b>
+        <b class="fc"><i>17</i>&nbsp; OTA_STATUS_TRANSFER((-1).toByte()), // Notifies SDK when an
+            OAD packet has been transferred.</b>
+        <b class="fc"><i>18</i>&nbsp; OTA_BLUETOOTH_RESET((-2).toByte()), // Notifies SDK when an
+            the Bluetooth has been reset</b>
+        <b class="fc"><i>19</i>&nbsp; MBX_OTA_MODE_EVT(0x05.toByte(),</b>
+        <b class="fc"><i>20</i>&nbsp; object : HashMap&lt;String, Byte&gt;() {</b>
+        <i>21</i>&nbsp; init {
+        <b class="fc"><i>22</i>&nbsp; put(&quot;CMD_CODE_OTA_MODE_EVT_FAILED&quot;,
+            0x00.toByte())</b>
+        <b class="fc"><i>23</i>&nbsp; put(&quot;CMD_CODE_OTA_MODE_EVT_SUCCESS&quot;, 0xFF.toByte())</b>
+        <b class="fc"><i>24</i>&nbsp; }</b>
+        <i>25</i>&nbsp; }
+        <i>26</i>&nbsp; ),
+        <i>27</i>&nbsp;
+        <i>28</i>&nbsp; /**
+        <i>29</i>&nbsp; * Event codes related to Device System Events
+        <i>30</i>&nbsp; */
+        <b class="fc"><i>31</i>&nbsp; MBX_SET_ADS_CONFIG(0x00.toByte()),
+            MBX_SET_AUDIO_CONFIG(0x01.toByte()),</b>
+        <i>32</i>&nbsp;
+        <i>33</i>&nbsp; /**
+        <i>34</i>&nbsp; * Event codes related to Device Configuration Events
+        <i>35</i>&nbsp; */
+        <b class="fc"><i>36</i>&nbsp; MBX_SET_PRODUCT_NAME(0x02.toByte()), // Product name
+            configuration request</b>
+        <b class="fc"><i>37</i>&nbsp; MBX_SET_NOTCH_FILT(0x0B.toByte()), // allows to hotswap the
+            filters&#39; parameters</b>
+        <b class="fc"><i>38</i>&nbsp; MBX_SET_BANDPASS_FILT(0x0C.toByte()), // Set the signal
+            bandwidth by changing the embedded bandpass filter</b>
+        <b class="fc"><i>39</i>&nbsp; MBX_SET_AMP_GAIN(0x0D.toByte()), // Set the eeg signal
+            amplifier gain</b>
+        <b class="fc"><i>40</i>&nbsp; MBX_P300_ENABLE(0x0F.toByte()), // Enable or disable the p300
+            functionnality of the melomind.</b>
+        <b class="fc"><i>41</i>&nbsp; MBX_DC_OFFSET_ENABLE(0x10.toByte()), // Enable or disable the
+            DC offset measurement computation and sending.</b>
+        <b class="fc"><i>42</i>&nbsp; MBX_SET_SERIAL_NUMBER(0x0A.toByte(),</b>
+        <b class="fc"><i>43</i>&nbsp; 0x53.toByte(), 0x4D.toByte()),</b>
+        <b class="fc"><i>44</i>&nbsp;
+            MBX_SET_EXTERNAL_NAME(MBX_SET_SERIAL_NUMBER.identifierCode,</b>
+        <b class="fc"><i>45</i>&nbsp; 0xAB.toByte(), 0x21.toByte()),</b>
+        <i>46</i>&nbsp;
+        <i>47</i>&nbsp; /**
+        <i>48</i>&nbsp; * Event codes related to a reading operation
+        <i>49</i>&nbsp; */
+        <b class="fc"><i>50</i>&nbsp; MBX_SYS_GET_STATUS(0x08.toByte()), // allows to retrieve to
+            system global status</b>
+        <b class="fc"><i>51</i>&nbsp; MBX_GET_EEG_CONFIG(0x0E.toByte()), // Get the current
+            configuration of the Notch filter, the bandpass filter, and the amplifier gain.</b>
+        <b class="fc"><i>52</i>&nbsp; GET_EEG_CONFIG_ADDITIONAL(0x00.toByte(), 0x00.toByte()), //
+            Additional info to get the current configuration .</b>
+        <b class="fc"><i>53</i>&nbsp; CMD_GET_BATTERY_VALUE(0x20.toByte()),</b>
+        <b class="fc"><i>54</i>&nbsp; CMD_START_EEG_ACQUISITION(0x24.toByte()),</b>
+        <b class="fc"><i>55</i>&nbsp; CMD_STOP_EEG_ACQUISITION(0x25.toByte()),</b>
+        <b class="fc"><i>56</i>&nbsp; CMD_GET_DEVICE_CONFIG(0x50.toByte()),</b>
+        <b class="fc"><i>57</i>&nbsp; CMD_GET_PSM_CONFIG(0x51.toByte()),</b>
+        <b class="fc"><i>58</i>&nbsp; CMD_GET_IMS_CONFIG(0x52.toByte()),</b>
+        <b class="fc"><i>59</i>&nbsp; CMD_SET_DEVICE_CONFIG(0x53.toByte()),</b>
+        <b class="fc"><i>60</i>&nbsp; CMD_GET_DEVICE_INFO(0x54.toByte()),</b>
+        <b class="fc"><i>61</i>&nbsp; START_FRAME(0x3C.toByte()),</b>
+        <b class="fc"><i>62</i>&nbsp; PAYLOAD_LENGTH(0x00.toByte(), 0x00.toByte()),</b>
+        <b class="fc"><i>63</i>&nbsp; COMPRESS(0x00.toByte()),</b>
+        <b class="fc"><i>64</i>&nbsp; PACKET_ID(0x00.toByte()),</b>
+        <b class="fc"><i>65</i>&nbsp; PAYLOAD(0x00.toByte()), // Additional info to get the current
+            configuration .</b>
+        <i>66</i>&nbsp;
+        <i>67</i>&nbsp; /**
+        <i>68</i>&nbsp; * Event codes related to Audio Connection Events
+        <i>69</i>&nbsp; */
+        <b class="fc"><i>70</i>&nbsp; MBX_CONNECT_IN_A2DP(0x11.toByte(), byteArrayOf(0x25.toByte(),
+            0xA2.toByte()),</b>
+        <b class="fc"><i>71</i>&nbsp; object : HashMap&lt;String, Byte&gt;() {</b>
+        <i>72</i>&nbsp; init {
+        <b class="fc"><i>73</i>&nbsp; put(&quot;CMD_CODE_CONNECT_IN_A2DP_IN_PROGRESS&quot;,
+            0x01.toByte())</b>
+        <b class="fc"><i>74</i>&nbsp; put(&quot;CMD_CODE_CONNECT_IN_A2DP_FAILED_BAD_BDADDR&quot;,
+            0x02.toByte())</b>
+        <b class="fc"><i>75</i>&nbsp; put(&quot;CMD_CODE_CONNECT_IN_A2DP_FAILED_ALREADY_CONNECTED&quot;,
+            0x04.toByte())</b>
+        <b class="fc"><i>76</i>&nbsp; put(&quot;CMD_CODE_CONNECT_IN_A2DP_FAILED_TIMEOUT&quot;,
+            0x08.toByte())</b>
+        <b class="fc"><i>77</i>&nbsp; put(&quot;CMD_CODE_CONNECT_IN_A2DP_LINKKEY_INVALID&quot;,
+            0x10.toByte())</b>
+        <b class="fc"><i>78</i>&nbsp; put(&quot;CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED&quot;,
+            0x20.toByte())</b>
+        <b class="fc"><i>79</i>&nbsp; put(&quot;CMD_CODE_CONNECT_IN_A2DP_SUCCESS&quot;,
+            0x80.toByte())</b>
+        <b class="fc"><i>80</i>&nbsp; }</b>
+        <i>81</i>&nbsp; }
+        <i>82</i>&nbsp; ),
+        <i>83</i>&nbsp;
+        <i>84</i>&nbsp; /**
+        <i>85</i>&nbsp; * Event codes related to Audio Reconnection Events
+        <i>86</i>&nbsp; */
+        <b class="fc"><i>87</i>&nbsp; MBX_SYS_REBOOT_EVT(0x09.toByte(),</b>
+        <b class="fc"><i>88</i>&nbsp; 0x29.toByte(), 0x08.toByte()),</b>
+        <i>89</i>&nbsp;
+        <i>90</i>&nbsp; /**
+        <i>91</i>&nbsp; * Event codes related to Audio Disconnection Events
+        <i>92</i>&nbsp; */
+        <b class="fc"><i>93</i>&nbsp; MBX_DISCONNECT_IN_A2DP(0x12.toByte(),
+            byteArrayOf(0x85.toByte(), 0x11.toByte()),</b>
+        <b class="fc"><i>94</i>&nbsp; object : HashMap&lt;String, Byte&gt;() {</b>
+        <i>95</i>&nbsp; init {
+        <b class="fc"><i>96</i>&nbsp; put(&quot;CMD_CODE_DISCONNECT_IN_A2DP_FAILED&quot;,
+            0x01.toByte())</b>
+        <b class="fc"><i>97</i>&nbsp; put(&quot;CMD_CODE_DISCONNECT_IN_A2DP_SUCCESS&quot;,
+            0xFF.toByte())</b>
+        <b class="fc"><i>98</i>&nbsp; }</b>
+        <i>99</i>&nbsp; }
+        <i>100</i>&nbsp; ),
+        <i>101</i>&nbsp;
+        <i>102</i>&nbsp; /**
+        <i>103</i>&nbsp; * Unused codes
+        <i>104</i>&nbsp; */
+        <b class="fc"><i>105</i>&nbsp; MBX_LEAD_OFF_EVT(0x04.toByte()), // Notifies app of a lead
+            off modification</b>
+        <b class="fc"><i>106</i>&nbsp; MBX_BAD_EVT(0xFF.toByte());</b>
+        <i>107</i>&nbsp;
+        <i>108</i>&nbsp; /**
+        <i>109</i>&nbsp; * Returns the unique identifier of the command
+        <i>110</i>&nbsp; * @return the unique identifier of the command
+        <i>111</i>&nbsp; */
+        <i>112</i>&nbsp; /**
+        <i>113</i>&nbsp; * Unique identifier of the event.
+        <i>114</i>&nbsp; */
+        <b class="fc"><i>115</i>&nbsp; var identifierCode: Byte</b>
+        <i>116</i>&nbsp; private set
+        <i>117</i>&nbsp;
+        <i>118</i>&nbsp; /**
+        <i>119</i>&nbsp; * Returns the optional additional code associated to the event
+        <i>120</i>&nbsp; * to add security and avoid requests sent by hackers.
+        <i>121</i>&nbsp; */
+        <i>122</i>&nbsp; /**
+        <i>123</i>&nbsp; * Optional additional code associated to the event
+        <i>124</i>&nbsp; * to add security and avoid requests sent by hackers.
+        <i>125</i>&nbsp; */
+        <b class="nc"><i>126</i>&nbsp; var additionalCodes: ByteArray? = null</b>
+        <i>127</i>&nbsp; private set
+        <i>128</i>&nbsp;
+        <i>129</i>&nbsp; /**
+        <i>130</i>&nbsp; * Optional additional codes associated to the event
+        <i>131</i>&nbsp; * that holds the possible responses returned once the device command has
+        been sent.
+        <i>132</i>&nbsp; */
+        <i>133</i>&nbsp; private var responseCodesMap: HashMap&lt;String, Byte&gt;? = null
+        <i>134</i>&nbsp;
+        <i>135</i>&nbsp; constructor(identifierCode: Byte, additionalCodes: ByteArray,
+        responseCodesMap: HashMap&lt;String, Byte&gt;?) {
+        <b class="fc"><i>136</i>&nbsp; this.identifierCode = identifierCode</b>
+        <b class="fc"><i>137</i>&nbsp; this.additionalCodes = additionalCodes</b>
+        <b class="fc"><i>138</i>&nbsp; this.responseCodesMap = responseCodesMap</b>
+        <i>139</i>&nbsp; }
+        <i>140</i>&nbsp;
+        <i>141</i>&nbsp; constructor(identifierCode: Byte, responseCodesMap: HashMap&lt;String, Byte&gt;)
+        {
+        <b class="fc"><i>142</i>&nbsp; this.identifierCode = identifierCode</b>
+        <b class="fc"><i>143</i>&nbsp; this.responseCodesMap = responseCodesMap</b>
+        <i>144</i>&nbsp; }
+        <i>145</i>&nbsp;
+        <i>146</i>&nbsp; constructor(identifierCode: Byte, vararg additionalCodes: Byte) {
+        <b class="fc"><i>147</i>&nbsp; this.identifierCode = identifierCode</b>
+        <b class="fc"><i>148</i>&nbsp; this.additionalCodes = additionalCodes</b>
+        <i>149</i>&nbsp; }
+        <i>150</i>&nbsp;
+        <i>151</i>&nbsp; constructor(identifierCode: Byte) {
+        <b class="fc"><i>152</i>&nbsp; this.identifierCode = identifierCode</b>
+        <i>153</i>&nbsp; }
+        <i>154</i>&nbsp;
+        <i>155</i>&nbsp; val assembledCodes: ByteArray
+        <b class="fc"><i>156</i>&nbsp; get() = assembleCodes(byteArrayOf(identifierCode),
+            additionalCodes)</b>
+        <i>157</i>&nbsp;
+        <i>158</i>&nbsp; /**
+        <i>159</i>&nbsp; * Returns the ptional additional codes associated to the event
+        <i>160</i>&nbsp; * that holds the possible responses returned once the device command has
+        been sent.
+        <i>161</i>&nbsp; */
+        <i>162</i>&nbsp; fun getResponseCodeForKey(key: String): Byte? {
+        <b class="fc"><i>163</i>&nbsp; return if (responseCodesMap!!.containsKey(key))
+            responseCodesMap!![key] else null</b>
+        <i>164</i>&nbsp; }
+        <i>165</i>&nbsp;
+        <b class="fc"><i>166</i>&nbsp; companion object {</b>
+        <i>167</i>&nbsp; const val CMD_CODE_CONNECT_IN_A2DP_IN_PROGRESS = &quot;CMD_CODE_CONNECT_IN_A2DP_IN_PROGRESS&quot;
+        <i>168</i>&nbsp; const val CMD_CODE_CONNECT_IN_A2DP_FAILED_BAD_BDADDR = &quot;CMD_CODE_CONNECT_IN_A2DP_FAILED_BAD_BDADDR&quot;
+        <i>169</i>&nbsp; const val CMD_CODE_CONNECT_IN_A2DP_FAILED_ALREADY_CONNECTED = &quot;CMD_CODE_CONNECT_IN_A2DP_FAILED_ALREADY_CONNECTED&quot;
+        <i>170</i>&nbsp; const val CMD_CODE_CONNECT_IN_A2DP_FAILED_TIMEOUT = &quot;CMD_CODE_CONNECT_IN_A2DP_FAILED_TIMEOUT&quot;
+        <i>171</i>&nbsp; const val CMD_CODE_CONNECT_IN_A2DP_LINKKEY_INVALID = &quot;CMD_CODE_CONNECT_IN_A2DP_LINKKEY_INVALID&quot;
+        <i>172</i>&nbsp; const val CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED = &quot;CMD_CODE_CONNECT_IN_A2DP_JACK_CONNECTED&quot;
+        <i>173</i>&nbsp; const val CMD_CODE_CONNECT_IN_A2DP_SUCCESS = &quot;CMD_CODE_CONNECT_IN_A2DP_SUCCESS&quot;
+        <i>174</i>&nbsp; const val CMD_CODE_DISCONNECT_IN_A2DP_FAILED = &quot;CMD_CODE_DISCONNECT_IN_A2DP_FAILED&quot;
+        <i>175</i>&nbsp; const val CMD_CODE_DISCONNECT_IN_A2DP_SUCCESS = &quot;CMD_CODE_DISCONNECT_IN_A2DP_SUCCESS&quot;
+        <i>176</i>&nbsp; const val CMD_CODE_OTA_MODE_EVT_FAILED = &quot;CMD_CODE_OTA_MODE_EVT_FAILED&quot;
+        <i>177</i>&nbsp; const val CMD_CODE_OTA_MODE_EVT_SUCCESS = &quot;CMD_CODE_OTA_MODE_EVT_SUCCESS&quot;
+        <i>178</i>&nbsp;
+        <i>179</i>&nbsp; /**
+        <i>180</i>&nbsp; * Returns the event that has an identifier that matchs the identifier code
+        <i>181</i>&nbsp; * @param identifierCode the identifier code
+        <i>182</i>&nbsp; * @return the event that has an identifier that matchs the identifier code
+        <i>183</i>&nbsp; */
+        <i>184</i>&nbsp; fun getEventFromIdentifierCode(identifierCode: Byte): DeviceCommandEvent? {
+        <b class="fc"><i>185</i>&nbsp; for (event in values()) {</b>
+        <b class="fc"><i>186</i>&nbsp; if (identifierCode == event.identifierCode) return event</b>
+        <i>187</i>&nbsp; }
+        <b class="nc"><i>188</i>&nbsp; return null</b>
+        <i>189</i>&nbsp; }
+        <i>190</i>&nbsp;
+        <i>191</i>&nbsp; @JvmStatic
+        <i>192</i>&nbsp; fun assembleCodes(vararg codes: ByteArray?): ByteArray {
+        <b class="fc"><i>193</i>&nbsp; var bufferLength = 0</b>
+        <b class="fc"><i>194</i>&nbsp; for (code in codes) {</b>
+        <b class="fc"><i>195</i>&nbsp; if (code != null) {</b>
+        <b class="fc"><i>196</i>&nbsp; for (codeByte in code) {</b>
+        <b class="fc"><i>197</i>&nbsp; bufferLength++</b>
+        <i>198</i>&nbsp; }
+        <i>199</i>&nbsp; }
+        <i>200</i>&nbsp; }
+        <b class="fc"><i>201</i>&nbsp; val buffer = ByteBuffer.allocate(bufferLength)</b>
+        <b class="fc"><i>202</i>&nbsp; for (code in codes) {</b>
+        <b class="fc"><i>203</i>&nbsp; if (code != null) {</b>
+        <b class="fc"><i>204</i>&nbsp; for (codeByte in code) {</b>
+        <b class="fc"><i>205</i>&nbsp; buffer.put(codeByte)</b>
+        <i>206</i>&nbsp; }
+        <i>207</i>&nbsp; }
+        <i>208</i>&nbsp; }
+        <b class="fc"><i>209</i>&nbsp; return buffer.array()</b>
+        <i>210</i>&nbsp; }
+        <i>211</i>&nbsp; }
+        <i>212</i>&nbsp;}
+    </div>
+</div>
+
+<div class="footer">
+
+    <div style="float:right;">generated on 2020-06-10 10:26</div>
+</div>
+</body>
+</html>

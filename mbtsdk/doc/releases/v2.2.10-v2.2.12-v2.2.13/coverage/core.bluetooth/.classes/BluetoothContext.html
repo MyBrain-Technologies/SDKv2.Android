@@ -1,0 +1,126 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+    <title>Coverage Report :: BluetoothContext</title>
+    <style type="text/css">
+    @import "../../.css/coverage.css";
+
+    </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+    <div class="breadCrumbs">
+        [ <a href="../../index.html">all classes</a> ]
+        [ <a href="../index.html">core.bluetooth</a> ]
+    </div>
+
+    <h1>Coverage Summary for Class: BluetoothContext (core.bluetooth)</h1>
+
+    <table class="coverageStats">
+        <tr>
+            <th class="name">Class</th>
+            <th class="coverageStat
+">
+                Class, %
+            </th>
+            <th class="coverageStat
+">
+                Method, %
+            </th>
+            <th class="coverageStat
+">
+                Line, %
+            </th>
+        </tr>
+        <tr>
+            <td class="name">BluetoothContext</td>
+            <td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+                <span class="absValue">
+    (1/ 1)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+                <span class="absValue">
+    (7/ 7)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    82,4%
+  </span>
+                <span class="absValue">
+    (14/ 17)
+  </span>
+            </td>
+        </tr>
+
+    </table>
+
+    <br/>
+    <br/>
+
+
+    <div class="sourceCode"><i>1</i>&nbsp;package core.bluetooth
+        <i>2</i>&nbsp;
+        <i>3</i>&nbsp;import android.content.Context
+        <i>4</i>&nbsp;import androidx.annotation.VisibleForTesting
+        <i>5</i>&nbsp;import core.device.model.MelomindsQRDataBase
+        <i>6</i>&nbsp;import features.MbtDeviceType
+        <i>7</i>&nbsp;
+        <b class="fc"><i>8</i>&nbsp;class BluetoothContext (val context: Context,</b>
+        <b class="fc"><i>9</i>&nbsp; val deviceTypeRequested: MbtDeviceType,</b>
+        <i>10</i>&nbsp; connectAudio: Boolean,
+        <b class="fc"><i>11</i>&nbsp; var deviceNameRequested: String?,</b>
+        <b class="fc"><i>12</i>&nbsp; var deviceQrCodeRequested: String?,</b>
+        <b class="fc"><i>13</i>&nbsp; val mtu: Int){</b>
+        <i>14</i>&nbsp;
+        <b class="fc"><i>15</i>&nbsp; val connectAudio: Boolean = connectAudio &amp;&amp;
+            deviceTypeRequested == MbtDeviceType.MELOMIND</b>
+        <i>16</i>&nbsp;
+        <i>17</i>&nbsp; init {
+        <b class="fc"><i>18</i>&nbsp; val qrCode = deviceQrCodeRequested</b>
+        <b class="fc"><i>19</i>&nbsp; if (qrCode != null) {</b>
+        <i>20</i>&nbsp;
+        <i>21</i>&nbsp; //if a QR code has been specified but no device name
+        <b class="fc"><i>22</i>&nbsp; if (deviceNameRequested == null) { //retrieve the BLE name
+            from the QR code database</b>
+        <b class="nc"><i>23</i>&nbsp; deviceNameRequested = MelomindsQRDataBase(context,
+            true)[deviceQrCodeRequested]</b>
+        <i>24</i>&nbsp; }
+        <i>25</i>&nbsp; //if QR code contains only 9 digits
+        <b class="fc"><i>26</i>&nbsp; if (qrCode.startsWith(MelomindsQRDataBase.QR_PREFIX)</b>
+        <b class="fc"><i>27</i>&nbsp; &amp;&amp; qrCode.length == MelomindsQRDataBase.QR_LENGTH - 1)
+            {</b>
+        <b class="nc"><i>28</i>&nbsp; deviceQrCodeRequested += MelomindsQRDataBase.QR_SUFFIX
+            //homogenization with the 10 digits QR code by adding a dot at the end</b>
+        <i>29</i>&nbsp; }
+        <i>30</i>&nbsp;
+        <i>31</i>&nbsp; //if a device name has been specified but no QR code
+        <b class="fc"><i>32</i>&nbsp; } else if (deviceNameRequested != null &amp;&amp;
+            (deviceTypeRequested == MbtDeviceType.MELOMIND)) {</b>
+        <b class="nc"><i>33</i>&nbsp; deviceQrCodeRequested = MelomindsQRDataBase(context,
+            false).get(deviceNameRequested) //retrieve the QR code from BLE name using QR code
+            database</b>
+        <b class="fc"><i>34</i>&nbsp; }</b>
+        <b class="fc"><i>35</i>&nbsp; }</b>
+        <i>36</i>&nbsp;
+        <i>37</i>&nbsp;}
+    </div>
+</div>
+
+<div class="footer">
+
+    <div style="float:right;">generated on 2020-06-10 10:26</div>
+</div>
+</body>
+</html>

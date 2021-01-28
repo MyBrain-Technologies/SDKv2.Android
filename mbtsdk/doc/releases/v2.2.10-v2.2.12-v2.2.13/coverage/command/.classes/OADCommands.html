@@ -1,0 +1,323 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+    <title>Coverage Report :: OADCommands</title>
+    <style type="text/css">
+    @import "../../.css/coverage.css";
+
+    </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+    <div class="breadCrumbs">
+        [ <a href="../../index.html">all classes</a> ]
+        [ <a href="../index.html">command</a> ]
+    </div>
+
+    <h1>Coverage Summary for Class: OADCommands (command)</h1>
+
+    <table class="coverageStats">
+
+        <tr>
+            <th class="name">Class</th>
+            <th class="coverageStat
+">
+                Method, %
+            </th>
+            <th class="coverageStat
+">
+                Line, %
+            </th>
+        </tr>
+        <tr>
+            <td class="name">OADCommands$RequestFirmwareValidation</td>
+            <td class="coverageStat">
+  <span class="percent">
+    66,7%
+  </span>
+                <span class="absValue">
+    (4/ 6)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    61,5%
+  </span>
+                <span class="absValue">
+    (16/ 26)
+  </span>
+            </td>
+        </tr>
+        <tr>
+            <td class="name">OADCommands$TransferPacket</td>
+            <td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+                <span class="absValue">
+    (0/ 6)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+                <span class="absValue">
+    (0/ 13)
+  </span>
+            </td>
+        </tr>
+        <tr>
+            <td class="name"><strong>total</strong></td>
+            <td class="coverageStat">
+  <span class="percent">
+    33,3%
+  </span>
+                <span class="absValue">
+    (4/ 12)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    41%
+  </span>
+                <span class="absValue">
+    (16/ 39)
+  </span>
+            </td>
+        </tr>
+    </table>
+
+    <br/>
+    <br/>
+
+
+    <div class="sourceCode"><i>1</i>&nbsp;package command;
+        <i>2</i>&nbsp;
+        <i>3</i>&nbsp;import androidx.annotation.Keep;
+        <i>4</i>&nbsp;
+        <i>5</i>&nbsp;import java.nio.ByteBuffer;
+        <i>6</i>&nbsp;
+        <i>7</i>&nbsp;import engine.clientevents.BaseError;
+        <i>8</i>&nbsp;import utils.OADExtractionUtils;
+        <i>9</i>&nbsp;
+        <i>10</i>&nbsp;import static utils.OADExtractionUtils.FILE_LENGTH_NB_BYTES;
+        <i>11</i>&nbsp;import static utils.OADExtractionUtils.FIRMWARE_VERSION_NB_BYTES;
+        <i>12</i>&nbsp;
+        <i>13</i>&nbsp;/**
+        <i>14</i>&nbsp; * OAD Mailbox commands sent from the SDK to the headset
+        <i>15</i>&nbsp; * in order to perform the firmware update
+        <i>16</i>&nbsp; */
+        <i>17</i>&nbsp;@Keep
+        <i>18</i>&nbsp;public interface OADCommands {
+        <i>19</i>&nbsp;
+        <i>20</i>&nbsp; /**
+        <i>21</i>&nbsp; * Mailbox command sent from the SDK to the connected headset
+        <i>22</i>&nbsp; * in order to request a validation of the current firmware before starting
+        the transfer.
+        <i>23</i>&nbsp; * The current firmware needs to know the firmware version and the binary
+        file length,
+        <i>24</i>&nbsp; * and can accept or reject the OAD update.
+        <i>25</i>&nbsp; */
+        <i>26</i>&nbsp; @Keep
+        <i>27</i>&nbsp; class RequestFirmwareValidation extends DeviceCommand&lt;byte[], BaseError&gt;
+        implements OADCommands {
+        <i>28</i>&nbsp;
+        <i>29</i>&nbsp; private static final int MSB_INDEX = 2;
+        <i>30</i>&nbsp; private static final int LSB_INDEX = 3;
+        <i>31</i>&nbsp; /**
+        <i>32</i>&nbsp; * The firmware version that will replace the current version installed on
+        the headset device
+        <i>33</i>&nbsp; */
+        <i>34</i>&nbsp; private byte[] firmwareVersion;
+        <i>35</i>&nbsp;
+        <i>36</i>&nbsp; /**
+        <i>37</i>&nbsp; * The number of packets of the binary file that holds the firmware to upload
+        &amp; install on the headset device
+        <i>38</i>&nbsp; */
+        <i>39</i>&nbsp; private short nbPackets;
+        <i>40</i>&nbsp;
+        <i>41</i>&nbsp; /**
+        <i>42</i>&nbsp; * Mailbox command sent from the SDK to the connected headset
+        <i>43</i>&nbsp; * in order to request a validation of the current firmware before starting
+        the transfer.
+        <i>44</i>&nbsp; * The current firmware needs to know the firmware version and the binary
+        file length,
+        <i>45</i>&nbsp; * and can accept or reject the OAD update.
+        <i>46</i>&nbsp; * @param firmwareVersion is the firmware version that will replace the
+        current version installed on the headset device
+        <i>47</i>&nbsp; * @param nbPackets is the number of packets of the binary file that holds
+        the firmware to upload &amp; install on the headset device
+        <i>48</i>&nbsp; * If you&#39;re interested in getting the returned response,
+        <i>49</i>&nbsp; * sent by the headset to the SDK once the command is received,
+        <i>50</i>&nbsp; * call the {@link RequestFirmwareValidation}(MbtVersion firmwareVersion,
+        short nbPackets, {@linkCommandCallback&lt;DeviceCommand, byte[]&gt;)} constructor.
+        <i>51</i>&nbsp; */
+        <i>52</i>&nbsp; public RequestFirmwareValidation(byte[] firmwareVersion, short nbPackets) {
+        <b class="fc"><i>53</i>&nbsp; super(DeviceCommandEvent.MBX_START_OTA_TXF);</b>
+        <b class="fc"><i>54</i>&nbsp; this.firmwareVersion = firmwareVersion;</b>
+        <b class="fc"><i>55</i>&nbsp; this.nbPackets = nbPackets;</b>
+        <b class="fc"><i>56</i>&nbsp; init();</b>
+        <b class="fc"><i>57</i>&nbsp; }</b>
+        <i>58</i>&nbsp;
+        <i>59</i>&nbsp; /**
+        <i>60</i>&nbsp; * Mailbox command sent from the SDK to the connected headset
+        <i>61</i>&nbsp; * in order to request a validation of the current firmware before starting
+        the transfer.
+        <i>62</i>&nbsp; * The current firmware needs to know the firmware version and the binary
+        file length,
+        <i>63</i>&nbsp; * and can accept or reject the OAD update.
+        <i>64</i>&nbsp; * @param firmwareVersion is the firmware version that will replace the
+        current version installed on the headset device
+        <i>65</i>&nbsp; * @param nbPackets is the number of packets of the binary file that holds
+        the firmware to upload &amp; install on the headset device
+        <i>66</i>&nbsp; * @param commandCallback is a {@link CommandInterface.CommandCallback}
+        object
+        <i>67</i>&nbsp; * that provides a callback for the returned raw response
+        <i>68</i>&nbsp; * sent by the headset to the SDK once the command is received.
+        <i>69</i>&nbsp; * This raw response is a byte array that has be to converted to be readable.
+        <i>70</i>&nbsp; * If you&#39;re not interested in getting the returned response,
+        <i>71</i>&nbsp; * call the {@link RequestFirmwareValidation}(String firmwareVersion, int
+        nbPackets) constructor
+        <i>72</i>&nbsp; * The onRequestSent callback is triggered if the command has successfully
+        been sent.
+        <i>73</i>&nbsp; */
+        <i>74</i>&nbsp; public RequestFirmwareValidation(byte[] firmwareVersion, short nbPackets,
+        CommandInterface.CommandCallback&lt;byte[]&gt; commandCallback) {
+        <b class="nc"><i>75</i>&nbsp; super(DeviceCommandEvent.MBX_SET_SERIAL_NUMBER);</b>
+        <b class="nc"><i>76</i>&nbsp; this.firmwareVersion = firmwareVersion;</b>
+        <b class="nc"><i>77</i>&nbsp; this.nbPackets = nbPackets;</b>
+        <b class="nc"><i>78</i>&nbsp; this.commandCallback = commandCallback;</b>
+        <b class="nc"><i>79</i>&nbsp; init();</b>
+        <b class="nc"><i>80</i>&nbsp; }</b>
+        <i>81</i>&nbsp;
+        <i>82</i>&nbsp; @Override
+        <i>83</i>&nbsp; public boolean isValid() {
+        <b class="fc"><i>84</i>&nbsp; return firmwareVersion != null</b>
+        <i>85</i>&nbsp; &amp;&amp; firmwareVersion.length == FIRMWARE_VERSION_NB_BYTES
+        <i>86</i>&nbsp; &amp;&amp; nbPackets == OADExtractionUtils.EXPECTED_NB_PACKETS;
+        <i>87</i>&nbsp; }
+        <i>88</i>&nbsp;
+        <i>89</i>&nbsp; @Override
+        <i>90</i>&nbsp; public String getInvalidityError() {
+        <b class="fc"><i>91</i>&nbsp; return &quot;You are not allowed to provide a null, or empty,
+            or invalid formatted, firmware version in the &quot;+this.getClass().getSimpleName()+
+            &quot; contructor.&quot;;</b>
+        <i>92</i>&nbsp; }
+        <i>93</i>&nbsp;
+        <i>94</i>&nbsp; @Override
+        <i>95</i>&nbsp; public void onResponseReceived(Object response) {
+        <b class="nc"><i>96</i>&nbsp; this.setCommandEvent(DeviceCommandEvent.MBX_OTA_MODE_EVT);</b>
+        <b class="nc"><i>97</i>&nbsp; super.onResponseReceived(response);</b>
+        <b class="nc"><i>98</i>&nbsp; }</b>
+        <i>99</i>&nbsp;
+        <i>100</i>&nbsp; @Override
+        <i>101</i>&nbsp; public byte[] getData() {
+        <b class="fc"><i>102</i>&nbsp; if(!isValid())</b>
+        <b class="nc"><i>103</i>&nbsp; return null;</b>
+        <i>104</i>&nbsp;
+        <b class="fc"><i>105</i>&nbsp; ByteBuffer buffer =
+            ByteBuffer.allocate(FIRMWARE_VERSION_NB_BYTES + FILE_LENGTH_NB_BYTES);</b>
+        <b class="fc"><i>106</i>&nbsp; buffer.put(firmwareVersion);</b>
+        <b class="fc"><i>107</i>&nbsp; buffer.putShort(nbPackets);</b>
+        <b class="fc"><i>108</i>&nbsp; byte[] data = buffer.array();</b>
+        <i>109</i>&nbsp; //Reversing LSB and MSB
+        <b class="fc"><i>110</i>&nbsp; byte temp = data[LSB_INDEX];</b>
+        <b class="fc"><i>111</i>&nbsp; data[LSB_INDEX] = data[MSB_INDEX];</b>
+        <b class="fc"><i>112</i>&nbsp; data[MSB_INDEX] = temp;</b>
+        <b class="fc"><i>113</i>&nbsp; return buffer.array();</b>
+        <i>114</i>&nbsp; }
+        <i>115</i>&nbsp; }
+        <i>116</i>&nbsp;
+        <i>117</i>&nbsp; /**
+        <i>118</i>&nbsp; * Command sent from the SDK to the peripheral connected headset device
+        <i>119</i>&nbsp; * in order to send in Bluetooth an OAD packet to the current firmware.
+        <i>120</i>&nbsp; */
+        <i>121</i>&nbsp; @Keep
+        <i>122</i>&nbsp; class TransferPacket extends DeviceCommand&lt;byte[], BaseError&gt;
+        implements OADCommands{
+        <i>123</i>&nbsp;
+        <i>124</i>&nbsp; /**
+        <i>125</i>&nbsp; * The packet to transfer to the connected peripheral headset device in
+        Bluetooth
+        <i>126</i>&nbsp; */
+        <i>127</i>&nbsp; private byte[] packetToTransfer;
+        <i>128</i>&nbsp;
+        <i>129</i>&nbsp; /**
+        <i>130</i>&nbsp; * Command sent from the SDK to the peripheral connected headset device
+        <i>131</i>&nbsp; * in order to transfer in Bluetooth an OAD packet to the current firmware.
+        <i>132</i>&nbsp; * @param packetToTransfer The packet to transfer to the connected
+        peripheral headset device in Bluetooth
+        <i>133</i>&nbsp; * If you&#39;re interested in getting the returned response,
+        <i>134</i>&nbsp; * sent by the headset to the SDK once the command is received,
+        <i>135</i>&nbsp; * call the {@link TransferPacket}(byte[] packetToTransfer, {@link
+        CommandInterface.SimpleCommandCallback&lt;DeviceCommand, byte[]&gt;)} constructor.
+        <i>136</i>&nbsp; */
+        <i>137</i>&nbsp; public TransferPacket(byte[] packetToTransfer) {
+        <b class="nc"><i>138</i>&nbsp; super(DeviceCommandEvent.OTA_STATUS_TRANSFER);</b>
+        <b class="nc"><i>139</i>&nbsp; this.packetToTransfer = packetToTransfer;</b>
+        <b class="nc"><i>140</i>&nbsp; init(false);</b>
+        <b class="nc"><i>141</i>&nbsp; }</b>
+        <i>142</i>&nbsp;
+        <i>143</i>&nbsp; /**
+        <i>144</i>&nbsp; * Command sent from the SDK to the peripheral connected headset device
+        <i>145</i>&nbsp; * in order to transfer in Bluetooth an OAD packet to the current firmware.
+        <i>146</i>&nbsp; * @param packetToTransfer The packet to transfer to the connected
+        peripheral headset device in Bluetooth
+        <i>147</i>&nbsp; * @param commandCallback is a {@link CommandInterface.CommandCallback}
+        object
+        <i>148</i>&nbsp; * that provides a callback for the returned raw response
+        <i>149</i>&nbsp; * sent by the headset to the SDK once the command is received.
+        <i>150</i>&nbsp; * This raw response is a byte array that has be to converted to be
+        readable.
+        <i>151</i>&nbsp; * If you&#39;re not interested in getting the returned response,
+        <i>152</i>&nbsp; * call the {@link TransferPacket}(String firmwareVersion, int nbPackets)
+        constructor
+        <i>153</i>&nbsp; * The onRequestSent callback is triggered if the command has successfully
+        been sent.
+        <i>154</i>&nbsp; */
+        <i>155</i>&nbsp; public TransferPacket(byte[] packetToTransfer,
+        CommandInterface.SimpleCommandCallback commandCallback) {
+        <b class="nc"><i>156</i>&nbsp; super(DeviceCommandEvent.OTA_STATUS_TRANSFER);</b>
+        <b class="nc"><i>157</i>&nbsp; this.packetToTransfer = packetToTransfer;</b>
+        <b class="nc"><i>158</i>&nbsp; this.commandCallback = commandCallback;</b>
+        <b class="nc"><i>159</i>&nbsp; init();</b>
+        <b class="nc"><i>160</i>&nbsp; }</b>
+        <i>161</i>&nbsp;
+        <i>162</i>&nbsp; @Override
+        <i>163</i>&nbsp; public boolean isValid() {
+        <b class="nc"><i>164</i>&nbsp; return packetToTransfer != null</b>
+        <i>165</i>&nbsp; &amp;&amp; packetToTransfer.length != 0;
+        <i>166</i>&nbsp; }
+        <i>167</i>&nbsp;
+        <i>168</i>&nbsp; @Override
+        <i>169</i>&nbsp; public String getInvalidityError() {
+        <b class="nc"><i>170</i>&nbsp; return &quot;You are not allowed to provide a null, or empty
+            packet &quot;+this.getClass().getSimpleName()+ &quot; contructor.&quot;;</b>
+        <i>171</i>&nbsp; }
+        <i>172</i>&nbsp;
+        <i>173</i>&nbsp; @Override
+        <i>174</i>&nbsp; public byte[] getData() {
+        <b class="nc"><i>175</i>&nbsp; return packetToTransfer;</b>
+        <i>176</i>&nbsp; }
+        <i>177</i>&nbsp;
+        <i>178</i>&nbsp; @Override
+        <i>179</i>&nbsp; public byte[] serialize() {
+        <b class="nc"><i>180</i>&nbsp; return getData();</b>
+        <i>181</i>&nbsp; }
+        <i>182</i>&nbsp; }
+        <i>183</i>&nbsp;
+        <i>184</i>&nbsp;}
+    </div>
+</div>
+
+<div class="footer">
+
+    <div style="float:right;">generated on 2020-06-10 10:26</div>
+</div>
+</body>
+</html>

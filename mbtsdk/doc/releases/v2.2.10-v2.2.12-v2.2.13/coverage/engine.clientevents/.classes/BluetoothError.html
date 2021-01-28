@@ -1,0 +1,179 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+    <title>Coverage Report :: BluetoothError</title>
+    <style type="text/css">
+    @import "../../.css/coverage.css";
+
+    </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+    <div class="breadCrumbs">
+        [ <a href="../../index.html">all classes</a> ]
+        [ <a href="../index.html">engine.clientevents</a> ]
+    </div>
+
+    <h1>Coverage Summary for Class: BluetoothError (engine.clientevents)</h1>
+
+    <table class="coverageStats">
+        <tr>
+            <th class="name">Class</th>
+            <th class="coverageStat
+">
+                Class, %
+            </th>
+            <th class="coverageStat
+">
+                Method, %
+            </th>
+            <th class="coverageStat
+">
+                Line, %
+            </th>
+        </tr>
+        <tr>
+            <td class="name">BluetoothError</td>
+            <td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+                <span class="absValue">
+    (1/ 1)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+                <span class="absValue">
+    (2/ 2)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+                <span class="absValue">
+    (36/ 36)
+  </span>
+            </td>
+        </tr>
+
+    </table>
+
+    <br/>
+    <br/>
+
+
+    <div class="sourceCode"><i>1</i>&nbsp;package engine.clientevents;
+        <i>2</i>&nbsp;
+        <i>3</i>&nbsp;import androidx.annotation.Keep;
+        <i>4</i>&nbsp;
+        <i>5</i>&nbsp;@Keep
+        <i>6</i>&nbsp;public final class BluetoothError extends BaseError {
+        <i>7</i>&nbsp;
+        <i>8</i>&nbsp; private static final String DOMAIN = &quot;Bluetooth&quot;;
+        <i>9</i>&nbsp;
+        <b class="fc"><i>10</i>&nbsp; private static int CODE_RANGE = 1100;</b>
+        <i>11</i>&nbsp;
+        <b class="fc"><i>12</i>&nbsp; public static String ERROR_LABEL = DOMAIN + &quot; Error :&quot;;</b>
+        <i>13</i>&nbsp;
+        <b class="fc"><i>14</i>&nbsp; public static BluetoothError ERROR_NOT_CONNECTED = new
+            BluetoothError(CODE_RANGE,&quot;No connected headset.&quot;);</b>
+        <b class="fc"><i>15</i>&nbsp; public static BluetoothError ERROR_LOST_CONNECTION = new
+            BluetoothError( CODE_RANGE+1, &quot;Lost Headset connection.&quot;);</b>
+        <b class="fc"><i>16</i>&nbsp; public static BluetoothError ERROR_ALREADY_CONNECTED = new
+            BluetoothError( CODE_RANGE+2, &quot;Headset already connected&quot;);</b>
+        <b class="fc"><i>17</i>&nbsp; public static BluetoothError ERROR_ALREADY_DISCONNECTED = new
+            BluetoothError( CODE_RANGE+3, &quot;Headset already disconnected&quot;);</b>
+        <b class="fc"><i>18</i>&nbsp; public static BluetoothError ERROR_ALREADY_SCANNING = new
+            BluetoothError( CODE_RANGE+4, &quot;Scanning already started.&quot;);</b>
+        <b class="fc"><i>19</i>&nbsp; public static BluetoothError ERROR_ALREADY_STOPPPED_SCANNING =
+            new BluetoothError( CODE_RANGE+5, &quot;Scanning already stopped.&quot;);</b>
+        <b class="fc"><i>20</i>&nbsp; public static BluetoothError ERROR_SCANNING_INTERRUPTED = new
+            BluetoothError( CODE_RANGE+6, &quot;Bluetooth Scanning has been interrupted.&quot;);</b>
+        <b class="fc"><i>21</i>&nbsp; public static BluetoothError ERROR_SCANNING_TIMEOUT = new
+            BluetoothError( CODE_RANGE+7, &quot;Bluetooth scanning could not be completed within the
+            permitted time.&quot;);</b>
+        <b class="fc"><i>22</i>&nbsp; public static BluetoothError ERROR_CONNECTION_TIMEOUT = new
+            BluetoothError( CODE_RANGE+8, &quot;Bluetooth connection could not be completed within
+            the permitted time.&quot;);</b>
+        <b class="fc"><i>23</i>&nbsp; public static BluetoothError ERROR_DISCONNECTION_TIMEOUT = new
+            BluetoothError( CODE_RANGE+9, &quot;Bluetooth disconnection could not be completed
+            within the permitted time.&quot;);</b>
+        <b class="fc"><i>24</i>&nbsp; public static BluetoothError ERROR_READING_DEVICE_INFO = new
+            BluetoothError( CODE_RANGE+10, &quot;Reading Device Informations values has failed or
+            could not be completed within the permitted time.&quot;);</b>
+        <b class="fc"><i>25</i>&nbsp; public static BluetoothError ERROR_TIMEOUT = new
+            BluetoothError( CODE_RANGE+11, &quot;Bluetooth operation has failed or could not be
+            completed within the permitted time.&quot;);</b>
+        <b class="fc"><i>26</i>&nbsp; public static BluetoothError ERROR_REFUSED_PAIRING = new
+            BluetoothError( CODE_RANGE+12, &quot;User refused to pair the headset.&quot;);</b>
+        <b class="fc"><i>27</i>&nbsp; public static BluetoothError ERROR_UNPAIRED = new
+            BluetoothError( CODE_RANGE+13, &quot;Unpaired headset.&quot;);</b>
+        <b class="fc"><i>28</i>&nbsp; public static BluetoothError ERROR_PAIRING_FAILED = new
+            BluetoothError( CODE_RANGE+14, &quot;Pairing failed.&quot;);</b>
+        <b class="fc"><i>29</i>&nbsp; public static BluetoothError ERROR_CONFLICT_CONNECTED_HEADSET
+            = new BluetoothError( CODE_RANGE+15, &quot;Headsets names are not matching.&quot;);</b>
+        <b class="fc"><i>30</i>&nbsp; public static BluetoothError ERROR_A2DP_CONNECT_FAILED = new
+            BluetoothError( CODE_RANGE+16, &quot;Bluetooth A2DP connection failed.&quot;);</b>
+        <b class="fc"><i>31</i>&nbsp; public static BluetoothError ERROR_BLE_CONNECT_FAILED = new
+            BluetoothError( CODE_RANGE+17, &quot;Bluetooth Low Energy connection failed.&quot;);</b>
+        <b class="fc"><i>32</i>&nbsp; public static BluetoothError ERROR_CONNECT_FAILED = new
+            BluetoothError( CODE_RANGE+18, &quot;Bluetooth connection failed.&quot;);</b>
+        <b class="fc"><i>33</i>&nbsp; public static BluetoothError ERROR_DISCOVERING_SERVICES = new
+            BluetoothError( CODE_RANGE+19, &quot;Discovering services and characteristics has failed
+            or could not be completed within the permitted time..&quot;);</b>
+        <b class="fc"><i>34</i>&nbsp; public static BluetoothError ERROR_ALREADY_CONNECTED_ANOTHER =
+            new BluetoothError( CODE_RANGE+20, &quot;Another device is already
+            connected.&quot;);</b>
+        <b class="fc"><i>35</i>&nbsp; public static BluetoothError ERROR_ALREADY_CONNECTED_ELSEWHERE
+            = new BluetoothError( CODE_RANGE+21, &quot;Audio is already connected to another device.&quot;);</b>
+        <b class="fc"><i>36</i>&nbsp; public static BluetoothError ERROR_ALREADY_CONNECTED_JACK =
+            new BluetoothError( CODE_RANGE+22, &quot;Jack cable already connected.&quot;);</b>
+        <b class="fc"><i>37</i>&nbsp; public static BluetoothError ERROR_NOT_SUPPORTED = new
+            BluetoothError( CODE_RANGE+23, &quot;Bluetooth Low Energy not supported for this mobile
+            device (incompatible Android OS version).&quot;);</b>
+        <b class="fc"><i>38</i>&nbsp; public static BluetoothError ERROR_SCANNING_NOT_STARTED = new
+            BluetoothError( CODE_RANGE+24, &quot;Bluetooth Scanning could not be
+            started.&quot;);</b>
+        <b class="fc"><i>39</i>&nbsp; public static BluetoothError ERROR_SCANNING_FAILED = new
+            BluetoothError( CODE_RANGE+25, &quot;Bluetooth Scanning failed.&quot;);</b>
+        <b class="fc"><i>40</i>&nbsp; public static BluetoothError ERROR_CONNECTION_INTERRUPTED =
+            new BluetoothError( CODE_RANGE+26, &quot;Bluetooth Connection has been interrupted.&quot;);</b>
+        <b class="fc"><i>41</i>&nbsp; public static BluetoothError ERROR_SETTINGS_INTERFACE_ACTION =
+            new BluetoothError( CODE_RANGE+27, &quot;Bluetooth Audio Connection with an unpaired
+            headset is not supported on your mobile. Please read the User Guide to connect Audio in
+            a different way.&quot;);</b>
+        <b class="fc"><i>42</i>&nbsp; public static BluetoothError
+            ERROR_WRITE_CHARACTERISTIC_OPERATION = new BluetoothError( CODE_RANGE+28, &quot;Bluetooth
+            characteristic write operation failed.&quot;);</b>
+        <b class="fc"><i>43</i>&nbsp; public static BluetoothError ERROR_REQUEST_OPERATION = new
+            BluetoothError( CODE_RANGE+28, &quot;Bluetooth request operation failed.&quot;);</b>
+        <b class="fc"><i>44</i>&nbsp; public static BluetoothError
+            ERROR_VALIDITY_CHARACTERISTIC_OPERATION = new BluetoothError( CODE_RANGE+29, &quot;Error:
+            failed to check service and characteristic validity.&quot;);</b>
+        <b class="fc"><i>45</i>&nbsp; public static BluetoothError ERROR_REBOOT_FAILED = new
+            BluetoothError(CODE_RANGE+30, &quot;Headset device reboot failed or could not be
+            completed within the permitted time.&quot;);</b>
+        <i>46</i>&nbsp;
+        <i>47</i>&nbsp;
+        <i>48</i>&nbsp; private BluetoothError(int code, String exception){
+        <b class="fc"><i>49</i>&nbsp; super(DOMAIN, code, exception);</b>
+        <b class="fc"><i>50</i>&nbsp; }</b>
+        <i>51</i>&nbsp;}
+        <i>52</i>&nbsp;
+    </div>
+</div>
+
+<div class="footer">
+
+    <div style="float:right;">generated on 2020-06-10 10:26</div>
+</div>
+</body>
+</html>
