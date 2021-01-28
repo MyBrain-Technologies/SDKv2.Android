@@ -1,0 +1,758 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+    <title>Coverage Report :: RecordConfig</title>
+    <style type="text/css">
+    @import "../../.css/coverage.css";
+
+    </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+    <div class="breadCrumbs">
+        [ <a href="../../index.html">all classes</a> ]
+        [ <a href="../index.html">config</a> ]
+    </div>
+
+    <h1>Coverage Summary for Class: RecordConfig (config)</h1>
+
+    <table class="coverageStats">
+
+        <tr>
+            <th class="name">Class</th>
+            <th class="coverageStat
+">
+                Method, %
+            </th>
+            <th class="coverageStat
+">
+                Line, %
+            </th>
+        </tr>
+        <tr>
+            <td class="name">RecordConfig</td>
+            <td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+                <span class="absValue">
+    (0/ 19)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+                <span class="absValue">
+    (0/ 36)
+  </span>
+            </td>
+        </tr>
+        <tr>
+            <td class="name">RecordConfig$Builder</td>
+            <td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+                <span class="absValue">
+    (0/ 21)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+                <span class="absValue">
+    (0/ 61)
+  </span>
+            </td>
+        </tr>
+        <tr>
+            <td class="name"><strong>total</strong></td>
+            <td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+                <span class="absValue">
+    (0/ 40)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+                <span class="absValue">
+    (0/ 97)
+  </span>
+            </td>
+        </tr>
+    </table>
+
+    <br/>
+    <br/>
+
+
+    <div class="sourceCode"><i>1</i>&nbsp;package config;
+        <i>2</i>&nbsp;
+        <i>3</i>&nbsp;import android.content.Context;
+        <i>4</i>&nbsp;import android.os.Bundle;
+        <i>5</i>&nbsp;import androidx.annotation.Keep;
+        <i>6</i>&nbsp;import androidx.annotation.NonNull;
+        <i>7</i>&nbsp;import androidx.annotation.Nullable;
+        <i>8</i>&nbsp;import android.util.Log;
+        <i>9</i>&nbsp;
+        <i>10</i>&nbsp;import java.util.ArrayList;
+        <i>11</i>&nbsp;import java.util.Arrays;
+        <i>12</i>&nbsp;import java.util.UUID;
+        <i>13</i>&nbsp;
+        <i>14</i>&nbsp;import core.recording.metadata.Comment;
+        <i>15</i>&nbsp;import core.recording.metadata.MelomindExerciseSource;
+        <i>16</i>&nbsp;import core.recording.metadata.RecordType;
+        <i>17</i>&nbsp;import core.recording.metadata.MelomindExerciseType;
+        <i>18</i>&nbsp;import features.MbtAcquisitionLocations;
+        <i>19</i>&nbsp;import features.MbtFeatures;
+        <i>20</i>&nbsp;import model.RecordInfo;
+        <i>21</i>&nbsp;
+        <i>22</i>&nbsp;import static core.eeg.MbtEEGManager.UNDEFINED_DURATION;
+        <i>23</i>&nbsp;
+        <i>24</i>&nbsp;/**
+        <i>25</i>&nbsp; * Recording configuration is all the data required to store the EEG packets
+        in a JSON file.
+        <i>26</i>&nbsp; * The JSON file content and file name can be defined using this object.
+        <i>27</i>&nbsp; * &lt;p&gt;Use the {@link Builder} class to instanciate this.&lt;/p&gt;
+        <i>28</i>&nbsp; */
+        <i>29</i>&nbsp;@Keep
+        <b class="nc"><i>30</i>&nbsp;public final class RecordConfig {</b>
+        <i>31</i>&nbsp;
+        <i>32</i>&nbsp; //CONFIG RELATED TO THE LOCATION OF THE JSON FILE
+        <i>33</i>&nbsp;
+        <i>34</i>&nbsp; /**
+        <i>35</i>&nbsp; * Path of the directory where the JSON file that contains the recording can
+        be stored
+        <i>36</i>&nbsp; * Default directory used is the root directory.
+        <i>37</i>&nbsp; */
+        <i>38</i>&nbsp; private String directory;
+        <i>39</i>&nbsp;
+        <i>40</i>&nbsp; /**
+        <i>41</i>&nbsp; * Boolean flag used to define if the JSON file has to be stored in the
+        directory external to the application directory.
+        <i>42</i>&nbsp; * An external directory is located at the root of your Android device
+        internal storage.
+        <i>43</i>&nbsp; * An internal directory is located in the Internal storage&gt;Android&gt;data
+        directory.
+        <i>44</i>&nbsp; * Default value is false.
+        <i>45</i>&nbsp; */
+        <i>46</i>&nbsp; private boolean useExternalStorage;
+        <i>47</i>&nbsp;
+        <i>48</i>&nbsp;
+        <i>49</i>&nbsp; //CONFIG RELATED TO THE NAME OF THE JSON FILE
+        <i>50</i>&nbsp;
+        <i>51</i>&nbsp; /**
+        <i>52</i>&nbsp; * Name of the JSON file (format excluded) where the recording is stored.
+        <i>53</i>&nbsp; * Default name looks like
+        yyyy-MM-dd_HH:mm:ss.SSS-projectname-devicename-subjectid-condition
+        <i>54</i>&nbsp; * Where :
+        <i>55</i>&nbsp; * yyyy-MM-dd_HH:mm:ss.SSS is the recording starting timestamp
+        <i>56</i>&nbsp; * devicename is the name of the EEG headset used to acquire the EEG
+        <i>57</i>&nbsp; * projectname is your application name defined in the Manifest file for the
+        attribute android:name
+        <i>58</i>&nbsp; * subjectid is the identifier of the person who&#39;s EEG is recorded with
+        the headset
+        <i>59</i>&nbsp; * condition is an additional information that provide more details of the
+        recording condition
+        <i>60</i>&nbsp; */
+        <i>61</i>&nbsp;
+        <i>62</i>&nbsp; private String filename;
+        <i>63</i>&nbsp;
+        <i>64</i>&nbsp; /**
+        <i>65</i>&nbsp; * Name of your Android application
+        <i>66</i>&nbsp; * Default value is the name defined in your Manifest file for the attribute
+        android:name
+        <i>67</i>&nbsp; */
+        <i>68</i>&nbsp; private String projectName;
+        <i>69</i>&nbsp;
+        <i>70</i>&nbsp; /**
+        <i>71</i>&nbsp; * Additional information that provide more details of the recording
+        condition
+        <i>72</i>&nbsp; * Default value is &quot;--&quot;.
+        <i>73</i>&nbsp; */
+        <i>74</i>&nbsp; private String condition;
+        <i>75</i>&nbsp;
+        <i>76</i>&nbsp; ///CONFIG RELATED TO THE NAME &amp; CONTENT OF THE JSON FILE
+        <i>77</i>&nbsp;
+        <i>78</i>&nbsp; /**
+        <i>79</i>&nbsp; * Identifier of the person who&#39;s EEG is recorded.
+        <i>80</i>&nbsp; * Default value is anonymous.
+        <i>81</i>&nbsp; */
+        <i>82</i>&nbsp; private String subjectID;
+        <i>83</i>&nbsp;
+        <i>84</i>&nbsp; /**
+        <i>85</i>&nbsp; * Starting date and time of the recording
+        <i>86</i>&nbsp; * formatted as the following example: &quot;yyyy-MM-dd_HH:mm:ss.SSS&quot;.
+        <i>87</i>&nbsp; */
+        <i>88</i>&nbsp; private long timestamp;
+        <i>89</i>&nbsp;
+        <i>90</i>&nbsp; private int duration;
+        <i>91</i>&nbsp;
+        <i>92</i>&nbsp; ///CONFIG RELATED TO THE CONTENT OF THE JSON FILE
+        <i>93</i>&nbsp;
+        <i>94</i>&nbsp; /**
+        <i>95</i>&nbsp; * Optional Additional information stored in the header of the JSON file.
+        <i>96</i>&nbsp; */
+        <i>97</i>&nbsp; private ArrayList&lt;Comment&gt; headerComments;
+        <i>98</i>&nbsp;
+        <i>99</i>&nbsp; /**
+        <i>100</i>&nbsp; * Record information that holds the type &amp; source of the EEG data, and
+        the used signal processing algorithms version.
+        <i>101</i>&nbsp; * Default values are :
+        <i>102</i>&nbsp; * {@link RecordType#RAWDATA} for the record type
+        <i>103</i>&nbsp; * {@link MelomindExerciseType#DEFAULT} for the exercise type
+        <i>104</i>&nbsp; * {@link MelomindExerciseSource#DEFAULT} for the source
+        <i>105</i>&nbsp; */
+        <i>106</i>&nbsp; private RecordInfo recordInfo;
+        <i>107</i>&nbsp;
+        <i>108</i>&nbsp; /**
+        <i>109</i>&nbsp; * Recording parameters are additional optional data stored in the body of
+        the JSON file.
+        <i>110</i>&nbsp; */
+        <i>111</i>&nbsp; private Bundle recordingParameters;
+        <i>112</i>&nbsp;
+        <i>113</i>&nbsp; /**
+        <i>114</i>&nbsp; * Enable multiple recordings
+        <i>115</i>&nbsp; */
+        <i>116</i>&nbsp; private boolean enableMultipleRecordings;
+        <i>117</i>&nbsp;
+        <i>118</i>&nbsp; private ArrayList&lt;MbtAcquisitionLocations&gt; acquisitionLocations;
+        <i>119</i>&nbsp; private ArrayList&lt;MbtAcquisitionLocations&gt; referenceLocations;
+        <i>120</i>&nbsp; private ArrayList&lt;MbtAcquisitionLocations&gt; groundLocations;
+        <i>121</i>&nbsp;
+        <i>122</i>&nbsp; private RecordConfig(String folder,
+        <i>123</i>&nbsp; String filename,
+        <i>124</i>&nbsp; String subjectId,
+        <i>125</i>&nbsp; RecordInfo recordInfo,
+        <i>126</i>&nbsp; String condition,
+        <i>127</i>&nbsp; String projectName,
+        <i>128</i>&nbsp; boolean useExternalStorage,
+        <i>129</i>&nbsp; long timestamp,
+        <i>130</i>&nbsp; int duration,
+        <i>131</i>&nbsp; ArrayList&lt;Comment&gt; comments,
+        <i>132</i>&nbsp; Bundle recordingParameters,
+        <i>133</i>&nbsp; boolean enableMultipleRecordings,
+        <i>134</i>&nbsp; ArrayList&lt;MbtAcquisitionLocations&gt; acquisitionLocations,
+        <i>135</i>&nbsp; ArrayList&lt;MbtAcquisitionLocations&gt; referenceLocation,
+        <i>136</i>&nbsp; ArrayList&lt;MbtAcquisitionLocations&gt; groundLocations
+        <b class="nc"><i>137</i>&nbsp; ){</b>
+        <i>138</i>&nbsp;
+        <b class="nc"><i>139</i>&nbsp; this.directory = folder;</b>
+        <b class="nc"><i>140</i>&nbsp; this.filename = filename;</b>
+        <b class="nc"><i>141</i>&nbsp; this.subjectID = subjectId;</b>
+        <b class="nc"><i>142</i>&nbsp; this.timestamp = timestamp;</b>
+        <b class="nc"><i>143</i>&nbsp; this.duration = duration;</b>
+        <b class="nc"><i>144</i>&nbsp; this.useExternalStorage = useExternalStorage;</b>
+        <b class="nc"><i>145</i>&nbsp; this.recordInfo = recordInfo;</b>
+        <b class="nc"><i>146</i>&nbsp; this.headerComments = comments;</b>
+        <b class="nc"><i>147</i>&nbsp; this.condition = condition;</b>
+        <b class="nc"><i>148</i>&nbsp; this.projectName = projectName;</b>
+        <b class="nc"><i>149</i>&nbsp; this.recordingParameters = recordingParameters;</b>
+        <b class="nc"><i>150</i>&nbsp; this.enableMultipleRecordings = enableMultipleRecordings;</b>
+        <b class="nc"><i>151</i>&nbsp; this.acquisitionLocations = acquisitionLocations;</b>
+        <b class="nc"><i>152</i>&nbsp; this.referenceLocations = referenceLocation;</b>
+        <b class="nc"><i>153</i>&nbsp; this.groundLocations = groundLocations;</b>
+        <b class="nc"><i>154</i>&nbsp; }</b>
+        <i>155</i>&nbsp;
+        <i>156</i>&nbsp; /**
+        <i>157</i>&nbsp; * Path of the directory where the JSON file that contains the recording can
+        be stored.
+        <i>158</i>&nbsp; * Default directory used is the root directory.
+        <i>159</i>&nbsp; */
+        <i>160</i>&nbsp; public String getDirectory() {
+        <b class="nc"><i>161</i>&nbsp; return directory;</b>
+        <i>162</i>&nbsp; }
+        <i>163</i>&nbsp;
+        <i>164</i>&nbsp; /**
+        <i>165</i>&nbsp; * Name of the JSON file (format excluded) where the recording is stored.
+        <i>166</i>&nbsp; * Default name looks like
+        yyyy-MM-dd_HH:mm:ss.SSS-projectname-devicename-subjectid-condition
+        <i>167</i>&nbsp; * Where :
+        <i>168</i>&nbsp; * yyyy-MM-dd_HH:mm:ss.SSS is the recording starting timestamp
+        <i>169</i>&nbsp; * devicename is the name of the EEG headset used to acquire the EEG
+        <i>170</i>&nbsp; * projectname is your application name defined in the Manifest file for the
+        attribute android:name
+        <i>171</i>&nbsp; * subjectid is the identifier of the person who&#39;s EEG is recorded with
+        the headset
+        <i>172</i>&nbsp; * condition is an additional information that provide more details of the
+        recording condition
+        <i>173</i>&nbsp; */
+        <i>174</i>&nbsp; public String getFilename() {
+        <b class="nc"><i>175</i>&nbsp; return filename;</b>
+        <i>176</i>&nbsp; }
+        <i>177</i>&nbsp;
+        <i>178</i>&nbsp; public void setFilename(String filename) {
+        <b class="nc"><i>179</i>&nbsp; this.filename = filename;</b>
+        <b class="nc"><i>180</i>&nbsp; }</b>
+        <i>181</i>&nbsp;
+        <i>182</i>&nbsp; /**
+        <i>183</i>&nbsp; * Boolean flag used to define if the JSON file has to be stored in the
+        directory external to the application directory.
+        <i>184</i>&nbsp; * An external directory is located at the root of your Android device
+        internal storage.
+        <i>185</i>&nbsp; * An internal directory is located in the Internal storage&gt;Android&gt;data
+        directory.
+        <i>186</i>&nbsp; * Default value is false.
+        <i>187</i>&nbsp; */
+        <i>188</i>&nbsp; public boolean useExternalStorage() {
+        <b class="nc"><i>189</i>&nbsp; return useExternalStorage;</b>
+        <i>190</i>&nbsp; }
+        <i>191</i>&nbsp;
+        <i>192</i>&nbsp; /**
+        <i>193</i>&nbsp; * Return the identifier of the person who&#39;s EEG is recorded.
+        <i>194</i>&nbsp; * Default value is anonymous.
+        <i>195</i>&nbsp; */
+        <i>196</i>&nbsp; public String getSubjectID() {
+        <b class="nc"><i>197</i>&nbsp; return subjectID;</b>
+        <i>198</i>&nbsp; }
+        <i>199</i>&nbsp;
+        <i>200</i>&nbsp; /**
+        <i>201</i>&nbsp; * Optional Additional information stored in the header of the JSON file.
+        <i>202</i>&nbsp; */
+        <i>203</i>&nbsp; public ArrayList&lt;Comment&gt; getHeaderComments() {
+        <b class="nc"><i>204</i>&nbsp; return headerComments;</b>
+        <i>205</i>&nbsp; }
+        <i>206</i>&nbsp;
+        <i>207</i>&nbsp; /**
+        <i>208</i>&nbsp; * Starting date and time of the recording
+        <i>209</i>&nbsp; * formatted as the following example: &quot;yyyy-MM-dd_HH:mm:ss.SSS&quot;.
+        <i>210</i>&nbsp; */
+        <i>211</i>&nbsp; public long getTimestamp() {
+        <b class="nc"><i>212</i>&nbsp; return timestamp;</b>
+        <i>213</i>&nbsp; }
+        <i>214</i>&nbsp;
+        <i>215</i>&nbsp; public int getDuration() {
+        <b class="nc"><i>216</i>&nbsp; return duration;</b>
+        <i>217</i>&nbsp; }
+        <i>218</i>&nbsp;
+        <i>219</i>&nbsp; /**
+        <i>220</i>&nbsp; * Record information that holds the type &amp; source of the EEG data, and
+        the used signal processing algorithms version.
+        <i>221</i>&nbsp; * Default values are :
+        <i>222</i>&nbsp; * {@link RecordType#RAWDATA} for the record type
+        <i>223</i>&nbsp; * {@link MelomindExerciseType#DEFAULT} for the exercise type
+        <i>224</i>&nbsp; * {@link MelomindExerciseSource#DEFAULT} for the source
+        <i>225</i>&nbsp; */
+        <i>226</i>&nbsp; public RecordInfo getRecordInfo() {
+        <b class="nc"><i>227</i>&nbsp; return recordInfo;</b>
+        <i>228</i>&nbsp; }
+        <i>229</i>&nbsp;
+        <i>230</i>&nbsp; /**
+        <i>231</i>&nbsp; * Name of your Android application
+        <i>232</i>&nbsp; * Default value is the name defined in your Manifest file for the attribute
+        android:name
+        <i>233</i>&nbsp; */
+        <i>234</i>&nbsp; public String getProjectName() {
+        <b class="nc"><i>235</i>&nbsp; return projectName;</b>
+        <i>236</i>&nbsp; }
+        <i>237</i>&nbsp;
+        <i>238</i>&nbsp; /**
+        <i>239</i>&nbsp; * Additional information that provide more details of the recording
+        condition
+        <i>240</i>&nbsp; * Default value is &quot;--&quot;.
+        <i>241</i>&nbsp; */
+        <i>242</i>&nbsp; public String getCondition() {
+        <b class="nc"><i>243</i>&nbsp; return condition;</b>
+        <i>244</i>&nbsp; }
+        <i>245</i>&nbsp;
+        <i>246</i>&nbsp; /**
+        <i>247</i>&nbsp; * Recording parameters are additional optional data stored in the body of
+        the JSON file.
+        <i>248</i>&nbsp; */
+        <i>249</i>&nbsp; public Bundle getRecordingParameters() {
+        <b class="nc"><i>250</i>&nbsp; return recordingParameters;</b>
+        <i>251</i>&nbsp; }
+        <i>252</i>&nbsp;
+        <i>253</i>&nbsp; public boolean enableMultipleRecordings() {
+        <b class="nc"><i>254</i>&nbsp; return enableMultipleRecordings;</b>
+        <i>255</i>&nbsp; }
+        <i>256</i>&nbsp;
+        <i>257</i>&nbsp; public ArrayList&lt;MbtAcquisitionLocations&gt; getAcquisitionLocations() {
+        <b class="nc"><i>258</i>&nbsp; return acquisitionLocations;</b>
+        <i>259</i>&nbsp; }
+        <i>260</i>&nbsp;
+        <i>261</i>&nbsp; public ArrayList&lt;MbtAcquisitionLocations&gt; getReferenceLocations() {
+        <b class="nc"><i>262</i>&nbsp; return referenceLocations;</b>
+        <i>263</i>&nbsp; }
+        <i>264</i>&nbsp;
+        <i>265</i>&nbsp; public ArrayList&lt;MbtAcquisitionLocations&gt; getGroundLocations() {
+        <b class="nc"><i>266</i>&nbsp; return groundLocations;</b>
+        <i>267</i>&nbsp; }
+        <i>268</i>&nbsp;
+        <i>269</i>&nbsp; // /**
+        <i>270</i>&nbsp;// * Checks if the recording configuration parameters are correct
+        <i>271</i>&nbsp;// * @return true is the configuration is correct, false otherwise
+        <i>272</i>&nbsp;// */
+        <i>273</i>&nbsp;// public boolean isRecordConfigCorrect() {
+        <i>274</i>&nbsp;// return (getFilename() != null/*
+        <i>275</i>&nbsp;// || (getProjectName() != null
+        <i>276</i>&nbsp;// &amp;&amp; getRecordInfo() != null
+        <i>277</i>&nbsp;// &amp;&amp; getSubjectID() != null
+        <i>278</i>&nbsp;// &amp;&amp; getCondition() != null)*/);
+        <i>279</i>&nbsp;// }
+        <i>280</i>&nbsp;
+        <i>281</i>&nbsp; /**
+        <i>282</i>&nbsp; * Builder class to ease construction of the {@link RecordConfig} instance.
+        <i>283</i>&nbsp; */
+        <i>284</i>&nbsp; @Keep
+        <i>285</i>&nbsp; public static class Builder{
+        <i>286</i>&nbsp;
+        <i>287</i>&nbsp; /**
+        <i>288</i>&nbsp; * Path of the directory where the JSON file that contains the recording can
+        be stored
+        <i>289</i>&nbsp; * Default directory used is the root directory.
+        <i>290</i>&nbsp; */
+        <b class="nc"><i>291</i>&nbsp; private String folder = &quot;&quot;;</b>
+        <i>292</i>&nbsp; /**
+        <i>293</i>&nbsp; * Name of the JSON file (format excluded) where the recording is stored.
+        <i>294</i>&nbsp; * Default name looks like
+        yyyy-MM-dd_HH:mm:ss.SSS-projectname-devicename-subjectid-condition
+        <i>295</i>&nbsp; * Where :
+        <i>296</i>&nbsp; * yyyy-MM-dd_HH:mm:ss.SSS is the recording starting timestamp
+        <i>297</i>&nbsp; * devicename is the name of the EEG headset used to acquire the EEG
+        <i>298</i>&nbsp; * projectname is your application name defined in the Manifest file for the
+        attribute android:name
+        <i>299</i>&nbsp; * subjectid is the identifier of the person who&#39;s EEG is recorded with
+        the headset
+        <i>300</i>&nbsp; * condition is an additional information that provide more details of the
+        recording condition
+        <i>301</i>&nbsp; */
+        <i>302</i>&nbsp; private String filename;
+        <i>303</i>&nbsp; /**
+        <i>304</i>&nbsp; * Boolean flag used to define if the JSON file has to be stored in the
+        directory external to the application directory.
+        <i>305</i>&nbsp; * An external directory is located at the root of your Android device
+        internal storage.
+        <i>306</i>&nbsp; * An internal directory is located in the Internal storage&gt;Android&gt;data
+        directory.
+        <i>307</i>&nbsp; * Default value is false.
+        <i>308</i>&nbsp; */
+        <b class="nc"><i>309</i>&nbsp; private boolean useExternalStorage = false;</b>
+        <i>310</i>&nbsp; /**
+        <i>311</i>&nbsp; * Starting date and time of the recording
+        <i>312</i>&nbsp; * formatted as the following example: &quot;yyyy-MM-dd_HH:mm:ss.SSS&quot;.
+        <i>313</i>&nbsp; */
+        <i>314</i>&nbsp; private long timestamp;
+        <i>315</i>&nbsp;
+        <b class="nc"><i>316</i>&nbsp; private int duration = UNDEFINED_DURATION;</b>
+        <i>317</i>&nbsp; /**
+        <i>318</i>&nbsp; * Name of your Android application
+        <i>319</i>&nbsp; * Default value is the name defined in your Manifest file for the attribute
+        android:name
+        <i>320</i>&nbsp; */
+        <i>321</i>&nbsp; private String projectName;
+        <i>322</i>&nbsp;
+        <i>323</i>&nbsp; /**
+        <i>324</i>&nbsp; * Identifier of the person who&#39;s EEG is recorded.
+        <i>325</i>&nbsp; * Default value is anonymous.
+        <i>326</i>&nbsp; */
+        <b class="nc"><i>327</i>&nbsp; private String subjectID = &quot;-&quot;;</b>
+        <i>328</i>&nbsp; /**
+        <i>329</i>&nbsp; * Additional information that provide more details of the recording
+        condition
+        <i>330</i>&nbsp; * Default value is &quot;--&quot;.
+        <i>331</i>&nbsp; */
+        <b class="nc"><i>332</i>&nbsp; private String condition = &quot;&quot;;</b>
+        <i>333</i>&nbsp;
+        <i>334</i>&nbsp; /**
+        <i>335</i>&nbsp; * Optional Additional information stored in the header of the JSON file.
+        <i>336</i>&nbsp; */
+        <i>337</i>&nbsp; private ArrayList&lt;Comment&gt; headerComments;
+        <i>338</i>&nbsp; /**
+        <i>339</i>&nbsp; * Record information that holds the type &amp; source of the EEG data, and
+        the used signal processing algorithms version.
+        <i>340</i>&nbsp; * Default values are :
+        <i>341</i>&nbsp; * {@link RecordType#RAWDATA} for the record type
+        <i>342</i>&nbsp; * {@link MelomindExerciseType#DEFAULT} for the exercise type
+        <i>343</i>&nbsp; * {@link MelomindExerciseSource#DEFAULT} for the source
+        <i>344</i>&nbsp; */
+        <i>345</i>&nbsp; private RecordInfo recordInfo;
+        <i>346</i>&nbsp; /**
+        <i>347</i>&nbsp; * Recording parameters are additional optional data stored in the body of
+        the JSON file.
+        <i>348</i>&nbsp; */
+        <i>349</i>&nbsp; private Bundle recordingParameters;
+        <i>350</i>&nbsp;
+        <b class="nc"><i>351</i>&nbsp; private boolean enableMultipleRecordings = false;</b>
+        <i>352</i>&nbsp;
+        <b class="nc"><i>353</i>&nbsp; private ArrayList&lt;MbtAcquisitionLocations&gt;
+            acquisitionLocations = MbtFeatures.MELOMIND_LOCATIONS;</b>
+        <b class="nc"><i>354</i>&nbsp; private ArrayList&lt;MbtAcquisitionLocations&gt;
+            referenceLocations = MbtFeatures.MELOMIND_REFERENCES;</b>
+        <b class="nc"><i>355</i>&nbsp; private ArrayList&lt;MbtAcquisitionLocations&gt;
+            groundLocations = MbtFeatures.MELOMIND_GROUNDS;</b>
+        <i>356</i>&nbsp;
+        <b class="nc"><i>357</i>&nbsp; public Builder(Context context){</b>
+        <b class="nc"><i>358</i>&nbsp; this.timestamp = System.currentTimeMillis();</b>
+        <b class="nc"><i>359</i>&nbsp; this.projectName =
+            context.getString(context.getApplicationInfo().labelRes).replace(&quot; &quot;,&quot;&quot;);</b>
+        <b class="nc"><i>360</i>&nbsp; this.recordInfo = new
+            RecordInfo(UUID.randomUUID().toString());</b>
+        <i>361</i>&nbsp; }
+        <i>362</i>&nbsp;
+        <i>363</i>&nbsp; /**
+        <i>364</i>&nbsp; * Path of the directory where the JSON file can be stored.
+        <i>365</i>&nbsp; * Default directory used is the root directory.
+        <i>366</i>&nbsp; */
+        <i>367</i>&nbsp; public Builder folder(@Nullable String folder){
+        <b class="nc"><i>368</i>&nbsp; this.folder = folder;</b>
+        <b class="nc"><i>369</i>&nbsp; return this;</b>
+        <i>370</i>&nbsp; }
+        <i>371</i>&nbsp;
+        <i>372</i>&nbsp; /**
+        <i>373</i>&nbsp; * EEG Electrodes locations
+        <i>374</i>&nbsp; */
+        <i>375</i>&nbsp; public Builder acquisitionLocations(@NonNull MbtAcquisitionLocations...
+        acquisitionLocations){
+        <b class="nc"><i>376</i>&nbsp; this.acquisitionLocations = new ArrayList&lt;&gt;(Arrays.asList(acquisitionLocations));</b>
+        <b class="nc"><i>377</i>&nbsp; return this;</b>
+        <i>378</i>&nbsp; }
+        <i>379</i>&nbsp;
+        <i>380</i>&nbsp; /**
+        <i>381</i>&nbsp; * Ground Electrodes locations
+        <i>382</i>&nbsp; */
+        <i>383</i>&nbsp; public Builder groundLocations(@NonNull MbtAcquisitionLocations...
+        groundLocations){
+        <b class="nc"><i>384</i>&nbsp; this.groundLocations = new ArrayList&lt;&gt;(Arrays.asList(groundLocations));</b>
+        <b class="nc"><i>385</i>&nbsp; return this;</b>
+        <i>386</i>&nbsp; }
+        <i>387</i>&nbsp;
+        <i>388</i>&nbsp; /**
+        <i>389</i>&nbsp; * Reference Electrodes locations
+        <i>390</i>&nbsp; */
+        <i>391</i>&nbsp; public Builder referenceLocations(@NonNull MbtAcquisitionLocations...
+        referenceLocations){
+        <b class="nc"><i>392</i>&nbsp; this.referenceLocations = new ArrayList&lt;&gt;(Arrays.asList(referenceLocations));</b>
+        <b class="nc"><i>393</i>&nbsp; return this;</b>
+        <i>394</i>&nbsp; }
+        <i>395</i>&nbsp;
+        <i>396</i>&nbsp; /**
+        <i>397</i>&nbsp; * Name of the JSON file (format excluded) where the recording is stored.
+        <i>398</i>&nbsp; * Default name looks like
+        yyyy-MM-dd_HH:mm:ss.SSS-projectname-devicename-subjectid-condition
+        <i>399</i>&nbsp; * Where :
+        <i>400</i>&nbsp; * yyyy-MM-dd_HH:mm:ss.SSS is the recording starting timestamp
+        <i>401</i>&nbsp; * devicename is the name of the EEG headset used to acquire the EEG
+        <i>402</i>&nbsp; * projectname is your application name defined in the Manifest file for the
+        attribute android:name
+        <i>403</i>&nbsp; * subjectid is the identifier of the person who&#39;s EEG is recorded with
+        the headset
+        <i>404</i>&nbsp; * condition is an additional information that provide more details of the
+        recording condition
+        <i>405</i>&nbsp; */
+        <i>406</i>&nbsp; public Builder filename(@Nullable String filename){
+        <b class="nc"><i>407</i>&nbsp; this.filename = filename;</b>
+        <b class="nc"><i>408</i>&nbsp; return this;</b>
+        <i>409</i>&nbsp; }
+        <i>410</i>&nbsp;
+        <i>411</i>&nbsp; /**
+        <i>412</i>&nbsp; * Optional Additional information stored in the header of the JSON file.
+        <i>413</i>&nbsp; */
+        <i>414</i>&nbsp; public Builder headerComments(@Nullable ArrayList&lt;Comment&gt; comments)
+        {
+        <b class="nc"><i>415</i>&nbsp; this.headerComments = comments;</b>
+        <b class="nc"><i>416</i>&nbsp; return this;</b>
+        <i>417</i>&nbsp; }
+        <i>418</i>&nbsp;
+        <i>419</i>&nbsp; /**
+        <i>420</i>&nbsp; * Optional Additional information stored in the header of the JSON file.
+        <i>421</i>&nbsp; */
+        <i>422</i>&nbsp; public Builder headerComment(@Nullable Comment... comment) {
+        <b class="nc"><i>423</i>&nbsp; if(this.headerComments == null)</b>
+        <b class="nc"><i>424</i>&nbsp; this.headerComments = new ArrayList&lt;&gt;(Arrays.asList(comment));</b>
+        <i>425</i>&nbsp; else
+        <b class="nc"><i>426</i>&nbsp; this.headerComments.addAll(Arrays.asList(comment));</b>
+        <b class="nc"><i>427</i>&nbsp; return this;</b>
+        <i>428</i>&nbsp; }
+        <i>429</i>&nbsp;
+        <i>430</i>&nbsp; /**
+        <i>431</i>&nbsp; * Additional information that provide more details of the recording
+        condition
+        <i>432</i>&nbsp; * Default value is &quot;--&quot;.
+        <i>433</i>&nbsp; */
+        <i>434</i>&nbsp; public Builder condition(@Nullable String condition) {
+        <b class="nc"><i>435</i>&nbsp; this.condition = condition;</b>
+        <b class="nc"><i>436</i>&nbsp; return this;</b>
+        <i>437</i>&nbsp; }
+        <i>438</i>&nbsp;
+        <i>439</i>&nbsp; /**
+        <i>440</i>&nbsp; * Identifier of the person who&#39;s EEG is recorded.
+        <i>441</i>&nbsp; * Default value is anonymous.
+        <i>442</i>&nbsp; */
+        <i>443</i>&nbsp; public Builder subjectID(@Nullable String subjectID) {
+        <b class="nc"><i>444</i>&nbsp; this.subjectID = subjectID;</b>
+        <b class="nc"><i>445</i>&nbsp; return this;</b>
+        <i>446</i>&nbsp; }
+        <i>447</i>&nbsp;
+        <i>448</i>&nbsp; /**
+        <i>449</i>&nbsp; * Define that the JSON file has to be stored in the directory external to
+        the application directory.
+        <i>450</i>&nbsp; * An external directory is located at the root of your Android device
+        internal storage.
+        <i>451</i>&nbsp; * An internal directory is located in the Internal storage&gt;Android&gt;data
+        directory.
+        <i>452</i>&nbsp; * Default directory used is the internal directory.
+        <i>453</i>&nbsp; */
+        <i>454</i>&nbsp; public Builder useExternalStorage() {
+        <b class="nc"><i>455</i>&nbsp; this.useExternalStorage = true;</b>
+        <b class="nc"><i>456</i>&nbsp; return this;</b>
+        <i>457</i>&nbsp; }
+        <i>458</i>&nbsp;
+        <i>459</i>&nbsp; /**
+        <i>460</i>&nbsp; * Define that the JSON file has to be stored in the internal application
+        directory.
+        <i>461</i>&nbsp; * An external directory is located at the root of your Android device
+        internal storage.
+        <i>462</i>&nbsp; * An internal directory is located in the Internal storage&gt;Android&gt;data
+        directory.
+        <i>463</i>&nbsp; * Default directory used is the internal directory.
+        <i>464</i>&nbsp; */
+        <i>465</i>&nbsp; public Builder useInternalStorage() {
+        <b class="nc"><i>466</i>&nbsp; this.useExternalStorage = false;</b>
+        <b class="nc"><i>467</i>&nbsp; return this;</b>
+        <i>468</i>&nbsp; }
+        <i>469</i>&nbsp;
+        <i>470</i>&nbsp; /**
+        <i>471</i>&nbsp; * Starting date and time of the recording
+        <i>472</i>&nbsp; * formatted as the following example: &quot;yyyy-MM-dd_HH:mm:ss.SSS&quot;.
+        <i>473</i>&nbsp; */
+        <i>474</i>&nbsp; public Builder timestamp(long timestamp) {
+        <b class="nc"><i>475</i>&nbsp; this.timestamp = timestamp;</b>
+        <b class="nc"><i>476</i>&nbsp; return this;</b>
+        <i>477</i>&nbsp; }
+        <i>478</i>&nbsp;
+        <i>479</i>&nbsp; public Builder duration(int duration) {
+        <b class="nc"><i>480</i>&nbsp; this.duration = duration;</b>
+        <b class="nc"><i>481</i>&nbsp; return this;</b>
+        <i>482</i>&nbsp; }
+        <i>483</i>&nbsp;
+        <i>484</i>&nbsp; /**
+        <i>485</i>&nbsp; * Name of your Android application
+        <i>486</i>&nbsp; * Default value is the name defined in your Manifest file for the attribute
+        android:name
+        <i>487</i>&nbsp; */
+        <i>488</i>&nbsp; public Builder projectName(String projectName) {
+        <b class="nc"><i>489</i>&nbsp; this.projectName = projectName;</b>
+        <b class="nc"><i>490</i>&nbsp; return this;</b>
+        <i>491</i>&nbsp; }
+        <i>492</i>&nbsp;
+        <i>493</i>&nbsp; /**
+        <i>494</i>&nbsp; * Exercise type is the Melomind type of neurofeedback exercise
+        <i>495</i>&nbsp; * Default value is {@link MelomindExerciseType#DEFAULT}.
+        <i>496</i>&nbsp; */
+        <i>497</i>&nbsp; public Builder exerciseType(MelomindExerciseType exerciseType) {
+        <b class="nc"><i>498</i>&nbsp; if(this.recordInfo == null)</b>
+        <b class="nc"><i>499</i>&nbsp; this.recordInfo = new
+            RecordInfo(UUID.randomUUID().toString());</b>
+        <b class="nc"><i>500</i>&nbsp;
+            this.recordInfo.getRecordingType().setExerciseType(exerciseType);</b>
+        <b class="nc"><i>501</i>&nbsp; return this;</b>
+        <i>502</i>&nbsp; }
+        <i>503</i>&nbsp;
+        <i>504</i>&nbsp; /**
+        <i>505</i>&nbsp; * Source is the Melomind type of program exercise
+        <i>506</i>&nbsp; * Default value is {@link MelomindExerciseSource#DEFAULT}.
+        <i>507</i>&nbsp; */
+        <i>508</i>&nbsp; public Builder source(MelomindExerciseSource source) {
+        <b class="nc"><i>509</i>&nbsp; if(this.recordInfo == null)</b>
+        <b class="nc"><i>510</i>&nbsp; this.recordInfo = new
+            RecordInfo(UUID.randomUUID().toString());</b>
+        <b class="nc"><i>511</i>&nbsp; this.recordInfo.getRecordingType().setSource(source);</b>
+        <b class="nc"><i>512</i>&nbsp; return this;</b>
+        <i>513</i>&nbsp; }
+        <i>514</i>&nbsp;
+        <i>515</i>&nbsp; /**
+        <i>516</i>&nbsp; * Record type is the type of task performed by the subject who&#39;s EEG is
+        recorded
+        <i>517</i>&nbsp; * Default value is {@link RecordType#RAWDATA}.
+        <i>518</i>&nbsp; */
+        <i>519</i>&nbsp; public Builder recordType(RecordType recordType) {
+        <b class="nc"><i>520</i>&nbsp; if(this.recordInfo == null)</b>
+        <b class="nc"><i>521</i>&nbsp; this.recordInfo = new
+            RecordInfo(UUID.randomUUID().toString());</b>
+        <b class="nc"><i>522</i>&nbsp; this.recordInfo.getRecordingType().setRecordType(recordType);</b>
+        <b class="nc"><i>523</i>&nbsp; return this;</b>
+        <i>524</i>&nbsp; }
+        <i>525</i>&nbsp;
+        <i>526</i>&nbsp; /**
+        <i>527</i>&nbsp; *
+        <i>528</i>&nbsp; * @return
+        <i>529</i>&nbsp; */
+        <i>530</i>&nbsp; public Builder enableMultipleRecordings(){
+        <b class="nc"><i>531</i>&nbsp; this.enableMultipleRecordings = true;</b>
+        <b class="nc"><i>532</i>&nbsp; return this;</b>
+        <i>533</i>&nbsp; }
+        <i>534</i>&nbsp;
+        <i>535</i>&nbsp; /**
+        <i>536</i>&nbsp; * Recording parameters are additional optional data stored in the body of
+        the JSON file.
+        <i>537</i>&nbsp; */
+        <i>538</i>&nbsp; public Builder bodyParameters(@Nullable Bundle recordingParameters){
+        <b class="nc"><i>539</i>&nbsp; this.recordingParameters = recordingParameters;</b>
+        <b class="nc"><i>540</i>&nbsp; return this;</b>
+        <i>541</i>&nbsp; }
+        <i>542</i>&nbsp;
+        <i>543</i>&nbsp; @NonNull
+        <i>544</i>&nbsp; public RecordConfig create(){
+        <b class="nc"><i>545</i>&nbsp; Log.d(&quot;Record config&quot;,this.toString());</b>
+        <b class="nc"><i>546</i>&nbsp; return new RecordConfig(</b>
+        <i>547</i>&nbsp; folder,
+        <i>548</i>&nbsp; filename,
+        <i>549</i>&nbsp; subjectID,
+        <i>550</i>&nbsp; recordInfo,
+        <i>551</i>&nbsp; condition,
+        <i>552</i>&nbsp; projectName,
+        <i>553</i>&nbsp; useExternalStorage,
+        <i>554</i>&nbsp; timestamp,
+        <i>555</i>&nbsp; duration,
+        <i>556</i>&nbsp; headerComments,
+        <i>557</i>&nbsp; recordingParameters,
+        <i>558</i>&nbsp; enableMultipleRecordings,
+        <i>559</i>&nbsp; acquisitionLocations,
+        <i>560</i>&nbsp; referenceLocations,
+        <i>561</i>&nbsp; groundLocations
+        <i>562</i>&nbsp; );
+        <i>563</i>&nbsp; }
+        <i>564</i>&nbsp;
+        <i>565</i>&nbsp; }
+        <i>566</i>&nbsp;
+        <i>567</i>&nbsp; @Override
+        <i>568</i>&nbsp; public String toString() {
+        <b class="nc"><i>569</i>&nbsp; return &quot;RecordConfig{&quot; +</b>
+        <i>570</i>&nbsp; &quot;directory=&#39;&quot; + directory + &#39;\&#39;&#39; +
+        <i>571</i>&nbsp; &quot;, filename=&#39;&quot; + filename + &#39;\&#39;&#39; +
+        <i>572</i>&nbsp; &quot;, useExternalStorage=&quot; + useExternalStorage +
+        <i>573</i>&nbsp; &quot;, timestamp=&quot; + timestamp +
+        <i>574</i>&nbsp; &quot;, projectName=&#39;&quot; + projectName + &#39;\&#39;&#39; +
+        <i>575</i>&nbsp; &quot;, subjectID=&#39;&quot; + subjectID + &#39;\&#39;&#39; +
+        <i>576</i>&nbsp; &quot;, condition=&#39;&quot; + condition + &#39;\&#39;&#39; +
+        <i>577</i>&nbsp; &quot;, headerComments=&quot; + headerComments +
+        <i>578</i>&nbsp; &quot;, recordInfo=&quot; + recordInfo +
+        <i>579</i>&nbsp; &quot;, recordingParameters=&quot; + recordingParameters +
+        <i>580</i>&nbsp; &quot;, enableMultipleRecordings=&quot; + enableMultipleRecordings +
+        <i>581</i>&nbsp; &quot;, acquisitionLocations=&quot; + acquisitionLocations +
+        <i>582</i>&nbsp; &quot;, referenceLocations=&quot; + referenceLocations +
+        <i>583</i>&nbsp; &quot;, groundLocations=&quot; + groundLocations +
+        <i>584</i>&nbsp; &#39;}&#39;;
+        <i>585</i>&nbsp; }
+        <i>586</i>&nbsp;
+        <i>587</i>&nbsp;}
+    </div>
+</div>
+
+<div class="footer">
+
+    <div style="float:right;">generated on 2020-06-10 10:26</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,211 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+    <title>Coverage Report :: Comment</title>
+    <style type="text/css">
+    @import "../../.css/coverage.css";
+
+    </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+    <div class="breadCrumbs">
+        [ <a href="../../index.html">all classes</a> ]
+        [ <a href="../index.html">core.recording.metadata</a> ]
+    </div>
+
+    <h1>Coverage Summary for Class: Comment (core.recording.metadata)</h1>
+
+    <table class="coverageStats">
+
+        <tr>
+            <th class="name">Class</th>
+            <th class="coverageStat
+">
+                Method, %
+            </th>
+            <th class="coverageStat
+">
+                Line, %
+            </th>
+        </tr>
+        <tr>
+            <td class="name">Comment</td>
+            <td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+                <span class="absValue">
+    (0/ 10)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+                <span class="absValue">
+    (0/ 27)
+  </span>
+            </td>
+        </tr>
+        <tr>
+            <td class="name">Comment$1</td>
+            <td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+                <span class="absValue">
+    (0/ 3)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+                <span class="absValue">
+    (0/ 3)
+  </span>
+            </td>
+        </tr>
+        <tr>
+            <td class="name"><strong>total</strong></td>
+            <td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+                <span class="absValue">
+    (0/ 13)
+  </span>
+            </td>
+            <td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+                <span class="absValue">
+    (0/ 30)
+  </span>
+            </td>
+        </tr>
+    </table>
+
+    <br/>
+    <br/>
+
+
+    <div class="sourceCode"><i>1</i>&nbsp;package core.recording.metadata;
+        <i>2</i>&nbsp;
+        <i>3</i>&nbsp;import android.os.Parcel;
+        <i>4</i>&nbsp;import android.os.Parcelable;
+        <i>5</i>&nbsp;import androidx.annotation.Keep;
+        <i>6</i>&nbsp;import androidx.annotation.NonNull;
+        <i>7</i>&nbsp;import androidx.annotation.Nullable;
+        <i>8</i>&nbsp;import android.text.TextUtils;
+        <i>9</i>&nbsp;
+        <i>10</i>&nbsp;/**
+        <i>11</i>&nbsp; * Created by Etienne on 13/02/2017.
+        <i>12</i>&nbsp; */
+        <i>13</i>&nbsp;@Keep
+        <i>14</i>&nbsp;public class Comment implements Parcelable {
+        <i>15</i>&nbsp;
+        <i>16</i>&nbsp; @NonNull
+        <i>17</i>&nbsp; private String comment;
+        <i>18</i>&nbsp; @NonNull
+        <i>19</i>&nbsp; private long timestamp;
+        <i>20</i>&nbsp; @Nullable
+        <i>21</i>&nbsp; private String user;
+        <i>22</i>&nbsp;
+        <b class="nc"><i>23</i>&nbsp; public Comment(@NonNull String comment, @NonNull long
+            timestamp, @Nullable String user){</b>
+        <b class="nc"><i>24</i>&nbsp; this.comment = comment;</b>
+        <b class="nc"><i>25</i>&nbsp; this.timestamp = timestamp;</b>
+        <b class="nc"><i>26</i>&nbsp; this.user = user;</b>
+        <i>27</i>&nbsp; }
+        <i>28</i>&nbsp;
+        <b class="nc"><i>29</i>&nbsp; protected Comment(Parcel in) {</b>
+        <b class="nc"><i>30</i>&nbsp; comment = in.readString();</b>
+        <b class="nc"><i>31</i>&nbsp; timestamp = in.readLong();</b>
+        <b class="nc"><i>32</i>&nbsp; user = in.readString();</b>
+        <i>33</i>&nbsp; }
+        <i>34</i>&nbsp;
+        <i>35</i>&nbsp; @Override
+        <i>36</i>&nbsp; public int describeContents() {
+        <b class="nc"><i>37</i>&nbsp; return 0;</b>
+        <i>38</i>&nbsp; }
+        <i>39</i>&nbsp;
+        <i>40</i>&nbsp; @Override
+        <i>41</i>&nbsp; public void writeToParcel(@NonNull Parcel dest, int flags) {
+        <b class="nc"><i>42</i>&nbsp; dest.writeString(comment);</b>
+        <b class="nc"><i>43</i>&nbsp; dest.writeLong(timestamp);</b>
+        <b class="nc"><i>44</i>&nbsp; dest.writeString(user);</b>
+        <i>45</i>&nbsp; }
+        <i>46</i>&nbsp;
+        <i>47</i>&nbsp; @SuppressWarnings(&quot;unused&quot;)
+        <b class="nc"><i>48</i>&nbsp; public static final Creator&lt;Comment&gt; CREATOR = new
+            Creator&lt;Comment&gt;() {</b>
+        <i>49</i>&nbsp; @Override
+        <i>50</i>&nbsp; public Comment createFromParcel(@NonNull Parcel in) {
+        <b class="nc"><i>51</i>&nbsp; return new Comment(in);</b>
+        <i>52</i>&nbsp; }
+        <i>53</i>&nbsp;
+        <i>54</i>&nbsp; @Override
+        <i>55</i>&nbsp; public Comment[] newArray(int size) {
+        <b class="nc"><i>56</i>&nbsp; return new Comment[size];</b>
+        <i>57</i>&nbsp; }
+        <i>58</i>&nbsp; };
+        <i>59</i>&nbsp;
+        <i>60</i>&nbsp; @NonNull
+        <i>61</i>&nbsp; public String getComment(){
+        <b class="nc"><i>62</i>&nbsp; return comment;</b>
+        <i>63</i>&nbsp; }
+        <i>64</i>&nbsp;
+        <i>65</i>&nbsp; public long getTimestamp(){
+        <b class="nc"><i>66</i>&nbsp; return timestamp;</b>
+        <i>67</i>&nbsp; }
+        <i>68</i>&nbsp;
+        <i>69</i>&nbsp; @Nullable
+        <i>70</i>&nbsp; public String getUser(){
+        <b class="nc"><i>71</i>&nbsp; return user;</b>
+        <i>72</i>&nbsp; }
+        <i>73</i>&nbsp;
+        <i>74</i>&nbsp; @Override
+        <i>75</i>&nbsp; public boolean equals(Object o) {
+        <b class="nc"><i>76</i>&nbsp; if (this == o) {</b>
+        <b class="nc"><i>77</i>&nbsp; return true;</b>
+        <i>78</i>&nbsp; }
+        <b class="nc"><i>79</i>&nbsp; if (!(o instanceof Comment)) {</b>
+        <b class="nc"><i>80</i>&nbsp; return false;</b>
+        <i>81</i>&nbsp; }
+        <b class="nc"><i>82</i>&nbsp; Comment c = (Comment) o;</b>
+        <b class="nc"><i>83</i>&nbsp; if (timestamp != c.timestamp) {</b>
+        <b class="nc"><i>84</i>&nbsp; return false;</b>
+        <i>85</i>&nbsp; }
+        <b class="nc"><i>86</i>&nbsp; if (!TextUtils.equals(comment, c.comment) ||
+            !TextUtils.equals(user, c.user)) {</b>
+        <b class="nc"><i>87</i>&nbsp; return false;</b>
+        <i>88</i>&nbsp; }
+        <b class="nc"><i>89</i>&nbsp; return true;</b>
+        <i>90</i>&nbsp; }
+        <i>91</i>&nbsp;
+        <i>92</i>&nbsp; @NonNull
+        <i>93</i>&nbsp; @Override
+        <i>94</i>&nbsp; public String toString() {
+        <b class="nc"><i>95</i>&nbsp; return &quot;Comment{&quot; +</b>
+        <i>96</i>&nbsp; &quot;comment=&#39;&quot; + comment + &#39;\&#39;&#39; +
+        <i>97</i>&nbsp; &quot;, timestamp=&quot; + timestamp +
+        <i>98</i>&nbsp; &quot;, user=&#39;&quot; + user + &#39;\&#39;&#39; +
+        <i>99</i>&nbsp; &#39;}&#39;;
+        <i>100</i>&nbsp; }
+        <i>101</i>&nbsp;}
+    </div>
+</div>
+
+<div class="footer">
+
+    <div style="float:right;">generated on 2020-06-10 10:26</div>
+</div>
+</body>
+</html>
