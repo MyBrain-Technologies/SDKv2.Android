@@ -10,15 +10,15 @@ android {
         minSdkVersion 22
         targetSdkVersion 28
 
-        versionCode 24
-        versionName '2.2.13'
+        versionCode 25
+        versionName '2.2.14'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
 
         buildConfigField "boolean", "EEG_ENABLED", "true"
         buildConfigField "boolean", "BLUETOOTH_ENABLED", "true"
         buildConfigField "boolean", "DEVICE_ENABLED", "true"
         buildConfigField "boolean", "RECORDING_ENABLED", "true"
-        buildConfigField "String", "FIRMWARE_VERSION", "\"1_7_24\""
+        buildConfigField "String", "FIRMWARE_VERSION", "\"1_7_25\""
         buildConfigField "String", "USE_ALGO_VERSION", "\"2.3.1\""
     }
 
@@ -31,6 +31,8 @@ android {
                     outputFileName = "lib_${variant.flavorName}_${variant.buildType.name}_${defaultConfig.versionName}.aar"
                 }
             }
+        }
+        prerelease {
         }
         staging {
         }
