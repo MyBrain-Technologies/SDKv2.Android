@@ -14,7 +14,7 @@ public final class BuildConfig {
   public static final boolean BLUETOOTH_ENABLED = true;
   public static final boolean DEVICE_ENABLED = true;
   public static final boolean EEG_ENABLED = true;
-  public static final String FIRMWARE_VERSION = "1_7_25";
+  public static final String FIRMWARE_VERSION = "1_7_24";
   public static final boolean RECORDING_ENABLED = true;
   public static final String USE_ALGO_VERSION = "2.3.1";
 }
