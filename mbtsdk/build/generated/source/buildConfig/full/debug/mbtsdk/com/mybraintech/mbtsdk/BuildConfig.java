@@ -15,7 +15,7 @@ public final class BuildConfig {
   // Field from default config.
   public static final boolean EEG_ENABLED = true;
   // Field from default config.
-  public static final String FIRMWARE_VERSION = "1_7_14";
+  public static final String FIRMWARE_VERSION = "1_7_24";
   // Field from default config.
   public static final boolean RECORDING_ENABLED = true;
   // Field from default config.
