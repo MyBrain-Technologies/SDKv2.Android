@@ -4,6 +4,7 @@ import android.content.Context;
 
 import eventbus.MbtEventBus;
 
+
 /**
  * Abstract class that represent a simple module manager.
  * All modules in this SDK have the same scheme. One module manager and several satellite classes that communicate to each other through the manager.
