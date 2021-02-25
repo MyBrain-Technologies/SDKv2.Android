@@ -11,7 +11,9 @@ import java.util.concurrent.*
  */
 @Keep
 object AsyncUtils {
-  //Executors.newCachedThreadPool();
+    lateinit var Companion: AsyncUtils
+
+    //Executors.newCachedThreadPool();
   val TAG = this::class.java.simpleName
 
   private val executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())
