@@ -98,7 +98,7 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
     if (filterOnDeviceService) {
       val filterService = ScanFilter.Builder()
           .setServiceUuid(ParcelUuid(MelomindCharacteristics.SERVICE_MEASUREMENT))
-      if (manager.context.deviceNameRequested != null) filterService.setDeviceName(manager.context.deviceNameRequested)
+      //if (manager.context.deviceNameRequested != null) filterService.setDeviceName(manager.context.deviceNameRequested)
       mFilters.add(filterService.build())
     }
     val settings = ScanSettings.Builder()
