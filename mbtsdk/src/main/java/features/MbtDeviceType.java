@@ -23,6 +23,11 @@ public enum MbtDeviceType {
     /**
      *
      */
+    MELOMIND_Q_PLUS(BluetoothProtocol.LOW_ENERGY),
+
+    /**
+     *
+     */
     VPRO(BluetoothProtocol.SPP);
 
 

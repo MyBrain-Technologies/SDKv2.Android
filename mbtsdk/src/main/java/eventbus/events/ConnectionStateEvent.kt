@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothDevice
 import core.bluetooth.BluetoothState
 import core.device.model.MbtDevice
 import core.device.model.MelomindDevice
+import core.device.model.MelomindQPlusDevice
 import core.device.model.VProDevice
 import features.MbtDeviceType
 
@@ -26,7 +27,11 @@ class ConnectionStateEvent : IEvent {
 
   constructor(newState: BluetoothState, device: BluetoothDevice, deviceType: MbtDeviceType) {
     this.newState = newState
-    this.device = if (deviceType == MbtDeviceType.MELOMIND) MelomindDevice(device) else VProDevice(device)
+    this.device = when (deviceType) {
+        MbtDeviceType.MELOMIND -> MelomindDevice(device)
+        MbtDeviceType.MELOMIND_Q_PLUS -> MelomindQPlusDevice(device)
+        else -> VProDevice(device)
+    }
   }
 
   constructor(newState: BluetoothState, additionalInfo: String?) {

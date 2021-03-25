@@ -31,10 +31,13 @@ public final class MbtFeatures{
     public final static int DEFAULT_SAMPLE_PER_PACKET = 4;
     public static int DEFAULT_SAMPLE_PER_NOTIF = DEFAULT_SAMPLE_PER_PACKET;
 
-    public final static int DEFAULT_EEG_PACKET_LENGTH = DEFAULT_SAMPLE_RATE;
+    public final static int DEFAULT_EEG_PACKET_LENGTH = 250;
 
     public final static int DEFAULT_CLIENT_PACKET_SIZE = 250;
-    public final static int DEFAULT_CLIENT_NOTIFICATION_PERIOD = 1000;
+    /**
+     * in ms, default value is 1000 ms that mean
+     */
+    public final static int DEFAULT_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS = 1000;
     public static final int MIN_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS = 200;
     public static final int MAX_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS = 60000;
 
@@ -61,6 +64,7 @@ public final class MbtFeatures{
     public static final String ALL_DEVICE_NAME = "All";
 
     public final static int MELOMIND_NB_CHANNELS = 2;
+    public final static int MELOMIND_QPLUS_NB_CHANNELS = 4;
     public final static int VPRO_NB_CHANNELS = 9;
 
     public final static int DEFAULT_BLE_NB_STATUS_BYTES = 0;
@@ -70,13 +74,21 @@ public final class MbtFeatures{
 
     public static final int DEFAULT_MAX_PENDING_RAW_DATA_BUFFER_SIZE = 40;
 
+    /**
+     * size of a ble sample for one channel
+     */
     public final static int DEFAULT_BLE_NB_BYTES = 2;
+
     public final static int DEFAULT_SPP_NB_BYTES = DEFAULT_SPP_NB_STATUS_BYTES;
 
     public final static int DEFAULT_BLE_RAW_DATA_INDEX_SIZE = DEFAULT_BLE_NB_BYTES;
     public final static int DEFAULT_SPP_RAW_DATA_INDEX_SIZE = 3;
 
+    /**
+     * size of raw data of a ble sample for all channels
+     */
     public final static int DEFAULT_BLE_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES = DEFAULT_BLE_NB_BYTES * MELOMIND_NB_CHANNELS;
+
     public final static int DEFAULT_SPP_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES = DEFAULT_SPP_NB_BYTES * VPRO_NB_CHANNELS;
 
     public final static int DEFAULT_BLE_RAW_DATA_PACKET_SIZE = DEFAULT_SAMPLE_PER_PACKET * DEFAULT_BLE_RAW_DATA_BYTES_PER_WHOLE_CHANNELS_SAMPLES + DEFAULT_BLE_NB_STATUS_BYTES;; //1 packet contains 4 samples per packet 2 channels 2 bytes data + the status bytes
@@ -98,7 +110,11 @@ public final class MbtFeatures{
     public static final int DEFAULT_NUMBER_OF_DATA_TO_DISPLAY = 500;
 
     public static int getNbChannels(MbtDeviceType device){
-        return (device.equals(MELOMIND) ? MELOMIND_NB_CHANNELS : VPRO_NB_CHANNELS);
+        switch (device) {
+            case MELOMIND : return MELOMIND_NB_CHANNELS;
+            case MELOMIND_Q_PLUS: return MELOMIND_QPLUS_NB_CHANNELS;
+            default: return VPRO_NB_CHANNELS;
+        }
     }
 
     @NonNull

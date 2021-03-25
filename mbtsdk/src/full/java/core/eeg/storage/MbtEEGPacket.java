@@ -8,6 +8,10 @@ import java.util.ArrayList;
 
 @Keep
 public final class MbtEEGPacket {
+
+    /**
+     * eg: 4x250
+     */
     @NonNull
     private ArrayList<ArrayList<Float>> channelsData = new ArrayList<>();
 
@@ -17,6 +21,9 @@ public final class MbtEEGPacket {
     @NonNull
     private final long timestamp;
 
+    /**
+     * eg: 4
+     */
     private ArrayList<Float> qualities;
 
     private float[][] features = null;

@@ -1,0 +1,52 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".VProActivity">
+    <item
+        android:id="@+id/action_config"
+        android:orderInCategory="100"
+        android:title="@string/action_change_config"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_oad"
+        android:orderInCategory="200"
+        android:title="@string/action_oad"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_filters"
+        android:orderInCategory="300"
+        android:title="@string/action_filter"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_mtu"
+        android:orderInCategory="301"
+        android:title="@string/action_mtu"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_AmpGain"
+        android:orderInCategory="302"
+        android:title="@string/action_ampGain"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_getAfeConfig"
+        android:orderInCategory="302"
+        android:title="@string/action_getAfeConfig"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_DcMeasure"
+        android:orderInCategory="302"
+        android:title="Change DC Measure"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_GraphScale"
+        android:orderInCategory="302"
+        android:title="Change graph scale"
+        app:showAsAction="never" />
+
+</menu>

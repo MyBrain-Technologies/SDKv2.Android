@@ -5,10 +5,8 @@ import android.bluetooth.*
 import android.bluetooth.le.*
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.os.Build
 import android.os.Handler
-import android.os.ParcelUuid
 import android.util.Log
 import command.BluetoothCommands.Mtu
 import command.CommandInterface.MbtCommand
@@ -19,12 +17,11 @@ import command.DeviceCommandEvent.Companion.CMD_CODE_CONNECT_IN_A2DP_SUCCESS
 import command.DeviceCommandEvent.MBX_CONNECT_IN_A2DP
 import command.OADCommands.TransferPacket
 import config.MbtConfig
+import core.Indus5FastMode
+import core.bluetooth.*
 import core.bluetooth.BluetoothInterfaces.IDeviceInfoMonitor
-import core.bluetooth.BluetoothProtocol
-import core.bluetooth.BluetoothState
-import core.bluetooth.MbtBluetoothManager
 import core.bluetooth.MbtDataBluetooth.MainBluetooth
-import core.bluetooth.StreamState
+import core.bluetooth.requests.Indus5CommandRequest
 import core.device.DeviceEvents.RawDeviceMeasure
 import core.device.model.DeviceInfo
 import core.device.model.MelomindDevice
@@ -34,7 +31,9 @@ import engine.clientevents.BluetoothError
 import engine.clientevents.ConnectionStateReceiver
 import eventbus.events.BluetoothResponseEvent
 import features.MbtFeatures
+import timber.log.Timber
 import utils.*
+import java.lang.UnsupportedOperationException
 import java.util.*
 
 /** This class contains all required methods to interact with a LE bluetooth peripheral, such as Melomind.
@@ -79,49 +78,59 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
     }
   }
 
-  /** Start bluetooth low energy scanner in order to find BLE device that matches the specific filters.
+  /**
+   * TODO: update javadoc (no filter)
+   * Start bluetooth low energy scanner in order to find BLE device that matches the specific filters.
    *
    * **Note:** This method will consume your mobile/tablet battery. Please consider calling
    * [.stopScan] when scanning is no longer needed.
-   * @return Each found device that matches the specified filters
+   * @return true if start the scan successfully, false otherwise.
    */
   override fun startScan(): Boolean {
-    val filterOnDeviceService = true
     LogUtils.i(TAG, " start low energy scan on device " + manager.context.deviceNameRequested)
-    val mFilters: MutableList<ScanFilter> = ArrayList()
     if (super.bluetoothAdapter == null || super.bluetoothAdapter?.bluetoothLeScanner == null) {
-      Log.e(TAG, "Unable to get LE scanner")
+      LogUtils.e(TAG, "Unable to get LE scanner")
       notifyConnectionStateChanged(BluetoothState.SCAN_FAILURE)
       return false
-    } else bluetoothLeScanner = super.bluetoothAdapter!!.bluetoothLeScanner
-    currentDevice = null
-    if (filterOnDeviceService) {
-      val filterService = ScanFilter.Builder()
-          .setServiceUuid(ParcelUuid(MelomindCharacteristics.SERVICE_MEASUREMENT))
-      //if (manager.context.deviceNameRequested != null) filterService.setDeviceName(manager.context.deviceNameRequested)
-      mFilters.add(filterService.build())
+    } else {
+      bluetoothLeScanner = super.bluetoothAdapter!!.bluetoothLeScanner
     }
+    currentDevice = null
+    val mFilters: MutableList<ScanFilter> = ArrayList() // no filter: indus5 does not have service uuid in ScanRecord
     val settings = ScanSettings.Builder()
         .setReportDelay(0)
         .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
         .build()
-    LogUtils.i(TAG, String.format("Starting Low Energy Scan with filtering on name '%s' and service UUID '%s'", manager.context.deviceNameRequested, MelomindCharacteristics.SERVICE_MEASUREMENT))
+    LogUtils.i(TAG, "Starting Low Energy Scan ")
     bluetoothLeScanner.startScan(mFilters, settings, scanCallback)
-    if (currentState == BluetoothState.READY_FOR_BLUETOOTH_OPERATION) manager.connecter.updateConnectionState(false) //current state is set to SCAN_STARTED
+    if (currentState == BluetoothState.READY_FOR_BLUETOOTH_OPERATION) {
+      manager.connecter.updateConnectionState(false) //current state is set to SCAN_STARTED
+    }
     return true //true : scan is started
   }
 
-  /** callback used when scanning using bluetooth Low Energy scanner. */
+  val melomindNamePrefix = "melo_"
+
+  /**
+   * callback used when scanning using bluetooth Low Energy scanner.
+   * Handle scan result here.
+   * We filter the result here to assure that we will only connect to Melomind devices.
+   */
   private val scanCallback: ScanCallback = object : ScanCallback() {
     override fun onScanResult(callbackType: Int, result: ScanResult) { //Callback when a BLE advertisement has been found.
-      AsyncUtils.executeAsync(Runnable {
-        if (currentState == BluetoothState.SCAN_STARTED) {
-          super.onScanResult(callbackType, result)
-          currentDevice = result.device
-          LogUtils.i(TAG, String.format("Stopping Low Energy Scan -> device detected " + "with name '%s' and MAC address '%s' ", currentDevice?.name, currentDevice?.address))
-          updateConnectionState(true) //current state is set to DEVICE_FOUND and future is completed
-        }
-      })
+      // filter device by device name
+      if (result.device.name != null && result.device.name.startsWith(melomindNamePrefix)) {
+        AsyncUtils.executeAsync(Runnable {
+          if (currentState == BluetoothState.SCAN_STARTED) {
+            LogUtils.e("ConnSteps", "5b : found device")
+            manager.context.deviceNameRequested
+            super.onScanResult(callbackType, result)
+            currentDevice = result.device
+            LogUtils.i(TAG, String.format("Stopping Low Energy Scan -> device detected " + "with name '%s' and MAC address '%s' ", currentDevice?.name, currentDevice?.address))
+            updateConnectionState(true) //current state is set to DEVICE_FOUND and future is completed
+          }
+        })
+      }
     }
 
     override fun onScanFailed(errorCode: Int) { //Callback when scan could not be started.
@@ -192,15 +201,19 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
    */
   private fun switchStream(isStart: Boolean): Boolean {
     if (isStreaming == isStart) return true
-    if (!checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_EEG)) return false
-    try {
-      Thread.sleep(50) //Adding small sleep to "free" bluetooth
-    } catch (e: InterruptedException) {
-      e.printStackTrace()
+    if (Indus5FastMode.isEnabled()) {
+      return startIndus5Operation(EnumIndus5Command.MBX_START_EEG_ACQUISITION)
+    } else {
+      if (!checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_EEG)) return false
+      try {
+        Thread.sleep(50) //Adding small sleep to "free" bluetooth
+      } catch (e: InterruptedException) {
+        e.printStackTrace()
+      }
+      return enableOrDisableNotificationsOnCharacteristic(isStart,
+              gatt!!.getService(MelomindCharacteristics.SERVICE_MEASUREMENT)
+                      .getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG))
     }
-    return enableOrDisableNotificationsOnCharacteristic(isStart,
-        gatt!!.getService(MelomindCharacteristics.SERVICE_MEASUREMENT)
-            .getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG))
   }
 
   /**  Whenever there is a new headset status received, this method is called to notify the bluetooth manager about it.
@@ -261,6 +274,26 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
         "enable notification... now waiting for confirmation from headset.")
     val result = startWaitingOperation(MbtConfig.getBluetoothA2DpConnectionTimeout())
     return (if (result == null || result !is Boolean) false else result)
+  }
+
+  fun enableIndus5RxSubscription(gatt: BluetoothGatt): Boolean {
+    val transparentService = gatt.getService(MelomindCharacteristics.INDUS_5_TRANSPARENT_SERVICE)
+    val indus5TxCharacteristic = transparentService?.getCharacteristic(MelomindCharacteristics.INDUS_5_TX_CHARACTERISTIC)
+    val indus5RxCharacteristic = transparentService?.getCharacteristic(MelomindCharacteristics.INDUS_5_RX_CHARACTERISTIC)
+
+    Thread.sleep(10)
+    val charNotified = gatt.setCharacteristicNotification(indus5RxCharacteristic, true)
+    Timber.i("setCharacteristicNotification indus5 rx requested = $charNotified")
+
+    val descriptor = indus5RxCharacteristic?.getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID)
+    descriptor?.let { desc ->
+      Thread.sleep(10)
+      val requestSent = gatt.writeDescriptor(desc)
+      Timber.i("writeDescriptor rx requested = $requestSent")
+      return requestSent
+    } ?: kotlin.run {
+      return false
+    }
   }
 
   /**
@@ -394,6 +427,18 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
     return true
   }
 
+  @Synchronized
+  fun startIndus5Operation(command: EnumIndus5Command): Boolean {
+    val char = mbtGattController.indus5TxCharacteristic
+    char?.let {
+      it.value = command.bytes
+      return gatt!!.writeCharacteristic(it)
+    } ?: kotlin.run {
+      LogUtils.e(TAG, "tx characteristic null")
+      return false
+    }
+  }
+
   /** Checks whether the service and characteristic about to be used to communicate with the remote device.
    * @param service the service to check
    * @param characteristic the characteristic to check
@@ -424,7 +469,11 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
   /** Initiates a read firmware version operation on this correct Protocol  */
   override fun readFwVersion(): Boolean {
     LogUtils.i(TAG, "read firmware version")
-    return startReadOperation(MelomindCharacteristics.CHARAC_INFO_FIRMWARE_VERSION)
+    return if (mbtGattController.isIndus5()) {
+      startIndus5Operation(EnumIndus5Command.MBX_GET_FIRMWARE_VERSION)
+    } else {
+      startReadOperation(MelomindCharacteristics.CHARAC_INFO_FIRMWARE_VERSION)
+    }
   }
 
   /** Initiates a read hardware version operation on this correct Protocol */
@@ -483,8 +532,13 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
   }
 
   fun onStateConnected() {
-    if (currentState == BluetoothState.DATA_BT_CONNECTING || currentState == BluetoothState.SCAN_STARTED) updateConnectionState(true) //current state is set to DATA_BT_CONNECTION_SUCCESS and future is completed
-    else if (currentState == BluetoothState.IDLE || currentState == BluetoothState.UPGRADING) this.notifyConnectionStateChanged(BluetoothState.CONNECTED_AND_READY)
+    if (currentState == BluetoothState.DATA_BT_CONNECTING || currentState == BluetoothState.SCAN_STARTED) {
+      LogUtils.e("ConnSteps", "6d : updateConnectionState to switch to next step")
+      updateConnectionState(true) //current state is set to DATA_BT_CONNECTION_SUCCESS and future is completed
+    }
+    else if (currentState == BluetoothState.IDLE || currentState == BluetoothState.UPGRADING) {
+      this.notifyConnectionStateChanged(BluetoothState.CONNECTED_AND_READY)
+    }
   }
 
   /** Callback triggered by the [MbtGattController] callback when the connection state has changed.
@@ -533,6 +587,15 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
     manager.connecter.updateConnectionState(newState) //do nothing if the current state is CONNECTED_AND_READY
   }
 
+  /**
+   * mark current state as finished and update the new state
+   * @param newState new current state
+   */
+  fun markCurrentStepAsCompletedAndUpdateConnectionState(newState: BluetoothState) {
+    manager.connecter.updateConnectionState(newState)
+    manager.stopWaitingOperation(isCancel = false)
+  }
+
   /** This method handle a single command in order to
    * reconfigure some headset or bluetooth streaming parameters
    * or get values stored by the headset
@@ -570,6 +633,36 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
   }
 
   fun sendRequestData(command: MbtCommand<*>): Boolean {
+    if (Indus5FastMode.isEnabled()) {
+      if (command is Indus5CommandRequest.Indus5ChangeMTU) {
+        val buffer = command.serialize() as ByteArray
+        return writeCharacteristic(
+                buffer = buffer,
+                service = MelomindCharacteristics.INDUS_5_TRANSPARENT_SERVICE,
+                characteristic = MelomindCharacteristics.INDUS_5_TX_CHARACTERISTIC,
+                enableNotification = false)
+      }
+
+      if (command is Indus5CommandRequest.Indus5StartStream) {
+        val buffer = EnumIndus5Command.MBX_START_EEG_ACQUISITION.bytes
+        return writeCharacteristic(
+                buffer = buffer,
+                service = MelomindCharacteristics.INDUS_5_TRANSPARENT_SERVICE,
+                characteristic = MelomindCharacteristics.INDUS_5_TX_CHARACTERISTIC,
+                enableNotification = false)
+      }
+
+      if (command is Mtu) {
+        return changeMTU(command.serialize())
+      }
+
+      if (command is Indus5CommandRequest.Indus5Subscription) {
+        return enableIndus5RxSubscription(gatt!!)
+      }
+
+      throw UnsupportedOperationException("Operation is not implemented yet!")
+    }
+
     if (command is Mtu)
       return changeMTU(command.serialize())
 
@@ -592,7 +685,14 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
    */
   fun changeMTU(newMTU: Int): Boolean {
     LogUtils.i(TAG, "change mtu $newMTU")
-    return if (gatt == null) false else gatt!!.requestMtu(newMTU)
+    return if (gatt == null) {
+      false
+    } else {
+      Thread.sleep(10)
+      val ok = gatt!!.requestMtu(newMTU)
+      Timber.i("requestMtu ok = $ok")
+      ok
+    }
   }
 
   fun writeCharacteristic(buffer: ByteArray, service: UUID, characteristic: UUID, enableNotification: Boolean): Boolean {
@@ -651,4 +751,7 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
     }
   }
 
+  fun onMtuIndus5Changed() {
+    markCurrentStepAsCompletedAndUpdateConnectionState(BluetoothState.INDUS5_MTU_CHANGED_2)
+  }
 }

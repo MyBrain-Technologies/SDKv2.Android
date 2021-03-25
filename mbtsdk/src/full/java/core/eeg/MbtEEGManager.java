@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 import core.BaseModuleManager;
+import core.Indus5FastMode;
 import core.MbtManager;
 import core.bluetooth.BluetoothProtocol;
 import core.bluetooth.BluetoothState;
@@ -65,15 +66,20 @@ public final class MbtEEGManager extends BaseModuleManager {
     private static final int UNCHANGED_VALUE = -1;
     public static final int UNDEFINED_DURATION = -1;
 
-    private int sampRate = MbtFeatures.DEFAULT_SAMPLE_RATE;
+    private int sampleRate = MbtFeatures.DEFAULT_SAMPLE_RATE;
     private int packetLength = MbtFeatures.DEFAULT_EEG_PACKET_LENGTH;
-    private int nbChannels = MbtFeatures.MELOMIND_NB_CHANNELS;
+
+//    private int nbChannels = MbtFeatures.MELOMIND_NB_CHANNELS; //TODO: think how we can different basic melomind with Q+
 
     private MbtDataAcquisition dataAcquisition;
     private MbtDataBuffering dataBuffering;
     private ArrayList<ArrayList<Float>> consolidatedEEG;
 
-    private BluetoothProtocol protocol;
+    private BluetoothProtocol protocol = BluetoothProtocol.LOW_ENERGY; //TODO: for testing
+
+    public void setBluetoothProtocol(BluetoothProtocol protocol) {
+        this.protocol = protocol;
+    }
 
     private boolean hasQualities = false;
 
@@ -88,6 +94,14 @@ public final class MbtEEGManager extends BaseModuleManager {
             System.loadLibrary(ContextSP.LIBRARY_NAME + BuildConfig.USE_ALGO_VERSION);
         } catch (final UnsatisfiedLinkError e) {
             e.printStackTrace();
+        }
+    }
+
+    int getNumberOfChannels() {
+        if (Indus5FastMode.INSTANCE.isEnabled()) {
+            return MbtFeatures.MELOMIND_QPLUS_NB_CHANNELS; //in Q+ melomind, there is 4 channels
+        } else {
+            return MbtFeatures.MELOMIND_NB_CHANNELS;
         }
     }
 
@@ -137,7 +151,7 @@ public final class MbtEEGManager extends BaseModuleManager {
                             toDecodeStatus.add(rawEEGSample.getStatus());
                     }
                 }
-                consolidatedEEG = MbtDataConversion.convertRawDataToEEG(toDecodeRawEEG, protocol, nbChannels); //convert byte table data to Float matrix and store the matrix in MbtEEGManager as eegResult attribute
+                consolidatedEEG = MbtDataConversion.convertRawDataToEEG(toDecodeRawEEG, protocol, getNumberOfChannels()); //convert byte table data to Float matrix and store the matrix in MbtEEGManager as eegResult attribute
 
                 dataBuffering.storeConsolidatedEegInPacketBuffer(consolidatedEEG, toDecodeStatus);// if the packet buffer is full, this method returns the non null packet buffer
 
@@ -215,17 +229,17 @@ public final class MbtEEGManager extends BaseModuleManager {
 
         if(packet.getChannelsData() != null && packet.getChannelsData().size()!=0){
 
-            float[] qualities = new float[nbChannels];
+            float[] qualities = new float[getNumberOfChannels()];
             Arrays.fill(qualities, -1f);
             try{
                 if(protocol.equals(BluetoothProtocol.LOW_ENERGY)){
-                    qualities = MBTSignalQualityChecker.computeQualitiesForPacketNew(sampRate, packetLength, MatrixUtils.invertFloatMatrix(packet.getChannelsData()));
+                    qualities = MBTSignalQualityChecker.computeQualitiesForPacketNew(sampleRate, packetLength, MatrixUtils.invertFloatMatrix(packet.getChannelsData()));
 
                 }else if(protocol.equals(BluetoothProtocol.SPP)){
                     ArrayList<Float> qualitiesList = new ArrayList<>();
                     ArrayList<ArrayList<Float>> temp = new  ArrayList<ArrayList<Float>>();
                     //WARNING : quality checker C++ algo only takes into account 2 channels
-                    for(int i = 0; i < nbChannels; i+=2) {
+                    for(int i = 0; i < getNumberOfChannels(); i+=2) {
                         final float[] qts;
                         temp.add(0, downsample(MatrixUtils.invertFloatMatrix(packet.getChannelsData()).get(i)));
                         temp.add(1, downsample(MatrixUtils.invertFloatMatrix(packet.getChannelsData()).get(i+1)));
@@ -289,7 +303,7 @@ public final class MbtEEGManager extends BaseModuleManager {
      * Computes the calibration parameters
      */
     private HashMap<String, float[]> calibrate(MbtEEGPacket... packets) {
-        return MBTCalibrator.calibrateNew(sampRate, packetLength, ContextSP.smoothingDuration, packets);
+        return MBTCalibrator.calibrateNew(sampleRate, packetLength, ContextSP.smoothingDuration, packets);
     }
 
     /**
@@ -321,7 +335,8 @@ public final class MbtEEGManager extends BaseModuleManager {
         }else {
             if(connectionStateEvent.getNewState().equals(BluetoothState.CONNECTED_AND_READY)){
                 protocol = connectionStateEvent.getDevice().getDeviceType().getProtocol();
-                nbChannels = connectionStateEvent.getDevice().getNbChannels();
+//                TODO: think how can we implement this, the number of eeg channels
+//                nbChannels = connectionStateEvent.getDevice().getNbChannels();
             }
         }
     }
@@ -335,7 +350,7 @@ public final class MbtEEGManager extends BaseModuleManager {
      */
     @Subscribe(threadMode = ThreadMode.BACKGROUND)
     public void onEvent(BluetoothEEGEvent event) { //warning : this method is used
-        dataAcquisition.handleDataAcquired(event.getData(), nbChannels);
+        dataAcquisition.handleDataAcquired(event.getData(), getNumberOfChannels());
     }
 
     /**
@@ -380,14 +395,14 @@ public final class MbtEEGManager extends BaseModuleManager {
     public void onConfigurationChanged(EEGConfigEvent configEEGEvent){
         MbtDevice.InternalConfig internalConfig = configEEGEvent.getConfig();
         LogUtils.d(TAG, "new config "+ internalConfig.toString());
-        sampRate = internalConfig.getSampRate();
+        sampleRate = internalConfig.getSampRate();
         packetLength = configEEGEvent.getDevice().getEegPacketLength();
-        nbChannels = internalConfig.getNbChannels();
+//        nbChannels = internalConfig.getNbChannels();
         resetBuffers(internalConfig.getNbPackets(), internalConfig.getStatusBytes(), internalConfig.getGainValue());
     }
 
-    public int getSampRate() {
-        return sampRate;
+    public int getSampleRate() {
+        return sampleRate;
     }
 
     @VisibleForTesting

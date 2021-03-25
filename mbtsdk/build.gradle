@@ -1,11 +1,13 @@
 apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
 apply plugin: 'maven-publish'
 
 
 android {
     compileSdkVersion 28
+    buildToolsVersion '28.0.3'
+
     defaultConfig {
         minSdkVersion 22
         targetSdkVersion 28
@@ -86,6 +88,7 @@ dependencies {
     compile "androidx.core:core-ktx:+"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
     implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation 'com.jakewharton.timber:timber:4.7.1'
     implementation 'org.mod4j.org.apache.commons:lang:2.1.0'
     implementation 'androidx.appcompat:appcompat:1.0.0'
     implementation 'org.greenrobot:eventbus:3.1.1'

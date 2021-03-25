@@ -6,6 +6,7 @@ import android.os.HandlerThread
 import android.util.Log
 import androidx.annotation.VisibleForTesting
 import command.BluetoothCommand
+import command.BluetoothCommands
 import command.BluetoothCommands.Mtu
 import command.DeviceCommandEvent
 import core.BaseModuleManager
@@ -19,10 +20,11 @@ import engine.clientevents.BaseErrorEvent
 import eventbus.MbtEventBus
 import eventbus.MbtEventBus.Companion.postEvent
 import eventbus.events.*
-import features.MbtDeviceType.MELOMIND
-import features.MbtDeviceType.VPRO
+import features.MbtDeviceType.*
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
+import timber.log.Timber
+import utils.LogUtils
 import utils.MbtAsyncWaitOperation
 
 /** Created by Sophie on 02/06/2020.
@@ -67,6 +69,7 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
 
     MbtDataBluetooth.instance = when (context.deviceTypeRequested) {
       MELOMIND -> MbtBluetoothLE.initInstance(this)
+      MELOMIND_Q_PLUS -> MbtBluetoothLE.initInstance(this)
       VPRO -> MbtBluetoothSPP.initInstance(this)
     }
 
@@ -109,9 +112,12 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
        * @param request the [BluetoothRequests] request to execute.
        */
       fun parseRequest(request: BluetoothRequests) {
-        Log.d(TAG, "Parse request $request")
+        Timber.e("RequestThread parseRequest : ${request.javaClass.simpleName} wait ")
         while (isRequestProcessing);
         isRequestProcessing = true
+
+        Timber.e("RequestThread parseRequest : ${request.javaClass.simpleName} will be executed ")
+
         when (request) {
 
           is StartOrContinueConnectionRequestEvent -> {
@@ -128,13 +134,18 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
 
           is StreamRequestEvent -> {
             when {
-              request.isStartStream -> if(this@MbtBluetoothManager::reader.isInitialized) reader.startStreamOperation(request.monitorDeviceStatus())
-              request.isStopStream -> if(this@MbtBluetoothManager::reader.isInitialized) reader.stopStreamOperation()
+              request.isStartStream -> if (this@MbtBluetoothManager::reader.isInitialized) reader.startStreamOperation(request.monitorDeviceStatus())
+              request.isStopStream -> if (this@MbtBluetoothManager::reader.isInitialized) reader.stopStreamOperation()
               else -> isRequestProcessing = false
             }
           }
 
-          is CommandRequestEvent -> MbtDataBluetooth.instance.sendCommand(request.command)
+          is CommandRequestEvent -> {
+            Timber.e("on CommandRequestEvent")
+            MbtDataBluetooth.instance.sendCommand(request.command)
+          }
+
+          is Indus5CommandRequest -> MbtDataBluetooth.instance.sendCommand(request.command)
 
           else -> isRequestProcessing = false
         }
@@ -143,7 +154,9 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
 
     fun isOperationWaiting(): Boolean { return asyncOperation.isWaiting }
     fun isSwitchOperationWaiting(): Boolean { return asyncSwitchOperation.isWaiting }
-    fun stopWaitingOperation(isCancel: Boolean?) {  asyncOperation.stopWaitingOperation(isCancel) }
+    fun stopWaitingOperation(isCancel: Boolean?) {
+      asyncOperation.stopWaitingOperation(isCancel)
+    }
     fun startSwitchWaitingOperation(timeout: Int) { try { asyncSwitchOperation.waitOperationResult(timeout) } catch (e: Exception) { }}
     fun stopSwitchWaitingOperation() { asyncSwitchOperation.stopWaitingOperation(false) }
 
@@ -195,7 +208,10 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
     MbtDataBluetooth.instance.notifyConnectionStateChanged(state)
   }
 
-  fun setRequestProcessing(isRequestProcessing: Boolean){ requestProcessor.isRequestProcessing = isRequestProcessing}
+  fun setRequestProcessing(isRequestProcessing: Boolean) {
+    Timber.i("someone set isRequestProcessing = $isRequestProcessing")
+    requestProcessor.isRequestProcessing = isRequestProcessing
+  }
   fun isOperationWaiting(): Boolean { return requestProcessor.isOperationWaiting() }
   fun isSwitchOperationWaiting(): Boolean { return requestProcessor.isSwitchOperationWaiting() }
 
