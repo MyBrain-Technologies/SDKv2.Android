@@ -9,6 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 
@@ -21,10 +22,13 @@ import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.listener.ChartTouchListener;
+import com.github.mikephil.charting.listener.OnChartGestureListener;
 
 import java.util.ArrayList;
 
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Objects;
 
 import core.bluetooth.StreamState;
@@ -46,6 +50,7 @@ import features.MbtDeviceType;
 import features.MbtFeatures;
 import utils.AsyncUtils;
 import utils.LogUtils;
+import utils.MatrixUtils;
 
 import static utils.MatrixUtils.invertFloatMatrix;
 
@@ -76,7 +81,9 @@ public class DeviceActivity extends AppCompatActivity {
     private String lastReadBatteryLevel = "";
 
     private boolean isConnected = false;
+    private boolean isRecording = false;
     private boolean isStreaming = false;
+    private boolean freezeGraph = false;
 
     private BluetoothStateListener bluetoothStateListener;
     private DeviceStatusListener<BaseError> deviceStatusListener;

@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="8dp"
+    tools:context=".LauncherActivity"
+    tools:ignore="HardcodedText,PxUsage">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="16dp">
+
+            <TextView
+                android:layout_width="160dp"
+                android:layout_height="wrap_content"
+                android:text="is ble connected =" />
+
+            <TextView
+                android:id="@+id/txt_is_connected"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:hint="NA" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="2px"
+                android:layout_marginTop="4dp"
+                android:background="@color/colorPrimary" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btn_connect_reconnect"
+                    android:layout_width="160dp"
+                    android:layout_height="wrap_content"
+                    android:text="connect/reconnect" />
+
+                <Button
+                    android:id="@+id/btn_disconnect"
+                    android:layout_width="160dp"
+                    android:layout_height="wrap_content"
+                    android:text="disconnect" />
+
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="2px"
+                android:layout_marginTop="4dp"
+                android:background="@color/colorPrimary" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingTop="16dp">
+
+            <Button
+                android:id="@+id/btn_read_firmware_version"
+                android:layout_width="160dp"
+                android:layout_height="wrap_content"
+                android:text="read firmware version" />
+
+            <TextView
+                android:id="@+id/txt_firmware_version"
+                android:hint="firmware version"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="2px"
+                android:layout_marginTop="4dp"
+                android:background="@color/colorPrimary" />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingTop="16dp">
+
+            <Button
+                android:id="@+id/btn_read_battery"
+                android:layout_width="160dp"
+                android:layout_height="wrap_content"
+                android:text="read battery level" />
+
+            <TextView
+                android:id="@+id/txt_battery_level"
+                android:hint="battery level"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="2px"
+                android:layout_marginTop="4dp"
+                android:background="@color/colorPrimary" />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingTop="16dp">
+
+            <Button
+                android:id="@+id/btn_start_streaming"
+                android:layout_width="160dp"
+                android:layout_height="wrap_content"
+                android:text="start streaming" />
+
+            <TextView
+                android:id="@+id/txt_stream_state"
+                android:hint="stream state"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:id="@+id/txt_eeg_package"
+                android:hint="eeg package"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="2px"
+                android:layout_marginTop="4dp"
+                android:background="@color/colorPrimary" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>
