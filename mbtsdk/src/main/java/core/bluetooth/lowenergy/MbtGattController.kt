@@ -16,6 +16,7 @@ import core.bluetooth.lowenergy.MelomindCharacteristics.Companion.CHARAC_MEASURE
 import core.bluetooth.lowenergy.MelomindCharacteristics.Companion.CHARAC_MEASUREMENT_EEG
 import core.bluetooth.lowenergy.MelomindCharacteristics.Companion.CHARAC_MEASUREMENT_MAILBOX
 import core.bluetooth.lowenergy.MelomindCharacteristics.Companion.CHARAC_MEASUREMENT_OAD_PACKETS_TRANSFER
+import core.bluetooth.lowenergy.MelomindCharacteristics.Companion.INDUS_5_TRANSPARENT_SERVICE
 import core.bluetooth.lowenergy.MelomindCharacteristics.Companion.SERVICE_DEVICE_INFOS
 import core.bluetooth.lowenergy.MelomindCharacteristics.Companion.SERVICE_MEASUREMENT
 import core.device.model.DeviceInfo
@@ -32,7 +33,17 @@ import java.util.*
  * @see BluetoothGattCallback
  */
 internal class MbtGattController(private val mbtBluetoothLE: MbtBluetoothLE) : BluetoothGattCallback() {
+
+  /**
+   * use for indus 5
+   */
+  private var transparentService: BluetoothGattService? = null
+
+  /**
+   * use for indus 2/3
+   */
   private var mainService: BluetoothGattService? = null
+
   private var deviceInfoService: BluetoothGattService? = null
   private var measurement: BluetoothGattCharacteristic? = null
   private var headsetStatus: BluetoothGattCharacteristic? = null
@@ -94,11 +105,42 @@ internal class MbtGattController(private val mbtBluetoothLE: MbtBluetoothLE) : B
     // Logging all available services
     for (service in gatt.services) {
       LogUtils.i(TAG, "Found Service with UUID -> " + service.uuid.toString())
+      if (service.uuid.equals(INDUS_5_TRANSPARENT_SERVICE)) {
+        LogUtils.i(TAG, "indus 5 detected")
+        transparentService = gatt.getService(service.uuid)
+        mainService = null
+      } else if (service.uuid.equals(SERVICE_MEASUREMENT)) {
+        LogUtils.i(TAG, "indus 2/3 detected")
+        mainService = gatt.getService(SERVICE_MEASUREMENT)
+        transparentService = null
+      }
     }
-    //TODO split function in two parts: first is input checking and second is characteristics initialization
 
-    // Retrieving main service
-    mainService = gatt.getService(SERVICE_MEASUREMENT)
+    if (isIndus5()) {
+      initIndus5()
+    } else {
+      initIndus23(gatt)
+    }
+
+    var initFail = true
+    if (isIndus5()) {
+      //TODO: verify here if device is correctly initialized for indus5
+      initFail = false
+    } else {
+      initFail = (mainService == null || measurement == null || battery == null || deviceInfoService == null || fwVersion == null || hwVersion == null || serialNumber == null || oadPacketsCharac == null || mailBox == null || headsetStatus == null)
+      if (initFail) {
+        LogUtils.e(TAG, "error, not all characteristics have been found")
+      }
+    }
+    if (initFail) {
+      gatt.disconnect()
+      mbtBluetoothLE.notifyConnectionStateChanged(BluetoothState.DISCOVERING_FAILURE)
+    } else if (mbtBluetoothLE.currentState == BluetoothState.DISCOVERING_SERVICES) {
+      mbtBluetoothLE.updateConnectionState(true) //current state is set to DISCOVERING_SUCCESS and future is completed
+    }
+  }
+
+  private fun initIndus23(gatt: BluetoothGatt) {
     deviceInfoService = gatt.getService(SERVICE_DEVICE_INFOS)
     if (mainService != null) {
       // Retrieving all relevant characteristics
@@ -117,13 +159,10 @@ internal class MbtGattController(private val mbtBluetoothLE: MbtBluetoothLE) : B
       serialNumber = deviceInfoService?.getCharacteristic(CHARAC_INFO_SERIAL_NUMBER)
       modelNumber = deviceInfoService?.getCharacteristic(CHARAC_INFO_MODEL_NUMBER)
     }
+  }
 
-    // In case one of these is null, we disconnect because something went wrong
-    if (mainService == null || measurement == null || battery == null || deviceInfoService == null || fwVersion == null || hwVersion == null || serialNumber == null || oadPacketsCharac == null || mailBox == null || headsetStatus == null) {
-      LogUtils.e(TAG, "error, not all characteristics have been found")
-      gatt.disconnect()
-      mbtBluetoothLE.notifyConnectionStateChanged(BluetoothState.DISCOVERING_FAILURE)
-    } else if (mbtBluetoothLE.currentState == BluetoothState.DISCOVERING_SERVICES) mbtBluetoothLE.updateConnectionState(true) //current state is set to DISCOVERING_SUCCESS and future is completed
+  private fun initIndus5() {
+    //TODO: init indus5 here if necessary
   }
 
   /**
@@ -269,5 +308,11 @@ internal class MbtGattController(private val mbtBluetoothLE: MbtBluetoothLE) : B
   }
   private val TAG = this::class.java.simpleName
 
+//----------------------------------------------------------------------------
+// indus 5 new functions
+//----------------------------------------------------------------------------
+  private fun isIndus5(): Boolean {
+    return (transparentService != null)
+  }
 
 }
