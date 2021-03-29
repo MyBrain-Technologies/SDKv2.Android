@@ -79,49 +79,58 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
     }
   }
 
-  /** Start bluetooth low energy scanner in order to find BLE device that matches the specific filters.
+  /**
+   * TODO: update javadoc (no filter)
+   * Start bluetooth low energy scanner in order to find BLE device that matches the specific filters.
    *
    * **Note:** This method will consume your mobile/tablet battery. Please consider calling
    * [.stopScan] when scanning is no longer needed.
-   * @return Each found device that matches the specified filters
+   * @return true if start the scan successfully, false otherwise.
    */
   override fun startScan(): Boolean {
-    val filterOnDeviceService = true
     LogUtils.i(TAG, " start low energy scan on device " + manager.context.deviceNameRequested)
-    val mFilters: MutableList<ScanFilter> = ArrayList()
     if (super.bluetoothAdapter == null || super.bluetoothAdapter?.bluetoothLeScanner == null) {
-      Log.e(TAG, "Unable to get LE scanner")
+      LogUtils.e(TAG, "Unable to get LE scanner")
       notifyConnectionStateChanged(BluetoothState.SCAN_FAILURE)
       return false
-    } else bluetoothLeScanner = super.bluetoothAdapter!!.bluetoothLeScanner
-    currentDevice = null
-    if (filterOnDeviceService) {
-      val filterService = ScanFilter.Builder()
-          .setServiceUuid(ParcelUuid(MelomindCharacteristics.SERVICE_MEASUREMENT))
-      //if (manager.context.deviceNameRequested != null) filterService.setDeviceName(manager.context.deviceNameRequested)
-      mFilters.add(filterService.build())
+    } else {
+      bluetoothLeScanner = super.bluetoothAdapter!!.bluetoothLeScanner
     }
+    currentDevice = null
+    val mFilters: MutableList<ScanFilter> = ArrayList() // no filter: indus5 does not have service uuid in ScanRecord
     val settings = ScanSettings.Builder()
         .setReportDelay(0)
         .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
         .build()
-    LogUtils.i(TAG, String.format("Starting Low Energy Scan with filtering on name '%s' and service UUID '%s'", manager.context.deviceNameRequested, MelomindCharacteristics.SERVICE_MEASUREMENT))
+    LogUtils.i(TAG, "Starting Low Energy Scan ")
     bluetoothLeScanner.startScan(mFilters, settings, scanCallback)
-    if (currentState == BluetoothState.READY_FOR_BLUETOOTH_OPERATION) manager.connecter.updateConnectionState(false) //current state is set to SCAN_STARTED
+    if (currentState == BluetoothState.READY_FOR_BLUETOOTH_OPERATION) {
+      manager.connecter.updateConnectionState(false) //current state is set to SCAN_STARTED
+    }
     return true //true : scan is started
   }
 
-  /** callback used when scanning using bluetooth Low Energy scanner. */
+  val melomindNamePrefix = "melo_"
+
+  /**
+   * callback used when scanning using bluetooth Low Energy scanner.
+   * Handle scan result here.
+   * We filter the result here to assure that we will only connect to Melomind devices.
+   */
   private val scanCallback: ScanCallback = object : ScanCallback() {
     override fun onScanResult(callbackType: Int, result: ScanResult) { //Callback when a BLE advertisement has been found.
-      AsyncUtils.executeAsync(Runnable {
-        if (currentState == BluetoothState.SCAN_STARTED) {
-          super.onScanResult(callbackType, result)
-          currentDevice = result.device
-          LogUtils.i(TAG, String.format("Stopping Low Energy Scan -> device detected " + "with name '%s' and MAC address '%s' ", currentDevice?.name, currentDevice?.address))
-          updateConnectionState(true) //current state is set to DEVICE_FOUND and future is completed
-        }
-      })
+      // filter device by device name
+      if (result.device.name != null && result.device.name.startsWith(melomindNamePrefix)) {
+        AsyncUtils.executeAsync(Runnable {
+          if (currentState == BluetoothState.SCAN_STARTED) {
+            manager.context.deviceNameRequested
+            super.onScanResult(callbackType, result)
+            currentDevice = result.device
+            LogUtils.i(TAG, String.format("Stopping Low Energy Scan -> device detected " + "with name '%s' and MAC address '%s' ", currentDevice?.name, currentDevice?.address))
+            updateConnectionState(true) //current state is set to DEVICE_FOUND and future is completed
+          }
+        })
+      }
     }
 
     override fun onScanFailed(errorCode: Int) { //Callback when scan could not be started.
