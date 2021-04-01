@@ -1,6 +1,7 @@
 package core.bluetooth
 
 import androidx.annotation.Keep
+import core.Indus5FastMode
 import engine.clientevents.*
 
 /**
@@ -130,6 +131,16 @@ enum class BluetoothState {
    * When connection was lost
    */
   DATA_BT_DISCONNECTED,  /// FROM THIS STATE, THE CONNECTION PROCESS IS CONSIDERED COMPLETED : THE FOLLOWING STATES ARE ERRORS THAT CAN OCCUR DURING A BLUETOOTH OPERATION
+
+  /**
+   * for indus5, after change mtu in gatt, we have to send a command to mailbox MBX_TRANSMIT_MTU_SIZE 0x29
+   */
+  INDUS5_CHANGING_MTU_ON_TX,
+
+  /**
+   * indices that indus5 changed mtu by command successfully
+   */
+  INDUS5_MTU_ON_TX_CHANGED,
 
   /**
    * Bluetooth is available on device but not enabled (turned on).
@@ -306,6 +317,12 @@ enum class BluetoothState {
    * @return the step that follow (in chronological order, based on the enum value) the current step
    */
   fun getNextConnectionStep(): BluetoothState {
+//    if (Indus5FastMode.isEnabled()) {
+//      if (this == DISCOVERING_SERVICES) {
+//        // do not read firmware..., go directly for change mtu
+//        return BONDED
+//      }
+//    }
     return if (!isAFailureState() && isConnectionInProgress()) values()[ordinal + 1] else IDLE
   }
 

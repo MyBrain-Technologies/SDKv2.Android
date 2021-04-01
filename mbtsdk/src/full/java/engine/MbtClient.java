@@ -12,6 +12,7 @@ import config.ConnectionConfig;
 import config.MbtConfig;
 import config.RecordConfig;
 import config.StreamConfig;
+import core.Indus5FastMode;
 import core.MbtManager;
 import core.bluetooth.BluetoothState;
 import core.device.model.DeviceInfo;
@@ -158,19 +159,22 @@ public final class MbtClient {
      */
     @SuppressWarnings("unchecked")
     public void startStream(@NonNull StreamConfig streamConfig){
+        if (Indus5FastMode.INSTANCE.isEnabled()) {
+            mbtManager.startStream(streamConfig);
+        } else {
+            if (!streamConfig.isNotificationConfigCorrect())
+                streamConfig.getEegListener().onError(ConfigError.ERROR_INVALID_PARAMS, streamConfig.shouldComputeQualities() ?
+                        ConfigError.NOTIFICATION_PERIOD_RANGE_QUALITIES : ConfigError.NOTIFICATION_PERIOD_RANGE);
+            else
+                requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
+                    @Override
+                    public void onRequestComplete(MbtDevice device) {
+                        MbtConfig.setEegBufferLengthClientNotif(streamConfig.getNotificationPeriod());
+                    }
+                });
 
-        if(!streamConfig.isNotificationConfigCorrect())
-            streamConfig.getEegListener().onError(ConfigError.ERROR_INVALID_PARAMS, streamConfig.shouldComputeQualities() ?
-                    ConfigError.NOTIFICATION_PERIOD_RANGE_QUALITIES : ConfigError.NOTIFICATION_PERIOD_RANGE);
-        else
-            requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
-                @Override
-                public void onRequestComplete(MbtDevice device) {
-                    MbtConfig.setEegBufferLengthClientNotif(streamConfig.getNotificationPeriod());
-                }
-            });
-
-        mbtManager.startStream(streamConfig);
+            mbtManager.startStream(streamConfig);
+        }
     }
 
     /**

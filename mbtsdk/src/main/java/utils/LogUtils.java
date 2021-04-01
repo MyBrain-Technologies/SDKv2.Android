@@ -29,6 +29,10 @@ public final class LogUtils{
         return isLoggingEnabled ? Log.e(tag, throwable.getMessage(), throwable) : 0;
     }
 
+    public static int e(Throwable throwable) {
+        return isLoggingEnabled ? Log.e("LogUtils", throwable.getMessage(), throwable) : 0;
+    }
+
     public static void enableLogging(){
         isLoggingEnabled = true;
     }

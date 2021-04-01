@@ -11,10 +11,13 @@ import command.BluetoothCommands
 import command.DeviceCommands.ConnectAudio
 import command.DeviceCommands.DisconnectAudio
 import config.MbtConfig
+import core.Indus5FastMode
 import core.bluetooth.BluetoothProtocol.*
 import core.bluetooth.BluetoothState.*
+import core.bluetooth.lowenergy.EnumIndus5Command
 import core.bluetooth.lowenergy.MbtBluetoothLE
 import core.bluetooth.requests.CommandRequestEvent
+import core.bluetooth.requests.Indus5CommandRequest
 import core.bluetooth.requests.StartOrContinueConnectionRequestEvent
 import core.device.DeviceEvents.GetDeviceEvent
 import core.device.DeviceEvents.PostDeviceEvent
@@ -29,6 +32,7 @@ import engine.clientevents.ConnectionStateReceiver
 import eventbus.MbtEventBus
 import eventbus.events.ConnectionStateEvent
 import org.greenrobot.eventbus.Subscribe
+import timber.log.Timber
 import utils.BroadcastUtils
 import utils.LogUtils
 import utils.MbtAsyncWaitOperation
@@ -134,7 +138,21 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
         READING_SERIAL_NUMBER_SUCCESS -> startReadingDeviceInfo(MODEL_NUMBER) // read next device info : fourth device info to read is model number
         READING_SUCCESS -> startBonding()
         BONDED -> changeMTU()
-        BT_PARAMETERS_CHANGED -> startSendingExternalName()
+        BT_PARAMETERS_CHANGED -> {
+          if (Indus5FastMode.isEnabled()) {
+            updateConnectionState(INDUS5_CHANGING_MTU_ON_TX)
+            changeMtuWithIndus5Tx()
+          } else {
+            startSendingExternalName()
+          }
+        }
+        INDUS5_MTU_ON_TX_CHANGED -> {
+          //for indus5 : ends connection process here
+          LogUtils.i(TAG, "INDUS5_MTU_ON_TX_CHANGED")
+          updateConnectionState(CONNECTED_AND_READY)
+          manager.setRequestProcessing(false)
+          notifyConnectionStateChanged(CONNECTED_AND_READY)
+        }
         CONNECTED -> startConnectionForAudioStreaming()
         else -> manager.setRequestProcessing(false)
       }
@@ -254,6 +272,11 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
       if (MbtDataBluetooth.instance.currentState != DISCOVERING_SUCCESS) { ////at this point : current state should be DISCOVERING_SUCCESS if discovery succeeded
         updateConnectionState(DISCOVERING_FAILURE)
       }
+
+      if (Indus5FastMode.isEnabled()) {
+        MbtDataBluetooth.instance.currentState = BONDED
+      }
+
       switchToNextConnectionStep()
     }
   }
@@ -299,8 +322,14 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
   }
 
   fun changeMTU() {
+    Timber.e("changeMTU")
     updateConnectionState(true) //current state is set to CHANGING_BT_PARAMETERS
     manager.parseRequest(CommandRequestEvent(BluetoothCommands.Mtu(manager.context.mtu)))
+  }
+
+  fun changeMtuWithIndus5Tx() {
+    LogUtils.i(TAG, "changeMtuWithIndus5Tx")
+    manager.parseRequest(Indus5CommandRequest(EnumIndus5Command.MBX_TRANSMIT_MTU_SIZE))
   }
 
   fun startSendingExternalName(){

@@ -65,6 +65,7 @@ import config.ConnectionConfig;
 import config.FilterConfig;
 import config.RecordConfig;
 import config.StreamConfig;
+import core.Indus5FastMode;
 import core.bluetooth.StreamState;
 import core.device.event.DCOffsetEvent;
 import core.device.event.SaturationEvent;
@@ -206,7 +207,10 @@ public class MelomindActivity extends AppCompatActivity implements ConnectionSta
                 MBTConfig.loadConfig("MM");
                 initChannelsNames();
 
-                sdkClient.readBattery(mbtsdk.com.mybraintech.sdkv2.MelomindActivity.this);
+                if (!Indus5FastMode.INSTANCE.isEnabled()) {
+                    //reading battery is not yet implemented for indus5
+                    sdkClient.readBattery(mbtsdk.com.mybraintech.sdkv2.MelomindActivity.this);
+                }
             }
         });
         t.setDaemon(true); // ça c'est important ça veut dire que le thread ne va pas vivre en dehors du process de l'app
@@ -746,7 +750,7 @@ public class MelomindActivity extends AppCompatActivity implements ConnectionSta
                 AsyncUtils.executeAsync(new Runnable() {
                     @Override
                     public void run() {
-                        sdkClient.requestEeg();
+//                        sdkClient.requestEeg();
                     }
                 });
             }

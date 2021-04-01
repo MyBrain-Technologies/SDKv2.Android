@@ -180,15 +180,25 @@ public class MbtManager {
     this.eegListener = streamConfig.getEegListener();
     this.deviceStatusListener = streamConfig.getDeviceStatusListener();
 
-    for (DeviceCommand command : streamConfig.getDeviceCommands()) {
-      sendCommand(command);
+    if (Indus5FastMode.INSTANCE.isEnabled()) {
+      MbtEventBus.postEvent(
+              new StreamRequestEvent(START,
+                      streamConfig.getRecordConfig() != null,
+                      streamConfig.shouldComputeQualities(),
+                      (deviceStatusListener != null),
+                      streamConfig.getRecordConfig()));
+    } else {
+      for (DeviceCommand command : streamConfig.getDeviceCommands()) {
+        sendCommand(command);
+      }
+      MbtEventBus.postEvent(
+              new StreamRequestEvent(START,
+                      streamConfig.getRecordConfig() != null,
+                      streamConfig.shouldComputeQualities(),
+                      (deviceStatusListener != null),
+                      streamConfig.getRecordConfig()));
+
     }
-    MbtEventBus.postEvent(
-        new StreamRequestEvent(START,
-            streamConfig.getRecordConfig() != null,
-            streamConfig.shouldComputeQualities(),
-            (deviceStatusListener != null),
-            streamConfig.getRecordConfig()));
   }
 
   /**

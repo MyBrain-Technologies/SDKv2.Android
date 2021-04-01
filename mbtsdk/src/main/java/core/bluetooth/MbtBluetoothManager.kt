@@ -136,6 +136,8 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
 
           is CommandRequestEvent -> MbtDataBluetooth.instance.sendCommand(request.command)
 
+          is Indus5CommandRequest -> MbtDataBluetooth.instance.sendCommand(request.command)
+
           else -> isRequestProcessing = false
         }
       }

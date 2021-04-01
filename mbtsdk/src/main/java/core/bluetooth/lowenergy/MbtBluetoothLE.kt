@@ -5,10 +5,8 @@ import android.bluetooth.*
 import android.bluetooth.le.*
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.os.Build
 import android.os.Handler
-import android.os.ParcelUuid
 import android.util.Log
 import command.BluetoothCommands.Mtu
 import command.CommandInterface.MbtCommand
@@ -19,12 +17,14 @@ import command.DeviceCommandEvent.Companion.CMD_CODE_CONNECT_IN_A2DP_SUCCESS
 import command.DeviceCommandEvent.MBX_CONNECT_IN_A2DP
 import command.OADCommands.TransferPacket
 import config.MbtConfig
+import core.Indus5FastMode
 import core.bluetooth.BluetoothInterfaces.IDeviceInfoMonitor
 import core.bluetooth.BluetoothProtocol
 import core.bluetooth.BluetoothState
 import core.bluetooth.MbtBluetoothManager
 import core.bluetooth.MbtDataBluetooth.MainBluetooth
 import core.bluetooth.StreamState
+import core.bluetooth.requests.Indus5CommandRequest
 import core.device.DeviceEvents.RawDeviceMeasure
 import core.device.model.DeviceInfo
 import core.device.model.MelomindDevice
@@ -35,6 +35,7 @@ import engine.clientevents.ConnectionStateReceiver
 import eventbus.events.BluetoothResponseEvent
 import features.MbtFeatures
 import utils.*
+import java.lang.UnsupportedOperationException
 import java.util.*
 
 /** This class contains all required methods to interact with a LE bluetooth peripheral, such as Melomind.
@@ -201,15 +202,19 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
    */
   private fun switchStream(isStart: Boolean): Boolean {
     if (isStreaming == isStart) return true
-    if (!checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_EEG)) return false
-    try {
-      Thread.sleep(50) //Adding small sleep to "free" bluetooth
-    } catch (e: InterruptedException) {
-      e.printStackTrace()
+    if (Indus5FastMode.isEnabled()) {
+      return startIndus5Operation(EnumIndus5Command.MBX_START_EEG_ACQUISITION)
+    } else {
+      if (!checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_EEG)) return false
+      try {
+        Thread.sleep(50) //Adding small sleep to "free" bluetooth
+      } catch (e: InterruptedException) {
+        e.printStackTrace()
+      }
+      return enableOrDisableNotificationsOnCharacteristic(isStart,
+              gatt!!.getService(MelomindCharacteristics.SERVICE_MEASUREMENT)
+                      .getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG))
     }
-    return enableOrDisableNotificationsOnCharacteristic(isStart,
-        gatt!!.getService(MelomindCharacteristics.SERVICE_MEASUREMENT)
-            .getCharacteristic(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG))
   }
 
   /**  Whenever there is a new headset status received, this method is called to notify the bluetooth manager about it.
@@ -403,6 +408,18 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
     return true
   }
 
+  @Synchronized
+  fun startIndus5Operation(command: EnumIndus5Command): Boolean {
+    val char = mbtGattController.indus5TxCharacteristic
+    char?.let {
+      it.value = command.bytes
+      return gatt!!.writeCharacteristic(it)
+    } ?: kotlin.run {
+      LogUtils.e(TAG, "tx characteristic null")
+      return false
+    }
+  }
+
   /** Checks whether the service and characteristic about to be used to communicate with the remote device.
    * @param service the service to check
    * @param characteristic the characteristic to check
@@ -433,7 +450,11 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
   /** Initiates a read firmware version operation on this correct Protocol  */
   override fun readFwVersion(): Boolean {
     LogUtils.i(TAG, "read firmware version")
-    return startReadOperation(MelomindCharacteristics.CHARAC_INFO_FIRMWARE_VERSION)
+    return if (mbtGattController.isIndus5()) {
+      startIndus5Operation(EnumIndus5Command.MBX_GET_FIRMWARE_VERSION)
+    } else {
+      startReadOperation(MelomindCharacteristics.CHARAC_INFO_FIRMWARE_VERSION)
+    }
   }
 
   /** Initiates a read hardware version operation on this correct Protocol */
@@ -579,6 +600,31 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
   }
 
   fun sendRequestData(command: MbtCommand<*>): Boolean {
+    if (Indus5FastMode.isEnabled()) {
+      if (command is Indus5CommandRequest.Indus5ChangeMTU) {
+        val buffer = command.serialize() as ByteArray
+        return writeCharacteristic(
+                buffer = buffer,
+                service = MelomindCharacteristics.INDUS_5_TRANSPARENT_SERVICE,
+                characteristic = MelomindCharacteristics.INDUS_5_TX_CHARACTERISTIC,
+                enableNotification = false)
+      }
+
+      if (command is Indus5CommandRequest.Indus5StartStream) {
+        val buffer = EnumIndus5Command.MBX_START_EEG_ACQUISITION.bytes
+        return writeCharacteristic(
+                buffer = buffer,
+                service = MelomindCharacteristics.INDUS_5_TRANSPARENT_SERVICE,
+                characteristic = MelomindCharacteristics.INDUS_5_TX_CHARACTERISTIC,
+                enableNotification = false)
+      }
+
+      if (command is Mtu)
+        return changeMTU(command.serialize())
+
+      throw UnsupportedOperationException("Operation is not implemented yet!")
+    }
+
     if (command is Mtu)
       return changeMTU(command.serialize())
 
@@ -660,4 +706,8 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
     }
   }
 
+  fun onMtuIndus5Changed() {
+    manager.connecter.updateConnectionState(BluetoothState.INDUS5_MTU_ON_TX_CHANGED)
+    manager.connecter.switchToNextConnectionStep()
+  }
 }
