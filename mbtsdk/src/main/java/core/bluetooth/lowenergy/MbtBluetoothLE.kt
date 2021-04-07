@@ -18,12 +18,9 @@ import command.DeviceCommandEvent.MBX_CONNECT_IN_A2DP
 import command.OADCommands.TransferPacket
 import config.MbtConfig
 import core.Indus5FastMode
+import core.bluetooth.*
 import core.bluetooth.BluetoothInterfaces.IDeviceInfoMonitor
-import core.bluetooth.BluetoothProtocol
-import core.bluetooth.BluetoothState
-import core.bluetooth.MbtBluetoothManager
 import core.bluetooth.MbtDataBluetooth.MainBluetooth
-import core.bluetooth.StreamState
 import core.bluetooth.requests.Indus5CommandRequest
 import core.device.DeviceEvents.RawDeviceMeasure
 import core.device.model.DeviceInfo
@@ -34,6 +31,7 @@ import engine.clientevents.BluetoothError
 import engine.clientevents.ConnectionStateReceiver
 import eventbus.events.BluetoothResponseEvent
 import features.MbtFeatures
+import timber.log.Timber
 import utils.*
 import java.lang.UnsupportedOperationException
 import java.util.*
@@ -124,6 +122,7 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
       if (result.device.name != null && result.device.name.startsWith(melomindNamePrefix)) {
         AsyncUtils.executeAsync(Runnable {
           if (currentState == BluetoothState.SCAN_STARTED) {
+            LogUtils.e("ConnSteps", "5b : found device")
             manager.context.deviceNameRequested
             super.onScanResult(callbackType, result)
             currentDevice = result.device
@@ -513,8 +512,13 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
   }
 
   fun onStateConnected() {
-    if (currentState == BluetoothState.DATA_BT_CONNECTING || currentState == BluetoothState.SCAN_STARTED) updateConnectionState(true) //current state is set to DATA_BT_CONNECTION_SUCCESS and future is completed
-    else if (currentState == BluetoothState.IDLE || currentState == BluetoothState.UPGRADING) this.notifyConnectionStateChanged(BluetoothState.CONNECTED_AND_READY)
+    if (currentState == BluetoothState.DATA_BT_CONNECTING || currentState == BluetoothState.SCAN_STARTED) {
+      LogUtils.e("ConnSteps", "6d : updateConnectionState to switch to next step")
+      updateConnectionState(true) //current state is set to DATA_BT_CONNECTION_SUCCESS and future is completed
+    }
+    else if (currentState == BluetoothState.IDLE || currentState == BluetoothState.UPGRADING) {
+      this.notifyConnectionStateChanged(BluetoothState.CONNECTED_AND_READY)
+    }
   }
 
   /** Callback triggered by the [MbtGattController] callback when the connection state has changed.
@@ -647,7 +651,14 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
    */
   fun changeMTU(newMTU: Int): Boolean {
     LogUtils.i(TAG, "change mtu $newMTU")
-    return if (gatt == null) false else gatt!!.requestMtu(newMTU)
+    return if (gatt == null) {
+      false
+    } else {
+      Thread.sleep(10)
+      val ok = gatt!!.requestMtu(newMTU)
+      Timber.i("requestMtu ok = $ok")
+      ok
+    }
   }
 
   fun writeCharacteristic(buffer: ByteArray, service: UUID, characteristic: UUID, enableNotification: Boolean): Boolean {

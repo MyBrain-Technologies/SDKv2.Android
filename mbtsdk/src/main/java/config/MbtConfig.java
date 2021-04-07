@@ -19,7 +19,7 @@ public final class MbtConfig { //todo remove this class and stop using static va
      * so that the user can do what he wants with this new packets
      * (for example plot the values on a chart).
      */
-    private static int eegBufferLengthClientNotif = MbtFeatures.DEFAULT_EEG_PACKET_LENGTH; //number of MbtEEGPackets to store in the buffer before notifying the client
+    private static int notificationPeriod = MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS; //number of MbtEEGPackets to store in the buffer before notifying the client
 
     private static boolean batteryEventsLogsEnabled;
 
@@ -45,12 +45,17 @@ public final class MbtConfig { //todo remove this class and stop using static va
 
     private static String serverURL;
 
-    public static int getEegBufferLengthClientNotif(int sampRate) {
-        return eegBufferLengthClientNotif * sampRate /1000;
+    /**
+     * calculate EEG buffer length from sample rate base on notification period
+     * @param sampleRate
+     * @return
+     */
+    public static int getEegBufferLength(int sampleRate) {
+        return notificationPeriod / 1000 * sampleRate;
     }
 
-    public static void setEegBufferLengthClientNotif(int notificationPeriod) {
-        eegBufferLengthClientNotif = notificationPeriod;
+    public static void setNotificationPeriod(int notificationPeriod) {
+        MbtConfig.notificationPeriod = notificationPeriod;
     }
 
     public static boolean isBatteryEventsLogsEnabled() {
@@ -121,7 +126,7 @@ public final class MbtConfig { //todo remove this class and stop using static va
 
         private int samplePerNotification;
 
-        private int eegBufferLengthClientNotif;
+        private int notificationPeriod;
 
         private boolean batteryEventsLogsEnabled;
 
@@ -154,8 +159,8 @@ public final class MbtConfig { //todo remove this class and stop using static va
 
 
         @NonNull
-        public MbtConfigBuilder setEegBufferLengthNotification(final int eegBufferLengthNotification) {
-            this.eegBufferLengthClientNotif = eegBufferLengthNotification;
+        public MbtConfigBuilder setNotificationPeriod(final int period) {
+            this.notificationPeriod = period;
             return this;
         }
 
@@ -210,7 +215,7 @@ public final class MbtConfig { //todo remove this class and stop using static va
 
     private MbtConfig(final MbtConfigBuilder builder) {
         samplePerNotification = builder.samplePerNotification;
-        eegBufferLengthClientNotif = builder.eegBufferLengthClientNotif;
+        notificationPeriod = builder.notificationPeriod;
         batteryEventsLogsEnabled = builder.batteryEventsLogsEnabled;
         batteryReadPeriod = builder.batteryReadPeriod;
         offlineModeEnabled = builder.offlineModeEnabled;

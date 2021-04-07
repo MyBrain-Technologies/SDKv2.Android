@@ -30,6 +30,7 @@ import engine.clientevents.EegListener;
 import engine.clientevents.OADStateListener;
 import features.MbtFeatures;
 import features.MbtDeviceType;
+import utils.LogUtils;
 
 /**
  * Created by Etienne on 08/02/2018.
@@ -120,6 +121,7 @@ public final class MbtClient {
             return;
         }
 
+        LogUtils.e("ConnSteps", "2 : use MbtManager to connect");
         this.mbtManager.connectBluetooth(config.getConnectionStateListener(),config.connectAudio(), config.getDeviceName(), config.getDeviceQrCode(), config.getDeviceType(), config.getMtu());
     }
 
@@ -169,7 +171,7 @@ public final class MbtClient {
                 requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
                     @Override
                     public void onRequestComplete(MbtDevice device) {
-                        MbtConfig.setEegBufferLengthClientNotif(streamConfig.getNotificationPeriod());
+                        MbtConfig.setNotificationPeriod(streamConfig.getNotificationPeriod());
                     }
                 });
 

@@ -82,7 +82,9 @@ import engine.clientevents.DeviceStatusListener;
 import engine.clientevents.EegListener;
 import engine.clientevents.OADStateListener;
 import features.MbtDeviceType;
+import timber.log.Timber;
 import utils.AsyncUtils;
+import utils.LogUtils;
 import utils.MatrixUtils;
 
 public class MelomindActivity extends AppCompatActivity implements ConnectionStateListener<BaseError>, EegListener<BaseError>, DeviceBatteryListener<BaseError>, OADStateListener<BaseError>, DeviceStatusListener<BaseError> {
@@ -176,7 +178,7 @@ public class MelomindActivity extends AppCompatActivity implements ConnectionSta
     private mbtsdk.com.mybraintech.sdkv2.MelomindActivity.appliState mAppliState = mbtsdk.com.mybraintech.sdkv2.MelomindActivity.appliState.DISCONNECTED;
 
     Map<Integer, Integer> relativeChannelPositions;
-    private final int NB_CHANNEL = 2;
+    private final int NB_CHANNEL = 4;
     String[] channelName = new String[NB_CHANNEL];
     private String deviceName;
 
@@ -204,7 +206,11 @@ public class MelomindActivity extends AppCompatActivity implements ConnectionSta
             @Override
             public void run() {
                 //vpro.updateDeviceConfiguration(MBTConfig.locations, MBTConfig.references, MBTConfig.grounds);
-                MBTConfig.loadConfig("MM");
+                if (Indus5FastMode.INSTANCE.isEnabled()) {
+                    MBTConfig.loadConfig("Q+");
+                } else {
+                    MBTConfig.loadConfig("MM");
+                }
                 initChannelsNames();
 
                 if (!Indus5FastMode.INSTANCE.isEnabled()) {
@@ -274,7 +280,21 @@ public class MelomindActivity extends AppCompatActivity implements ConnectionSta
     }
 
     @Override
-    public void onNewPackets(final @NonNull MbtEEGPacket mbteegPackets) {
+    public void onNewPackets(final @NonNull MbtEEGPacket origin) {
+//        Timber.i("mbteegPackets getChannelsData rows = " + origin.getChannelsData().size());
+//        Timber.i("mbteegPackets getChannelsData columns = " + origin.getChannelsData().get(0).size());
+        MbtEEGPacket channels12 = new MbtEEGPacket();
+        channels12.setChannelsData(MelomindKotlinKt.toChannels12(origin.getChannelsData()));
+//        Timber.i("mbteegPackets getChannelsData 12 rows = " + channels12.getChannelsData().size());
+//        Timber.i("mbteegPackets getChannelsData 12 columns = " + channels12.getChannelsData().get(0).size());
+//        MbtEEGPacket channels34 = new MbtEEGPacket();
+//        channels34.setChannelsData(MelomindKotlinKt.toChannels34(origin.getChannelsData()));
+//        Timber.i("mbteegPackets getChannelsData 34 rows = " + channels34.getChannelsData().size());
+//        Timber.i("mbteegPackets getChannelsData 34 columns = " + channels34.getChannelsData().get(0).size());
+//
+        final MbtEEGPacket mbteegPackets = origin;
+        origin.setChannelsData(channels12.getChannelsData());
+
         if(isRecording){
             if(useAdvancedFeatures && timerSwitch.isChecked())
                 nbPacketsToRecord--;
@@ -729,13 +749,16 @@ public class MelomindActivity extends AppCompatActivity implements ConnectionSta
         connectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 setState(appliState.CONNECTING);
 
                 AsyncUtils.executeAsync(new Runnable() {
                     @Override
                     public void run() {
+                        LogUtils.e("ConnSteps", "1 : button clicked");
                         sdkClient.connectBluetooth(new ConnectionConfig.Builder(mbtsdk.com.mybraintech.sdkv2.MelomindActivity.this)
-                                .createForDevice(MbtDeviceType.MELOMIND));
+                                .createForDevice(MbtDeviceType.MELOMIND)
+                        );
 
                     }
                 });
@@ -1086,8 +1109,10 @@ public class MelomindActivity extends AppCompatActivity implements ConnectionSta
     }
 
     private void initChannelsNames() {
+        Timber.i("size = "+ MBTConfig.getLocationsInDisplayOrder().length);
         for(int i = 0; i < MBTConfig.getLocationsInDisplayOrder().length; i++){
-            channelName[i] =  MBTConfig.getLocationsInDisplayOrder()[i].toString();
+//            channelName[i] =  MBTConfig.getLocationsInDisplayOrder()[i].toString();
+            channelName[i] =  "ch"+i;
             //relativeChannelPositions.put(i,i);
         }
         if(cda != null)

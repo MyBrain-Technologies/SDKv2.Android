@@ -66,7 +66,7 @@ public final class MbtEEGManager extends BaseModuleManager {
     private static final int UNCHANGED_VALUE = -1;
     public static final int UNDEFINED_DURATION = -1;
 
-    private int sampRate = MbtFeatures.DEFAULT_SAMPLE_RATE;
+    private int sampleRate = MbtFeatures.DEFAULT_SAMPLE_RATE;
     private int packetLength = MbtFeatures.DEFAULT_EEG_PACKET_LENGTH;
 
 //    private int nbChannels = MbtFeatures.MELOMIND_NB_CHANNELS; //TODO: think how we can different basic melomind with Q+
@@ -95,7 +95,7 @@ public final class MbtEEGManager extends BaseModuleManager {
 
     int getNumberOfChannels() {
         if (Indus5FastMode.INSTANCE.isEnabled()) {
-            return 4; //in Q+ melomind, there is 4 channels
+            return MbtFeatures.MELOMIND_QPLUS_NB_CHANNELS; //in Q+ melomind, there is 4 channels
         } else {
             return MbtFeatures.MELOMIND_NB_CHANNELS;
         }
@@ -229,7 +229,7 @@ public final class MbtEEGManager extends BaseModuleManager {
             Arrays.fill(qualities, -1f);
             try{
                 if(protocol.equals(BluetoothProtocol.LOW_ENERGY)){
-                    qualities = MBTSignalQualityChecker.computeQualitiesForPacketNew(sampRate, packetLength, MatrixUtils.invertFloatMatrix(packet.getChannelsData()));
+                    qualities = MBTSignalQualityChecker.computeQualitiesForPacketNew(sampleRate, packetLength, MatrixUtils.invertFloatMatrix(packet.getChannelsData()));
 
                 }else if(protocol.equals(BluetoothProtocol.SPP)){
                     ArrayList<Float> qualitiesList = new ArrayList<>();
@@ -299,7 +299,7 @@ public final class MbtEEGManager extends BaseModuleManager {
      * Computes the calibration parameters
      */
     private HashMap<String, float[]> calibrate(MbtEEGPacket... packets) {
-        return MBTCalibrator.calibrateNew(sampRate, packetLength, ContextSP.smoothingDuration, packets);
+        return MBTCalibrator.calibrateNew(sampleRate, packetLength, ContextSP.smoothingDuration, packets);
     }
 
     /**
@@ -391,14 +391,14 @@ public final class MbtEEGManager extends BaseModuleManager {
     public void onConfigurationChanged(EEGConfigEvent configEEGEvent){
         MbtDevice.InternalConfig internalConfig = configEEGEvent.getConfig();
         LogUtils.d(TAG, "new config "+ internalConfig.toString());
-        sampRate = internalConfig.getSampRate();
+        sampleRate = internalConfig.getSampRate();
         packetLength = configEEGEvent.getDevice().getEegPacketLength();
 //        nbChannels = internalConfig.getNbChannels();
         resetBuffers(internalConfig.getNbPackets(), internalConfig.getStatusBytes(), internalConfig.getGainValue());
     }
 
-    public int getSampRate() {
-        return sampRate;
+    public int getSampleRate() {
+        return sampleRate;
     }
 
     @VisibleForTesting

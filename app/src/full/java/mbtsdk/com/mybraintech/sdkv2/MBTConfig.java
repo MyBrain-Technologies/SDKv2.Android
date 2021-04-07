@@ -189,6 +189,21 @@ public final class MBTConfig {
                 grounds = new MbtAcquisitionLocations[]{MbtAcquisitionLocations.M2};
                 break;
 
+            case "Q+":
+
+                locationsOrder = new MbtAcquisitionLocations[]{
+                        MbtAcquisitionLocations.P3,
+                        MbtAcquisitionLocations.P4,
+                        MbtAcquisitionLocations.F3,
+                        MbtAcquisitionLocations.F4,};
+                locations = new LinkedHashMap<>();
+                for (int order = 0; order < locationsOrder.length; order++){
+                    locations.put(order, locationsOrder[order]);
+                }
+                references = new MbtAcquisitionLocations[]{MbtAcquisitionLocations.M1};
+                grounds = new MbtAcquisitionLocations[]{MbtAcquisitionLocations.M2};
+                break;
+
         }
     }
 
