@@ -126,7 +126,7 @@ internal class MbtGattController(private val mbtBluetoothLE: MbtBluetoothLE) : B
     var isMelomindClassic = false
     for (service in gatt.services) {
       LogUtils.i(TAG, "Found Service with UUID -> " + service.uuid.toString())
-      if (service.uuid.equals(SERVICE_MEASUREMENT)) {
+      if (service.uuid.toString() == SERVICE_MEASUREMENT.toString()) {
         isMelomindClassic = true
         LogUtils.i(TAG, "indus 2/3 detected")
         mainService = gatt.getService(SERVICE_MEASUREMENT)

@@ -280,11 +280,11 @@ public class MelomindActivity extends AppCompatActivity implements ConnectionSta
     }
 
     @Override
-    public void onNewPackets(final @NonNull MbtEEGPacket origin) {
+    public void onNewPackets(final @NonNull MbtEEGPacket mbteegPackets) {
 //        Timber.i("mbteegPackets getChannelsData rows = " + origin.getChannelsData().size());
 //        Timber.i("mbteegPackets getChannelsData columns = " + origin.getChannelsData().get(0).size());
-        MbtEEGPacket channels12 = new MbtEEGPacket();
-        channels12.setChannelsData(MelomindKotlinKt.toChannels12(origin.getChannelsData()));
+//        MbtEEGPacket channels12 = new MbtEEGPacket();
+//        channels12.setChannelsData(MelomindKotlinKt.toChannels12(origin.getChannelsData()));
 //        Timber.i("mbteegPackets getChannelsData 12 rows = " + channels12.getChannelsData().size());
 //        Timber.i("mbteegPackets getChannelsData 12 columns = " + channels12.getChannelsData().get(0).size());
 //        MbtEEGPacket channels34 = new MbtEEGPacket();
@@ -292,8 +292,8 @@ public class MelomindActivity extends AppCompatActivity implements ConnectionSta
 //        Timber.i("mbteegPackets getChannelsData 34 rows = " + channels34.getChannelsData().size());
 //        Timber.i("mbteegPackets getChannelsData 34 columns = " + channels34.getChannelsData().get(0).size());
 //
-        final MbtEEGPacket mbteegPackets = origin;
-        origin.setChannelsData(channels12.getChannelsData());
+//        final MbtEEGPacket mbteegPackets = origin;
+//        origin.setChannelsData(channels12.getChannelsData());
 
         if(isRecording){
             if(useAdvancedFeatures && timerSwitch.isChecked())
