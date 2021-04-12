@@ -1178,6 +1178,10 @@ public class MelomindActivity extends AppCompatActivity implements ConnectionSta
         LineDataSet dataSetChan2 = new LineDataSet(new ArrayList<Entry>(250), "Channel 1");
         LineDataSet dataSetChan3 = new LineDataSet(new ArrayList<Entry>(250), "Channel 2");
 
+        //for indus5
+        LineDataSet dataSetChan4 = new LineDataSet(new ArrayList<Entry>(250), "Channel 3");
+        LineDataSet dataSetChan5 = new LineDataSet(new ArrayList<Entry>(250), "Channel 4");
+
         dataSetChan1.setLabel("STYM");
         dataSetChan1.setDrawValues(false);
         dataSetChan1.disableDashedLine();
@@ -1205,13 +1209,39 @@ public class MelomindActivity extends AppCompatActivity implements ConnectionSta
         dataSetChan3.setColor(Color.BLUE);
         dataSetChan3.setAxisDependency(YAxis.AxisDependency.LEFT);
 
+        if (Indus5FastMode.INSTANCE.isEnabled()) {
+            dataSetChan4.setLabel("Channel 3");
+            dataSetChan4.setDrawValues(false);
+            dataSetChan4.disableDashedLine();
+            dataSetChan4.setDrawCircleHole(false);
+            dataSetChan4.setDrawCircles(false);
+            dataSetChan4.setColor(Color.MAGENTA);
+            dataSetChan4.setAxisDependency(YAxis.AxisDependency.LEFT);
+
+            dataSetChan5.setLabel("Channel 4");
+            dataSetChan5.setDrawValues(false);
+            dataSetChan5.disableDashedLine();
+            dataSetChan5.setDrawCircleHole(false);
+            dataSetChan5.setDrawCircles(false);
+            dataSetChan5.setColor(Color.CYAN);
+            dataSetChan5.setAxisDependency(YAxis.AxisDependency.LEFT);
+        }
+
         // setting chart
+        if (Indus5FastMode.INSTANCE.isEnabled()) {
+            lineData.removeDataSet(4);
+            lineData.removeDataSet(3);
+        }
         lineData.removeDataSet(2);
         lineData.removeDataSet(1);
         lineData.removeDataSet(0);
         lineData.addDataSet(dataSetChan1);
         lineData.addDataSet(dataSetChan2);
         lineData.addDataSet(dataSetChan3);
+        if (Indus5FastMode.INSTANCE.isEnabled()) {
+            lineData.addDataSet(dataSetChan4);
+            lineData.addDataSet(dataSetChan5);
+        }
 
         lineChart.setData(lineData);
         // this.chart.setAutoScaleMinMaxEnabled(true);
@@ -1301,6 +1331,10 @@ public class MelomindActivity extends AppCompatActivity implements ConnectionSta
 
                         data.addEntry(new Entry(data.getDataSets().get(1).getEntryCount(), channelData.get(0).get(i).floatValue()*1000000), 1);
                         data.addEntry(new Entry(data.getDataSets().get(2).getEntryCount(), channelData.get(1).get(i).floatValue()*1000000), 2);
+                        if (Indus5FastMode.INSTANCE.isEnabled()) {
+                            data.addEntry(new Entry(data.getDataSets().get(3).getEntryCount(), channelData.get(0).get(i).floatValue()*1000000), 3);
+                            data.addEntry(new Entry(data.getDataSets().get(4).getEntryCount(), channelData.get(1).get(i).floatValue()*1000000), 4);
+                        }
                     }
                 }else{
                     throw new IllegalStateException("Channels do not have the same amount of data");
@@ -1336,6 +1370,10 @@ public class MelomindActivity extends AppCompatActivity implements ConnectionSta
                 data.getDataSets().get(0).clear();
             data.getDataSets().get(1).clear();
             data.getDataSets().get(2).clear();
+            if (Indus5FastMode.INSTANCE.isEnabled()) {
+                data.getDataSets().get(3).clear();
+                data.getDataSets().get(4).clear();
+            }
             if(channelData.size()<2){
                 throw new IllegalStateException("Incorrect matrix size, one or more channel are missing");
             }else{
@@ -1346,6 +1384,10 @@ public class MelomindActivity extends AppCompatActivity implements ConnectionSta
 
                         data.addEntry(new Entry(data.getDataSets().get(1).getEntryCount(), bufferedData.get(1).get(i).floatValue()*1000000), 1);
                         data.addEntry(new Entry(data.getDataSets().get(2).getEntryCount(), bufferedData.get(2).get(i).floatValue()*1000000), 2);
+                        if (Indus5FastMode.INSTANCE.isEnabled()) {
+                            data.addEntry(new Entry(data.getDataSets().get(3).getEntryCount(), bufferedData.get(3).get(i).floatValue()*1000000), 3);
+                            data.addEntry(new Entry(data.getDataSets().get(4).getEntryCount(), bufferedData.get(4).get(i).floatValue()*1000000), 4);
+                        }
                     }
                 }else{
                     throw new IllegalStateException("Channels do not have the same amount of data");
@@ -1358,6 +1400,10 @@ public class MelomindActivity extends AppCompatActivity implements ConnectionSta
 
                         data.addEntry(new Entry(data.getDataSets().get(1).getEntryCount(), channelData.get(0).get(i).floatValue()*1000000), 1);
                         data.addEntry(new Entry(data.getDataSets().get(2).getEntryCount(), channelData.get(1).get(i).floatValue()*1000000), 2);
+                        if (Indus5FastMode.INSTANCE.isEnabled()) {
+                            data.addEntry(new Entry(data.getDataSets().get(3).getEntryCount(), channelData.get(2).get(i).floatValue()*1000000), 3);
+                            data.addEntry(new Entry(data.getDataSets().get(4).getEntryCount(), channelData.get(3).get(i).floatValue()*1000000), 4);
+                        }
                     }
                 }else{
                     throw new IllegalStateException("Channels do not have the same amount of data");
