@@ -63,7 +63,6 @@ public class MbtDataAcquisition {
         if(data.length < getRawDataIndexSize(protocol))
             return;
 
-        LogUtils.i("n113", "handleDataAcquired");
         //1st step : check index
         final int currentIndex = (data[protocol == LOW_ENERGY ? 0 : 1] & 0xff) << 8 | (data[protocol == LOW_ENERGY ? 1 : 2] & 0xff); //index bytes are the 2 first bytes for BLE only
 

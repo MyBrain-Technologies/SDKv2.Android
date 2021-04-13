@@ -132,15 +132,21 @@ enum class BluetoothState {
    */
   DATA_BT_DISCONNECTED,  /// FROM THIS STATE, THE CONNECTION PROCESS IS CONSIDERED COMPLETED : THE FOLLOWING STATES ARE ERRORS THAT CAN OCCUR DURING A BLUETOOTH OPERATION
 
-  /**
-   * for indus5, after change mtu in gatt, we have to send a command to mailbox MBX_TRANSMIT_MTU_SIZE 0x29
-   */
-  INDUS5_CHANGING_MTU_ON_TX,
+  //----------------------------------------------------------------------------
+  // for indus5
+  //----------------------------------------------------------------------------
+  INDUS5_DISCOVERING_SUCCESS,
+
+  INDUS5_MTU_CHANGING_1,
+
+  INDUS5_MTU_CHANGED_1,
+
+  INDUS5_MTU_CHANGING_2,
 
   /**
    * indices that indus5 changed mtu by command successfully
    */
-  INDUS5_MTU_ON_TX_CHANGED,
+  INDUS5_MTU_CHANGED_2,
 
   /**
    * Bluetooth is available on device but not enabled (turned on).

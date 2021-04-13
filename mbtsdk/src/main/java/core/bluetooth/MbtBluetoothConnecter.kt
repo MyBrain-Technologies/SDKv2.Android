@@ -149,25 +149,29 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
         READING_HARDWARE_VERSION_SUCCESS -> startReadingDeviceInfo(SERIAL_NUMBER) // read next device info : third device info to read is serial number (device ID)
         READING_SERIAL_NUMBER_SUCCESS -> startReadingDeviceInfo(MODEL_NUMBER) // read next device info : fourth device info to read is model number
         READING_SUCCESS -> startBonding()
-        BONDED -> {
-          LogUtils.e("ConnSteps", "8a : bonded, change mtu")
+        BONDED -> changeMTU()
+        BT_PARAMETERS_CHANGED -> startSendingExternalName()
+        INDUS5_DISCOVERING_SUCCESS -> {
+          LogUtils.e("ConnSteps", "8a : change mtu")
           changeMTU()
         }
-        BT_PARAMETERS_CHANGED -> {
-          if (Indus5FastMode.isEnabled()) {
-            LogUtils.e("ConnSteps", "9a : supplement step to change mtu for indus5")
-            changeMtuWithIndus5Tx()
-          } else {
-            startSendingExternalName()
-          }
+        INDUS5_MTU_CHANGING_1 -> {
+          //no operation, mark immediately this step as done
+          manager.setRequestProcessing(false)
         }
-        INDUS5_MTU_ON_TX_CHANGED -> {
+        INDUS5_MTU_CHANGED_1 -> {
+          changeMtuInMailboxIndus5()
+        }
+        INDUS5_MTU_CHANGING_2 -> {
+          //no operation, mark immediately this step as done
+          manager.setRequestProcessing(false)
+        }
+        INDUS5_MTU_CHANGED_2 -> {
           LogUtils.e("ConnSteps", "10a : mtu indus5 changed ok, finish connection steps")
           //for indus5 : ends connection process here
           LogUtils.i(TAG, "INDUS5_MTU_ON_TX_CHANGED")
-          updateConnectionState(CONNECTED_AND_READY)
           manager.setRequestProcessing(false)
-          LogUtils.e("ConnSteps", "stop 171")
+          updateConnectionState(CONNECTED_AND_READY)
           notifyConnectionStateChanged(CONNECTED_AND_READY)
         }
         CONNECTED -> {
@@ -309,13 +313,9 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
               MbtConfig.getBluetoothDiscoverTimeout()
       )
 
-      if (MbtDataBluetooth.instance.currentState != DISCOVERING_SUCCESS) { ////at this point : current state should be DISCOVERING_SUCCESS if discovery succeeded
+      if ((MbtDataBluetooth.instance.currentState != DISCOVERING_SUCCESS)
+              && (MbtDataBluetooth.instance.currentState != INDUS5_DISCOVERING_SUCCESS)) { ////at this point : current state should be DISCOVERING_SUCCESS if discovery succeeded
         updateConnectionState(DISCOVERING_FAILURE)
-      }
-
-      //on indus5, there are no bonding yet, we consider that now we are bonded already
-      if (Indus5FastMode.isEnabled()) {
-        MbtDataBluetooth.instance.currentState = BONDED
       }
 
       switchToNextConnectionStep()
@@ -364,11 +364,11 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
 
   fun changeMTU() {
     Timber.e("changeMTU : parseRequest")
-    updateConnectionState(true) //current state is set to CHANGING_BT_PARAMETERS
+    updateConnectionState(false) //current state is set to CHANGING_BT_PARAMETERS (indus2) or INDUS5_CHANGING_MTU_1 (indus5)
     manager.parseRequest(CommandRequestEvent(BluetoothCommands.Mtu(manager.context.mtu)))
   }
 
-  fun changeMtuWithIndus5Tx() {
+  fun changeMtuInMailboxIndus5() {
     LogUtils.i(TAG, "changeMtuWithIndus5Tx")
     updateConnectionState(true)
     manager.parseRequest(Indus5CommandRequest(EnumIndus5Command.MBX_TRANSMIT_MTU_SIZE))

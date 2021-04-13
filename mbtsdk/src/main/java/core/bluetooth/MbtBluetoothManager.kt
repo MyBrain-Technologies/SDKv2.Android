@@ -208,7 +208,10 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
     MbtDataBluetooth.instance.notifyConnectionStateChanged(state)
   }
 
-  fun setRequestProcessing(isRequestProcessing: Boolean){ requestProcessor.isRequestProcessing = isRequestProcessing}
+  fun setRequestProcessing(isRequestProcessing: Boolean) {
+    Timber.i("someone set isRequestProcessing = $isRequestProcessing")
+    requestProcessor.isRequestProcessing = isRequestProcessing
+  }
   fun isOperationWaiting(): Boolean { return requestProcessor.isOperationWaiting() }
   fun isSwitchOperationWaiting(): Boolean { return requestProcessor.isSwitchOperationWaiting() }
 

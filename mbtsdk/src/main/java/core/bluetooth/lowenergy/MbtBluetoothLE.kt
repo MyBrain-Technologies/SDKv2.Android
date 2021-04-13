@@ -567,6 +567,15 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
     manager.connecter.updateConnectionState(newState) //do nothing if the current state is CONNECTED_AND_READY
   }
 
+  /**
+   * mark current state as finished and update the new state
+   * @param newState new current state
+   */
+  fun markCurrentStepAsCompletedAndUpdateConnectionState(newState: BluetoothState) {
+    manager.connecter.updateConnectionState(newState)
+    manager.stopWaitingOperation(isCancel = false)
+  }
+
   /** This method handle a single command in order to
    * reconfigure some headset or bluetooth streaming parameters
    * or get values stored by the headset
@@ -718,7 +727,6 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
   }
 
   fun onMtuIndus5Changed() {
-    manager.connecter.updateConnectionState(BluetoothState.INDUS5_MTU_ON_TX_CHANGED)
-    manager.connecter.switchToNextConnectionStep()
+    markCurrentStepAsCompletedAndUpdateConnectionState(BluetoothState.INDUS5_MTU_CHANGED_2)
   }
 }

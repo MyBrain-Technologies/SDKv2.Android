@@ -28,6 +28,7 @@ import timber.log.Timber
 import utils.BitUtils
 import utils.CommandUtils
 import utils.LogUtils
+import utils.MbtAsyncWaitOperation
 import java.util.*
 
 /**
@@ -166,7 +167,11 @@ internal class MbtGattController(private val mbtBluetoothLE: MbtBluetoothLE) : B
       mbtBluetoothLE.notifyConnectionStateChanged(BluetoothState.DISCOVERING_FAILURE)
     } else if (mbtBluetoothLE.currentState == BluetoothState.DISCOVERING_SERVICES) {
       LogUtils.e("ConnSteps", "7b : onServicesDiscovered + init ok")
-      mbtBluetoothLE.updateConnectionState(true) //current state is set to DISCOVERING_SUCCESS and future is completed
+      if (isIndus5()) {
+        mbtBluetoothLE.markCurrentStepAsCompletedAndUpdateConnectionState(BluetoothState.INDUS5_DISCOVERING_SUCCESS)
+      } else {
+        mbtBluetoothLE.updateConnectionState(true) //current state is set to DISCOVERING_SUCCESS and future is completed
+      }
     }
   }
 
@@ -194,17 +199,24 @@ internal class MbtGattController(private val mbtBluetoothLE: MbtBluetoothLE) : B
   private fun initIndus5(gatt: BluetoothGatt) {
     indus5TxCharacteristic = transparentService?.getCharacteristic(INDUS_5_TX_CHARACTERISTIC)
     indus5RxCharacteristic = transparentService?.getCharacteristic(INDUS_5_RX_CHARACTERISTIC)
-
-    Thread.sleep(10)
     val charNotified = gatt.setCharacteristicNotification(indus5RxCharacteristic, true)
     Timber.i("setCharacteristicNotification indus5 rx requested = $charNotified")
-
     val descriptor = indus5RxCharacteristic?.getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID)
+    FlagHelper.setRxDescriptorFlag(false)
+    FlagHelper.asyncWaitOperation = MbtAsyncWaitOperation<Boolean>()
     descriptor?.let {
       it.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-      Thread.sleep(10)
       val descriptionWritten = gatt.writeDescriptor(it)
       Timber.i("writeDescriptor rx requested = $descriptionWritten")
+    }
+    FlagHelper.asyncWaitOperation.waitOperationResult(100)
+    if (FlagHelper.isRxDescriptorOk()) {
+      Timber.i("subscribed RX successfully")
+    } else {
+      //init fail
+      Timber.e("subscribed RX fail")
+      indus5RxCharacteristic = null
+      indus5TxCharacteristic = null
     }
   }
 
@@ -258,20 +270,25 @@ internal class MbtGattController(private val mbtBluetoothLE: MbtBluetoothLE) : B
   override fun onCharacteristicWrite(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic, status: Int) {
     super.onCharacteristicWrite(gatt, characteristic, status)
     //Log.d(TAG, "on Characteristic Write value: "+(characteristic.getValue() == null ? characteristic.getValue() : Arrays.toString(characteristic.getValue())) );
-    mbtBluetoothLE.notifyEventReceived(DeviceCommandEvent.OTA_STATUS_TRANSFER, byteArrayOf(BitUtils.booleanToBit(status == BluetoothGatt.GATT_SUCCESS)))
+    if (isIndus5()) {
+
+    } else {
+      mbtBluetoothLE.notifyEventReceived(DeviceCommandEvent.OTA_STATUS_TRANSFER, byteArrayOf(BitUtils.booleanToBit(status == BluetoothGatt.GATT_SUCCESS)))
+    }
   }
 
   override fun onCharacteristicChanged(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
     super.onCharacteristicChanged(gatt, characteristic)
     //Log.d(TAG, "on Characteristic Changed value: "+(characteristic.getValue() == null ? characteristic.getValue() : Arrays.toString(characteristic.getValue())) );
     if (isIndus5()) {
-      LogUtils.i("n113", "onCharacteristicChanged : data = ${Arrays.toString(characteristic.value)}")
+//      LogUtils.i("n113", "onCharacteristicChanged : data = ${Arrays.toString(characteristic.value)}")
       //TODO: log and debug n113
       val response = characteristic.value.parseRawIndus5Response()
       when (response) {
         is Indus5Response.MtuChangedResponse -> {
           LogUtils.i("n113", "indus5 mtu changed : byte 2 = ${response.sampleSize}")
           mbtBluetoothLE.onMtuIndus5Changed()
+//          mbtBluetoothLE.stopWaitingOperation(false)
         }
         is Indus5Response.EegFrameResponse -> {
           LogUtils.i("n113", "indus5 eeg frame received: data = ${Arrays.toString(characteristic.value)}")
@@ -306,6 +323,10 @@ internal class MbtGattController(private val mbtBluetoothLE: MbtBluetoothLE) : B
     if (isIndus5()) {
         if (descriptor.uuid == indus5RxCharacteristic?.getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID)?.uuid) {
           Timber.i("onDescriptorWrite : status = $status")
+          if (status == 0) {
+            FlagHelper.setRxDescriptorFlag(true)
+            FlagHelper.asyncWaitOperation.stopWaitingOperation(true)
+          }
         }
     } else {
       LogUtils.i(TAG, "Received a [onDescriptorWrite] callback with status " + if (status == BluetoothGatt.GATT_SUCCESS) "SUCCESS" else "FAILURE")
