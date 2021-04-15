@@ -757,7 +757,7 @@ public class MelomindActivity extends AppCompatActivity implements ConnectionSta
                     public void run() {
                         LogUtils.e("ConnSteps", "1 : button clicked");
                         sdkClient.connectBluetooth(new ConnectionConfig.Builder(mbtsdk.com.mybraintech.sdkv2.MelomindActivity.this)
-                                .createForDevice(MbtDeviceType.MELOMIND)
+                                .createForDevice(MbtDeviceType.MELOMIND_Q_PLUS)
                         );
 
                     }
@@ -1110,7 +1110,7 @@ public class MelomindActivity extends AppCompatActivity implements ConnectionSta
 
     private void initChannelsNames() {
         Timber.i("size = "+ MBTConfig.getLocationsInDisplayOrder().length);
-        for(int i = 0; i < MBTConfig.getLocationsInDisplayOrder().length; i++){
+        for(int i = 0; i < 4; i++){
 //            channelName[i] =  MBTConfig.getLocationsInDisplayOrder()[i].toString();
             channelName[i] =  "ch"+i;
             //relativeChannelPositions.put(i,i);

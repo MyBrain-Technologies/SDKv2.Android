@@ -54,6 +54,7 @@ import eventbus.events.FirmwareUpdateClientEvent;
 import eventbus.events.SignalProcessingEvent;
 import features.MbtDeviceType;
 import features.MbtFeatures;
+import indus5.MbtClientIndus5;
 import mbtsdk.com.mybraintech.mbtsdk.R;
 import utils.LogUtils;
 
@@ -182,12 +183,7 @@ public class MbtManager {
     this.deviceStatusListener = streamConfig.getDeviceStatusListener();
 
     if (Indus5FastMode.INSTANCE.isEnabled()) {
-      MbtEventBus.postEvent(
-              new StreamRequestEvent(START,
-                      streamConfig.getRecordConfig() != null,
-                      streamConfig.shouldComputeQualities(),
-                      (deviceStatusListener != null),
-                      streamConfig.getRecordConfig()));
+      MbtClientIndus5.startStream(streamConfig);
     } else {
       for (DeviceCommand command : streamConfig.getDeviceCommands()) {
         sendCommand(command);

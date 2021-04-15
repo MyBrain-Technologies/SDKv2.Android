@@ -30,6 +30,7 @@ import engine.clientevents.EegListener;
 import engine.clientevents.OADStateListener;
 import features.MbtFeatures;
 import features.MbtDeviceType;
+import indus5.MbtClientIndus5;
 import utils.LogUtils;
 
 /**
@@ -40,6 +41,7 @@ import utils.LogUtils;
 public final class MbtClient {
 
     private static final String TAG = MbtClient.class.getName();
+    private static Context context;
 
     /**
      * The MbtManager is responsible for managing all the package managers
@@ -54,6 +56,9 @@ public final class MbtClient {
      * @return the initialized MbtClient instance to the application
      */
     public static MbtClient init(@NonNull Context context){
+        if (MbtClient.context == null) {
+            MbtClient.context = context;
+        }
         if(clientInstance == null) {
             clientInstance = new MbtClientBuilder()
                     .setContext(context)
@@ -95,6 +100,11 @@ public final class MbtClient {
      */
     @SuppressWarnings("unchecked")
     public void connectBluetooth(@NonNull ConnectionConfig config){
+        if (config.getDeviceType() == MbtDeviceType.MELOMIND_Q_PLUS) {
+            MbtClientIndus5.connectBluetooth(context, config);
+            return;
+        }
+
         MbtConfig.setBluetoothScanTimeout(config.getMaxScanDuration());
 
         if(!config.isDeviceNameValid(config.getDeviceType())) {
@@ -129,7 +139,11 @@ public final class MbtClient {
      * Call this method to attempt to disconnect from the currently connected bluetooth device.
      */
     public void disconnectBluetooth(){
-        this.mbtManager.disconnectBluetooth(false);
+        if (Indus5FastMode.INSTANCE.isEnabled()) {
+            MbtClientIndus5.disconnectBluetooth();
+        } else {
+            this.mbtManager.disconnectBluetooth(false);
+        }
     }
 
     /**
@@ -184,7 +198,11 @@ public final class MbtClient {
      * reset all internal buffering system.
      */
     public void stopStream(){
-        mbtManager.stopStream(null);
+        if (Indus5FastMode.INSTANCE.isEnabled()) {
+            MbtClientIndus5.stopStream();
+        } else {
+            mbtManager.stopStream(null);
+        }
     }
 
     /**

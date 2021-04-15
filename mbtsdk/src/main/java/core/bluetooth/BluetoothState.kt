@@ -137,6 +137,8 @@ enum class BluetoothState {
   //----------------------------------------------------------------------------
   INDUS5_DISCOVERING_SUCCESS,
 
+  INDUS5_TX5_SUBSCRIPTION,
+
   INDUS5_MTU_CHANGING_1,
 
   INDUS5_MTU_CHANGED_1,

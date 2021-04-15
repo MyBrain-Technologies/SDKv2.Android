@@ -32,5 +32,10 @@ enum class EnumIndus5Command(vararg val bytes: Byte) {
     MBX_SET_FILTER_CONFIG_TYPE (0x31),
     MBX_SET_ADS_CONFIG (0x32),
     MBX_START_IMS_ACQUISITION (0x33),
-    MBX_STOP_IMS_ACQUISITION (0x34);
+    MBX_STOP_IMS_ACQUISITION (0x34),
+
+    /**
+     * this is not a mailbox command
+     */
+    MBX_RX_SUBSCRIPTION ();
 }

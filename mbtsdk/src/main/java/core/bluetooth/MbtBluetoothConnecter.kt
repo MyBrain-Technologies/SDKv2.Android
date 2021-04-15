@@ -152,8 +152,8 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
         BONDED -> changeMTU()
         BT_PARAMETERS_CHANGED -> startSendingExternalName()
         INDUS5_DISCOVERING_SUCCESS -> {
-          LogUtils.e("ConnSteps", "8a : change mtu")
-          changeMTU()
+          LogUtils.e("ConnSteps", "subsribe")
+          subscribeIndus5Tx()
         }
         INDUS5_MTU_CHANGING_1 -> {
           //no operation, mark immediately this step as done
@@ -368,9 +368,16 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
     manager.parseRequest(CommandRequestEvent(BluetoothCommands.Mtu(manager.context.mtu)))
   }
 
+  fun subscribeIndus5Tx() {
+    Timber.i("subscribeIndus5Tx")
+    updateConnectionState(false)
+    manager.setRequestProcessing(false)
+    manager.parseRequest(Indus5CommandRequest(EnumIndus5Command.MBX_RX_SUBSCRIPTION))
+  }
+
   fun changeMtuInMailboxIndus5() {
     LogUtils.i(TAG, "changeMtuWithIndus5Tx")
-    updateConnectionState(true)
+    updateConnectionState(false)
     manager.parseRequest(Indus5CommandRequest(EnumIndus5Command.MBX_TRANSMIT_MTU_SIZE))
   }
 

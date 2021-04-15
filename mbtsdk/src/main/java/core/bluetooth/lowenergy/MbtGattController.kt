@@ -28,7 +28,6 @@ import timber.log.Timber
 import utils.BitUtils
 import utils.CommandUtils
 import utils.LogUtils
-import utils.MbtAsyncWaitOperation
 import java.util.*
 
 /**
@@ -199,25 +198,6 @@ internal class MbtGattController(private val mbtBluetoothLE: MbtBluetoothLE) : B
   private fun initIndus5(gatt: BluetoothGatt) {
     indus5TxCharacteristic = transparentService?.getCharacteristic(INDUS_5_TX_CHARACTERISTIC)
     indus5RxCharacteristic = transparentService?.getCharacteristic(INDUS_5_RX_CHARACTERISTIC)
-    val charNotified = gatt.setCharacteristicNotification(indus5RxCharacteristic, true)
-    Timber.i("setCharacteristicNotification indus5 rx requested = $charNotified")
-    val descriptor = indus5RxCharacteristic?.getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID)
-    FlagHelper.setRxDescriptorFlag(false)
-    FlagHelper.asyncWaitOperation = MbtAsyncWaitOperation<Boolean>()
-    descriptor?.let {
-      it.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-      val descriptionWritten = gatt.writeDescriptor(it)
-      Timber.i("writeDescriptor rx requested = $descriptionWritten")
-    }
-    FlagHelper.asyncWaitOperation.waitOperationResult(100)
-    if (FlagHelper.isRxDescriptorOk()) {
-      Timber.i("subscribed RX successfully")
-    } else {
-      //init fail
-      Timber.e("subscribed RX fail")
-      indus5RxCharacteristic = null
-      indus5TxCharacteristic = null
-    }
   }
 
   /**
@@ -318,15 +298,15 @@ internal class MbtGattController(private val mbtBluetoothLE: MbtBluetoothLE) : B
   }
 
   override fun onDescriptorWrite(gatt: BluetoothGatt, descriptor: BluetoothGattDescriptor, status: Int) {
+    Timber.i("onDescriptorWrite")
     super.onDescriptorWrite(gatt, descriptor, status)
     // Check for EEG Notification status
     if (isIndus5()) {
-        if (descriptor.uuid == indus5RxCharacteristic?.getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID)?.uuid) {
+        if (descriptor.uuid.toString() == gatt.getService(MelomindCharacteristics.INDUS_5_TRANSPARENT_SERVICE)
+                        .getCharacteristic(MelomindCharacteristics.INDUS_5_RX_CHARACTERISTIC)
+                        .getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID).uuid.toString()) {
           Timber.i("onDescriptorWrite : status = $status")
-          if (status == 0) {
-            FlagHelper.setRxDescriptorFlag(true)
-            FlagHelper.asyncWaitOperation.stopWaitingOperation(true)
-          }
+          mbtBluetoothLE.stopWaitingOperation(status == 0) //0 means successful
         }
     } else {
       LogUtils.i(TAG, "Received a [onDescriptorWrite] callback with status " + if (status == BluetoothGatt.GATT_SUCCESS) "SUCCESS" else "FAILURE")

@@ -6,7 +6,7 @@ import core.bluetooth.lowenergy.EnumIndus5Command
 import engine.clientevents.BaseError
 import java.lang.UnsupportedOperationException
 
-class Indus5CommandRequest(private val indus5Command: EnumIndus5Command) : BluetoothRequests() {
+class Indus5CommandRequest(indus5Command: EnumIndus5Command) : BluetoothRequests() {
 
     val command: CommandInterface.MbtCommand<BaseError> =
             when (indus5Command) {
@@ -16,8 +16,11 @@ class Indus5CommandRequest(private val indus5Command: EnumIndus5Command) : Bluet
                 EnumIndus5Command.MBX_START_EEG_ACQUISITION -> {
                     Indus5StartStream()
                 }
+                EnumIndus5Command.MBX_RX_SUBSCRIPTION -> {
+                    Indus5Subscription()
+                }
                 else -> {
-                    throw UnsupportedOperationException("only supported MBX_TRANSMIT_MTU_SIZE")
+                    throw UnsupportedOperationException("unknown request")
                 }
             }
 
@@ -37,6 +40,19 @@ class Indus5CommandRequest(private val indus5Command: EnumIndus5Command) : Bluet
     }
 
     class Indus5StartStream() : CommandInterface.MbtCommand<BaseError>() {
+
+        override fun serialize(): Any {
+            return "null"
+        }
+
+        override val isValid: Boolean
+            get() = true
+
+        override val invalidityError: String?
+            get() = null
+    }
+
+    class Indus5Subscription() : CommandInterface.MbtCommand<BaseError>() {
 
         override fun serialize(): Any {
             return "null"

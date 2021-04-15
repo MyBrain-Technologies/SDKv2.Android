@@ -15,6 +15,12 @@ fun ByteArray.parseRawIndus5Response() : Indus5Response {
             val data = this.copyOfRange(1, this.size)
             return Indus5Response.EegFrameResponse(data)
         }
+        if (this[0].compareTo(0x24) == 0) {
+            return Indus5Response.EegStartResponse()
+        }
+        if (this[0].compareTo(0x25) == 0) {
+            return Indus5Response.EegStopResponse()
+        }
     } catch (e: Exception) {
         LogUtils.e(e)
         return Indus5Response.UnknownResponse(this)

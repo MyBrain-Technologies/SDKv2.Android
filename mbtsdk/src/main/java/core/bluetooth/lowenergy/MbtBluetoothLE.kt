@@ -276,6 +276,26 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
     return (if (result == null || result !is Boolean) false else result)
   }
 
+  fun enableIndus5RxSubscription(gatt: BluetoothGatt): Boolean {
+    val transparentService = gatt.getService(MelomindCharacteristics.INDUS_5_TRANSPARENT_SERVICE)
+    val indus5TxCharacteristic = transparentService?.getCharacteristic(MelomindCharacteristics.INDUS_5_TX_CHARACTERISTIC)
+    val indus5RxCharacteristic = transparentService?.getCharacteristic(MelomindCharacteristics.INDUS_5_RX_CHARACTERISTIC)
+
+    Thread.sleep(10)
+    val charNotified = gatt.setCharacteristicNotification(indus5RxCharacteristic, true)
+    Timber.i("setCharacteristicNotification indus5 rx requested = $charNotified")
+
+    val descriptor = indus5RxCharacteristic?.getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID)
+    descriptor?.let { desc ->
+      Thread.sleep(10)
+      val requestSent = gatt.writeDescriptor(desc)
+      Timber.i("writeDescriptor rx requested = $requestSent")
+      return requestSent
+    } ?: kotlin.run {
+      return false
+    }
+  }
+
   /**
    * Reset Bluetooth
    */
@@ -632,8 +652,13 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
                 enableNotification = false)
       }
 
-      if (command is Mtu)
+      if (command is Mtu) {
         return changeMTU(command.serialize())
+      }
+
+      if (command is Indus5CommandRequest.Indus5Subscription) {
+        return enableIndus5RxSubscription(gatt!!)
+      }
 
       throw UnsupportedOperationException("Operation is not implemented yet!")
     }

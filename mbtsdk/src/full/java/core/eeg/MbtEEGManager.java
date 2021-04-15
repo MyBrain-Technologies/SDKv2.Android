@@ -75,7 +75,11 @@ public final class MbtEEGManager extends BaseModuleManager {
     private MbtDataBuffering dataBuffering;
     private ArrayList<ArrayList<Float>> consolidatedEEG;
 
-    private BluetoothProtocol protocol;
+    private BluetoothProtocol protocol = BluetoothProtocol.LOW_ENERGY; //TODO: for testing
+
+    public void setBluetoothProtocol(BluetoothProtocol protocol) {
+        this.protocol = protocol;
+    }
 
     private boolean hasQualities = false;
 
