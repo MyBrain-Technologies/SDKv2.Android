@@ -1,0 +1,621 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: MbtBluetoothConnecter</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">core.bluetooth</a> ]
+</div>
+
+<h1>Coverage Summary for Class: MbtBluetoothConnecter (core.bluetooth)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">MbtBluetoothConnecter</td>
+<td class="coverageStat">
+  <span class="percent">
+    41%
+  </span>
+  <span class="absValue">
+    (16/ 39)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    25%
+  </span>
+  <span class="absValue">
+    (54/ 216)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">MbtBluetoothConnecter$Companion</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (1/ 2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (1/ 2)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">MbtBluetoothConnecter$connectedDevice$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/ 2)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">MbtBluetoothConnecter$connectedDevice$1$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 2)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">MbtBluetoothConnecter$requestCurrentConnectedDevice$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (1/ 2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    25%
+  </span>
+  <span class="absValue">
+    (1/ 4)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">MbtBluetoothConnecter$WhenMappings</td>
+  </tr>
+<tr>
+  <td class="name"><strong>total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    42,2%
+  </span>
+  <span class="absValue">
+    (19/ 45)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    25,7%
+  </span>
+  <span class="absValue">
+    (58/ 226)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package core.bluetooth
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import android.Manifest
+<i>4</i>&nbsp;import android.bluetooth.BluetoothAdapter
+<i>5</i>&nbsp;import android.bluetooth.BluetoothDevice
+<i>6</i>&nbsp;import android.content.Context
+<i>7</i>&nbsp;import android.content.Intent
+<i>8</i>&nbsp;import android.os.Build
+<i>9</i>&nbsp;import android.util.Log
+<i>10</i>&nbsp;import command.BluetoothCommands
+<i>11</i>&nbsp;import command.DeviceCommands.ConnectAudio
+<i>12</i>&nbsp;import command.DeviceCommands.DisconnectAudio
+<i>13</i>&nbsp;import config.MbtConfig
+<i>14</i>&nbsp;import core.bluetooth.BluetoothProtocol.*
+<i>15</i>&nbsp;import core.bluetooth.BluetoothState.*
+<i>16</i>&nbsp;import core.bluetooth.lowenergy.MbtBluetoothLE
+<i>17</i>&nbsp;import core.bluetooth.requests.CommandRequestEvent
+<i>18</i>&nbsp;import core.bluetooth.requests.StartOrContinueConnectionRequestEvent
+<i>19</i>&nbsp;import core.device.DeviceEvents.GetDeviceEvent
+<i>20</i>&nbsp;import core.device.DeviceEvents.PostDeviceEvent
+<i>21</i>&nbsp;import core.device.model.DeviceInfo
+<i>22</i>&nbsp;import core.device.model.DeviceInfo.*
+<i>23</i>&nbsp;import core.device.model.MbtDevice
+<i>24</i>&nbsp;import engine.SimpleRequestCallback
+<i>25</i>&nbsp;import engine.clientevents.BaseError
+<i>26</i>&nbsp;import engine.clientevents.BaseErrorEvent
+<i>27</i>&nbsp;import engine.clientevents.ConnectionStateReceiver
+<i>28</i>&nbsp;import eventbus.MbtEventBus
+<i>29</i>&nbsp;import eventbus.events.ConnectionStateEvent
+<i>30</i>&nbsp;import org.greenrobot.eventbus.Subscribe
+<i>31</i>&nbsp;import utils.BroadcastUtils
+<i>32</i>&nbsp;import utils.LogUtils
+<i>33</i>&nbsp;import utils.MbtAsyncWaitOperation
+<i>34</i>&nbsp;import utils.VersionHelper
+<i>35</i>&nbsp;import java.util.concurrent.TimeoutException
+<i>36</i>&nbsp;
+<i>37</i>&nbsp;/**Created by Sophie on 02/06/2020.
+<i>38</i>&nbsp; * This class contains all necessary methods to manage the Bluetooth connection &amp; disconnection with the myBrain peripheral devices.*/
+<b class="fc"><i>39</i>&nbsp;class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : ConnectionStateReceiver() {</b>
+<i>40</i>&nbsp;  //----------------------------------------------------------------------------
+<i>41</i>&nbsp;  // Properties
+<i>42</i>&nbsp;  //----------------------------------------------------------------------------
+<b class="fc"><i>43</i>&nbsp;  companion object {</b>
+<b class="pc"><i>44</i>&nbsp;    val TAG = MbtBluetoothConnecter::class.java.simpleName</b>
+<i>45</i>&nbsp;    private const val MAX_CONNECTION_RETRY = 2
+<i>46</i>&nbsp;  }
+<i>47</i>&nbsp;  
+<b class="nc"><i>48</i>&nbsp;  var connectionRetryCounter = 0</b>
+<b class="nc"><i>49</i>&nbsp;  var isConnectionInterrupted = false</b>
+<b class="nc"><i>50</i>&nbsp;  var connectedDevice : MbtDevice? = null</b>
+<i>51</i>&nbsp;    get() {
+<b class="fc"><i>52</i>&nbsp;      if(field == null){</b>
+<b class="fc"><i>53</i>&nbsp;        val asyncWaitOperation = MbtAsyncWaitOperation&lt;MbtDevice&gt;()</b>
+<b class="fc"><i>54</i>&nbsp;        field = asyncWaitOperation.tryOperationForResult({</b>
+<b class="fc"><i>55</i>&nbsp;          requestCurrentConnectedDevice(SimpleRequestCallback { device -&gt;</b>
+<b class="nc"><i>56</i>&nbsp;            asyncWaitOperation.stopWaitingOperation(device)</b>
+<b class="nc"><i>57</i>&nbsp;          })</b>
+<b class="fc"><i>58</i>&nbsp;        }, null, null, 500)</b>
+<i>59</i>&nbsp;      }
+<b class="fc"><i>60</i>&nbsp;      return field</b>
+<i>61</i>&nbsp;    }
+<i>62</i>&nbsp;  
+<b class="fc"><i>63</i>&nbsp;  fun getBluetoothContext() : BluetoothContext {return manager.context}</b>
+<i>64</i>&nbsp;
+<i>65</i>&nbsp;  val isDataBluetoothConnected: Boolean
+<b class="fc"><i>66</i>&nbsp;    get() = MbtDataBluetooth.instance.isConnected</b>
+<i>67</i>&nbsp;
+<i>68</i>&nbsp;  /** Tells whether or not the end-user device is currently connected to the headset in A2DP.
+<i>69</i>&nbsp;   * @return `true` if connected, `false` otherwise */
+<i>70</i>&nbsp;  val isAudioBluetoothConnected: Boolean
+<b class="fc"><i>71</i>&nbsp;    get() = MbtAudioBluetooth.instance?.isConnected ?: false</b>
+<i>72</i>&nbsp;
+<i>73</i>&nbsp;  /** Tells whether or not the end-user device is currently connected to the headset both in Low Energy and A2DP.
+<i>74</i>&nbsp;   * @return `true` if connected, `false` otherwise*/
+<i>75</i>&nbsp;  val isConnected: Boolean
+<b class="nc"><i>76</i>&nbsp;    get() = (if (getBluetoothContext().connectAudio)</b>
+<b class="nc"><i>77</i>&nbsp;      (isDataBluetoothConnected &amp;&amp; isAudioBluetoothConnected)</b>
+<i>78</i>&nbsp;    else
+<b class="nc"><i>79</i>&nbsp;      isDataBluetoothConnected)</b>
+<i>80</i>&nbsp;
+<i>81</i>&nbsp;  /**  As the Bluetooth scan requires access to the mobile device Location,
+<i>82</i>&nbsp;   * the Bluetooth Manager must always check this prerequisite before starting any connection operation by calling the isLocationDisabledOrNotGranted() method.
+<i>83</i>&nbsp;   * @return true if a headset is already connected in BLE and Audio (if Audio has been enabled)
+<i>84</i>&nbsp;   * or if no headset is connected. */
+<i>85</i>&nbsp;  fun MbtDevice.isAlreadyConnectedToAnyDevice(): Boolean {
+<b class="nc"><i>86</i>&nbsp;    if (isConnected) {</b>
+<b class="nc"><i>87</i>&nbsp;      if (!isAlreadyConnectedToRequestedDevice(getBluetoothContext().deviceNameRequested)) {</b>
+<b class="nc"><i>88</i>&nbsp;        updateConnectionState(ANOTHER_DEVICE_CONNECTED)</b>
+<b class="nc"><i>89</i>&nbsp;      } else updateConnectionState(CONNECTED_AND_READY)</b>
+<b class="nc"><i>90</i>&nbsp;      return true</b>
+<i>91</i>&nbsp;    }
+<b class="nc"><i>92</i>&nbsp;    return false</b>
+<i>93</i>&nbsp;  }
+<i>94</i>&nbsp;  
+<i>95</i>&nbsp;  /** Return true if the user has requested connection with an already connected device, false otherwise */
+<i>96</i>&nbsp;  fun MbtDevice.isAlreadyConnectedToRequestedDevice(nameDeviceToConnect: String?): Boolean {
+<b class="nc"><i>97</i>&nbsp;    return (externalName != null) &amp;&amp; (externalName == nameDeviceToConnect)</b>
+<i>98</i>&nbsp;  }
+<i>99</i>&nbsp;  //----------------------------------------------------------------------------
+<i>100</i>&nbsp;  // SET UP
+<i>101</i>&nbsp;  //----------------------------------------------------------------------------
+<i>102</i>&nbsp;  init {
+<b class="fc"><i>103</i>&nbsp;    val context = getBluetoothContext().context</b>
+<b class="fc"><i>104</i>&nbsp;    BroadcastUtils.registerReceiverIntents(context, this, BluetoothAdapter.ACTION_STATE_CHANGED)</b>
+<b class="fc"><i>105</i>&nbsp;  }</b>
+<i>106</i>&nbsp;  //----------------------------------------------------------------------------
+<i>107</i>&nbsp;  // CONNECTION PROCESS METHODS
+<i>108</i>&nbsp;  //----------------------------------------------------------------------------
+<i>109</i>&nbsp;  /** This method do the following operations:
+<i>110</i>&nbsp;   * - 1) Check the prerequisites to ensure that the connection can be performed
+<i>111</i>&nbsp;   * - 2) Scan for [BluetoothDevice] filtering on deviceName. The scan is performed by LE scanner if the device is LE compatible. Otherwise, the discovery scan is performed instead.
+<i>112</i>&nbsp;   * - 3) Perform the BLE/SPP connection operation if scan resulted in a found device
+<i>113</i>&nbsp;   * - 4) Discovering services once the headset is connected.
+<i>114</i>&nbsp;   * - 5) Reading the device info (firmware version, hardware version, serial number, model number) once the services has been discovered
+<i>115</i>&nbsp;   * - 6) Bond the headset if the firmware version supports it (version &gt; 1.6.7)
+<i>116</i>&nbsp;   * - 7) Send the QR code number to the headset if it doesn&#39;t know its own value and if the firmware version supports it (version &gt; 1.7.1)
+<i>117</i>&nbsp;   * - 8) Connect audio in A2dp is the user requested it */
+<i>118</i>&nbsp;  fun startOrContinueConnectionOperation(isClientUserRequest: Boolean) {
+<b class="nc"><i>119</i>&nbsp;    if (isClientUserRequest) isConnectionInterrupted = false</b>
+<b class="nc"><i>120</i>&nbsp;    if (!isConnectionInterrupted) {</b>
+<b class="nc"><i>121</i>&nbsp;      val currentState = MbtDataBluetooth.instance.currentState</b>
+<i>122</i>&nbsp;
+<b class="nc"><i>123</i>&nbsp;      LogUtils.d(TAG, &quot;State is $currentState&quot;)</b>
+<b class="nc"><i>124</i>&nbsp;      when (currentState) {</b>
+<b class="nc"><i>125</i>&nbsp;        IDLE, DATA_BT_DISCONNECTED -&gt; getReadyForBluetoothOperation()</b>
+<b class="nc"><i>126</i>&nbsp;        READY_FOR_BLUETOOTH_OPERATION -&gt; startScan()</b>
+<b class="nc"><i>127</i>&nbsp;        DEVICE_FOUND, DATA_BT_CONNECTING -&gt; startConnectionForDataStreaming()</b>
+<b class="nc"><i>128</i>&nbsp;        DATA_BT_CONNECTION_SUCCESS -&gt; startDiscoveringServices()</b>
+<b class="nc"><i>129</i>&nbsp;        DISCOVERING_SUCCESS -&gt; startReadingDeviceInfo(FW_VERSION) // read all device info (except battery) : first device info to read is firmware version</b>
+<b class="nc"><i>130</i>&nbsp;        READING_FIRMWARE_VERSION_SUCCESS -&gt; startReadingDeviceInfo(HW_VERSION) // read next device info : second device info to read is hardware version</b>
+<b class="nc"><i>131</i>&nbsp;        READING_HARDWARE_VERSION_SUCCESS -&gt; startReadingDeviceInfo(SERIAL_NUMBER) // read next device info : third device info to read is serial number (device ID)</b>
+<b class="nc"><i>132</i>&nbsp;        READING_SERIAL_NUMBER_SUCCESS -&gt; startReadingDeviceInfo(MODEL_NUMBER) // read next device info : fourth device info to read is model number</b>
+<b class="nc"><i>133</i>&nbsp;        READING_SUCCESS -&gt; startBonding()</b>
+<b class="nc"><i>134</i>&nbsp;        BONDED -&gt; changeMTU()</b>
+<b class="nc"><i>135</i>&nbsp;        BT_PARAMETERS_CHANGED -&gt; startSendingExternalName()</b>
+<b class="nc"><i>136</i>&nbsp;        CONNECTED -&gt; startConnectionForAudioStreaming()</b>
+<b class="nc"><i>137</i>&nbsp;        else -&gt; manager.setRequestProcessing(false)</b>
+<b class="nc"><i>138</i>&nbsp;      }</b>
+<b class="nc"><i>139</i>&nbsp;    } else manager.setRequestProcessing(false)</b>
+<b class="nc"><i>140</i>&nbsp;  }</b>
+<i>141</i>&nbsp;
+<i>142</i>&nbsp;  fun switchToNextConnectionStep() {
+<b class="fc"><i>143</i>&nbsp;    manager.setRequestProcessing(false)</b>
+<b class="fc"><i>144</i>&nbsp;    val currentState = MbtDataBluetooth.instance.currentState</b>
+<b class="fc"><i>145</i>&nbsp;    if (!currentState.isAFailureState() &amp;&amp; !isConnectionInterrupted &amp;&amp; currentState != IDLE) {  //if nothing went wrong during the current step of the connection process, we continue the process</b>
+<b class="fc"><i>146</i>&nbsp;      manager.onNewBluetoothRequest(StartOrContinueConnectionRequestEvent(false, getBluetoothContext()))</b>
+<i>147</i>&nbsp;    }
+<b class="fc"><i>148</i>&nbsp;  }</b>
+<i>149</i>&nbsp;  
+<i>150</i>&nbsp;  /** Check the bluetooth prerequisites before starting any bluetooth operation.
+<i>151</i>&nbsp;   * The started Bluetooth connection process is stopped if the prerequisites are not valid. */
+<i>152</i>&nbsp;  fun getReadyForBluetoothOperation() {
+<b class="nc"><i>153</i>&nbsp;    connectionRetryCounter = 0</b>
+<i>154</i>&nbsp;    //Request sent to the BUS in order to get device from the device manager : the BUS should return a null object if it&#39;s the first connection, or return a non null object if the user requests connection whereas a headset is already connected
+<b class="nc"><i>155</i>&nbsp;    LogUtils.i(TAG, &quot;Checking Bluetooth Prerequisites and initialize&quot;)</b>
+<b class="nc"><i>156</i>&nbsp;    if (connectedDevice?.isAlreadyConnectedToAnyDevice() == true) // assert that headset is not already connected</b>
+<b class="nc"><i>157</i>&nbsp;      return</b>
+<b class="nc"><i>158</i>&nbsp;    val state = BluetoothInitializer().getBluetoothPrerequisitesState((getBluetoothContext())) //check that Bluetooth is on, Location is on, Location permission is granted</b>
+<i>159</i>&nbsp;
+<b class="nc"><i>160</i>&nbsp;    if (state != READY_FOR_BLUETOOTH_OPERATION) { //assert that Bluetooth is on, Location is on, Location permission is granted</b>
+<b class="nc"><i>161</i>&nbsp;      updateConnectionState(state)</b>
+<b class="nc"><i>162</i>&nbsp;      return</b>
+<i>163</i>&nbsp;    }
+<i>164</i>&nbsp;
+<b class="nc"><i>165</i>&nbsp;    if (MbtAudioBluetooth.instance is MbtBluetoothA2DP) (MbtAudioBluetooth.instance as MbtBluetoothA2DP).initA2dpProxy() //initialization to check if a Melomind is already connected in A2DP : as the next step is the scanning, the SDK is able to filter on the name of this device</b>
+<b class="nc"><i>166</i>&nbsp;    if (MbtDataBluetooth.instance.currentState == IDLE) updateConnectionState(false) //current state is set to READY_FOR_BLUETOOTH_OPERATION</b>
+<b class="nc"><i>167</i>&nbsp;    switchToNextConnectionStep()</b>
+<b class="nc"><i>168</i>&nbsp;  }</b>
+<i>169</i>&nbsp;
+<i>170</i>&nbsp;  /** This method starts a bluetooth scan operation, loooking for a single device by filtering on its name.
+<i>171</i>&nbsp;   * This method is asynchronous.
+<i>172</i>&nbsp;   * If the device to scan is a Melomind, the bluetooth LE scanner is invoked.
+<i>173</i>&nbsp;   * Otherwise, the classic discovery scan is invoked.
+<i>174</i>&nbsp;   * Requires [Manifest.permission.ACCESS_FINE_LOCATION] or [Manifest.permission.ACCESS_COARSE_LOCATION] permission if a GPS sensor is available.
+<i>175</i>&nbsp;   * If permissions are not given and/or bluetooth device is not Le compatible, discovery scan is started.
+<i>176</i>&nbsp;   * The started Bluetooth connection process is stopped if the prerequisites are not valid. */
+<i>177</i>&nbsp;  fun startScan() {
+<b class="nc"><i>178</i>&nbsp;    var newState: BluetoothState = SCAN_FAILURE</b>
+<b class="nc"><i>179</i>&nbsp;    manager.tryOperation({ MbtDataBluetooth.instance.startScan() },</b>
+<b class="nc"><i>180</i>&nbsp;        BaseErrorEvent { exception, _ -&gt;</b>
+<i>181</i>&nbsp;          if (exception is TimeoutException) newState = SCAN_TIMEOUT
+<i>182</i>&nbsp;        },//stop the current Bluetooth connection process
+<b class="nc"><i>183</i>&nbsp;        { MbtDataBluetooth.instance.stopScan() },</b>
+<b class="nc"><i>184</i>&nbsp;        MbtConfig.getBluetoothScanTimeout())</b>
+<i>185</i>&nbsp;
+<b class="nc"><i>186</i>&nbsp;    if (MbtDataBluetooth.instance.currentState == SCAN_STARTED) ////at this point : current state should be DEVICE_FOUND if scan succeeded</b>
+<b class="nc"><i>187</i>&nbsp;      updateConnectionState(newState) //scan failure or timeout</b>
+<b class="nc"><i>188</i>&nbsp;    switchToNextConnectionStep()</b>
+<b class="nc"><i>189</i>&nbsp;  }</b>
+<i>190</i>&nbsp;
+<i>191</i>&nbsp;  /** This connection step is the BLE (Melomind) /SPP (Vpro) connection to the found device
+<i>192</i>&nbsp;   * It allows communication between the headset device and the SDK for data streaming (EEG, battery level, etc.)  */
+<i>193</i>&nbsp;  fun startConnectionForDataStreaming() {
+<b class="nc"><i>194</i>&nbsp;    LogUtils.i(TAG, &quot;start connection data streaming&quot;)</b>
+<b class="nc"><i>195</i>&nbsp;    manager.tryOperation({ connect(getBluetoothContext().deviceTypeRequested.protocol) },</b>
+<b class="nc"><i>196</i>&nbsp;        MbtConfig.getBluetoothConnectionTimeout())</b>
+<i>197</i>&nbsp;
+<b class="nc"><i>198</i>&nbsp;    if (MbtDataBluetooth.instance.currentState.notEquals(CONNECTED_AND_READY, DATA_BT_CONNECTION_SUCCESS, IDLE)) updateConnectionState(CONNECTION_FAILURE)</b>
+<b class="nc"><i>199</i>&nbsp;    switchToNextConnectionStep()</b>
+<b class="nc"><i>200</i>&nbsp;  }</b>
+<i>201</i>&nbsp;
+<i>202</i>&nbsp;  fun connect(protocol: BluetoothProtocol) {
+<b class="nc"><i>203</i>&nbsp;    isConnectionInterrupted = false // resetting the flag when starting a new connection</b>
+<b class="nc"><i>204</i>&nbsp;    val context = getBluetoothContext().context</b>
+<b class="nc"><i>205</i>&nbsp;    val currentDevice = MbtDataBluetooth.instance.currentDevice</b>
+<b class="nc"><i>206</i>&nbsp;    val isConnectionSuccessful = currentDevice != null &amp;&amp; when (protocol) {</b>
+<b class="nc"><i>207</i>&nbsp;      LOW_ENERGY, SPP -&gt; MbtDataBluetooth.instance.connect(context, currentDevice)</b>
+<b class="nc"><i>208</i>&nbsp;      A2DP -&gt; MbtAudioBluetooth.instance?.connect(context, currentDevice) ?: false</b>
+<i>209</i>&nbsp;    }
+<b class="nc"><i>210</i>&nbsp;    if (isConnectionSuccessful) {</b>
+<b class="nc"><i>211</i>&nbsp;      if (protocol == A2DP) {</b>
+<b class="nc"><i>212</i>&nbsp;        if (isAudioBluetoothConnected) manager.stopWaitingOperation(false)</b>
+<b class="nc"><i>213</i>&nbsp;      } else updateConnectionState(isDataBluetoothConnected)</b>
+<i>214</i>&nbsp;    }
+<b class="nc"><i>215</i>&nbsp;  }</b>
+<i>216</i>&nbsp;
+<i>217</i>&nbsp;  /** Starts a Low Energy connection process if a Melomind is connected for Audio Streaming in A2DP.*/
+<i>218</i>&nbsp;  fun connectBLEFromA2DP(newDeviceBleName: String) {
+<b class="nc"><i>219</i>&nbsp;    LogUtils.i(TAG, &quot;connect BLE from a2dp &quot;)</b>
+<b class="nc"><i>220</i>&nbsp;    if (isAudioBluetoothConnected) {</b>
+<b class="nc"><i>221</i>&nbsp;      val currentStateBeforeDisconnection = MbtDataBluetooth.instance.currentState</b>
+<b class="nc"><i>222</i>&nbsp;      if (MbtDataBluetooth.instance.isConnected</b>
+<b class="nc"><i>223</i>&nbsp;          &amp;&amp; !MbtDataBluetooth.instance.isCurrentDeviceNameEqual(newDeviceBleName)) { //Disconnecting another melomind if already one connected in BLE</b>
+<b class="nc"><i>224</i>&nbsp;        MbtDataBluetooth.instance.disconnect()</b>
+<i>225</i>&nbsp;      }
+<b class="nc"><i>226</i>&nbsp;      getBluetoothContext().deviceNameRequested = newDeviceBleName</b>
+<b class="nc"><i>227</i>&nbsp;      if (currentStateBeforeDisconnection != IDLE) {</b>
+<b class="nc"><i>228</i>&nbsp;        manager.startSwitchWaitingOperation(8000)</b>
+<b class="nc"><i>229</i>&nbsp;        manager.notifyEvent(StartOrContinueConnectionRequestEvent(false, getBluetoothContext())) //current state should be IDLE</b>
+<i>230</i>&nbsp;      }
+<i>231</i>&nbsp;    }
+<b class="nc"><i>232</i>&nbsp;  }</b>
+<i>233</i>&nbsp;
+<i>234</i>&nbsp;  /**  Once a device is connected in Bluetooth Low Energy / SPP for data streaming, we consider that the Bluetooth connection process is not fully completed.
+<i>235</i>&nbsp;   * The services offered by a remote device as well as their characteristics and descriptors are discovered to ensure that Data Streaming can be performed.
+<i>236</i>&nbsp;   * It means that the Bluetooth Manager retrieve all the services, which can be seen as categories of data that the headset is transmitting
+<i>237</i>&nbsp;   * This is an asynchronous operation.
+<i>238</i>&nbsp;   * Once service discovery is completed, the BluetoothGattCallback.onServicesDiscovered callback is triggered.
+<i>239</i>&nbsp;   * If the discovery was successful, the remote services can be retrieved using the getServices function */
+<i>240</i>&nbsp;  fun startDiscoveringServices() {
+<b class="nc"><i>241</i>&nbsp;    if (MbtDataBluetooth.instance !is MbtBluetoothLE) {</b>
+<b class="nc"><i>242</i>&nbsp;      return</b>
+<i>243</i>&nbsp;    }
+<b class="nc"><i>244</i>&nbsp;    LogUtils.i(TAG, &quot;start discovering services &quot;)</b>
+<b class="nc"><i>245</i>&nbsp;    if (MbtDataBluetooth.instance.currentState.ordinal &gt;= DATA_BT_CONNECTION_SUCCESS.ordinal) { //if connection is in progress and BLE is at least connected, we can discover services</b>
+<b class="nc"><i>246</i>&nbsp;      manager.tryOperation({ (MbtDataBluetooth.instance as MbtBluetoothLE).discoverServices() },</b>
+<b class="nc"><i>247</i>&nbsp;          MbtConfig.getBluetoothDiscoverTimeout()</b>
+<i>248</i>&nbsp;      )
+<i>249</i>&nbsp;
+<b class="nc"><i>250</i>&nbsp;      if (MbtDataBluetooth.instance.currentState != DISCOVERING_SUCCESS) { ////at this point : current state should be DISCOVERING_SUCCESS if discovery succeeded</b>
+<b class="nc"><i>251</i>&nbsp;        updateConnectionState(DISCOVERING_FAILURE)</b>
+<i>252</i>&nbsp;      }
+<b class="nc"><i>253</i>&nbsp;      switchToNextConnectionStep()</b>
+<i>254</i>&nbsp;    }
+<b class="nc"><i>255</i>&nbsp;  }</b>
+<i>256</i>&nbsp;
+<i>257</i>&nbsp;  fun startReadingDeviceInfo(deviceInfo: DeviceInfo) {
+<b class="nc"><i>258</i>&nbsp;    updateConnectionState(false) //current state is set to READING_FIRMWARE_VERSION or READING_HARDWARE_VERSION or READING_SERIAL_NUMBER or READING_MODEL_NUMBER</b>
+<b class="nc"><i>259</i>&nbsp;    val state = manager.reader.startReadingDeviceInfo(deviceInfo)</b>
+<b class="nc"><i>260</i>&nbsp;    if (state != MbtDataBluetooth.instance.currentState) {</b>
+<b class="nc"><i>261</i>&nbsp;      updateConnectionState(READING_FAILURE)//at this point : current state should be READING...SUCCESS if a read result has been returned</b>
+<i>262</i>&nbsp;    }
+<b class="nc"><i>263</i>&nbsp;    switchToNextConnectionStep()</b>
+<b class="nc"><i>264</i>&nbsp;  }</b>
+<i>265</i>&nbsp;
+<i>266</i>&nbsp;    fun startBonding() {
+<b class="nc"><i>267</i>&nbsp;    if (MbtDataBluetooth.instance !is MbtBluetoothLE) {</b>
+<b class="nc"><i>268</i>&nbsp;      return</b>
+<i>269</i>&nbsp;    }
+<b class="nc"><i>270</i>&nbsp;    val isBondingSupported = VersionHelper(connectedDevice?.firmwareVersion.toString()).isValidForFeature(VersionHelper.Feature.BLE_BONDING)</b>
+<b class="nc"><i>271</i>&nbsp;    LogUtils.i(TAG, &quot;start bonding if supported $isBondingSupported&quot;)</b>
+<i>272</i>&nbsp;
+<b class="nc"><i>273</i>&nbsp;    if (isBondingSupported) { //if firmware version bonding is higher than 1.6.7, the bonding is launched</b>
+<b class="nc"><i>274</i>&nbsp;      manager.tryOperation({</b>
+<i>275</i>&nbsp;        if (MbtDataBluetooth.instance.currentState == BONDING) {
+<i>276</i>&nbsp;          return@tryOperation
+<i>277</i>&nbsp;        }//avoid double bond if several requestCurrentConnectedDevice are called at the same moment
+<i>278</i>&nbsp;        (MbtDataBluetooth.instance as MbtBluetoothLE).bond()
+<i>279</i>&nbsp;      },
+<b class="nc"><i>280</i>&nbsp;          MbtConfig.getBluetoothBondingTimeout()</b>
+<i>281</i>&nbsp;      )
+<b class="nc"><i>282</i>&nbsp;      sleep(500)</b>
+<b class="nc"><i>283</i>&nbsp;      if ((MbtDataBluetooth.instance.currentState == BONDING)) { //at this point : current state should be BONDED if bonding succeeded</b>
+<b class="nc"><i>284</i>&nbsp;        updateConnectionState(BONDING_FAILURE)</b>
+<i>285</i>&nbsp;      }
+<b class="nc"><i>286</i>&nbsp;      sleep(1000)</b>
+<i>287</i>&nbsp;    } else  //if firmware version bonding is older than 1.6.7, the connection process is considered completed
+<b class="nc"><i>288</i>&nbsp;      updateConnectionState(CONNECTED)</b>
+<i>289</i>&nbsp;
+<b class="nc"><i>290</i>&nbsp;    switchToNextConnectionStep()</b>
+<b class="nc"><i>291</i>&nbsp;  }</b>
+<i>292</i>&nbsp;
+<i>293</i>&nbsp;  fun changeMTU() {
+<b class="nc"><i>294</i>&nbsp;    updateConnectionState(true) //current state is set to CHANGING_BT_PARAMETERS</b>
+<b class="nc"><i>295</i>&nbsp;    manager.parseRequest(CommandRequestEvent(BluetoothCommands.Mtu(manager.context.mtu)))</b>
+<b class="nc"><i>296</i>&nbsp;  }</b>
+<i>297</i>&nbsp;
+<i>298</i>&nbsp;  fun startSendingExternalName(){
+<b class="nc"><i>299</i>&nbsp;    updateConnectionState(true) //current state is set to QR_CODE_SENDING</b>
+<b class="nc"><i>300</i>&nbsp;    connectedDevice?.let { manager.writer.startSendingExternalName(it) }</b>
+<b class="nc"><i>301</i>&nbsp;    updateConnectionState(true) //current state is set to CONNECTED in any case (success or failure) the connection process is completed and the SDK consider that everything is ready for any operation (for example ready to acquire EEG data)</b>
+<b class="nc"><i>302</i>&nbsp;    switchToNextConnectionStep()</b>
+<b class="nc"><i>303</i>&nbsp;  }</b>
+<i>304</i>&nbsp;
+<i>305</i>&nbsp;  fun startConnectionForAudioStreaming() {
+<b class="nc"><i>306</i>&nbsp;    if (getBluetoothContext().connectAudio &amp;&amp; !isAudioBluetoothConnected) {</b>
+<b class="nc"><i>307</i>&nbsp;      LogUtils.i(TAG, &quot;start connection audio streaming with $connectedDevice&quot;)</b>
+<b class="nc"><i>308</i>&nbsp;      if (connectedDevice == null) return</b>
+<b class="nc"><i>309</i>&nbsp;      val connectionFromBleAvailable = VersionHelper(connectedDevice?.firmwareVersion.toString()).isValidForFeature(VersionHelper.Feature.A2DP_FROM_HEADSET)</b>
+<b class="nc"><i>310</i>&nbsp;      manager.tryOperation({</b>
+<i>311</i>&nbsp;        if (connectionFromBleAvailable) { //A2DP cannot be connected from BLE if BLE connection state is not CONNECTED_AND_READY or CONNECTED
+<i>312</i>&nbsp;          MbtDataBluetooth.instance.sendCommand(ConnectAudio())  // if connectA2DPFromBLE failed or is not supported by the headset firmware version
+<i>313</i>&nbsp;        } else {
+<i>314</i>&nbsp;          if (Build.VERSION.SDK_INT &lt; Build.VERSION_CODES.P || (MbtAudioBluetooth.instance as MbtBluetoothA2DP?)?.isPairedDevice(MbtDataBluetooth.instance.currentDevice) == true) {
+<i>315</i>&nbsp;            connect(A2DP)
+<i>316</i>&nbsp;          } else {
+<i>317</i>&nbsp;            notifyConnectionStateChanged(AUDIO_CONNECTION_UNSUPPORTED)
+<i>318</i>&nbsp;          }
+<i>319</i>&nbsp;        }
+<b class="nc"><i>320</i>&nbsp;      }, MbtConfig.getBluetoothA2DpConnectionTimeout())</b>
+<i>321</i>&nbsp;
+<b class="nc"><i>322</i>&nbsp;      if (MbtAudioBluetooth.instance?.isConnected == false) {</b>
+<b class="nc"><i>323</i>&nbsp;        retryConnectionForAudioStreaming()</b>
+<i>324</i>&nbsp;      }
+<i>325</i>&nbsp;    }
+<b class="nc"><i>326</i>&nbsp;    if (isConnected) updateConnectionState(true) //BLE and audio (if SDK user requested it) are connected so the client is notified that the device is fully connected</b>
+<b class="nc"><i>327</i>&nbsp;    manager.setRequestProcessing(false)</b>
+<b class="nc"><i>328</i>&nbsp;    LogUtils.i(TAG, &quot;connection completed&quot;)</b>
+<b class="nc"><i>329</i>&nbsp;  }</b>
+<i>330</i>&nbsp;
+<i>331</i>&nbsp;  fun retryConnectionForAudioStreaming() {
+<b class="nc"><i>332</i>&nbsp;    if (connectionRetryCounter &lt; MAX_CONNECTION_RETRY) {</b>
+<b class="nc"><i>333</i>&nbsp;      connectionRetryCounter++</b>
+<b class="nc"><i>334</i>&nbsp;      sleep(200)</b>
+<b class="nc"><i>335</i>&nbsp;      startConnectionForAudioStreaming()</b>
+<i>336</i>&nbsp;    } else {
+<b class="nc"><i>337</i>&nbsp;      connectionRetryCounter = 0</b>
+<b class="nc"><i>338</i>&nbsp;      MbtAudioBluetooth.instance?.notifyConnectionStateChanged(CONNECTION_FAILURE) //at this point : current state should be AUDIO_CONNECTED if audio connection succeeded</b>
+<b class="nc"><i>339</i>&nbsp;      MbtDataBluetooth.instance.notifyConnectionStateChanged(CONNECTION_FAILURE)</b>
+<b class="nc"><i>340</i>&nbsp;    }</b>
+<b class="nc"><i>341</i>&nbsp;  }</b>
+<i>342</i>&nbsp;
+<i>343</i>&nbsp;    /** Start the disconnect operation on the currently connected bluetooth device according to the [BluetoothProtocol] currently used. */
+<i>344</i>&nbsp;  fun disconnect(protocol: BluetoothProtocol) {
+<b class="fc"><i>345</i>&nbsp;    if (isAudioBluetoothConnected || isDataBluetoothConnected || MbtDataBluetooth.instance.currentState.isConnectionInProgress()) {</b>
+<b class="nc"><i>346</i>&nbsp;      when (protocol) {</b>
+<b class="nc"><i>347</i>&nbsp;        LOW_ENERGY, SPP -&gt; MbtDataBluetooth.instance.disconnect()</b>
+<b class="nc"><i>348</i>&nbsp;        A2DP -&gt; MbtAudioBluetooth.instance?.disconnect()</b>
+<b class="fc"><i>349</i>&nbsp;      }</b>
+<i>350</i>&nbsp;    }
+<b class="fc"><i>351</i>&nbsp;    connectedDevice = null</b>
+<b class="fc"><i>352</i>&nbsp;  }</b>
+<i>353</i>&nbsp;
+<i>354</i>&nbsp;  fun disconnectAllBluetooth(disconnectAudioIfConnected: Boolean) {
+<b class="fc"><i>355</i>&nbsp;    LogUtils.i(TAG, &quot;Disconnect all bluetooth&quot;)</b>
+<b class="fc"><i>356</i>&nbsp;    if (isAudioBluetoothConnected &amp;&amp; disconnectAudioIfConnected) disconnect(A2DP)</b>
+<b class="fc"><i>357</i>&nbsp;    getBluetoothContext().deviceTypeRequested.protocol?.let { disconnect(it) }</b>
+<b class="fc"><i>358</i>&nbsp;  }</b>
+<i>359</i>&nbsp;
+<i>360</i>&nbsp;  fun disconnectA2DPFromBLE() {
+<b class="nc"><i>361</i>&nbsp;    LogUtils.i(TAG, &quot; disconnect A2dp from ble&quot;);</b>
+<b class="nc"><i>362</i>&nbsp;    if(isDataBluetoothConnected &amp;&amp; isAudioBluetoothConnected)</b>
+<b class="nc"><i>363</i>&nbsp;      MbtDataBluetooth.instance.sendCommand(DisconnectAudio())</b>
+<b class="nc"><i>364</i>&nbsp;  }</b>
+<i>365</i>&nbsp;
+<i>366</i>&nbsp;  /** Stops current pending connection according to its current [state][BluetoothState].
+<i>367</i>&nbsp;   * It can be either stop scan or connection process interruption  */
+<i>368</i>&nbsp;  fun cancelPendingConnection(isClientUserAbortion: Boolean) {
+<b class="fc"><i>369</i>&nbsp;    LogUtils.i(TAG, &quot;cancelling pending connection&quot;)</b>
+<b class="fc"><i>370</i>&nbsp;    manager.setRequestProcessing(false)</b>
+<b class="fc"><i>371</i>&nbsp;    disconnectAllBluetooth(!manager.isSwitchOperationWaiting())</b>
+<b class="fc"><i>372</i>&nbsp;    if (isClientUserAbortion) {</b>
+<b class="nc"><i>373</i>&nbsp;      isConnectionInterrupted = true</b>
+<b class="nc"><i>374</i>&nbsp;      updateConnectionState(CONNECTION_INTERRUPTED)</b>
+<i>375</i>&nbsp;    }
+<b class="fc"><i>376</i>&nbsp;    manager.stopWaitingOperation(null)</b>
+<b class="fc"><i>377</i>&nbsp;  }</b>
+<i>378</i>&nbsp;
+<i>379</i>&nbsp;  fun sleep(duration: Long) {
+<b class="nc"><i>380</i>&nbsp;    try { Thread.sleep(duration) } catch (e: InterruptedException) { }</b>
+<b class="nc"><i>381</i>&nbsp;  }</b>
+<i>382</i>&nbsp;
+<i>383</i>&nbsp;  fun requestCurrentConnectedDevice(callback: SimpleRequestCallback&lt;MbtDevice&gt;) {
+<b class="fc"><i>384</i>&nbsp;    MbtEventBus.postEvent(GetDeviceEvent(), object : MbtEventBus.Callback&lt;PostDeviceEvent&gt; {</b>
+<i>385</i>&nbsp;      @Subscribe // DO NOT DELETE THE SUBSCRIBE ANNOTATION
+<i>386</i>&nbsp;      override fun onEventCallback(event: PostDeviceEvent): Unit? {
+<b class="nc"><i>387</i>&nbsp;        MbtEventBus.registerOrUnregister(false, this)</b>
+<b class="nc"><i>388</i>&nbsp;        callback.onRequestComplete(event.device)</b>
+<b class="nc"><i>389</i>&nbsp;        return null</b>
+<i>390</i>&nbsp;      }
+<i>391</i>&nbsp;    })
+<b class="fc"><i>392</i>&nbsp;  }</b>
+<i>393</i>&nbsp;
+<i>394</i>&nbsp;  /**  This method is called from Bluetooth classes and is meant to post an event to the main manager
+<i>395</i>&nbsp;   * that contains the new [BluetoothState]
+<i>396</i>&nbsp;   * @param newState the new [BluetoothState] */
+<i>397</i>&nbsp;  fun notifyConnectionStateChanged(newState: BluetoothState) {
+<b class="fc"><i>398</i>&nbsp;    manager.setRequestProcessing(false)</b>
+<b class="fc"><i>399</i>&nbsp;    when (newState) {</b>
+<b class="fc"><i>400</i>&nbsp;      DATA_BT_DISCONNECTED -&gt; manager.notifyDataBluetoothDisconnected() //a disconnection occurred</b>
+<b class="nc"><i>401</i>&nbsp;      AUDIO_BT_DISCONNECTED -&gt; manager.notifyAudioBluetoothDisconnected()</b>
+<b class="fc"><i>402</i>&nbsp;      AUDIO_BT_CONNECTION_SUCCESS -&gt; manager.notifyAudioBluetoothConnected()</b>
+<b class="nc"><i>403</i>&nbsp;      JACK_CABLE_CONNECTED -&gt; manager.stopWaitingOperation(false)</b>
+<b class="fc"><i>404</i>&nbsp;      DEVICE_FOUND -&gt; manager.notifyDeviceFound()</b>
+<b class="fc"><i>405</i>&nbsp;    }</b>
+<b class="fc"><i>406</i>&nbsp;    manager.notifyEvent(ConnectionStateEvent(newState, connectedDevice))</b>
+<b class="fc"><i>407</i>&nbsp;  }</b>
+<i>408</i>&nbsp;
+<i>409</i>&nbsp;  /** Set the current bluetooth connection state to the value of the next step in chronological order (according to enum order)
+<i>410</i>&nbsp;   * and notify the bluetooth manager of this change.
+<i>411</i>&nbsp;   * This method should be called if no error occurred. */
+<i>412</i>&nbsp;  fun updateConnectionState(isCompleted: Boolean) {
+<b class="fc"><i>413</i>&nbsp;    val nextStep = MbtDataBluetooth.instance.currentState.getNextConnectionStep()</b>
+<b class="fc"><i>414</i>&nbsp;    if (!isConnectionInterrupted) updateConnectionState(if (nextStep != IDLE) nextStep else null)</b>
+<b class="fc"><i>415</i>&nbsp;    if (isCompleted) manager.stopWaitingOperation(false)</b>
+<b class="fc"><i>416</i>&nbsp;  }</b>
+<i>417</i>&nbsp;
+<i>418</i>&nbsp;  /**  Set the current bluetooth connection state to the value given in parameter
+<i>419</i>&nbsp;   * and notify the bluetooth manager of this change.
+<i>420</i>&nbsp;   * This method should be called :
+<i>421</i>&nbsp;   * - if something went wrong during the connection process
+<i>422</i>&nbsp;   * - or if the new state does not correspond to the state that follow the current state in chronological order ([BluetoothState] enum order)
+<i>423</i>&nbsp;   * The updateConnectionState(boolean) method with no parameter should be call if nothing went wrong and user wants to continue the connection process */
+<i>424</i>&nbsp;  fun updateConnectionState(state: BluetoothState?) {
+<b class="fc"><i>425</i>&nbsp;    if (state?.shouldBeNotified() == true) {</b>
+<b class="fc"><i>426</i>&nbsp;      manager.onConnectionStateChanged(state)</b>
+<i>427</i>&nbsp;    }
+<b class="fc"><i>428</i>&nbsp;  }</b>
+<i>429</i>&nbsp;
+<i>430</i>&nbsp;  fun BluetoothState.shouldBeNotified() : Boolean{
+<b class="fc"><i>431</i>&nbsp;    return (!isAudioState()</b>
+<b class="fc"><i>432</i>&nbsp;        &amp;&amp; getBluetoothContext().deviceTypeRequested != null</b>
+<b class="fc"><i>433</i>&nbsp;        &amp;&amp; (!isConnectionInterrupted || this == CONNECTION_INTERRUPTED))</b>
+<i>434</i>&nbsp;  }
+<i>435</i>&nbsp;
+<i>436</i>&nbsp;  //----------------------------------------------------------------------------
+<i>437</i>&nbsp;  // CALLBACKS
+<i>438</i>&nbsp;  //----------------------------------------------------------------------------
+<b class="nc"><i>439</i>&nbsp;  override fun onError(error: BaseError, additionalInfo: String) {}</b>
+<i>440</i>&nbsp;  override fun onReceive(context: Context, intent: Intent) {
+<b class="nc"><i>441</i>&nbsp;    val action = intent.action</b>
+<b class="nc"><i>442</i>&nbsp;    if (action != null) {</b>
+<b class="nc"><i>443</i>&nbsp;      val device = intent.getParcelableExtra&lt;BluetoothDevice&gt;(BluetoothDevice.EXTRA_DEVICE)</b>
+<b class="nc"><i>444</i>&nbsp;      Log.d(MbtBluetoothManager::class.simpleName, &quot; received intent &quot; + action + &quot; for device &quot; + (device?.name))</b>
+<b class="nc"><i>445</i>&nbsp;      if ((MbtAudioBluetooth.instance != null) &amp;&amp; getBluetoothContext().connectAudio &amp;&amp; (action == BluetoothAdapter.ACTION_STATE_CHANGED)) (MbtAudioBluetooth.instance as MbtBluetoothA2DP).resetA2dpProxy(intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1))</b>
+<i>446</i>&nbsp;    }
+<b class="nc"><i>447</i>&nbsp;  }</b>
+<i>448</i>&nbsp;
+<i>449</i>&nbsp;  fun onDeviceDisconnected(){
+<b class="fc"><i>450</i>&nbsp;    connectedDevice = null</b>
+<b class="fc"><i>451</i>&nbsp;  }</b>
+<i>452</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2020-06-10 10:26</div>
+</div>
+</body>
+</html>
