@@ -8,6 +8,8 @@ import androidx.annotation.Nullable;
 import org.apache.commons.lang.ArrayUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Locale;
 
 import utils.LogUtils;
 
@@ -82,8 +84,18 @@ public final class MBTSignalQualityChecker {
         while(qcCurrentState != QCStateMachine.IDLE);
 
         qcCurrentState = QCStateMachine.COMPUTING;
-        float[] res = nativeComputeQualityCheckerNew(MBTSignalProcessingUtils.channelsToMatrixFloat(channels), samprate, packetLength);
+        float[] res;
+        try {
+            res = nativeComputeQualityCheckerNew(MBTSignalProcessingUtils.channelsToMatrixFloat(channels), samprate, packetLength);
+        } catch (Exception e) {
+            e.printStackTrace();
+            LogUtils.e(TAG, e.getMessage());
+            res = new float[channels.size()];
+            Arrays.fill(res, -1f);
+        }
         qcCurrentState = QCStateMachine.IDLE;
+        LogUtils.v(TAG, String.format(Locale.getDefault(), "size of quality checker = %d", res.length));
+        LogUtils.v(TAG, String.format(Locale.getDefault(), "values = %s", Arrays.toString(res)));
         return res;
     }
 

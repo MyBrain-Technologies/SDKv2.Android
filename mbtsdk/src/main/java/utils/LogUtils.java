@@ -9,6 +9,10 @@ import mbtsdk.com.mybraintech.mbtsdk.BuildConfig;
 public final class LogUtils{
     private static boolean isLoggingEnabled = BuildConfig.DEBUG;
 
+    public static int v(String tag, String msg) {
+        return isLoggingEnabled ? Log.v(tag, msg) : 0;
+    }
+
     public static int d(String tag, String msg) {
         return isLoggingEnabled ? Log.d(tag, msg) : 0;
     }
