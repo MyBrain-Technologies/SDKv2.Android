@@ -89,6 +89,29 @@ class MelomindCharacteristics {
      * The UUID for the descriptor of a characteristic. It is the sasme for all characteristics
      */
     val NOTIFICATION_DESCRIPTOR_UUID : UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
+
+    /**
+     * INDUS 2/3 Bluetooth low energy implement one service with many characteristics
+     * that allow different operation at the same time (more details on Specification
+     * -Bluetooth stack initialization ).
+     * These characteristics are for example used for mailbox command, eeg streaming,
+     * battery reading, DFU…Contrary to INDUS 2/3, the Bluetooth chip of INDUS 5 have
+     * only one service and two characteristic for BLE operation. This service is
+     * called the transparent service  and will manage all the operation and command
+     * supported by the precedent electronics version.
+     */
+    val INDUS_5_TRANSPARENT_SERVICE : UUID = UUID.fromString("49535343-fe7d-4ae5-8fa9-9fafd205e455")
+
+    /**
+     * Indus5 RX characteristic UUID
+     */
+    val INDUS_5_RX_CHARACTERISTIC : UUID = UUID.fromString("49535343-1e4d-4bd9-ba61-23c647249616")
+
+    /**
+     * Indus5 TX characteristic UUID
+     */
+    val INDUS_5_TX_CHARACTERISTIC : UUID = UUID.fromString("49535343-8841-43f4-a8d4-ecbe34729bb3")
+
   }
 
 }

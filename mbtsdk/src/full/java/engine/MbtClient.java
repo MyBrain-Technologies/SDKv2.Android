@@ -12,6 +12,7 @@ import config.ConnectionConfig;
 import config.MbtConfig;
 import config.RecordConfig;
 import config.StreamConfig;
+import core.Indus5FastMode;
 import core.MbtManager;
 import core.bluetooth.BluetoothState;
 import core.device.model.DeviceInfo;
@@ -29,6 +30,8 @@ import engine.clientevents.EegListener;
 import engine.clientevents.OADStateListener;
 import features.MbtFeatures;
 import features.MbtDeviceType;
+import indus5.MbtClientIndus5;
+import utils.LogUtils;
 
 /**
  * Created by Etienne on 08/02/2018.
@@ -38,6 +41,7 @@ import features.MbtDeviceType;
 public final class MbtClient {
 
     private static final String TAG = MbtClient.class.getName();
+    private static Context context;
 
     /**
      * The MbtManager is responsible for managing all the package managers
@@ -52,6 +56,9 @@ public final class MbtClient {
      * @return the initialized MbtClient instance to the application
      */
     public static MbtClient init(@NonNull Context context){
+        if (MbtClient.context == null) {
+            MbtClient.context = context;
+        }
         if(clientInstance == null) {
             clientInstance = new MbtClientBuilder()
                     .setContext(context)
@@ -93,6 +100,11 @@ public final class MbtClient {
      */
     @SuppressWarnings("unchecked")
     public void connectBluetooth(@NonNull ConnectionConfig config){
+        if (config.getDeviceType() == MbtDeviceType.MELOMIND_Q_PLUS) {
+            MbtClientIndus5.connectBluetooth(context, config);
+            return;
+        }
+
         MbtConfig.setBluetoothScanTimeout(config.getMaxScanDuration());
 
         if(!config.isDeviceNameValid(config.getDeviceType())) {
@@ -119,6 +131,7 @@ public final class MbtClient {
             return;
         }
 
+        LogUtils.e("ConnSteps", "2 : use MbtManager to connect");
         this.mbtManager.connectBluetooth(config.getConnectionStateListener(),config.connectAudio(), config.getDeviceName(), config.getDeviceQrCode(), config.getDeviceType(), config.getMtu());
     }
 
@@ -126,7 +139,11 @@ public final class MbtClient {
      * Call this method to attempt to disconnect from the currently connected bluetooth device.
      */
     public void disconnectBluetooth(){
-        this.mbtManager.disconnectBluetooth(false);
+        if (Indus5FastMode.INSTANCE.isEnabled()) {
+            MbtClientIndus5.disconnectBluetooth();
+        } else {
+            this.mbtManager.disconnectBluetooth(false);
+        }
     }
 
     /**
@@ -158,19 +175,22 @@ public final class MbtClient {
      */
     @SuppressWarnings("unchecked")
     public void startStream(@NonNull StreamConfig streamConfig){
+        if (Indus5FastMode.INSTANCE.isEnabled()) {
+            mbtManager.startStream(streamConfig);
+        } else {
+            if (!streamConfig.isNotificationConfigCorrect())
+                streamConfig.getEegListener().onError(ConfigError.ERROR_INVALID_PARAMS, streamConfig.shouldComputeQualities() ?
+                        ConfigError.NOTIFICATION_PERIOD_RANGE_QUALITIES : ConfigError.NOTIFICATION_PERIOD_RANGE);
+            else
+                requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
+                    @Override
+                    public void onRequestComplete(MbtDevice device) {
+                        MbtConfig.setNotificationPeriod(streamConfig.getNotificationPeriod());
+                    }
+                });
 
-        if(!streamConfig.isNotificationConfigCorrect())
-            streamConfig.getEegListener().onError(ConfigError.ERROR_INVALID_PARAMS, streamConfig.shouldComputeQualities() ?
-                    ConfigError.NOTIFICATION_PERIOD_RANGE_QUALITIES : ConfigError.NOTIFICATION_PERIOD_RANGE);
-        else
-            requestCurrentConnectedDevice(new SimpleRequestCallback<MbtDevice>() {
-                @Override
-                public void onRequestComplete(MbtDevice device) {
-                    MbtConfig.setEegBufferLengthClientNotif(streamConfig.getNotificationPeriod());
-                }
-            });
-
-        mbtManager.startStream(streamConfig);
+            mbtManager.startStream(streamConfig);
+        }
     }
 
     /**
@@ -178,7 +198,11 @@ public final class MbtClient {
      * reset all internal buffering system.
      */
     public void stopStream(){
-        mbtManager.stopStream(null);
+        if (Indus5FastMode.INSTANCE.isEnabled()) {
+            MbtClientIndus5.stopStream();
+        } else {
+            mbtManager.stopStream(null);
+        }
     }
 
     /**

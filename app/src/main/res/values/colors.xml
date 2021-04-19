@@ -7,4 +7,12 @@
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="dark_blue">#03207b</color>
     <color name="colorAccent">#FF4081</color>
+
+    <color name="blue">#13A0EC</color>
+
+    <color name="pink">#E24612</color>
+    <color name="light_pink">#F8BAA5</color>
+    <color name="transparent">#00000000</color>
+    <color name="list_item_background">#AACCCCCC</color>
+
 </resources>

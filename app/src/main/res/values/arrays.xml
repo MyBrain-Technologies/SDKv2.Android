@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string-array name="config_name">
+        <item>F</item>
+        <item>L</item>
+        <item>C</item>
+        <item>MBT</item>
+        <item>F-V2</item>
+        <item>Custom A.V</item>
+        <item>F-R</item>
+    </string-array>
+
+</resources>

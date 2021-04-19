@@ -1,0 +1,451 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: MbtBluetoothA2DP</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">core.bluetooth</a> ]
+</div>
+
+<h1>Coverage Summary for Class: MbtBluetoothA2DP (core.bluetooth)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">MbtBluetoothA2DP</td>
+<td class="coverageStat">
+  <span class="percent">
+    30,8%
+  </span>
+  <span class="absValue">
+    (4/ 13)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    10,3%
+  </span>
+  <span class="absValue">
+    (12/ 117)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">MbtBluetoothA2DP$Companion</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/ 3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/ 3)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    43,8%
+  </span>
+  <span class="absValue">
+    (7/ 16)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    12,5%
+  </span>
+  <span class="absValue">
+    (15/ 120)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package core.bluetooth
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import android.bluetooth.BluetoothA2dp
+<i>4</i>&nbsp;import android.bluetooth.BluetoothAdapter
+<i>5</i>&nbsp;import android.bluetooth.BluetoothDevice
+<i>6</i>&nbsp;import android.bluetooth.BluetoothProfile
+<i>7</i>&nbsp;import android.content.Context
+<i>8</i>&nbsp;import android.media.AudioManager
+<i>9</i>&nbsp;import android.util.Log
+<i>10</i>&nbsp;import config.MbtConfig
+<i>11</i>&nbsp;import core.bluetooth.MbtAudioBluetooth.ExtraBluetooth
+<i>12</i>&nbsp;import core.device.model.MelomindsQRDataBase
+<i>13</i>&nbsp;import features.MbtFeatures
+<i>14</i>&nbsp;import utils.LogUtils
+<i>15</i>&nbsp;import utils.MbtAsyncWaitOperation
+<i>16</i>&nbsp;import utils.VersionHelper
+<i>17</i>&nbsp;import java.util.*
+<i>18</i>&nbsp;import java.util.concurrent.CancellationException
+<i>19</i>&nbsp;
+<i>20</i>&nbsp;/**
+<i>21</i>&nbsp; * Created by Etienne on 08/02/2018.
+<i>22</i>&nbsp; */
+<b class="fc"><i>23</i>&nbsp;class MbtBluetoothA2DP(manager: MbtBluetoothManager) : ExtraBluetooth(BluetoothProtocol.A2DP, manager) {</b>
+<i>24</i>&nbsp;  private var a2dpProxy: BluetoothA2dp? = null
+<b class="fc"><i>25</i>&nbsp;  private val asyncInit = MbtAsyncWaitOperation&lt;Boolean?&gt;()</b>
+<b class="fc"><i>26</i>&nbsp;  private val asyncConnection = MbtAsyncWaitOperation&lt;Boolean?&gt;()</b>
+<b class="fc"><i>27</i>&nbsp;  private val asyncDisconnection = MbtAsyncWaitOperation&lt;Boolean?&gt;()</b>
+<i>28</i>&nbsp;
+<i>29</i>&nbsp;  /**
+<i>30</i>&nbsp;   * A Bluetooth connection lets users stream audio on Bluetooth-enabled devices.
+<i>31</i>&nbsp;   * The connect method will attempt to connect to the headset via the Advanced Audio Distribution Profile protocol.
+<i>32</i>&nbsp;   * This protocol is used to transmit the stereo audio signals.
+<i>33</i>&nbsp;   * Since Android&#39;s A2DP Bluetooth class has many hidden methods we use reflexion to access them.
+<i>34</i>&nbsp;   * This method can handle the case where the end-user device is already connected to the melomind via
+<i>35</i>&nbsp;   * the A2DP protocol or to another device in which case it will disconnected (Android support only
+<i>36</i>&nbsp;   * one A2DP headset at the time).
+<i>37</i>&nbsp;   * @param deviceToConnect    the device to connect to
+<i>38</i>&nbsp;   * @param context   the application context
+<i>39</i>&nbsp;   * @return          `true` upon success, `false otherwise`
+<i>40</i>&nbsp;   */
+<i>41</i>&nbsp;  override fun connect(context: Context, deviceToConnect: BluetoothDevice): Boolean {
+<b class="nc"><i>42</i>&nbsp;    if (deviceToConnect == null) return false</b>
+<b class="nc"><i>43</i>&nbsp;    LogUtils.d(TAG, &quot;Attempting to connect A2DP to &quot; + deviceToConnect.name + &quot; address is &quot; + deviceToConnect.address)</b>
+<i>44</i>&nbsp;
+<i>45</i>&nbsp;    // First we retrieve the Audio Manager that will help monitor the A2DP status
+<i>46</i>&nbsp;    // and then the instance of Bluetooth A2DP to make the necessaries calls
+<b class="nc"><i>47</i>&nbsp;    if (a2dpProxy == null) { // failed to retrieve instance of Bluetooth A2DP within alloted time (5 sec)</b>
+<b class="nc"><i>48</i>&nbsp;      LogUtils.e(TAG, &quot;Failed to retrieve instance of Bluetooth A2DP. Cannot perform A2DP operations&quot;)</b>
+<i>49</i>&nbsp;      //notifyConnectionStateChanged(BluetoothState.CONNECTION_FAILURE);
+<b class="nc"><i>50</i>&nbsp;      return false</b>
+<i>51</i>&nbsp;    }
+<i>52</i>&nbsp;
+<i>53</i>&nbsp;    // First we check if the end-user device is currently connected to an A2DP device
+<b class="nc"><i>54</i>&nbsp;    if (hasA2DPDeviceConnected()) {</b>
+<i>55</i>&nbsp;      // End-user is indeed connected to an A2DP device. We retrieve it to see if it is the melomind
+<b class="nc"><i>56</i>&nbsp;      LogUtils.d(TAG, &quot;User device is currently connected to an A2DP Headset. Checking if it is the melomind&quot;)</b>
+<i>57</i>&nbsp;
+<i>58</i>&nbsp;//            if (a2dpProxy.getcurrentDevices() == null || a2dpProxy.getcurrentDevices().isEmpty())
+<i>59</i>&nbsp;//                connect(context,deviceToConnect); // Somehow end-user is no longer connected (should not happen)
+<i>60</i>&nbsp;
+<i>61</i>&nbsp;      // we assume there is only one, because Android can only support one at the time
+<b class="nc"><i>62</i>&nbsp;      val deviceConnected = a2dpProxy!!.connectedDevices[0]</b>
+<b class="nc"><i>63</i>&nbsp;      if (deviceConnected.address == deviceToConnect.address) { // already connected to the Melomind !</b>
+<b class="nc"><i>64</i>&nbsp;        LogUtils.d(TAG, &quot;Already connected to the melomind.&quot;)</b>
+<b class="nc"><i>65</i>&nbsp;        notifyConnectionStateChanged(BluetoothState.AUDIO_BT_CONNECTION_SUCCESS)</b>
+<b class="nc"><i>66</i>&nbsp;        return true</b>
+<i>67</i>&nbsp;      } else {
+<i>68</i>&nbsp;        // The user device is currently connected to a headset that is not the melomind
+<i>69</i>&nbsp;        // so we disconnect it now and then we connect it to the melomind
+<b class="nc"><i>70</i>&nbsp;        try {</b>
+<b class="nc"><i>71</i>&nbsp;          val result = a2dpProxy!!.javaClass.getMethod(DISCONNECT_METHOD, BluetoothDevice::class.java)</b>
+<b class="nc"><i>72</i>&nbsp;              .invoke(a2dpProxy, deviceConnected) as Boolean</b>
+<b class="nc"><i>73</i>&nbsp;          if (!result) { // according to doc : &quot;false on immediate error, true otherwise&quot;</b>
+<i>74</i>&nbsp;            //notifyConnectionStateChanged(BluetoothState.CONNECTION_FAILURE);
+<b class="nc"><i>75</i>&nbsp;            return false</b>
+<i>76</i>&nbsp;          }
+<i>77</i>&nbsp;          // Since the disconnecting process is asynchronous we use a timer to monitor the status for a short while
+<b class="nc"><i>78</i>&nbsp;          Timer(true).scheduleAtFixedRate(object : TimerTask() {</b>
+<i>79</i>&nbsp;            override fun run() {
+<i>80</i>&nbsp;              if (!hasA2DPDeviceConnected()) { // the user device is no longer connected to the wrong headset
+<i>81</i>&nbsp;                cancel()
+<i>82</i>&nbsp;                asyncConnection.stopWaitingOperation(false)
+<i>83</i>&nbsp;                notifyConnectionStateChanged(BluetoothState.AUDIO_BT_DISCONNECTED)
+<i>84</i>&nbsp;              }
+<i>85</i>&nbsp;            }
+<b class="nc"><i>86</i>&nbsp;          }, 100, 500)</b>
+<b class="nc"><i>87</i>&nbsp;          var status: Boolean? = false</b>
+<b class="nc"><i>88</i>&nbsp;          try {</b>
+<b class="nc"><i>89</i>&nbsp;            status = asyncConnection.waitOperationResult(5000) as Boolean?</b>
+<b class="nc"><i>90</i>&nbsp;          } catch (e: Exception) {</b>
+<b class="nc"><i>91</i>&nbsp;            if (e is CancellationException) asyncConnection.resetWaitingOperation()</b>
+<b class="nc"><i>92</i>&nbsp;          }</b>
+<b class="nc"><i>93</i>&nbsp;          return if (status != null &amp;&amp; status) {</b>
+<b class="nc"><i>94</i>&nbsp;            LogUtils.i(TAG, &quot;successfully disconnected from A2DP device -&gt; &quot; + deviceConnected.name)</b>
+<b class="nc"><i>95</i>&nbsp;            LogUtils.i(TAG, &quot;Now connecting A2DP to &quot; + deviceToConnect.address)</b>
+<b class="nc"><i>96</i>&nbsp;            connect(context, deviceToConnect)</b>
+<i>97</i>&nbsp;          } else {
+<b class="nc"><i>98</i>&nbsp;            LogUtils.e(TAG, &quot;failed to connect A2DP! future has timed out...&quot;)</b>
+<i>99</i>&nbsp;            //notifyConnectionStateChanged(BluetoothState.CONNECTION_FAILURE);
+<b class="nc"><i>100</i>&nbsp;            false</b>
+<i>101</i>&nbsp;          }
+<b class="nc"><i>102</i>&nbsp;        } catch (e: Exception) {</b>
+<b class="nc"><i>103</i>&nbsp;          val errorMsg = &quot; -&gt; &quot; + e.message</b>
+<b class="nc"><i>104</i>&nbsp;          if (e is NoSuchMethodException) LogUtils.e(TAG, &quot;Failed to find disconnect method via reflexion$errorMsg&quot;) else if (e is IllegalAccessException) LogUtils.e(TAG, &quot;Failed to access disconnect method via reflexion$errorMsg&quot;) else LogUtils.e(TAG, &quot;Failed to invoke disconnect method via reflexion$errorMsg&quot;)</b>
+<b class="nc"><i>105</i>&nbsp;          Log.getStackTraceString(e)</b>
+<b class="nc"><i>106</i>&nbsp;        }</b>
+<b class="nc"><i>107</i>&nbsp;      }</b>
+<i>108</i>&nbsp;    } else {
+<b class="nc"><i>109</i>&nbsp;      LogUtils.i(TAG, &quot;Initiate connection via A2DP! &quot;)</b>
+<i>110</i>&nbsp;      // Safe to connect to melomind via A2DP
+<b class="nc"><i>111</i>&nbsp;      try {</b>
+<b class="nc"><i>112</i>&nbsp;        val result = a2dpProxy!!.javaClass</b>
+<b class="nc"><i>113</i>&nbsp;            .getMethod(CONNECT_METHOD, BluetoothDevice::class.java)</b>
+<b class="nc"><i>114</i>&nbsp;            .invoke(a2dpProxy, deviceToConnect) as Boolean</b>
+<b class="nc"><i>115</i>&nbsp;        if (!result) { // according to doc : &quot;false on immediate error, true otherwise&quot;</b>
+<b class="nc"><i>116</i>&nbsp;          notifyConnectionStateChanged(BluetoothState.CONNECTION_FAILURE)</b>
+<b class="nc"><i>117</i>&nbsp;          return false</b>
+<i>118</i>&nbsp;        }
+<i>119</i>&nbsp;
+<i>120</i>&nbsp;        // Since the disconnecting process is asynchronous we use a timer to monitor the status for a short while
+<b class="nc"><i>121</i>&nbsp;        Timer(true).scheduleAtFixedRate(object : TimerTask() {</b>
+<i>122</i>&nbsp;          override fun run() {
+<i>123</i>&nbsp;            if (hasA2DPDeviceConnected()) {
+<i>124</i>&nbsp;              cancel()
+<i>125</i>&nbsp;              asyncConnection.stopWaitingOperation(false)
+<i>126</i>&nbsp;            }
+<i>127</i>&nbsp;          }
+<b class="nc"><i>128</i>&nbsp;        }, 100, 1500)</b>
+<i>129</i>&nbsp;
+<i>130</i>&nbsp;        // we give 20 seconds to the user to accepting bonding request
+<b class="nc"><i>131</i>&nbsp;        val timeout = if (deviceToConnect.bondState == BluetoothDevice.BOND_BONDED) MbtConfig.getBluetoothA2DpConnectionTimeout() else 25000</b>
+<b class="nc"><i>132</i>&nbsp;        var status: Boolean? = false</b>
+<b class="nc"><i>133</i>&nbsp;        try {</b>
+<b class="nc"><i>134</i>&nbsp;          status = asyncConnection.waitOperationResult(timeout) as Boolean?</b>
+<b class="nc"><i>135</i>&nbsp;        } catch (e: Exception) {</b>
+<b class="nc"><i>136</i>&nbsp;          if (e is CancellationException) asyncConnection.resetWaitingOperation()</b>
+<b class="nc"><i>137</i>&nbsp;          LogUtils.i(TAG, &quot; A2dp Connection failed: $e&quot;)</b>
+<b class="nc"><i>138</i>&nbsp;        }</b>
+<b class="nc"><i>139</i>&nbsp;        return if (status != null &amp;&amp; status) {</b>
+<b class="nc"><i>140</i>&nbsp;          LogUtils.i(TAG, &quot;Successfully connected via A2DP to &quot; + deviceToConnect.address)</b>
+<b class="nc"><i>141</i>&nbsp;          notifyConnectionStateChanged(BluetoothState.AUDIO_BT_CONNECTION_SUCCESS)</b>
+<b class="nc"><i>142</i>&nbsp;          true</b>
+<i>143</i>&nbsp;        } else {
+<b class="nc"><i>144</i>&nbsp;          LogUtils.i(TAG, &quot;Cannot connect to A2DP device &quot; + deviceToConnect.address)</b>
+<b class="nc"><i>145</i>&nbsp;          notifyConnectionStateChanged(BluetoothState.CONNECTION_FAILURE)</b>
+<b class="nc"><i>146</i>&nbsp;          false</b>
+<i>147</i>&nbsp;        }
+<b class="nc"><i>148</i>&nbsp;      } catch (e: Exception) {</b>
+<b class="nc"><i>149</i>&nbsp;        val errorMsg = &quot; -&gt; &quot; + e.message</b>
+<b class="nc"><i>150</i>&nbsp;        if (e is NoSuchMethodException) LogUtils.e(TAG, &quot;Failed to find connect method via reflexion$errorMsg&quot;) else if (e is IllegalAccessException) LogUtils.e(TAG, &quot;Failed to access connect method via reflexion$errorMsg&quot;) else LogUtils.e(TAG, &quot;Failed to invoke connect method via reflexion$errorMsg&quot;)</b>
+<b class="nc"><i>151</i>&nbsp;        Log.getStackTraceString(e)</b>
+<b class="nc"><i>152</i>&nbsp;      }</b>
+<b class="nc"><i>153</i>&nbsp;    }</b>
+<b class="nc"><i>154</i>&nbsp;    return false</b>
+<i>155</i>&nbsp;  }
+<i>156</i>&nbsp;
+<i>157</i>&nbsp;  fun initA2dpProxy() {
+<b class="nc"><i>158</i>&nbsp;    if (bluetoothAdapter != null) A2DPAccessor().initA2DPProxy(context, bluetoothAdapter!!)</b>
+<b class="nc"><i>159</i>&nbsp;  }</b>
+<i>160</i>&nbsp;
+<i>161</i>&nbsp;  /**
+<i>162</i>&nbsp;   * This method will attempt to disconnect to the current a2dp device via the A2DP protocol.
+<i>163</i>&nbsp;   * Since Android&#39;s A2DP Bluetooth class has many hidden methods we use reflexion to access them.
+<i>164</i>&nbsp;   * This method can handle the case where the end-user device is already connected to the melomind via
+<i>165</i>&nbsp;   * the A2DP protocol or to another device in which case it will disconnected (Android support only
+<i>166</i>&nbsp;   * one A2DP headset at the time).
+<i>167</i>&nbsp;   * @return `true` by default
+<i>168</i>&nbsp;   */
+<i>169</i>&nbsp;  override fun disconnect(): Boolean {
+<b class="nc"><i>170</i>&nbsp;    if (asyncConnection.isWaiting) {</b>
+<b class="nc"><i>171</i>&nbsp;      asyncConnection.stopWaitingOperation(null)</b>
+<i>172</i>&nbsp;    } else {
+<b class="nc"><i>173</i>&nbsp;      LogUtils.d(TAG, &quot;Disconnect audio&quot;)</b>
+<b class="nc"><i>174</i>&nbsp;      if (bluetoothAdapter != null) {</b>
+<b class="nc"><i>175</i>&nbsp;        currentDevice = null</b>
+<b class="nc"><i>176</i>&nbsp;        if (a2dpProxy != null &amp;&amp; a2dpProxy!!.connectedDevices.size &gt; 0) currentDevice = a2dpProxy!!.connectedDevices[0] //assuming that one device is connected and its obviously the melomind</b>
+<b class="nc"><i>177</i>&nbsp;        val device = manager.connecter.connectedDevice ?: return true</b>
+<b class="nc"><i>178</i>&nbsp;        if (VersionHelper(device.firmwareVersion.toString()).isValidForFeature(VersionHelper.Feature.A2DP_FROM_HEADSET)) {</b>
+<b class="nc"><i>179</i>&nbsp;          manager.connecter.disconnectA2DPFromBLE()</b>
+<b class="nc"><i>180</i>&nbsp;          try {</b>
+<b class="nc"><i>181</i>&nbsp;            asyncDisconnection.waitOperationResult(MbtConfig.getBluetoothA2DpConnectionTimeout())</b>
+<b class="nc"><i>182</i>&nbsp;          } catch (e: Exception) {</b>
+<b class="nc"><i>183</i>&nbsp;            if (e is CancellationException) asyncDisconnection.resetWaitingOperation()</b>
+<i>184</i>&nbsp;          } finally {
+<b class="nc"><i>185</i>&nbsp;            asyncDisconnection.stopWaitingOperation(null)</b>
+<b class="nc"><i>186</i>&nbsp;          }</b>
+<i>187</i>&nbsp;        }
+<b class="nc"><i>188</i>&nbsp;        if (isConnected) {</b>
+<b class="nc"><i>189</i>&nbsp;          try {</b>
+<b class="nc"><i>190</i>&nbsp;            if (a2dpProxy != null) a2dpProxy!!.javaClass.getMethod(DISCONNECT_METHOD, BluetoothDevice::class.java).invoke(a2dpProxy, currentDevice)</b>
+<b class="nc"><i>191</i>&nbsp;            currentDevice = null</b>
+<b class="nc"><i>192</i>&nbsp;          } catch (e: Exception) {</b>
+<b class="nc"><i>193</i>&nbsp;            e.printStackTrace()</b>
+<b class="nc"><i>194</i>&nbsp;          }</b>
+<i>195</i>&nbsp;        }
+<i>196</i>&nbsp;      }
+<b class="nc"><i>197</i>&nbsp;    }</b>
+<b class="nc"><i>198</i>&nbsp;    return true</b>
+<i>199</i>&nbsp;  }
+<i>200</i>&nbsp;
+<i>201</i>&nbsp;  /**
+<i>202</i>&nbsp;   * Checks whether a Bluetooth A2DP audio peripheral is connected or not.
+<i>203</i>&nbsp;   * @return true if a Bluetooth A2DP audio peripheral is connected, false otherwise
+<i>204</i>&nbsp;   */
+<i>205</i>&nbsp;  private fun hasA2DPDeviceConnected(): Boolean {
+<i>206</i>&nbsp;    // First we retrieve the Audio Manager that will help monitor the A2DP status
+<i>207</i>&nbsp;    // and then the instance of Bluetooth A2DP to make the necessaries calls
+<b class="nc"><i>208</i>&nbsp;    val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager</b>
+<b class="nc"><i>209</i>&nbsp;        ?: return false</b>
+<i>210</i>&nbsp;    // First we check if the end-user device is currently connected to an A2DP device
+<b class="nc"><i>211</i>&nbsp;    return audioManager.isBluetoothA2dpOn</b>
+<i>212</i>&nbsp;  }
+<i>213</i>&nbsp;
+<i>214</i>&nbsp;  private val a2DPcurrentDevices: List&lt;BluetoothDevice&gt;
+<b class="nc"><i>215</i>&nbsp;    private get() = if (a2dpProxy == null) emptyList() else a2dpProxy!!.connectedDevices</b>
+<i>216</i>&nbsp;
+<i>217</i>&nbsp;  override val isConnected: Boolean
+<b class="fc"><i>218</i>&nbsp;    get() = currentState == BluetoothState.AUDIO_BT_CONNECTION_SUCCESS</b>
+<i>219</i>&nbsp;
+<i>220</i>&nbsp;  fun resetA2dpProxy(state: Int) {
+<b class="nc"><i>221</i>&nbsp;    if (state == BluetoothAdapter.STATE_ON &amp;&amp; a2dpProxy == null &amp;&amp; bluetoothAdapter != null) A2DPAccessor().initA2DPProxy(context, bluetoothAdapter!!)</b>
+<b class="nc"><i>222</i>&nbsp;  }</b>
+<i>223</i>&nbsp;
+<i>224</i>&nbsp;  override fun startStream(): Boolean {
+<b class="nc"><i>225</i>&nbsp;    return false</b>
+<i>226</i>&nbsp;  }
+<i>227</i>&nbsp;
+<i>228</i>&nbsp;  override fun stopStream(): Boolean {
+<b class="nc"><i>229</i>&nbsp;    return false</b>
+<i>230</i>&nbsp;  }
+<i>231</i>&nbsp;
+<i>232</i>&nbsp;  override fun notifyConnectionStateChanged(newState: BluetoothState, notifyManager: Boolean) {
+<b class="fc"><i>233</i>&nbsp;    currentState = newState</b>
+<b class="fc"><i>234</i>&nbsp;    if (newState == BluetoothState.AUDIO_BT_DISCONNECTED &amp;&amp; asyncDisconnection.isWaiting) asyncDisconnection.stopWaitingOperation(false) else if (newState == BluetoothState.AUDIO_BT_CONNECTION_SUCCESS) {</b>
+<b class="fc"><i>235</i>&nbsp;      if (asyncConnection.isWaiting) asyncConnection.stopWaitingOperation(false)</b>
+<b class="fc"><i>236</i>&nbsp;      if (notifyManager) //if audio is connected (and BLE is not) when the user request connection to a headset</b>
+<b class="nc"><i>237</i>&nbsp;        manager.connecter.notifyConnectionStateChanged(BluetoothState.AUDIO_BT_CONNECTION_SUCCESS)</b>
+<b class="fc"><i>238</i>&nbsp;    }</b>
+<b class="fc"><i>239</i>&nbsp;  }</b>
+<i>240</i>&nbsp;
+<i>241</i>&nbsp;  fun isPairedDevice(device: BluetoothDevice?): Boolean {
+<b class="nc"><i>242</i>&nbsp;    return bluetoothAdapter != null &amp;&amp; bluetoothAdapter!!.bondedDevices.contains(device)</b>
+<i>243</i>&nbsp;  }
+<i>244</i>&nbsp;
+<i>245</i>&nbsp;  internal inner class A2DPAccessor : BluetoothProfile.ServiceListener {
+<i>246</i>&nbsp;    private val a2DPMonitor: A2DPMonitor? = A2DPMonitor()
+<i>247</i>&nbsp;
+<i>248</i>&nbsp;    /**
+<i>249</i>&nbsp;     * The Advanced Audio Distribution Profile (A2DP) profile defines how high quality audio can be streamed from one device to another over a Bluetooth connection.
+<i>250</i>&nbsp;     * Android provides the BluetoothA2dp class, which is a proxy for controlling the Bluetooth A2DP Service.
+<i>251</i>&nbsp;     * This method blocks for 5 sec
+<i>252</i>&nbsp;     * onds while attempting to retrieve the instance of `BluetoothA2dp`
+<i>253</i>&nbsp;     * @param context   the application context
+<i>254</i>&nbsp;     * @param adapter   the Bluetooth Adapter to retrieve the BluetoothA2DP from
+<i>255</i>&nbsp;     */
+<i>256</i>&nbsp;    fun initA2DPProxy(context: Context, adapter: BluetoothAdapter) {
+<i>257</i>&nbsp;      adapter.getProfileProxy(context, this, BluetoothProfile.A2DP) //establish the connection to the proxy
+<i>258</i>&nbsp;      try {
+<i>259</i>&nbsp;        asyncInit.waitOperationResult(3000)
+<i>260</i>&nbsp;      } catch (e: Exception) {
+<i>261</i>&nbsp;        LogUtils.d(TAG, &quot; No audio connected device &quot;)
+<i>262</i>&nbsp;      }
+<i>263</i>&nbsp;    }
+<i>264</i>&nbsp;
+<i>265</i>&nbsp;    override fun onServiceConnected(profile: Int, proxy: BluetoothProfile) {
+<i>266</i>&nbsp;      if (profile == BluetoothProfile.A2DP) {
+<i>267</i>&nbsp;        a2dpProxy = proxy as BluetoothA2dp
+<i>268</i>&nbsp;        a2DPMonitor?.start(500) //init A2DP state
+<i>269</i>&nbsp;      }
+<i>270</i>&nbsp;    }
+<i>271</i>&nbsp;
+<i>272</i>&nbsp;    override fun onServiceDisconnected(profile: Int) {
+<i>273</i>&nbsp;      if (profile == BluetoothProfile.A2DP) {
+<i>274</i>&nbsp;        Log.w(TAG, &quot;device is disconnected from service&quot;)
+<i>275</i>&nbsp;        a2DPMonitor!!.stop()
+<i>276</i>&nbsp;      }
+<i>277</i>&nbsp;    }
+<i>278</i>&nbsp;  }
+<i>279</i>&nbsp;
+<i>280</i>&nbsp;  /**
+<i>281</i>&nbsp;   *
+<i>282</i>&nbsp;   */
+<i>283</i>&nbsp;  internal inner class A2DPMonitor {
+<i>284</i>&nbsp;    private var pollingTimer: Timer? = null
+<i>285</i>&nbsp;    private var connectedA2DpDevices: List&lt;BluetoothDevice&gt;
+<i>286</i>&nbsp;    fun start(pollingMillis: Int) {
+<i>287</i>&nbsp;      pollingTimer = Timer()
+<i>288</i>&nbsp;      pollingTimer!!.scheduleAtFixedRate(Task(), 200, pollingMillis.toLong())
+<i>289</i>&nbsp;    }
+<i>290</i>&nbsp;
+<i>291</i>&nbsp;    fun stop() {
+<i>292</i>&nbsp;      if (pollingTimer != null) {
+<i>293</i>&nbsp;        pollingTimer!!.cancel()
+<i>294</i>&nbsp;        pollingTimer!!.purge()
+<i>295</i>&nbsp;        pollingTimer = null
+<i>296</i>&nbsp;      }
+<i>297</i>&nbsp;    }//if device name is a valid BLE name
+<i>298</i>&nbsp;    //or if device name is a valid QR Code name
+<i>299</i>&nbsp;
+<i>300</i>&nbsp;    //if QR code contains only 9 digits
+<i>301</i>&nbsp;    private val isCurrentDeviceNameValid: Boolean
+<i>302</i>&nbsp;      get() {
+<i>303</i>&nbsp;        if (currentDevice?.name?.startsWith(MelomindsQRDataBase.QR_PREFIX) == true &amp;&amp; currentDevice?.name?.length == MelomindsQRDataBase.QR_LENGTH - 1) //if QR code contains only 9 digits
+<i>304</i>&nbsp;          currentDevice?.name + MelomindsQRDataBase.QR_SUFFIX
+<i>305</i>&nbsp;        return (currentDevice?.name?.startsWith(MbtFeatures.MELOMIND_DEVICE_NAME_PREFIX) == true || currentDevice?.name?.startsWith(MbtFeatures.A2DP_DEVICE_NAME_PREFIX) == true//if device name is a valid BLE name
+<i>306</i>&nbsp;            || currentDevice?.name?.startsWith(MelomindsQRDataBase.QR_PREFIX) == true &amp;&amp; currentDevice?.name?.length == MelomindsQRDataBase.QR_LENGTH //or if device name is a valid QR Code name
+<i>307</i>&nbsp;            )
+<i>308</i>&nbsp;      }
+<i>309</i>&nbsp;
+<i>310</i>&nbsp;    private inner class Task : TimerTask() {
+<i>311</i>&nbsp;      override fun run() {
+<i>312</i>&nbsp;        if (connectedA2DpDevices != a2DPcurrentDevices) { //It means that something has changed. Now we need to find out what changed (getAD2PcurrentDevices returns the connected devices for this specific profile.)
+<i>313</i>&nbsp;          if (connectedA2DpDevices.size &lt; a2DPcurrentDevices.size) { //Here, we have a new A2DP connection then we notify bluetooth manager
+<i>314</i>&nbsp;            val previousDevice = currentDevice
+<i>315</i>&nbsp;            currentDevice = a2DPcurrentDevices[a2DPcurrentDevices.size - 1] //As one a2dp output is possible at a time on android, it is possible to consider that last item in list is the current one
+<i>316</i>&nbsp;            if (hasA2DPDeviceConnected() &amp;&amp;  currentDevice?.name != null &amp;&amp; isCurrentDeviceNameValid) { //if a Bluetooth A2DP audio peripheral is connected to a device whose name is not null.
+<i>317</i>&nbsp;              LogUtils.d(TAG, &quot;Detected connected device &quot; + currentDevice?.name + &quot; address is &quot; + currentDevice?.address)
+<i>318</i>&nbsp;              if (previousDevice == null || currentDevice != null &amp;&amp; currentDevice !== previousDevice) notifyConnectionStateChanged(BluetoothState.AUDIO_BT_CONNECTION_SUCCESS, true)
+<i>319</i>&nbsp;              asyncInit.stopWaitingOperation(false)
+<i>320</i>&nbsp;            }
+<i>321</i>&nbsp;          } else  //Here, either the A2DP connection has dropped or a new A2DP device is connecting.
+<i>322</i>&nbsp;            notifyConnectionStateChanged(BluetoothState.AUDIO_BT_DISCONNECTED)
+<i>323</i>&nbsp;          connectedA2DpDevices = a2DPcurrentDevices //In any case, it is mandatory to updated our local connected A2DP list
+<i>324</i>&nbsp;        }
+<i>325</i>&nbsp;      }
+<i>326</i>&nbsp;    }
+<i>327</i>&nbsp;
+<i>328</i>&nbsp;    init {
+<i>329</i>&nbsp;      connectedA2DpDevices = emptyList()
+<i>330</i>&nbsp;    }
+<i>331</i>&nbsp;  }
+<i>332</i>&nbsp;
+<b class="fc"><i>333</i>&nbsp;  companion object {</b>
+<b class="fc"><i>334</i>&nbsp;    private val TAG = MbtBluetoothA2DP::class.java.simpleName</b>
+<i>335</i>&nbsp;    private const val CONNECT_METHOD = &quot;connect&quot;
+<i>336</i>&nbsp;    private const val DISCONNECT_METHOD = &quot;disconnect&quot;
+<b class="fc"><i>337</i>&nbsp;    var instance: MbtBluetoothA2DP? = null</b>
+<i>338</i>&nbsp;    fun initInstance(manager: MbtBluetoothManager): ExtraBluetooth {
+<b class="fc"><i>339</i>&nbsp;      return MbtBluetoothA2DP(manager).also { instance = it }</b>
+<i>340</i>&nbsp;    }
+<i>341</i>&nbsp;  }
+<i>342</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2020-06-10 10:26</div>
+</div>
+</body>
+</html>

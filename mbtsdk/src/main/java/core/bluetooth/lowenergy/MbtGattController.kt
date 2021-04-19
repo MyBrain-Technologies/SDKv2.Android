@@ -3,9 +3,10 @@ package core.bluetooth.lowenergy
 import android.bluetooth.*
 import android.util.Log
 import command.DeviceCommandEvent
-import command.DeviceCommandEvent.MBX_CONNECT_IN_A2DP
-import command.DeviceCommandEvent.Companion.CMD_CODE_CONNECT_IN_A2DP_LINKKEY_INVALID
 import command.DeviceCommandEvent.Companion.CMD_CODE_CONNECT_IN_A2DP_IN_PROGRESS
+import command.DeviceCommandEvent.Companion.CMD_CODE_CONNECT_IN_A2DP_LINKKEY_INVALID
+import command.DeviceCommandEvent.MBX_CONNECT_IN_A2DP
+import core.Indus5FastMode
 import core.bluetooth.BluetoothState
 import core.bluetooth.lowenergy.MelomindCharacteristics.Companion.CHARAC_HEADSET_STATUS
 import core.bluetooth.lowenergy.MelomindCharacteristics.Companion.CHARAC_INFO_FIRMWARE_VERSION
@@ -16,10 +17,14 @@ import core.bluetooth.lowenergy.MelomindCharacteristics.Companion.CHARAC_MEASURE
 import core.bluetooth.lowenergy.MelomindCharacteristics.Companion.CHARAC_MEASUREMENT_EEG
 import core.bluetooth.lowenergy.MelomindCharacteristics.Companion.CHARAC_MEASUREMENT_MAILBOX
 import core.bluetooth.lowenergy.MelomindCharacteristics.Companion.CHARAC_MEASUREMENT_OAD_PACKETS_TRANSFER
+import core.bluetooth.lowenergy.MelomindCharacteristics.Companion.INDUS_5_RX_CHARACTERISTIC
+import core.bluetooth.lowenergy.MelomindCharacteristics.Companion.INDUS_5_TRANSPARENT_SERVICE
+import core.bluetooth.lowenergy.MelomindCharacteristics.Companion.INDUS_5_TX_CHARACTERISTIC
 import core.bluetooth.lowenergy.MelomindCharacteristics.Companion.SERVICE_DEVICE_INFOS
 import core.bluetooth.lowenergy.MelomindCharacteristics.Companion.SERVICE_MEASUREMENT
 import core.device.model.DeviceInfo
 import core.device.model.MelomindDevice
+import timber.log.Timber
 import utils.BitUtils
 import utils.CommandUtils
 import utils.LogUtils
@@ -32,6 +37,24 @@ import java.util.*
  * @see BluetoothGattCallback
  */
 internal class MbtGattController(private val mbtBluetoothLE: MbtBluetoothLE) : BluetoothGattCallback() {
+
+  //----------------------------------------------------------------------------
+  // indus5 variables
+  //----------------------------------------------------------------------------
+
+  /**
+   * use for indus 5
+   */
+  private var transparentService: BluetoothGattService? = null
+  var indus5RxCharacteristic: BluetoothGattCharacteristic? = null
+  var indus5TxCharacteristic: BluetoothGattCharacteristic? = null
+
+  //----------------------------------------------------------------------------
+  // indus 2/3 variables
+  //----------------------------------------------------------------------------
+  /**
+   * use for indus 2/3
+   */
   private var mainService: BluetoothGattService? = null
   private var deviceInfoService: BluetoothGattService? = null
   private var measurement: BluetoothGattCharacteristic? = null
@@ -43,6 +66,11 @@ internal class MbtGattController(private val mbtBluetoothLE: MbtBluetoothLE) : B
   private var hwVersion: BluetoothGattCharacteristic? = null
   private var serialNumber: BluetoothGattCharacteristic? = null
   private var modelNumber: BluetoothGattCharacteristic? = null
+
+  //----------------------------------------------------------------------------
+  // functions
+  //----------------------------------------------------------------------------
+
   override fun onPhyUpdate(gatt: BluetoothGatt, txPhy: Int, rxPhy: Int, status: Int) {
     super.onPhyUpdate(gatt, txPhy, rxPhy, status)
   }
@@ -59,7 +87,10 @@ internal class MbtGattController(private val mbtBluetoothLE: MbtBluetoothLE) : B
     var msg = "Current state was " + mbtBluetoothLE.currentState + " but Connection state change : " + if (newState == 2) "connected " else " code is $newState"
     when (newState) {
       BluetoothGatt.STATE_CONNECTING -> mbtBluetoothLE.onStateConnecting()
-      BluetoothGatt.STATE_CONNECTED -> mbtBluetoothLE.onStateConnected()
+      BluetoothGatt.STATE_CONNECTED -> {
+        LogUtils.e("ConnSteps", "6c : Bluetooth connected")
+        mbtBluetoothLE.onStateConnected()
+      }
       BluetoothGatt.STATE_DISCONNECTING -> mbtBluetoothLE.onStateDisconnecting()
       BluetoothGatt.STATE_DISCONNECTED -> {
         LogUtils.e(TAG, "Gatt returned disconnected state")
@@ -92,13 +123,58 @@ internal class MbtGattController(private val mbtBluetoothLE: MbtBluetoothLE) : B
     }
 
     // Logging all available services
+    var isMelomindClassic = false
     for (service in gatt.services) {
       LogUtils.i(TAG, "Found Service with UUID -> " + service.uuid.toString())
+      if (service.uuid.toString() == SERVICE_MEASUREMENT.toString()) {
+        isMelomindClassic = true
+        LogUtils.i(TAG, "indus 2/3 detected")
+        mainService = gatt.getService(SERVICE_MEASUREMENT)
+        transparentService = null
+      }
     }
-    //TODO split function in two parts: first is input checking and second is characteristics initialization
+    if (!isMelomindClassic) {
+      LogUtils.i(TAG, "indus 5 detected")
+      transparentService = gatt.getService(INDUS_5_TRANSPARENT_SERVICE)
+      if (transparentService == null) {
+        LogUtils.e(TAG, "Do not found transparent service on this device ${gatt.device.name}")
+        gatt.disconnect()
+        mbtBluetoothLE.notifyConnectionStateChanged(BluetoothState.DISCOVERING_FAILURE)
+        return
+      }
+      mainService = null
+      Indus5FastMode.setMelomindIndus5()
+    }
 
-    // Retrieving main service
-    mainService = gatt.getService(SERVICE_MEASUREMENT)
+    if (isIndus5()) {
+      initIndus5(gatt)
+    } else {
+      initIndus23(gatt)
+    }
+
+    val initFail: Boolean
+    if (isIndus5()) {
+      initFail = (indus5TxCharacteristic == null) || (indus5RxCharacteristic == null)
+    } else {
+      initFail = (mainService == null || measurement == null || battery == null || deviceInfoService == null || fwVersion == null || hwVersion == null || serialNumber == null || oadPacketsCharac == null || mailBox == null || headsetStatus == null)
+      if (initFail) {
+        LogUtils.e(TAG, "error, not all characteristics have been found")
+      }
+    }
+    if (initFail) {
+      gatt.disconnect()
+      mbtBluetoothLE.notifyConnectionStateChanged(BluetoothState.DISCOVERING_FAILURE)
+    } else if (mbtBluetoothLE.currentState == BluetoothState.DISCOVERING_SERVICES) {
+      LogUtils.e("ConnSteps", "7b : onServicesDiscovered + init ok")
+      if (isIndus5()) {
+        mbtBluetoothLE.markCurrentStepAsCompletedAndUpdateConnectionState(BluetoothState.INDUS5_DISCOVERING_SUCCESS)
+      } else {
+        mbtBluetoothLE.updateConnectionState(true) //current state is set to DISCOVERING_SUCCESS and future is completed
+      }
+    }
+  }
+
+  private fun initIndus23(gatt: BluetoothGatt) {
     deviceInfoService = gatt.getService(SERVICE_DEVICE_INFOS)
     if (mainService != null) {
       // Retrieving all relevant characteristics
@@ -117,13 +193,11 @@ internal class MbtGattController(private val mbtBluetoothLE: MbtBluetoothLE) : B
       serialNumber = deviceInfoService?.getCharacteristic(CHARAC_INFO_SERIAL_NUMBER)
       modelNumber = deviceInfoService?.getCharacteristic(CHARAC_INFO_MODEL_NUMBER)
     }
+  }
 
-    // In case one of these is null, we disconnect because something went wrong
-    if (mainService == null || measurement == null || battery == null || deviceInfoService == null || fwVersion == null || hwVersion == null || serialNumber == null || oadPacketsCharac == null || mailBox == null || headsetStatus == null) {
-      LogUtils.e(TAG, "error, not all characteristics have been found")
-      gatt.disconnect()
-      mbtBluetoothLE.notifyConnectionStateChanged(BluetoothState.DISCOVERING_FAILURE)
-    } else if (mbtBluetoothLE.currentState == BluetoothState.DISCOVERING_SERVICES) mbtBluetoothLE.updateConnectionState(true) //current state is set to DISCOVERING_SUCCESS and future is completed
+  private fun initIndus5(gatt: BluetoothGatt) {
+    indus5TxCharacteristic = transparentService?.getCharacteristic(INDUS_5_TX_CHARACTERISTIC)
+    indus5RxCharacteristic = transparentService?.getCharacteristic(INDUS_5_RX_CHARACTERISTIC)
   }
 
   /**
@@ -162,11 +236,11 @@ internal class MbtGattController(private val mbtBluetoothLE: MbtBluetoothLE) : B
           level = MelomindDevice.getBatteryPercentageFromByteValue(characteristic.value[0])
           if (level.toInt() == -1) {
             LogUtils.e(TAG, "Error: received a [onCharacteristicRead] callback for battery level request " +
-                "but the returned value could not be decoded ! " +
-                "Byte value received -> " + characteristic.value[3])
+                    "but the returned value could not be decoded ! " +
+                    "Byte value received -> " + characteristic.value[3])
           }
           LogUtils.i(TAG, "Received a [onCharacteristicRead] callback for battery level request. " +
-              "Value -> " + level)
+                  "Value -> " + level)
         }
         mbtBluetoothLE.notifyBatteryReceived(level.toInt())
       }
@@ -176,19 +250,46 @@ internal class MbtGattController(private val mbtBluetoothLE: MbtBluetoothLE) : B
   override fun onCharacteristicWrite(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic, status: Int) {
     super.onCharacteristicWrite(gatt, characteristic, status)
     //Log.d(TAG, "on Characteristic Write value: "+(characteristic.getValue() == null ? characteristic.getValue() : Arrays.toString(characteristic.getValue())) );
-    mbtBluetoothLE.notifyEventReceived(DeviceCommandEvent.OTA_STATUS_TRANSFER, byteArrayOf(BitUtils.booleanToBit(status == BluetoothGatt.GATT_SUCCESS)))
+    if (isIndus5()) {
+
+    } else {
+      mbtBluetoothLE.notifyEventReceived(DeviceCommandEvent.OTA_STATUS_TRANSFER, byteArrayOf(BitUtils.booleanToBit(status == BluetoothGatt.GATT_SUCCESS)))
+    }
   }
 
   override fun onCharacteristicChanged(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
     super.onCharacteristicChanged(gatt, characteristic)
     //Log.d(TAG, "on Characteristic Changed value: "+(characteristic.getValue() == null ? characteristic.getValue() : Arrays.toString(characteristic.getValue())) );
-    if (characteristic.uuid.compareTo(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG) == 0) {
-      mbtBluetoothLE.notifyNewDataAcquired(characteristic.value)
-    } else if (characteristic.uuid.compareTo(MelomindCharacteristics.CHARAC_HEADSET_STATUS) == 0) {
-      mbtBluetoothLE.notifyNewHeadsetStatus(characteristic.value)
-    } else if (characteristic.uuid.compareTo(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX) == 0) {
-      onMailboxEventReceived(characteristic)
-      //mbtBluetoothLE.stopWaitingOperation(true, false);
+    if (isIndus5()) {
+//      LogUtils.i("n113", "onCharacteristicChanged : data = ${Arrays.toString(characteristic.value)}")
+      //TODO: log and debug n113
+      val response = characteristic.value.parseRawIndus5Response()
+      when (response) {
+        is Indus5Response.MtuChangedResponse -> {
+          LogUtils.i("n113", "indus5 mtu changed : byte 2 = ${response.sampleSize}")
+          mbtBluetoothLE.onMtuIndus5Changed()
+//          mbtBluetoothLE.stopWaitingOperation(false)
+        }
+        is Indus5Response.EegFrameResponse -> {
+          LogUtils.i("n113", "indus5 eeg frame received: data = ${Arrays.toString(characteristic.value)}")
+          mbtBluetoothLE.notifyNewDataAcquired(response.data)
+        }
+        else -> {
+          //it should be Indus5Response.UnknownResponse here
+          LogUtils.e(TAG, "unknown indus5 frame : data = ${Arrays.toString(characteristic.value)}")
+        }
+      }
+//      characteristic.value
+//      mbtBluetoothLE.notifyDeviceInfoReceived(DeviceInfo.FW_VERSION, String(characteristic.value))
+    } else {
+      if (characteristic.uuid.compareTo(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG) == 0) {
+        mbtBluetoothLE.notifyNewDataAcquired(characteristic.value)
+      } else if (characteristic.uuid.compareTo(MelomindCharacteristics.CHARAC_HEADSET_STATUS) == 0) {
+        mbtBluetoothLE.notifyNewHeadsetStatus(characteristic.value)
+      } else if (characteristic.uuid.compareTo(MelomindCharacteristics.CHARAC_MEASUREMENT_MAILBOX) == 0) {
+        onMailboxEventReceived(characteristic)
+        //mbtBluetoothLE.stopWaitingOperation(true, false);
+      }
     }
   }
 
@@ -197,11 +298,21 @@ internal class MbtGattController(private val mbtBluetoothLE: MbtBluetoothLE) : B
   }
 
   override fun onDescriptorWrite(gatt: BluetoothGatt, descriptor: BluetoothGattDescriptor, status: Int) {
+    Timber.i("onDescriptorWrite")
     super.onDescriptorWrite(gatt, descriptor, status)
     // Check for EEG Notification status
-    LogUtils.i(TAG, "Received a [onDescriptorWrite] callback with status " + if (status == BluetoothGatt.GATT_SUCCESS) "SUCCESS" else "FAILURE")
-    mbtBluetoothLE.stopWaitingOperation(status == BluetoothGatt.GATT_SUCCESS)
-    mbtBluetoothLE.onNotificationStateChanged(status == BluetoothGatt.GATT_SUCCESS, descriptor.characteristic, descriptor.value == BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
+    if (isIndus5()) {
+        if (descriptor.uuid.toString() == gatt.getService(MelomindCharacteristics.INDUS_5_TRANSPARENT_SERVICE)
+                        .getCharacteristic(MelomindCharacteristics.INDUS_5_RX_CHARACTERISTIC)
+                        .getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID).uuid.toString()) {
+          Timber.i("onDescriptorWrite : status = $status")
+          mbtBluetoothLE.stopWaitingOperation(status == 0) //0 means successful
+        }
+    } else {
+      LogUtils.i(TAG, "Received a [onDescriptorWrite] callback with status " + if (status == BluetoothGatt.GATT_SUCCESS) "SUCCESS" else "FAILURE")
+      mbtBluetoothLE.stopWaitingOperation(status == BluetoothGatt.GATT_SUCCESS)
+      mbtBluetoothLE.onNotificationStateChanged(status == BluetoothGatt.GATT_SUCCESS, descriptor.characteristic, descriptor.value == BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
+    }
   }
 
   override fun onReliableWriteCompleted(gatt: BluetoothGatt, status: Int) {
@@ -214,6 +325,8 @@ internal class MbtGattController(private val mbtBluetoothLE: MbtBluetoothLE) : B
 
   override fun onMtuChanged(gatt: BluetoothGatt, mtu: Int, status: Int) {
     super.onMtuChanged(gatt, mtu, status)
+    Timber.e("n113 : onMtuChanged : mtu = $mtu ; status = $status")
+    LogUtils.e("ConnSteps", "8b : mtu changed")
     mbtBluetoothLE.stopWaitingOperation(mtu)
   }
 
@@ -268,6 +381,15 @@ internal class MbtGattController(private val mbtBluetoothLE: MbtBluetoothLE) : B
         && linkkeyInvalidResponseCode?.let { BitUtils.areByteEquals(it, response[0]) } == false)) //wait another response until timeout if the linkkey invalid response is returned
   }
   private val TAG = this::class.java.simpleName
+
+  //----------------------------------------------------------------------------
+  // indus 5 new functions
+  //----------------------------------------------------------------------------
+
+  fun isIndus5(): Boolean {
+    return (transparentService != null)
+  }
+
 
 
 }

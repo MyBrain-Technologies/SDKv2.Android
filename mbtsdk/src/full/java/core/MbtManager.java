@@ -54,6 +54,7 @@ import eventbus.events.FirmwareUpdateClientEvent;
 import eventbus.events.SignalProcessingEvent;
 import features.MbtDeviceType;
 import features.MbtFeatures;
+import indus5.MbtClientIndus5;
 import mbtsdk.com.mybraintech.mbtsdk.R;
 import utils.LogUtils;
 
@@ -145,6 +146,7 @@ public class MbtManager {
     } else if (deviceQrCodeRequested != null && deviceNameRequested != null && deviceNameRequested.equals(new MelomindsQRDataBase(mContext, true).get(deviceQrCodeRequested))) {
       this.connectionStateListener.onError(HeadsetDeviceError.ERROR_MATCHING, mContext.getString(R.string.aborted_connection));
     } else {
+      LogUtils.e("ConnSteps", "3 : from MbtManager post EventBus event StartOrContinueConnectionRequestEvent to start the connection process");
       MbtEventBus.postEvent(new StartOrContinueConnectionRequestEvent(true,
           new BluetoothContext(mContext,
               deviceTypeRequested,
@@ -180,15 +182,20 @@ public class MbtManager {
     this.eegListener = streamConfig.getEegListener();
     this.deviceStatusListener = streamConfig.getDeviceStatusListener();
 
-    for (DeviceCommand command : streamConfig.getDeviceCommands()) {
-      sendCommand(command);
+    if (Indus5FastMode.INSTANCE.isEnabled()) {
+      MbtClientIndus5.startStream(streamConfig);
+    } else {
+      for (DeviceCommand command : streamConfig.getDeviceCommands()) {
+        sendCommand(command);
+      }
+      MbtEventBus.postEvent(
+              new StreamRequestEvent(START,
+                      streamConfig.getRecordConfig() != null,
+                      streamConfig.shouldComputeQualities(),
+                      (deviceStatusListener != null),
+                      streamConfig.getRecordConfig()));
+
     }
-    MbtEventBus.postEvent(
-        new StreamRequestEvent(START,
-            streamConfig.getRecordConfig() != null,
-            streamConfig.shouldComputeQualities(),
-            (deviceStatusListener != null),
-            streamConfig.getRecordConfig()));
   }
 
   /**

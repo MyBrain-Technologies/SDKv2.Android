@@ -1,9 +1,8 @@
 package core.device.model;
 
 /**
- * Created by Etienne on 14/10/2016.
+ * Enum DeviceInfo
  */
-
 public enum DeviceInfo {
 
     /**

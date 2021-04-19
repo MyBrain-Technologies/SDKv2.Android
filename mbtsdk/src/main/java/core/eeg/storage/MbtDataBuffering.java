@@ -84,7 +84,7 @@ public class MbtDataBuffering {
    */
   public void storeConsolidatedEegInPacketBuffer(@NonNull final ArrayList<ArrayList<Float>> consolidatedEEG, @NonNull ArrayList<Float> status) {
 
-    int maxElementsToAppend = getBufferLengthClientNotif() - mbtEEGPacketsBuffer.getChannelsData().size();
+    int maxElementsToAppend = getBufferLength() - mbtEEGPacketsBuffer.getChannelsData().size();
     try {
       if (maxElementsToAppend > consolidatedEEG.size()) {
 
@@ -129,8 +129,8 @@ public class MbtDataBuffering {
    *
    * @return
    */
-  private int getBufferLengthClientNotif() {
-    return Math.max(MbtConfig.getEegBufferLengthClientNotif(eegManager.getSampRate()), MbtFeatures.DEFAULT_MAX_PENDING_RAW_DATA_BUFFER_SIZE); //todo ajouter size buffer C++
+  private int getBufferLength() {
+    return Math.max(MbtConfig.getEegBufferLength(eegManager.getSampleRate()), MbtFeatures.DEFAULT_MAX_PENDING_RAW_DATA_BUFFER_SIZE); //todo ajouter size buffer C++
   }
 
   /**

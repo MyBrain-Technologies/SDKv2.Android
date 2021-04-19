@@ -117,7 +117,7 @@ public final class StreamConfig {
      */
     @Keep
     public static class Builder{
-        private int notificationPeriod = MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD;
+        private int notificationPeriod = MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS;
         /**
          * The EEG Listener is a callback that receives the EEG raw data streamed
          * from the headset to the SDK.
@@ -199,7 +199,7 @@ public final class StreamConfig {
          * For example, if the sampling frequency is 250Hz, then the sampling period is 4ms.
          * It means that the value must be a multiple of 4ms.</p>
          *
-         * <p>It is by default set to {@link MbtFeatures#DEFAULT_CLIENT_NOTIFICATION_PERIOD}</p>
+         * <p>It is by default set to {@link MbtFeatures#DEFAULT_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS}</p>
          * @param periodInMillis the period in milliseconds
          * @return the builder instance
          */

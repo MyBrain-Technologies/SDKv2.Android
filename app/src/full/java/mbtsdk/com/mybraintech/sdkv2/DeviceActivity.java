@@ -76,7 +76,9 @@ public class DeviceActivity extends AppCompatActivity {
     private String lastReadBatteryLevel = "";
 
     private boolean isConnected = false;
+    private boolean isRecording = false;
     private boolean isStreaming = false;
+    private boolean freezeGraph = false;
 
     private BluetoothStateListener bluetoothStateListener;
     private DeviceStatusListener<BaseError> deviceStatusListener;
@@ -286,7 +288,7 @@ public class DeviceActivity extends AppCompatActivity {
 
                 if (!isStreaming) { //streaming is not in progress : starting streaming
                         startStream(new StreamConfig.Builder(eegListener)
-                            .setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD)
+                            .setNotificationPeriod(MbtFeatures.DEFAULT_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS)
                             .useQualities()
                             .createForDevice(deviceType));
 
