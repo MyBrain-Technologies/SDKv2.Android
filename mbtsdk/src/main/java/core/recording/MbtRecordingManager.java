@@ -8,13 +8,18 @@ import org.greenrobot.eventbus.ThreadMode;
 
 import config.RecordConfig;
 import core.BaseModuleManager;
+import core.Indus5FastMode;
+import core.bluetooth.requests.RecordingRequestIndus5Event;
 import core.bluetooth.requests.StreamRequestEvent;
 import core.device.DeviceEvents;
+import core.device.model.MbtDevice;
+import core.device.model.MelomindQPlusDevice;
 import core.eeg.MbtEEGManager;
 import core.recording.localstorage.MbtRecordBuffering;
 import eventbus.MbtEventBus;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.ConnectionStateEvent;
+import timber.log.Timber;
 
 /**
  * Created by Etienne on 08/02/2018.
@@ -46,7 +51,9 @@ public final class MbtRecordingManager extends BaseModuleManager {
      * @param request is the start or stop streaming request
      */
     @Subscribe (threadMode = ThreadMode.ASYNC)
-    public void onStreamRequest(final StreamRequestEvent request) {
+    public void StreamRequestEvent(final StreamRequestEvent request) {
+        Timber.i("StreamRequestEvent : start = %s", request.isStartStream());
+
         recordConfig = request.getRecordConfig();
 
         if (request.isStartStream()) { //start streaming
@@ -71,6 +78,38 @@ public final class MbtRecordingManager extends BaseModuleManager {
         }
     }
 
+    /**
+     * for Indus5
+     * Record the data in a JSON file once the streaming is stopped
+     * @param request is the start or stop streaming request
+     */
+    @Subscribe (threadMode = ThreadMode.ASYNC)
+    public void onStreamRequestIndus5(final RecordingRequestIndus5Event request) {
+        Timber.i("onStreamRequestIndus5 : start = %s", request.isStart());
+
+        recordConfig = request.getRecordConfig();
+
+        if (request.isStart()) { //start streaming
+
+            if(recordBuffering != null)
+                recordBuffering.resetPacketsBuffer();
+            else
+                recordBuffering = new MbtRecordBuffering(mContext);
+
+        } else { //stop streaming
+            try {
+                Thread.sleep(500); //packets can be received with a small delay so we wait this packets
+
+                if(recordConfig != null && !recordBuffering.isEegPacketsBufferEmpty())
+                    storeRecording(); //Save the EEG packets and associated data on a JSON file
+
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            recordConfig = null;
+        }
+    }
 
 
     @Subscribe(threadMode = ThreadMode.ASYNC)
@@ -107,17 +146,24 @@ public final class MbtRecordingManager extends BaseModuleManager {
     }
 
     private void storeRecording(){
-        MbtEventBus.postEvent(new DeviceEvents.GetDeviceEvent(), new MbtEventBus.Callback<DeviceEvents.PostDeviceEvent>() {
-            @Override
-            @Subscribe
-            public Void onEventCallback(DeviceEvents.PostDeviceEvent device) {
-                MbtEventBus.registerOrUnregister(false, this);
-                if (device != null && device.getDevice() != null)
-                    recordBuffering.storeRecordBuffer(device.getDevice(), recordConfig);
+        Timber.i("storeRecording : " + recordConfig.getDirectory() + " " + recordConfig.getFilename());
 
-                return null;
-            }
-        });
+        if (Indus5FastMode.INSTANCE.isEnabled()) {
+            MbtDevice device = new MelomindQPlusDevice("null", "q_plus_test");
+            recordBuffering.storeRecordBuffer(device, recordConfig);
+        } else {
+            MbtEventBus.postEvent(new DeviceEvents.GetDeviceEvent(), new MbtEventBus.Callback<DeviceEvents.PostDeviceEvent>() {
+                @Override
+                @Subscribe
+                public Void onEventCallback(DeviceEvents.PostDeviceEvent device) {
+                    MbtEventBus.registerOrUnregister(false, this);
+                    if (device != null && device.getDevice() != null)
+                        recordBuffering.storeRecordBuffer(device.getDevice(), recordConfig);
+
+                    return null;
+                }
+            });
+        }
 
         if(!recordConfig.enableMultipleRecordings())
             recordBuffering = null;

@@ -752,28 +752,18 @@ public class MelomindActivity extends AppCompatActivity implements ConnectionSta
 
                 setState(appliState.CONNECTING);
 
+                CheckBox chb = findViewById(R.id.chb_indus5);
+                final boolean isIndus5 = chb.isChecked();
+
                 AsyncUtils.executeAsync(new Runnable() {
                     @Override
                     public void run() {
                         LogUtils.e("ConnSteps", "1 : button clicked");
+
+                        MbtDeviceType deviceType = isIndus5 ? MbtDeviceType.MELOMIND_Q_PLUS : MbtDeviceType.MELOMIND;
                         sdkClient.connectBluetooth(new ConnectionConfig.Builder(mbtsdk.com.mybraintech.sdkv2.MelomindActivity.this)
-                                .createForDevice(MbtDeviceType.MELOMIND_Q_PLUS)
+                                .createForDevice(deviceType)
                         );
-
-                    }
-                });
-            }
-
-        });
-
-        View btn_eeg_indus5 = findViewById(R.id.btn_eeg_indus5);
-        btn_eeg_indus5.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                AsyncUtils.executeAsync(new Runnable() {
-                    @Override
-                    public void run() {
-//                        sdkClient.requestEeg();
                     }
                 });
             }

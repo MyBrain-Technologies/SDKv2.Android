@@ -14,6 +14,7 @@ import core.eeg.signalprocessing.ContextSP;
 import core.eeg.storage.MbtEEGPacket;
 import engine.clientevents.RecordingError;
 import model.MbtRecording;
+import timber.log.Timber;
 import utils.LogUtils;
 
 /**
@@ -52,6 +53,7 @@ public class MbtRecordBuffering {
     }
 
     public boolean storeRecordBuffer(@NonNull MbtDevice device, @NonNull RecordConfig recordConfig) {
+        Timber.i("storeRecordBuffer : " + recordConfig.getDirectory() + " " + recordConfig.getFilename());
         if (eegPacketsBuffer == null || eegPacketsBuffer.isEmpty()){
             LogUtils.w(TAG," JSON file not created: null or empty buffer of EEG packets");
             return false;

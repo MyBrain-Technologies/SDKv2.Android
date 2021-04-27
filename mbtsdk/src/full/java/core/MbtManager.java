@@ -25,6 +25,7 @@ import core.bluetooth.requests.DisconnectRequestEvent;
 import core.bluetooth.requests.ReadRequestEvent;
 import core.bluetooth.requests.StartOrContinueConnectionRequestEvent;
 import core.bluetooth.requests.StreamRequestEvent;
+import core.bluetooth.requests.RecordingRequestIndus5Event;
 import core.device.event.DCOffsetEvent;
 import core.device.DeviceEvents;
 import core.device.MbtDeviceManager;
@@ -183,6 +184,11 @@ public class MbtManager {
     this.deviceStatusListener = streamConfig.getDeviceStatusListener();
 
     if (Indus5FastMode.INSTANCE.isEnabled()) {
+      if (streamConfig.getRecordConfig() != null) {
+        MbtEventBus.postEvent(
+                new RecordingRequestIndus5Event(START,
+                        streamConfig.getRecordConfig()));
+      }
       MbtClientIndus5.startStream(streamConfig);
     } else {
       for (DeviceCommand command : streamConfig.getDeviceCommands()) {
@@ -202,9 +208,15 @@ public class MbtManager {
    * Posts an event to stop the currently started stream session
    */
   public void stopStream(@Nullable RecordConfig recordConfig) {
-    MbtEventBus.postEvent(
-        new StreamRequestEvent(STOP, false,
-            false, false, recordConfig));
+    if (Indus5FastMode.INSTANCE.isEnabled()) {
+      MbtClientIndus5.stopStream();
+      MbtEventBus.postEvent(
+              new RecordingRequestIndus5Event(STOP));
+    } else {
+      MbtEventBus.postEvent(
+              new StreamRequestEvent(STOP, false,
+                      false, false, recordConfig));
+    }
   }
 
   public void startRecord(Context context) {
