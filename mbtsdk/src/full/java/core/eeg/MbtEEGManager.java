@@ -184,7 +184,7 @@ public final class MbtEEGManager extends BaseModuleManager {
                 MbtEventBus.postEvent(new ClientReadyEEGEvent(eegPackets));
             }
         });
-        LogUtils.d(TAG, "New packet: "+eegPackets.toString());
+        LogUtils.v(TAG, "New packet: "+eegPackets.toString());
     }
     private final String FREQUENCY_BAND_FEATURES_VERSION = "2.3.1";
 

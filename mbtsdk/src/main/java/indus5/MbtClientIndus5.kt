@@ -21,7 +21,9 @@ import core.bluetooth.requests.StreamRequestEvent
 import core.device.model.MbtDevice
 import core.device.model.MelomindQPlusDevice
 import core.eeg.MbtEEGManager
+import engine.clientevents.BaseError
 import engine.clientevents.BluetoothError
+import engine.clientevents.DeviceBatteryListener
 import eventbus.MbtEventBus
 import eventbus.events.BluetoothEEGEvent
 import org.greenrobot.eventbus.EventBus
@@ -33,6 +35,7 @@ import java.util.*
 @SuppressLint("StaticFieldLeak")
 object MbtClientIndus5 {
 
+    private var deviceBatteryListener: DeviceBatteryListener<BaseError>? = null
     private const val MELOMIND_INDUS5_PREFIX = "melo_2"
 
     lateinit var context: Context
@@ -57,7 +60,7 @@ object MbtClientIndus5 {
     private lateinit var handler : Handler
 
     // Stops scanning after N seconds.
-    private const val SCAN_PERIOD: Long = 60 * 1000
+    private const val SCAN_PERIOD: Long = 15 * 1000
     private const val MTU_SIZE: Int = 47
 
     private lateinit var leScanCallback: MyScanCallback
@@ -86,6 +89,7 @@ object MbtClientIndus5 {
             if (isTargetDevice(result.device)) {
                 stopScan()
                 Indus5FastMode.setMelomindIndus5()
+                Indus5FastMode.mbtDevice = MelomindQPlusDevice(result.device.address, result.device.name)
                 connectGattServer(result.device!!)
             }
         }
@@ -202,6 +206,10 @@ object MbtClientIndus5 {
                 is Indus5Response.EegFrameResponse -> {
                     Timber.v("indus5 eeg frame received: data = ${Arrays.toString(characteristic.value)}")
                     MbtEventBus.postEvent(BluetoothEEGEvent(response.data))
+                }
+                is Indus5Response.BatteryLevelResponse -> {
+                    Timber.v("indus5 eeg frame received: data = ${Arrays.toString(characteristic.value)}")
+                    deviceBatteryListener?.onBatteryLevelReceived(response.percent.toString())
                 }
                 is Indus5Response.EegStartResponse -> {
                     Timber.v("indus5 eeg start")
@@ -398,6 +406,14 @@ object MbtClientIndus5 {
     fun stopStream() {
         Timber.i("indus 5 startStream")
         tx.value = EnumIndus5Command.MBX_STOP_EEG_ACQUISITION.bytes
+        bluetoothGatt.writeCharacteristic(tx)
+    }
+
+    @JvmStatic
+    fun getBatteryLevelIndus5(listener: DeviceBatteryListener<BaseError>) {
+        Timber.i("indus 5 getBatteryLevelIndus5")
+        this.deviceBatteryListener = listener
+        tx.value = EnumIndus5Command.MBX_GET_BATTERY_VALUE.bytes
         bluetoothGatt.writeCharacteristic(tx)
     }
 }

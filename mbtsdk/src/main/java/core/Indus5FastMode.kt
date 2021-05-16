@@ -1,9 +1,17 @@
 package core
 
+import android.bluetooth.BluetoothDevice
+import core.device.model.MbtDevice
+import core.device.model.MelomindQPlusDevice
+import features.MbtDeviceType
+
 /**
  * TODO: remove this later, this class is used to quick develop function of Q+ indus5
  */
 object Indus5FastMode {
+
+    @JvmStatic
+    var mbtDevice: MbtDevice = MelomindQPlusDevice("unset", "unset")
 
     private var isMelomindIndus5 = false
 

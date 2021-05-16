@@ -158,7 +158,12 @@ public final class MbtClient {
      * <p>0%</p>
      */
     public void readBattery(DeviceBatteryListener listener) {
-        mbtManager.readBluetooth(DeviceInfo.BATTERY, listener);
+        if (Indus5FastMode.INSTANCE.isEnabled()) {
+            mbtManager.getBatteryLevelIndus5(listener);
+        }
+        else {
+            mbtManager.readBluetooth(DeviceInfo.BATTERY, listener);
+        }
     }
 
     /**

@@ -74,7 +74,7 @@ public class MbtDataAcquisition {
 
         //2nd step : Create interpolation packets if packet loss
         if(indexDifference != 1){
-            LogUtils.e(TAG, "diff is " + indexDifference +" . Current index : " + currentIndex + " previousIndex : " + previousIndex);
+            LogUtils.w(TAG, "diff is " + indexDifference +" . Current index : " + currentIndex + " previousIndex : " + previousIndex);
             for (int i = 0; i < indexDifference; i++) {
                 fillSingleDataEEGList(nbChannels, true, data);
             }

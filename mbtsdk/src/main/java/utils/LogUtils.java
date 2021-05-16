@@ -13,6 +13,10 @@ public final class LogUtils{
         return isLoggingEnabled ? Log.d(tag, msg) : 0;
     }
 
+    public static int v(String tag, String msg) {
+        return isLoggingEnabled ? Log.v(tag, msg) : 0;
+    }
+
     public static int i(String tag, String msg) {
         return isLoggingEnabled ? Log.i(tag, msg) : 0;
     }

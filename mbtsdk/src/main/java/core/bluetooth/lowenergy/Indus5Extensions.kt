@@ -1,7 +1,6 @@
 package core.bluetooth.lowenergy
 
 import utils.LogUtils
-import java.util.*
 
 fun ByteArray.parseRawIndus5Response() : Indus5Response {
     try {
@@ -20,6 +19,14 @@ fun ByteArray.parseRawIndus5Response() : Indus5Response {
         }
         if (this[0].compareTo(0x25) == 0) {
             return Indus5Response.EegStopResponse()
+        }
+        if (this[0].compareTo(0x25) == 0) {
+            return Indus5Response.EegStopResponse()
+        }
+        if (this[0].compareTo(0x20) == 0) {
+            // 0x00 .. 0x04 = 0% | 0x05 = 12,5% -> 0x0C = 100%
+            val percent = (this[1] - 4) * 12.5f
+            return Indus5Response.BatteryLevelResponse(percent)
         }
     } catch (e: Exception) {
         LogUtils.e(e)

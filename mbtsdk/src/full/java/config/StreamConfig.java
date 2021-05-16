@@ -5,6 +5,7 @@ import androidx.annotation.Nullable;
 import java.util.LinkedList;
 import command.DeviceCommand;
 import command.DeviceStreamingCommands;
+import core.device.event.indus5.RecordingSavedListener;
 import core.eeg.storage.MbtEEGPacket;
 import engine.MbtClient;
 import engine.clientevents.BaseError;
@@ -24,6 +25,8 @@ public final class StreamConfig {
     private final EegListener<BaseError> eegListener;
     private DeviceStatusListener<BaseError> deviceStatusListener;
     private boolean computeQualities;
+    public RecordingSavedListener recordingSavedListener = null;
+
     /**
      * Recording configuration is all the data required to store the EEG packets in a JSON file.
      */

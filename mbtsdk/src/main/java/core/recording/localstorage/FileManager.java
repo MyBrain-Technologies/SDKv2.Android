@@ -124,6 +124,21 @@ public final class FileManager {
         }
     }
 
+    public static File getFile(@NonNull final Context context,
+                                  @Nullable String folder,
+                                  @NonNull String filename,
+                                  boolean useExternalStorage)
+    {
+        String absolutePath = createDirectory(context, folder, useExternalStorage);
+        if (absolutePath == null){
+            Log.e(TAG, "Impossible to create the folder: "+folder);
+            return null;
+        }
+
+        File file = new File(absolutePath, filename + FILE_FORMAT);
+        return file;
+    }
+
     /**
      * Create and write recorded data into a new JSON file
      * @param context the context of the application

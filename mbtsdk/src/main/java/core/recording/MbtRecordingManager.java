@@ -3,6 +3,7 @@ package core.recording;
 import android.content.Context;
 import androidx.annotation.NonNull;
 
+import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
@@ -12,6 +13,7 @@ import core.Indus5FastMode;
 import core.bluetooth.requests.RecordingRequestIndus5Event;
 import core.bluetooth.requests.StreamRequestEvent;
 import core.device.DeviceEvents;
+import core.device.event.indus5.RecordingSavedEvent;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindQPlusDevice;
 import core.eeg.MbtEEGManager;
@@ -149,8 +151,8 @@ public final class MbtRecordingManager extends BaseModuleManager {
         Timber.i("storeRecording : " + recordConfig.getDirectory() + " " + recordConfig.getFilename());
 
         if (Indus5FastMode.INSTANCE.isEnabled()) {
-            MbtDevice device = new MelomindQPlusDevice("null", "q_plus_test");
-            recordBuffering.storeRecordBuffer(device, recordConfig);
+            recordBuffering.storeRecordBuffer(Indus5FastMode.getMbtDevice(), recordConfig);
+            MbtEventBus.postEvent(new RecordingSavedEvent(recordConfig));
         } else {
             MbtEventBus.postEvent(new DeviceEvents.GetDeviceEvent(), new MbtEventBus.Callback<DeviceEvents.PostDeviceEvent>() {
                 @Override

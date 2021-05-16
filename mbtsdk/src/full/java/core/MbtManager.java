@@ -30,6 +30,8 @@ import core.device.event.DCOffsetEvent;
 import core.device.DeviceEvents;
 import core.device.MbtDeviceManager;
 import core.device.event.SaturationEvent;
+import core.device.event.indus5.RecordingSavedEvent;
+import core.device.event.indus5.RecordingSavedListener;
 import core.device.model.DeviceInfo;
 import core.device.model.MbtDevice;
 import core.device.model.MelomindsQRDataBase;
@@ -97,6 +99,7 @@ public class MbtManager {
    */
   private OADStateListener oadStateListener;
   private EegListener<BaseError> eegListener;
+  private RecordingSavedListener recordingSavedListener = null;
   private DeviceBatteryListener<BaseError> deviceInfoListener;
   @Nullable
   private DeviceStatusListener deviceStatusListener;
@@ -182,6 +185,7 @@ public class MbtManager {
   public void startStream(StreamConfig streamConfig) {
     this.eegListener = streamConfig.getEegListener();
     this.deviceStatusListener = streamConfig.getDeviceStatusListener();
+    this.recordingSavedListener = streamConfig.recordingSavedListener;
 
     if (Indus5FastMode.INSTANCE.isEnabled()) {
       if (streamConfig.getRecordConfig() != null) {
@@ -202,6 +206,10 @@ public class MbtManager {
                       streamConfig.getRecordConfig()));
 
     }
+  }
+
+  public void getBatteryLevelIndus5(DeviceBatteryListener listener) {
+    MbtClientIndus5.getBatteryLevelIndus5(listener);
   }
 
   /**
@@ -418,6 +426,13 @@ public class MbtManager {
 
         oadStateListener.onProgressPercentChanged(event.getOadProgress());
       }
+    }
+  }
+
+  @Subscribe(threadMode = ThreadMode.MAIN)
+  public void onRecordingSaved(@NonNull final RecordingSavedEvent event) {
+    if (this.recordingSavedListener != null) {
+      this.recordingSavedListener.onRecordingSaved(event.getRecordConfig());
     }
   }
 
