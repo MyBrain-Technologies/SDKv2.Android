@@ -209,7 +209,7 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
   }
 
   fun setRequestProcessing(isRequestProcessing: Boolean) {
-    Timber.i("someone set isRequestProcessing = $isRequestProcessing")
+//    Timber.i("someone set isRequestProcessing = $isRequestProcessing")
     requestProcessor.isRequestProcessing = isRequestProcessing
   }
   fun isOperationWaiting(): Boolean { return requestProcessor.isOperationWaiting() }
