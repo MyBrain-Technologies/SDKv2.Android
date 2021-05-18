@@ -159,9 +159,10 @@ public final class MbtRecordingManager extends BaseModuleManager {
                 @Subscribe
                 public Void onEventCallback(DeviceEvents.PostDeviceEvent device) {
                     MbtEventBus.registerOrUnregister(false, this);
-                    if (device != null && device.getDevice() != null)
+                    if (device != null && device.getDevice() != null) {
                         recordBuffering.storeRecordBuffer(device.getDevice(), recordConfig);
-
+                        MbtEventBus.postEvent(new RecordingSavedEvent(recordConfig));
+                    }
                     return null;
                 }
             });
