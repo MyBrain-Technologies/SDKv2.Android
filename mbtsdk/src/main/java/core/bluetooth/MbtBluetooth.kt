@@ -142,7 +142,7 @@ abstract class MbtBluetooth(protocol: BluetoothProtocol, protected var manager: 
    */
   protected fun startWaitingOperation(timeout: Int): Any? { //todo rename startWait/wait
     Log.d(TAG, "Wait response of device command ")
-    LogUtils.e("ConnSteps", "MbtBluetooth startWaitingOperation")
+//    LogUtils.e("ConnSteps", "MbtBluetooth startWaitingOperation")
     try {
       return lock.waitOperationResult(timeout)
     } catch (e: Exception) {
@@ -152,7 +152,7 @@ abstract class MbtBluetooth(protocol: BluetoothProtocol, protected var manager: 
   }
 
   fun stopWaitingOperation(response: Any) {
-    LogUtils.e("ConnSteps", "MbtBluetooth stopWaitingOperation")
+//    LogUtils.e("ConnSteps", "MbtBluetooth stopWaitingOperation")
     lock.stopWaitingOperation(response)
   }
 

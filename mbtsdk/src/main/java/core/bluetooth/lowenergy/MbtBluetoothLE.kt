@@ -122,7 +122,7 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
       if (result.device.name != null && result.device.name.startsWith(melomindNamePrefix)) {
         AsyncUtils.executeAsync(Runnable {
           if (currentState == BluetoothState.SCAN_STARTED) {
-            LogUtils.e("ConnSteps", "5b : found device")
+//            LogUtils.e("ConnSteps", "5b : found device")
             manager.context.deviceNameRequested
             super.onScanResult(callbackType, result)
             currentDevice = result.device
@@ -533,7 +533,7 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
 
   fun onStateConnected() {
     if (currentState == BluetoothState.DATA_BT_CONNECTING || currentState == BluetoothState.SCAN_STARTED) {
-      LogUtils.e("ConnSteps", "6d : updateConnectionState to switch to next step")
+//      LogUtils.e("ConnSteps", "6d : updateConnectionState to switch to next step")
       updateConnectionState(true) //current state is set to DATA_BT_CONNECTION_SUCCESS and future is completed
     }
     else if (currentState == BluetoothState.IDLE || currentState == BluetoothState.UPGRADING) {

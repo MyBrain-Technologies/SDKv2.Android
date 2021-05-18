@@ -131,7 +131,7 @@ public final class MbtClient {
             return;
         }
 
-        LogUtils.e("ConnSteps", "2 : use MbtManager to connect");
+//        LogUtils.e("ConnSteps", "2 : use MbtManager to connect");
         this.mbtManager.connectBluetooth(config.getConnectionStateListener(),config.connectAudio(), config.getDeviceName(), config.getDeviceQrCode(), config.getDeviceType(), config.getMtu());
     }
 

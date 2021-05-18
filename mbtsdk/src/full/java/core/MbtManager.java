@@ -150,7 +150,7 @@ public class MbtManager {
     } else if (deviceQrCodeRequested != null && deviceNameRequested != null && deviceNameRequested.equals(new MelomindsQRDataBase(mContext, true).get(deviceQrCodeRequested))) {
       this.connectionStateListener.onError(HeadsetDeviceError.ERROR_MATCHING, mContext.getString(R.string.aborted_connection));
     } else {
-      LogUtils.e("ConnSteps", "3 : from MbtManager post EventBus event StartOrContinueConnectionRequestEvent to start the connection process");
+//      LogUtils.e("ConnSteps", "3 : from MbtManager post EventBus event StartOrContinueConnectionRequestEvent to start the connection process");
       MbtEventBus.postEvent(new StartOrContinueConnectionRequestEvent(true,
           new BluetoothContext(mContext,
               deviceTypeRequested,

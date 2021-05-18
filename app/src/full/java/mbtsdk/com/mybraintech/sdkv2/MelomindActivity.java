@@ -758,7 +758,7 @@ public class MelomindActivity extends AppCompatActivity implements ConnectionSta
                 AsyncUtils.executeAsync(new Runnable() {
                     @Override
                     public void run() {
-                        LogUtils.e("ConnSteps", "1 : button clicked");
+//                        LogUtils.e("ConnSteps", "1 : button clicked");
 
                         MbtDeviceType deviceType = isIndus5 ? MbtDeviceType.MELOMIND_Q_PLUS : MbtDeviceType.MELOMIND;
                         sdkClient.connectBluetooth(new ConnectionConfig.Builder(mbtsdk.com.mybraintech.sdkv2.MelomindActivity.this)

@@ -126,22 +126,22 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
 
 
       LogUtils.d(TAG, "State is $currentState")
-      LogUtils.e("ConnSteps", "State is $currentState")
+//      LogUtils.e("ConnSteps", "State is $currentState")
       when (currentState) {
         IDLE, DATA_BT_DISCONNECTED -> {
-          LogUtils.e("ConnSteps", "4a : getReadyForBluetoothOperation");
+//          LogUtils.e("ConnSteps", "4a : getReadyForBluetoothOperation");
           getReadyForBluetoothOperation()
         }
         READY_FOR_BLUETOOTH_OPERATION -> {
-          LogUtils.e("ConnSteps", "5a : start ble scan")
+//          LogUtils.e("ConnSteps", "5a : start ble scan")
           startScan()
         }
         DEVICE_FOUND, DATA_BT_CONNECTING -> {
-          LogUtils.e("ConnSteps", "6a : startConnectionForDataStreaming")
+//          LogUtils.e("ConnSteps", "6a : startConnectionForDataStreaming")
           startConnectionForDataStreaming()
         }
         DATA_BT_CONNECTION_SUCCESS -> {
-          LogUtils.e("ConnSteps", "7a : startDiscoveringServices")
+//          LogUtils.e("ConnSteps", "7a : startDiscoveringServices")
           startDiscoveringServices()
         }
         DISCOVERING_SUCCESS -> startReadingDeviceInfo(FW_VERSION) // read all device info (except battery) : first device info to read is firmware version
@@ -152,7 +152,7 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
         BONDED -> changeMTU()
         BT_PARAMETERS_CHANGED -> startSendingExternalName()
         INDUS5_DISCOVERING_SUCCESS -> {
-          LogUtils.e("ConnSteps", "subsribe")
+//          LogUtils.e("ConnSteps", "subsribe")
           subscribeIndus5Tx()
         }
         INDUS5_MTU_CHANGING_1 -> {
@@ -167,7 +167,7 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
           manager.setRequestProcessing(false)
         }
         INDUS5_MTU_CHANGED_2 -> {
-          LogUtils.e("ConnSteps", "10a : mtu indus5 changed ok, finish connection steps")
+//          LogUtils.e("ConnSteps", "10a : mtu indus5 changed ok, finish connection steps")
           //for indus5 : ends connection process here
           LogUtils.i(TAG, "INDUS5_MTU_ON_TX_CHANGED")
           manager.setRequestProcessing(false)
@@ -175,16 +175,16 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
           notifyConnectionStateChanged(CONNECTED_AND_READY)
         }
         CONNECTED -> {
-          LogUtils.e("ConnSteps", "11a")
+//          LogUtils.e("ConnSteps", "11a")
           startConnectionForAudioStreaming()
         }
         else -> {
-          LogUtils.e("ConnSteps", "stop 179")
+//          LogUtils.e("ConnSteps", "stop 179")
           manager.setRequestProcessing(false)
         }
       }
     } else {
-      LogUtils.e("ConnSteps", "stop 184")
+//      LogUtils.e("ConnSteps", "stop 184")
       manager.setRequestProcessing(false)
     }
   }
@@ -215,7 +215,7 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
 
     if (MbtAudioBluetooth.instance is MbtBluetoothA2DP) (MbtAudioBluetooth.instance as MbtBluetoothA2DP).initA2dpProxy() //initialization to check if a Melomind is already connected in A2DP : as the next step is the scanning, the SDK is able to filter on the name of this device
     if (MbtDataBluetooth.instance.currentState == IDLE) updateConnectionState(false) //current state is set to READY_FOR_BLUETOOTH_OPERATION
-    LogUtils.e("ConnSteps", "4b : bluetooth is ready")
+//    LogUtils.e("ConnSteps", "4b : bluetooth is ready")
     switchToNextConnectionStep()
   }
 
@@ -250,7 +250,7 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
     LogUtils.i(TAG, "start connection data streaming")
     manager.tryOperation(
             {
-              LogUtils.e("ConnSteps", "6b : request connect bluetooth")
+//              LogUtils.e("ConnSteps", "6b : request connect bluetooth")
               connect(getBluetoothContext().deviceTypeRequested.protocol)
             },
             MbtConfig.getBluetoothConnectionTimeout())
@@ -265,11 +265,11 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
     val currentDevice = MbtDataBluetooth.instance.currentDevice
     val isConnectionSuccessful = currentDevice != null && when (protocol) {
       LOW_ENERGY, SPP -> {
-        LogUtils.e("ConnSteps", "6b1 : connect bluetooth")
+//        LogUtils.e("ConnSteps", "6b1 : connect bluetooth")
         MbtDataBluetooth.instance.connect(context, currentDevice)
       }
       A2DP -> {
-        LogUtils.e("ConnSteps", "6b2 : connect a2dp")
+//        LogUtils.e("ConnSteps", "6b2 : connect a2dp")
         MbtAudioBluetooth.instance?.connect(context, currentDevice) ?: false
       }
     }
@@ -410,9 +410,9 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
       }
     }
     if (isConnected) updateConnectionState(true) //BLE and audio (if SDK user requested it) are connected so the client is notified that the device is fully connected
-    LogUtils.e("ConnSteps", "stop 404")
+//    LogUtils.e("ConnSteps", "stop 404")
     manager.setRequestProcessing(false)
-    LogUtils.i(TAG, "connection completed")
+//    LogUtils.i(TAG, "connection completed")
   }
 
   fun retryConnectionForAudioStreaming() {

@@ -88,7 +88,7 @@ internal class MbtGattController(private val mbtBluetoothLE: MbtBluetoothLE) : B
     when (newState) {
       BluetoothGatt.STATE_CONNECTING -> mbtBluetoothLE.onStateConnecting()
       BluetoothGatt.STATE_CONNECTED -> {
-        LogUtils.e("ConnSteps", "6c : Bluetooth connected")
+//        LogUtils.e("ConnSteps", "6c : Bluetooth connected")
         mbtBluetoothLE.onStateConnected()
       }
       BluetoothGatt.STATE_DISCONNECTING -> mbtBluetoothLE.onStateDisconnecting()
@@ -165,7 +165,7 @@ internal class MbtGattController(private val mbtBluetoothLE: MbtBluetoothLE) : B
       gatt.disconnect()
       mbtBluetoothLE.notifyConnectionStateChanged(BluetoothState.DISCOVERING_FAILURE)
     } else if (mbtBluetoothLE.currentState == BluetoothState.DISCOVERING_SERVICES) {
-      LogUtils.e("ConnSteps", "7b : onServicesDiscovered + init ok")
+//      LogUtils.e("ConnSteps", "7b : onServicesDiscovered + init ok")
       if (isIndus5()) {
         mbtBluetoothLE.markCurrentStepAsCompletedAndUpdateConnectionState(BluetoothState.INDUS5_DISCOVERING_SUCCESS)
       } else {
@@ -326,7 +326,7 @@ internal class MbtGattController(private val mbtBluetoothLE: MbtBluetoothLE) : B
   override fun onMtuChanged(gatt: BluetoothGatt, mtu: Int, status: Int) {
     super.onMtuChanged(gatt, mtu, status)
     Timber.e("n113 : onMtuChanged : mtu = $mtu ; status = $status")
-    LogUtils.e("ConnSteps", "8b : mtu changed")
+//    LogUtils.e("ConnSteps", "8b : mtu changed")
     mbtBluetoothLE.stopWaitingOperation(mtu)
   }
 
