@@ -193,7 +193,7 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
     manager.setRequestProcessing(false)
     val currentState = MbtDataBluetooth.instance.currentState
     if (!currentState.isAFailureState() && !isConnectionInterrupted && currentState != IDLE) {  //if nothing went wrong during the current step of the connection process, we continue the process
-      Timber.e("Post new StartOrContinueConnectionRequestEvent")
+//      Timber.e("Post new StartOrContinueConnectionRequestEvent")
       manager.onNewBluetoothRequest(StartOrContinueConnectionRequestEvent(false, getBluetoothContext()))
     }
   }
@@ -363,7 +363,7 @@ class MbtBluetoothConnecter(private val manager: MbtBluetoothManager) : Connecti
   }
 
   fun changeMTU() {
-    Timber.e("changeMTU : parseRequest")
+//    Timber.e("changeMTU : parseRequest")
     updateConnectionState(false) //current state is set to CHANGING_BT_PARAMETERS (indus2) or INDUS5_CHANGING_MTU_1 (indus5)
     manager.parseRequest(CommandRequestEvent(BluetoothCommands.Mtu(manager.context.mtu)))
   }

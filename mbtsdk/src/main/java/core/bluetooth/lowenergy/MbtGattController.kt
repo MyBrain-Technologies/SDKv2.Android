@@ -325,7 +325,7 @@ internal class MbtGattController(private val mbtBluetoothLE: MbtBluetoothLE) : B
 
   override fun onMtuChanged(gatt: BluetoothGatt, mtu: Int, status: Int) {
     super.onMtuChanged(gatt, mtu, status)
-    Timber.e("n113 : onMtuChanged : mtu = $mtu ; status = $status")
+//    Timber.e("n113 : onMtuChanged : mtu = $mtu ; status = $status")
 //    LogUtils.e("ConnSteps", "8b : mtu changed")
     mbtBluetoothLE.stopWaitingOperation(mtu)
   }

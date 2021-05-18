@@ -112,11 +112,11 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
        * @param request the [BluetoothRequests] request to execute.
        */
       fun parseRequest(request: BluetoothRequests) {
-        Timber.e("RequestThread parseRequest : ${request.javaClass.simpleName} wait ")
+//        Timber.e("RequestThread parseRequest : ${request.javaClass.simpleName} wait ")
         while (isRequestProcessing);
         isRequestProcessing = true
 
-        Timber.e("RequestThread parseRequest : ${request.javaClass.simpleName} will be executed ")
+//        Timber.e("RequestThread parseRequest : ${request.javaClass.simpleName} will be executed ")
 
         when (request) {
 
@@ -141,7 +141,7 @@ class MbtBluetoothManager(context: Context) : BaseModuleManager(context) {
           }
 
           is CommandRequestEvent -> {
-            Timber.e("on CommandRequestEvent")
+//            Timber.e("on CommandRequestEvent")
             MbtDataBluetooth.instance.sendCommand(request.command)
           }
 

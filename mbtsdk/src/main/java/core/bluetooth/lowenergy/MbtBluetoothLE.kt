@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Handler
+import android.os.ParcelUuid
 import android.util.Log
 import command.BluetoothCommands.Mtu
 import command.CommandInterface.MbtCommand
@@ -96,7 +97,11 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
       bluetoothLeScanner = super.bluetoothAdapter!!.bluetoothLeScanner
     }
     currentDevice = null
-    val mFilters: MutableList<ScanFilter> = ArrayList() // no filter: indus5 does not have service uuid in ScanRecord
+    val mFilters: MutableList<ScanFilter> = ArrayList()
+    val filterService = ScanFilter.Builder()
+            .setServiceUuid(ParcelUuid(MelomindCharacteristics.SERVICE_MEASUREMENT))
+    mFilters.add(filterService.build())
+
     val settings = ScanSettings.Builder()
         .setReportDelay(0)
         .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
