@@ -11,7 +11,6 @@ import command.BluetoothCommands
 import command.DeviceCommands.ConnectAudio
 import command.DeviceCommands.DisconnectAudio
 import config.MbtConfig
-import core.Indus5FastMode
 import core.bluetooth.BluetoothProtocol.*
 import core.bluetooth.BluetoothState.*
 import core.bluetooth.lowenergy.EnumIndus5Command

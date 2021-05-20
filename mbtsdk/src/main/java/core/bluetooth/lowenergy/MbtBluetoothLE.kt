@@ -18,7 +18,7 @@ import command.DeviceCommandEvent.Companion.CMD_CODE_CONNECT_IN_A2DP_SUCCESS
 import command.DeviceCommandEvent.MBX_CONNECT_IN_A2DP
 import command.OADCommands.TransferPacket
 import config.MbtConfig
-import core.Indus5FastMode
+import core.Indus5Singleton
 import core.bluetooth.*
 import core.bluetooth.BluetoothInterfaces.IDeviceInfoMonitor
 import core.bluetooth.MbtDataBluetooth.MainBluetooth
@@ -206,7 +206,7 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
    */
   private fun switchStream(isStart: Boolean): Boolean {
     if (isStreaming == isStart) return true
-    if (Indus5FastMode.isEnabled()) {
+    if (Indus5Singleton.isIndus5()) {
       return startIndus5Operation(EnumIndus5Command.MBX_START_EEG_ACQUISITION)
     } else {
       if (!checkServiceAndCharacteristicValidity(MelomindCharacteristics.SERVICE_MEASUREMENT, MelomindCharacteristics.CHARAC_MEASUREMENT_EEG)) return false
@@ -638,7 +638,7 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
   }
 
   fun sendRequestData(command: MbtCommand<*>): Boolean {
-    if (Indus5FastMode.isEnabled()) {
+    if (Indus5Singleton.isIndus5()) {
       if (command is Indus5CommandRequest.Indus5ChangeMTU) {
         val buffer = command.serialize() as ByteArray
         return writeCharacteristic(

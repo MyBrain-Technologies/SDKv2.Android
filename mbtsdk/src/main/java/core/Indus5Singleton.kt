@@ -8,18 +8,18 @@ import features.MbtDeviceType
 /**
  * TODO: remove this later, this class is used to quick develop function of Q+ indus5
  */
-object Indus5FastMode {
+object Indus5Singleton {
 
     @JvmStatic
     var mbtDevice: MbtDevice = MelomindQPlusDevice("unset", "unset")
 
     private var isMelomindIndus5 = false
 
-    fun setMelomindIndus5() {
-        isMelomindIndus5 = true
+    fun setMelomindIndus5(isIndus5 : Boolean) {
+        isMelomindIndus5 = isIndus5
     }
 
-    fun isEnabled(): Boolean {
+    fun isIndus5(): Boolean {
         return isMelomindIndus5
     }
 }

@@ -1,7 +1,6 @@
 package core.bluetooth
 
 import androidx.annotation.Keep
-import core.Indus5FastMode
 import engine.clientevents.*
 
 /**

@@ -12,7 +12,7 @@ import config.ConnectionConfig;
 import config.MbtConfig;
 import config.RecordConfig;
 import config.StreamConfig;
-import core.Indus5FastMode;
+import core.Indus5Singleton;
 import core.MbtManager;
 import core.bluetooth.BluetoothState;
 import core.device.model.DeviceInfo;
@@ -31,7 +31,6 @@ import engine.clientevents.OADStateListener;
 import features.MbtFeatures;
 import features.MbtDeviceType;
 import indus5.MbtClientIndus5;
-import utils.LogUtils;
 
 /**
  * Created by Etienne on 08/02/2018.
@@ -139,7 +138,7 @@ public final class MbtClient {
      * Call this method to attempt to disconnect from the currently connected bluetooth device.
      */
     public void disconnectBluetooth(){
-        if (Indus5FastMode.INSTANCE.isEnabled()) {
+        if (Indus5Singleton.INSTANCE.isIndus5()) {
             MbtClientIndus5.disconnectBluetooth();
         } else {
             this.mbtManager.disconnectBluetooth(false);
@@ -158,7 +157,7 @@ public final class MbtClient {
      * <p>0%</p>
      */
     public void readBattery(DeviceBatteryListener listener) {
-        if (Indus5FastMode.INSTANCE.isEnabled()) {
+        if (Indus5Singleton.INSTANCE.isIndus5()) {
             mbtManager.getBatteryLevelIndus5(listener);
         }
         else {
@@ -180,7 +179,7 @@ public final class MbtClient {
      */
     @SuppressWarnings("unchecked")
     public void startStream(@NonNull StreamConfig streamConfig){
-        if (Indus5FastMode.INSTANCE.isEnabled()) {
+        if (Indus5Singleton.INSTANCE.isIndus5()) {
             mbtManager.startStream(streamConfig);
         } else {
             if (!streamConfig.isNotificationConfigCorrect())
@@ -203,7 +202,7 @@ public final class MbtClient {
      * reset all internal buffering system.
      */
     public void stopStream(){
-        if (Indus5FastMode.INSTANCE.isEnabled()) {
+        if (Indus5Singleton.INSTANCE.isIndus5()) {
             MbtClientIndus5.stopStream();
         } else {
             mbtManager.stopStream(null);

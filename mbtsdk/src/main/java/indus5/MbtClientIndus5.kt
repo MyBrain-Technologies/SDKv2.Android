@@ -8,25 +8,20 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import config.ConnectionConfig
-import config.RecordConfig
 import config.StreamConfig
-import core.Indus5FastMode
-import core.bluetooth.BluetoothProtocol
+import core.Indus5Singleton
 import core.bluetooth.lowenergy.EnumIndus5Command
 import core.bluetooth.lowenergy.Indus5Response
 import core.bluetooth.lowenergy.MelomindCharacteristics
 import core.bluetooth.lowenergy.parseRawIndus5Response
-import core.bluetooth.requests.Indus5CommandRequest
 import core.bluetooth.requests.StreamRequestEvent
 import core.device.model.MbtDevice
 import core.device.model.MelomindQPlusDevice
-import core.eeg.MbtEEGManager
 import engine.clientevents.BaseError
 import engine.clientevents.BluetoothError
 import engine.clientevents.DeviceBatteryListener
 import eventbus.MbtEventBus
 import eventbus.events.BluetoothEEGEvent
-import org.greenrobot.eventbus.EventBus
 import timber.log.Timber
 import java.lang.Exception
 import java.util.*
@@ -88,8 +83,7 @@ object MbtClientIndus5 {
             //stop scanning if target device found
             if (isTargetDevice(result.device)) {
                 stopScan()
-                Indus5FastMode.setMelomindIndus5()
-                Indus5FastMode.mbtDevice = MelomindQPlusDevice(result.device.address, result.device.name)
+                Indus5Singleton.mbtDevice = MelomindQPlusDevice(result.device.address, result.device.name)
                 connectGattServer(result.device!!)
             }
         }

@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 import core.BaseModuleManager;
-import core.Indus5FastMode;
+import core.Indus5Singleton;
 import core.MbtManager;
 import core.bluetooth.BluetoothProtocol;
 import core.bluetooth.BluetoothState;
@@ -98,7 +98,7 @@ public final class MbtEEGManager extends BaseModuleManager {
     }
 
     int getNumberOfChannels() {
-        if (Indus5FastMode.INSTANCE.isEnabled()) {
+        if (Indus5Singleton.INSTANCE.isIndus5()) {
             return MbtFeatures.MELOMIND_QPLUS_NB_CHANNELS; //in Q+ melomind, there is 4 channels
         } else {
             return MbtFeatures.MELOMIND_NB_CHANNELS;

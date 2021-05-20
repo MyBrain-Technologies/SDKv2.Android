@@ -187,7 +187,7 @@ public class MbtManager {
     this.deviceStatusListener = streamConfig.getDeviceStatusListener();
     this.recordingSavedListener = streamConfig.recordingSavedListener;
 
-    if (Indus5FastMode.INSTANCE.isEnabled()) {
+    if (Indus5Singleton.INSTANCE.isIndus5()) {
       if (streamConfig.getRecordConfig() != null) {
         MbtEventBus.postEvent(
                 new RecordingRequestIndus5Event(START,
@@ -216,7 +216,7 @@ public class MbtManager {
    * Posts an event to stop the currently started stream session
    */
   public void stopStream(@Nullable RecordConfig recordConfig) {
-    if (Indus5FastMode.INSTANCE.isEnabled()) {
+    if (Indus5Singleton.INSTANCE.isIndus5()) {
       MbtClientIndus5.stopStream();
       MbtEventBus.postEvent(
               new RecordingRequestIndus5Event(STOP));

@@ -6,7 +6,7 @@ import command.DeviceCommandEvent
 import command.DeviceCommandEvent.Companion.CMD_CODE_CONNECT_IN_A2DP_IN_PROGRESS
 import command.DeviceCommandEvent.Companion.CMD_CODE_CONNECT_IN_A2DP_LINKKEY_INVALID
 import command.DeviceCommandEvent.MBX_CONNECT_IN_A2DP
-import core.Indus5FastMode
+import core.Indus5Singleton
 import core.bluetooth.BluetoothState
 import core.bluetooth.lowenergy.MelomindCharacteristics.Companion.CHARAC_HEADSET_STATUS
 import core.bluetooth.lowenergy.MelomindCharacteristics.Companion.CHARAC_INFO_FIRMWARE_VERSION
@@ -143,7 +143,6 @@ internal class MbtGattController(private val mbtBluetoothLE: MbtBluetoothLE) : B
         return
       }
       mainService = null
-      Indus5FastMode.setMelomindIndus5()
     }
 
     if (isIndus5()) {
