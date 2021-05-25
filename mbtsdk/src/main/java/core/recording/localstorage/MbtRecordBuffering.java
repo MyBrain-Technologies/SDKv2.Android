@@ -14,7 +14,6 @@ import core.device.model.MbtDevice;
 import core.eeg.signalprocessing.ContextSP;
 import core.eeg.storage.MbtEEGPacket;
 import engine.clientevents.RecordingError;
-import indus5.ArrayHelper;
 import model.MbtRecording;
 import model.Position3D;
 import timber.log.Timber;
@@ -74,14 +73,16 @@ public class MbtRecordBuffering {
             return false;
         }
         ArrayList<MbtEEGPacket> eegPacketsClone = (ArrayList<MbtEEGPacket>) eegPacketsBuffer.clone();
-        ArrayList<Position3D> imsClone = ArrayHelper.Companion.copyArray(imsBuffer);
+
+        ArrayList<Position3D> imsClone = new ArrayList<Position3D>(imsBuffer);
 
         resetPacketsBuffer();
 
         if(recordConfig.getDuration() > 0 && eegPacketsClone.size() > recordConfig.getDuration())
             eegPacketsClone = new ArrayList<>(eegPacketsClone.subList(0,recordConfig.getDuration()));
 
-        LogUtils.d(TAG," Saving buffer of "+ eegPacketsClone.size()+ " packets.");
+        LogUtils.d(TAG," Saving buffer of "+ eegPacketsClone.size()+ " eeg packets.");
+        LogUtils.d(TAG," Saving buffer of "+ imsClone.size()+ " ims packets.");
 
         if (recordConfig.getFilename() == null)
             recordConfig.setFilename(FileManager.createFilename(recordConfig.getTimestamp(),
@@ -155,7 +156,6 @@ public class MbtRecordBuffering {
     }
 
     public void recordIMS(ArrayList<Position3D> positions){
-        Timber.v("on recordIMS");
         if(imsBuffer != null) {
             imsBuffer.addAll(positions);
         }

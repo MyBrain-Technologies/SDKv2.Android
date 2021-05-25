@@ -208,7 +208,7 @@ object MbtClientIndus5 {
                     deviceBatteryListener?.onBatteryLevelReceived(response.percent.toString())
                 }
                 is Indus5Response.EegStartResponse -> {
-                    Timber.v("indus5 eeg start")
+                    Timber.d("indus5 eeg start")
                     val isStartRequest = true
                     val isRecordRequest = false
                     val computeQualities = true
@@ -225,7 +225,7 @@ object MbtClientIndus5 {
                     )
                 }
                 is Indus5Response.EegStopResponse -> {
-                    Timber.v("indus5 eeg stop")
+                    Timber.d("indus5 eeg stop")
                     val isStartRequest = false
                     val isRecordRequest = false
                     val computeQualities = true
@@ -242,7 +242,7 @@ object MbtClientIndus5 {
                     )
                 }
                 is Indus5Response.AccelerometerCommand -> {
-                    Timber.v("indus5 AccelerometerCommand IMS : is enabled = ${response.isEnabled}")
+                    Timber.d("indus5 AccelerometerCommand IMS : is enabled = ${response.isEnabled}")
                     if (response.isEnabled) {
                         accelerometerListener?.onAccelerometerStarted()
                     } else {

@@ -42,6 +42,7 @@ import eventbus.events.ConnectionStateEvent;
 import eventbus.events.SignalProcessingEvent;
 import features.MbtFeatures;
 import mbtsdk.com.mybraintech.mbtsdk.BuildConfig;
+import timber.log.Timber;
 import utils.AsyncUtils;
 import utils.LogUtils;
 import utils.MatrixUtils;
@@ -177,7 +178,8 @@ public final class MbtEEGManager extends BaseModuleManager {
                                 Integer.parseInt(FREQUENCY_BAND_FEATURES_VERSION.replace(".","")))
                             eegPackets.setFeatures(MBTSignalQualityChecker.getFeatures());
                     }catch (NumberFormatException e){
-                        Log.e(TAG, "Qualities checker version unknown");
+                        Timber.e(e);
+                        Timber.e("Qualities checker version unknown");
                     }
                 }
 

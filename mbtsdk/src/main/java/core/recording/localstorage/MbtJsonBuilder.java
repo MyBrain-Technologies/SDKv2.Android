@@ -264,12 +264,17 @@ final class MbtJsonBuilder{
                 jsonWriter.name("sampRate").value(100);
                 jsonWriter.name("imsData");
                 jsonWriter.beginArray();
-                for (Position3D position : recording.getAccelerometerPositions()) {
-                    jsonWriter.beginArray(); // we generate an array for each row of the position data
-                    jsonWriter.value(position.getX());
-                    jsonWriter.value(position.getY());
-                    jsonWriter.value(position.getZ());
-                    jsonWriter.endArray();  // and we close it here
+                for (int i =0; i<recording.getAccelerometerPositions().size(); i++) {
+                    Position3D position = recording.getAccelerometerPositions().get(i);
+                    if (position != null) {
+                        jsonWriter.beginArray(); // we generate an array for each row of the position data
+                        jsonWriter.value(position.getX());
+                        jsonWriter.value(position.getY());
+                        jsonWriter.value(position.getZ());
+                        jsonWriter.endArray();  // and we close it here
+                    } else {
+                        Timber.w("found null Position3D in IMS buffer");
+                    }
                 }
                 jsonWriter.endArray();
                 jsonWriter.endObject();
