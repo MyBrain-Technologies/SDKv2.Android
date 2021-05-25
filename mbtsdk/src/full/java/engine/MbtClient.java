@@ -6,6 +6,8 @@ import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import org.jetbrains.annotations.NotNull;
+
 import command.CommandInterface;
 import command.DeviceCommands;
 import config.ConnectionConfig;
@@ -30,14 +32,18 @@ import engine.clientevents.EegListener;
 import engine.clientevents.OADStateListener;
 import features.MbtFeatures;
 import features.MbtDeviceType;
+import indus5.AccelerometerInterface;
+import indus5.AccelerometerListener;
+import indus5.AccelerometerSingleton;
 import indus5.MbtClientIndus5;
+import timber.log.Timber;
 
 /**
  * Created by Etienne on 08/02/2018.
  */
 
 @Keep
-public final class MbtClient {
+public final class MbtClient implements AccelerometerInterface {
 
     private static final String TAG = MbtClient.class.getName();
     private static Context context;
@@ -203,7 +209,7 @@ public final class MbtClient {
      */
     public void stopStream(){
         if (Indus5Singleton.INSTANCE.isIndus5()) {
-            MbtClientIndus5.stopStream();
+            mbtManager.stopStream(null);
         } else {
             mbtManager.stopStream(null);
         }
@@ -382,5 +388,27 @@ public final class MbtClient {
         }
     }
 
+    //----------------------------------------------------------------------------
+    // indus 5
+    //----------------------------------------------------------------------------
+    @Override
+    public boolean startAccelerometer(@NotNull AccelerometerListener listener) {
+        if (Indus5Singleton.INSTANCE.isIndus5()) {
+            return MbtClientIndus5.startAccelerometer(listener);
+        } else {
+            Timber.e("Accelerometer function is only available in Indus5");
+            return false;
+        }
+    }
+
+    @Override
+    public boolean stopAccelerometer() {
+        if (Indus5Singleton.INSTANCE.isIndus5()) {
+            return MbtClientIndus5.stopAccelerometer();
+        } else {
+            Timber.e("Accelerometer function is only available in Indus5");
+            return false;
+        }
+    }
 }
 

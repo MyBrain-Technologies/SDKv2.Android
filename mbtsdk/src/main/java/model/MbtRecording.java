@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import core.eeg.storage.MbtEEGPacket;
+import timber.log.Timber;
 
 
 /**
@@ -22,8 +23,20 @@ public class MbtRecording implements Serializable{
     private int firstPacketID;
     private ArrayList<ArrayList<Float>> qualities;
     private ArrayList<ArrayList<Float>> eegData;
+    private ArrayList<Position3D> accelerometerPositions = null;
     @Nullable
     private ArrayList<Float> status;
+
+    public MbtRecording(@NonNull int nbChannels,
+                        @NonNull final RecordInfo recordInfo,
+                        @NonNull final long recordingTime,
+                        @NonNull List<MbtEEGPacket> eegPackets,
+                        @NonNull final ArrayList<Position3D> accelerometerPositions,
+                        @NonNull final boolean hasStatus) {
+        this(nbChannels, recordInfo, recordingTime, eegPackets, hasStatus);
+        Timber.d("MbtRecording with accelerometerPositions");
+        this.accelerometerPositions = accelerometerPositions;
+    }
 
     public MbtRecording(@NonNull int nbChannels,
                         @NonNull final RecordInfo recordInfo,
@@ -107,6 +120,14 @@ public class MbtRecording implements Serializable{
     public void setNbPackets(@NonNull final int nbPackets) {this.nbPackets = nbPackets;}
 
     public void setFirstPacketID(@NonNull final int firstPacketID) {this.firstPacketID = firstPacketID;}
+
+    public ArrayList<Position3D> getAccelerometerPositions() {
+        return accelerometerPositions;
+    }
+
+    public void setAccelerometerPositions(ArrayList<Position3D> accelerometerPositions) {
+        this.accelerometerPositions = accelerometerPositions;
+    }
 
     @Override
     public String toString() {

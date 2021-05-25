@@ -18,6 +18,7 @@ import core.recording.localstorage.MbtRecordBuffering;
 import eventbus.MbtEventBus;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.ConnectionStateEvent;
+import eventbus.events.IMSEvent;
 import timber.log.Timber;
 
 /**
@@ -50,7 +51,7 @@ public final class MbtRecordingManager extends BaseModuleManager {
      * @param request is the start or stop streaming request
      */
     @Subscribe (threadMode = ThreadMode.ASYNC)
-    public void StreamRequestEvent(final StreamRequestEvent request) {
+    public void onStreamRequestEvent(final StreamRequestEvent request) {
         Timber.i("StreamRequestEvent : start = %s", request.isStartStream());
 
         recordConfig = request.getRecordConfig();
@@ -142,6 +143,13 @@ public final class MbtRecordingManager extends BaseModuleManager {
         if(recordBuffering != null)
             recordBuffering.record(event.getEegPackets());
 
+    }
+
+    @SuppressWarnings("unused")
+    @Subscribe(threadMode = ThreadMode.ASYNC)
+    public void onNewIMSPackets(@NonNull final IMSEvent event) {
+        if(recordBuffering != null)
+            recordBuffering.recordIMS(event.getPositions());
     }
 
     private void storeRecording(){

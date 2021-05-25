@@ -31,6 +31,9 @@ public final class StreamConfig {
      * Recording configuration is all the data required to store the EEG packets in a JSON file.
      */
     private RecordConfig recordConfig;
+
+    private boolean isImsEnabled = false;
+
     /**
      * Optional list of commands sent to the headset in order to
      * configure a parameter,
@@ -239,5 +242,13 @@ public final class StreamConfig {
                 MbtFeatures.MAX_CLIENT_NOTIFICATION_PERIOD_WITH_QUALITIES_IN_MILLIS : MbtFeatures.MAX_CLIENT_NOTIFICATION_PERIOD_IN_MILLIS))
             return false;
         return true;
+    }
+
+    public void setImsEnabled(boolean imsEnabled) {
+        isImsEnabled = imsEnabled;
+    }
+
+    public boolean isImsEnabled() {
+        return isImsEnabled;
     }
 }

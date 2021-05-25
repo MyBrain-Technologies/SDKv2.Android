@@ -22,8 +22,9 @@ import engine.clientevents.BluetoothError
 import engine.clientevents.DeviceBatteryListener
 import eventbus.MbtEventBus
 import eventbus.events.BluetoothEEGEvent
+import eventbus.events.IMSEvent
+import model.AccelerometerFrame
 import timber.log.Timber
-import java.lang.Exception
 import java.util.*
 
 //TODO: refactor later
@@ -31,6 +32,7 @@ import java.util.*
 object MbtClientIndus5 {
 
     private var deviceBatteryListener: DeviceBatteryListener<BaseError>? = null
+    private var accelerometerListener: AccelerometerListener? = null
     private const val MELOMIND_INDUS5_PREFIX = "melo_2"
 
     lateinit var context: Context
@@ -52,7 +54,7 @@ object MbtClientIndus5 {
     private lateinit var bluetoothManager: BluetoothManager
     private var scanning = false
     private var discoveringService = false
-    private lateinit var handler : Handler
+    private lateinit var handler: Handler
 
     // Stops scanning after N seconds.
     private const val SCAN_PERIOD: Long = 15 * 1000
@@ -194,7 +196,7 @@ object MbtClientIndus5 {
             val response = characteristic.value.parseRawIndus5Response()
             when (response) {
                 is Indus5Response.MtuChangedResponse -> {
-                    Timber.i("indus5 mtu changed : byte 2 = ${response.sampleSize}")
+                    Timber.i("indus5 mtu changed : byte 2 = ${response.size}")
                     config.connectionStateListener.onDeviceConnected(MelomindQPlusDevice(device))
                 }
                 is Indus5Response.EegFrameResponse -> {
@@ -202,7 +204,7 @@ object MbtClientIndus5 {
                     MbtEventBus.postEvent(BluetoothEEGEvent(response.data))
                 }
                 is Indus5Response.BatteryLevelResponse -> {
-                    Timber.v("indus5 eeg frame received: data = ${Arrays.toString(characteristic.value)}")
+                    Timber.v("indus5 BatteryLevelResponse received: data = ${Arrays.toString(characteristic.value)}")
                     deviceBatteryListener?.onBatteryLevelReceived(response.percent.toString())
                 }
                 is Indus5Response.EegStartResponse -> {
@@ -238,6 +240,19 @@ object MbtClientIndus5 {
                                     recordConfig
                             )
                     )
+                }
+                is Indus5Response.AccelerometerCommand -> {
+                    Timber.v("indus5 AccelerometerCommand IMS : is enabled = ${response.isEnabled}")
+                    if (response.isEnabled) {
+                        accelerometerListener?.onAccelerometerStarted()
+                    } else {
+                        accelerometerListener?.onAccelerometerStopped()
+                    }
+                }
+                is Indus5Response.AccelerometerFrame -> {
+                    val frame = AccelerometerFrame(response.data)
+                    MbtEventBus.postEvent(IMSEvent(frame.positions))
+                    accelerometerListener?.onNewAccelerometerFrame(frame)
                 }
                 else -> {
                     //it should be Indus5Response.UnknownResponse here
@@ -307,12 +322,12 @@ object MbtClientIndus5 {
         this.context = context
         this.config = config
 
-        handler = Handler(Looper.myLooper()?:Looper.getMainLooper())
+        handler = Handler(Looper.myLooper() ?: Looper.getMainLooper())
         //start process
         setupBle()
 
         //after scan period device should found and connected
-        handler.postDelayed( Runnable { onConnectionError() }, SCAN_PERIOD)
+        handler.postDelayed(Runnable { onConnectionError() }, SCAN_PERIOD)
     }
 
     @JvmStatic
@@ -398,7 +413,7 @@ object MbtClientIndus5 {
 
     @JvmStatic
     fun stopStream() {
-        Timber.i("indus 5 startStream")
+        Timber.i("indus 5 stopStream")
         tx.value = EnumIndus5Command.MBX_STOP_EEG_ACQUISITION.bytes
         bluetoothGatt.writeCharacteristic(tx)
     }
@@ -409,5 +424,21 @@ object MbtClientIndus5 {
         this.deviceBatteryListener = listener
         tx.value = EnumIndus5Command.MBX_GET_BATTERY_VALUE.bytes
         bluetoothGatt.writeCharacteristic(tx)
+    }
+
+    //----------------------------------------------------------------------------
+    // accelerometer
+    //----------------------------------------------------------------------------
+    @JvmStatic
+    fun startAccelerometer(listener: AccelerometerListener?= null): Boolean {
+        this.accelerometerListener = listener
+        tx.value = EnumIndus5Command.MBX_START_IMS_ACQUISITION.bytes
+        return bluetoothGatt.writeCharacteristic(tx)
+    }
+
+    @JvmStatic
+    fun stopAccelerometer(): Boolean {
+        tx.value = EnumIndus5Command.MBX_STOP_IMS_ACQUISITION.bytes
+        return bluetoothGatt.writeCharacteristic(tx)
     }
 }

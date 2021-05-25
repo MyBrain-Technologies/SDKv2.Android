@@ -29,8 +29,8 @@ public class MelomindQPlusDevice extends MbtDevice{
         this.acquisitionLocations = Arrays.asList(
                 MbtAcquisitionLocations.P3,
                 MbtAcquisitionLocations.P4,
-                MbtAcquisitionLocations.F3,
-                MbtAcquisitionLocations.F4);
+                MbtAcquisitionLocations.AF3,
+                MbtAcquisitionLocations.AF4);
         this.groundsLocation = Arrays.asList(MbtAcquisitionLocations.M2);
         this.referencesLocations = Arrays.asList(MbtAcquisitionLocations.M1);
         this.serialNumber = "0000000000";
@@ -42,8 +42,8 @@ public class MelomindQPlusDevice extends MbtDevice{
         this.acquisitionLocations = Arrays.asList(
                 MbtAcquisitionLocations.P3,
                 MbtAcquisitionLocations.P4,
-                MbtAcquisitionLocations.F3,
-                MbtAcquisitionLocations.F4);
+                MbtAcquisitionLocations.AF3,
+                MbtAcquisitionLocations.AF4);
         this.groundsLocation = Arrays.asList(MbtAcquisitionLocations.M2);
         this.referencesLocations = Arrays.asList(MbtAcquisitionLocations.M1);
         this.serialNumber = "0000000000";

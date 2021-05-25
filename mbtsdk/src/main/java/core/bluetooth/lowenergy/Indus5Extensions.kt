@@ -28,6 +28,16 @@ fun ByteArray.parseRawIndus5Response() : Indus5Response {
             val percent = (this[1] - 4) * 12.5f
             return Indus5Response.BatteryLevelResponse(percent)
         }
+        if (this[0].compareTo(0x33) == 0) {
+            return Indus5Response.AccelerometerCommand(true)
+        }
+        if (this[0].compareTo(0x34) == 0) {
+            return Indus5Response.AccelerometerCommand(false)
+        }
+        if (this[0].compareTo(0x50) == 0) {
+            val data = this.copyOfRange(1, this.size)
+            return Indus5Response.AccelerometerFrame(data)
+        }
     } catch (e: Exception) {
         LogUtils.e(e)
         return Indus5Response.UnknownResponse(this)

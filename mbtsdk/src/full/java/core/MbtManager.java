@@ -8,6 +8,7 @@ import androidx.annotation.Nullable;
 
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -57,8 +58,11 @@ import eventbus.events.FirmwareUpdateClientEvent;
 import eventbus.events.SignalProcessingEvent;
 import features.MbtDeviceType;
 import features.MbtFeatures;
+import indus5.AccelerometerListener;
 import indus5.MbtClientIndus5;
 import mbtsdk.com.mybraintech.mbtsdk.R;
+import model.AccelerometerFrame;
+import timber.log.Timber;
 import utils.LogUtils;
 
 import static mbtsdk.com.mybraintech.mbtsdk.BuildConfig.BLUETOOTH_ENABLED;
@@ -98,6 +102,7 @@ public class MbtManager {
    * Listener used to notify the SDK client when the current OAD state changes or when the SDK raises an error.
    */
   private OADStateListener oadStateListener;
+  private StreamConfig streamConfig;
   private EegListener<BaseError> eegListener;
   private RecordingSavedListener recordingSavedListener = null;
   private DeviceBatteryListener<BaseError> deviceInfoListener;
@@ -178,11 +183,12 @@ public class MbtManager {
     MbtEventBus.postEvent(new ReadRequestEvent(deviceInfo));
   }
 
-
+  AccelerometerListener accelerometerListener = null;
   /**
    * Posts an event to initiate a stream session.
    */
   public void startStream(StreamConfig streamConfig) {
+    this.streamConfig = streamConfig;
     this.eegListener = streamConfig.getEegListener();
     this.deviceStatusListener = streamConfig.getDeviceStatusListener();
     this.recordingSavedListener = streamConfig.recordingSavedListener;
@@ -193,7 +199,41 @@ public class MbtManager {
                 new RecordingRequestIndus5Event(START,
                         streamConfig.getRecordConfig()));
       }
-      MbtClientIndus5.startStream(streamConfig);
+      if (streamConfig.isImsEnabled()) {
+        //TODO: sequential start ims and eeg
+        if (accelerometerListener == null) {
+          accelerometerListener = new AccelerometerListener() {
+            @Override
+            public void onAccelerometerStarted() {
+              Timber.d("send startStream");
+              MbtClientIndus5.startStream(streamConfig);
+            }
+
+            @Override
+            public void onAccelerometerStopped() {
+              Timber.d("send stopStream");
+              MbtClientIndus5.stopStream();
+              MbtEventBus.postEvent(
+                      new RecordingRequestIndus5Event(STOP));
+            }
+
+            @Override
+            public void onNewAccelerometerFrame(@NotNull AccelerometerFrame frame) {
+              Timber.v(frame.toString());
+            }
+
+            @Override
+            public void onAccelerometerError(@NotNull Exception e) {
+
+            }
+          };
+        }
+        Timber.d("send startAccelerometer");
+        MbtClientIndus5.startAccelerometer(accelerometerListener);
+      } else {
+        Timber.d("send startStream");
+        MbtClientIndus5.startStream(streamConfig);
+      }
     } else {
       for (DeviceCommand command : streamConfig.getDeviceCommands()) {
         sendCommand(command);
@@ -217,9 +257,15 @@ public class MbtManager {
    */
   public void stopStream(@Nullable RecordConfig recordConfig) {
     if (Indus5Singleton.INSTANCE.isIndus5()) {
-      MbtClientIndus5.stopStream();
-      MbtEventBus.postEvent(
-              new RecordingRequestIndus5Event(STOP));
+      if (streamConfig != null && streamConfig.isImsEnabled()) {
+        Timber.d("send stopAccelerometer");
+        MbtClientIndus5.stopAccelerometer();
+      } else {
+        Timber.d("send stopStream");
+        MbtClientIndus5.stopStream();
+        MbtEventBus.postEvent(
+                new RecordingRequestIndus5Event(STOP));
+      }
     } else {
       MbtEventBus.postEvent(
               new StreamRequestEvent(STOP, false,

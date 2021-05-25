@@ -9,11 +9,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 import config.RecordConfig;
+import core.Indus5Singleton;
 import core.device.model.MbtDevice;
 import core.eeg.signalprocessing.ContextSP;
 import core.eeg.storage.MbtEEGPacket;
 import engine.clientevents.RecordingError;
+import indus5.ArrayHelper;
 import model.MbtRecording;
+import model.Position3D;
 import timber.log.Timber;
 import utils.LogUtils;
 
@@ -35,6 +38,11 @@ public class MbtRecordBuffering {
     private ArrayList<MbtEEGPacket> eegPacketsBuffer;
 
     /**
+     * Inertial Motion Sensor (IMS) - Accelerometer
+     */
+    private ArrayList<Position3D> imsBuffer;
+
+    /**
      * Map that stores the path of the recording as a JSON file and its associated ID
      */
     private Map<String, String> recordingsBuffer;
@@ -46,10 +54,12 @@ public class MbtRecordBuffering {
         this.mContext = mContext;
         recordingsBuffer = new HashMap<>();
         eegPacketsBuffer = new ArrayList<>();
+        imsBuffer = new ArrayList<>();
     }
 
     public void resetPacketsBuffer(){
         eegPacketsBuffer = new ArrayList<>();
+        imsBuffer = new ArrayList<>();
     }
 
     public boolean storeRecordBuffer(@NonNull MbtDevice device, @NonNull RecordConfig recordConfig) {
@@ -64,6 +74,8 @@ public class MbtRecordBuffering {
             return false;
         }
         ArrayList<MbtEEGPacket> eegPacketsClone = (ArrayList<MbtEEGPacket>) eegPacketsBuffer.clone();
+        ArrayList<Position3D> imsClone = ArrayHelper.Companion.copyArray(imsBuffer);
+
         resetPacketsBuffer();
 
         if(recordConfig.getDuration() > 0 && eegPacketsClone.size() > recordConfig.getDuration())
@@ -89,11 +101,23 @@ public class MbtRecordBuffering {
             return false;
         }
 
-        MbtRecording recording = MbtJsonBuilder.convertEEGPacketsToRecording(
-                device.getNbChannels(),
-                recordConfig.getRecordInfo().setSPVersion(ContextSP.SP_VERSION),
-                recordConfig.getTimestamp(), eegPacketsClone,
-                device.getInternalConfig().getStatusBytes() > 0);
+        MbtRecording recording;
+        if (Indus5Singleton.INSTANCE.isIndus5() && recordConfig.isAccelerometerEnabled()) {
+            recording = MbtJsonBuilder.convertDataToRecording(
+                    device.getNbChannels(),
+                    recordConfig.getRecordInfo().setSPVersion(ContextSP.SP_VERSION),
+                    recordConfig.getTimestamp(),
+                    eegPacketsClone,
+                    imsClone,
+                    device.getInternalConfig().getStatusBytes() > 0);
+        } else {
+            recording = MbtJsonBuilder.convertEEGPacketsToRecording(
+                    device.getNbChannels(),
+                    recordConfig.getRecordInfo().setSPVersion(ContextSP.SP_VERSION),
+                    recordConfig.getTimestamp(), eegPacketsClone,
+                    device.getInternalConfig().getStatusBytes() > 0);
+        }
+
         LogUtils.d(TAG, "New recording created : " + recording.toString());
 
         device.setAcquisitionLocations(recordConfig.getAcquisitionLocations());
@@ -111,7 +135,6 @@ public class MbtRecordBuffering {
                 recordConfig.getHeaderComments());
 
         LogUtils.d(TAG, "Recording stored in file: " + recordingPath);
-
         if (recordingPath != null) {
             recordingsBuffer.put(recordingPath, recordConfig.getRecordInfo().getRecordId());
             //Check if Recordings map is empty or not to update the number of recording in each recording JSON file
@@ -128,6 +151,13 @@ public class MbtRecordBuffering {
     public void record(MbtEEGPacket eegPacket){
         if(eegPacketsBuffer != null) {
             eegPacketsBuffer.add(eegPacket);
+        }
+    }
+
+    public void recordIMS(ArrayList<Position3D> positions){
+        Timber.v("on recordIMS");
+        if(imsBuffer != null) {
+            imsBuffer.addAll(positions);
         }
     }
 

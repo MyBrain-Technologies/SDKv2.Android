@@ -260,26 +260,7 @@ internal class MbtGattController(private val mbtBluetoothLE: MbtBluetoothLE) : B
     super.onCharacteristicChanged(gatt, characteristic)
     //Log.d(TAG, "on Characteristic Changed value: "+(characteristic.getValue() == null ? characteristic.getValue() : Arrays.toString(characteristic.getValue())) );
     if (isIndus5()) {
-//      LogUtils.i("n113", "onCharacteristicChanged : data = ${Arrays.toString(characteristic.value)}")
-      //TODO: log and debug n113
-      val response = characteristic.value.parseRawIndus5Response()
-      when (response) {
-        is Indus5Response.MtuChangedResponse -> {
-          LogUtils.i("n113", "indus5 mtu changed : byte 2 = ${response.sampleSize}")
-          mbtBluetoothLE.onMtuIndus5Changed()
-//          mbtBluetoothLE.stopWaitingOperation(false)
-        }
-        is Indus5Response.EegFrameResponse -> {
-          LogUtils.i("n113", "indus5 eeg frame received: data = ${Arrays.toString(characteristic.value)}")
-          mbtBluetoothLE.notifyNewDataAcquired(response.data)
-        }
-        else -> {
-          //it should be Indus5Response.UnknownResponse here
-          LogUtils.e(TAG, "unknown indus5 frame : data = ${Arrays.toString(characteristic.value)}")
-        }
-      }
-//      characteristic.value
-//      mbtBluetoothLE.notifyDeviceInfoReceived(DeviceInfo.FW_VERSION, String(characteristic.value))
+      Timber.e(Throwable("see class MbtClientIndus5"))
     } else {
       if (characteristic.uuid.compareTo(MelomindCharacteristics.CHARAC_MEASUREMENT_EEG) == 0) {
         mbtBluetoothLE.notifyNewDataAcquired(characteristic.value)

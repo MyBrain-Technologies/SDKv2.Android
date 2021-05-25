@@ -110,6 +110,11 @@ public final class RecordConfig {
     private Bundle recordingParameters;
 
     /**
+     * only available for indus5
+     */
+    private boolean isAccelerometerEnabled = false;
+
+    /**
      * Enable multiple recordings
      */
     private boolean enableMultipleRecordings;
@@ -583,4 +588,11 @@ public final class RecordConfig {
                 '}';
     }
 
+    public boolean isAccelerometerEnabled() {
+        return isAccelerometerEnabled;
+    }
+
+    public void setAccelerometerEnabled(boolean accelerometerEnabled) {
+        isAccelerometerEnabled = accelerometerEnabled;
+    }
 }

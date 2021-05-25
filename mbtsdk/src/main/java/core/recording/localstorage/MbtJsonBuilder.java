@@ -16,12 +16,15 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import core.Indus5Singleton;
 import core.device.model.MbtDevice;
 import core.eeg.storage.MbtEEGPacket;
 import core.recording.metadata.Comment;
 import features.MbtAcquisitionLocations;
 import model.MbtRecording;
+import model.Position3D;
 import model.RecordInfo;
+import timber.log.Timber;
 
 /**
  * A helper class containing statics methods to serialize and deserialize Objects.
@@ -248,6 +251,33 @@ final class MbtJsonBuilder{
 
             jsonWriter.endArray();      // end of       "channelData"       array
 
+            //----------------------------------------------------------------------------
+            // start ims
+            //----------------------------------------------------------------------------
+
+            if (Indus5Singleton.INSTANCE.isIndus5() && recording.getAccelerometerPositions() != null) {
+                Timber.d("serialize with IMS");
+
+                jsonWriter.name("IMS");
+                jsonWriter.beginObject();    // beginning of "IMS"       array
+
+                jsonWriter.name("sampRate").value(100);
+                jsonWriter.name("imsData");
+                jsonWriter.beginArray();
+                for (Position3D position : recording.getAccelerometerPositions()) {
+                    jsonWriter.beginArray(); // we generate an array for each row of the position data
+                    jsonWriter.value(position.getX());
+                    jsonWriter.value(position.getY());
+                    jsonWriter.value(position.getZ());
+                    jsonWriter.endArray();  // and we close it here
+                }
+                jsonWriter.endArray();
+                jsonWriter.endObject();
+            }
+            //----------------------------------------------------------------------------
+            // end ims
+            //----------------------------------------------------------------------------
+
             jsonWriter.name(STATUS_DATA_KEY); // beginning of "statusData"       array
             jsonWriter.beginArray();
 
@@ -297,5 +327,14 @@ final class MbtJsonBuilder{
                                                             @NonNull List<MbtEEGPacket> eegPackets,
                                                             @NonNull boolean hasStatus){
         return new MbtRecording(nbChannels, recordInfo, timestamp, eegPackets, hasStatus);
+    }
+
+    static MbtRecording convertDataToRecording(@NonNull int nbChannels,
+                                               @NonNull RecordInfo recordInfo,
+                                               @NonNull long timestamp,
+                                               @NonNull List<MbtEEGPacket> eegPackets,
+                                               @NonNull final ArrayList<Position3D> accelerometerPositions,
+                                               @NonNull boolean hasStatus){
+        return new MbtRecording(nbChannels, recordInfo, timestamp, eegPackets, accelerometerPositions, hasStatus);
     }
 }

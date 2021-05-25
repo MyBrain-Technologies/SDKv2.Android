@@ -36,10 +36,6 @@ public class StreamRequestEvent extends BluetoothRequests {
         return computeQualities;
     }
 
-    public boolean recordData() {
-        return recordConfig != null;
-    }
-
     public boolean startStream() {
         Log.d("Start stream ",""+(isStart && !isRecord));
         return isStart && !isRecord;
