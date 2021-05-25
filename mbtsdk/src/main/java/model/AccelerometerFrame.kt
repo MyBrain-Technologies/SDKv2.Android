@@ -27,9 +27,9 @@ class AccelerometerFrame private constructor() {
             val tmp = arrayListOf<Position3D>()
             for (i in 0 until size) {
                 tmp.add(Position3D(
-                        x = decodeBytesToValue(data[2 + i * 3], data[3 + i * 3]),
-                        y = decodeBytesToValue(data[4 + i * 3], data[5 + i * 3]),
-                        z = decodeBytesToValue(data[6 + i * 3], data[7 + i * 3])))
+                        x = decodeBytesToValue(data[2 + i * 6], data[3 + i * 6]),
+                        y = decodeBytesToValue(data[4 + i * 6], data[5 + i * 6]),
+                        z = decodeBytesToValue(data[6 + i * 6], data[7 + i * 6])))
             }
             positions = tmp
         }
