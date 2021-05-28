@@ -24,6 +24,7 @@ import eventbus.MbtEventBus
 import eventbus.events.BluetoothEEGEvent
 import eventbus.events.IMSEvent
 import model.AccelerometerFrame
+import model.PpgFrame
 import timber.log.Timber
 import java.util.*
 
@@ -33,6 +34,7 @@ object MbtClientIndus5 {
 
     private var deviceBatteryListener: DeviceBatteryListener<BaseError>? = null
     private var accelerometerListener: AccelerometerListener? = null
+    private var ppgListener: PpgListener? = null
     private const val MELOMIND_INDUS5_PREFIX = "melo_2"
 
     lateinit var context: Context
@@ -254,6 +256,19 @@ object MbtClientIndus5 {
                     MbtEventBus.postEvent(IMSEvent(frame.positions))
                     accelerometerListener?.onNewAccelerometerFrame(frame)
                 }
+                is Indus5Response.PpgCommand -> {
+                    Timber.d("indus5 PpgCommand : is enabled = ${response.isEnabled}")
+                    if (response.isEnabled) {
+                        ppgListener?.onPpgStarted()
+                    } else {
+                        ppgListener?.onPpgStopped()
+                    }
+                }
+                is Indus5Response.PpgFrame -> {
+                    val frame = PpgFrame(response.data)
+                    MbtEventBus.postEvent(IMSEvent(frame.positions))
+                    accelerometerListener?.onNewAccelerometerFrame(frame)
+                }
                 else -> {
                     //it should be Indus5Response.UnknownResponse here
                     Timber.e("unknown indus5 frame : data = ${Arrays.toString(characteristic.value)}")
@@ -427,7 +442,7 @@ object MbtClientIndus5 {
     }
 
     //----------------------------------------------------------------------------
-    // accelerometer
+    // IMS - Accelerometer
     //----------------------------------------------------------------------------
     @JvmStatic
     fun startAccelerometer(listener: AccelerometerListener?= null): Boolean {
@@ -439,6 +454,22 @@ object MbtClientIndus5 {
     @JvmStatic
     fun stopAccelerometer(): Boolean {
         tx.value = EnumIndus5Command.MBX_STOP_IMS_ACQUISITION.bytes
+        return bluetoothGatt.writeCharacteristic(tx)
+    }
+
+    //----------------------------------------------------------------------------
+    // PPG
+    //----------------------------------------------------------------------------
+    @JvmStatic
+    fun startPPG(listener: PpgListener?= null): Boolean {
+        this.ppgListener = listener
+        tx.value = EnumIndus5Command.MBX_START_PPG_ACQUISITION.bytes
+        return bluetoothGatt.writeCharacteristic(tx)
+    }
+
+    @JvmStatic
+    fun stopPPG(): Boolean {
+        tx.value = EnumIndus5Command.MBX_STOP_PPG_ACQUISITION.bytes
         return bluetoothGatt.writeCharacteristic(tx)
     }
 }

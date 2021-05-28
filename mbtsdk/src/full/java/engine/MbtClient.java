@@ -43,7 +43,7 @@ import timber.log.Timber;
  */
 
 @Keep
-public final class MbtClient implements AccelerometerInterface {
+public final class MbtClient {
 
     private static final String TAG = MbtClient.class.getName();
     private static Context context;
@@ -391,8 +391,7 @@ public final class MbtClient implements AccelerometerInterface {
     //----------------------------------------------------------------------------
     // indus 5
     //----------------------------------------------------------------------------
-    @Override
-    public boolean startAccelerometer(@NotNull AccelerometerListener listener) {
+    private boolean startAccelerometer(@NotNull AccelerometerListener listener) {
         if (Indus5Singleton.INSTANCE.isIndus5()) {
             return MbtClientIndus5.startAccelerometer(listener);
         } else {
@@ -401,8 +400,7 @@ public final class MbtClient implements AccelerometerInterface {
         }
     }
 
-    @Override
-    public boolean stopAccelerometer() {
+    private boolean stopAccelerometer() {
         if (Indus5Singleton.INSTANCE.isIndus5()) {
             return MbtClientIndus5.stopAccelerometer();
         } else {
