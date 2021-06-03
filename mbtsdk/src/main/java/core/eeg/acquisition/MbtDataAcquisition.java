@@ -10,6 +10,7 @@ import java.util.LinkedList;
 import core.bluetooth.BluetoothProtocol;
 import core.eeg.MbtEEGManager;
 import core.eeg.storage.RawEEGSample;
+import timber.log.Timber;
 import utils.BitUtils;
 import utils.ConversionUtils;
 import utils.LogUtils;
@@ -99,6 +100,7 @@ public class MbtDataAcquisition {
     private void fillSingleDataEEGList(int numberOfChannels, boolean isInterpolationEEGSample, byte[] input) {
         if (protocol.equals(LOW_ENERGY)){
             statusDataBytes = (getNbStatusBytes(protocol) > 0) ? (Arrays.copyOfRange(input, getRawDataIndexSize(protocol), getRawDataIndexSize(protocol) + getNbStatusBytes(protocol))) : null;
+//            Timber.v("status bytes = " + Arrays.toString(statusDataBytes));
             fillBLESingleDataEEGList(numberOfChannels, isInterpolationEEGSample, input);
         }else if (protocol.equals(SPP))
                 fillSPPSingleDataEEGList(numberOfChannels, isInterpolationEEGSample, input);

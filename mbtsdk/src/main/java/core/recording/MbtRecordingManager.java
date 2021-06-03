@@ -19,6 +19,7 @@ import eventbus.MbtEventBus;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.ConnectionStateEvent;
 import eventbus.events.IMSEvent;
+import eventbus.events.PpgEvent;
 import timber.log.Timber;
 
 /**
@@ -150,6 +151,13 @@ public final class MbtRecordingManager extends BaseModuleManager {
     public void onNewIMSPackets(@NonNull final IMSEvent event) {
         if(recordBuffering != null)
             recordBuffering.recordIMS(event.getPositions());
+    }
+
+    @SuppressWarnings("unused")
+    @Subscribe(threadMode = ThreadMode.ASYNC)
+    public void onNewPpgPackets(@NonNull final PpgEvent event) {
+        if(recordBuffering != null)
+            recordBuffering.recordPpg(event.getData());
     }
 
     private void storeRecording(){

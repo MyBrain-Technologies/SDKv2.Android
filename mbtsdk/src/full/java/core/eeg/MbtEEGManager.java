@@ -352,7 +352,11 @@ public final class MbtEEGManager extends BaseModuleManager {
      */
     @Subscribe(threadMode = ThreadMode.BACKGROUND)
     public void onEvent(BluetoothEEGEvent event) { //warning : this method is used
-        dataAcquisition.handleDataAcquired(event.getData(), getNumberOfChannels());
+        try {
+            dataAcquisition.handleDataAcquired(event.getData(), getNumberOfChannels());
+        } catch (Exception e) {
+            Timber.e(e);
+        }
     }
 
     /**

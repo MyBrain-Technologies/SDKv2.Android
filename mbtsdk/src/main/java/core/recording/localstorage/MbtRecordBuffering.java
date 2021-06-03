@@ -14,8 +14,10 @@ import core.device.model.MbtDevice;
 import core.eeg.signalprocessing.ContextSP;
 import core.eeg.storage.MbtEEGPacket;
 import engine.clientevents.RecordingError;
+import features.MbtFeatures;
 import model.MbtRecording;
 import model.Position3D;
+import model.PpgFrame;
 import timber.log.Timber;
 import utils.LogUtils;
 
@@ -40,6 +42,8 @@ public class MbtRecordBuffering {
      * Inertial Motion Sensor (IMS) - Accelerometer
      */
     private ArrayList<Position3D> imsBuffer;
+
+    private ArrayList<Position3D> ppgBuffer;
 
     /**
      * Map that stores the path of the recording as a JSON file and its associated ID
@@ -110,7 +114,7 @@ public class MbtRecordBuffering {
                     recordConfig.getTimestamp(),
                     eegPacketsClone,
                     imsClone,
-                    device.getInternalConfig().getStatusBytes() > 0);
+                    MbtFeatures.getNbStatusBytes(null) > 0);
         } else {
             recording = MbtJsonBuilder.convertEEGPacketsToRecording(
                     device.getNbChannels(),
@@ -159,6 +163,10 @@ public class MbtRecordBuffering {
         if(imsBuffer != null) {
             imsBuffer.addAll(positions);
         }
+    }
+
+    public void recordPpg(PpgFrame data){
+        //TODO: on going
     }
 
     public boolean isEegPacketsBufferEmpty() {

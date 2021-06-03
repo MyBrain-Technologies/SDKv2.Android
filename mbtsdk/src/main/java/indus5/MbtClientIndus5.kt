@@ -23,6 +23,7 @@ import engine.clientevents.DeviceBatteryListener
 import eventbus.MbtEventBus
 import eventbus.events.BluetoothEEGEvent
 import eventbus.events.IMSEvent
+import eventbus.events.PpgEvent
 import model.AccelerometerFrame
 import model.PpgFrame
 import timber.log.Timber
@@ -32,10 +33,12 @@ import java.util.*
 @SuppressLint("StaticFieldLeak")
 object MbtClientIndus5 {
 
+    private var triggerListener: TriggerListener? = null
     private var deviceBatteryListener: DeviceBatteryListener<BaseError>? = null
     private var accelerometerListener: AccelerometerListener? = null
     private var ppgListener: PpgListener? = null
     private const val MELOMIND_INDUS5_PREFIX = "melo_2"
+    private const val MELOMIND_PREFIX = "melo_"
 
     lateinit var context: Context
     private lateinit var config: ConnectionConfig
@@ -68,7 +71,7 @@ object MbtClientIndus5 {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             super.onScanResult(callbackType, result)
 
-            if (result.device?.name != null) {
+            if ((result.device?.name != null) && (result.device!!.name!!.startsWith(MELOMIND_PREFIX))) {
                 val name = result.device?.name!!
                 if (isNewDevice(name)) {
                     foundDevices.add(name)
@@ -76,19 +79,20 @@ object MbtClientIndus5 {
                     Timber.d("found device : name = ${result.device?.name}")
                     val services = result.scanRecord?.serviceUuids
                     if (!services.isNullOrEmpty()) {
-                        Timber.i("found services in scan record")
+                        Timber.d("found services in scan record")
                         for (service in services) {
                             Timber.i("${service.uuid}")
                         }
                     }
                 }
-            }
 
-            //stop scanning if target device found
-            if (isTargetDevice(result.device)) {
-                stopScan()
-                Indus5Singleton.mbtDevice = MelomindQPlusDevice(result.device.address, result.device.name)
-                connectGattServer(result.device!!)
+                //stop scanning if target device found
+                if (isTargetDevice(result.device)) {
+                    Timber.i("found indus5 : stop scan")
+                    stopScan()
+                    Indus5Singleton.mbtDevice = MelomindQPlusDevice(result.device.address, result.device.name)
+                    connectGattServer(result.device!!)
+                }
             }
         }
 
@@ -98,6 +102,7 @@ object MbtClientIndus5 {
 
         override fun onScanFailed(errorCode: Int) {
             super.onScanFailed(errorCode)
+            Timber.d("onScanFailed : errorCode = $errorCode")
         }
     }
 
@@ -197,53 +202,54 @@ object MbtClientIndus5 {
 
             val response = characteristic.value.parseRawIndus5Response()
             when (response) {
-                is Indus5Response.MtuChangedResponse -> {
-                    Timber.i("indus5 mtu changed : byte 2 = ${response.size}")
+                is Indus5Response.MtuChange -> {
+                    Timber.d("indus5 mtu changed : byte 2 = ${response.size}")
                     config.connectionStateListener.onDeviceConnected(MelomindQPlusDevice(device))
                 }
-                is Indus5Response.EegFrameResponse -> {
-                    Timber.v("indus5 eeg frame received: data = ${Arrays.toString(characteristic.value)}")
+                is Indus5Response.TriggerConfiguration -> {
+                    Timber.d("indus5 TriggerConfigResponse : enabled = ${response.isEnabled}")
+                    triggerListener?.onTriggerResponse(response.isEnabled)
+                }
+                is Indus5Response.EegFrame -> {
+//                    Timber.v("indus5 eeg frame received: data = ${Arrays.toString(characteristic.value)}")
                     MbtEventBus.postEvent(BluetoothEEGEvent(response.data))
                 }
-                is Indus5Response.BatteryLevelResponse -> {
-                    Timber.v("indus5 BatteryLevelResponse received: data = ${Arrays.toString(characteristic.value)}")
+                is Indus5Response.BatteryLevel -> {
+                    Timber.d("indus5 BatteryLevelResponse received: data = ${Arrays.toString(characteristic.value)}")
                     deviceBatteryListener?.onBatteryLevelReceived(response.percent.toString())
                 }
-                is Indus5Response.EegStartResponse -> {
-                    Timber.d("indus5 eeg start")
+                is Indus5Response.EegStatus -> {
+                    Timber.d("indus5 EegStatus : is enabled = ${response.isEnabled}")
                     val isStartRequest = true
                     val isRecordRequest = false
                     val computeQualities = true
                     val monitorDeviceStatus = false
                     val recordConfig = streamConfig.recordConfig
-                    MbtEventBus.postEvent(
-                            StreamRequestEvent(
-                                    isStartRequest,
-                                    isRecordRequest,
-                                    computeQualities,
-                                    monitorDeviceStatus,
-                                    recordConfig
-                            )
-                    )
+                    if (response.isEnabled) {
+                        Timber.d("indus5 eeg start")
+                        MbtEventBus.postEvent(
+                                StreamRequestEvent(
+                                        response.isEnabled,
+                                        isRecordRequest,
+                                        computeQualities,
+                                        monitorDeviceStatus,
+                                        recordConfig
+                                )
+                        )
+
+                    } else {
+                        MbtEventBus.postEvent(
+                                StreamRequestEvent(
+                                        response.isEnabled,
+                                        isRecordRequest,
+                                        computeQualities,
+                                        monitorDeviceStatus,
+                                        recordConfig
+                                )
+                        )
+                    }
                 }
-                is Indus5Response.EegStopResponse -> {
-                    Timber.d("indus5 eeg stop")
-                    val isStartRequest = false
-                    val isRecordRequest = false
-                    val computeQualities = true
-                    val monitorDeviceStatus = false
-                    val recordConfig = streamConfig.recordConfig
-                    MbtEventBus.postEvent(
-                            StreamRequestEvent(
-                                    isStartRequest,
-                                    isRecordRequest,
-                                    computeQualities,
-                                    monitorDeviceStatus,
-                                    recordConfig
-                            )
-                    )
-                }
-                is Indus5Response.AccelerometerCommand -> {
+                is Indus5Response.ImsStatus -> {
                     Timber.d("indus5 AccelerometerCommand IMS : is enabled = ${response.isEnabled}")
                     if (response.isEnabled) {
                         accelerometerListener?.onAccelerometerStarted()
@@ -251,12 +257,12 @@ object MbtClientIndus5 {
                         accelerometerListener?.onAccelerometerStopped()
                     }
                 }
-                is Indus5Response.AccelerometerFrame -> {
+                is Indus5Response.ImsFrame -> {
                     val frame = AccelerometerFrame(response.data)
                     MbtEventBus.postEvent(IMSEvent(frame.positions))
                     accelerometerListener?.onNewAccelerometerFrame(frame)
                 }
-                is Indus5Response.PpgCommand -> {
+                is Indus5Response.PpgStatus -> {
                     Timber.d("indus5 PpgCommand : is enabled = ${response.isEnabled}")
                     if (response.isEnabled) {
                         ppgListener?.onPpgStarted()
@@ -265,9 +271,10 @@ object MbtClientIndus5 {
                     }
                 }
                 is Indus5Response.PpgFrame -> {
+                    Timber.v("on PpgFrame : data = ${response.data}")
                     val frame = PpgFrame(response.data)
-                    MbtEventBus.postEvent(IMSEvent(frame.positions))
-                    accelerometerListener?.onNewAccelerometerFrame(frame)
+                    MbtEventBus.postEvent(PpgEvent(frame))
+                    ppgListener?.onPpgFrame(frame)
                 }
                 else -> {
                     //it should be Indus5Response.UnknownResponse here
@@ -364,7 +371,7 @@ object MbtClientIndus5 {
     }
 
     private fun connectGattServer(device: BluetoothDevice) {
-        Timber.v("connectGattServer")
+        Timber.d("connectGattServer")
         this.device = device
         val gattCallback = MyGattCallback()
         bluetoothGatt = device.connectGatt(context, false, gattCallback)
@@ -373,7 +380,7 @@ object MbtClientIndus5 {
     }
 
     private fun scanLeDevice() {
-        Timber.v("scanLeDevice")
+        Timber.d("scanLeDevice")
 
         bluetoothAdapter.bluetoothLeScanner?.let { scanner ->
             if (!scanning) { // Stops scanning after a pre-defined scan period.
@@ -445,7 +452,7 @@ object MbtClientIndus5 {
     // IMS - Accelerometer
     //----------------------------------------------------------------------------
     @JvmStatic
-    fun startAccelerometer(listener: AccelerometerListener?= null): Boolean {
+    fun startAccelerometer(listener: AccelerometerListener? = null): Boolean {
         this.accelerometerListener = listener
         tx.value = EnumIndus5Command.MBX_START_IMS_ACQUISITION.bytes
         return bluetoothGatt.writeCharacteristic(tx)
@@ -461,7 +468,7 @@ object MbtClientIndus5 {
     // PPG
     //----------------------------------------------------------------------------
     @JvmStatic
-    fun startPPG(listener: PpgListener?= null): Boolean {
+    fun startPPG(listener: PpgListener? = null): Boolean {
         this.ppgListener = listener
         tx.value = EnumIndus5Command.MBX_START_PPG_ACQUISITION.bytes
         return bluetoothGatt.writeCharacteristic(tx)
@@ -470,6 +477,21 @@ object MbtClientIndus5 {
     @JvmStatic
     fun stopPPG(): Boolean {
         tx.value = EnumIndus5Command.MBX_STOP_PPG_ACQUISITION.bytes
+        return bluetoothGatt.writeCharacteristic(tx)
+    }
+
+    @JvmOverloads
+    @JvmStatic
+    fun configureTrigger(isEnabled: Boolean, triggerListener: TriggerListener? = null): Boolean {
+        this.triggerListener = triggerListener
+        val p300Byte: Byte = if (isEnabled) {
+            0x01
+        } else {
+            0x00
+        }
+        val command = EnumIndus5Command.MBX_P300_ENABLE.bytes.toMutableList()
+        command.add(p300Byte)
+        tx.value = command.toByteArray()
         return bluetoothGatt.writeCharacteristic(tx)
     }
 }

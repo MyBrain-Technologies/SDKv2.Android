@@ -3,7 +3,7 @@ package model
 import org.junit.Test
 import org.junit.jupiter.api.Assertions.assertEquals
 
-internal class AccelerometerFrameTest {
+internal class ImsFrameTest {
 
     private val dataFrame1 = byteArrayOf(0x00, 0x03,
             0xFE.toByte(), 0xFF.toByte(), 0x01, 0x00, 0x3F, 0x00,
