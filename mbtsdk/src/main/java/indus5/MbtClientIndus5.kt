@@ -213,6 +213,7 @@ object MbtClientIndus5 {
                 is Indus5Response.EegFrame -> {
 //                    Timber.v("indus5 eeg frame received: data = ${Arrays.toString(characteristic.value)}")
                     MbtEventBus.postEvent(BluetoothEEGEvent(response.data))
+
                 }
                 is Indus5Response.BatteryLevel -> {
                     Timber.d("indus5 BatteryLevelResponse received: data = ${Arrays.toString(characteristic.value)}")

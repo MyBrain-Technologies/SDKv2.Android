@@ -259,7 +259,7 @@ final class MbtJsonBuilder{
                 Timber.d("serialize with IMS");
 
                 jsonWriter.name("img");
-                jsonWriter.beginObject();    // beginning of "ims"       array
+                jsonWriter.beginObject();    // beginning of "ims"
 
                 jsonWriter.name("sampRate").value(100);
                 jsonWriter.name("imsData");
@@ -277,11 +277,23 @@ final class MbtJsonBuilder{
                     }
                 }
                 jsonWriter.endArray();
+
                 jsonWriter.endObject();
             }
+
             //----------------------------------------------------------------------------
-            // end ims
+            // recording error data
             //----------------------------------------------------------------------------
+            if (Indus5Singleton.INSTANCE.isIndus5() && recording.getRecordingErrorData() != null) {
+                Timber.d("serialize recording error data");
+
+                jsonWriter.name("recordingErrorData");
+                jsonWriter.beginObject();
+                jsonWriter.name("missingEeg").value(recording.getRecordingErrorData().getMissingFrame());
+                jsonWriter.name("zeroTime").value(recording.getRecordingErrorData().getZeroTimeNumber());
+                jsonWriter.name("zeroSample").value(recording.getRecordingErrorData().getZeroSampleNumber());
+                jsonWriter.endObject();
+            }
 
             jsonWriter.name(STATUS_DATA_KEY); // beginning of "statusData"       array
             jsonWriter.beginArray();

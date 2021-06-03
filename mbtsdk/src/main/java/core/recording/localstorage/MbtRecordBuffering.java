@@ -11,6 +11,7 @@ import java.util.Map;
 import config.RecordConfig;
 import core.Indus5Singleton;
 import core.device.model.MbtDevice;
+import core.eeg.acquisition.RecordingErrorData;
 import core.eeg.signalprocessing.ContextSP;
 import core.eeg.storage.MbtEEGPacket;
 import engine.clientevents.RecordingError;
@@ -50,6 +51,8 @@ public class MbtRecordBuffering {
      */
     private Map<String, String> recordingsBuffer;
 
+    private RecordingErrorData recordingErrorData;
+
     private final Context mContext;
 
     public MbtRecordBuffering(Context mContext) {
@@ -63,6 +66,10 @@ public class MbtRecordBuffering {
     public void resetPacketsBuffer(){
         eegPacketsBuffer = new ArrayList<>();
         imsBuffer = new ArrayList<>();
+    }
+
+    public void addErrorDataInfo(RecordingErrorData errorData) {
+        recordingErrorData = errorData;
     }
 
     public boolean storeRecordBuffer(@NonNull MbtDevice device, @NonNull RecordConfig recordConfig) {
@@ -115,6 +122,8 @@ public class MbtRecordBuffering {
                     eegPacketsClone,
                     imsClone,
                     MbtFeatures.getNbStatusBytes(null) > 0);
+            Timber.d("setRecordingErrorData");
+            recording.setRecordingErrorData(recordingErrorData);
         } else {
             recording = MbtJsonBuilder.convertEEGPacketsToRecording(
                     device.getNbChannels(),
@@ -166,7 +175,7 @@ public class MbtRecordBuffering {
     }
 
     public void recordPpg(PpgFrame data){
-        //TODO: on going
+        //TODO: on going ppg
     }
 
     public boolean isEegPacketsBufferEmpty() {

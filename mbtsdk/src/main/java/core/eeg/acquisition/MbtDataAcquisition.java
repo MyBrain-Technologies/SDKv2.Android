@@ -10,6 +10,7 @@ import java.util.LinkedList;
 import core.bluetooth.BluetoothProtocol;
 import core.eeg.MbtEEGManager;
 import core.eeg.storage.RawEEGSample;
+import kotlin.Pair;
 import timber.log.Timber;
 import utils.BitUtils;
 import utils.ConversionUtils;
@@ -35,8 +36,9 @@ public class MbtDataAcquisition {
 
     private final String TAG = MbtDataAcquisition.class.getName();
 
-    private int startingIndex = -1;
     private int previousIndex = -1;
+
+    private RecordingErrorData recordingErrorData = RecordingErrorData.getDefault();
 
     private MbtEEGManager eegManager;
 
@@ -67,11 +69,20 @@ public class MbtDataAcquisition {
         //1st step : check index
         final int currentIndex = (data[protocol == LOW_ENERGY ? 0 : 1] & 0xff) << 8 | (data[protocol == LOW_ENERGY ? 1 : 2] & 0xff); //index bytes are the 2 first bytes for BLE only
 
-        if(previousIndex == -1){
+        if (previousIndex == -1) {
             previousIndex = currentIndex -1;
+            Timber.d("");
+            recordingErrorData.setStartingIndex(currentIndex);
         }
 
         final int indexDifference = currentIndex - previousIndex;
+
+        recordingErrorData.increaseMissingEegFrame(indexDifference - 1);
+
+        //this block is to count zero signal
+        Pair<Integer, Integer> zeroSignal = ErrorDataHelper.INSTANCE.countZeroSample(data, 4);
+        recordingErrorData.increaseZeroTimeCounter(zeroSignal.component1());
+        recordingErrorData.increaseZeroSampleCounter(zeroSignal.component2());
 
         //2nd step : Create interpolation packets if packet loss
         if(indexDifference != 1){
@@ -88,6 +99,7 @@ public class MbtDataAcquisition {
         storeData();
 
         previousIndex = currentIndex;
+        recordingErrorData.setCurrentIndex(currentIndex);
     }
 
 
@@ -228,17 +240,8 @@ public class MbtDataAcquisition {
      * Reset the starting and previous indexes to -1
      */
     public void resetIndex() {
-        startingIndex = -1;
         previousIndex = -1;
-    }
-
-    /**
-     * Get the starting index for scanning the raw EEG data array
-     *
-     * @return the starting index
-     */
-    public int getStartingIndex() {
-        return startingIndex;
+        RecordingErrorData.getDefault().resetData();
     }
 
     /**

@@ -365,6 +365,7 @@ public final class MbtEEGManager extends BaseModuleManager {
      */
     @Subscribe(threadMode = ThreadMode.POSTING)
     public void onStreamStateChanged(StreamState newState) {
+        Timber.d("onStreamStateChanged : %s", newState.name());
         if (newState == StreamState.STOPPED && dataAcquisition != null)
             resetBuffers((byte) UNCHANGED_VALUE, UNCHANGED_VALUE, (byte) 0);
     }

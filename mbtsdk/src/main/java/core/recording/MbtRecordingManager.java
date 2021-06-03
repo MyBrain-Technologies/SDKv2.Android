@@ -14,6 +14,7 @@ import core.bluetooth.requests.StreamRequestEvent;
 import core.device.DeviceEvents;
 import core.device.event.indus5.RecordingSavedEvent;
 import core.eeg.MbtEEGManager;
+import core.eeg.acquisition.RecordingErrorData;
 import core.recording.localstorage.MbtRecordBuffering;
 import eventbus.MbtEventBus;
 import eventbus.events.ClientReadyEEGEvent;
@@ -164,6 +165,8 @@ public final class MbtRecordingManager extends BaseModuleManager {
         Timber.i("storeRecording : " + recordConfig.getDirectory() + " " + recordConfig.getFilename());
 
         if (Indus5Singleton.INSTANCE.isIndus5()) {
+            RecordingErrorData clone = RecordingErrorData.getDefault().clone();
+            recordBuffering.addErrorDataInfo(clone);
             recordBuffering.storeRecordBuffer(Indus5Singleton.getMbtDevice(), recordConfig);
             MbtEventBus.postEvent(new RecordingSavedEvent(recordConfig));
         } else {

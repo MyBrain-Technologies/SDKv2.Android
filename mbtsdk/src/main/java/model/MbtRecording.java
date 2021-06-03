@@ -7,6 +7,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+import core.eeg.acquisition.RecordingErrorData;
 import core.eeg.storage.MbtEEGPacket;
 import timber.log.Timber;
 
@@ -23,6 +24,7 @@ public class MbtRecording implements Serializable{
     private int firstPacketID;
     private ArrayList<ArrayList<Float>> qualities;
     private ArrayList<ArrayList<Float>> eegData;
+    private RecordingErrorData recordingErrorData;
     private ArrayList<Position3D> accelerometerPositions = null;
     @Nullable
     private ArrayList<Float> status;
@@ -127,6 +129,14 @@ public class MbtRecording implements Serializable{
 
     public void setAccelerometerPositions(ArrayList<Position3D> accelerometerPositions) {
         this.accelerometerPositions = accelerometerPositions;
+    }
+
+    public RecordingErrorData getRecordingErrorData() {
+        return recordingErrorData;
+    }
+
+    public void setRecordingErrorData(RecordingErrorData recordingErrorData) {
+        this.recordingErrorData = recordingErrorData;
     }
 
     @Override
