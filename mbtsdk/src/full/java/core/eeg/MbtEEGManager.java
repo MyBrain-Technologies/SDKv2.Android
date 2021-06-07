@@ -372,6 +372,7 @@ public final class MbtEEGManager extends BaseModuleManager {
 
     @Subscribe
     public void onStreamStartedOrStopped(StreamRequestEvent event){
+        Timber.d("MbtEEGManager :  onStreamStartedOrStopped  = " + event.startStream());
         if(event.startStream()){
             this.dataAcquisition = new MbtDataAcquisition(this, protocol);
             this.dataBuffering = new MbtDataBuffering(this);

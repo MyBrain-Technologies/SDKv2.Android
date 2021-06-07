@@ -71,9 +71,12 @@ public class MbtDataAcquisition {
 
         if (previousIndex == -1) {
             previousIndex = currentIndex -1;
-            Timber.d("");
+        }
+
+        if (recordingErrorData.getStartingIndex() == -1) {
             recordingErrorData.setStartingIndex(currentIndex);
         }
+        recordingErrorData.setCurrentIndex(currentIndex);
 
         final int indexDifference = currentIndex - previousIndex;
 
@@ -99,7 +102,6 @@ public class MbtDataAcquisition {
         storeData();
 
         previousIndex = currentIndex;
-        recordingErrorData.setCurrentIndex(currentIndex);
     }
 
 
@@ -241,7 +243,6 @@ public class MbtDataAcquisition {
      */
     public void resetIndex() {
         previousIndex = -1;
-        RecordingErrorData.getDefault().resetData();
     }
 
     /**

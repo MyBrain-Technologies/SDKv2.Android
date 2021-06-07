@@ -37,6 +37,7 @@ import core.device.model.MbtDevice;
 import core.device.model.MbtVersion;
 import core.device.model.MelomindsQRDataBase;
 import core.eeg.MbtEEGManager;
+import core.eeg.acquisition.RecordingErrorData;
 import core.recording.MbtRecordingManager;
 import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
@@ -49,6 +50,7 @@ import engine.clientevents.EegError;
 import engine.clientevents.EegListener;
 import engine.clientevents.HeadsetDeviceError;
 import engine.clientevents.OADStateListener;
+import engine.clientevents.RecordingError;
 import eventbus.MbtEventBus;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.ConnectionStateEvent;
@@ -321,6 +323,7 @@ public class MbtManager {
     }
 
     public void startRecord(Context context) {
+        Timber.d("MbtManager :  startRecord");
         MbtEventBus.postEvent(
                 new StreamRequestEvent(START, true,
                         false, (deviceStatusListener != null), new RecordConfig.Builder(context).create()));

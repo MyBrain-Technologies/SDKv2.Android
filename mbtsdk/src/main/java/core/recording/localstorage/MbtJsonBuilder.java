@@ -221,6 +221,20 @@ final class MbtJsonBuilder{
             jsonWriter.name(FIRST_PACKET_ID_KEY)
                     .value(recording.getFirstPacketsId());
 
+            //----------------------------------------------------------------------------
+            // recording error data
+            //----------------------------------------------------------------------------
+            if (Indus5Singleton.INSTANCE.isIndus5() && recording.getRecordingErrorData() != null) {
+                Timber.d("serialize recording error data");
+
+                jsonWriter.name("recordingErrorData");
+                jsonWriter.beginObject();
+                jsonWriter.name("missingEeg").value(recording.getRecordingErrorData().getMissingFrame());
+                jsonWriter.name("zeroTime").value(recording.getRecordingErrorData().getZeroTimeNumber());
+                jsonWriter.name("zeroSample").value(recording.getRecordingErrorData().getZeroSampleNumber());
+                jsonWriter.endObject();
+            }
+
             jsonWriter.name(QUALITIES_KEY);
             jsonWriter.beginArray();    // beginning of "qualities"         array
 
@@ -258,7 +272,7 @@ final class MbtJsonBuilder{
             if (Indus5Singleton.INSTANCE.isIndus5() && recording.getAccelerometerPositions() != null) {
                 Timber.d("serialize with IMS");
 
-                jsonWriter.name("img");
+                jsonWriter.name("ims");
                 jsonWriter.beginObject();    // beginning of "ims"
 
                 jsonWriter.name("sampRate").value(100);
@@ -278,20 +292,6 @@ final class MbtJsonBuilder{
                 }
                 jsonWriter.endArray();
 
-                jsonWriter.endObject();
-            }
-
-            //----------------------------------------------------------------------------
-            // recording error data
-            //----------------------------------------------------------------------------
-            if (Indus5Singleton.INSTANCE.isIndus5() && recording.getRecordingErrorData() != null) {
-                Timber.d("serialize recording error data");
-
-                jsonWriter.name("recordingErrorData");
-                jsonWriter.beginObject();
-                jsonWriter.name("missingEeg").value(recording.getRecordingErrorData().getMissingFrame());
-                jsonWriter.name("zeroTime").value(recording.getRecordingErrorData().getZeroTimeNumber());
-                jsonWriter.name("zeroSample").value(recording.getRecordingErrorData().getZeroSampleNumber());
                 jsonWriter.endObject();
             }
 

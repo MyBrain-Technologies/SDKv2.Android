@@ -54,11 +54,12 @@ public final class MbtRecordingManager extends BaseModuleManager {
      */
     @Subscribe (threadMode = ThreadMode.ASYNC)
     public void onStreamRequestEvent(final StreamRequestEvent request) {
-        Timber.i("StreamRequestEvent : start = %s", request.isStartStream());
+        Timber.i("MbtRecordingManager : onStreamRequestEvent : start = %s", request.isStartStream());
 
         recordConfig = request.getRecordConfig();
 
         if (request.isStartStream()) { //start streaming
+            RecordingErrorData.getDefault().resetData();
 
             if(recordBuffering != null)
                 recordBuffering.resetPacketsBuffer();
@@ -90,6 +91,7 @@ public final class MbtRecordingManager extends BaseModuleManager {
         Timber.i("onStreamRequestIndus5 : start = %s", request.isStart());
 
         recordConfig = request.getRecordConfig();
+
 
         if (request.isStart()) { //start streaming
 

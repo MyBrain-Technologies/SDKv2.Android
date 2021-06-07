@@ -1,5 +1,7 @@
 package core.eeg.acquisition
 
+import timber.log.Timber
+
 /**
  * this class is to debug data loss bug, it may be removed in release version
  */
@@ -47,7 +49,9 @@ class RecordingErrorData {
         return missingFrame.toFloat() * 100 / (currentIndex - startingIndex + 1)
     }
 
+    @JvmOverloads
     fun resetData() {
+        Timber.d("resetData")
         missingFrame = 0
         zeroSampleNumber = 0
         zeroTimeNumber = 0
