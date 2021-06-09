@@ -272,7 +272,7 @@ final class MbtJsonBuilder{
             // start ims
             //----------------------------------------------------------------------------
 
-            if (Indus5Singleton.INSTANCE.isIndus5() && recording.getAccelerometerPositions() != null) {
+            if (Indus5Singleton.INSTANCE.isIndus5() && recording.getAccelerometerPositions() != null && !recording.getAccelerometerPositions().isEmpty()) {
                 Timber.d("write IMS");
 
                 jsonWriter.name("ims");

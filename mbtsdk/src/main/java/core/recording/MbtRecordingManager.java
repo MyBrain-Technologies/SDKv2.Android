@@ -146,18 +146,17 @@ public final class MbtRecordingManager extends BaseModuleManager {
     public void onNewPackets(@NonNull final ClientReadyEEGEvent event) {
         if(recordBuffering != null)
             recordBuffering.record(event.getEegPackets());
-
     }
 
     @SuppressWarnings("unused")
-    @Subscribe(threadMode = ThreadMode.ASYNC)
+    @Subscribe(threadMode = ThreadMode.BACKGROUND)
     public void onNewIMSPackets(@NonNull final IMSEvent event) {
         if(recordBuffering != null)
             recordBuffering.recordIMS(event.getPositions());
     }
 
     @SuppressWarnings("unused")
-    @Subscribe(threadMode = ThreadMode.ASYNC)
+    @Subscribe(threadMode = ThreadMode.BACKGROUND)
     public void onNewPpgPackets(@NonNull final PpgEvent event) {
         if(recordBuffering != null)
             recordBuffering.recordPpg(event.getData());

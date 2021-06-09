@@ -27,6 +27,7 @@ import eventbus.events.PpgEvent
 import model.AccelerometerFrame
 import model.PpgFrame
 import timber.log.Timber
+import utils.ConversionUtils
 import java.util.*
 
 //TODO: refactor later
@@ -259,7 +260,7 @@ object MbtClientIndus5 {
                     }
                 }
                 is Indus5Response.ImsFrame -> {
-                    Timber.v("on ImsFrame : data = ${response.data}")
+                    Timber.v("on ImsFrame : data = ${ConversionUtils.bytesToHex(response.data)}")
                     val frame = AccelerometerFrame(response.data)
                     MbtEventBus.postEvent(IMSEvent(frame.positions))
                     accelerometerListener?.onNewAccelerometerFrame(frame)
@@ -273,14 +274,14 @@ object MbtClientIndus5 {
                     }
                 }
                 is Indus5Response.PpgFrame -> {
-                    Timber.v("on PpgFrame : data = ${response.data}")
+                    Timber.v("on PpgFrame : data = ${ConversionUtils.bytesToHex(response.data)}")
                     val frame = PpgFrame(response.data)
                     MbtEventBus.postEvent(PpgEvent(frame))
                     ppgListener?.onPpgFrame(frame)
                 }
                 else -> {
                     //it should be Indus5Response.UnknownResponse here
-                    Timber.e("unknown indus5 frame : data = ${Arrays.toString(characteristic.value)}")
+                    Timber.e("unknown indus5 frame : data = ${ConversionUtils.bytesToHex(characteristic.value)}")
                 }
             }
 
