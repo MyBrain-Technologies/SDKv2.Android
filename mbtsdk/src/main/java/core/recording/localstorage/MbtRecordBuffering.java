@@ -4,6 +4,7 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 
 import java.io.File;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -16,6 +17,7 @@ import core.eeg.signalprocessing.ContextSP;
 import core.eeg.storage.MbtEEGPacket;
 import engine.clientevents.RecordingError;
 import features.MbtFeatures;
+import model.LedSignal;
 import model.MbtRecording;
 import model.Position3D;
 import model.PpgFrame;
@@ -44,7 +46,7 @@ public class MbtRecordBuffering {
      */
     private ArrayList<Position3D> imsBuffer;
 
-    private ArrayList<Position3D> ppgBuffer;
+    private ArrayList<ArrayList<LedSignal>> ppgBuffer;
 
     /**
      * Map that stores the path of the recording as a JSON file and its associated ID
@@ -61,11 +63,13 @@ public class MbtRecordBuffering {
         recordingsBuffer = new HashMap<>();
         eegPacketsBuffer = new ArrayList<>();
         imsBuffer = new ArrayList<>();
+        ppgBuffer = new ArrayList<ArrayList<LedSignal>>();
     }
 
     public void resetPacketsBuffer(){
         eegPacketsBuffer = new ArrayList<>();
         imsBuffer = new ArrayList<>();
+        ppgBuffer = new ArrayList<>();
     }
 
     public void addErrorDataInfo(RecordingErrorData errorData) {
@@ -87,13 +91,19 @@ public class MbtRecordBuffering {
 
         ArrayList<Position3D> imsClone = new ArrayList<Position3D>(imsBuffer);
 
+        ArrayList<ArrayList<LedSignal>> ppgClone = new ArrayList<ArrayList<LedSignal>>(ppgBuffer);
+
         resetPacketsBuffer();
 
         if(recordConfig.getDuration() > 0 && eegPacketsClone.size() > recordConfig.getDuration())
             eegPacketsClone = new ArrayList<>(eegPacketsClone.subList(0,recordConfig.getDuration()));
 
         LogUtils.d(TAG," Saving buffer of "+ eegPacketsClone.size()+ " eeg packets.");
-        LogUtils.d(TAG," Saving buffer of "+ imsClone.size()+ " ims packets.");
+        LogUtils.d(TAG," Saving buffer of "+ imsClone.size()+ " ims signals.");
+
+        if (!ppgClone.isEmpty()) {
+            LogUtils.d(TAG, " Saving buffer of " + ppgClone.get(0).size() + " ppg signals.");
+        }
 
         if (recordConfig.getFilename() == null)
             recordConfig.setFilename(FileManager.createFilename(recordConfig.getTimestamp(),
@@ -121,6 +131,7 @@ public class MbtRecordBuffering {
                     recordConfig.getTimestamp(),
                     eegPacketsClone,
                     imsClone,
+                    ppgClone,
                     MbtFeatures.getNbStatusBytes(null) > 0);
             Timber.d("setRecordingErrorData");
             recording.setRecordingErrorData(recordingErrorData);
@@ -175,7 +186,15 @@ public class MbtRecordBuffering {
     }
 
     public void recordPpg(PpgFrame data){
-        //TODO: on going ppg
+        if (ppgBuffer != null) {
+            int ledNb = data.getLeds().size();
+            while (ppgBuffer.size() < ledNb) {
+                ppgBuffer.add(new ArrayList());
+            }
+            for (int i=0; i<ledNb; i++) {
+                ppgBuffer.get(i).addAll(data.getLeds().get(i));
+            }
+        }
     }
 
     public boolean isEegPacketsBufferEmpty() {

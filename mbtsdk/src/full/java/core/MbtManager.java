@@ -37,7 +37,6 @@ import core.device.model.MbtDevice;
 import core.device.model.MbtVersion;
 import core.device.model.MelomindsQRDataBase;
 import core.eeg.MbtEEGManager;
-import core.eeg.acquisition.RecordingErrorData;
 import core.recording.MbtRecordingManager;
 import engine.SimpleRequestCallback;
 import engine.clientevents.BaseError;
@@ -50,7 +49,6 @@ import engine.clientevents.EegError;
 import engine.clientevents.EegListener;
 import engine.clientevents.HeadsetDeviceError;
 import engine.clientevents.OADStateListener;
-import engine.clientevents.RecordingError;
 import eventbus.MbtEventBus;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.ConnectionStateEvent;
@@ -61,8 +59,10 @@ import features.MbtDeviceType;
 import features.MbtFeatures;
 import indus5.AccelerometerListener;
 import indus5.MbtClientIndus5;
+import indus5.PpgListener;
 import mbtsdk.com.mybraintech.mbtsdk.R;
 import model.AccelerometerFrame;
+import model.PpgFrame;
 import timber.log.Timber;
 import utils.LogUtils;
 
@@ -231,55 +231,58 @@ public class MbtManager {
             MbtFeatures.setNbStatusBytes(1);
         }
         if (streamConfig.isImsEnabled()) {
-            //TODO: sequential start ims and eeg
+//            Timber.d("ppg = " + streamConfig.isPpgEnabled());
             if (accelerometerListener == null) {
                 accelerometerListener = new AccelerometerListener() {
                     @Override
                     public void onAccelerometerStarted() {
-//                        Timber.d("send startPPG");
-//                        MbtClientIndus5.startPPG(
-//                                new PpgListener() {
-//
-//                                    @Override
-//                                    public void onPpgError() {
-//
-//                                    }
-//
-//                                    @Override
-//                                    public void onPpgFrame(@NotNull PpgFrame frame) {
-//
-//                                    }
-//
-//                                    @Override
-//                                    public void onPpgStopped() {
-//                                        Timber.d("send stopStream");
-//                                        MbtClientIndus5.stopStream();
-//                                        MbtEventBus.postEvent(
-//                                                new RecordingRequestIndus5Event(STOP));
-//                                    }
-//
-//                                    @Override
-//                                    public void onPpgStarted() {
-//                                        Timber.d("send startStream");
-//                                        MbtClientIndus5.startStream(streamConfig);
-//                                    }
-//                                }
-//                        );
+                        if (streamConfig.isPpgEnabled()) {
+                            Timber.d("send startPPG");
+                            MbtClientIndus5.startPPG(
+                                    new PpgListener() {
 
+                                        @Override
+                                        public void onPpgError() {
 
-                        Timber.d("send startStream");
-                        MbtClientIndus5.startStream(streamConfig);
+                                        }
+
+                                        @Override
+                                        public void onPpgFrame(@NotNull PpgFrame frame) {
+
+                                        }
+
+                                        @Override
+                                        public void onPpgStopped() {
+                                            Timber.d("send stopStream");
+                                            MbtClientIndus5.stopStream();
+                                            MbtEventBus.postEvent(
+                                                    new RecordingRequestIndus5Event(STOP));
+                                        }
+
+                                        @Override
+                                        public void onPpgStarted() {
+                                            Timber.d("send startStream");
+                                            MbtClientIndus5.startStream(streamConfig);
+                                        }
+                                    }
+                            );
+                        } else {
+                            Timber.d("send startStream");
+                            MbtClientIndus5.startStream(streamConfig);
+                        }
                     }
 
                     @Override
                     public void onAccelerometerStopped() {
-//                        Timber.d("send stopPPG");
-//                        MbtClientIndus5.stopPPG();
-
-                        Timber.d("send stopStream");
-                        MbtClientIndus5.stopStream();
-                        MbtEventBus.postEvent(
-                                new RecordingRequestIndus5Event(STOP));
+                        if (streamConfig.isPpgEnabled()) {
+                            Timber.d("send stopPPG");
+                            MbtClientIndus5.stopPPG();
+                        } else {
+                            Timber.d("send stopStream");
+                            MbtClientIndus5.stopStream();
+                            MbtEventBus.postEvent(
+                                    new RecordingRequestIndus5Event(STOP));
+                        }
                     }
 
                     @Override

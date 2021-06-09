@@ -26,6 +26,7 @@ public class MbtRecording implements Serializable{
     private ArrayList<ArrayList<Float>> eegData;
     private RecordingErrorData recordingErrorData;
     private ArrayList<Position3D> accelerometerPositions = null;
+    private ArrayList<ArrayList<LedSignal>> ppg = null;
     @Nullable
     private ArrayList<Float> status;
 
@@ -34,10 +35,12 @@ public class MbtRecording implements Serializable{
                         @NonNull final long recordingTime,
                         @NonNull List<MbtEEGPacket> eegPackets,
                         @NonNull final ArrayList<Position3D> accelerometerPositions,
+                        @NonNull final ArrayList<ArrayList<LedSignal>> ppg,
                         @NonNull final boolean hasStatus) {
         this(nbChannels, recordInfo, recordingTime, eegPackets, hasStatus);
-        Timber.d("MbtRecording with accelerometerPositions");
+        Timber.d("MbtRecording with accelerometerPositions + ppg");
         this.accelerometerPositions = accelerometerPositions;
+        this.ppg = ppg;
     }
 
     public MbtRecording(@NonNull int nbChannels,
@@ -129,6 +132,10 @@ public class MbtRecording implements Serializable{
 
     public void setAccelerometerPositions(ArrayList<Position3D> accelerometerPositions) {
         this.accelerometerPositions = accelerometerPositions;
+    }
+
+    public ArrayList<ArrayList<LedSignal>> getPpg() {
+        return ppg;
     }
 
     public RecordingErrorData getRecordingErrorData() {

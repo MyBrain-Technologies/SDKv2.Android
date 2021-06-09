@@ -259,6 +259,7 @@ object MbtClientIndus5 {
                     }
                 }
                 is Indus5Response.ImsFrame -> {
+                    Timber.v("on ImsFrame : data = ${response.data}")
                     val frame = AccelerometerFrame(response.data)
                     MbtEventBus.postEvent(IMSEvent(frame.positions))
                     accelerometerListener?.onNewAccelerometerFrame(frame)
@@ -349,7 +350,7 @@ object MbtClientIndus5 {
         //start process
         setupBle()
 
-        //after scan period device should found and connected
+        //after scan period device should be found and connected
         handler.postDelayed(Runnable { onConnectionError() }, SCAN_PERIOD)
     }
 

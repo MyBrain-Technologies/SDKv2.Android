@@ -1,16 +1,18 @@
 package core.recording.localstorage;
 
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import android.util.JsonWriter;
 import android.util.Log;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -21,6 +23,7 @@ import core.device.model.MbtDevice;
 import core.eeg.storage.MbtEEGPacket;
 import core.recording.metadata.Comment;
 import features.MbtAcquisitionLocations;
+import model.LedSignal;
 import model.MbtRecording;
 import model.Position3D;
 import model.RecordInfo;
@@ -270,7 +273,7 @@ final class MbtJsonBuilder{
             //----------------------------------------------------------------------------
 
             if (Indus5Singleton.INSTANCE.isIndus5() && recording.getAccelerometerPositions() != null) {
-                Timber.d("serialize with IMS");
+                Timber.d("write IMS");
 
                 jsonWriter.name("ims");
                 jsonWriter.beginObject();    // beginning of "ims"
@@ -289,6 +292,40 @@ final class MbtJsonBuilder{
                     } else {
                         Timber.w("found null Position3D in IMS buffer");
                     }
+                }
+                jsonWriter.endArray();
+
+                jsonWriter.endObject();
+            }
+
+            //----------------------------------------------------------------------------
+            // start ppg
+            //----------------------------------------------------------------------------
+
+            if (Indus5Singleton.INSTANCE.isIndus5() && recording.getPpg() != null && !recording.getPpg().isEmpty()) {
+                Timber.d("write PPG");
+
+                jsonWriter.name("ppg");
+                jsonWriter.beginObject();    // beginning of "ims"
+
+                jsonWriter.name("sampRate").value(100);
+                jsonWriter.name("sampNumber").value(recording.getPpg().get(0).size());
+                jsonWriter.name("ppgData");
+                jsonWriter.beginArray();
+                for (int i = 0; i < recording.getPpg().size(); i++) {
+                    jsonWriter.beginArray();
+                    ArrayList<LedSignal> leds = recording.getPpg().get(i);
+                    if (leds != null && !leds.isEmpty()) {
+                        for (int j = 0; j < leds.size(); j++) {
+                            if (leds.get(j) != null) {
+                                jsonWriter.value(leds.get(j).getValue());
+                            } else {
+                                Timber.w("found null LedSignal in PPG buffer");
+                            }
+                        }
+
+                    }
+                    jsonWriter.endArray();
                 }
                 jsonWriter.endArray();
 
@@ -351,7 +388,8 @@ final class MbtJsonBuilder{
                                                @NonNull long timestamp,
                                                @NonNull List<MbtEEGPacket> eegPackets,
                                                @NonNull final ArrayList<Position3D> accelerometerPositions,
+                                               @NonNull final ArrayList<ArrayList<LedSignal>> ppg,
                                                @NonNull boolean hasStatus){
-        return new MbtRecording(nbChannels, recordInfo, timestamp, eegPackets, accelerometerPositions, hasStatus);
+        return new MbtRecording(nbChannels, recordInfo, timestamp, eegPackets, accelerometerPositions, ppg, hasStatus);
     }
 }

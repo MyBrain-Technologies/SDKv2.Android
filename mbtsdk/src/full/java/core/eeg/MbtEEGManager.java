@@ -236,7 +236,7 @@ public final class MbtEEGManager extends BaseModuleManager {
             try{
                 if(protocol.equals(BluetoothProtocol.LOW_ENERGY)){
                     qualities = MBTSignalQualityChecker.computeQualitiesForPacketNew(sampleRate, packetLength, MatrixUtils.invertFloatMatrix(packet.getChannelsData()));
-
+//                    Timber.d("qualities = " + Arrays.toString(qualities));
                 }else if(protocol.equals(BluetoothProtocol.SPP)){
                     ArrayList<Float> qualitiesList = new ArrayList<>();
                     ArrayList<ArrayList<Float>> temp = new  ArrayList<ArrayList<Float>>();
