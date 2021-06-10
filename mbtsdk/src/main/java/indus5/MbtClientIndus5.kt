@@ -231,29 +231,15 @@ object MbtClientIndus5 {
                     val computeQualities = true
                     val monitorDeviceStatus = false
                     val recordConfig = streamConfig.recordConfig
-                    if (response.isEnabled) {
-                        Timber.d("indus5 eeg start")
-                        MbtEventBus.postEvent(
-                                StreamRequestEvent(
-                                        response.isEnabled,
-                                        isRecordRequest,
-                                        computeQualities,
-                                        monitorDeviceStatus,
-                                        recordConfig
-                                )
-                        )
-
-                    } else {
-                        MbtEventBus.postEvent(
-                                StreamRequestEvent(
-                                        response.isEnabled,
-                                        isRecordRequest,
-                                        computeQualities,
-                                        monitorDeviceStatus,
-                                        recordConfig
-                                )
-                        )
-                    }
+                    MbtEventBus.postEvent(
+                            StreamRequestEvent(
+                                    response.isEnabled,
+                                    isRecordRequest,
+                                    computeQualities,
+                                    monitorDeviceStatus,
+                                    recordConfig
+                            )
+                    )
                 }
                 is Indus5Response.ImsStatus -> {
                     Timber.d("indus5 AccelerometerCommand IMS : is enabled = ${response.isEnabled}")
