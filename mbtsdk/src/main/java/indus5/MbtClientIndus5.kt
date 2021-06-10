@@ -37,6 +37,7 @@ object MbtClientIndus5 {
     private var triggerListener: TriggerListener? = null
     private var deviceBatteryListener: DeviceBatteryListener<BaseError>? = null
     private var accelerometerListener: AccelerometerListener? = null
+    private var firmwareListener: FirmwareListener? = null
     private var ppgListener: PpgListener? = null
     private const val MELOMIND_INDUS5_PREFIX = "melo_2"
     private const val MELOMIND_PREFIX = "melo_"
@@ -203,6 +204,10 @@ object MbtClientIndus5 {
 
             val response = characteristic.value.parseRawIndus5Response()
             when (response) {
+                is Indus5Response.FirmwareVersion -> {
+                    Timber.d("indus5 FirmwareVersion = ${response.version}")
+                    firmwareListener?.onFirmwareVersion(response.version)
+                }
                 is Indus5Response.MtuChange -> {
                     Timber.d("indus5 mtu changed : byte 2 = ${response.size}")
                     config.connectionStateListener.onDeviceConnected(MelomindQPlusDevice(device))
@@ -212,9 +217,8 @@ object MbtClientIndus5 {
                     triggerListener?.onTriggerResponse(response.isEnabled)
                 }
                 is Indus5Response.EegFrame -> {
-//                    Timber.v("indus5 eeg frame received: data = ${Arrays.toString(characteristic.value)}")
+                    Timber.v("indus5 eeg frame received: data = ${ConversionUtils.bytesToHex(characteristic.value)}")
                     MbtEventBus.postEvent(BluetoothEEGEvent(response.data))
-
                 }
                 is Indus5Response.BatteryLevel -> {
                     Timber.d("indus5 BatteryLevelResponse received: data = ${Arrays.toString(characteristic.value)}")
@@ -449,6 +453,16 @@ object MbtClientIndus5 {
         this.deviceBatteryListener = listener
         tx.value = EnumIndus5Command.MBX_GET_BATTERY_VALUE.bytes
         bluetoothGatt.writeCharacteristic(tx)
+    }
+
+    //----------------------------------------------------------------------------
+    // get FW
+    //----------------------------------------------------------------------------
+    @JvmStatic
+    fun getFirmwareVersion(listener: FirmwareListener): Boolean {
+        this.firmwareListener = listener
+        tx.value = EnumIndus5Command.MBX_GET_FIRMWARE_VERSION.bytes
+        return bluetoothGatt.writeCharacteristic(tx)
     }
 
     //----------------------------------------------------------------------------

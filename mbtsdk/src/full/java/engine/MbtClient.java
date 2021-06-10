@@ -35,6 +35,7 @@ import features.MbtDeviceType;
 import indus5.AccelerometerInterface;
 import indus5.AccelerometerListener;
 import indus5.AccelerometerSingleton;
+import indus5.FirmwareListener;
 import indus5.MbtClientIndus5;
 import timber.log.Timber;
 
@@ -405,6 +406,15 @@ public final class MbtClient {
             return MbtClientIndus5.stopAccelerometer();
         } else {
             Timber.e("Accelerometer function is only available in Indus5");
+            return false;
+        }
+    }
+
+    public boolean getFirmwareVersion(FirmwareListener listener) {
+        if (Indus5Singleton.INSTANCE.isIndus5()) {
+            return MbtClientIndus5.getFirmwareVersion(listener);
+        } else {
+            Timber.e("This function is only available in SDK Indus5");
             return false;
         }
     }

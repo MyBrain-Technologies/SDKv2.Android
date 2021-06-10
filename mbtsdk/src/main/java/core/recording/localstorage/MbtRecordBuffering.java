@@ -58,7 +58,7 @@ public class MbtRecordBuffering {
     private final Context mContext;
 
     public MbtRecordBuffering(Context mContext) {
-        LogUtils.d(TAG, " Start recording ");
+        LogUtils.d(TAG, "Recording buffers is created and empty");
         this.mContext = mContext;
         recordingsBuffer = new HashMap<>();
         eegPacketsBuffer = new ArrayList<>();
@@ -67,6 +67,7 @@ public class MbtRecordBuffering {
     }
 
     public void resetPacketsBuffer(){
+        LogUtils.d(TAG, "Recording buffers is reset and empty");
         eegPacketsBuffer = new ArrayList<>();
         imsBuffer = new ArrayList<>();
         ppgBuffer = new ArrayList<>();
