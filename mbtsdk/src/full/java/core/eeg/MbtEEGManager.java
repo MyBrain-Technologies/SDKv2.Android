@@ -195,7 +195,9 @@ public final class MbtEEGManager extends BaseModuleManager {
      * Should be destroyed at the end of the session
      */
     private void initQualityChecker() {
+        Timber.d("initQualityChecker");
         ContextSP.SP_VERSION = MBTSignalQualityChecker.initQualityChecker();
+        Timber.d("SP_VERSION = " + ContextSP.SP_VERSION);
     }
 
     /**

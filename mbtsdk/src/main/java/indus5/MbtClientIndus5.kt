@@ -15,7 +15,6 @@ import core.bluetooth.lowenergy.Indus5Response
 import core.bluetooth.lowenergy.MelomindCharacteristics
 import core.bluetooth.lowenergy.parseRawIndus5Response
 import core.bluetooth.requests.StreamRequestEvent
-import core.device.model.MbtDevice
 import core.device.model.MelomindQPlusDevice
 import engine.clientevents.BaseError
 import engine.clientevents.BluetoothError
@@ -48,19 +47,16 @@ object MbtClientIndus5 {
     private var isDeviceFoundAndConnected = false
     private var isReplied = false
     private var currentState = BluetoothGatt.STATE_DISCONNECTED
-    private var mbtDevice: MbtDevice? = null
 
     private lateinit var bluetoothGatt: BluetoothGatt
-    private lateinit var service: BluetoothGattService
-    private lateinit var rx: BluetoothGattCharacteristic
-    private lateinit var tx: BluetoothGattCharacteristic
-    private lateinit var rxDescriptor: BluetoothGattDescriptor
     private lateinit var streamConfig: StreamConfig
 
     private lateinit var bluetoothAdapter: BluetoothAdapter
     private lateinit var bluetoothManager: BluetoothManager
     private var scanning = false
     private var discoveringService = false
+    private var isSubscribingRx = false
+    private var isRequestingMtu = false
     private lateinit var handler: Handler
 
     // Stops scanning after N seconds.
@@ -75,10 +71,12 @@ object MbtClientIndus5 {
 
             if ((result.device?.name != null) && (result.device!!.name!!.startsWith(MELOMIND_PREFIX))) {
                 val name = result.device?.name!!
+
+                //log scan result for melomind device
                 if (isNewDevice(name)) {
                     foundDevices.add(name)
 
-                    Timber.d("found device : name = ${result.device?.name}")
+                    Timber.d("found new melomind device : name = ${result.device?.name}")
                     val services = result.scanRecord?.serviceUuids
                     if (!services.isNullOrEmpty()) {
                         Timber.d("found services in scan record")
@@ -109,13 +107,15 @@ object MbtClientIndus5 {
     }
 
     /**
-     * list all found devices on scanning
+     * list all found melomind devices on scanning
      */
     val foundDevices = mutableListOf<String>()
 
     fun isNewDevice(name: String): Boolean {
         return (name.startsWith("melo") && !(foundDevices.contains(name)))
     }
+
+    val gattCallback = MyGattCallback()
 
     class MyGattCallback : BluetoothGattCallback() {
         override fun onPhyUpdate(gatt: BluetoothGatt?, txPhy: Int, rxPhy: Int, status: Int) {
@@ -159,22 +159,15 @@ object MbtClientIndus5 {
             for (service in gatt.services) {
                 Timber.v("uuid = ${service.uuid}")
             }
-            service = gatt.getService(MelomindCharacteristics.INDUS_5_TRANSPARENT_SERVICE)
-            Timber.v("service is $service")
 
-            rx = service.getCharacteristic(MelomindCharacteristics.INDUS_5_RX_CHARACTERISTIC)
-            Timber.v("rx is $rx")
-
-            tx = service.getCharacteristic(MelomindCharacteristics.INDUS_5_TX_CHARACTERISTIC)
-            Timber.v("tx is $tx")
-
-            rxDescriptor = rx.getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID)
-            Timber.v("rxDescriptor is $rxDescriptor")
-
-            //subscribe rx on new thread
-            Thread {
-                subscribeRx()
-            }.start()
+            if (discoveringService) {
+                //subscribe rx on new thread
+                discoveringService = false
+                Thread {
+                    isSubscribingRx = true
+                    subscribeRx()
+                }.start()
+            }
         }
 
         override fun onCharacteristicRead(
@@ -226,7 +219,6 @@ object MbtClientIndus5 {
                 }
                 is Indus5Response.EegStatus -> {
                     Timber.d("indus5 EegStatus : is enabled = ${response.isEnabled}")
-                    val isStartRequest = true
                     val isRecordRequest = false
                     val computeQualities = true
                     val monitorDeviceStatus = false
@@ -296,15 +288,19 @@ object MbtClientIndus5 {
         ) {
             super.onDescriptorWrite(gatt, descriptor, status)
             Timber.i("onDescriptorWrite : status = $status")
-            if (descriptor.uuid.toString() == rx.getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID).uuid.toString()) {
+            if (descriptor.characteristic.uuid.toString() == getRx().uuid.toString() && descriptor.uuid.toString() == getRxDescriptor().uuid.toString()) {
                 Timber.i("onDescriptorWrite INDUS_5_RX_CHARACTERISTIC")
-            }
 
-            //start changing mtu
-            Thread(Runnable {
-                Timber.i("request gatt to change mtu")
-                gatt.requestMtu(MTU_SIZE)
-            }).start()
+                if (isSubscribingRx) {
+                    //start changing mtu
+                    isSubscribingRx = false
+                    Thread {
+                        Timber.i("request gatt to change mtu")
+                        isRequestingMtu = true
+                        gatt.requestMtu(MTU_SIZE)
+                    }.start()
+                }
+            }
         }
 
         override fun onReliableWriteCompleted(gatt: BluetoothGatt?, status: Int) {
@@ -321,14 +317,18 @@ object MbtClientIndus5 {
             super.onMtuChanged(gatt, mtu, status)
             Timber.v("onMtuChanged: size = $mtu")
 
-            //start send new mtu size by mailbox command
-            Thread {
-                Timber.i("send mailbox command to change mtu")
-                val command = EnumIndus5Command.MBX_TRANSMIT_MTU_SIZE.bytes.toMutableList()
-                command.add(MTU_SIZE.toByte())
-                tx.value = command.toByteArray()
-                gatt.writeCharacteristic(tx)
-            }.start()
+            if (isRequestingMtu) {
+                //start send new mtu size by mailbox command
+                isRequestingMtu = false
+                Thread {
+                    Timber.i("send mailbox command to change mtu")
+                    val command = EnumIndus5Command.MBX_TRANSMIT_MTU_SIZE.bytes.toMutableList()
+                    command.add(MTU_SIZE.toByte())
+                    val tx = getTx()
+                    tx.value = command.toByteArray()
+                    gatt.writeCharacteristic(tx)
+                }.start()
+            }
         }
     }
 
@@ -342,7 +342,7 @@ object MbtClientIndus5 {
         setupBle()
 
         //after scan period device should be found and connected
-        handler.postDelayed(Runnable { onConnectionError() }, SCAN_PERIOD)
+        handler.postDelayed({ onConnectionError() }, SCAN_PERIOD)
     }
 
     @JvmStatic
@@ -366,14 +366,24 @@ object MbtClientIndus5 {
     private fun connectGattServer(device: BluetoothDevice) {
         Timber.d("connectGattServer")
         this.device = device
-        val gattCallback = MyGattCallback()
         bluetoothGatt = device.connectGatt(context, false, gattCallback)
         bluetoothGatt.connect()
         Timber.v("bluetoothGatt is $bluetoothGatt")
     }
 
     private fun scanLeDevice() {
-        Timber.d("scanLeDevice")
+        //log connected ble devices
+        val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        val devices = bluetoothManager.getConnectedDevices(BluetoothProfile.GATT);
+//        bluetoothManager.
+        for (device in devices) {
+            if ((device.type == BluetoothDevice.DEVICE_TYPE_LE) && isTargetDevice(device)) {
+                Timber.v("already connected to ble device = %s", device.toString())
+                Timber.v("try to reconnect...")
+                connectGattServer(device)
+                return
+            }
+        }
 
         bluetoothAdapter.bluetoothLeScanner?.let { scanner ->
             if (!scanning) { // Stops scanning after a pre-defined scan period.
@@ -386,6 +396,8 @@ object MbtClientIndus5 {
                 foundDevices.clear()
 
                 leScanCallback = MyScanCallback()
+
+                Timber.d("startScan")
                 scanner.startScan(leScanCallback)
             }
         }
@@ -396,19 +408,22 @@ object MbtClientIndus5 {
     }
 
     fun stopScan() {
-        if (scanning) {
-            Timber.v("stopScan")
+        try {
+            Timber.d("stopScan")
             scanning = false
             bluetoothAdapter.bluetoothLeScanner?.stopScan(leScanCallback)
+        } catch (e: Exception) {
+            Timber.e(e)
         }
     }
 
     fun subscribeRx() {
-        val isSubscribed = bluetoothGatt.setCharacteristicNotification(rx, true)
+        val isSubscribed = bluetoothGatt.setCharacteristicNotification(getRx(), true)
         Timber.v("isSubscribed = $isSubscribed")
+        val rxDescriptor = getRxDescriptor()
         rxDescriptor.value = (BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
-        val isDescriptorWritten = bluetoothGatt.writeDescriptor(rxDescriptor)
-        Timber.v("isDescriptorWritten = $isDescriptorWritten")
+        val isDescriptorWrittenSent = bluetoothGatt.writeDescriptor(rxDescriptor)
+        Timber.v("isDescriptorWrittenSent = $isDescriptorWrittenSent")
     }
 
     private fun onConnectionError() {
@@ -421,6 +436,7 @@ object MbtClientIndus5 {
     @JvmStatic
     fun startStream(streamConfig: StreamConfig) {
         Timber.i("indus 5 startStream")
+        val tx = getTx()
         tx.value = EnumIndus5Command.MBX_START_EEG_ACQUISITION.bytes
         bluetoothGatt.writeCharacteristic(tx)
         this.streamConfig = streamConfig
@@ -429,6 +445,7 @@ object MbtClientIndus5 {
     @JvmStatic
     fun stopStream() {
         Timber.i("indus 5 stopStream")
+        val tx = getTx()
         tx.value = EnumIndus5Command.MBX_STOP_EEG_ACQUISITION.bytes
         bluetoothGatt.writeCharacteristic(tx)
     }
@@ -437,6 +454,7 @@ object MbtClientIndus5 {
     fun getBatteryLevelIndus5(listener: DeviceBatteryListener<BaseError>) {
         Timber.i("indus 5 getBatteryLevelIndus5")
         this.deviceBatteryListener = listener
+        val tx = getTx()
         tx.value = EnumIndus5Command.MBX_GET_BATTERY_VALUE.bytes
         bluetoothGatt.writeCharacteristic(tx)
     }
@@ -447,6 +465,7 @@ object MbtClientIndus5 {
     @JvmStatic
     fun getFirmwareVersion(listener: FirmwareListener): Boolean {
         this.firmwareListener = listener
+        val tx = getTx()
         tx.value = EnumIndus5Command.MBX_GET_FIRMWARE_VERSION.bytes
         return bluetoothGatt.writeCharacteristic(tx)
     }
@@ -457,12 +476,14 @@ object MbtClientIndus5 {
     @JvmStatic
     fun startAccelerometer(listener: AccelerometerListener? = null): Boolean {
         this.accelerometerListener = listener
+        val tx = getTx()
         tx.value = EnumIndus5Command.MBX_START_IMS_ACQUISITION.bytes
         return bluetoothGatt.writeCharacteristic(tx)
     }
 
     @JvmStatic
     fun stopAccelerometer(): Boolean {
+        val tx = getTx()
         tx.value = EnumIndus5Command.MBX_STOP_IMS_ACQUISITION.bytes
         return bluetoothGatt.writeCharacteristic(tx)
     }
@@ -473,12 +494,14 @@ object MbtClientIndus5 {
     @JvmStatic
     fun startPPG(listener: PpgListener? = null): Boolean {
         this.ppgListener = listener
+        val tx = getTx()
         tx.value = EnumIndus5Command.MBX_START_PPG_ACQUISITION.bytes
         return bluetoothGatt.writeCharacteristic(tx)
     }
 
     @JvmStatic
     fun stopPPG(): Boolean {
+        val tx = getTx()
         tx.value = EnumIndus5Command.MBX_STOP_PPG_ACQUISITION.bytes
         return bluetoothGatt.writeCharacteristic(tx)
     }
@@ -494,7 +517,28 @@ object MbtClientIndus5 {
         }
         val command = EnumIndus5Command.MBX_P300_ENABLE.bytes.toMutableList()
         command.add(p300Byte)
+        val tx = getTx()
         tx.value = command.toByteArray()
         return bluetoothGatt.writeCharacteristic(tx)
+    }
+
+    private fun getService(): BluetoothGattService {
+        return bluetoothGatt.getService(MelomindCharacteristics.INDUS_5_TRANSPARENT_SERVICE)
+    }
+
+    private fun getRx(): BluetoothGattCharacteristic {
+        return getService().getCharacteristic(MelomindCharacteristics.INDUS_5_RX_CHARACTERISTIC)
+    }
+
+    private fun getTx(): BluetoothGattCharacteristic {
+        return getService().getCharacteristic(MelomindCharacteristics.INDUS_5_TX_CHARACTERISTIC)
+    }
+
+    private fun getRxDescriptor(): BluetoothGattDescriptor {
+        return getRx().getDescriptor(MelomindCharacteristics.NOTIFICATION_DESCRIPTOR_UUID)
+    }
+
+    interface RxSubscriptionListener {
+        fun onRxSubscribed()
     }
 }
