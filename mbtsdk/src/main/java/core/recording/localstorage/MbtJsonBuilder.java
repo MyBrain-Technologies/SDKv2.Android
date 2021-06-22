@@ -10,9 +10,8 @@ import androidx.annotation.Nullable;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.FileWriter;
 import java.io.IOException;
-import java.io.StringWriter;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -82,19 +81,19 @@ final class MbtJsonBuilder{
         private final static String RECORDING_PARAMS_KEY = "recordingParameters";
 
     @Nullable
-    static final String serializeRecording(@NonNull final MbtDevice device,
-                                                  @NonNull final MbtRecording recording,
-                                                  @NonNull final int totalRecordingNb,
-                                                  @Nullable final ArrayList<Comment> comments,
-                                                  @Nullable final Bundle recordingParams,
-                                                  @NonNull final String ownerId) {
+    static final boolean serializeRecording(@NonNull final MbtDevice device,
+                                            @NonNull final MbtRecording recording,
+                                            @NonNull final int totalRecordingNb,
+                                            @Nullable final ArrayList<Comment> comments,
+                                            @Nullable final Bundle recordingParams,
+                                            @NonNull final String ownerId,
+                                            @NonNull final FileWriter fileWriter) {
 
         if (recording.getNbPackets() == 0)
             throw new IllegalArgumentException("No recording");
 
         try {
-            final StringWriter stringWriter = new StringWriter();
-            final JsonWriter jsonWriter = new JsonWriter(stringWriter);
+            final JsonWriter jsonWriter = new JsonWriter(fileWriter);
 
             jsonWriter.beginObject();
             // BEGINNING OF MAIN JSON OBJECT
@@ -357,20 +356,21 @@ final class MbtJsonBuilder{
                         Log.e(TAG, "Impossible to serialize bundle element with key " + mKey);
                     }
                 }
-                stringWriter.append(",");
-                stringWriter.append("\"").append(RECORDING_PARAMS_KEY).append("\"").append(":");
-                stringWriter.append(json.toString());
+                fileWriter.append(",");
+                fileWriter.append("\"").append(RECORDING_PARAMS_KEY).append("\"").append(":");
+                fileWriter.append(json.toString());
             }
 
             jsonWriter.endObject();     // end of       "recording"    object
 
             // END OF OF MAIN JSON OBJECT
             jsonWriter.endObject();   // end of MAIN JSON   object
+            jsonWriter.close();
 
-            return stringWriter.toString();
+            return true;
         } catch (@NonNull final IOException ioe) {
-            Log.e(TAG, "Error while serializing EEG data to JSON ->\n" + ioe.getMessage());
-            return null;
+            Timber.e("Error while serializing EEG data to JSON ->\n" + ioe.getMessage());
+            return false;
         }
     }
 

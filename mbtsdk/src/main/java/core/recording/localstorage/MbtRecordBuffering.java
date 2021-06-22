@@ -88,13 +88,15 @@ public class MbtRecordBuffering {
             LogUtils.w(TAG," JSON file not created : null device or record config ");
             return false;
         }
-        ArrayList<MbtEEGPacket> eegPacketsClone = (ArrayList<MbtEEGPacket>) eegPacketsBuffer.clone();
+        LogUtils.d(TAG," eegPacketsBuffer buffer = "+ eegPacketsBuffer.size()+ " eeg packets.");
 
-        ArrayList<Position3D> imsClone = new ArrayList<Position3D>(imsBuffer);
+        ArrayList<MbtEEGPacket> eegPacketsClone = eegPacketsBuffer;
 
-        ArrayList<ArrayList<LedSignal>> ppgClone = new ArrayList<ArrayList<LedSignal>>(ppgBuffer);
+        ArrayList<Position3D> imsClone = imsBuffer;
 
-        resetPacketsBuffer();
+        ArrayList<ArrayList<LedSignal>> ppgClone = ppgBuffer;
+
+        resetPacketsBuffer(); //3 new list will be created
 
         if(recordConfig.getDuration() > 0 && eegPacketsClone.size() > recordConfig.getDuration())
             eegPacketsClone = new ArrayList<>(eegPacketsClone.subList(0,recordConfig.getDuration()));
@@ -200,5 +202,13 @@ public class MbtRecordBuffering {
 
     public boolean isEegPacketsBufferEmpty() {
         return (eegPacketsBuffer == null || eegPacketsBuffer.isEmpty());
+    }
+
+    public long getEegBufferSize() {
+        if (eegPacketsBuffer == null) {
+            return -1;
+        } else {
+            return eegPacketsBuffer.size();
+        }
     }
 }
