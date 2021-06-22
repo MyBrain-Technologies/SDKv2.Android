@@ -42,12 +42,9 @@ class PpgFrame private constructor() {
         }
     }
 
-    //TODO: implement
-    private fun getPositions(data: ByteArray): ArrayList<Position3D> {
-        return ArrayList<Position3D>()
-    }
-
-    //TODO: configure 1 or 2 led mode
+    /**
+     * next version: configure 1 or 2 led mode
+     */
     private fun getLedNumber(): Int {
         return 2 //default value is 2 ?
     }
