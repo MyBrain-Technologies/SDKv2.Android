@@ -124,10 +124,11 @@ public final class FileManager {
         try {
             if(file.exists())
                 file.delete();
-
-            return (file.createNewFile() ? file : null);
+            boolean isOk = file.createNewFile();
+            return (isOk) ? file : null;
         } catch (IOException e) {
             Log.e(TAG,"Create file failed "+e.toString());
+            Timber.e(e);
             return null;
         }
     }
