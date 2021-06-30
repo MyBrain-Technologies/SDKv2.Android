@@ -44,8 +44,6 @@ object MbtClientIndus5 {
     lateinit var context: Context
     private lateinit var config: ConnectionConfig
     private lateinit var device: BluetoothDevice
-    private var isDeviceFoundAndConnected = false
-    private var isReplied = false
     private var currentState = BluetoothGatt.STATE_DISCONNECTED
 
     private lateinit var bluetoothGatt: BluetoothGatt
@@ -89,7 +87,7 @@ object MbtClientIndus5 {
                 //stop scanning if target device found
                 if (isTargetDevice(result.device)) {
                     Timber.i("found indus5 : stop scan")
-                    stopScan()
+                    stopScan(isTimeout = false)
                     Indus5Singleton.mbtDevice = MelomindQPlusDevice(result.device.address, result.device.name)
                     connectGattServer(result.device!!)
                 }
@@ -340,9 +338,6 @@ object MbtClientIndus5 {
         handler = Handler(Looper.myLooper() ?: Looper.getMainLooper())
         //start process
         setupBle()
-
-        //after scan period device should be found and connected
-        handler.postDelayed({ onConnectionError() }, SCAN_PERIOD)
     }
 
     @JvmStatic
@@ -388,7 +383,7 @@ object MbtClientIndus5 {
         bluetoothAdapter.bluetoothLeScanner?.let { scanner ->
             if (!scanning) { // Stops scanning after a pre-defined scan period.
                 handler.postDelayed({
-                    stopScan()
+                    stopScan(isTimeout = true)
                 }, SCAN_PERIOD)
 
                 scanning = true
@@ -407,13 +402,16 @@ object MbtClientIndus5 {
         return device.name?.startsWith(MELOMIND_INDUS5_PREFIX) == true
     }
 
-    fun stopScan() {
+    fun stopScan(isTimeout: Boolean) {
         try {
             Timber.d("stopScan")
             scanning = false
             bluetoothAdapter.bluetoothLeScanner?.stopScan(leScanCallback)
         } catch (e: Exception) {
             Timber.e(e)
+        }
+        if (isTimeout) {
+            onConnectionError()
         }
     }
 
@@ -427,10 +425,7 @@ object MbtClientIndus5 {
     }
 
     private fun onConnectionError() {
-        if (!isDeviceFoundAndConnected && !isReplied) {
-            isReplied = true
-            config.connectionStateListener.onError(BluetoothError.ERROR_CONNECT_FAILED)
-        }
+        config.connectionStateListener.onError(BluetoothError.ERROR_CONNECT_FAILED)
     }
 
     @JvmStatic
