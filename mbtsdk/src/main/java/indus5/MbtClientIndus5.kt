@@ -87,6 +87,7 @@ object MbtClientIndus5 {
                 //stop scanning if target device found
                 if (isTargetDevice(result.device)) {
                     Timber.i("found indus5 : stop scan")
+                    handler.removeCallbacks(scanTimeoutRunnable)
                     stopScan(isTimeout = false)
                     Indus5Singleton.mbtDevice = MelomindQPlusDevice(result.device.address, result.device.name)
                     connectGattServer(result.device!!)
@@ -366,6 +367,12 @@ object MbtClientIndus5 {
         Timber.v("bluetoothGatt is $bluetoothGatt")
     }
 
+    val scanTimeoutRunnable: Runnable =
+            Runnable {
+                Timber.e("Scan fails: Timeout")
+                stopScan(isTimeout = true)
+            }
+
     private fun scanLeDevice() {
         //log connected ble devices
         val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
@@ -382,9 +389,7 @@ object MbtClientIndus5 {
 
         bluetoothAdapter.bluetoothLeScanner?.let { scanner ->
             if (!scanning) { // Stops scanning after a pre-defined scan period.
-                handler.postDelayed({
-                    stopScan(isTimeout = true)
-                }, SCAN_PERIOD)
+                handler.postDelayed(scanTimeoutRunnable, SCAN_PERIOD)
 
                 scanning = true
                 discoveringService = false
