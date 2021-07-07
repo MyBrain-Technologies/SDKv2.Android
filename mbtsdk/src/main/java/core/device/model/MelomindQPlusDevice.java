@@ -34,7 +34,7 @@ public class MelomindQPlusDevice extends MbtDevice{
         this.groundsLocation = Arrays.asList(MbtAcquisitionLocations.M2);
         this.referencesLocations = Arrays.asList(MbtAcquisitionLocations.M1);
         this.serialNumber = "0000000000";
-        this.externalName = MbtFeatures.MELOMIND_DEVICE_NAME;
+        this.externalName = MbtFeatures.Q_PLUS_DEVICE_NAME;
     }
 
     public MelomindQPlusDevice(@NonNull final BluetoothDevice device){
@@ -47,7 +47,7 @@ public class MelomindQPlusDevice extends MbtDevice{
         this.groundsLocation = Arrays.asList(MbtAcquisitionLocations.M2);
         this.referencesLocations = Arrays.asList(MbtAcquisitionLocations.M1);
         this.serialNumber = "0000000000";
-        this.externalName = MbtFeatures.MELOMIND_DEVICE_NAME;
+        this.externalName = MbtFeatures.Q_PLUS_DEVICE_NAME;
     }
 
     public static short getBatteryPercentageFromByteValue(byte value){

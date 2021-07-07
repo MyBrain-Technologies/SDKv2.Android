@@ -60,6 +60,7 @@ public final class MbtFeatures{
     public final static int DEVICE_QR_CODE_LENGTH = MbtFeatures.QR_CODE_NAME_PREFIX.length() + 8;
 
     public static final String MELOMIND_DEVICE_NAME = "melomind";
+    public static final String Q_PLUS_DEVICE_NAME = "melomind_qplus";
     public static final String VPRO_DEVICE_NAME = "vpro";
     public static final String ALL_DEVICE_NAME = "All";
 
