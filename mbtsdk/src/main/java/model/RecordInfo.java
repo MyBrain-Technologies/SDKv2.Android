@@ -41,6 +41,10 @@ public class RecordInfo {
         return recordId;
     }
 
+    public void setRecordId(String recordId) {
+        this.recordId = recordId;
+    }
+
     public RecordingType getRecordingType() {
         return recordingType;
     }
