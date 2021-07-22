@@ -38,7 +38,8 @@ object MbtClientIndus5 {
     private var accelerometerListener: AccelerometerListener? = null
     private var firmwareListener: FirmwareListener? = null
     private var ppgListener: PpgListener? = null
-    private const val MELOMIND_INDUS5_PREFIX = "melo_2"
+    private const val MELOMIND_INDUS5_PREFIX_1 = "melo_2"
+    private const val MELOMIND_INDUS5_PREFIX_2 = "qp_"
     private const val MELOMIND_PREFIX = "melo_"
 
     lateinit var context: Context
@@ -404,7 +405,9 @@ object MbtClientIndus5 {
     }
 
     fun isTargetDevice(device: BluetoothDevice): Boolean {
-        return device.name?.startsWith(MELOMIND_INDUS5_PREFIX) == true
+        val condition1 = device.name?.startsWith(MELOMIND_INDUS5_PREFIX_1) == true
+        val condition2 = device.name?.startsWith(MELOMIND_INDUS5_PREFIX_2) == true
+        return (condition1 || condition2)
     }
 
     fun stopScan(isTimeout: Boolean) {
