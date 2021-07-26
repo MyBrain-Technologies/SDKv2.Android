@@ -62,15 +62,33 @@ public final class VersionHelper {
     }
 
     public int getMainVersionAsNumber(){
-        return Integer.valueOf(main);
+        int value = 0;
+        try {
+            value = Integer.parseInt(main);
+        } catch (Exception e) {
+            LogUtils.e(TAG, e.getMessage());
+        }
+        return value;
     }
 
     public int getMajorVersionAsNumber(){
-        return Integer.valueOf(major);
+        int value = 0;
+        try {
+            value = Integer.parseInt(major);
+        } catch (Exception e) {
+            LogUtils.e(TAG, e.getMessage());
+        }
+        return value;
     }
 
     public int getMinorVersionAsNumber(){
-        return Integer.valueOf(minor);
+        int value = 0;
+        try {
+            value = Integer.parseInt(minor);
+        } catch (Exception e) {
+            LogUtils.e(TAG, e.getMessage());
+        }
+        return value;
     }
 
     public boolean isValidForFeature(Feature feature){

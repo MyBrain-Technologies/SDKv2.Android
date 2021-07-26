@@ -166,11 +166,11 @@ public final class MbtEEGManager extends BaseModuleManager {
      * @param eegPackets the list that contains EEG packets ready to use for the client.
      */
     public void notifyEEGDataIsReady(@NonNull final MbtEEGPacket eegPackets) {
-
         AsyncUtils.executeAsync(new Runnable() {
             @Override
             public void run() {
                 if (hasQualities) {
+                    LogUtils.v(TAG, "calculate new eeg packet qualities");
                     eegPackets.setQualities(MbtEEGManager.this.computeEEGSignalQuality(eegPackets));
                     try{
                         if(Integer.parseInt(ContextSP.SP_VERSION.replace(".","")) >=
@@ -184,7 +184,7 @@ public final class MbtEEGManager extends BaseModuleManager {
                 MbtEventBus.postEvent(new ClientReadyEEGEvent(eegPackets));
             }
         });
-        LogUtils.d(TAG, "New packet: "+eegPackets.toString());
+        LogUtils.v(TAG, "New packet: "+eegPackets.toString());
     }
     private final String FREQUENCY_BAND_FEATURES_VERSION = "2.3.1";
 
@@ -254,7 +254,7 @@ public final class MbtEEGManager extends BaseModuleManager {
                     return qualitiesList;
                 }
 
-            } catch (IllegalStateException e){
+            } catch (Exception e){
                 e.printStackTrace();
             }
 
