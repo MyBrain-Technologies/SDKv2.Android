@@ -33,6 +33,8 @@ public final class StreamConfig {
     private RecordConfig recordConfig;
 
     private boolean isImsEnabled = false;
+    private boolean isTriggerEnabled = false;
+    private boolean isPpgEnabled = false;
 
     /**
      * Optional list of commands sent to the headset in order to
@@ -248,7 +250,23 @@ public final class StreamConfig {
         isImsEnabled = imsEnabled;
     }
 
+    public void setPpgEnabled(boolean isEnabled) {
+        isPpgEnabled = isEnabled;
+    }
+
     public boolean isImsEnabled() {
         return isImsEnabled;
+    }
+
+    public boolean isPpgEnabled() {
+        return isPpgEnabled;
+    }
+
+    public boolean isTriggerEnabled() {
+        return isTriggerEnabled;
+    }
+
+    public void setTriggerEnabled(boolean triggerEnabled) {
+        isTriggerEnabled = triggerEnabled;
     }
 }

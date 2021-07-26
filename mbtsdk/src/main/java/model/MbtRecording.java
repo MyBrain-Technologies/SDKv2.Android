@@ -7,6 +7,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+import core.eeg.acquisition.RecordingErrorData;
 import core.eeg.storage.MbtEEGPacket;
 import timber.log.Timber;
 
@@ -23,7 +24,9 @@ public class MbtRecording implements Serializable{
     private int firstPacketID;
     private ArrayList<ArrayList<Float>> qualities;
     private ArrayList<ArrayList<Float>> eegData;
+    private RecordingErrorData recordingErrorData;
     private ArrayList<Position3D> accelerometerPositions = null;
+    private ArrayList<ArrayList<LedSignal>> ppg = null;
     @Nullable
     private ArrayList<Float> status;
 
@@ -32,10 +35,12 @@ public class MbtRecording implements Serializable{
                         @NonNull final long recordingTime,
                         @NonNull List<MbtEEGPacket> eegPackets,
                         @NonNull final ArrayList<Position3D> accelerometerPositions,
+                        @NonNull final ArrayList<ArrayList<LedSignal>> ppg,
                         @NonNull final boolean hasStatus) {
         this(nbChannels, recordInfo, recordingTime, eegPackets, hasStatus);
-        Timber.d("MbtRecording with accelerometerPositions");
+        Timber.d("MbtRecording with accelerometerPositions + ppg");
         this.accelerometerPositions = accelerometerPositions;
+        this.ppg = ppg;
     }
 
     public MbtRecording(@NonNull int nbChannels,
@@ -127,6 +132,18 @@ public class MbtRecording implements Serializable{
 
     public void setAccelerometerPositions(ArrayList<Position3D> accelerometerPositions) {
         this.accelerometerPositions = accelerometerPositions;
+    }
+
+    public ArrayList<ArrayList<LedSignal>> getPpg() {
+        return ppg;
+    }
+
+    public RecordingErrorData getRecordingErrorData() {
+        return recordingErrorData;
+    }
+
+    public void setRecordingErrorData(RecordingErrorData recordingErrorData) {
+        this.recordingErrorData = recordingErrorData;
     }
 
     @Override

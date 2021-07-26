@@ -18,7 +18,7 @@ object AccelerometerSingleton {
         }
 
         override fun onNewAccelerometerFrame(frame: AccelerometerFrame) {
-            Timber.v("received IMS frame : ${frame.toString()}")
+//            Timber.v("received IMS frame : ${frame.toString()}")
             addFrameWithCorrection(accelerometerPositions, frame)
         }
 

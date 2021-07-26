@@ -12,8 +12,8 @@ android {
         minSdkVersion 22
         targetSdkVersion 28
 
-        versionCode 26
-        versionName '2.2.15'
+        versionCode 27
+        versionName '2.2.16.qplus'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
 
         buildConfigField "boolean", "EEG_ENABLED", "true"
@@ -85,7 +85,7 @@ configurations {
 }
 
 dependencies {
-    compile "androidx.core:core-ktx:+"
+    implementation 'androidx.core:core-ktx:1.5.0'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'com.jakewharton.timber:timber:4.7.1'

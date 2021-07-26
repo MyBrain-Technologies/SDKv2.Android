@@ -3,9 +3,6 @@ package core.bluetooth.lowenergy
 import org.junit.Assert
 import org.junit.jupiter.api.Test
 
-import org.junit.jupiter.api.Assertions.*
-import java.util.*
-
 internal class Indus5ExtensionsKtTest {
 
     val unknownResponse = byteArrayOf(0x99.toByte())
@@ -22,13 +19,13 @@ internal class Indus5ExtensionsKtTest {
     @Test
     fun parseRawIndus5Response() {
         val mtu = mtuResponse.parseRawIndus5Response()
-        Assert.assertEquals(mtu::class.java, Indus5Response.MtuChangedResponse::class.java)
-        Assert.assertEquals((mtu as Indus5Response.MtuChangedResponse).size, 0x0A.toInt())
+        Assert.assertEquals(mtu::class.java, Indus5Response.MtuChange::class.java)
+        Assert.assertEquals((mtu as Indus5Response.MtuChange).size, 0x0A.toInt())
 
         val eeg = eegResponse.parseRawIndus5Response()
-        Assert.assertEquals(eeg::class.java, Indus5Response.EegFrameResponse::class.java)
-        Assert.assertEquals((eeg as Indus5Response.EegFrameResponse).data.size, eegResponse.size-1)
-        println("parsed eeg content = ${(eeg as Indus5Response.EegFrameResponse).data.contentToString()}")
+        Assert.assertEquals(eeg::class.java, Indus5Response.EegFrame::class.java)
+        Assert.assertEquals((eeg as Indus5Response.EegFrame).data.size, eegResponse.size-1)
+        println("parsed eeg content = ${(eeg as Indus5Response.EegFrame).data.contentToString()}")
 
         val unknown = unknownResponse.parseRawIndus5Response()
         Assert.assertEquals(unknown::class.java, Indus5Response.UnknownResponse::class.java)

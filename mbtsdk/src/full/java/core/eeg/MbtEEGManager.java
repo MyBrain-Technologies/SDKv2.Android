@@ -236,7 +236,7 @@ public final class MbtEEGManager extends BaseModuleManager {
             try{
                 if(protocol.equals(BluetoothProtocol.LOW_ENERGY)){
                     qualities = MBTSignalQualityChecker.computeQualitiesForPacketNew(sampleRate, packetLength, MatrixUtils.invertFloatMatrix(packet.getChannelsData()));
-
+//                    Timber.d("qualities = " + Arrays.toString(qualities));
                 }else if(protocol.equals(BluetoothProtocol.SPP)){
                     ArrayList<Float> qualitiesList = new ArrayList<>();
                     ArrayList<ArrayList<Float>> temp = new  ArrayList<ArrayList<Float>>();
@@ -352,7 +352,11 @@ public final class MbtEEGManager extends BaseModuleManager {
      */
     @Subscribe(threadMode = ThreadMode.BACKGROUND)
     public void onEvent(BluetoothEEGEvent event) { //warning : this method is used
-        dataAcquisition.handleDataAcquired(event.getData(), getNumberOfChannels());
+        try {
+            dataAcquisition.handleDataAcquired(event.getData(), getNumberOfChannels());
+        } catch (Exception e) {
+            Timber.e(e);
+        }
     }
 
     /**
@@ -361,12 +365,14 @@ public final class MbtEEGManager extends BaseModuleManager {
      */
     @Subscribe(threadMode = ThreadMode.POSTING)
     public void onStreamStateChanged(StreamState newState) {
+        Timber.d("onStreamStateChanged : %s", newState.name());
         if (newState == StreamState.STOPPED && dataAcquisition != null)
             resetBuffers((byte) UNCHANGED_VALUE, UNCHANGED_VALUE, (byte) 0);
     }
 
     @Subscribe
     public void onStreamStartedOrStopped(StreamRequestEvent event){
+        Timber.d("MbtEEGManager :  onStreamStartedOrStopped  = " + event.startStream());
         if(event.startStream()){
             this.dataAcquisition = new MbtDataAcquisition(this, protocol);
             this.dataBuffering = new MbtDataBuffering(this);

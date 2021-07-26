@@ -14,11 +14,13 @@ import core.bluetooth.requests.StreamRequestEvent;
 import core.device.DeviceEvents;
 import core.device.event.indus5.RecordingSavedEvent;
 import core.eeg.MbtEEGManager;
+import core.eeg.acquisition.RecordingErrorData;
 import core.recording.localstorage.MbtRecordBuffering;
 import eventbus.MbtEventBus;
 import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.ConnectionStateEvent;
 import eventbus.events.IMSEvent;
+import eventbus.events.PpgEvent;
 import timber.log.Timber;
 
 /**
@@ -52,11 +54,12 @@ public final class MbtRecordingManager extends BaseModuleManager {
      */
     @Subscribe (threadMode = ThreadMode.ASYNC)
     public void onStreamRequestEvent(final StreamRequestEvent request) {
-        Timber.i("StreamRequestEvent : start = %s", request.isStartStream());
+        Timber.i("MbtRecordingManager : onStreamRequestEvent : start = %s", request.isStartStream());
 
         recordConfig = request.getRecordConfig();
 
         if (request.isStartStream()) { //start streaming
+            RecordingErrorData.getDefault().resetData();
 
             if(recordBuffering != null)
                 recordBuffering.resetPacketsBuffer();
@@ -88,6 +91,7 @@ public final class MbtRecordingManager extends BaseModuleManager {
         Timber.i("onStreamRequestIndus5 : start = %s", request.isStart());
 
         recordConfig = request.getRecordConfig();
+
 
         if (request.isStart()) { //start streaming
 
@@ -142,20 +146,28 @@ public final class MbtRecordingManager extends BaseModuleManager {
     public void onNewPackets(@NonNull final ClientReadyEEGEvent event) {
         if(recordBuffering != null)
             recordBuffering.record(event.getEegPackets());
-
     }
 
     @SuppressWarnings("unused")
-    @Subscribe(threadMode = ThreadMode.ASYNC)
+    @Subscribe(threadMode = ThreadMode.BACKGROUND)
     public void onNewIMSPackets(@NonNull final IMSEvent event) {
         if(recordBuffering != null)
             recordBuffering.recordIMS(event.getPositions());
+    }
+
+    @SuppressWarnings("unused")
+    @Subscribe(threadMode = ThreadMode.BACKGROUND)
+    public void onNewPpgPackets(@NonNull final PpgEvent event) {
+        if(recordBuffering != null)
+            recordBuffering.recordPpg(event.getData());
     }
 
     private void storeRecording(){
         Timber.i("storeRecording : " + recordConfig.getDirectory() + " " + recordConfig.getFilename());
 
         if (Indus5Singleton.INSTANCE.isIndus5()) {
+            RecordingErrorData clone = RecordingErrorData.getDefault().clone();
+            recordBuffering.addErrorDataInfo(clone);
             recordBuffering.storeRecordBuffer(Indus5Singleton.getMbtDevice(), recordConfig);
             MbtEventBus.postEvent(new RecordingSavedEvent(recordConfig));
         } else {

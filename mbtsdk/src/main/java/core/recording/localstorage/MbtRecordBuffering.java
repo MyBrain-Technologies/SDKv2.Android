@@ -4,6 +4,7 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 
 import java.io.File;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -11,11 +12,15 @@ import java.util.Map;
 import config.RecordConfig;
 import core.Indus5Singleton;
 import core.device.model.MbtDevice;
+import core.eeg.acquisition.RecordingErrorData;
 import core.eeg.signalprocessing.ContextSP;
 import core.eeg.storage.MbtEEGPacket;
 import engine.clientevents.RecordingError;
+import features.MbtFeatures;
+import model.LedSignal;
 import model.MbtRecording;
 import model.Position3D;
+import model.PpgFrame;
 import timber.log.Timber;
 import utils.LogUtils;
 
@@ -41,24 +46,35 @@ public class MbtRecordBuffering {
      */
     private ArrayList<Position3D> imsBuffer;
 
+    private ArrayList<ArrayList<LedSignal>> ppgBuffer;
+
     /**
      * Map that stores the path of the recording as a JSON file and its associated ID
      */
     private Map<String, String> recordingsBuffer;
 
+    private RecordingErrorData recordingErrorData;
+
     private final Context mContext;
 
     public MbtRecordBuffering(Context mContext) {
-        LogUtils.d(TAG, " Start recording ");
+        LogUtils.d(TAG, "Recording buffers is created and empty");
         this.mContext = mContext;
         recordingsBuffer = new HashMap<>();
         eegPacketsBuffer = new ArrayList<>();
         imsBuffer = new ArrayList<>();
+        ppgBuffer = new ArrayList<ArrayList<LedSignal>>();
     }
 
     public void resetPacketsBuffer(){
+        LogUtils.d(TAG, "Recording buffers is reset and empty");
         eegPacketsBuffer = new ArrayList<>();
         imsBuffer = new ArrayList<>();
+        ppgBuffer = new ArrayList<>();
+    }
+
+    public void addErrorDataInfo(RecordingErrorData errorData) {
+        recordingErrorData = errorData;
     }
 
     public boolean storeRecordBuffer(@NonNull MbtDevice device, @NonNull RecordConfig recordConfig) {
@@ -72,17 +88,25 @@ public class MbtRecordBuffering {
             LogUtils.w(TAG," JSON file not created : null device or record config ");
             return false;
         }
-        ArrayList<MbtEEGPacket> eegPacketsClone = (ArrayList<MbtEEGPacket>) eegPacketsBuffer.clone();
+        LogUtils.d(TAG," eegPacketsBuffer buffer = "+ eegPacketsBuffer.size()+ " eeg packets.");
 
-        ArrayList<Position3D> imsClone = new ArrayList<Position3D>(imsBuffer);
+        ArrayList<MbtEEGPacket> eegPacketsClone = eegPacketsBuffer;
 
-        resetPacketsBuffer();
+        ArrayList<Position3D> imsClone = imsBuffer;
+
+        ArrayList<ArrayList<LedSignal>> ppgClone = ppgBuffer;
+
+        resetPacketsBuffer(); //3 new list will be created
 
         if(recordConfig.getDuration() > 0 && eegPacketsClone.size() > recordConfig.getDuration())
             eegPacketsClone = new ArrayList<>(eegPacketsClone.subList(0,recordConfig.getDuration()));
 
         LogUtils.d(TAG," Saving buffer of "+ eegPacketsClone.size()+ " eeg packets.");
-        LogUtils.d(TAG," Saving buffer of "+ imsClone.size()+ " ims packets.");
+        LogUtils.d(TAG," Saving buffer of "+ imsClone.size()+ " ims signals.");
+
+        if (!ppgClone.isEmpty()) {
+            LogUtils.d(TAG, " Saving buffer of " + ppgClone.get(0).size() + " ppg signals.");
+        }
 
         if (recordConfig.getFilename() == null)
             recordConfig.setFilename(FileManager.createFilename(recordConfig.getTimestamp(),
@@ -110,7 +134,10 @@ public class MbtRecordBuffering {
                     recordConfig.getTimestamp(),
                     eegPacketsClone,
                     imsClone,
-                    device.getInternalConfig().getStatusBytes() > 0);
+                    ppgClone,
+                    MbtFeatures.getNbStatusBytes(null) > 0);
+            Timber.d("setRecordingErrorData");
+            recording.setRecordingErrorData(recordingErrorData);
         } else {
             recording = MbtJsonBuilder.convertEEGPacketsToRecording(
                     device.getNbChannels(),
@@ -161,7 +188,27 @@ public class MbtRecordBuffering {
         }
     }
 
+    public void recordPpg(PpgFrame data){
+        if (ppgBuffer != null) {
+            int ledNb = data.getLeds().size();
+            while (ppgBuffer.size() < ledNb) {
+                ppgBuffer.add(new ArrayList());
+            }
+            for (int i=0; i<ledNb; i++) {
+                ppgBuffer.get(i).addAll(data.getLeds().get(i));
+            }
+        }
+    }
+
     public boolean isEegPacketsBufferEmpty() {
         return (eegPacketsBuffer == null || eegPacketsBuffer.isEmpty());
+    }
+
+    public long getEegBufferSize() {
+        if (eegPacketsBuffer == null) {
+            return -1;
+        } else {
+            return eegPacketsBuffer.size();
+        }
     }
 }

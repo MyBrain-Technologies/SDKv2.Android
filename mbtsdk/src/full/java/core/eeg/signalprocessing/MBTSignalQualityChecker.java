@@ -9,6 +9,7 @@ import org.apache.commons.lang.ArrayUtils;
 
 import java.util.ArrayList;
 
+import timber.log.Timber;
 import utils.LogUtils;
 
 /**
@@ -29,6 +30,9 @@ public final class MBTSignalQualityChecker {
      */
     @NonNull
     public static String initQualityChecker(){
+        Timber.d("QCStateMachine current state = " + qcCurrentState);
+        Timber.d( "initQualityChecker");
+
         if(qcCurrentState != QCStateMachine.NOT_READY)
             return "";
 
@@ -46,10 +50,11 @@ public final class MBTSignalQualityChecker {
      * Destroy the MBT_MainQc object in the JNI at the end of the session.
      */
     public static void deinitQualityChecker(){
-
-        LogUtils.d(TAG, "iscomputing is " + (qcCurrentState == QCStateMachine.COMPUTING ? "true" : "false"));
+        Timber.d("QCStateMachine current state = " + qcCurrentState);
+        Timber.d( "deinitQualityChecker");
+        Timber.d( "iscomputing is " + (qcCurrentState == QCStateMachine.COMPUTING ? "true" : "false"));
         while(qcCurrentState == QCStateMachine.COMPUTING);
-        LogUtils.d(TAG, "deinit quality checker started");
+        Timber.d( "deinit quality checker started");
         qcCurrentState = QCStateMachine.DEINIT;
         nativeDeinitQualityChecker();
         qcCurrentState = QCStateMachine.NOT_READY;

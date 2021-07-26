@@ -1,16 +1,17 @@
 package core.recording.localstorage;
 
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import android.util.JsonWriter;
 import android.util.Log;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.FileWriter;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -21,6 +22,7 @@ import core.device.model.MbtDevice;
 import core.eeg.storage.MbtEEGPacket;
 import core.recording.metadata.Comment;
 import features.MbtAcquisitionLocations;
+import model.LedSignal;
 import model.MbtRecording;
 import model.Position3D;
 import model.RecordInfo;
@@ -79,19 +81,19 @@ final class MbtJsonBuilder{
         private final static String RECORDING_PARAMS_KEY = "recordingParameters";
 
     @Nullable
-    static final String serializeRecording(@NonNull final MbtDevice device,
-                                                  @NonNull final MbtRecording recording,
-                                                  @NonNull final int totalRecordingNb,
-                                                  @Nullable final ArrayList<Comment> comments,
-                                                  @Nullable final Bundle recordingParams,
-                                                  @NonNull final String ownerId) {
+    static final boolean serializeRecording(@NonNull final MbtDevice device,
+                                            @NonNull final MbtRecording recording,
+                                            @NonNull final int totalRecordingNb,
+                                            @Nullable final ArrayList<Comment> comments,
+                                            @Nullable final Bundle recordingParams,
+                                            @NonNull final String ownerId,
+                                            @NonNull final FileWriter fileWriter) {
 
         if (recording.getNbPackets() == 0)
             throw new IllegalArgumentException("No recording");
 
         try {
-            final StringWriter stringWriter = new StringWriter();
-            final JsonWriter jsonWriter = new JsonWriter(stringWriter);
+            final JsonWriter jsonWriter = new JsonWriter(fileWriter);
 
             jsonWriter.beginObject();
             // BEGINNING OF MAIN JSON OBJECT
@@ -221,6 +223,20 @@ final class MbtJsonBuilder{
             jsonWriter.name(FIRST_PACKET_ID_KEY)
                     .value(recording.getFirstPacketsId());
 
+            //----------------------------------------------------------------------------
+            // recording error data
+            //----------------------------------------------------------------------------
+            if (Indus5Singleton.INSTANCE.isIndus5() && recording.getRecordingErrorData() != null) {
+                Timber.d("serialize recording error data");
+
+                jsonWriter.name("recordingErrorData");
+                jsonWriter.beginObject();
+                jsonWriter.name("missingEeg").value(recording.getRecordingErrorData().getMissingFrame());
+                jsonWriter.name("zeroTime").value(recording.getRecordingErrorData().getZeroTimeNumber());
+                jsonWriter.name("zeroSample").value(recording.getRecordingErrorData().getZeroSampleNumber());
+                jsonWriter.endObject();
+            }
+
             jsonWriter.name(QUALITIES_KEY);
             jsonWriter.beginArray();    // beginning of "qualities"         array
 
@@ -255,11 +271,11 @@ final class MbtJsonBuilder{
             // start ims
             //----------------------------------------------------------------------------
 
-            if (Indus5Singleton.INSTANCE.isIndus5() && recording.getAccelerometerPositions() != null) {
-                Timber.d("serialize with IMS");
+            if (Indus5Singleton.INSTANCE.isIndus5() && recording.getAccelerometerPositions() != null && !recording.getAccelerometerPositions().isEmpty()) {
+                Timber.d("write IMS");
 
-                jsonWriter.name("img");
-                jsonWriter.beginObject();    // beginning of "ims"       array
+                jsonWriter.name("ims");
+                jsonWriter.beginObject();    // beginning of "ims"
 
                 jsonWriter.name("sampRate").value(100);
                 jsonWriter.name("imsData");
@@ -277,11 +293,43 @@ final class MbtJsonBuilder{
                     }
                 }
                 jsonWriter.endArray();
+
                 jsonWriter.endObject();
             }
+
             //----------------------------------------------------------------------------
-            // end ims
+            // start ppg
             //----------------------------------------------------------------------------
+
+            if (Indus5Singleton.INSTANCE.isIndus5() && recording.getPpg() != null && !recording.getPpg().isEmpty()) {
+                Timber.d("write PPG");
+
+                jsonWriter.name("ppg");
+                jsonWriter.beginObject();    // beginning of "ims"
+
+                jsonWriter.name("sampRate").value(100);
+                jsonWriter.name("sampNumber").value(recording.getPpg().get(0).size());
+                jsonWriter.name("ppgData");
+                jsonWriter.beginArray();
+                for (int i = 0; i < recording.getPpg().size(); i++) {
+                    jsonWriter.beginArray();
+                    ArrayList<LedSignal> leds = recording.getPpg().get(i);
+                    if (leds != null && !leds.isEmpty()) {
+                        for (int j = 0; j < leds.size(); j++) {
+                            if (leds.get(j) != null) {
+                                jsonWriter.value(leds.get(j).getValue());
+                            } else {
+                                Timber.w("found null LedSignal in PPG buffer");
+                            }
+                        }
+
+                    }
+                    jsonWriter.endArray();
+                }
+                jsonWriter.endArray();
+
+                jsonWriter.endObject();
+            }
 
             jsonWriter.name(STATUS_DATA_KEY); // beginning of "statusData"       array
             jsonWriter.beginArray();
@@ -308,20 +356,21 @@ final class MbtJsonBuilder{
                         Log.e(TAG, "Impossible to serialize bundle element with key " + mKey);
                     }
                 }
-                stringWriter.append(",");
-                stringWriter.append("\"").append(RECORDING_PARAMS_KEY).append("\"").append(":");
-                stringWriter.append(json.toString());
+                fileWriter.append(",");
+                fileWriter.append("\"").append(RECORDING_PARAMS_KEY).append("\"").append(":");
+                fileWriter.append(json.toString());
             }
 
             jsonWriter.endObject();     // end of       "recording"    object
 
             // END OF OF MAIN JSON OBJECT
             jsonWriter.endObject();   // end of MAIN JSON   object
+            jsonWriter.close();
 
-            return stringWriter.toString();
+            return true;
         } catch (@NonNull final IOException ioe) {
-            Log.e(TAG, "Error while serializing EEG data to JSON ->\n" + ioe.getMessage());
-            return null;
+            Timber.e("Error while serializing EEG data to JSON ->\n" + ioe.getMessage());
+            return false;
         }
     }
 
@@ -339,7 +388,8 @@ final class MbtJsonBuilder{
                                                @NonNull long timestamp,
                                                @NonNull List<MbtEEGPacket> eegPackets,
                                                @NonNull final ArrayList<Position3D> accelerometerPositions,
+                                               @NonNull final ArrayList<ArrayList<LedSignal>> ppg,
                                                @NonNull boolean hasStatus){
-        return new MbtRecording(nbChannels, recordInfo, timestamp, eegPackets, accelerometerPositions, hasStatus);
+        return new MbtRecording(nbChannels, recordInfo, timestamp, eegPackets, accelerometerPositions, ppg, hasStatus);
     }
 }

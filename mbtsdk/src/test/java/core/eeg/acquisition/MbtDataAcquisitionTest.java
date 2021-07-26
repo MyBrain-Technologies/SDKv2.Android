@@ -83,16 +83,6 @@ public class MbtDataAcquisitionTest {
 
 
     /**
-     * check that the indexes has been well reset
-     */
-    @Test
-    public void resetIndexTest() {
-        dataAcquisition.resetIndex();
-        assertTrue(dataAcquisition.getPreviousIndex() == -1);
-        assertTrue(dataAcquisition.getStartingIndex() == -1);
-    }
-
-    /**
      * Check that some values have been well modified / the output values corresponds to the expected result for a defined/known input
      * after the call of the handleDataAcquired method.
      */

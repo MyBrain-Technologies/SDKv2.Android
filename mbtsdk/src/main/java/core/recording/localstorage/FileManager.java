@@ -10,15 +10,22 @@ import android.os.Environment;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
+
+import android.util.JsonWriter;
 import android.util.Log;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.RandomAccessFile;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -28,6 +35,7 @@ import java.util.Map;
 import core.device.model.MbtDevice;
 import core.recording.metadata.Comment;
 import model.MbtRecording;
+import timber.log.Timber;
 import utils.AsyncUtils;
 import utils.LogUtils;
 
@@ -116,10 +124,11 @@ public final class FileManager {
         try {
             if(file.exists())
                 file.delete();
-
-            return (file.createNewFile() ? file : null);
+            boolean isOk = file.createNewFile();
+            return (isOk) ? file : null;
         } catch (IOException e) {
             Log.e(TAG,"Create file failed "+e.toString());
+            Timber.e(e);
             return null;
         }
     }
@@ -162,10 +171,10 @@ public final class FileManager {
         }
 
         try (final FileWriter fw = new FileWriter(file)) {
-
-            String json = MbtJsonBuilder.serializeRecording(device, recording, totalRecordingInSession, comments, recordingParams, subjectId);
-            if(json != null)
-                fw.append(json);
+            boolean isOk = MbtJsonBuilder.serializeRecording(device, recording, totalRecordingInSession, comments, recordingParams, subjectId, fw);
+            if (!isOk) {
+                Timber.e("Saving file fails!");
+            }
             fw.close();
 
             //This block of code only serves to see the file in USB storage mode

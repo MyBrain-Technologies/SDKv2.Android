@@ -35,6 +35,7 @@ import features.MbtDeviceType;
 import indus5.AccelerometerInterface;
 import indus5.AccelerometerListener;
 import indus5.AccelerometerSingleton;
+import indus5.FirmwareListener;
 import indus5.MbtClientIndus5;
 import timber.log.Timber;
 
@@ -43,7 +44,7 @@ import timber.log.Timber;
  */
 
 @Keep
-public final class MbtClient implements AccelerometerInterface {
+public final class MbtClient {
 
     private static final String TAG = MbtClient.class.getName();
     private static Context context;
@@ -391,8 +392,7 @@ public final class MbtClient implements AccelerometerInterface {
     //----------------------------------------------------------------------------
     // indus 5
     //----------------------------------------------------------------------------
-    @Override
-    public boolean startAccelerometer(@NotNull AccelerometerListener listener) {
+    private boolean startAccelerometer(@NotNull AccelerometerListener listener) {
         if (Indus5Singleton.INSTANCE.isIndus5()) {
             return MbtClientIndus5.startAccelerometer(listener);
         } else {
@@ -401,12 +401,20 @@ public final class MbtClient implements AccelerometerInterface {
         }
     }
 
-    @Override
-    public boolean stopAccelerometer() {
+    private boolean stopAccelerometer() {
         if (Indus5Singleton.INSTANCE.isIndus5()) {
             return MbtClientIndus5.stopAccelerometer();
         } else {
             Timber.e("Accelerometer function is only available in Indus5");
+            return false;
+        }
+    }
+
+    public boolean getFirmwareVersion(FirmwareListener listener) {
+        if (Indus5Singleton.INSTANCE.isIndus5()) {
+            return MbtClientIndus5.getFirmwareVersion(listener);
+        } else {
+            Timber.e("This function is only available in SDK Indus5");
             return false;
         }
     }
