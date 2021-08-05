@@ -107,8 +107,11 @@ public final class MbtClient {
     @SuppressWarnings("unchecked")
     public void connectBluetooth(@NonNull ConnectionConfig config){
         if (config.getDeviceType() == MbtDeviceType.MELOMIND_Q_PLUS) {
+            Indus5Singleton.INSTANCE.setMelomindIndus5(true);
             MbtClientIndus5.connectBluetooth(context, config);
             return;
+        } else {
+            Indus5Singleton.INSTANCE.setMelomindIndus5(false);
         }
 
         MbtConfig.setBluetoothScanTimeout(config.getMaxScanDuration());
