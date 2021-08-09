@@ -10,6 +10,7 @@ import android.os.Looper
 import config.ConnectionConfig
 import config.StreamConfig
 import core.Indus5Singleton
+import core.bluetooth.StreamState
 import core.bluetooth.lowenergy.EnumIndus5Command
 import core.bluetooth.lowenergy.Indus5Response
 import core.bluetooth.lowenergy.MelomindCharacteristics
@@ -219,6 +220,13 @@ object MbtClientIndus5 {
                 }
                 is Indus5Response.EegStatus -> {
                     Timber.d("indus5 EegStatus : is enabled = ${response.isEnabled}")
+                    MbtEventBus.postEvent(
+                        if (response.isEnabled) {
+                            StreamState.STARTED
+                        } else {
+                            StreamState.STOPPED
+                        }
+                    )
                     val isRecordRequest = false
                     val computeQualities = true
                     val monitorDeviceStatus = false
