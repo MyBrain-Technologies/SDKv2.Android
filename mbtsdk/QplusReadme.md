@@ -8,23 +8,23 @@
 
 The SDK is compiled with Android API version 28 and is compatible with Android API version 22 and higher.
 
-Import the SDK file in the *build.gradle* of your application module (for example: app/build.gradle)
+Import the SDK file in the *build.gradle* of your application module (for example: *app/build.gradle*)
 
 ```
 implementation files('libs/lib_full_release_2.2.16.qplus.aar')
 ```
 
-add the permissions in the *AndroidManifest.xml*
+## 2. How to use the SDK (example in Kotlin):
+
+------
+
+Add the permissions in the *AndroidManifest.xml*
 
 ```
 <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
 <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
 ```
-
-## 2. How to use the SDK (example in Kotlin):
-
-------
 
 The first step is to initialize the SDK 
 
