@@ -13,7 +13,7 @@ android {
         targetSdkVersion 28
 
         versionCode 29
-        versionName '2.2.18.qplus'
+        versionName '2.2.18.qplus.rc3'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
 
         buildConfigField "boolean", "EEG_ENABLED", "true"
