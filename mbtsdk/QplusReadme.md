@@ -126,7 +126,7 @@ fun stopRecord(recordConfig: RecordConfig)
 fun getFirmwareVersion(listener: FirmwareListener)
 ``` 
 
-## 3. Class and package name:
+## 4. Class and package name:
 
 
 ```
