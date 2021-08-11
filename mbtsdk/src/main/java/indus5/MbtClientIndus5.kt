@@ -69,7 +69,7 @@ object MbtClientIndus5 {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             super.onScanResult(callbackType, result)
 
-            if ((result.device?.name != null) && (result.device!!.name!!.startsWith(MELOMIND_PREFIX))) {
+            if (result.device?.name != null) {
                 val name = result.device?.name!!
 
                 //log scan result for melomind device
