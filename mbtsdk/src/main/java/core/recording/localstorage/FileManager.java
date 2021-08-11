@@ -7,6 +7,8 @@ import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+
+import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
@@ -41,6 +43,7 @@ import utils.LogUtils;
 
 import static core.recording.localstorage.MbtJsonBuilder.RECORDING_NUMBER_KEY;
 
+@Keep
 public final class FileManager {
     private static final String TAG = FileManager.class.getName();
 

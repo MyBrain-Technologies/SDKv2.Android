@@ -1,5 +1,8 @@
 package model
 
+import androidx.annotation.Keep
+
+@Keep
 enum class EnumRecordingType {
     CALIBRATION,// : acquisition aimed to get a reference EEG measure of the subject (e.g. 30 second in melomind app)
 

@@ -61,6 +61,7 @@ public class RecordInfo {
     /**
      * Inner class for recording type.
      */
+    @Keep
     public class RecordingType{
         private String recordType;
         private String spVersion;
