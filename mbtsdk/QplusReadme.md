@@ -1,5 +1,8 @@
 # USER GUIDE
 
+Modified date: 2021-08-11 
+Version: 0.1
+
 # How to install and use the SDK in your project
 
 ## 1. Requirement & How to install 
