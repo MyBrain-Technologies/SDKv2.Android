@@ -122,3 +122,16 @@ fun stopRecord(recordConfig: RecordConfig)
 //get connected device firmware
 fun getFirmwareVersion(listener: FirmwareListener)
 ``` 
+
+## 3. Class and package name:
+
+
+```
+config.ConnectionConfig
+config.StreamConfig
+core.eeg.storage.MbtEEGPacket
+engine.clientevents.ConnectionStateListener
+engine.clientevents.EegListener
+engine.MbtClient
+features.MbtDeviceType
+```
