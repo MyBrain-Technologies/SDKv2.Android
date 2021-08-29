@@ -65,7 +65,7 @@ import config.ConnectionConfig;
 import config.FilterConfig;
 import config.RecordConfig;
 import config.StreamConfig;
-import core.Indus5FastMode;
+import core.Indus5Singleton;
 import core.bluetooth.StreamState;
 import core.device.event.DCOffsetEvent;
 import core.device.event.SaturationEvent;
@@ -206,14 +206,14 @@ public class MelomindActivity extends AppCompatActivity implements ConnectionSta
             @Override
             public void run() {
                 //vpro.updateDeviceConfiguration(MBTConfig.locations, MBTConfig.references, MBTConfig.grounds);
-                if (Indus5FastMode.INSTANCE.isEnabled()) {
+                if (Indus5Singleton.INSTANCE.isIndus5()) {
                     MBTConfig.loadConfig("Q+");
                 } else {
                     MBTConfig.loadConfig("MM");
                 }
                 initChannelsNames();
 
-                if (!Indus5FastMode.INSTANCE.isEnabled()) {
+                if (!Indus5Singleton.INSTANCE.isIndus5()) {
                     //reading battery is not yet implemented for indus5
                     sdkClient.readBattery(mbtsdk.com.mybraintech.sdkv2.MelomindActivity.this);
                 }
@@ -1199,7 +1199,7 @@ public class MelomindActivity extends AppCompatActivity implements ConnectionSta
         dataSetChan3.setColor(Color.BLUE);
         dataSetChan3.setAxisDependency(YAxis.AxisDependency.LEFT);
 
-        if (Indus5FastMode.INSTANCE.isEnabled()) {
+        if (Indus5Singleton.INSTANCE.isIndus5()) {
             dataSetChan4.setLabel("Channel 3");
             dataSetChan4.setDrawValues(false);
             dataSetChan4.disableDashedLine();
@@ -1218,7 +1218,7 @@ public class MelomindActivity extends AppCompatActivity implements ConnectionSta
         }
 
         // setting chart
-        if (Indus5FastMode.INSTANCE.isEnabled()) {
+        if (Indus5Singleton.INSTANCE.isIndus5()) {
             lineData.removeDataSet(4);
             lineData.removeDataSet(3);
         }
@@ -1228,7 +1228,7 @@ public class MelomindActivity extends AppCompatActivity implements ConnectionSta
         lineData.addDataSet(dataSetChan1);
         lineData.addDataSet(dataSetChan2);
         lineData.addDataSet(dataSetChan3);
-        if (Indus5FastMode.INSTANCE.isEnabled()) {
+        if (Indus5Singleton.INSTANCE.isIndus5()) {
             lineData.addDataSet(dataSetChan4);
             lineData.addDataSet(dataSetChan5);
         }
@@ -1321,7 +1321,7 @@ public class MelomindActivity extends AppCompatActivity implements ConnectionSta
 
                         data.addEntry(new Entry(data.getDataSets().get(1).getEntryCount(), channelData.get(0).get(i).floatValue()*1000000), 1);
                         data.addEntry(new Entry(data.getDataSets().get(2).getEntryCount(), channelData.get(1).get(i).floatValue()*1000000), 2);
-                        if (Indus5FastMode.INSTANCE.isEnabled()) {
+                        if (Indus5Singleton.INSTANCE.isIndus5()) {
                             data.addEntry(new Entry(data.getDataSets().get(3).getEntryCount(), channelData.get(0).get(i).floatValue()*1000000), 3);
                             data.addEntry(new Entry(data.getDataSets().get(4).getEntryCount(), channelData.get(1).get(i).floatValue()*1000000), 4);
                         }
@@ -1360,7 +1360,7 @@ public class MelomindActivity extends AppCompatActivity implements ConnectionSta
                 data.getDataSets().get(0).clear();
             data.getDataSets().get(1).clear();
             data.getDataSets().get(2).clear();
-            if (Indus5FastMode.INSTANCE.isEnabled()) {
+            if (Indus5Singleton.INSTANCE.isIndus5()) {
                 data.getDataSets().get(3).clear();
                 data.getDataSets().get(4).clear();
             }
@@ -1374,7 +1374,7 @@ public class MelomindActivity extends AppCompatActivity implements ConnectionSta
 
                         data.addEntry(new Entry(data.getDataSets().get(1).getEntryCount(), bufferedData.get(1).get(i).floatValue()*1000000), 1);
                         data.addEntry(new Entry(data.getDataSets().get(2).getEntryCount(), bufferedData.get(2).get(i).floatValue()*1000000), 2);
-                        if (Indus5FastMode.INSTANCE.isEnabled()) {
+                        if (Indus5Singleton.INSTANCE.isIndus5()) {
                             data.addEntry(new Entry(data.getDataSets().get(3).getEntryCount(), bufferedData.get(3).get(i).floatValue()*1000000), 3);
                             data.addEntry(new Entry(data.getDataSets().get(4).getEntryCount(), bufferedData.get(4).get(i).floatValue()*1000000), 4);
                         }
@@ -1390,7 +1390,7 @@ public class MelomindActivity extends AppCompatActivity implements ConnectionSta
 
                         data.addEntry(new Entry(data.getDataSets().get(1).getEntryCount(), channelData.get(0).get(i).floatValue()*1000000), 1);
                         data.addEntry(new Entry(data.getDataSets().get(2).getEntryCount(), channelData.get(1).get(i).floatValue()*1000000), 2);
-                        if (Indus5FastMode.INSTANCE.isEnabled()) {
+                        if (Indus5Singleton.INSTANCE.isIndus5()) {
                             data.addEntry(new Entry(data.getDataSets().get(3).getEntryCount(), channelData.get(2).get(i).floatValue()*1000000), 3);
                             data.addEntry(new Entry(data.getDataSets().get(4).getEntryCount(), channelData.get(3).get(i).floatValue()*1000000), 4);
                         }
