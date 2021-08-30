@@ -13,7 +13,7 @@ android {
         targetSdkVersion 28
 
         versionCode 29
-        versionName '2.2.18.qplus.rc3'
+        versionName '2.2.19.rc1'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
 
         buildConfigField "boolean", "EEG_ENABLED", "true"
@@ -26,7 +26,7 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled true
+//            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             libraryVariants.all { variant ->
                 variant.outputs.all {
@@ -76,7 +76,7 @@ android {
         targetCompatibility 1.8
         sourceCompatibility 1.8
     }
-    ndkVersion "21.0.6113669"
+    ndkVersion "21.1.6352462"
 
 }
 
