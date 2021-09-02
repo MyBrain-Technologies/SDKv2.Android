@@ -76,7 +76,11 @@ android {
         targetCompatibility 1.8
         sourceCompatibility 1.8
     }
-    ndkVersion "21.1.6352462"
+
+    Properties properties = new Properties()
+    properties.load(project.rootProject.file('local.properties').newDataInputStream())
+    def ndk_version = properties.getProperty('ndk_version')
+    ndkVersion ndk_version
 
 }
 
