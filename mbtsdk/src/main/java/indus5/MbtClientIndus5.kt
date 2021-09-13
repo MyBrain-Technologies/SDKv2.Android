@@ -91,7 +91,8 @@ object MbtClientIndus5 {
                     Timber.i("found indus5 : stop scan")
                     handler.removeCallbacks(scanTimeoutRunnable)
                     stopScan(isTimeout = false)
-                    Indus5Singleton.mbtDevice = MelomindQPlusDevice(result.device.address, result.device.name)
+                    Indus5Singleton.mbtDevice =
+                        MelomindQPlusDevice(result.device.address, result.device.name)
                     connectGattServer(result.device!!)
                 }
             }
@@ -172,18 +173,18 @@ object MbtClientIndus5 {
         }
 
         override fun onCharacteristicRead(
-                gatt: BluetoothGatt,
-                characteristic: BluetoothGattCharacteristic,
-                status: Int
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+            status: Int
         ) {
             super.onCharacteristicRead(gatt, characteristic, status)
             Timber.v("onCharacteristicRead")
         }
 
         override fun onCharacteristicWrite(
-                gatt: BluetoothGatt?,
-                characteristic: BluetoothGattCharacteristic?,
-                status: Int
+            gatt: BluetoothGatt?,
+            characteristic: BluetoothGattCharacteristic?,
+            status: Int
         ) {
             super.onCharacteristicWrite(gatt, characteristic, status)
             Timber.v("onCharacteristicWrite")
@@ -191,8 +192,8 @@ object MbtClientIndus5 {
         }
 
         override fun onCharacteristicChanged(
-                gatt: BluetoothGatt,
-                characteristic: BluetoothGattCharacteristic
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic
         ) {
             super.onCharacteristicChanged(gatt, characteristic)
 
@@ -211,11 +212,23 @@ object MbtClientIndus5 {
                     triggerListener?.onTriggerResponse(response.isEnabled)
                 }
                 is Indus5Response.EegFrame -> {
-                    Timber.v("indus5 eeg frame received: data = ${ConversionUtils.bytesToHex(characteristic.value)}")
+                    Timber.v(
+                        "indus5 eeg frame received: data = ${
+                            ConversionUtils.bytesToHex(
+                                characteristic.value
+                            )
+                        }"
+                    )
                     MbtEventBus.postEvent(BluetoothEEGEvent(response.data))
                 }
                 is Indus5Response.BatteryLevel -> {
-                    Timber.d("indus5 BatteryLevelResponse received: data = ${Arrays.toString(characteristic.value)}")
+                    Timber.d(
+                        "indus5 BatteryLevelResponse received: data = ${
+                            Arrays.toString(
+                                characteristic.value
+                            )
+                        }"
+                    )
                     deviceBatteryListener?.onBatteryLevelReceived(response.percent.toString())
                 }
                 is Indus5Response.EegStatus -> {
@@ -232,13 +245,13 @@ object MbtClientIndus5 {
                     val monitorDeviceStatus = false
                     val recordConfig = streamConfig.recordConfig
                     MbtEventBus.postEvent(
-                            StreamRequestEvent(
-                                    response.isEnabled,
-                                    isRecordRequest,
-                                    computeQualities,
-                                    monitorDeviceStatus,
-                                    recordConfig
-                            )
+                        StreamRequestEvent(
+                            response.isEnabled,
+                            isRecordRequest,
+                            computeQualities,
+                            monitorDeviceStatus,
+                            recordConfig
+                        )
                     )
                 }
                 is Indus5Response.ImsStatus -> {
@@ -271,7 +284,13 @@ object MbtClientIndus5 {
                 }
                 else -> {
                     //it should be Indus5Response.UnknownResponse here
-                    Timber.e("unknown indus5 frame : data = ${ConversionUtils.bytesToHex(characteristic.value)}")
+                    Timber.e(
+                        "unknown indus5 frame : data = ${
+                            ConversionUtils.bytesToHex(
+                                characteristic.value
+                            )
+                        }"
+                    )
                 }
             }
 
@@ -280,9 +299,9 @@ object MbtClientIndus5 {
         }
 
         override fun onDescriptorRead(
-                gatt: BluetoothGatt?,
-                descriptor: BluetoothGattDescriptor,
-                status: Int
+            gatt: BluetoothGatt?,
+            descriptor: BluetoothGattDescriptor,
+            status: Int
         ) {
             super.onDescriptorRead(gatt, descriptor, status)
             Timber.v("onDescriptorRead")
@@ -290,9 +309,9 @@ object MbtClientIndus5 {
         }
 
         override fun onDescriptorWrite(
-                gatt: BluetoothGatt,
-                descriptor: BluetoothGattDescriptor,
-                status: Int
+            gatt: BluetoothGatt,
+            descriptor: BluetoothGattDescriptor,
+            status: Int
         ) {
             super.onDescriptorWrite(gatt, descriptor, status)
             Timber.i("onDescriptorWrite : status = $status")
@@ -353,6 +372,15 @@ object MbtClientIndus5 {
     @JvmStatic
     fun disconnectBluetooth() {
         bluetoothGatt.disconnect()
+        removeBond(bluetoothGatt.device)
+    }
+
+    private fun removeBond(device: BluetoothDevice) {
+        try {
+            device::class.java.getMethod("removeBond").invoke(device)
+        } catch (e: Exception) {
+            Timber.e("Removing bond has been failed. ${e.message}")
+        }
     }
 
     private fun setupBle() {
@@ -377,14 +405,15 @@ object MbtClientIndus5 {
     }
 
     val scanTimeoutRunnable: Runnable =
-            Runnable {
-                Timber.e("Scan fails: Timeout")
-                stopScan(isTimeout = true)
-            }
+        Runnable {
+            Timber.e("Scan fails: Timeout")
+            stopScan(isTimeout = true)
+        }
 
     private fun scanLeDevice() {
         //log connected ble devices
-        val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        val bluetoothManager =
+            context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         val devices = bluetoothManager.getConnectedDevices(BluetoothProfile.GATT);
 //        bluetoothManager.
         for (device in devices) {
