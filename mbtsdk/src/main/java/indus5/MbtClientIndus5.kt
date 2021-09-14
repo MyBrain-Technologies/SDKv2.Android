@@ -111,10 +111,10 @@ object MbtClientIndus5 {
     /**
      * list all found melomind devices on scanning
      */
-    val foundDevices = mutableListOf<String>()
+    var foundDevices = mutableListOf<String>()
 
     fun isNewDevice(name: String): Boolean {
-        return (name.startsWith("melo") && !(foundDevices.contains(name)))
+        return (!foundDevices.contains(name))
     }
 
     val gattCallback = MyGattCallback()
@@ -441,7 +441,7 @@ object MbtClientIndus5 {
 
                 scanning = true
                 discoveringService = false
-                foundDevices.clear()
+                foundDevices = mutableListOf()
 
                 leScanCallback = MyScanCallback()
 
