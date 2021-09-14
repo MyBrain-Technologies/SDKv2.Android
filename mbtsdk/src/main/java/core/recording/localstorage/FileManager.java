@@ -80,49 +80,52 @@ public final class FileManager {
                         "" : FILENAME_SPLITTER + condition );
     }
 
-    /**
-     * Retrieve (or create if not existing) the folder to store the recording
-     * @param context
-     * @param folder
-     * @param useExternalStorage
-     * @return the absolute path of the folder created
-     */
-    public static String createDirectory(@NonNull final Context context,
-                                         @Nullable String folder,
-                                         boolean useExternalStorage)
-    {
-        File parent = new File(
-                (useExternalStorage && ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                        == PackageManager.PERMISSION_GRANTED ?
-                        Environment.getExternalStorageDirectory()
-                        : context.getFilesDir())
-                        + FOLDER_SEPARATOR
-                        + (folder != null ? folder : RECORDING_FOLDER));
-
-        boolean parentExists = (parent.exists() || parent.mkdir());
-
-        return (parentExists ? parent.getAbsolutePath() : null);
-    }
+//    /**
+//     * Retrieve (or create if not existing) the folder to store the recording
+//     * @param context
+//     * @param folder
+//     * @param useExternalStorage
+//     * @return the absolute path of the folder created
+//     */
+//    public static String createDirectory(@NonNull final Context context,
+//                                         @Nullable String folder,
+//                                         boolean useExternalStorage)
+//    {
+//        File parent = new File(
+//                (useExternalStorage && ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+//                        == PackageManager.PERMISSION_GRANTED ?
+//                        Environment.getExternalStorageDirectory()
+//                        : context.getFilesDir())
+//                        + FOLDER_SEPARATOR
+//                        + (folder != null ? folder : RECORDING_FOLDER));
+//
+//        boolean parentExists = (parent.exists() || parent.mkdir());
+//
+//        return (parentExists ? parent.getAbsolutePath() : null);
+//    }
 
     /**
      * Create a file to store the recording and delete
-     * @param context
-     * @param folder
-     * @param useExternalStorage
-     * @return
      */
     public static File createFile(@NonNull final Context context,
-                                  @Nullable String folder,
+                                  @Nullable String folderDir,
                                   @NonNull String filename,
                                   boolean useExternalStorage)
     {
-        String absolutePath = createDirectory(context, folder, useExternalStorage);
-        if (absolutePath == null){
-            Log.e(TAG, "Impossible to create the folder: "+folder);
+        if (folderDir == null) {
+            Timber.e("folderDir is null");
             return null;
         }
+        File folder = new File(folderDir);
+        if (!folder.isDirectory()) {
+            boolean isFolderCreated = folder.mkdir();
+            if (!isFolderCreated) {
+                Timber.e("cannot create folder : " + folderDir);
+                return null;
+            }
+        }
 
-        File file = new File(absolutePath, filename + FILE_FORMAT);
+        File file = new File(folder, filename + FILE_FORMAT);
 
         try {
             if(file.exists())
@@ -137,17 +140,24 @@ public final class FileManager {
     }
 
     public static File getFile(@NonNull final Context context,
-                                  @Nullable String folder,
+                                  @Nullable String folderDir,
                                   @NonNull String filename,
                                   boolean useExternalStorage)
     {
-        String absolutePath = createDirectory(context, folder, useExternalStorage);
-        if (absolutePath == null){
-            Log.e(TAG, "Impossible to create the folder: "+folder);
+        if (folderDir == null) {
+            Timber.e("folderDir is null");
             return null;
         }
+        File folder = new File(folderDir);
+        if (!folder.isDirectory()) {
+            boolean isFolderCreated = folder.mkdir();
+            if (!isFolderCreated) {
+                Timber.e("cannot create folder : " + folderDir);
+                return null;
+            }
+        }
 
-        File file = new File(absolutePath, filename + FILE_FORMAT);
+        File file = new File(folder, filename + FILE_FORMAT);
         return file;
     }
 
