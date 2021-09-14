@@ -60,7 +60,7 @@ object MbtClientIndus5 {
     private lateinit var handler: Handler
 
     // Stops scanning after N seconds.
-    private const val SCAN_PERIOD: Long = 15 * 1000
+    private const val SCAN_PERIOD: Long = 30 * 1000
     private const val MTU_SIZE: Int = 47
 
     private lateinit var leScanCallback: MyScanCallback
