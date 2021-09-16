@@ -46,6 +46,7 @@ versions.junit = "4.12"
 versions.junit_jupiter = "5.6.2"
 versions.kotlin = "1.5.20"
 versions.lifecycle = "2.2.0"
+versions.lottie = "4.1.0"
 versions.material = "1.0.0"
 versions.mockito = "3.8.0"
 versions.mockito_all = "1.10.19"
@@ -238,16 +239,17 @@ work.runtime_ktx = "androidx.work:work-runtime-ktx:$versions.work"
 deps.work = work
 
 //add other libraries here
-deps.legacy_support = 'androidx.legacy:legacy-support-v4:1.0.0'
-deps.vectordrawable_animated = 'androidx.vectordrawable:vectordrawable-animated:1.0.0'
-deps.circular_fillable_loaders = 'com.mikhaellopez:circularfillableloaders:1.2.0'
-deps.mp_android_chart = 'com.github.PhilJay:MPAndroidChart:v3.0.1'
-deps.expandable_layout = 'com.github.aakira:expandable-layout:1.6.0@aar'
-deps.view_animator = 'com.github.florent37:viewanimator:1.0.5'
-deps.drag_list_view = 'com.github.woxthebox:draglistview:1.4.4'
 deps.apache_commons = "org.mod4j.org.apache.commons:lang:$versions.apache_commons"
+deps.circular_fillable_loaders = 'com.mikhaellopez:circularfillableloaders:1.2.0'
+deps.drag_list_view = 'com.github.woxthebox:draglistview:1.4.4'
 deps.event_bus = 'org.greenrobot:eventbus:3.1.1'
+deps.expandable_layout = 'com.github.aakira:expandable-layout:1.6.0@aar'
 deps.gson = 'com.google.code.gson:gson:2.8.6'
+deps.legacy_support = 'androidx.legacy:legacy-support-v4:1.0.0'
+deps.lottie = "com.airbnb.android:lottie:$versions.lottie"
+deps.mp_android_chart = 'com.github.PhilJay:MPAndroidChart:v3.0.1'
+deps.vectordrawable_animated = 'androidx.vectordrawable:vectordrawable-animated:1.0.0'
+deps.view_animator = 'com.github.florent37:viewanimator:1.0.5'
 
 ext.deps = deps
 
