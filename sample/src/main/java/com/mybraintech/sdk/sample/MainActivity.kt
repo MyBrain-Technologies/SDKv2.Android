@@ -139,6 +139,21 @@ class MainActivity : AppCompatActivity() {
 
     private fun connectBle(delay: Long = 300) {
         clearText()
+
+        val connectBleRunnable = Runnable {
+            val config = ConnectionConfig.Builder(connectionStateListener)
+                .createForDevice(MbtDeviceType.MELOMIND_Q_PLUS)
+
+            if (!binding.edtDeviceName.text.isNullOrBlank()) {
+                config.deviceName = binding.edtDeviceName.text.trim().toString()
+                Timber.i("scan with name = ${config.deviceName}")
+            } else {
+                Timber.i("scan without name")
+            }
+
+            mbtClient.connectBluetooth(config)
+        }
+
         Handler().postDelayed(connectBleRunnable, delay)
     }
 
@@ -173,12 +188,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-    }
-
-    private val connectBleRunnable = Runnable {
-        val config = ConnectionConfig.Builder(connectionStateListener)
-            .createForDevice(MbtDeviceType.MELOMIND_Q_PLUS)
-        mbtClient.connectBluetooth(config)
     }
 
     private val disconnectBleRunnable = Runnable {

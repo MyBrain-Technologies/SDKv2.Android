@@ -34,6 +34,7 @@ import java.util.*
 @SuppressLint("StaticFieldLeak")
 object MbtClientIndus5 {
 
+    private var deviceName: String? = null
     private var triggerListener: TriggerListener? = null
     private var deviceBatteryListener: DeviceBatteryListener<BaseError>? = null
     private var accelerometerListener: AccelerometerListener? = null
@@ -366,7 +367,7 @@ object MbtClientIndus5 {
 
         handler = Handler(Looper.myLooper() ?: Looper.getMainLooper())
         //start process
-        setupBle()
+        setupBle(config)
     }
 
     @JvmStatic
@@ -385,13 +386,13 @@ object MbtClientIndus5 {
         }
     }
 
-    private fun setupBle() {
+    private fun setupBle(config: ConnectionConfig) {
         // Initializes Bluetooth adapter.
         bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothAdapter = bluetoothManager.adapter
 
         if (bluetoothAdapter.isEnabled) {
-            scanLeDevice()
+            scanLeDevice(config.deviceName)
         } else {
             Timber.e("bluetooth is not ready")
             onConnectionError()
@@ -420,7 +421,8 @@ object MbtClientIndus5 {
             stopScan(isTimeout = true)
         }
 
-    private fun scanLeDevice() {
+    private fun scanLeDevice(name: String?) {
+        this.deviceName = name
         //log connected ble devices
         val bluetoothManager =
             context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
@@ -452,6 +454,10 @@ object MbtClientIndus5 {
     }
 
     fun isTargetDevice(device: BluetoothDevice): Boolean {
+        if (deviceName != null) {
+            //if deviceName is defined, only search this name
+            return deviceName == device.name
+        }
         val condition1 = device.name?.startsWith(MELOMIND_INDUS5_PREFIX_1) == true
         val condition2 = device.name?.startsWith(MELOMIND_INDUS5_PREFIX_2) == true
         return (condition1 || condition2)

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -12,6 +11,26 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="(Empty to scan all) Device name = "
+                android:textColor="@color/black" />
+
+            <EditText
+                android:id="@+id/edt_device_name"
+                android:text="qp_2120000023"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="qp_xxx"
+                android:textColor="@color/black" />
+        </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -73,8 +92,8 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
             android:gravity="center"
+            android:orientation="vertical"
             android:paddingTop="16dp">
 
             <Button
@@ -85,9 +104,9 @@
 
             <TextView
                 android:id="@+id/txt_firmware_version"
-                android:hint="firmware version"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:hint="firmware version" />
 
             <View
                 android:layout_width="match_parent"
@@ -95,11 +114,12 @@
                 android:layout_marginTop="4dp"
                 android:background="@color/colorPrimary" />
         </LinearLayout>
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
             android:gravity="center"
+            android:orientation="vertical"
             android:paddingTop="16dp">
 
             <Button
@@ -110,9 +130,9 @@
 
             <TextView
                 android:id="@+id/txt_battery_level"
-                android:hint="battery level"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:hint="battery level" />
 
             <View
                 android:layout_width="match_parent"
@@ -120,11 +140,12 @@
                 android:layout_marginTop="4dp"
                 android:background="@color/colorPrimary" />
         </LinearLayout>
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
             android:gravity="center"
+            android:orientation="vertical"
             android:paddingTop="16dp">
 
             <Button
@@ -135,15 +156,15 @@
 
             <TextView
                 android:id="@+id/txt_stream_state"
-                android:hint="stream state"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:hint="stream state" />
 
             <TextView
                 android:id="@+id/txt_eeg_package"
-                android:hint="eeg package"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:hint="eeg package" />
 
             <View
                 android:layout_width="match_parent"
