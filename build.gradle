@@ -2,20 +2,16 @@
 
 buildscript {
     apply from: 'versions.gradle'
-
     ext {
-        kotlin_version = '1.4.31'
+        kotlinVersion = '1.5.20'
+        kotlin_version = '1.5.20'
     }
-    ext.kotlinVersion = '1.3.72'
-
-    repositories {
-        google()
-        jcenter()
-    }
+    addRepos(repositories)
     dependencies {
-
-        classpath 'com.android.tools.build:gradle:3.5.3'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+        classpath deps.android_gradle_plugin
+        classpath deps.kotlin.plugin
+        classpath deps.google_services
+        classpath deps.crashlytics_gradle
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -23,11 +19,7 @@ buildscript {
 }
 
 allprojects {
-    repositories {
-        google()
-        jcenter()
-        maven { url 'https://jitpack.io' }
-    }
+    addRepos(repositories)
 }
 
 task clean(type: Delete) {

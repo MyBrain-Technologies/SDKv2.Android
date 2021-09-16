@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "449806950189",
+    "project_id": "acquisier-debug-b9d24",
+    "storage_bucket": "acquisier-debug-b9d24.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:449806950189:android:343d5b9e1938d45926bda4",
+        "android_client_info": {
+          "package_name": "com.mybraintech.acquisier.dev"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "449806950189-3jj67gfldp78m9ohfil43200bt78nr62.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBL02yLPqshy3FGu6BGdlc356iWSud9luQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "449806950189-3jj67gfldp78m9ohfil43200bt78nr62.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:449806950189:android:59c5d82ad627334126bda4",
+        "android_client_info": {
+          "package_name": "com.mybraintech.sdk.sample.dev"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "449806950189-3jj67gfldp78m9ohfil43200bt78nr62.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBL02yLPqshy3FGu6BGdlc356iWSud9luQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "449806950189-3jj67gfldp78m9ohfil43200bt78nr62.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
