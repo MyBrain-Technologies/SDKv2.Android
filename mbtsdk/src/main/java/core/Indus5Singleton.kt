@@ -22,4 +22,7 @@ object Indus5Singleton {
     fun isIndus5(): Boolean {
         return isMelomindIndus5
     }
+
+    @JvmStatic
+    var isConnected = false
 }
