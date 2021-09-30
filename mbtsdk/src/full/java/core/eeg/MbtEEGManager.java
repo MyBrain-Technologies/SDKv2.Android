@@ -1,9 +1,11 @@
 package core.eeg;
 
 import android.content.Context;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
-import android.util.Log;
+
+import com.mybraintech.android.jnibrainbox.QualityChecker;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.greenrobot.eventbus.Subscribe;
@@ -35,10 +37,10 @@ import core.eeg.storage.MbtDataBuffering;
 import core.eeg.storage.MbtEEGPacket;
 import core.eeg.storage.RawEEGSample;
 import eventbus.MbtEventBus;
-import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.BluetoothEEGEvent;
-import eventbus.events.EEGConfigEvent;
+import eventbus.events.ClientReadyEEGEvent;
 import eventbus.events.ConnectionStateEvent;
+import eventbus.events.EEGConfigEvent;
 import eventbus.events.SignalProcessingEvent;
 import features.MbtFeatures;
 import mbtsdk.com.mybraintech.mbtsdk.BuildConfig;
@@ -72,6 +74,9 @@ public final class MbtEEGManager extends BaseModuleManager {
 
 //    private int nbChannels = MbtFeatures.MELOMIND_NB_CHANNELS; //TODO: think how we can different basic melomind with Q+
 
+    private final boolean isUsingNewBrainbox = true;
+    private QualityChecker qualityChecker;
+
     private MbtDataAcquisition dataAcquisition;
     private MbtDataBuffering dataBuffering;
     private ArrayList<ArrayList<Float>> consolidatedEEG;
@@ -91,10 +96,13 @@ public final class MbtEEGManager extends BaseModuleManager {
     public MbtEEGManager(@NonNull Context context) {
         super(context);
         this.dataBuffering = new MbtDataBuffering(this);
-        try {
-            System.loadLibrary(ContextSP.LIBRARY_NAME + BuildConfig.USE_ALGO_VERSION);
-        } catch (final UnsatisfiedLinkError e) {
-            e.printStackTrace();
+
+        if (!isUsingNewBrainbox) {
+            try {
+                System.loadLibrary(ContextSP.LIBRARY_NAME + BuildConfig.USE_ALGO_VERSION);
+            } catch (final UnsatisfiedLinkError e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -121,10 +129,10 @@ public final class MbtEEGManager extends BaseModuleManager {
      * Reset the buffers arrays, status list, the number of status bytes and the packet Size
      */
     private void resetBuffers(byte samplePerNotif, final int statusByteNb, byte gain) {
-        if(statusByteNb != UNCHANGED_VALUE)
+        if (statusByteNb != UNCHANGED_VALUE)
             MbtFeatures.setNbStatusBytes(statusByteNb);
 
-        if(samplePerNotif != UNCHANGED_VALUE) {
+        if (samplePerNotif != UNCHANGED_VALUE) {
             MbtFeatures.setPacketSize(protocol, samplePerNotif);
             MbtFeatures.setSamplePerNotif(samplePerNotif);
         }
@@ -173,11 +181,11 @@ public final class MbtEEGManager extends BaseModuleManager {
             public void run() {
                 if (hasQualities) {
                     eegPackets.setQualities(MbtEEGManager.this.computeEEGSignalQuality(eegPackets));
-                    try{
-                        if(Integer.parseInt(ContextSP.SP_VERSION.replace(".","")) >=
-                                Integer.parseInt(FREQUENCY_BAND_FEATURES_VERSION.replace(".","")))
-                            eegPackets.setFeatures(MBTSignalQualityChecker.getFeatures());
-                    }catch (NumberFormatException e){
+                    try {
+//                        if(Integer.parseInt(ContextSP.SP_VERSION.replace(".","")) >=
+//                                Integer.parseInt(FREQUENCY_BAND_FEATURES_VERSION.replace(".","")))
+//                            eegPackets.setFeatures(MBTSignalQualityChecker.getFeatures());
+                    } catch (NumberFormatException e) {
                         Timber.e(e);
                         Timber.e("Qualities checker version unknown");
                     }
@@ -186,8 +194,9 @@ public final class MbtEEGManager extends BaseModuleManager {
                 MbtEventBus.postEvent(new ClientReadyEEGEvent(eegPackets));
             }
         });
-        LogUtils.v(TAG, "New packet: "+eegPackets.toString());
+        LogUtils.v(TAG, "New packet: " + eegPackets.toString());
     }
+
     private final String FREQUENCY_BAND_FEATURES_VERSION = "2.3.1";
 
     /**
@@ -195,7 +204,20 @@ public final class MbtEEGManager extends BaseModuleManager {
      * Should be destroyed at the end of the session
      */
     private void initQualityChecker() {
-        ContextSP.SP_VERSION = MBTSignalQualityChecker.initQualityChecker();
+        if (!isUsingNewBrainbox) {
+            ContextSP.SP_VERSION = MBTSignalQualityChecker.initQualityChecker(); //old version
+        } else {
+
+            //new version -->
+            if (qualityChecker == null) {
+                try {
+                    qualityChecker = new QualityChecker(250);
+                } catch (Exception e) {
+                    Timber.e(e);
+                }
+            }
+            ContextSP.SP_VERSION = "3.0.0";
+        }
     }
 
     /**
@@ -221,30 +243,39 @@ public final class MbtEEGManager extends BaseModuleManager {
      * Computes the quality for each provided channels
      *
      * @param packet the user-readable EEG data matrix
-     *                        The Melomind headset has 2 channels and the VPRO headset has 9 channels.
+     *               The Melomind headset has 2 channels and the VPRO headset has 9 channels.
      * @return an array that contains the quality of each EEG acquisition channels
      * This array contains 2 qualities (items) if the headset used is MELOMIND.
      * This array contains 9 qualities (items) if the headset used is VPRO.
      * The method computes and displays the duration for quality computation.
      */
     private ArrayList<Float> computeEEGSignalQuality(final MbtEEGPacket packet) {
-
-        if(packet.getChannelsData() != null && packet.getChannelsData().size()!=0){
+        if (packet.getChannelsData() != null && packet.getChannelsData().size() != 0) {
 
             float[] qualities = new float[getNumberOfChannels()];
             Arrays.fill(qualities, -1f);
-            try{
-                if(protocol.equals(BluetoothProtocol.LOW_ENERGY)){
-                    qualities = MBTSignalQualityChecker.computeQualitiesForPacketNew(sampleRate, packetLength, MatrixUtils.invertFloatMatrix(packet.getChannelsData()));
-//                    Timber.d("qualities = " + Arrays.toString(qualities));
-                }else if(protocol.equals(BluetoothProtocol.SPP)){
+            try {
+                if (protocol.equals(BluetoothProtocol.LOW_ENERGY)) {
+                    if (!isUsingNewBrainbox) {
+                        qualities = MBTSignalQualityChecker.computeQualitiesForPacketNew(sampleRate, packetLength, MatrixUtils.invertFloatMatrix(packet.getChannelsData()));
+                    } else {
+                        if (qualityChecker != null) {
+                            try {
+                                qualities = qualityChecker.computeQualityChecker(packetLength, MatrixUtils.invertFloatMatrix(packet.getChannelsData()));
+                            } catch (Exception e) {
+                                Timber.e(e);
+                            }
+                        }
+                    }
+                    Timber.d("qualities = " + Arrays.toString(qualities));
+                } else if (protocol.equals(BluetoothProtocol.SPP)) {
                     ArrayList<Float> qualitiesList = new ArrayList<>();
-                    ArrayList<ArrayList<Float>> temp = new  ArrayList<ArrayList<Float>>();
+                    ArrayList<ArrayList<Float>> temp = new ArrayList<ArrayList<Float>>();
                     //WARNING : quality checker C++ algo only takes into account 2 channels
-                    for(int i = 0; i < getNumberOfChannels(); i+=2) {
+                    for (int i = 0; i < getNumberOfChannels(); i += 2) {
                         final float[] qts;
                         temp.add(0, downsample(MatrixUtils.invertFloatMatrix(packet.getChannelsData()).get(i)));
-                        temp.add(1, downsample(MatrixUtils.invertFloatMatrix(packet.getChannelsData()).get(i+1)));
+                        temp.add(1, downsample(MatrixUtils.invertFloatMatrix(packet.getChannelsData()).get(i + 1)));
                         int mSampRate = temp.get(0).size();
                         int mPacketLentgh = mSampRate;
                         qts = MBTSignalQualityChecker.computeQualitiesForPacketNew(mSampRate, mPacketLentgh, temp);
@@ -256,7 +287,7 @@ public final class MbtEEGManager extends BaseModuleManager {
                     return qualitiesList;
                 }
 
-            } catch (IllegalStateException e){
+            } catch (IllegalStateException e) {
                 e.printStackTrace();
             }
 
@@ -268,26 +299,28 @@ public final class MbtEEGManager extends BaseModuleManager {
 
     /**
      * Temporary used to fix the quality checker bug for 500 Hz (non 250Hz)
+     *
      * @param vector 500 Hz
      * @return vector of 250 Hz (one of out 2 values are removed)
      */
-    private ArrayList<Float> downsample(ArrayList<Float> vector){
+    private ArrayList<Float> downsample(ArrayList<Float> vector) {
         int size = 0;
-        if(vector != null)
-            size = vector.size()/2;
+        if (vector != null)
+            size = vector.size() / 2;
 
         ArrayList<Float> temp = new ArrayList<>(size);
         Iterator<Float> iterator = vector.iterator();
         boolean keep = true;
-        while (iterator.hasNext()){
+        while (iterator.hasNext()) {
             Float value = iterator.next();
-            if(keep){
+            if (keep) {
                 temp.add(value);
             }
             keep = !keep;
         }
         return temp;
     }
+
     /**
      * Computes the relaxation index using the provided <code>MbtEEGPacket</code>.
      * For now, we admit there are only 2 channels for each packet
@@ -317,6 +350,7 @@ public final class MbtEEGManager extends BaseModuleManager {
 
     /**
      * Gets the user-readable EEG data matrix
+     *
      * @return the converted EEG data matrix that contains readable values for any user
      */
     public ArrayList<ArrayList<Float>> getConsolidatedEEG() {
@@ -332,10 +366,10 @@ public final class MbtEEGManager extends BaseModuleManager {
 
     @Subscribe(threadMode = ThreadMode.BACKGROUND)
     public void onConnectionStateChanged(ConnectionStateEvent connectionStateEvent) {
-        if(connectionStateEvent.getDevice() == null) {
+        if (connectionStateEvent.getDevice() == null) {
             protocol = null;
-        }else {
-            if(connectionStateEvent.getNewState().equals(BluetoothState.CONNECTED_AND_READY)){
+        } else {
+            if (connectionStateEvent.getNewState().equals(BluetoothState.CONNECTED_AND_READY)) {
                 protocol = connectionStateEvent.getDevice().getDeviceType().getProtocol();
 //                TODO: think how can we implement this, the number of eeg channels
 //                nbChannels = connectionStateEvent.getDevice().getNbChannels();
@@ -348,6 +382,7 @@ public final class MbtEEGManager extends BaseModuleManager {
      * onEvent is called by the Event Bus when a BluetoothEEGEvent event is posted
      * This event is published by {@link core.bluetooth.MbtBluetoothManager}:
      * this manager handles Bluetooth communication between the headset and the application and receive raw EEG data from the headset.
+     *
      * @param event contains data transmitted by the publisher : here it contains the raw EEG data array
      */
     @Subscribe(threadMode = ThreadMode.BACKGROUND)
@@ -361,6 +396,7 @@ public final class MbtEEGManager extends BaseModuleManager {
 
     /**
      * Called when a new stream state event has been broadcast on the event bus.
+     *
      * @param newState
      */
     @Subscribe(threadMode = ThreadMode.POSTING)
@@ -371,23 +407,24 @@ public final class MbtEEGManager extends BaseModuleManager {
     }
 
     @Subscribe
-    public void onStreamStartedOrStopped(StreamRequestEvent event){
+    public void onStreamStartedOrStopped(StreamRequestEvent event) {
         Timber.d("MbtEEGManager :  onStreamStartedOrStopped  = " + event.startStream());
-        if(event.startStream()){
+        if (event.startStream()) {
             this.dataAcquisition = new MbtDataAcquisition(this, protocol);
             this.dataBuffering = new MbtDataBuffering(this);
-            if(event.computeQualities()){
+            if (event.computeQualities()) {
                 hasQualities = true;
                 initQualityChecker();
             }
+        } else if (event.isStopStream() && !ContextSP.SP_VERSION.equals("0.0.0")) {
+            if (!isUsingNewBrainbox) {
+                deinitQualityChecker();
+            }
         }
-        else if(event.isStopStream() && !ContextSP.SP_VERSION.equals("0.0.0"))
-            deinitQualityChecker();
-
     }
 
     @Subscribe
-    public void applyBandpassFilter(SignalProcessingEvent.GetBandpassFilter config){
+    public void applyBandpassFilter(SignalProcessingEvent.GetBandpassFilter config) {
         MbtEventBus.postEvent(
                 new SignalProcessingEvent.PostBandpassFilter(
                         MBTEegFilter.bandpassFilter(
@@ -400,9 +437,9 @@ public final class MbtEEGManager extends BaseModuleManager {
     }
 
     @Subscribe
-    public void onConfigurationChanged(EEGConfigEvent configEEGEvent){
+    public void onConfigurationChanged(EEGConfigEvent configEEGEvent) {
         MbtDevice.InternalConfig internalConfig = configEEGEvent.getConfig();
-        LogUtils.d(TAG, "new config "+ internalConfig.toString());
+        LogUtils.d(TAG, "new config " + internalConfig.toString());
         sampleRate = internalConfig.getSampRate();
         packetLength = configEEGEvent.getDevice().getEegPacketLength();
 //        nbChannels = internalConfig.getNbChannels();
