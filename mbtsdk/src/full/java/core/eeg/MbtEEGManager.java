@@ -261,7 +261,7 @@ public final class MbtEEGManager extends BaseModuleManager {
                     } else {
                         if (qualityChecker != null) {
                             try {
-                                qualities = qualityChecker.computeQualityChecker(packetLength, MatrixUtils.invertFloatMatrix(packet.getChannelsData()));
+                                qualities = qualityChecker.computeQualityChecker(MatrixUtils.invertFloatMatrix(packet.getChannelsData()));
                             } catch (Exception e) {
                                 Timber.e(e);
                             }
