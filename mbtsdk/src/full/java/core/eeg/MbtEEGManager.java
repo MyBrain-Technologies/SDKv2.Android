@@ -183,9 +183,11 @@ public final class MbtEEGManager extends BaseModuleManager {
                 if (hasQualities) {
                     eegPackets.setQualities(MbtEEGManager.this.computeEEGSignalQuality(eegPackets));
                     try {
-//                        if(Integer.parseInt(ContextSP.SP_VERSION.replace(".","")) >=
-//                                Integer.parseInt(FREQUENCY_BAND_FEATURES_VERSION.replace(".","")))
-//                            eegPackets.setFeatures(MBTSignalQualityChecker.getFeatures());
+                        if (!isUsingNewBrainbox) {
+                            if (Integer.parseInt(ContextSP.SP_VERSION.replace(".", "")) >=
+                                    Integer.parseInt(FREQUENCY_BAND_FEATURES_VERSION.replace(".", "")))
+                                eegPackets.setFeatures(MBTSignalQualityChecker.getFeatures());
+                        }
                     } catch (NumberFormatException e) {
                         Timber.e(e);
                         Timber.e("Qualities checker version unknown");
