@@ -5,6 +5,7 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 
+import com.mybraintech.android.jnibrainbox.BrainBoxVersion;
 import com.mybraintech.android.jnibrainbox.QualityChecker;
 
 import org.apache.commons.lang.ArrayUtils;
@@ -216,7 +217,7 @@ public final class MbtEEGManager extends BaseModuleManager {
                     Timber.e(e);
                 }
             }
-            ContextSP.SP_VERSION = "3.0.0";
+            ContextSP.SP_VERSION = BrainBoxVersion.getVersion();
         }
     }
 
