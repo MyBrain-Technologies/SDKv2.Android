@@ -5,7 +5,7 @@ import utils.LogUtils
 sealed class Indus5Response() {
     class FirmwareVersion(val version: String) : Indus5Response()
     class MtuChange(val size: Int) : Indus5Response()
-    class TriggerConfiguration(val isEnabled: Boolean) : Indus5Response()
+    class TriggerConfiguration(val triggerSize: Int) : Indus5Response()
     class EegFrame(val data: ByteArray) : Indus5Response()
     class EegStatus(val isEnabled: Boolean) : Indus5Response()
     class BatteryLevel(val percent: Float) : Indus5Response()
@@ -28,7 +28,7 @@ fun ByteArray.parseRawIndus5Response() : Indus5Response {
             return Indus5Response.MtuChange(this[1].toInt())
         }
         if (this[0].compareTo(0x0F) == 0) {
-            return Indus5Response.TriggerConfiguration(this[1].toInt() == 1)
+            return Indus5Response.TriggerConfiguration(this[1].toInt())
         }
         if (this[0].compareTo(0x40) == 0) {
             // remove command code

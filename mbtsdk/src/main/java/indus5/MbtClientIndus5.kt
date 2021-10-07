@@ -209,8 +209,8 @@ object MbtClientIndus5 {
                     config.connectionStateListener.onDeviceConnected(MelomindQPlusDevice(device))
                 }
                 is Indus5Response.TriggerConfiguration -> {
-                    Timber.d("indus5 TriggerConfigResponse : enabled = ${response.isEnabled}")
-                    triggerListener?.onTriggerResponse(response.isEnabled)
+                    Timber.d("indus5 TriggerConfigResponse : trigger size = ${response.triggerSize}")
+                    triggerListener?.onTriggerResponse(response.triggerSize)
                 }
                 is Indus5Response.EegFrame -> {
                     Timber.v(

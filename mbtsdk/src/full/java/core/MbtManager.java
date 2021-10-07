@@ -223,13 +223,9 @@ public class MbtManager {
         MbtClientIndus5.getBatteryLevelIndus5(listener);
     }
 
-    public void onIndus5TriggerConfigured(boolean isTriggerEnabled) {
-        if (isTriggerEnabled != streamConfig.isTriggerEnabled()) {
-            Timber.e("Trigger configuration was not set correctly!!");
-        } else if (isTriggerEnabled) {
-            // trigger is enabled successfully, set status bytes size to 1
-            MbtFeatures.setNbStatusBytes(1);
-        }
+    public void onIndus5TriggerConfigured(int triggerSize) {
+        MbtFeatures.setNbStatusBytes(triggerSize);
+
         if (streamConfig.isImsEnabled()) {
 //            Timber.d("ppg = " + streamConfig.isPpgEnabled());
             if (accelerometerListener == null) {
