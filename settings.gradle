@@ -1,3 +1,4 @@
-//include ':app'
+include ':JniBrainBox'
 include ':mbtsdk'
 include ':sample'
+//include ':app'

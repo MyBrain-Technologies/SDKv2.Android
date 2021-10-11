@@ -5,6 +5,7 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 
+import com.mybraintech.android.jnibrainbox.BrainBoxVersion;
 import com.mybraintech.android.jnibrainbox.QualityChecker;
 
 import org.apache.commons.lang.ArrayUtils;
@@ -182,9 +183,11 @@ public final class MbtEEGManager extends BaseModuleManager {
                 if (hasQualities) {
                     eegPackets.setQualities(MbtEEGManager.this.computeEEGSignalQuality(eegPackets));
                     try {
-//                        if(Integer.parseInt(ContextSP.SP_VERSION.replace(".","")) >=
-//                                Integer.parseInt(FREQUENCY_BAND_FEATURES_VERSION.replace(".","")))
-//                            eegPackets.setFeatures(MBTSignalQualityChecker.getFeatures());
+                        if (!isUsingNewBrainbox) {
+                            if (Integer.parseInt(ContextSP.SP_VERSION.replace(".", "")) >=
+                                    Integer.parseInt(FREQUENCY_BAND_FEATURES_VERSION.replace(".", "")))
+                                eegPackets.setFeatures(MBTSignalQualityChecker.getFeatures());
+                        }
                     } catch (NumberFormatException e) {
                         Timber.e(e);
                         Timber.e("Qualities checker version unknown");
@@ -216,7 +219,7 @@ public final class MbtEEGManager extends BaseModuleManager {
                     Timber.e(e);
                 }
             }
-            ContextSP.SP_VERSION = "3.0.0";
+            ContextSP.SP_VERSION = BrainBoxVersion.getVersion();
         }
     }
 
