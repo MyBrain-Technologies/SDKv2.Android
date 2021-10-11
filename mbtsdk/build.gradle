@@ -91,8 +91,12 @@ configurations {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-//    implementation files('libs/JniBrainBox-debug.aar')
-    implementation project(path: ':JniBrainBox')
+    def useLocalJni = false
+    if (useLocalJni) {
+        implementation project(path: ':JniBrainBox')
+    } else {
+        implementation "com.mybraintech.android:jnibrainbox:3.0.0rc2"
+    }
 
     implementation deps.kotlin.stdlib
 
