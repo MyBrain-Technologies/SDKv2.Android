@@ -54,20 +54,21 @@ dependencies {
 //* add your credentials in local.properties
 //* to run from terminal: ./gradlew :JniBrainBox:publishReleasePublicationToMavenRepository --stacktrace
 //************************************************
-Properties jniMavenProperties = new Properties()
-jniMavenProperties.load(project.rootProject.file('local.properties').newDataInputStream())
-def nexus_url = jniMavenProperties.getProperty('nexus_url')
-def nexus_username = jniMavenProperties.getProperty('nexus_username')
-def nexus_password = jniMavenProperties.getProperty('nexus_password')
+Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
+def mavenUsername = properties.getProperty('maven_username')
+def mavenPassword = properties.getProperty('maven_password')
+def releasesRepoUrl = 'https://package.mybraintech.com/repository/maven-2-releases/'
+def snapshotsRepoUrl = 'https://package.mybraintech.com/repository/maven-2-snapshots/'
 
 project.afterEvaluate {
     publishing {
         repositories {
             maven {
-                url nexus_url
+                url = android.defaultConfig.versionName.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
                 credentials {
-                    username nexus_username
-                    password nexus_password
+                    username mavenUsername
+                    password mavenPassword
                 }
             }
         }
