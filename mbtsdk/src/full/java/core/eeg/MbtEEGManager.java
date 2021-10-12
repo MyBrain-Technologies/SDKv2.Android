@@ -270,7 +270,7 @@ public final class MbtEEGManager extends BaseModuleManager {
                             }
                         }
                     }
-                    Timber.d("qualities = " + Arrays.toString(qualities));
+                    Timber.v("qualities = " + Arrays.toString(qualities));
                 } else if (protocol.equals(BluetoothProtocol.SPP)) {
                     ArrayList<Float> qualitiesList = new ArrayList<>();
                     ArrayList<ArrayList<Float>> temp = new ArrayList<ArrayList<Float>>();
