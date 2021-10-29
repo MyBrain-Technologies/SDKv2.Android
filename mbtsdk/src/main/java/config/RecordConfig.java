@@ -361,7 +361,11 @@ public final class RecordConfig {
         public Builder(Context context){
             this.timestamp = System.currentTimeMillis();
             this.projectName = context.getString(context.getApplicationInfo().labelRes).replace(" ","");
-            this.recordInfo = new RecordInfo(UUID.randomUUID().toString());
+        }
+
+        public Builder recordId(@NonNull String recordId){
+            this.recordInfo = new RecordInfo(recordId);
+            return this;
         }
 
         /**
@@ -499,10 +503,12 @@ public final class RecordConfig {
          * Default value is {@link MelomindExerciseType#DEFAULT}.
          */
         public Builder exerciseType(MelomindExerciseType exerciseType) {
-            if(this.recordInfo == null)
-                this.recordInfo = new RecordInfo(UUID.randomUUID().toString());
-            this.recordInfo.getRecordingType().setExerciseType(exerciseType);
-            return this;
+            throw new UnsupportedOperationException("this method is no longer supported: recordId is required from BrainWeb v1.4.0");
+
+//            if(this.recordInfo == null)
+//                this.recordInfo = new RecordInfo(UUID.randomUUID().toString());
+//            this.recordInfo.getRecordingType().setExerciseType(exerciseType);
+//            return this;
         }
 
         /**
@@ -510,10 +516,12 @@ public final class RecordConfig {
          * Default value is {@link MelomindExerciseSource#DEFAULT}.
          */
         public Builder source(MelomindExerciseSource source) {
-            if(this.recordInfo == null)
-                this.recordInfo = new RecordInfo(UUID.randomUUID().toString());
-            this.recordInfo.getRecordingType().setSource(source);
-            return this;
+            throw new UnsupportedOperationException("this method is no longer supported: recordId is required from BrainWeb v1.4.0");
+
+//            if(this.recordInfo == null)
+//                this.recordInfo = new RecordInfo(UUID.randomUUID().toString());
+//            this.recordInfo.getRecordingType().setSource(source);
+//            return this;
         }
 
         /**
@@ -521,10 +529,12 @@ public final class RecordConfig {
          * Default value is {@link RAWDATA}.
          */
         public Builder recordType(String recordType) {
-            if(this.recordInfo == null)
-                this.recordInfo = new RecordInfo(UUID.randomUUID().toString());
-            this.recordInfo.getRecordingType().setRecordType(recordType);
-            return this;
+            throw new UnsupportedOperationException("this method is no longer supported: recordId is required from BrainWeb v1.4.0");
+
+//            if(this.recordInfo == null)
+//                this.recordInfo = new RecordInfo(UUID.randomUUID().toString());
+//            this.recordInfo.getRecordingType().setRecordType(recordType);
+//            return this;
         }
 
         /**
