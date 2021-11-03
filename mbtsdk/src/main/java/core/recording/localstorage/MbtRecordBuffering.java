@@ -127,7 +127,7 @@ public class MbtRecordBuffering {
         }
 
         MbtRecording recording;
-        if (Indus5Singleton.INSTANCE.isIndus5() && recordConfig.isAccelerometerEnabled()) {
+        if (Indus5Singleton.INSTANCE.isIndus5()) {
             recording = MbtJsonBuilder.convertDataToRecording(
                     device.getNbChannels(),
                     recordConfig.getRecordInfo().setSPVersion(ContextSP.SP_VERSION),
