@@ -295,6 +295,8 @@ final class MbtJsonBuilder{
                 jsonWriter.endArray();
 
                 jsonWriter.endObject();
+            } else {
+                Timber.d("json writing: no IMS");
             }
 
             //----------------------------------------------------------------------------
@@ -329,6 +331,8 @@ final class MbtJsonBuilder{
                 jsonWriter.endArray();
 
                 jsonWriter.endObject();
+            } else {
+                Timber.d("json writing: no PPG");
             }
 
             jsonWriter.name(STATUS_DATA_KEY); // beginning of "statusData"       array
