@@ -278,23 +278,47 @@ final class MbtJsonBuilder{
                 jsonWriter.beginObject();    // beginning of "ims"
 
                 jsonWriter.name("sampRate").value(100);
+
                 jsonWriter.name("imsData");
-                jsonWriter.beginArray();
+                jsonWriter.beginArray(); //start to write ims data (ims)
+
+                //write X
+                jsonWriter.beginArray(); //start to write X (x)
                 for (int i =0; i<recording.getAccelerometerPositions().size(); i++) {
                     Position3D position = recording.getAccelerometerPositions().get(i);
                     if (position != null) {
-                        jsonWriter.beginArray(); // we generate an array for each row of the position data
                         jsonWriter.value(position.getX());
-                        jsonWriter.value(position.getY());
-                        jsonWriter.value(position.getZ());
-                        jsonWriter.endArray();  // and we close it here
                     } else {
                         Timber.w("found null Position3D in IMS buffer");
                     }
                 }
-                jsonWriter.endArray();
+                jsonWriter.endArray(); //end to write X (x)
+
+                //write Y
+                jsonWriter.beginArray(); //start to write Y (y)
+                for (int i =0; i<recording.getAccelerometerPositions().size(); i++) {
+                    Position3D position = recording.getAccelerometerPositions().get(i);
+                    if (position != null) {
+                        jsonWriter.value(position.getY());
+                    }
+                }
+                jsonWriter.endArray(); //end to write Y (y)
+
+                //write Z
+                jsonWriter.beginArray(); //start to write Z (z)
+                for (int i =0; i<recording.getAccelerometerPositions().size(); i++) {
+                    Position3D position = recording.getAccelerometerPositions().get(i);
+                    if (position != null) {
+                        jsonWriter.value(position.getZ());
+                    }
+                }
+                jsonWriter.endArray(); //end to write Z (z)
+
+                jsonWriter.endArray(); //end writing ims (ims)
 
                 jsonWriter.endObject();
+            } else {
+                Timber.d("json writing: no IMS");
             }
 
             //----------------------------------------------------------------------------
@@ -329,6 +353,8 @@ final class MbtJsonBuilder{
                 jsonWriter.endArray();
 
                 jsonWriter.endObject();
+            } else {
+                Timber.d("json writing: no PPG");
             }
 
             jsonWriter.name(STATUS_DATA_KEY); // beginning of "statusData"       array
