@@ -43,7 +43,7 @@ interface IPeripheralGateway {
   // Initialization
   //----------------------------------------------------------------------------
 
-  // TODO: How to ad custome constructor?
+  // TODO: How to ad custom constructor?
 //  constructor(peripheral: Peripheral)
 
   //----------------------------------------------------------------------------

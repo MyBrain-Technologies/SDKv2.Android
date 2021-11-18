@@ -14,5 +14,4 @@ interface IPeripheralListener {
   fun onConnect()
   fun onConnect(deviceInformation: DeviceInformation)
   fun onFail(error: Error)
-
 }
