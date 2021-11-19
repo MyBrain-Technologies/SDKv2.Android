@@ -13,7 +13,10 @@ interface IBluetoothManager {
     //----------------------------------------------------------------------------
     fun hasConnectedDevice(): Boolean
     fun hasA2dpConnectedDevice(): Boolean
+
+    fun setCurrentDeviceInformationListener(listener: DeviceInformationListener?)
     fun getCurrentDeviceInformation(listener: DeviceInformationListener)
+
     fun getCurrentDeviceA2DPName(): String?
     fun isListeningToEEG(): Boolean
     fun isListeningToIMS(): Boolean
@@ -22,7 +25,8 @@ interface IBluetoothManager {
     //----------------------------------------------------------------------------
     // battery
     //----------------------------------------------------------------------------
-    fun getBatteryLevel(batteryLevelListener: BatteryLevelListener)
+    fun setBatteryLevelListener(batteryLevelListener: BatteryLevelListener?)
+    fun getBatteryLevel()
 
     //----------------------------------------------------------------------------
     // scanning + connection
