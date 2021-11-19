@@ -13,5 +13,5 @@ interface IPeripheralValueReceiverListener {
 //  fun didA2DPConnectionRequestSucceed()
 //  fun didRequestPairing()
 //  fun didPair()
-//  fun didFail(with error: Error)
+  fun onError(error: Throwable)
 }
