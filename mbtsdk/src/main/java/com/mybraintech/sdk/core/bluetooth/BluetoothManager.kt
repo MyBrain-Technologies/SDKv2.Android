@@ -1,5 +1,8 @@
 package com.mybraintech.sdk.core.bluetooth
 
+import com.mybraintech.sdk.core.bluetooth.peripheral.Peripheral
+import com.mybraintech.sdk.core.bluetooth.peripheral.peripheralgateway.IPeripheralGateway
+import com.mybraintech.sdk.core.bluetooth.peripheral.peripheralvaluereceiver.IPeripheralValueReceiverListener
 import com.mybraintech.sdk.core.listener.BatteryLevelListener
 import com.mybraintech.sdk.core.listener.ConnectionListener
 import com.mybraintech.sdk.core.listener.DeviceInformationListener
@@ -34,8 +37,17 @@ interface IBluetoothManager {
     fun startScan(scanResultListener: ScanResultListener)
     fun stopScan()
     fun connect(mbtDevice: MBTDevice, connectionListener: ConnectionListener)
+
+
+
 }
 
 // TODO: 09/11/2021 : implement
 abstract class BluetoothManager : IBluetoothManager {
+
+  private lateinit var peripheral: Peripheral
+
+  override fun getBatteryLevel() {
+    peripheral.requestBatteryLevel()
+  }
 }

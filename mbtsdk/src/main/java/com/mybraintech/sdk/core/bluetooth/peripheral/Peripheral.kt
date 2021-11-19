@@ -1,6 +1,7 @@
 package com.mybraintech.sdk.core.bluetooth.peripheral
 
 import android.bluetooth.BluetoothDevice
+import com.mybraintech.sdk.core.bluetooth.peripheral.peripheralgateway.IPeripheralGateway
 
 // BluetoothDevice
 class Peripheral(
@@ -47,6 +48,8 @@ class Peripheral(
 
   /******************** Gateway ********************/
 
+  private lateinit var gateway: IPeripheralGateway
+
   /******************** Callbacks ********************/
 
   //----------------------------------------------------------------------------
@@ -54,7 +57,11 @@ class Peripheral(
   //----------------------------------------------------------------------------
 
   init {
-
+    if (isPreIndus5) {
+      gateway = PeripheralGatewayPreIndus5()
+    } else {
+      gateway = PeripheralGatewayPostIndus5()
+    }
   }
 
   //----------------------------------------------------------------------------
@@ -66,6 +73,6 @@ class Peripheral(
   //----------------------------------------------------------------------------
 
   fun requestBatteryLevel() {
-
+    gateway.requestBatteryLevel()
   }
 }
