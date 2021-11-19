@@ -60,6 +60,4 @@ enum class PreIndus5Characteristic(val raw: UUID) {
     }
   }
 
-
-
 }

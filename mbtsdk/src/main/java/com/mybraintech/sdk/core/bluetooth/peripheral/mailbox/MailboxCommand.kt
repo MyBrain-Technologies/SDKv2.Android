@@ -152,7 +152,7 @@ enum class MailboxCommand(val raw: Byte) {
       MailboxCommand.UnknownEvent to MailboxCommand.UnknownEvent
     )
 
-    fun ofRaw(raw: UUID): MailboxCommand? {
+    fun ofRaw(raw: Byte): MailboxCommand? {
       return rawToEnum[raw]
     }
   }
