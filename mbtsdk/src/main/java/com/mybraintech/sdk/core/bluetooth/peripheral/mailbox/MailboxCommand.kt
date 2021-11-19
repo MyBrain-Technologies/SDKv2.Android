@@ -1,5 +1,8 @@
 package com.mybraintech.sdk.core.bluetooth.peripheral.mailbox
 
+import com.mybraintech.sdk.core.bluetooth.attributes.characteristiccontainer.characteristics.PreIndus5Characteristic
+import java.util.*
+
 // TODO: Or use sealed class?
 enum class MailboxCommand(val raw: Byte) {
   // Product name configuration request
@@ -103,5 +106,54 @@ enum class MailboxCommand(val raw: Byte) {
 
   EegDataFrameEvent(0x40.toByte()),
 
-  UnknownEvent(0xFF.toByte())
+  UnknownEvent(0xFF.toByte());
+
+  companion object {
+    private val rawToEnum = mapOf(
+      MailboxCommand.SetProductName.raw to MailboxCommand.SetProductName,
+      MailboxCommand.StartOTATFX.raw to MailboxCommand.StartOTATFX,
+      MailboxCommand.OtaModeEvent.raw to MailboxCommand.OtaModeEvent,
+      MailboxCommand.OtaIndexResetEvent to MailboxCommand.OtaIndexResetEvent,
+      MailboxCommand.OtaStatusEvent to MailboxCommand.OtaStatusEvent,
+      MailboxCommand.SystemGetStatus to MailboxCommand.SystemGetStatus,
+      MailboxCommand.SystemRebootEvent to MailboxCommand.SystemRebootEvent,
+      MailboxCommand.SetSerialNumber to MailboxCommand.SetSerialNumber,
+      MailboxCommand.SetA2dpName to MailboxCommand.SetA2dpName,
+      MailboxCommand.SetNotchFilter to MailboxCommand.SetNotchFilter,
+      MailboxCommand.SetBandpassFilter to MailboxCommand.SetBandpassFilter,
+      MailboxCommand.SetAmplifierSignalGain to MailboxCommand.SetAmplifierSignalGain,
+      MailboxCommand.GetEEGConfig to MailboxCommand.GetEEGConfig,
+      MailboxCommand.ToggleP300 to MailboxCommand.ToggleP300,
+      MailboxCommand.EnableDCOffset to MailboxCommand.EnableDCOffset,
+      MailboxCommand.A2dpConnection to MailboxCommand.A2dpConnection,
+      MailboxCommand.BatteryLevel to MailboxCommand.BatteryLevel,
+      MailboxCommand.SerialNumber to MailboxCommand.SerialNumber,
+      MailboxCommand.DeviceId to MailboxCommand.DeviceId,
+      MailboxCommand.StartEeg to MailboxCommand.StartEeg,
+      MailboxCommand.StopEeg to MailboxCommand.StopEeg,
+      MailboxCommand.Reset to MailboxCommand.Reset,
+      MailboxCommand.FirmewareVersion to MailboxCommand.FirmewareVersion,
+      MailboxCommand.HardwareVersion to MailboxCommand.HardwareVersion,
+      MailboxCommand.MtuSize to MailboxCommand.MtuSize,
+      MailboxCommand.GetFilterConfigurationType to MailboxCommand.GetFilterConfigurationType,
+      MailboxCommand.SetFilterConfigurationType to MailboxCommand.SetFilterConfigurationType,
+      MailboxCommand.SetAudioconfig to MailboxCommand.SetAudioconfig,
+      MailboxCommand.StartImsAcquisition to MailboxCommand.StartImsAcquisition,
+      MailboxCommand.StopImsAcquisition to MailboxCommand.StopImsAcquisition,
+      MailboxCommand.StartPpgAcquisition to MailboxCommand.StartPpgAcquisition,
+      MailboxCommand.StopPpgAcquisition to MailboxCommand.StopPpgAcquisition,
+      MailboxCommand.StartTemperatureAcquisition to MailboxCommand.StartTemperatureAcquisition,
+      MailboxCommand.SetImsConfiguration to MailboxCommand.SetImsConfiguration,
+      MailboxCommand.GetSensorStatus to MailboxCommand.GetSensorStatus,
+      MailboxCommand.SetPpgConfiguration to MailboxCommand.SetPpgConfiguration,
+      MailboxCommand.ImsDataFrameEvent to MailboxCommand.ImsDataFrameEvent,
+      MailboxCommand.PpgDataFrameEvent to MailboxCommand.PpgDataFrameEvent,
+      MailboxCommand.EegDataFrameEvent to MailboxCommand.EegDataFrameEvent,
+      MailboxCommand.UnknownEvent to MailboxCommand.UnknownEvent
+    )
+
+    fun ofRaw(raw: UUID): MailboxCommand? {
+      return rawToEnum[raw]
+    }
+  }
 }
