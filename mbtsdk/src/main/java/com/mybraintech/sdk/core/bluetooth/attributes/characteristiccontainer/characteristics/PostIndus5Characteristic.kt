@@ -1,28 +1,26 @@
 package com.mybraintech.sdk.core.bluetooth.attributes.characteristiccontainer.characteristics
 
 import com.mybraintech.sdk.core.bluetooth.attributes.characteristiccontainer.IMBTAttribute
+import com.mybraintech.sdk.core.bluetooth.deviceinformation.IndusVersion
 import java.util.*
 
-enum class PostIndus5Characteristic(val raw: String): IMBTAttribute {
+enum class PostIndus5Characteristic(val raw: UUID) {
 
-  //--------------------------------------------------------------------------
-  // MARK: - Cases
-  //--------------------------------------------------------------------------
-
-  Rx("49535343-1E4D-4BD9-BA61-23C647249616"),
-  Tx("49535343-8841-43F4-A8D4-ECBE34729BB3"),
-  Unknown("49535343-4C8A-39B3-2F49-511CFF073B7E");
+  Rx(UUID.fromString("49535343-1E4D-4BD9-BA61-23C647249616")),
+  Tx(UUID.fromString("49535343-8841-43F4-A8D4-ECBE34729BB3")),
+  Unknown(UUID.fromString("49535343-4C8A-39B3-2F49-511CFF073B7E"));
 
 
-  //--------------------------------------------------------------------------
-  // MARK: - MBTAttributeProtocol
-  //--------------------------------------------------------------------------
+  companion object {
+    private val rawToEnum = mapOf(
+      Rx.raw to Rx,
+      Tx.raw to Tx,
+      Unknown.raw to Unknown
+    )
 
-  // TODO: Anh Tuan To check
-  override val uuid: UUID
-    get() {
-      val uuidBytes = this.raw.toByteArray()
-      return UUID.nameUUIDFromBytes(uuidBytes)
+    fun ofRaw(raw: UUID): PostIndus5Characteristic? {
+      return rawToEnum[raw]
     }
+  }
 
 }
