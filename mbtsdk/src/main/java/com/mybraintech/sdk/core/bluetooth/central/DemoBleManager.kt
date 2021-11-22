@@ -54,6 +54,11 @@ class DemoBleManager(ctx: Context)
 
             }
             .enqueue() //asynchro
+
+        readCharacteristic(
+            txCharacteristic
+        )
+            .enqueue()
     }
     fun getMtuMailboxOperation() : Operation {
         val CMD_READ_BATTERY : ByteArray = byteArrayOf(0x20.toByte())
