@@ -16,7 +16,7 @@ import no.nordicsemi.android.ble.data.Data
 import timber.log.Timber
 
 class DemoBleManager(ctx: Context)
-    : BleManager(ctx), IBluetoothConnectable, Iblue {
+    : BleManager(ctx), IBluetoothConnectable {
 
     private var txCharacteristic: BluetoothGattCharacteristic? = null
 
