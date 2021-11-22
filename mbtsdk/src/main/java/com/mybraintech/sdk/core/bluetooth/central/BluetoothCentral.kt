@@ -24,6 +24,9 @@ interface IBluetoothCentral {
     fun setConnectionListener(connectionListener: ConnectionListener? = null)
 }
 
+/**
+ * manage connect/disconnect devices
+ */
 class BluetoothCentral(val context: Context, val bluetoothConnectable: IBluetoothConnectable) : IBluetoothCentral, ScanCallback() {
 
     //----------------------------------------------------------------------------
