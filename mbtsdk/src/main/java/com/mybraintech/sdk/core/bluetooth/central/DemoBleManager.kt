@@ -11,10 +11,12 @@ import com.mybraintech.sdk.core.listener.ConnectionListener
 import no.nordicsemi.android.ble.BleManager
 import no.nordicsemi.android.ble.Operation
 import no.nordicsemi.android.ble.callback.DataReceivedCallback
+import no.nordicsemi.android.ble.callback.DataSentCallback
+import no.nordicsemi.android.ble.data.Data
 import timber.log.Timber
 
 class DemoBleManager(ctx: Context)
-    : BleManager(ctx), IBluetoothConnectable {
+    : BleManager(ctx), IBluetoothConnectable, Iblue {
 
     private var txCharacteristic: BluetoothGattCharacteristic? = null
 
@@ -24,6 +26,35 @@ class DemoBleManager(ctx: Context)
         Timber.log(priority, message)
     }
 
+    fun readBattery() {
+        val CMD_READ_BATTERY : ByteArray = byteArrayOf(0x20.toByte())
+
+        val batteryCharacteristic = ...
+        if (batteryCharacteristic != null) {
+            writeCharacteristic(
+                txCharacteristic,
+                CMD_READ_BATTERY,
+                BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+            ).await(object : DataSentCallback { //synchro
+                override fun onDataSent(device: BluetoothDevice, data: Data) {
+                    data.value
+                }
+            })
+        }
+
+        writeCharacteristic(
+            txCharacteristic,
+            CMD_READ_BATTERY,
+            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        )
+            .done {
+
+            }
+            .fail { device, status ->
+
+            }
+            .enqueue() //asynchro
+    }
     fun getMtuMailboxOperation() : Operation {
         val CMD_READ_BATTERY : ByteArray = byteArrayOf(0x20.toByte())
        return writeCharacteristic(txCharacteristic,
