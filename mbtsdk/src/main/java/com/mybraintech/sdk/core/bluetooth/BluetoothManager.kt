@@ -1,13 +1,13 @@
 package com.mybraintech.sdk.core.bluetooth
 
+import android.content.Context
+import com.mybraintech.sdk.core.bluetooth.central.BluetoothCentral
+import com.mybraintech.sdk.core.bluetooth.central.IBluetoothCentral
+import com.mybraintech.sdk.core.bluetooth.central.MBTScanOption
 import com.mybraintech.sdk.core.bluetooth.peripheral.Peripheral
-import com.mybraintech.sdk.core.bluetooth.peripheral.peripheralgateway.IPeripheralGateway
-import com.mybraintech.sdk.core.bluetooth.peripheral.peripheralvaluereceiver.IPeripheralValueReceiverListener
 import com.mybraintech.sdk.core.listener.BatteryLevelListener
 import com.mybraintech.sdk.core.listener.ConnectionListener
 import com.mybraintech.sdk.core.listener.DeviceInformationListener
-import com.mybraintech.sdk.core.listener.ScanResultListener
-import com.mybraintech.sdk.core.model.MBTDevice
 
 interface IBluetoothManager {
 
@@ -34,20 +34,31 @@ interface IBluetoothManager {
     //----------------------------------------------------------------------------
     // scanning + connection
     //----------------------------------------------------------------------------
-    fun startScan(scanResultListener: ScanResultListener)
-    fun stopScan()
-    fun connect(mbtDevice: MBTDevice, connectionListener: ConnectionListener)
-
-
+    fun setConnectionListener(connectionListener: ConnectionListener)
+    fun connect(scanOption: MBTScanOption)
 
 }
 
 // TODO: 09/11/2021 : implement
-abstract class BluetoothManager : IBluetoothManager {
+abstract class BluetoothManager(context: Context) : IBluetoothManager {
 
-  private lateinit var peripheral: Peripheral
+    private lateinit var peripheral: Peripheral
+    private var bluetoothCentral: IBluetoothCentral = BluetoothCentral(context)
 
-  override fun getBatteryLevel() {
-    peripheral.requestBatteryLevel()
-  }
+    override fun connect(scanOption: MBTScanOption) {
+        if (scanOption.isIndus5) {
+            bluetoothCentral.connect(scanOption)
+        } else {
+            TODO("not yet implemented")
+        }
+    }
+
+    override fun setConnectionListener(connectionListener: ConnectionListener) {
+        bluetoothCentral.setConnectionListener(connectionListener)
+    }
+
+    override fun getBatteryLevel() {
+        peripheral.requestBatteryLevel()
+    }
+
 }
