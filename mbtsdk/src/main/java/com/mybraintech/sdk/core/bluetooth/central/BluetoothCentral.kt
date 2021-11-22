@@ -14,13 +14,17 @@ import no.nordicsemi.android.support.v18.scanner.ScanResult
 import no.nordicsemi.android.support.v18.scanner.ScanSettings
 import timber.log.Timber
 
+interface IBluetoothConnectable {
+    fun connectMbt(device: BluetoothDevice)
+    fun disconnectMbt()
+}
 
 interface IBluetoothCentral {
     fun connect(scanOption: MBTScanOption)
     fun setConnectionListener(connectionListener: ConnectionListener? = null)
 }
 
-class BluetoothCentral(val context: Context) : IBluetoothCentral, ScanCallback() {
+class BluetoothCentral(val context: Context, val bluetoothConnectable: IBluetoothConnectable) : IBluetoothCentral, ScanCallback() {
 
     //----------------------------------------------------------------------------
     // MARK: - Properties
@@ -30,8 +34,6 @@ class BluetoothCentral(val context: Context) : IBluetoothCentral, ScanCallback()
     var isScanning: Boolean = false
     var scanOption: MBTScanOption? = null
     val scanner: BluetoothLeScannerCompat = BluetoothLeScannerCompat.getScanner()
-
-    private lateinit var bleManager: BleManager
 
     // TODO: Find right type for this set
     private var discoveredPeripherals: MutableSet<Any> = HashSet()
@@ -200,11 +202,7 @@ class BluetoothCentral(val context: Context) : IBluetoothCentral, ScanCallback()
     private fun handleIndus5(result: ScanResult): Boolean {
         if (isIndus5ScanResult(result)) {
             if ((scanOption?.name == null) || (scanOption?.name == result.device.name)) {
-                bleManager = Indus5BleManager(context, null, null)
-                bleManager.connect(result.device)
-                    .useAutoConnect(true)
-                    .timeout(5000)
-                    .enqueue()
+                bluetoothConnectable.connectMbt()
                 return true
             }
         }

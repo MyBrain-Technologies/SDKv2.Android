@@ -13,7 +13,8 @@ import no.nordicsemi.android.ble.Operation
 import no.nordicsemi.android.ble.callback.DataReceivedCallback
 import timber.log.Timber
 
-class Indus5BleManager(ctx: Context, val connectionListener: ConnectionListener?, val rxDataReceivedCallback: DataReceivedCallback?) : BleManager(ctx) {
+class Indus5BleManager(ctx: Context, val connectionListener: ConnectionListener?, val rxDataReceivedCallback: DataReceivedCallback?)
+    : BleManager(ctx), IBluetoothConnectable {
 
     private var txCharacteristic: BluetoothGattCharacteristic? = null
     private var rxCharacteristic: BluetoothGattCharacteristic? = null
@@ -100,5 +101,19 @@ class Indus5BleManager(ctx: Context, val connectionListener: ConnectionListener?
         override fun onDeviceDisconnected() {
 
         }
+    }
+
+    //----------------------------------------------------------------------------
+    // MARK: IBluetoothConnectable
+    //----------------------------------------------------------------------------
+    override fun connectMbt(device: BluetoothDevice) {
+        connect(device)
+                    .useAutoConnect(true)
+                    .timeout(5000)
+                    .enqueue()
+    }
+
+    override fun disconnectMbt() {
+        TODO("Not yet implemented")
     }
 }

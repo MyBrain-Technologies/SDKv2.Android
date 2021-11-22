@@ -3,6 +3,7 @@ package com.mybraintech.sdk.core.bluetooth
 import android.content.Context
 import com.mybraintech.sdk.core.bluetooth.central.BluetoothCentral
 import com.mybraintech.sdk.core.bluetooth.central.IBluetoothCentral
+import com.mybraintech.sdk.core.bluetooth.central.Indus5BleManager
 import com.mybraintech.sdk.core.bluetooth.central.MBTScanOption
 import com.mybraintech.sdk.core.bluetooth.peripheral.Peripheral
 import com.mybraintech.sdk.core.listener.BatteryLevelListener
@@ -40,13 +41,16 @@ interface IBluetoothManager {
 }
 
 // TODO: 09/11/2021 : implement
-abstract class BluetoothManager(context: Context) : IBluetoothManager {
+abstract class BluetoothManager(val context: Context) : IBluetoothManager {
 
     private lateinit var peripheral: Peripheral
     private var bluetoothCentral: IBluetoothCentral = BluetoothCentral(context)
 
     override fun connect(scanOption: MBTScanOption) {
         if (scanOption.isIndus5) {
+            val bleManager = Indus5BleManager(context)
+            bluetoothCentral = BluetoothCentral(context, bleManager)
+//            peripheral = Peripheral(bleManager) todo
             bluetoothCentral.connect(scanOption)
         } else {
             TODO("not yet implemented")
