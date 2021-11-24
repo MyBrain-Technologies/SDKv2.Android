@@ -7,15 +7,18 @@ import android.content.Context
 import android.util.Log
 import com.mybraintech.sdk.core.bluetooth.attributes.characteristiccontainer.characteristics.PostIndus5Characteristic
 import com.mybraintech.sdk.core.bluetooth.attributes.characteristiccontainer.services.PostIndus5Service
+import com.mybraintech.sdk.core.listener.BatteryLevelListener
 import com.mybraintech.sdk.core.listener.ConnectionListener
 import no.nordicsemi.android.ble.BleManager
-import no.nordicsemi.android.ble.Operation
+import no.nordicsemi.android.ble.WriteRequest
 import no.nordicsemi.android.ble.callback.DataReceivedCallback
 import timber.log.Timber
 
-class Indus5BleManager(ctx: Context, val connectionListener: ConnectionListener?, val rxDataReceivedCallback: DataReceivedCallback?)
-    : BleManager(ctx), IBluetoothConnectable {
+class Indus5BleManager(ctx: Context, val rxDataReceivedCallback: DataReceivedCallback?) :
+    BleManager(ctx), IBluetoothConnectable, IBluetoothUsage {
 
+    private var connectionListener: ConnectionListener? = null
+    private var batteryLevelListener: BatteryLevelListener? = null
     private var txCharacteristic: BluetoothGattCharacteristic? = null
     private var rxCharacteristic: BluetoothGattCharacteristic? = null
 
@@ -25,26 +28,22 @@ class Indus5BleManager(ctx: Context, val connectionListener: ConnectionListener?
         Timber.log(priority, message)
     }
 
-//    fun readBattery() {
-//        if (txCharacteristic != null) {
-//            writeCharacteristic(
-//                txCharacteristic,
-//                BleCommand.ReadBattery.command,
-//                BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
-//            ).await(object : DataSentCallback {
-//                override fun onDataSent(device: BluetoothDevice, data: Data) {
-//
-//                }
-//            })
-//        }
-//    }
+    private fun getMtuMailboxRequest(): WriteRequest {
+        val CMD_CHANGE_MTU: ByteArray = byteArrayOf(0x29.toByte(), 0x2F)
+        return writeCharacteristic(
+            txCharacteristic,
+            CMD_CHANGE_MTU,
+            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        )
+    }
 
-    fun getMtuMailboxOperation() : Operation {
-        val CMD_READ_BATTERY : ByteArray = byteArrayOf(0x20.toByte())
-       return writeCharacteristic(txCharacteristic,
-            CMD_READ_BATTERY,
-                BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
-
+    private fun getBatteryMailboxRequest(): WriteRequest {
+        val CMD_READ_BATTERY_LEVEL: ByteArray = byteArrayOf(0x20.toByte())
+        return writeCharacteristic(
+            txCharacteristic,
+            CMD_READ_BATTERY_LEVEL,
+            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        )
     }
 
     private inner class GattCallback : BleManagerGattCallback() {
@@ -55,32 +54,49 @@ class Indus5BleManager(ctx: Context, val connectionListener: ConnectionListener?
                 service?.getCharacteristic(PostIndus5Characteristic.Rx.uuid)
             txCharacteristic =
                 service?.getCharacteristic(PostIndus5Characteristic.Tx.uuid)
-            val myCharacteristicProperties = rxCharacteristic?.properties ?: 0
-            return (myCharacteristicProperties and BluetoothGattCharacteristic.PROPERTY_READ != 0) &&
-                    (myCharacteristicProperties and BluetoothGattCharacteristic.PROPERTY_NOTIFY != 0)
+            return (txCharacteristic != null && rxCharacteristic != null)
         }
 
         override fun initialize() {
             rxDataReceivedCallback?.let {
+                //todo: parse indus5 response here to battery listener...
                 setNotificationCallback(rxCharacteristic).with(it)
             }
 
             beginAtomicRequestQueue()
-                .add(enableNotifications(rxCharacteristic)
-                    .fail { _: BluetoothDevice?, status: Int ->
-                        log(Log.ERROR, "Could not subscribe: $status")
-                        disconnect().enqueue()
-                    }
+                .add(
+                    enableNotifications(rxCharacteristic)
+                        .done {
+                            Timber.i("rx enableNotifications done")
+                        }
+                        .fail { _: BluetoothDevice?, status: Int ->
+                            log(Log.ERROR, "Could not subscribe: $status")
+                        }
                 )
-                .add(requestMtu(47))
-                .add(getMtuMailboxOperation())
+                .add(
+                    requestMtu(47)
+                        .done {
+                            Timber.i("requestMtu done")
+                        }
+                        .fail { _, status ->
+                            Timber.e("Could not requestMtu: $status")
+                        }
+                )
+                .add(
+                    getMtuMailboxRequest()
+                        .done {
+                            Timber.i("MtuMailboxRequest done")
+                        }
+                        .fail { _, status ->
+                            Timber.e("Could not MtuMailboxRequest: $status")
+                        }
+                )
                 .done {
                     log(Log.INFO, "Target initialized")
-                    // TODO: 22/11/2021 change mtu by mailbox
-                    requestMtu(47).enqueue()
                 }
-                .fail { device, status ->
-
+                .fail { _, status ->
+                    Timber.e("Could not initialize: $status")
+                    disconnect().enqueue()
                 }
                 .enqueue()
         }
@@ -91,15 +107,15 @@ class Indus5BleManager(ctx: Context, val connectionListener: ConnectionListener?
         }
 
         override fun onDeviceReady() {
-
+            connectionListener?.onDeviceConnectionStateChanged(true)
         }
 
         override fun onMtuChanged(gatt: BluetoothGatt, mtu: Int) {
-
+            Timber.i("onMtuChanged : mtu = $mtu")
         }
 
         override fun onDeviceDisconnected() {
-
+            connectionListener?.onDeviceConnectionStateChanged(false)
         }
     }
 
@@ -108,12 +124,33 @@ class Indus5BleManager(ctx: Context, val connectionListener: ConnectionListener?
     //----------------------------------------------------------------------------
     override fun connectMbt(device: BluetoothDevice) {
         connect(device)
-                    .useAutoConnect(true)
-                    .timeout(5000)
-                    .enqueue()
+            .useAutoConnect(true)
+            .timeout(5000)
+            .enqueue()
     }
 
     override fun disconnectMbt() {
-        TODO("Not yet implemented")
+        disconnect()
+            .enqueue()
+    }
+
+    override fun setConnectionListener(connectionListener: ConnectionListener?) {
+        this.connectionListener = connectionListener
+    }
+
+    //----------------------------------------------------------------------------
+    // MARK: IbluetoothUsage
+    //----------------------------------------------------------------------------
+
+    override fun readBatteryLevelMbt() {
+        getBatteryMailboxRequest()
+            .done {
+                Timber.i("readBatteryLevelMbt done")
+            }
+            .enqueue()
+    }
+
+    override fun setBatteryLevelListener(batteryLevelListener: BatteryLevelListener?) {
+        this.batteryLevelListener = batteryLevelListener
     }
 }

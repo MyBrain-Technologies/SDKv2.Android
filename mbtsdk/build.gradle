@@ -90,7 +90,7 @@ configurations {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    def useLocalJni = false
+    def useLocalJni = true
     if (useLocalJni) {
         implementation project(path: ':JniBrainBox')
     } else {

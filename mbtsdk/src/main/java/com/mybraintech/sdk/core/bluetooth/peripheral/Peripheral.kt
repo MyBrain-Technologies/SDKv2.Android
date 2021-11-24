@@ -1,14 +1,14 @@
 package com.mybraintech.sdk.core.bluetooth.peripheral
 
 import android.bluetooth.BluetoothDevice
+import com.mybraintech.sdk.core.bluetooth.central.IBluetoothUsage
 import com.mybraintech.sdk.core.bluetooth.peripheral.peripheralgateway.IPeripheralGateway
 import com.mybraintech.sdk.core.bluetooth.peripheral.peripheralgateway.PeripheralGatewayPostIndus5
 import com.mybraintech.sdk.core.bluetooth.peripheral.peripheralgateway.PeripheralGatewayPreIndus5
 
 // BluetoothDevice
 class Peripheral(
-  private val peripheral: BluetoothDevice,
-  val isPreIndus5: Boolean
+  private val bleUsage: IBluetoothUsage
 ) {
 
   //----------------------------------------------------------------------------
@@ -59,11 +59,11 @@ class Peripheral(
   //----------------------------------------------------------------------------
 
   init {
-    if (isPreIndus5) {
-      gateway = PeripheralGatewayPreIndus5()
-    } else {
-      gateway = PeripheralGatewayPostIndus5()
-    }
+//    if (isPreIndus5) {
+//      gateway = PeripheralGatewayPreIndus5()
+//    } else {
+//      gateway = PeripheralGatewayPostIndus5()
+//    }
   }
 
   //----------------------------------------------------------------------------
@@ -75,6 +75,6 @@ class Peripheral(
   //----------------------------------------------------------------------------
 
   fun requestBatteryLevel() {
-    gateway.requestBatteryLevel()
+    bleUsage.readBatteryLevelMbt()
   }
 }

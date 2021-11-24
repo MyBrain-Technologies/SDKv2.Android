@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import com.mybraintech.sdk.core.listener.BatteryLevelListener
 import com.mybraintech.sdk.core.listener.ConnectionListener
 import no.nordicsemi.android.ble.BleManager
 import no.nordicsemi.android.support.v18.scanner.BluetoothLeScannerCompat
@@ -14,20 +15,27 @@ import no.nordicsemi.android.support.v18.scanner.ScanResult
 import no.nordicsemi.android.support.v18.scanner.ScanSettings
 import timber.log.Timber
 
+interface IBluetoothUsage {
+    fun readBatteryLevelMbt()
+    fun setBatteryLevelListener(batteryLevelListener: BatteryLevelListener?)
+}
+
 interface IBluetoothConnectable {
     fun connectMbt(device: BluetoothDevice)
     fun disconnectMbt()
+    fun setConnectionListener(connectionListener: ConnectionListener? = null)
 }
 
 interface IBluetoothCentral {
     fun connect(scanOption: MBTScanOption)
+    fun disconnect()
     fun setConnectionListener(connectionListener: ConnectionListener? = null)
 }
 
 /**
  * manage connect/disconnect devices
  */
-class BluetoothCentral(val context: Context, val bluetoothConnectable: IBluetoothConnectable) : IBluetoothCentral, ScanCallback() {
+class BluetoothCentral(private val context: Context, private val bluetoothConnectable: IBluetoothConnectable) : IBluetoothCentral, ScanCallback() {
 
     //----------------------------------------------------------------------------
     // MARK: - Properties
@@ -173,8 +181,8 @@ class BluetoothCentral(val context: Context, val bluetoothConnectable: IBluetoot
         }
     }
 
-    fun disconnect() {
-
+    override fun disconnect() {
+        bluetoothConnectable.disconnectMbt()
     }
 
     private fun handleConnectionFailure(errorCode: Int) {
@@ -205,7 +213,7 @@ class BluetoothCentral(val context: Context, val bluetoothConnectable: IBluetoot
     private fun handleIndus5(result: ScanResult): Boolean {
         if (isIndus5ScanResult(result)) {
             if ((scanOption?.name == null) || (scanOption?.name == result.device.name)) {
-                bluetoothConnectable.connectMbt()
+                bluetoothConnectable.connectMbt(result.device)
                 return true
             }
         }
