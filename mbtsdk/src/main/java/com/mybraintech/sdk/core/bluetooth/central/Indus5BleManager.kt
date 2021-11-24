@@ -66,6 +66,8 @@ class Indus5BleManager(ctx: Context, val rxDataReceivedCallback: DataReceivedCal
                 setNotificationCallback(rxCharacteristic).with(it)
             }
 
+            // Try to execute requests, this procedure do not make sure that all requests will be executed successfully.
+            // For example in Android 11, user can refuse to bond device, which will cause a fail connection.
             beginAtomicRequestQueue()
                 .add(
                     enableNotifications(rxCharacteristic)
@@ -82,8 +84,6 @@ class Indus5BleManager(ctx: Context, val rxDataReceivedCallback: DataReceivedCal
                         .done("MtuMailboxRequest done".getSuccessCallback())
                         .fail("Could not MtuMailboxRequest".getFailCallback())
                 )
-                .done("Target initialized".getSuccessCallback())
-                .fail("Could not initialize".getFailCallback())
                 .enqueue()
         }
 

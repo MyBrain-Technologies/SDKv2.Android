@@ -79,7 +79,7 @@ class BluetoothCentral(private val context: Context, private val bluetoothConnec
                             Timber.i("BOND_BONDING")
                         }
                         BluetoothDevice.BOND_NONE -> {
-                            Timber.i("not BOND_NONE")
+                            Timber.i("BOND_NONE")
                         }
                     }
                 }
