@@ -1,10 +1,12 @@
 package com.mybraintech.sdk.core.bluetooth.peripheral
 
 import android.bluetooth.BluetoothDevice
+import android.content.Context
 import com.mybraintech.sdk.core.bluetooth.central.IBluetoothUsage
 import com.mybraintech.sdk.core.bluetooth.peripheral.peripheralgateway.IPeripheralGateway
 import com.mybraintech.sdk.core.bluetooth.peripheral.peripheralgateway.PeripheralGatewayPostIndus5
 import com.mybraintech.sdk.core.bluetooth.peripheral.peripheralgateway.PeripheralGatewayPreIndus5
+import no.nordicsemi.android.ble.BleManager
 
 // BluetoothDevice
 class Peripheral(

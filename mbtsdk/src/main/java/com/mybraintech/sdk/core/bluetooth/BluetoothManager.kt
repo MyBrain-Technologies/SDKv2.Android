@@ -12,7 +12,7 @@ interface IBluetoothManager {
     //----------------------------------------------------------------------------
     // device
     //----------------------------------------------------------------------------
-    fun hasConnectedDevice(): Boolean
+    fun hasConnectedDevice(context: Context): Boolean
     fun hasA2dpConnectedDevice(): Boolean
 
     fun setCurrentDeviceInformationListener(listener: DeviceInformationListener?)
@@ -42,36 +42,47 @@ interface IBluetoothManager {
 class BluetoothManager(private val context: Context) : IBluetoothManager {
 
     private var peripheral: Peripheral? =null
-    private var bluetoothCentral: IBluetoothCentral? = null
+    private lateinit var bluetoothCentral: IBluetoothCentral
     private var connectionListener: ConnectionListener? = null
     private var batteryLevelListener: BatteryLevelListener? = null
 
     override fun connect(scanOption: MBTScanOption) {
-        if (scanOption.isIndus5) {
-            val bleManager = Indus5BleManager(context, null)
-
-            bleManager.setConnectionListener(connectionListener)
-            bluetoothCentral = BluetoothCentral(context, bleManager)
-
-            bleManager.setBatteryLevelListener(batteryLevelListener)
-            peripheral = Peripheral(bleManager)
-
-            bluetoothCentral?.connect(scanOption)
+        if (hasConnectedDevice(context)) {
+            connectionListener?.onConnectionError(Throwable("A device is connected already, please disconnect first!"))
         } else {
-            TODO("not yet implemented")
+            if (scanOption.isIndus5) {
+                configureAndConnectIndus5(scanOption)
+            } else {
+                TODO("not yet implemented")
+            }
         }
     }
 
+    private fun configureAndConnectIndus5(scanOption: MBTScanOption) {
+        val bleManager = Indus5BleManager(context, null)
+
+        bleManager.setConnectionListener(connectionListener)
+        bluetoothCentral = BluetoothCentral(context, bleManager)
+
+        bleManager.setBatteryLevelListener(batteryLevelListener)
+        peripheral = Peripheral(bleManager)
+
+        bluetoothCentral?.connect(scanOption)
+    }
+
     override fun disconnect() {
-        bluetoothCentral?.disconnect()
+        if (!::bluetoothCentral.isInitialized) {
+            bluetoothCentral = BluetoothCentral(context, Indus5BleManager(context, null))
+        }
+        bluetoothCentral.disconnect()
     }
 
     override fun setConnectionListener(connectionListener: ConnectionListener) {
         this.connectionListener = connectionListener
     }
 
-    override fun hasConnectedDevice(): Boolean {
-        TODO("Not yet implemented")
+    override fun hasConnectedDevice(context: Context): Boolean {
+        return BluetoothCentral.hasConnectedDevice(context)
     }
 
     override fun hasA2dpConnectedDevice(): Boolean {

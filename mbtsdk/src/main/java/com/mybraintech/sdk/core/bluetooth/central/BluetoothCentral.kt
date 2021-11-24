@@ -2,8 +2,11 @@ package com.mybraintech.sdk.core.bluetooth.central
 
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothProfile.GATT
 import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Context.BLUETOOTH_SERVICE
 import android.content.Intent
 import android.content.IntentFilter
 import com.mybraintech.sdk.core.listener.BatteryLevelListener
@@ -111,6 +114,18 @@ class BluetoothCentral(private val context: Context, private val bluetoothConnec
         )
     }
 
+    companion object {
+        fun hasConnectedDevice(context: Context): Boolean {
+            return try {
+                val btManager = context.getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
+                val connectedDevices = btManager.getConnectedDevices(GATT)
+                !connectedDevices.isNullOrEmpty()
+            } catch (e: Exception) {
+                Timber.e(e)
+                false
+            }
+        }
+    }
 
     //----------------------------------------------------------------------------
     // MARK: - Scanning
@@ -171,7 +186,7 @@ class BluetoothCentral(private val context: Context, private val bluetoothConnec
     }
 
     //----------------------------------------------------------------------------
-    // MARK: - Connection
+    // MARK: IBluetoothCentral
     //----------------------------------------------------------------------------
 
     override fun setConnectionListener(connectionListener: ConnectionListener?) {
