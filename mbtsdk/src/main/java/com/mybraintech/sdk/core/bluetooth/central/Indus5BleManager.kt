@@ -4,7 +4,6 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.content.Context
-import android.util.Log
 import com.mybraintech.sdk.core.bluetooth.attributes.characteristiccontainer.characteristics.PostIndus5Characteristic
 import com.mybraintech.sdk.core.bluetooth.attributes.characteristiccontainer.services.PostIndus5Service
 import com.mybraintech.sdk.core.listener.BatteryLevelListener
@@ -12,6 +11,8 @@ import com.mybraintech.sdk.core.listener.ConnectionListener
 import no.nordicsemi.android.ble.BleManager
 import no.nordicsemi.android.ble.WriteRequest
 import no.nordicsemi.android.ble.callback.DataReceivedCallback
+import no.nordicsemi.android.ble.callback.FailCallback
+import no.nordicsemi.android.ble.callback.SuccessCallback
 import timber.log.Timber
 
 class Indus5BleManager(ctx: Context, val rxDataReceivedCallback: DataReceivedCallback?) :
@@ -58,6 +59,8 @@ class Indus5BleManager(ctx: Context, val rxDataReceivedCallback: DataReceivedCal
         }
 
         override fun initialize() {
+            assert(rxCharacteristic != null)
+
             rxDataReceivedCallback?.let {
                 //todo: parse indus5 response here to battery listener...
                 setNotificationCallback(rxCharacteristic).with(it)
@@ -66,38 +69,21 @@ class Indus5BleManager(ctx: Context, val rxDataReceivedCallback: DataReceivedCal
             beginAtomicRequestQueue()
                 .add(
                     enableNotifications(rxCharacteristic)
-                        .done {
-                            Timber.i("rx enableNotifications done")
-                        }
-                        .fail { _: BluetoothDevice?, status: Int ->
-                            log(Log.ERROR, "Could not subscribe: $status")
-                        }
+                        .done("rx enableNotifications done".getSuccessCallback())
+                        .fail("Could not subscribe".getFailCallback())
                 )
                 .add(
                     requestMtu(47)
-                        .done {
-                            Timber.i("requestMtu done")
-                        }
-                        .fail { _, status ->
-                            Timber.e("Could not requestMtu: $status")
-                        }
+                        .done("requestMtu done".getSuccessCallback())
+                        .fail("Could not requestMtu".getFailCallback())
                 )
                 .add(
                     getMtuMailboxRequest()
-                        .done {
-                            Timber.i("MtuMailboxRequest done")
-                        }
-                        .fail { _, status ->
-                            Timber.e("Could not MtuMailboxRequest: $status")
-                        }
+                        .done("MtuMailboxRequest done".getSuccessCallback())
+                        .fail("Could not MtuMailboxRequest".getFailCallback())
                 )
-                .done {
-                    log(Log.INFO, "Target initialized")
-                }
-                .fail { _, status ->
-                    Timber.e("Could not initialize: $status")
-                    disconnect().enqueue()
-                }
+                .done("Target initialized".getSuccessCallback())
+                .fail("Could not initialize".getFailCallback())
                 .enqueue()
         }
 
@@ -115,6 +101,7 @@ class Indus5BleManager(ctx: Context, val rxDataReceivedCallback: DataReceivedCal
         }
 
         override fun onDeviceDisconnected() {
+            Timber.i("onDeviceDisconnected")
             connectionListener?.onDeviceConnectionStateChanged(false)
         }
     }
@@ -152,5 +139,28 @@ class Indus5BleManager(ctx: Context, val rxDataReceivedCallback: DataReceivedCal
 
     override fun setBatteryLevelListener(batteryLevelListener: BatteryLevelListener?) {
         this.batteryLevelListener = batteryLevelListener
+    }
+
+    //----------------------------------------------------------------------------
+    // MARK: gatt callback
+    //----------------------------------------------------------------------------
+    private fun String.getFailCallback(): FailCallback {
+        return Indus5FailCallback(this)
+    }
+
+    private fun String.getSuccessCallback(): SuccessCallback {
+        return Indus5SuccessCallback(this)
+    }
+
+    private class Indus5SuccessCallback(private val message: String) : SuccessCallback {
+        override fun onRequestCompleted(device: BluetoothDevice) {
+            Timber.i(message)
+        }
+    }
+
+    private class Indus5FailCallback(private val message: String) : FailCallback {
+        override fun onRequestFailed(device: BluetoothDevice, status: Int) {
+            Timber.e("$message : status = $status")
+        }
     }
 }

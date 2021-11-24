@@ -73,8 +73,13 @@ class BluetoothCentral(private val context: Context, private val bluetoothConnec
                     Timber.d("ACTION_BOND_STATE_CHANGED : ${device?.name}: ${device?.address}: ${device?.bondState}")
                     when (device?.bondState) {
                         BluetoothDevice.BOND_BONDED -> {
+                            Timber.i("BOND_BONDED")
+                        }
+                        BluetoothDevice.BOND_BONDING -> {
+                            Timber.i("BOND_BONDING")
                         }
                         BluetoothDevice.BOND_NONE -> {
+                            Timber.i("not BOND_NONE")
                         }
                     }
                 }
