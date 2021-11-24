@@ -153,13 +153,13 @@ class Indus5BleManager(ctx: Context, val rxDataReceivedCallback: DataReceivedCal
     }
 
     private class Indus5SuccessCallback(private val message: String) : SuccessCallback {
-        override fun onRequestCompleted(device: BluetoothDevice) {
+        override fun onRequestCompleted(device: BluetoothDevice?) {
             Timber.i(message)
         }
     }
 
     private class Indus5FailCallback(private val message: String) : FailCallback {
-        override fun onRequestFailed(device: BluetoothDevice, status: Int) {
+        override fun onRequestFailed(device: BluetoothDevice?, status: Int) {
             Timber.e("$message : status = $status")
         }
     }
