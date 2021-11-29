@@ -68,12 +68,12 @@ public final class MbtRecordingManager extends BaseModuleManager {
 
         } else { //stop streaming
             try {
-                Thread.sleep(500); //packets can be received with a small delay so we wait this packets
+//                Thread.sleep(500); //packets can be received with a small delay so we wait this packets
 
                 if(recordConfig != null && !recordBuffering.isEegPacketsBufferEmpty())
                     storeRecording(); //Save the EEG packets and associated data on a JSON file
 
-            } catch (InterruptedException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
 
