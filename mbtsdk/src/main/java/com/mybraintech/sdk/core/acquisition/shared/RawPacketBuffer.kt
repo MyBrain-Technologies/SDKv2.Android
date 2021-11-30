@@ -3,7 +3,7 @@ package com.mybraintech.sdk.core.acquisition.shared
 import kotlin.math.min
 
 class RawPacketBuffer(
-  val bufferSizeMax: Int = 0
+  private val bufferSizeMax: Int = 0
 ) {
 
   //----------------------------------------------------------------------------
@@ -12,7 +12,7 @@ class RawPacketBuffer(
 
   private var buffer: MutableList<Byte> = ArrayList<Byte>(0)
 
-  var isFull: Bool = false
+  val isFull: Bool
   get() {
     return buffer.size >= bufferSizeMax
   }
