@@ -37,15 +37,18 @@ class EEGAcquisier(
   // Initialization
   //----------------------------------------------------------------------------
 
-  // TODO: Anh Tuan add to init :
-  // init() { signalProcessor.resetSession() }
+   init {
+    signalProcessor.resetSession()
+   }
 
   //==============================================================================
   // MARK: - Packets
   //==============================================================================
 
-  func getLastPackets(count: Int) -> [MBTEEGPacket]? {
-    return eegPacketManager.getLastPackets(count)
+  fun getLastPackets(count: Int): Array<MbtEEGPacket>? {
+    // TODO: Anh Tuan todo. Need refactor MbtEEGPacket?
+//    return eegPacketManager.getLastPackets(count)
+    return null
   }
 
   //----------------------------------------------------------------------------
