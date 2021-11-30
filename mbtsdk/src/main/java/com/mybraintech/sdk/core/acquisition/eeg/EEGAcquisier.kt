@@ -21,7 +21,7 @@ class EEGAcquisier(
   /********************  Parameters ********************/
 
   /// Bool to know if developer wants to use QC or not.
-  var hasQualityChecker: Bool = false
+  var hasQualityChecker: Boolean = false
   private set
 
   /// if the sdk record in DB EEGPacket
