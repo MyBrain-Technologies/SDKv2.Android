@@ -90,7 +90,7 @@ configurations {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    def useLocalJni = false
+    def useLocalJni = true
     if (useLocalJni) {
         implementation project(path: ':JniBrainBox')
     } else {
@@ -117,8 +117,14 @@ dependencies {
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.2'
 
     //bluetooth
-    implementation 'no.nordicsemi.android.support.v18:scanner:1.5.1'
-    implementation 'no.nordicsemi.android:ble:2.3.1'
+    implementation 'no.nordicsemi.android.support.v18:scanner:1.5.1' //use old version since we do not target Android api 31, update later
+    def useCustomizedBle = true
+    if (useCustomizedBle) {
+        implementation project(path: ':ble')
+        implementation project(path: ':ble-common')
+    } else {
+        implementation 'no.nordicsemi.android:ble:2.3.1'
+    }
 
     //test
     testImplementation 'org.powermock:powermock-api-mockito2:1.7.4'

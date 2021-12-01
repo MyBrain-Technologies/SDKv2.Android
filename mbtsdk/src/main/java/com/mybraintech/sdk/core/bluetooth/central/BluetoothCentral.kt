@@ -2,10 +2,14 @@ package com.mybraintech.sdk.core.bluetooth.central
 
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothProfile.GATT
 import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Context.BLUETOOTH_SERVICE
 import android.content.Intent
 import android.content.IntentFilter
+import com.mybraintech.sdk.core.listener.BatteryLevelListener
 import com.mybraintech.sdk.core.listener.ConnectionListener
 import no.nordicsemi.android.ble.BleManager
 import no.nordicsemi.android.support.v18.scanner.BluetoothLeScannerCompat
@@ -14,13 +18,27 @@ import no.nordicsemi.android.support.v18.scanner.ScanResult
 import no.nordicsemi.android.support.v18.scanner.ScanSettings
 import timber.log.Timber
 
+interface IBluetoothUsage {
+    fun readBatteryLevelMbt()
+    fun setBatteryLevelListener(batteryLevelListener: BatteryLevelListener?)
+}
 
-interface IBluetoothCentral {
-    fun connect(scanOption: MBTScanOption)
+interface IBluetoothConnectable {
+    fun connectMbt(device: BluetoothDevice)
+    fun disconnectMbt()
     fun setConnectionListener(connectionListener: ConnectionListener? = null)
 }
 
-class BluetoothCentral(val context: Context) : IBluetoothCentral, ScanCallback() {
+interface IBluetoothCentral {
+    fun connect(scanOption: MBTScanOption)
+    fun disconnect()
+    fun setConnectionListener(connectionListener: ConnectionListener? = null)
+}
+
+/**
+ * manage connect/disconnect devices
+ */
+class BluetoothCentral(private val context: Context, private val bluetoothConnectable: IBluetoothConnectable) : IBluetoothCentral, ScanCallback() {
 
     //----------------------------------------------------------------------------
     // MARK: - Properties
@@ -30,8 +48,6 @@ class BluetoothCentral(val context: Context) : IBluetoothCentral, ScanCallback()
     var isScanning: Boolean = false
     var scanOption: MBTScanOption? = null
     val scanner: BluetoothLeScannerCompat = BluetoothLeScannerCompat.getScanner()
-
-    private lateinit var bleManager: BleManager
 
     // TODO: Find right type for this set
     private var discoveredPeripherals: MutableSet<Any> = HashSet()
@@ -60,8 +76,13 @@ class BluetoothCentral(val context: Context) : IBluetoothCentral, ScanCallback()
                     Timber.d("ACTION_BOND_STATE_CHANGED : ${device?.name}: ${device?.address}: ${device?.bondState}")
                     when (device?.bondState) {
                         BluetoothDevice.BOND_BONDED -> {
+                            Timber.i("BOND_BONDED")
+                        }
+                        BluetoothDevice.BOND_BONDING -> {
+                            Timber.i("BOND_BONDING")
                         }
                         BluetoothDevice.BOND_NONE -> {
+                            Timber.i("BOND_NONE")
                         }
                     }
                 }
@@ -93,6 +114,18 @@ class BluetoothCentral(val context: Context) : IBluetoothCentral, ScanCallback()
         )
     }
 
+    companion object {
+        fun hasConnectedDevice(context: Context): Boolean {
+            return try {
+                val btManager = context.getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
+                val connectedDevices = btManager.getConnectedDevices(GATT)
+                !connectedDevices.isNullOrEmpty()
+            } catch (e: Exception) {
+                Timber.e(e)
+                false
+            }
+        }
+    }
 
     //----------------------------------------------------------------------------
     // MARK: - Scanning
@@ -153,7 +186,7 @@ class BluetoothCentral(val context: Context) : IBluetoothCentral, ScanCallback()
     }
 
     //----------------------------------------------------------------------------
-    // MARK: - Connection
+    // MARK: IBluetoothCentral
     //----------------------------------------------------------------------------
 
     override fun setConnectionListener(connectionListener: ConnectionListener?) {
@@ -168,8 +201,8 @@ class BluetoothCentral(val context: Context) : IBluetoothCentral, ScanCallback()
         }
     }
 
-    fun disconnect() {
-
+    override fun disconnect() {
+        bluetoothConnectable.disconnectMbt()
     }
 
     private fun handleConnectionFailure(errorCode: Int) {
@@ -200,11 +233,7 @@ class BluetoothCentral(val context: Context) : IBluetoothCentral, ScanCallback()
     private fun handleIndus5(result: ScanResult): Boolean {
         if (isIndus5ScanResult(result)) {
             if ((scanOption?.name == null) || (scanOption?.name == result.device.name)) {
-                bleManager = Indus5BleManager(context, null, null)
-                bleManager.connect(result.device)
-                    .useAutoConnect(true)
-                    .timeout(5000)
-                    .enqueue()
+                bluetoothConnectable.connectMbt(result.device)
                 return true
             }
         }

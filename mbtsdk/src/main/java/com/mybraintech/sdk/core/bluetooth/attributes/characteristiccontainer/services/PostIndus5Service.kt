@@ -19,7 +19,6 @@ enum class PostIndus5Service(val raw: String): IMBTAttribute {
   // TODO: To check
   override val uuid: UUID
     get() {
-      val uuidBytes = this.raw.toByteArray()
-      return UUID.nameUUIDFromBytes(uuidBytes)
+      return UUID.fromString(this.raw)
     }
 }
