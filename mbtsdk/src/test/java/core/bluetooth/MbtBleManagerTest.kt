@@ -21,7 +21,7 @@ import org.mockito.Mockito
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
 
-class MbtBluetoothManagerTest {
+class MbtBleManagerTest {
   private val RESPONSE_MTU = 47
   private val RESPONSE_SERIAL_NUMBER = byteArrayOf(DeviceCommandEvent.MBX_SET_SERIAL_NUMBER.identifierCode, 1, 2, 3, 4, 5)
   private val RESPONSE_MODEL_NUMBER = byteArrayOf(DeviceCommandEvent.MBX_SET_EXTERNAL_NAME.identifierCode, 1, 2, 3, 4, 5)
