@@ -13,9 +13,8 @@ import core.eeg.storage.MbtEEGPacket
 
 
 class SignalProcessingManager(
-  val hasComputedCalibrationDefaultValue: Boolean = false
+  private val hasComputedCalibrationDefaultValue: Boolean = false
 ) {
-
 
   //----------------------------------------------------------------------------
   // MARK: - Properties
@@ -141,38 +140,31 @@ class SignalProcessingManager(
                                                       channelCount)
   }
 
-}
-
 //==============================================================================
 // MARK: - MBTSessionAnalysisComputer
 //==============================================================================
 
-extension SignalProcessingManager {
-
   //Implementing MBT_SessionAnalysisComputer
-  func analyseSession(snrValues: [Float],
-  threshold: Float) -> [String: Float] {
-    guard snrValues.count > 3 else { return [:] }
+  fun analyseSession(snrValues: Array<Float>,
+                     threshold: Float): Map<String, Float> {
+    if (snrValues.size <= 3) { return emptyMap() }
 
+    // TODO: Anh Tuan Use the brainbox here
     //Perform the computation
-    let sessionAnalysisValues =
-    MBTSNRStatisticsBridge.computeSessionStatistics(snrValues,
-                                                    threshold: threshold)
-    let sessionAnalysis = sessionAnalysisValues as? [String: Float] ?? [:]
-    return sessionAnalysis
+//    val sessionAnalysisValues =
+//    MBTSNRStatisticsBridge.computeSessionStatistics(snrValues,  threshold)
+//    val sessionAnalysis = sessionAnalysisValues as? [String: Float] ?? [:]
+//    return sessionAnalysis
+    return emptyMap()
   }
-
-}
 
 //==============================================================================
 // MARK: - MBTMelomindAnalysis
 //==============================================================================
 
-extension SignalProcessingManager {
-
-  func resetSession() {
-    MBTMelomindAnalysis.resetSession()
+  fun resetSession() {
+    // TODO: Anh Tuan Use the brainbox here
+//    MBTMelomindAnalysis.resetSession()
   }
 
-}
 }
