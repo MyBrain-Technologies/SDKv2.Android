@@ -1,9 +1,9 @@
 package com.mybraintech.sdk.core.acquisition.eeg
 
 import com.mybraintech.sdk.core.acquisition.eeg.signalprocessing.EEGQualityProcessor
+import com.mybraintech.sdk.core.acquisition.eeg.signalprocessing.EEGToRelaxIndexProcessor
 import com.mybraintech.sdk.core.shared.MBTRelaxIndexAlgorithm
-
-
+import core.eeg.storage.MbtEEGPacket
 
 
 // TODO: Anh Tuan MBTQualityCheckerBridge is the BrainBox
@@ -110,36 +110,35 @@ class SignalProcessingManager(
   ///     - packetsCount: Number of packets to get, from the last one.
   /// - Returns: A dictionnary with calibration datas from the CPP Signal
   /// Processing.
-  fun computeCalibration(
-    packets: Array<MbtEEGPacket>,
-  sampleRate: Int,
-  channelCount: Int,
-  packetLength: Int
-  ) -> CalibrationOutput? {
-    let calibrationResult =
-    EEGCalibrationProcessor.computeCalibrationV2(lastPackets: packets,
-                                                 packetLength: packetLength,
-                                                 sampleRate: sampleRate,
-                                                 channelCount: channelCount)
-    hasComputedCalibration = calibrationResult != nil ? true : false
-    return calibrationResult
-  }
 
-}
+  // TODO: Anh Tuan to check
+//  fun computeCalibration(
+//    packets: Array<MbtEEGPacket>,
+//  sampleRate: Int,
+//  channelCount: Int,
+//  packetLength: Int
+//  ) -> CalibrationOutput? {
+//    let calibrationResult =
+//    EEGCalibrationProcessor.computeCalibrationV2(lastPackets: packets,
+//                                                 packetLength: packetLength,
+//                                                 sampleRate: sampleRate,
+//                                                 channelCount: channelCount)
+//    hasComputedCalibration = calibrationResult != nil ? true : false
+//    return calibrationResult
+//  }
+
 
 //==============================================================================
 // MARK: - MBTRelaxIndexComputer
 //==============================================================================
 
-extension SignalProcessingManager {
-
-  func computeRelaxIndex(eegPackets: [MBTEEGPacket],
-  sampleRate: Int,
-  channelCount: Int) -> Float? {
-    guard hasComputedCalibration else { return 0 }
-    return EEGToRelaxIndexProcessor.computeRelaxIndex(from: eegPackets,
-                                                      sampRate: sampleRate,
-                                                      nbChannels: channelCount)
+  fun computeRelaxIndex(eegPackets: Array<MbtEEGPacket>,
+                        sampleRate: Int,
+                        channelCount: Int): Float? {
+    if (!hasComputedCalibration) { return 0.0.toFloat() }
+    return EEGToRelaxIndexProcessor.computeRelaxIndex(eegPackets,
+                                                      sampleRate,
+                                                      channelCount)
   }
 
 }
