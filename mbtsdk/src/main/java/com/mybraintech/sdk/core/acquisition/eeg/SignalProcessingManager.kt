@@ -1,5 +1,6 @@
 package com.mybraintech.sdk.core.acquisition.eeg
 
+import com.mybraintech.android.jnibrainbox.QualityChecker
 import com.mybraintech.sdk.core.acquisition.eeg.signalprocessing.EEGQualityProcessor
 import com.mybraintech.sdk.core.acquisition.eeg.signalprocessing.EEGToRelaxIndexProcessor
 import com.mybraintech.sdk.core.shared.MBTRelaxIndexAlgorithm
@@ -8,26 +9,20 @@ import core.eeg.storage.MbtEEGPacket
 
 // TODO: Anh Tuan MBTQualityCheckerBridge is the BrainBox
 
-
-
-
-
 class SignalProcessingManager(
-  private val hasComputedCalibrationDefaultValue: Boolean = false
+  private val hasComputedCalibrationDefaultValue: Boolean = false,
+  private val sampleRate: Int = 250
 ) {
 
   //----------------------------------------------------------------------------
   // MARK: - Properties
   //----------------------------------------------------------------------------
 
-  /******************** Singleton ********************/
+  private val qualityChecker: QualityChecker = QualityChecker(sampleRate)
 
   /// Dictionnary to store calibration results.
   var hasComputedCalibration: Boolean = hasComputedCalibrationDefaultValue
   private set
-
-  ///
-  var sampleRate: Int = 0
 
   ///
   internal var eegPacketLength: Int = 0
