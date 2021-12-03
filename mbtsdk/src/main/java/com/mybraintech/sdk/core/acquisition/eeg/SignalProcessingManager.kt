@@ -11,14 +11,14 @@ import core.eeg.storage.MbtEEGPacket
 
 class SignalProcessingManager(
   private val hasComputedCalibrationDefaultValue: Boolean = false,
-  private val sampleRate: Int = 250
+  private val eegQualityProcessor: EEGQualityProcessor = EEGQualityProcessor(sampleRate)
 ) {
 
   //----------------------------------------------------------------------------
   // MARK: - Properties
   //----------------------------------------------------------------------------
 
-  private val qualityChecker: QualityChecker = QualityChecker(sampleRate)
+
 
   /// Dictionnary to store calibration results.
   var hasComputedCalibration: Boolean = hasComputedCalibrationDefaultValue
@@ -27,29 +27,17 @@ class SignalProcessingManager(
   ///
   internal var eegPacketLength: Int = 0
 
-  // TODO: Anh Tuan is it necessary?
-//  internal var relaxIndexAlgorithm = MBTRelaxIndexAlgorithm.algorithm(
-//    fromSDKVersion: MBTQualityCheckerBridge.getVersion()!
-//  )
+
+  /******************** Versioning ********************/
+
+  val qualityCheckerVersion: String
+  get() {
+    return eegQualityProcessor.qualityCheckerVersion
+  }
 
   //----------------------------------------------------------------------------
   // MARK: - Initialization
   //----------------------------------------------------------------------------
-
-
-  /// Initalize MBT_MainQC to enable MBT_QualityChecker methods.
-  fun initializeQualityChecker(sampleRate: Float,
-                               accuracy: Float = 0.85.toFloat()) {
-    // TODO: Anh Tuan Add BrainBox here
-//    MBTQualityCheckerBridge.initializeMainQualityChecker(sampleRate,
-//                                                         accuracy)
-  }
-
-  /// Delete MBT_MainQC instance once acquisition phase is over.
-  fun deinitQualityChecker() {
-    // TODO: Anh Tuan Add BrainBox here
-//    MBTQualityCheckerBridge.deInitializeMainQualityChecker()
-  }
 
   //----------------------------------------------------------------------------
   // MARK: - Quality
@@ -61,21 +49,8 @@ class SignalProcessingManager(
   /// (no GPIOs)
   /// - returns: The array of computed "quality" values. Each value is the
   /// quality for a channel, in the same order as the row order in data.
-  fun computeQualityValue(data: Array<Array<Float>>): FloatArray {
-    val packetLength = data.firstOrNull()?.size ?: return FloatArray(0)
-
-    return EEGQualityProcessor.computeQualityValue(data,
-                                                   sampleRate,
-                                                   packetLength)
-  }
-
-  fun computeQualityValue(data: Array<Array<Float>>,
-                          sampleRate: Int,
-                          eegPacketLength: Int): FloatArray {
-    // FIXME: Why is it passed as parameter and the property being init here?
-    this.sampleRate = sampleRate
-    this.eegPacketLength = eegPacketLength
-    return computeQualityValue(data)
+  fun computeQualityValue(data: ArrayList<ArrayList<Float>>): FloatArray {
+    return eegQualityProcessor.computeQualityValue(data)
   }
 
   //----------------------------------------------------------------------------
