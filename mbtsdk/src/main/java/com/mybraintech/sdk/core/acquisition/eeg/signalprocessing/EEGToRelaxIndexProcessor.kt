@@ -1,6 +1,7 @@
 package com.mybraintech.sdk.core.acquisition.eeg.signalprocessing
 
 import com.mybraintech.android.jnibrainbox.RelaxIndex
+import com.mybraintech.android.jnibrainbox.RelaxIndexSessionOutputData
 import core.eeg.storage.MbtEEGPacket
 
 class EEGToRelaxIndexProcessor(
@@ -27,5 +28,9 @@ class EEGToRelaxIndexProcessor(
 
      TODO("Find a way for the input type")
 //    return relaxIndexEngine.computeVolume(signal, qualities)
+  }
+
+  fun endSessionAndGenerateSessionStatistic(): RelaxIndexSessionOutputData {
+    return relaxIndexEngine.endSession()
   }
 }

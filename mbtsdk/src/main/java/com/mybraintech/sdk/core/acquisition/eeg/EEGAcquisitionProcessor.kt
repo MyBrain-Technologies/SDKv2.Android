@@ -18,6 +18,7 @@ class EEGAcquisitionProcessor(
     acquisitionBuffer.add(data)
     val packet = acquisitionBuffer.getUsablePackets() ?: return null
 
+    TODO("Check if needed.")
     val relaxIndexes =
     EEGDeserializer.deserializeToRelaxIndex(packet, channelCount)
 
@@ -38,6 +39,7 @@ class EEGAcquisitionProcessor(
 //    ) else {
 //      return nil
 //    }
+
 
     if (hasQualityChecker) {
       val qualities = generateQualities(eegPacket)

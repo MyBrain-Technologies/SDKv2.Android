@@ -1,6 +1,8 @@
 package com.mybraintech.sdk.core.acquisition.eeg
 
+import com.mybraintech.android.jnibrainbox.BrainBoxVersion
 import com.mybraintech.android.jnibrainbox.QualityChecker
+import com.mybraintech.android.jnibrainbox.RelaxIndexSessionOutputData
 import com.mybraintech.sdk.core.acquisition.eeg.signalprocessing.EEGQualityProcessor
 import com.mybraintech.sdk.core.acquisition.eeg.signalprocessing.EEGToRelaxIndexProcessor
 import com.mybraintech.sdk.core.shared.MBTRelaxIndexAlgorithm
@@ -11,14 +13,15 @@ import core.eeg.storage.MbtEEGPacket
 
 class SignalProcessingManager(
   private val hasComputedCalibrationDefaultValue: Boolean = false,
-  private val eegQualityProcessor: EEGQualityProcessor = EEGQualityProcessor(sampleRate)
+  private val sampleRate: Int = 250,
+  private val eegQualityProcessor: EEGQualityProcessor =
+    EEGQualityProcessor(sampleRate),
+  private val eegRelaxIndexProcessor: EEGToRelaxIndexProcessor = EEGToRelaxIndexProcessor()
 ) {
 
   //----------------------------------------------------------------------------
   // MARK: - Properties
   //----------------------------------------------------------------------------
-
-
 
   /// Dictionnary to store calibration results.
   var hasComputedCalibration: Boolean = hasComputedCalibrationDefaultValue
@@ -29,6 +32,11 @@ class SignalProcessingManager(
 
 
   /******************** Versioning ********************/
+
+  val brainBoxVersion: String
+    get() {
+      return BrainBoxVersion.getVersion()
+    }
 
   val qualityCheckerVersion: String
   get() {
@@ -101,13 +109,9 @@ class SignalProcessingManager(
 // MARK: - MBTRelaxIndexComputer
 //==============================================================================
 
-  fun computeRelaxIndex(eegPackets: Array<MbtEEGPacket>,
-                        sampleRate: Int,
-                        channelCount: Int): Float? {
-    if (!hasComputedCalibration) { return 0.0.toFloat() }
-    return EEGToRelaxIndexProcessor.computeRelaxIndex(eegPackets,
-                                                      sampleRate,
-                                                      channelCount)
+  fun computeRelaxIndex(eegPackets: Array<MbtEEGPacket>): Float? {
+//    if (!hasComputedCalibration) { return 0.0.toFloat() }
+    eegRelaxIndexProcessor.computeRelaxIndex(eegPackets)
   }
 
 //==============================================================================
@@ -128,12 +132,16 @@ class SignalProcessingManager(
     return emptyMap()
   }
 
+  fun endSessionAndGenerateSessionStatistic(): RelaxIndexSessionOutputData {
+    return eegRelaxIndexProcessor.endSessionAndGenerateSessionStatistic()
+  }
+
 //==============================================================================
 // MARK: - MBTMelomindAnalysis
 //==============================================================================
 
   fun resetSession() {
-    // TODO: Anh Tuan Use the brainbox here
+    TODO("Anh Tuan Use the brainbox here")
 //    MBTMelomindAnalysis.resetSession()
   }
 
