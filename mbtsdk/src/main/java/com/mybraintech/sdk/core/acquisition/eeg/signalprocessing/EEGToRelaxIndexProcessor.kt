@@ -25,8 +25,7 @@ class EEGToRelaxIndexProcessor(
     val lastPacket = packets.last()
     val qualities = lastPacket.qualities
 
-    // TODO: Anh Tuan Find a way for the input type
+     TODO("Find a way for the input type")
 //    return relaxIndexEngine.computeVolume(signal, qualities)
-    return 0
   }
 }
