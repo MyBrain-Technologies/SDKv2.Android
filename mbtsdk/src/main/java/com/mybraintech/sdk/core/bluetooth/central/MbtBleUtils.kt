@@ -1,9 +1,17 @@
 package com.mybraintech.sdk.core.bluetooth.central
 
 import android.bluetooth.BluetoothDevice
-import no.nordicsemi.android.support.v18.scanner.ScanResult
+import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothProfile
+import android.content.Context
 
-object Indus5Utils {
+object MbtBleUtils {
+    fun getGattConnectedDevices(context: Context): List<BluetoothDevice> {
+        val bluetoothManager =
+            context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        return bluetoothManager.getConnectedDevices(BluetoothProfile.GATT) ?: emptyList()
+    }
+
     fun isIndus5(device: BluetoothDevice): Boolean {
         val INDUS5_PREFIX_1 = "melo_2"
         val INDUS5_PREFIX_2 = "qp_"

@@ -9,7 +9,6 @@ import com.mybraintech.sdk.core.bluetooth.MbtBleManager
 import com.mybraintech.sdk.core.listener.BatteryLevelListener
 import com.mybraintech.sdk.core.listener.ConnectionListener
 import com.mybraintech.sdk.sample.databinding.ActivityBluetoothManagerBinding
-import indus5.MbtClientIndus5
 import timber.log.Timber
 
 class BluetoothManagerActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListener {
@@ -36,8 +35,11 @@ class BluetoothManagerActivity : AppCompatActivity(), ConnectionListener, Batter
         binding.btnCount.setOnClickListener {
             val bluetoothManager =
                 this.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-            val btnCount = bluetoothManager.getConnectedDevices(BluetoothProfile.GATT);
-            buffer.appendLine("btnCount = ${btnCount.size}")
+            val gattCount = bluetoothManager.getConnectedDevices(BluetoothProfile.GATT);
+            buffer.appendLine("gatt btnCount = ${gattCount.size}")
+            binding.txtStatus.text = buffer.toString()
+            val hasConnectedDevice = mbtBleManager.hasConnectedDevice()
+            buffer.appendLine("mbtBleManager hasConnectedDevice = ${hasConnectedDevice}")
             binding.txtStatus.text = buffer.toString()
         }
 
@@ -57,13 +59,18 @@ class BluetoothManagerActivity : AppCompatActivity(), ConnectionListener, Batter
         binding.btnReadBattery.setOnClickListener {
             mbtBleManager.getBatteryLevel()
         }
+
+        binding.btnClearText.setOnClickListener {
+            buffer.clear()
+            binding.txtStatus.text = ""
+        }
     }
 
     //----------------------------------------------------------------------------
     // MARK: bluetooth manager listeners
     //----------------------------------------------------------------------------
     override fun onDeviceConnectionStateChanged(isConnected: Boolean) {
-        buffer.appendLine("isConnected = $isConnected")
+        buffer.appendLine("onDeviceConnectionStateChanged : isConnected = $isConnected")
         binding.txtStatus.text = buffer.toString()
     }
 
@@ -76,11 +83,13 @@ class BluetoothManagerActivity : AppCompatActivity(), ConnectionListener, Batter
     }
 
     override fun onConnectionError(error: Throwable) {
-        TODO("Not yet implemented")
+        buffer.appendLine("onConnectionError = ${error.message}")
+        binding.txtStatus.text = buffer.toString()
     }
 
     override fun onScanFailed(error: Throwable) {
-        Timber.e(error)
+        buffer.appendLine("onScanFailed = ${error.message}")
+        binding.txtStatus.text = buffer.toString()
     }
 
     //----------------------------------------------------------------------------

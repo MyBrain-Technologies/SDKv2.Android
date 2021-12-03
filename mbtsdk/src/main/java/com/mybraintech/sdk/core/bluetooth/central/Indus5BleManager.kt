@@ -1,9 +1,10 @@
 package com.mybraintech.sdk.core.bluetooth.central
 
-import android.bluetooth.*
-import android.content.BroadcastReceiver
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothGattCharacteristic
 import android.content.Context
-import android.content.Intent
 import android.content.IntentFilter
 import com.mybraintech.sdk.core.bluetooth.attributes.characteristiccontainer.characteristics.PostIndus5Characteristic
 import com.mybraintech.sdk.core.bluetooth.attributes.characteristiccontainer.services.PostIndus5Service
@@ -29,7 +30,7 @@ class Indus5BleManager(ctx: Context) :
     private var isScanning: Boolean = false
     private var scanOption: MBTScanOption? = null
     private var scanCallback: ScanCallback = getScanCallback()
-    private var broadcastReceiver = Indus5BroadcastReceiver()
+    private var broadcastReceiver = MbtBleBroadcastReceiver()
     private val scanner: BluetoothLeScannerCompat = BluetoothLeScannerCompat.getScanner()
 
     private var connectionListener: ConnectionListener? = null
@@ -77,13 +78,17 @@ class Indus5BleManager(ctx: Context) :
     //----------------------------------------------------------------------------
     override fun hasConnectedDevice(): Boolean {
         if (!super.isReady()) {
+            Timber.d("device is not ready")
             return false
         }
         val device = super.getBluetoothDevice()
         return if (device == null) {
+            Timber.d("device is null")
             false
         } else {
-            Indus5Utils.isIndus5(device)
+            val result = MbtBleUtils.isIndus5(device)
+            Timber.d("result = $result")
+            return result
         }
     }
 
@@ -128,6 +133,22 @@ class Indus5BleManager(ctx: Context) :
     }
 
     override fun connectMbt(scanOption: MBTScanOption?) {
+        if (super.isReady()) {
+            connectionListener?.onConnectionError(Throwable("A device is connected already : ${bluetoothDevice?.name} |  ${bluetoothDevice?.address}"))
+            return
+        }
+
+        Timber.i("search indus5 in connected devices")
+        val gattConnectedDevices = MbtBleUtils.getGattConnectedDevices(context)
+        for (device in gattConnectedDevices) {
+            if (MbtBleUtils.isIndus5(device)) {
+                Timber.i("search indus5 in connected devices : found a connected indus5, start connection without scan...")
+                enqueueConnect(device)
+                return
+            }
+        }
+        Timber.i("search indus5 in connected devices : not found")
+
         if (!isScanning) {
             isScanning = true
             this.scanOption = scanOption
@@ -138,7 +159,11 @@ class Indus5BleManager(ctx: Context) :
     }
 
     override fun disconnectMbt() {
-        disconnect().enqueue()
+        if (super.isReady()) {
+            disconnect().enqueue()
+        } else {
+            connectionListener?.onConnectionError(Throwable("there is no connected device to disconnect!"))
+        }
     }
 
     //----------------------------------------------------------------------------
@@ -180,7 +205,7 @@ class Indus5BleManager(ctx: Context) :
     private fun handleScanResults(results: List<ScanResult>) {
         for (result in results) {
             Timber.d("handleScanResults : name = ${result.device.name} | address = ${result.device.address} ")
-            if (Indus5Utils.isIndus5(result.device)) {
+            if (MbtBleUtils.isIndus5(result.device)) {
                 Timber.d("found indus5 device")
                 if ((scanOption == null) || (scanOption?.name == result.device.name)) {
                     Timber.d("stop running scan, start connection process...")
@@ -196,11 +221,17 @@ class Indus5BleManager(ctx: Context) :
     private fun enqueueConnect(device: BluetoothDevice) {
         connect(device)
             .useAutoConnect(true)
-            .timeout(2000)
+            .timeout(5000)
+            .done {
+                Timber.i("enqueueConnect done")
+            }
+            .fail { device, status ->
+                Timber.i("enqueueConnect fail")
+            }
             .enqueue()
     }
 
-    private fun getScanCallback() : ScanCallback {
+    private fun getScanCallback(): ScanCallback {
         return object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
                 Timber.d("onScanResult : name = ${result.device.name} | address = ${result.device.address} ")
@@ -296,46 +327,6 @@ class Indus5BleManager(ctx: Context) :
         override fun onDeviceDisconnected() {
             Timber.i("onDeviceDisconnected")
             connectionListener?.onDeviceConnectionStateChanged(false)
-        }
-    }
-
-    private inner class Indus5BroadcastReceiver : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            when (intent?.action) {
-                BluetoothAdapter.ACTION_STATE_CHANGED -> {
-                    val bluetoothState = intent.getIntExtra(
-                        BluetoothAdapter.EXTRA_STATE,
-                        -1
-                    )
-                    Timber.d("ACTION_STATE_CHANGED : is state on = ${bluetoothState == BluetoothAdapter.STATE_ON}")
-                    when (bluetoothState) {
-                        BluetoothAdapter.STATE_ON -> {
-                        }
-                        BluetoothAdapter.STATE_OFF -> {
-                        }
-                    }
-                }
-                BluetoothDevice.ACTION_BOND_STATE_CHANGED -> {
-                    val device =
-                        intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
-                    Timber.d("ACTION_BOND_STATE_CHANGED : ${device?.name}: ${device?.address}: ${device?.bondState}")
-                    when (device?.bondState) {
-                        BluetoothDevice.BOND_BONDED -> {
-                            Timber.i("BOND_BONDED")
-                            if (Indus5Utils.isIndus5(device)) {
-                                Timber.i("new indus5 device is bonded, start connection")
-                                enqueueConnect(device)
-                            }
-                        }
-                        BluetoothDevice.BOND_BONDING -> {
-                            Timber.i("BOND_BONDING")
-                        }
-                        BluetoothDevice.BOND_NONE -> {
-                            Timber.i("BOND_NONE")
-                        }
-                    }
-                }
-            }
         }
     }
 }
