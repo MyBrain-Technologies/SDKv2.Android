@@ -1,34 +1,32 @@
 package com.mybraintech.sdk.core.acquisition.eeg.signalprocessing
 
+import com.mybraintech.android.jnibrainbox.RelaxIndex
 import core.eeg.storage.MbtEEGPacket
 
-object EEGToRelaxIndexProcessor {
-  fun computeRelaxIndex(packets: Array<MbtEEGPacket>,
-                        sampleRate: Int,
-                        channelCount: Int): Float {
+class EEGToRelaxIndexProcessor(
+  private val samplingRate: Int = 250,
+  private val smoothedRms: FloatArray = FloatArray(0),
+  private val iafMedianLower: Float = 0.0.toFloat(),
+  private val iafMedianUpper: Float = 0.0.toFloat(),
+  private val relaxIndexEngine: RelaxIndex =
+    RelaxIndex(samplingRate, smoothedRms, iafMedianLower, iafMedianUpper)
+) {
 
-
+  fun computeRelaxIndex(packets: Array<MbtEEGPacket>): Float {
 
     // TODO: Anh Tuan No idea what I'm doing. I don't know where is the
     // modifiedChannelData
     //    val dataArray = packets.flattenModifiedChannelData() // Swift code
-    val dataArray =  packets.map {
+    val signal =  packets.map {
       val channelsData = it.channelsData
-      channelsData.flatten()
-    }.flatten()
-
-
+      channelsData.flatten().toTypedArray()
+    }.toTypedArray()
 
     val lastPacket = packets.last()
     val qualities = lastPacket.qualities
 
-    // TODO: Anh Tuan use BrainBox here
+    // TODO: Anh Tuan Find a way for the input type
+//    return relaxIndexEngine.computeVolume(signal, qualities)
     return 0
-//    val relaxIndex =
-//    MBTRelaxIndexBridge.computeRelaxIndex(dataArray,
-//                                          sampRate: sampRate,
-//                                          nbChannels: channelCount,
-//                                          lastPacketQualities: qualities)
-//    return relaxIndex
   }
 }
