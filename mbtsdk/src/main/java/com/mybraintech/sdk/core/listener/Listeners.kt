@@ -19,5 +19,5 @@ interface ConnectionListener {
      */
     fun onDeviceReady()
     fun onConnectionError(error: Throwable)
-    fun onScanFailed(errorCode: Int)
+    fun onScanFailed(error: Throwable)
 }
