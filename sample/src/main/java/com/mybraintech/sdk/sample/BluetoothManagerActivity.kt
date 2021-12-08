@@ -1,20 +1,25 @@
 package com.mybraintech.sdk.sample
 
+import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.content.Context
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.mybraintech.sdk.core.bluetooth.MbtBleManager
+import com.mybraintech.sdk.MbtClient
+import com.mybraintech.sdk.MbtClientFactory
 import com.mybraintech.sdk.core.listener.BatteryLevelListener
 import com.mybraintech.sdk.core.listener.ConnectionListener
+import com.mybraintech.sdk.core.listener.ScanResultListener
+import com.mybraintech.sdk.core.model.MbtDevice
 import com.mybraintech.sdk.sample.databinding.ActivityBluetoothManagerBinding
 import timber.log.Timber
 
 class BluetoothManagerActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListener {
 
     private lateinit var binding: ActivityBluetoothManagerBinding
-    lateinit var mbtBleManager: MbtBleManager
+    lateinit var mbtClient: MbtClient
+    var mbtDevice: MbtDevice? = null
     val buffer = StringBuilder()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -22,11 +27,7 @@ class BluetoothManagerActivity : AppCompatActivity(), ConnectionListener, Batter
         binding = ActivityBluetoothManagerBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        mbtBleManager = MbtBleManager(applicationContext)
-        mbtBleManager.init(true)
-
-        mbtBleManager.setConnectionListener(this)
-        mbtBleManager.setBatteryLevelListener(this)
+        mbtClient = MbtClientFactory.createMbtClient(applicationContext, true)
 
         initView()
     }
@@ -38,26 +39,52 @@ class BluetoothManagerActivity : AppCompatActivity(), ConnectionListener, Batter
             val gattCount = bluetoothManager.getConnectedDevices(BluetoothProfile.GATT);
             buffer.appendLine("gatt btnCount = ${gattCount.size}")
             binding.txtStatus.text = buffer.toString()
-            val hasConnectedDevice = mbtBleManager.hasConnectedDevice()
-            buffer.appendLine("mbtBleManager hasConnectedDevice = ${hasConnectedDevice}")
-            binding.txtStatus.text = buffer.toString()
         }
 
         binding.btnIsConnected.setOnClickListener {
-            buffer.appendLine("hasConnectedDevice = ${mbtBleManager.hasConnectedDevice()}")
+            val bleConnectionStatus = mbtClient.getBleConnectionStatus()
+            buffer.appendLine("getBleConnectionStatus = ${bleConnectionStatus.mbtDevice} | ${bleConnectionStatus.isConnectionEstablished}")
             binding.txtStatus.text = buffer.toString()
         }
 
+        binding.btnScan.setOnClickListener {
+            mbtClient.startScan(object : ScanResultListener {
+                override fun onMbtDevices(mbtDevices: List<MbtDevice>) {
+                    Timber.i("onMbtDevices size = ${mbtDevices.size}")
+                    addResultText("found devices")
+                    for (device in mbtDevices) {
+                        Timber.i("device ${device.bluetoothDevice.name}")
+                    }
+                    mbtClient.stopScan()
+                    mbtDevice = mbtDevices[0]
+                }
+
+                override fun onOtherDevices(otherDevices: List<BluetoothDevice>) {
+                    Timber.i("onOtherDevices size = ${otherDevices.size}")
+                }
+
+                override fun onScanError(error: Throwable) {
+                    Timber.e(error)
+                    addResultText("onScanError")
+                }
+
+            })
+        }
+
         binding.btnConnect.setOnClickListener {
-            mbtBleManager.connect()
+            if (mbtDevice != null) {
+                mbtClient.connect(mbtDevice!!, this)
+            } else {
+                Timber.e("please scan first")
+                addResultText("please scan first")
+            }
         }
 
         binding.btnDisconnect.setOnClickListener {
-            mbtBleManager.disconnect()
+            mbtClient.disconnect()
         }
 
         binding.btnReadBattery.setOnClickListener {
-            mbtBleManager.getBatteryLevel()
         }
 
         binding.btnClearText.setOnClickListener {
@@ -66,20 +93,21 @@ class BluetoothManagerActivity : AppCompatActivity(), ConnectionListener, Batter
         }
     }
 
-    //----------------------------------------------------------------------------
-    // MARK: bluetooth manager listeners
-    //----------------------------------------------------------------------------
-    override fun onDeviceConnectionStateChanged(isConnected: Boolean) {
-        buffer.appendLine("onDeviceConnectionStateChanged : isConnected = $isConnected")
+    fun addResultText(text: String) {
+        buffer.appendLine(text)
         binding.txtStatus.text = buffer.toString()
     }
 
+    override fun onServiceDiscovered() {
+        addResultText("onServiceDiscovered")
+    }
+
     override fun onDeviceBondStateChanged(isBonded: Boolean) {
-        TODO("Not yet implemented")
+        addResultText("onDeviceBondStateChanged = $isBonded")
     }
 
     override fun onDeviceReady() {
-        TODO("Not yet implemented")
+        addResultText("onDeviceReady")
     }
 
     override fun onConnectionError(error: Throwable) {
@@ -87,9 +115,8 @@ class BluetoothManagerActivity : AppCompatActivity(), ConnectionListener, Batter
         binding.txtStatus.text = buffer.toString()
     }
 
-    override fun onScanFailed(error: Throwable) {
-        buffer.appendLine("onScanFailed = ${error.message}")
-        binding.txtStatus.text = buffer.toString()
+    override fun onDeviceDisconnected() {
+        addResultText("onDeviceDisconnected")
     }
 
     //----------------------------------------------------------------------------

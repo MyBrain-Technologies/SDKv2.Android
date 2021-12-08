@@ -1,16 +1,26 @@
-package com.mybraintech.sdk.core.bluetooth.interfaces
+package com.mybraintech.sdk.core.bluetooth
 
-import android.content.Context
-import com.mybraintech.sdk.core.bluetooth.central.MBTScanOption
 import com.mybraintech.sdk.core.listener.BatteryLevelListener
 import com.mybraintech.sdk.core.listener.ConnectionListener
 import com.mybraintech.sdk.core.listener.DeviceInformationListener
+import com.mybraintech.sdk.core.listener.ScanResultListener
+import com.mybraintech.sdk.core.model.BleConnectionStatus
+import com.mybraintech.sdk.core.model.MbtDevice
 
-interface IInternalBleManager {
+
+interface IMbtBleManager {
+    //----------------------------------------------------------------------------
+    // scanning + connection
+    //----------------------------------------------------------------------------
+    fun startScan(scanResultListener: ScanResultListener)
+    fun stopScan()
+    fun connectMbt(mbtDevice: MbtDevice, connectionListener: ConnectionListener)
+    fun disconnectMbt()
+
     //----------------------------------------------------------------------------
     // device
     //----------------------------------------------------------------------------
-    fun hasConnectedDevice(): Boolean
+    fun getBleConnectionStatus(): BleConnectionStatus
     fun hasA2dpConnectedDevice(): Boolean
 
     fun setCurrentDeviceInformationListener(listener: DeviceInformationListener?)
@@ -26,11 +36,4 @@ interface IInternalBleManager {
     //----------------------------------------------------------------------------
     fun setBatteryLevelListener(batteryLevelListener: BatteryLevelListener?)
     fun getBatteryLevel()
-
-    //----------------------------------------------------------------------------
-    // scanning + connection
-    //----------------------------------------------------------------------------
-    fun setConnectionListener(connectionListener: ConnectionListener?)
-    fun connectMbt(scanOption: MBTScanOption?)
-    fun disconnectMbt()
 }

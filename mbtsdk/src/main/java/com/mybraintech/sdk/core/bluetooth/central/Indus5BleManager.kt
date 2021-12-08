@@ -1,38 +1,35 @@
 package com.mybraintech.sdk.core.bluetooth.central
 
-import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothGatt
-import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.*
 import android.content.Context
 import android.content.IntentFilter
+import com.mybraintech.sdk.core.bluetooth.IMbtBleManager
 import com.mybraintech.sdk.core.bluetooth.attributes.characteristiccontainer.characteristics.PostIndus5Characteristic
 import com.mybraintech.sdk.core.bluetooth.attributes.characteristiccontainer.services.PostIndus5Service
-import com.mybraintech.sdk.core.bluetooth.interfaces.IInternalBleManager
 import com.mybraintech.sdk.core.listener.BatteryLevelListener
 import com.mybraintech.sdk.core.listener.ConnectionListener
 import com.mybraintech.sdk.core.listener.DeviceInformationListener
+import com.mybraintech.sdk.core.listener.ScanResultListener
+import com.mybraintech.sdk.core.model.BleConnectionStatus
+import com.mybraintech.sdk.core.model.MbtDevice
 import no.nordicsemi.android.ble.BleManager
 import no.nordicsemi.android.ble.WriteRequest
 import no.nordicsemi.android.ble.callback.DataReceivedCallback
 import no.nordicsemi.android.ble.callback.FailCallback
 import no.nordicsemi.android.ble.callback.SuccessCallback
 import no.nordicsemi.android.ble.data.Data
-import no.nordicsemi.android.support.v18.scanner.BluetoothLeScannerCompat
 import no.nordicsemi.android.support.v18.scanner.ScanCallback
 import no.nordicsemi.android.support.v18.scanner.ScanResult
-import no.nordicsemi.android.support.v18.scanner.ScanSettings
 import timber.log.Timber
 
 class Indus5BleManager(ctx: Context) :
-    BleManager(ctx), IInternalBleManager, DataReceivedCallback {
+    BleManager(ctx), IMbtBleManager, DataReceivedCallback {
 
     private var isScanning: Boolean = false
-    private var scanOption: MBTScanOption? = null
-    private var scanCallback: ScanCallback = getScanCallback()
     private var broadcastReceiver = MbtBleBroadcastReceiver()
-    private val scanner: BluetoothLeScannerCompat = BluetoothLeScannerCompat.getScanner()
+    private val mbtBleScanner = MbtBleScanner()
 
+    private lateinit var scanResultListener: ScanResultListener
     private var connectionListener: ConnectionListener? = null
     private var batteryLevelListener: BatteryLevelListener? = null
     private var txCharacteristic: BluetoothGattCharacteristic? = null
@@ -76,19 +73,87 @@ class Indus5BleManager(ctx: Context) :
     //----------------------------------------------------------------------------
     // MARK: internal ble manager
     //----------------------------------------------------------------------------
-    override fun hasConnectedDevice(): Boolean {
-        if (!super.isReady()) {
-            Timber.d("device is not ready")
-            return false
+    private fun isBluetoothEnabled(): Boolean {
+        return BluetoothAdapter.getDefaultAdapter().isEnabled
+    }
+
+    private fun isConnectedAndReady() : Boolean {
+        return (super.isConnected() && super.isReady())
+    }
+
+    override fun startScan(scanResultListener: ScanResultListener) {
+        if (!isBluetoothEnabled()) {
+            scanResultListener.onScanError(Throwable("Bluetooth is not enabled"))
+            return
         }
-        val device = super.getBluetoothDevice()
-        return if (device == null) {
-            Timber.d("device is null")
-            false
+        this.scanResultListener = scanResultListener
+
+        if (!isScanning) {
+            isScanning = true
+            mbtBleScanner.startScan(getScanCallback())
         } else {
-            val result = MbtBleUtils.isIndus5(device)
-            Timber.d("result = $result")
-            return result
+            scanResultListener.onScanError(Throwable("a scan process is in progress already, can not launch another!"))
+        }
+    }
+
+    override fun stopScan() {
+        isScanning = false
+        mbtBleScanner.stopScan()
+    }
+
+    override fun connectMbt(mbtDevice: MbtDevice, connectionListener: ConnectionListener) {
+        if (!isBluetoothEnabled()) {
+            connectionListener.onConnectionError(Throwable("Bluetooth is not enabled"))
+            return
+        }
+        this.connectionListener = connectionListener
+        connect(mbtDevice.bluetoothDevice)
+            .useAutoConnect(false)
+            .timeout(5000)
+            .done {
+                Timber.i("enqueueConnect done")
+            }
+            .fail { device, status ->
+                Timber.i("enqueueConnect fail")
+                connectionListener.onConnectionError(Throwable("fail to connect to MbtDevice ${mbtDevice.bluetoothDevice.name}"))
+            }
+            .enqueue()
+    }
+
+    override fun disconnectMbt() {
+        if (super.isConnected()) {
+            disconnect().enqueue()
+        } else {
+            connectionListener?.onConnectionError(Throwable("there is no connected device to disconnect!"))
+        }
+    }
+
+    override fun getBleConnectionStatus(): BleConnectionStatus {
+        val gattConnectedDevices = MbtBleUtils.getGattConnectedDevices(context)
+        var connectedIndus5 : BluetoothDevice? = null
+        for (device in gattConnectedDevices) {
+            if (MbtBleUtils.isIndus5(device)) {
+                Timber.i("found a connected indus5")
+                connectedIndus5 = device
+                break
+            }
+        }
+        if (!isConnectedAndReady()) {
+            Timber.d("device is NOT ready or is not connected")
+            return if (connectedIndus5 != null) {
+                BleConnectionStatus(MbtDevice(connectedIndus5), false)
+            } else {
+                BleConnectionStatus(null, false)
+            }
+        } else {
+            Timber.d("device is ready and is connected")
+            if (bluetoothDevice != null) {
+                return BleConnectionStatus(MbtDevice(bluetoothDevice!!), true)
+            } else {
+                // this case should never happen
+                Timber.e("fatal error: bluetoothDevice is null")
+                return BleConnectionStatus(null, false)
+            }
         }
     }
 
@@ -128,44 +193,6 @@ class Indus5BleManager(ctx: Context) :
             .enqueue()
     }
 
-    override fun setConnectionListener(connectionListener: ConnectionListener?) {
-        this.connectionListener = connectionListener
-    }
-
-    override fun connectMbt(scanOption: MBTScanOption?) {
-        if (super.isReady()) {
-            connectionListener?.onConnectionError(Throwable("A device is connected already : ${bluetoothDevice?.name} |  ${bluetoothDevice?.address}"))
-            return
-        }
-
-        Timber.i("search indus5 in connected devices")
-        val gattConnectedDevices = MbtBleUtils.getGattConnectedDevices(context)
-        for (device in gattConnectedDevices) {
-            if (MbtBleUtils.isIndus5(device)) {
-                Timber.i("search indus5 in connected devices : found a connected indus5, start connection without scan...")
-                enqueueConnect(device)
-                return
-            }
-        }
-        Timber.i("search indus5 in connected devices : not found")
-
-        if (!isScanning) {
-            isScanning = true
-            this.scanOption = scanOption
-            startScan()
-        } else {
-            connectionListener?.onScanFailed(Throwable("a scan process is in progress already, can not launch another!"))
-        }
-    }
-
-    override fun disconnectMbt() {
-        if (super.isReady()) {
-            disconnect().enqueue()
-        } else {
-            connectionListener?.onConnectionError(Throwable("there is no connected device to disconnect!"))
-        }
-    }
-
     //----------------------------------------------------------------------------
     // MARK: gatt callback
     //----------------------------------------------------------------------------
@@ -192,59 +219,36 @@ class Indus5BleManager(ctx: Context) :
     //----------------------------------------------------------------------------
     // MARK: private functions
     //----------------------------------------------------------------------------
-    private fun startScan() {
-        val settings: ScanSettings = ScanSettings.Builder()
-            .setLegacy(false)
-            .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-            .setReportDelay(5000)
-            .setUseHardwareBatchingIfSupported(true)
-            .build()
-        scanner.startScan(null, settings, scanCallback)
-    }
 
-    private fun handleScanResults(results: List<ScanResult>) {
-        for (result in results) {
-            Timber.d("handleScanResults : name = ${result.device.name} | address = ${result.device.address} ")
-            if (MbtBleUtils.isIndus5(result.device)) {
-                Timber.d("found indus5 device")
-                if ((scanOption == null) || (scanOption?.name == result.device.name)) {
-                    Timber.d("stop running scan, start connection process...")
-                    scanner.stopScan(scanCallback)
-                    isScanning = false
-                    enqueueConnect(result.device)
-                    break
-                }
-            }
+    private fun handleScanResults(results: List<BluetoothDevice>) {
+        val indus5Devices = results.filter { MbtBleUtils.isIndus5(it) }
+        if (indus5Devices.isNotEmpty()) {
+            Timber.d("found indus5 devices : number = ${indus5Devices.size}")
+            scanResultListener.onMbtDevices(indus5Devices.map { MbtDevice(it) })
         }
-    }
-
-    private fun enqueueConnect(device: BluetoothDevice) {
-        connect(device)
-            .useAutoConnect(true)
-            .timeout(5000)
-            .done {
-                Timber.i("enqueueConnect done")
-            }
-            .fail { device, status ->
-                Timber.i("enqueueConnect fail")
-            }
-            .enqueue()
+        val otherDevices = results.filter { !MbtBleUtils.isIndus5(it) }
+        if (otherDevices.isNotEmpty()) {
+            Timber.d("found other devices : number = ${otherDevices.size}")
+            scanResultListener.onOtherDevices(otherDevices)
+        }
     }
 
     private fun getScanCallback(): ScanCallback {
         return object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
                 Timber.d("onScanResult : name = ${result.device.name} | address = ${result.device.address} ")
-                handleScanResults(listOf(result))
+                handleScanResults(listOf(result.device))
             }
 
             override fun onBatchScanResults(results: MutableList<ScanResult>) {
                 Timber.d("onBatchScanResults : size = ${results.size}")
-                handleScanResults(results)
+                handleScanResults(results.map { it.device })
             }
 
             override fun onScanFailed(errorCode: Int) {
-                connectionListener?.onConnectionError(Throwable("errorCode=$errorCode"))
+                val msg = "onScanFailed : errorCode=$errorCode"
+                Timber.e(msg)
+                scanResultListener.onScanError(Throwable(msg))
             }
         }
     }
@@ -274,6 +278,7 @@ class Indus5BleManager(ctx: Context) :
         BleManagerGattCallback() {
 
         override fun isRequiredServiceSupported(gatt: BluetoothGatt): Boolean {
+            connectionListener?.onServiceDiscovered()
             val service = gatt.getService(PostIndus5Service.Transparent.uuid)
             rxCharacteristic =
                 service?.getCharacteristic(PostIndus5Characteristic.Rx.uuid)
@@ -317,7 +322,7 @@ class Indus5BleManager(ctx: Context) :
         }
 
         override fun onDeviceReady() {
-            connectionListener?.onDeviceConnectionStateChanged(true)
+            connectionListener?.onDeviceReady()
         }
 
         override fun onMtuChanged(gatt: BluetoothGatt, mtu: Int) {
@@ -326,7 +331,8 @@ class Indus5BleManager(ctx: Context) :
 
         override fun onDeviceDisconnected() {
             Timber.i("onDeviceDisconnected")
-            connectionListener?.onDeviceConnectionStateChanged(false)
+            connectionListener?.onDeviceDisconnected()
+            disconnect().enqueue()
         }
     }
 }

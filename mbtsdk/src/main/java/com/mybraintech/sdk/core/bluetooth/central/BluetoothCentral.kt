@@ -22,20 +22,3 @@ interface IBluetoothUsage {
     fun readBatteryLevelMbt()
     fun setBatteryLevelListener(batteryLevelListener: BatteryLevelListener?)
 }
-
-interface IBluetoothConnectable {
-    fun connectMbt(device: BluetoothDevice)
-    fun disconnectMbt()
-    fun setConnectionListener(connectionListener: ConnectionListener? = null)
-}
-
-interface IBluetoothCentral {
-    fun connect(scanOption: MBTScanOption)
-    fun disconnect()
-    fun setConnectionListener(connectionListener: ConnectionListener? = null)
-}
-
-/**
- * manage connect/disconnect devices
- */
-abstract class BluetoothCentral(private val context: Context, private val bluetoothConnectable: IBluetoothConnectable) : IBluetoothCentral, ScanCallback()
