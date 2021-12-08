@@ -59,22 +59,22 @@ class EEGAcquisier(
   /// session has began. Method will make everything ready, acquisition side
   /// for the new session.
   fun startStream(isUsingQualityChecker: Boolean, sampleRate: Int) {
-    // Start mainQualityChecker.
-    if (!isUsingQualityChecker) { return }
-
-    signalProcessor.initializeQualityChecker(sampleRate.toFloat())
-    hasQualityChecker = true
+    TODO("Start mainQualityChecker")
+//    if (!isUsingQualityChecker) { return }
+//
+//    signalProcessor.initializeQualityChecker(sampleRate.toFloat())
+//    hasQualityChecker = true
   }
 
 
   /// Method called by MelomindEngine when the current EEG streaming
   /// session has finished.
   fun stopStream() {
-    // Dealloc mainQC.
-    if (!isUsingQualityChecker) { return }
-
-    hasQualityChecker = false
-    signalProcessor.deinitQualityChecker()
+    TODO("// Dealloc mainQC.")
+//    if (!isUsingQualityChecker) { return }
+//
+//    hasQualityChecker = false
+//    signalProcessor.deinitQualityChecker()
   }
 
 //  /// Save the EEGPackets recorded

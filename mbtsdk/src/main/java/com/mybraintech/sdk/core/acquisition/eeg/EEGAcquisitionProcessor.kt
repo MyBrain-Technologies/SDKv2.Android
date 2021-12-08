@@ -29,36 +29,36 @@ class EEGAcquisitionProcessor(
   /// Convert values from the acquisition to EEG Packets
   private fun convertToEEGPacket(values: Array<Array<Float>>,
                                  hasQualityChecker: Boolean): MbtEEGPacket? {
-    // TODO: Anh Tuan Update MBTEEGPacket to use this
-    // Start temporary
-    val eegPacket = MbtEEGPacket()
-    // End temporary
-//    guard let eegPacket = MBTEEGPacket(
-//      buffer: values,
-//      electrodeToChannelIndex: electrodeToChannelIndex
-//    ) else {
-//      return nil
+    TODO("Update MBTEEGPacket to use this")
+//    // Start temporary
+//    val eegPacket = MbtEEGPacket()
+//    // End temporary
+////    guard let eegPacket = MBTEEGPacket(
+////      buffer: values,
+////      electrodeToChannelIndex: electrodeToChannelIndex
+////    ) else {
+////      return nil
+////    }
+//
+//
+//    if (hasQualityChecker) {
+//      val qualities = generateQualities(eegPacket)
+//      eegPacket.addQualities(qualities)
+//
+//      val modifiedValues = generateModifiedValues(eegPacket)
+//      eegPacket.setModifiedChannelsData(modifiedValues, sampleRate)
 //    }
-
-
-    if (hasQualityChecker) {
-      val qualities = generateQualities(eegPacket)
-      eegPacket.addQualities(qualities)
-
-      val modifiedValues = generateModifiedValues(eegPacket)
-      eegPacket.setModifiedChannelsData(modifiedValues, sampleRate)
-    }
-    return eegPacket
+//    return eegPacket
   }
 
   /// Get qualities from signal processing
   private fun generateQualities(eegPacket: MbtEEGPacket): FloatArray {
-    // TODO: To check
-    val buffer = eegPacket.channelsData
-
-    val qualities =
-    signalProcessor.computeQualityValue(buffer, sampleRate, eegPacketLength)
-    return qualities
+    TODO("To check")
+//    val buffer = eegPacket.channelsData
+//
+//    val qualities =
+//    signalProcessor.computeQualityValue(buffer, sampleRate, eegPacketLength)
+//    return qualities
   }
 
   /// Get Eeg modified values from signal progression

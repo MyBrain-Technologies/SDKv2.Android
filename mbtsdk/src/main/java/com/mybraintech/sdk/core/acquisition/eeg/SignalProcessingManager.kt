@@ -69,7 +69,7 @@ class SignalProcessingManager(
   /// return it.
   /// - returns: The matrix of EEG datas (modified) by channel.
   fun getModifiedEEGValues(): Array<Array<Float>> {
-    // TODO: Anh Tuan Add BrainBox here and todo
+    TODO("Add BrainBox here and todo")
 //    val newEEGValues = MBTQualityCheckerBridge.getModifiedEEGData()
 //    val newEEGValuesSwift = newEEGValues as? [[Float]] ?? [[]]
 //
@@ -110,8 +110,9 @@ class SignalProcessingManager(
 //==============================================================================
 
   fun computeRelaxIndex(eegPackets: Array<MbtEEGPacket>): Float? {
+    TODO("Implement")
 //    if (!hasComputedCalibration) { return 0.0.toFloat() }
-    eegRelaxIndexProcessor.computeRelaxIndex(eegPackets)
+//    eegRelaxIndexProcessor.computeRelaxIndex(eegPackets)
   }
 
 //==============================================================================

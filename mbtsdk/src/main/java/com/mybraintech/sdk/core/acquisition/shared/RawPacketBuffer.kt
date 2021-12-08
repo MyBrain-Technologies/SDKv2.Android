@@ -49,14 +49,14 @@ class RawPacketBuffer(
     val content = buffer.subList(0, lastRangeIndex) // buffer.slice(range)
 
 
-    // TODO: Anh Tuan How to manage to remove the items from 0 to lastRangeIndex
+    TODO("How to manage to remove the items from 0 to lastRangeIndex")
     // and keep the rest to the array. For example:
     // var measurements = [1.2, 1.5, 2.9, 1.2, 1.5]
     // measurements.removeSubrange(1..<4)
     // print(measurements)
     // // Prints "[1.2, 1.5]"
-    buffer.removeSubrange(range)
-
-    return content.toTypedArray()
+//    buffer.removeSubrange(range)
+//
+//    return content.toTypedArray()
   }
 }

@@ -8,7 +8,7 @@ class EEGPacketManager {
   // MARK: - Properties
   //----------------------------------------------------------------------------
 
-  var eegPackets: MutableList<MbtEEGPacket> = MutableList(0)
+  var eegPackets: MutableList<MbtEEGPacket> = mutableListOf()
   private set
 
   /******************** Array getters ********************/
