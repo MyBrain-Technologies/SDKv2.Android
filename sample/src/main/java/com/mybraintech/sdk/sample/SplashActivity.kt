@@ -34,7 +34,7 @@ class SplashActivity : AppCompatActivity() {
                 requestPermissions(permissions, REQUEST_CODE_PERMISSIONS)
             }
         } else {
-            Intent(this, BluetoothManagerActivity::class.java)
+            Intent(this, QplusActivity::class.java)
                 .also {
                     startActivity(it)
                 }

@@ -5,9 +5,14 @@ import android.bluetooth.BluetoothDevice
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import no.nordicsemi.android.ble.observer.BondingObserver
 import timber.log.Timber
 
 class MbtBleBroadcastReceiver : BroadcastReceiver() {
+
+    private var lastBondState: Int = BluetoothDevice.BOND_NONE
+    private var lastBluetoothDevice: BluetoothDevice? = null
+
     override fun onReceive(context: Context?, intent: Intent?) {
         when (intent?.action) {
             BluetoothAdapter.ACTION_STATE_CHANGED -> {
@@ -24,10 +29,11 @@ class MbtBleBroadcastReceiver : BroadcastReceiver() {
 //                    }
             }
             BluetoothDevice.ACTION_BOND_STATE_CHANGED -> {
-                val device =
+                lastBluetoothDevice =
                     intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
-                Timber.d("ACTION_BOND_STATE_CHANGED : ${device?.name}: ${device?.address}: ${device?.bondState}")
-                when (device?.bondState) {
+                Timber.d("ACTION_BOND_STATE_CHANGED : ${lastBluetoothDevice?.name}: ${lastBluetoothDevice?.address}: ${lastBluetoothDevice?.bondState}")
+                lastBondState = lastBluetoothDevice?.bondState ?: BluetoothDevice.BOND_NONE
+                when (lastBondState) {
                     BluetoothDevice.BOND_BONDED -> {
                         Timber.i("BOND_BONDED")
 //                            if (MbtBleUtils.isIndus5(device)) {
@@ -44,5 +50,9 @@ class MbtBleBroadcastReceiver : BroadcastReceiver() {
                 }
             }
         }
+    }
+
+    fun isBonding(bluetoothDevice: BluetoothDevice): Boolean {
+        return (lastBluetoothDevice == bluetoothDevice) && (lastBondState == BluetoothDevice.BOND_BONDING)
     }
 }

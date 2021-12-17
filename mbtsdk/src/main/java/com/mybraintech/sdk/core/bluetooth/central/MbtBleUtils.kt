@@ -12,6 +12,12 @@ object MbtBleUtils {
         return bluetoothManager.getConnectedDevices(BluetoothProfile.GATT) ?: emptyList()
     }
 
+    fun getBondedDevices(context: Context): List<BluetoothDevice> {
+        val bluetoothManager =
+            context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        return bluetoothManager.adapter.bondedDevices.toList()
+    }
+
     fun isIndus5(device: BluetoothDevice): Boolean {
         val INDUS5_PREFIX_1 = "melo_2"
         val INDUS5_PREFIX_2 = "qp_"

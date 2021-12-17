@@ -1,6 +1,9 @@
 package com.mybraintech.sdk.core.bluetooth.central
 
-import android.bluetooth.*
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothGattCharacteristic
 import android.content.Context
 import android.content.IntentFilter
 import com.mybraintech.sdk.core.bluetooth.IMbtBleManager
@@ -12,23 +15,27 @@ import com.mybraintech.sdk.core.listener.DeviceInformationListener
 import com.mybraintech.sdk.core.listener.ScanResultListener
 import com.mybraintech.sdk.core.model.BleConnectionStatus
 import com.mybraintech.sdk.core.model.MbtDevice
+import com.mybraintech.sdk.util.getString
+import com.mybraintech.sdk.util.toJson
 import no.nordicsemi.android.ble.BleManager
 import no.nordicsemi.android.ble.WriteRequest
 import no.nordicsemi.android.ble.callback.DataReceivedCallback
 import no.nordicsemi.android.ble.callback.FailCallback
 import no.nordicsemi.android.ble.callback.SuccessCallback
 import no.nordicsemi.android.ble.data.Data
+import no.nordicsemi.android.ble.observer.BondingObserver
 import no.nordicsemi.android.support.v18.scanner.ScanCallback
 import no.nordicsemi.android.support.v18.scanner.ScanResult
 import timber.log.Timber
 
 class Indus5BleManager(ctx: Context) :
-    BleManager(ctx), IMbtBleManager, DataReceivedCallback {
+    BleManager(ctx), IMbtBleManager, BondingObserver, DataReceivedCallback {
 
     private var isScanning: Boolean = false
     private var broadcastReceiver = MbtBleBroadcastReceiver()
     private val mbtBleScanner = MbtBleScanner()
 
+    private var processingDevice: MbtDevice? = null
     private lateinit var scanResultListener: ScanResultListener
     private var connectionListener: ConnectionListener? = null
     private var batteryLevelListener: BatteryLevelListener? = null
@@ -77,7 +84,7 @@ class Indus5BleManager(ctx: Context) :
         return BluetoothAdapter.getDefaultAdapter().isEnabled
     }
 
-    private fun isConnectedAndReady() : Boolean {
+    private fun isConnectedAndReady(): Boolean {
         return (super.isConnected() && super.isReady())
     }
 
@@ -106,22 +113,28 @@ class Indus5BleManager(ctx: Context) :
             connectionListener.onConnectionError(Throwable("Bluetooth is not enabled"))
             return
         }
+        if (isConnectedAndReady()) {
+            connectionListener.onConnectionError(Throwable("Device is connected already : ${bluetoothDevice.getString()}"))
+            return
+        }
+        setBondingObserver(this)
         this.connectionListener = connectionListener
+        this.processingDevice = mbtDevice
         connect(mbtDevice.bluetoothDevice)
             .useAutoConnect(false)
             .timeout(5000)
             .done {
-                Timber.i("enqueueConnect done")
+                Timber.i("ble connect done")
             }
             .fail { device, status ->
-                Timber.i("enqueueConnect fail")
-                connectionListener.onConnectionError(Throwable("fail to connect to MbtDevice ${mbtDevice.bluetoothDevice.name}"))
+                connectionListener.onConnectionError(Throwable("fail to connect to MbtDevice : name = ${device?.name} | status = $status"))
             }
             .enqueue()
     }
 
     override fun disconnectMbt() {
         if (super.isConnected()) {
+            processingDevice = null
             disconnect().enqueue()
         } else {
             connectionListener?.onConnectionError(Throwable("there is no connected device to disconnect!"))
@@ -130,7 +143,7 @@ class Indus5BleManager(ctx: Context) :
 
     override fun getBleConnectionStatus(): BleConnectionStatus {
         val gattConnectedDevices = MbtBleUtils.getGattConnectedDevices(context)
-        var connectedIndus5 : BluetoothDevice? = null
+        var connectedIndus5: BluetoothDevice? = null
         for (device in gattConnectedDevices) {
             if (MbtBleUtils.isIndus5(device)) {
                 Timber.i("found a connected indus5")
@@ -214,6 +227,21 @@ class Indus5BleManager(ctx: Context) :
         override fun onRequestFailed(device: BluetoothDevice?, status: Int) {
             Timber.e("$message : status = $status")
         }
+    }
+
+    //----------------------------------------------------------------------------
+    // MARK: Bonding observer
+    //----------------------------------------------------------------------------
+    override fun onBondingRequired(device: BluetoothDevice) {
+        connectionListener?.onBondingRequired(device)
+    }
+
+    override fun onBonded(device: BluetoothDevice) {
+        connectionListener?.onBonded(device)
+    }
+
+    override fun onBondingFailed(device: BluetoothDevice) {
+        connectionListener?.onBondingFailed(device)
     }
 
     //----------------------------------------------------------------------------
@@ -332,7 +360,6 @@ class Indus5BleManager(ctx: Context) :
         override fun onDeviceDisconnected() {
             Timber.i("onDeviceDisconnected")
             connectionListener?.onDeviceDisconnected()
-            disconnect().enqueue()
         }
     }
 }

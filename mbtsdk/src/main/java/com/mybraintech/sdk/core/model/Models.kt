@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothDevice
 
 // TODO: 09/11/2021 : move to separated class later
 class DeviceInformation {
+    var name: String? = null
 }
 
 class ScanResult(val devices: List<MbtDevice>) {

@@ -12,19 +12,20 @@ import com.mybraintech.sdk.core.listener.BatteryLevelListener
 import com.mybraintech.sdk.core.listener.ConnectionListener
 import com.mybraintech.sdk.core.listener.ScanResultListener
 import com.mybraintech.sdk.core.model.MbtDevice
-import com.mybraintech.sdk.sample.databinding.ActivityBluetoothManagerBinding
+import com.mybraintech.sdk.sample.databinding.ActivityQplusBinding
+import com.mybraintech.sdk.util.toJson
 import timber.log.Timber
 
-class BluetoothManagerActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListener {
+class QplusActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListener {
 
-    private lateinit var binding: ActivityBluetoothManagerBinding
+    private lateinit var binding: ActivityQplusBinding
     lateinit var mbtClient: MbtClient
     var mbtDevice: MbtDevice? = null
     val buffer = StringBuilder()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityBluetoothManagerBinding.inflate(layoutInflater)
+        binding = ActivityQplusBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         mbtClient = MbtClientFactory.createMbtClient(applicationContext, true)
@@ -43,7 +44,7 @@ class BluetoothManagerActivity : AppCompatActivity(), ConnectionListener, Batter
 
         binding.btnIsConnected.setOnClickListener {
             val bleConnectionStatus = mbtClient.getBleConnectionStatus()
-            buffer.appendLine("getBleConnectionStatus = ${bleConnectionStatus.mbtDevice} | ${bleConnectionStatus.isConnectionEstablished}")
+            buffer.appendLine("getBleConnectionStatus = ${bleConnectionStatus.mbtDevice.toJson()} | ${bleConnectionStatus.isConnectionEstablished}")
             binding.txtStatus.text = buffer.toString()
         }
 
@@ -102,8 +103,16 @@ class BluetoothManagerActivity : AppCompatActivity(), ConnectionListener, Batter
         addResultText("onServiceDiscovered")
     }
 
-    override fun onDeviceBondStateChanged(isBonded: Boolean) {
-        addResultText("onDeviceBondStateChanged = $isBonded")
+    override fun onBondingRequired(device: BluetoothDevice) {
+        addResultText("onBondingRequired")
+    }
+
+    override fun onBonded(device: BluetoothDevice) {
+        addResultText("onBonded")
+    }
+
+    override fun onBondingFailed(device: BluetoothDevice) {
+        addResultText("onBondingFailed")
     }
 
     override fun onDeviceReady() {
