@@ -1,12 +1,9 @@
 package com.mybraintech.sdk.core.model
 
 import android.bluetooth.BluetoothDevice
+import com.google.gson.annotations.SerializedName
 
 // TODO: 09/11/2021 : move to separated class later
-class DeviceInformation {
-    var name: String? = null
-}
-
 class ScanResult(val devices: List<MbtDevice>) {
 }
 

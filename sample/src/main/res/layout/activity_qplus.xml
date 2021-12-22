@@ -37,6 +37,12 @@
         android:text="Read battery level" />
 
     <Button
+        android:id="@+id/btn_read_device_infos"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Read device infos" />
+
+    <Button
         android:id="@+id/btn_disconnect"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

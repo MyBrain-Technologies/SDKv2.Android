@@ -1,4 +1,4 @@
-package com.mybraintech.sdk.core.bluetooth.central
+package com.mybraintech.sdk.core.bluetooth.qplus
 
 import no.nordicsemi.android.support.v18.scanner.BluetoothLeScannerCompat
 import no.nordicsemi.android.support.v18.scanner.ScanCallback

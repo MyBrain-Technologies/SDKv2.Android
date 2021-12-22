@@ -10,7 +10,9 @@ import com.mybraintech.sdk.MbtClient
 import com.mybraintech.sdk.MbtClientFactory
 import com.mybraintech.sdk.core.listener.BatteryLevelListener
 import com.mybraintech.sdk.core.listener.ConnectionListener
+import com.mybraintech.sdk.core.listener.DeviceInformationListener
 import com.mybraintech.sdk.core.listener.ScanResultListener
+import com.mybraintech.sdk.core.model.DeviceInformation
 import com.mybraintech.sdk.core.model.MbtDevice
 import com.mybraintech.sdk.sample.databinding.ActivityQplusBinding
 import com.mybraintech.sdk.util.toJson
@@ -62,6 +64,11 @@ class QplusActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListe
 
                 override fun onOtherDevices(otherDevices: List<BluetoothDevice>) {
                     Timber.i("onOtherDevices size = ${otherDevices.size}")
+                    for (device in otherDevices) {
+                        if (device.name !=null) {
+                            Timber.d("onOtherDevices name = ${device.name}")
+                        }
+                    }
                 }
 
                 override fun onScanError(error: Throwable) {
@@ -86,6 +93,29 @@ class QplusActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListe
         }
 
         binding.btnReadBattery.setOnClickListener {
+            mbtClient.getBatteryLevel(object : BatteryLevelListener {
+                override fun onBatteryLevel(float: Float) {
+                    addResultText("battery $float percent")
+                }
+
+                override fun onBatteryLevelError(error: Throwable) {
+                    addResultText("battery error : ${error.message}")
+                }
+
+            })
+        }
+
+        binding.btnReadDeviceInfos.setOnClickListener {
+            mbtClient.getDeviceInformation(object : DeviceInformationListener {
+                override fun onDeviceInformation(deviceInformation: DeviceInformation) {
+                    addResultText(deviceInformation.toJson())
+                }
+
+                override fun onDeviceInformationError(error: Throwable) {
+                    addResultText("onDeviceInformationError = ${error.message}")
+                }
+
+            })
         }
 
         binding.btnClearText.setOnClickListener {

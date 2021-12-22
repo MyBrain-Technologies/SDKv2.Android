@@ -6,8 +6,10 @@ import com.mybraintech.sdk.core.acquisition.IMSAcquisier
 import com.mybraintech.sdk.core.acquisition.eeg.EEGAcquisier
 import com.mybraintech.sdk.core.acquisition.eeg.SignalProcessingManager
 import com.mybraintech.sdk.core.bluetooth.IMbtBleManager
-import com.mybraintech.sdk.core.bluetooth.central.Indus5BleManager
+import com.mybraintech.sdk.core.bluetooth.qplus.Indus5BleManager
+import com.mybraintech.sdk.core.listener.BatteryLevelListener
 import com.mybraintech.sdk.core.listener.ConnectionListener
+import com.mybraintech.sdk.core.listener.DeviceInformationListener
 import com.mybraintech.sdk.core.listener.ScanResultListener
 import com.mybraintech.sdk.core.model.BleConnectionStatus
 import com.mybraintech.sdk.core.model.MbtDevice
@@ -41,5 +43,13 @@ class MbtClientV2(private val context: Context) : MbtClient {
 
     override fun disconnect() {
         mbtBleManager.disconnectMbt()
+    }
+
+    override fun getBatteryLevel(batteryLevelListener: BatteryLevelListener) {
+        mbtBleManager.getBatteryLevel(batteryLevelListener)
+    }
+
+    override fun getDeviceInformation(deviceInformationListener: DeviceInformationListener) {
+        mbtBleManager.getDeviceInformation(deviceInformationListener)
     }
 }

@@ -1,12 +1,13 @@
-package com.mybraintech.sdk.core.bluetooth.central
+package com.mybraintech.sdk.core.bluetooth.qplus
 
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.content.Context
-import android.content.IntentFilter
+import android.os.Handler
 import com.mybraintech.sdk.core.bluetooth.IMbtBleManager
+import com.mybraintech.sdk.core.bluetooth.MbtBleUtils
 import com.mybraintech.sdk.core.bluetooth.attributes.characteristiccontainer.characteristics.PostIndus5Characteristic
 import com.mybraintech.sdk.core.bluetooth.attributes.characteristiccontainer.services.PostIndus5Service
 import com.mybraintech.sdk.core.listener.BatteryLevelListener
@@ -14,13 +15,13 @@ import com.mybraintech.sdk.core.listener.ConnectionListener
 import com.mybraintech.sdk.core.listener.DeviceInformationListener
 import com.mybraintech.sdk.core.listener.ScanResultListener
 import com.mybraintech.sdk.core.model.BleConnectionStatus
+import com.mybraintech.sdk.core.model.DeviceInformation
 import com.mybraintech.sdk.core.model.MbtDevice
+import com.mybraintech.sdk.util.NumericalUtils
 import com.mybraintech.sdk.util.getString
 import no.nordicsemi.android.ble.BleManager
 import no.nordicsemi.android.ble.WriteRequest
 import no.nordicsemi.android.ble.callback.DataReceivedCallback
-import no.nordicsemi.android.ble.callback.FailCallback
-import no.nordicsemi.android.ble.callback.SuccessCallback
 import no.nordicsemi.android.ble.data.Data
 import no.nordicsemi.android.support.v18.scanner.ScanCallback
 import no.nordicsemi.android.support.v18.scanner.ScanResult
@@ -29,16 +30,21 @@ import timber.log.Timber
 class Indus5BleManager(ctx: Context) :
     BleManager(ctx), IMbtBleManager, DataReceivedCallback {
 
+    private val MTU_SIZE = 47
+
     private var isScanning: Boolean = false
     private var broadcastReceiver = MbtBleBroadcastReceiver()
     private val mbtBleScanner = MbtBleScanner()
+    private lateinit var scanResultListener: ScanResultListener
 
     private var targetMbtDevice: MbtDevice? = null
-    private lateinit var scanResultListener: ScanResultListener
+    private var deviceInformation = DeviceInformation()
     private var connectionListener: ConnectionListener? = null
-    private var batteryLevelListener: BatteryLevelListener? = null
     private var txCharacteristic: BluetoothGattCharacteristic? = null
     private var rxCharacteristic: BluetoothGattCharacteristic? = null
+
+    private var batteryLevelListener: BatteryLevelListener? = null
+    private var deviceInformationListener: DeviceInformationListener? = null
 
     //----------------------------------------------------------------------------
     // MARK: ble manager
@@ -49,19 +55,47 @@ class Indus5BleManager(ctx: Context) :
         Timber.log(priority, message)
     }
 
-    //----------------------------------------------------------------------------
-    // MARK: IbluetoothUsage
-    //----------------------------------------------------------------------------
-
-    override fun setBatteryLevelListener(batteryLevelListener: BatteryLevelListener?) {
+    override fun getBatteryLevel(batteryLevelListener: BatteryLevelListener) {
         this.batteryLevelListener = batteryLevelListener
+        getBatteryLevelMailboxRequest()
+            .fail { _, _ ->
+                batteryLevelListener.onBatteryLevelError(Throwable())
+            }
+            .enqueue()
     }
 
     //----------------------------------------------------------------------------
     // MARK: rx data receive callback
     //----------------------------------------------------------------------------
     override fun onDataReceived(device: BluetoothDevice, data: Data) {
-        Timber.i("onDataReceived : ${data.value}")
+        if (data.value != null) {
+            Timber.i("onDataReceived : ${NumericalUtils.bytesToHex(data.value)}")
+            when (val indus5Response = QPlusMailboxHelper.parseRawIndus5Response(data.value!!)) {
+                is Indus5Response.MtuChange -> {
+                    Timber.i("Mailbox MTU changed successfully")
+                }
+                is Indus5Response.BatteryLevel -> {
+                    batteryLevelListener?.onBatteryLevel(indus5Response.percent)
+                }
+                is Indus5Response.FirmwareVersion -> {
+                    deviceInformation.firmwareVersion = indus5Response.version
+                }
+                is Indus5Response.HardwareVersion -> {
+                    deviceInformation.hardwareVersion = indus5Response.version
+                }
+                is Indus5Response.SerialNumber -> {
+                    deviceInformation.uniqueDeviceIdentifier = indus5Response.serialNumber
+                }
+                is Indus5Response.DeviceName -> {
+                    deviceInformation.productName = indus5Response.name
+                }
+                else -> {
+                    Timber.e("this type is not supported : ${indus5Response.javaClass.simpleName}")
+                }
+            }
+        } else {
+            Timber.e("data value is null")
+        }
     }
 
     //----------------------------------------------------------------------------
@@ -158,6 +192,34 @@ class Indus5BleManager(ctx: Context) :
         }
     }
 
+    override fun getDeviceInformation(deviceInformationListener: DeviceInformationListener) {
+        this.deviceInformation = DeviceInformation().also {
+            it.productName = targetMbtDevice?.bluetoothDevice?.name ?: ""
+        }
+        this.deviceInformationListener = deviceInformationListener
+        beginAtomicRequestQueue()
+//            .add(getDeviceNameMailboxRequest()) //do not need to call this, we have already device name
+            .add(getFirmwareVersionMailboxRequest())
+            .add(getHardwareVersionMailboxRequest())
+            .add(getSerialNumberMailboxRequest())
+            .done {
+                //emit result immediately if completed, otherwise emit result (may be not completed) with 100 ms delay
+                if (deviceInformation.isCompleted()) {
+                    Timber.d("device information is completed, trigger listener...")
+                    deviceInformationListener.onDeviceInformation(deviceInformation)
+                } else {
+                    Handler(context.mainLooper).postDelayed({
+                        Timber.d("Delayed callback : device information is completed = ${this.deviceInformation.isCompleted()}, trigger listener...")
+                        deviceInformationListener.onDeviceInformation(this.deviceInformation)
+                    }, 100)
+                }
+            }
+            .fail { _, status ->
+                deviceInformationListener.onDeviceInformationError(Throwable("fail to retrieve device information : status = $status"))
+            }
+            .enqueue()
+    }
+
     override fun hasA2dpConnectedDevice(): Boolean {
         TODO("Not yet implemented")
     }
@@ -184,37 +246,6 @@ class Indus5BleManager(ctx: Context) :
 
     override fun isListeningToHeadsetStatus(): Boolean {
         TODO("Not yet implemented")
-    }
-
-    override fun getBatteryLevel() {
-        getBatteryMailboxRequest()
-            .done {
-                Timber.i("readBatteryLevelMbt done")
-            }
-            .enqueue()
-    }
-
-    //----------------------------------------------------------------------------
-    // MARK: gatt callback
-    //----------------------------------------------------------------------------
-    private fun String.getFailCallback(): FailCallback {
-        return Indus5FailCallback(this)
-    }
-
-    private fun String.getSuccessCallback(): SuccessCallback {
-        return Indus5SuccessCallback(this)
-    }
-
-    private class Indus5SuccessCallback(private val message: String) : SuccessCallback {
-        override fun onRequestCompleted(device: BluetoothDevice?) {
-            Timber.i(message)
-        }
-    }
-
-    private class Indus5FailCallback(private val message: String) : FailCallback {
-        override fun onRequestFailed(device: BluetoothDevice?, status: Int) {
-            Timber.e("$message : status = $status")
-        }
     }
 
     private fun handleScanResults(results: List<BluetoothDevice>) {
@@ -251,19 +282,49 @@ class Indus5BleManager(ctx: Context) :
     }
 
     private fun getMtuMailboxRequest(): WriteRequest {
-        val CMD_CHANGE_MTU: ByteArray = byteArrayOf(0x29.toByte(), 0x2F)
         return writeCharacteristic(
             txCharacteristic,
-            CMD_CHANGE_MTU,
+            QPlusMailboxHelper.generateMtuChangeBytes(MTU_SIZE),
             BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
         )
     }
 
-    private fun getBatteryMailboxRequest(): WriteRequest {
-        val CMD_READ_BATTERY_LEVEL: ByteArray = byteArrayOf(0x20.toByte())
+    private fun getBatteryLevelMailboxRequest(): WriteRequest {
         return writeCharacteristic(
             txCharacteristic,
-            CMD_READ_BATTERY_LEVEL,
+            EnumIndus5FrameSuffix.MBX_GET_BATTERY_VALUE.bytes,
+            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        )
+    }
+
+    private fun getDeviceNameMailboxRequest(): WriteRequest {
+        return writeCharacteristic(
+            txCharacteristic,
+            EnumIndus5FrameSuffix.MBX_GET_DEVICE_NAME.bytes,
+            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        )
+    }
+
+    private fun getFirmwareVersionMailboxRequest(): WriteRequest {
+        return writeCharacteristic(
+            txCharacteristic,
+            EnumIndus5FrameSuffix.MBX_GET_FIRMWARE_VERSION.bytes,
+            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        )
+    }
+
+    private fun getHardwareVersionMailboxRequest(): WriteRequest {
+        return writeCharacteristic(
+            txCharacteristic,
+            EnumIndus5FrameSuffix.MBX_GET_HARDWARE_VERSION.bytes,
+            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        )
+    }
+
+    private fun getSerialNumberMailboxRequest(): WriteRequest {
+        return writeCharacteristic(
+            txCharacteristic,
+            EnumIndus5FrameSuffix.MBX_GET_SERIAL_NUMBER.bytes,
             BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
         )
     }
@@ -297,18 +358,18 @@ class Indus5BleManager(ctx: Context) :
             beginAtomicRequestQueue()
                 .add(
                     enableNotifications(rxCharacteristic)
-                        .done("rx enableNotifications done".getSuccessCallback())
-                        .fail("Could not subscribe".getFailCallback())
+                        .done { Timber.d("asdfsd") }
+                        .fail { _, _ -> Timber.e("Could not subscribe") }
                 )
                 .add(
-                    requestMtu(47)
-                        .done("requestMtu done".getSuccessCallback())
-                        .fail("Could not requestMtu".getFailCallback())
+                    requestMtu(MTU_SIZE)
+                        .done { Timber.d("requestMtu done") }
+                        .fail { _, _ -> Timber.e("Could not requestMtu") }
                 )
                 .add(
                     getMtuMailboxRequest()
-                        .done("MtuMailboxRequest done".getSuccessCallback())
-                        .fail("Could not MtuMailboxRequest".getFailCallback())
+                        .done { Timber.d("MtuMailboxRequest done") }
+                        .fail { _, _ -> Timber.e("Could not MtuMailboxRequest") }
                 )
                 .enqueue()
         }

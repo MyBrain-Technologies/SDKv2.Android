@@ -34,6 +34,7 @@ interface IMbtBleManager {
     //----------------------------------------------------------------------------
     // battery
     //----------------------------------------------------------------------------
-    fun setBatteryLevelListener(batteryLevelListener: BatteryLevelListener?)
-    fun getBatteryLevel()
+    fun getBatteryLevel(batteryLevelListener: BatteryLevelListener)
+
+    fun getDeviceInformation(deviceInformationListener: DeviceInformationListener)
 }

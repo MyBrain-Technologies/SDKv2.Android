@@ -1,4 +1,4 @@
-package com.mybraintech.sdk.core.bluetooth.central
+package com.mybraintech.sdk.core.bluetooth
 
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
