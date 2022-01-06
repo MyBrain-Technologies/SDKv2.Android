@@ -167,7 +167,7 @@ class QplusActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListe
     }
 
     override fun onBatteryLevelError(error: Throwable) {
-        TODO("Not yet implemented")
+        Timber.e(error)
     }
 
 

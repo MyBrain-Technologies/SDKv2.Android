@@ -9,7 +9,7 @@ object MbtClientFactory {
         return if (isQPlusDevice) {
             MbtClientV2(context)
         } else {
-            TODO("not yet supported")
+            TODO("Melomind : to implement")
         }
     }
 }
