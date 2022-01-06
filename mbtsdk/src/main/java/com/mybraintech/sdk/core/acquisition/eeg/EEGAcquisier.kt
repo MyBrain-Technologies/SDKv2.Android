@@ -1,81 +1,80 @@
 package com.mybraintech.sdk.core.acquisition.eeg
 
-import com.mybraintech.sdk.core.bluetooth.deviceinformation.DeviceInformation
-import com.mybraintech.sdk.core.shared.MBTRelaxIndexAlgorithm
-import core.eeg.signalprocessing.ContextSP
 import core.eeg.storage.MbtEEGPacket
 
 
 // TODO: 09/11/2021 : implement
-class EEGAcquisier(
-  private val signalProcessor: SignalProcessingManager,
-  private val acquisitionProcessor: EEGAcquisitionProcessor,
-  private val  eegPacketManager: EEGPacketManager = EEGPacketManager(),
-  private val acquisisitonSaver: EEGAcquisitionSaver = EEGAcquisitionSaver()
-  ) {
+abstract class EEGAcquisier(
+//    private val signalProcessor: SignalProcessingManager,
+//    private val acquisitionProcessor: EEGAcquisitionProcessor,
+//    private val eegPacketManager: EEGPacketManager = EEGPacketManager(),
+//    private val acquisisitonSaver: EEGAcquisitionSaver = EEGAcquisitionSaver()
+) {
 
-  //----------------------------------------------------------------------------
-  // MARK: - Properties
-  //----------------------------------------------------------------------------
+    //----------------------------------------------------------------------------
+    // MARK: - Properties
+    //----------------------------------------------------------------------------
 
-  /********************  Parameters ********************/
+    /********************  Parameters ********************/
 
-  /// Bool to know if developer wants to use QC or not.
-  var hasQualityChecker: Boolean = false
-  private set
+    /// Bool to know if developer wants to use QC or not.
+    var hasQualityChecker: Boolean = false
+        private set
 
-  /// if the sdk record in DB EEGPacket
-  var isRecording: Boolean = false
-  set(value) {
-    field = value
-    if (value) {
-      eegPacketManager.removeAllEegPackets()
+    /// if the sdk record in DB EEGPacket
+    var isRecording: Boolean = false
+        set(value) {
+            field = value
+            if (value) {
+                eegPacketManager.removeAllEegPackets()
+            }
+        }
+
+    //----------------------------------------------------------------------------
+    // Initialization
+    //----------------------------------------------------------------------------
+
+    init {
+        signalProcessor.resetSession()
     }
-  }
 
-  //----------------------------------------------------------------------------
-  // Initialization
-  //----------------------------------------------------------------------------
+    //==============================================================================
+    // MARK: - Packets
+    //==============================================================================
 
-   init {
-    signalProcessor.resetSession()
-   }
+    abstract fun onEEGFrame(bytes: ByteArray)
 
-  //==============================================================================
-  // MARK: - Packets
-  //==============================================================================
-
-  fun getLastPackets(count: Int): Array<MbtEEGPacket>? {
-    // TODO: Anh Tuan todo. Need refactor MbtEEGPacket?
+    fun getLastPackets(count: Int): Array<MbtEEGPacket>? {
+        // TODO: Anh Tuan todo. Need refactor MbtEEGPacket?
 //    return eegPacketManager.getLastPackets(count)
-    return null
-  }
+        return null
+    }
 
-  //----------------------------------------------------------------------------
-  // MARK: - Manage streaming datas methods.
-  //----------------------------------------------------------------------------
+    //----------------------------------------------------------------------------
+    // MARK: - Manage streaming datas methods.
+    //----------------------------------------------------------------------------
 
-  /// Method called by MelomindEngine when a new EEG streaming
-  /// session has began. Method will make everything ready, acquisition side
-  /// for the new session.
-  fun startStream(isUsingQualityChecker: Boolean, sampleRate: Int) {
-    TODO("Start mainQualityChecker")
+    /// Method called by MelomindEngine when a new EEG streaming
+    /// session has began. Method will make everything ready, acquisition side
+    /// for the new session.
+    fun startStream(isUsingQualityChecker: Boolean, sampleRate: Int) {
+        TODO("Start mainQualityChecker")
 //    if (!isUsingQualityChecker) { return }
 //
 //    signalProcessor.initializeQualityChecker(sampleRate.toFloat())
 //    hasQualityChecker = true
-  }
+    }
 
 
-  /// Method called by MelomindEngine when the current EEG streaming
-  /// session has finished.
-  fun stopStream() {
-    TODO("// Dealloc mainQC.")
+    /// Method called by MelomindEngine when the current EEG streaming
+    /// session has finished.
+    fun stopStream() {
+        TODO("// Dealloc mainQC.")
 //    if (!isUsingQualityChecker) { return }
 //
 //    hasQualityChecker = false
 //    signalProcessor.deinitQualityChecker()
-  }
+    }
 
 //  /// Save the EEGPackets recorded
 //  ///
@@ -120,29 +119,28 @@ class EEGAcquisier(
 ////      }
 //  }
 
-  //----------------------------------------------------------------------------
-  // MARK: - Process Received data Methods.
-  //----------------------------------------------------------------------------
+    //----------------------------------------------------------------------------
+    // MARK: - Process Received data Methods.
+    //----------------------------------------------------------------------------
 
-  /// Process the brain activty measurement received and return the processed
-  /// data.
-  /// - Parameters:
-  ///     - data: *Data* received from MBT Headset EEGs.
-  /// - Returns: *Dictionnary* with the packet Index (key: "packetIndex") and
-  /// array of P3 and P4 samples arrays ( key: "packet" )
-  fun generateEegPacket(eegData: ByteArray): MbtEEGPacket? {
-    val eegPacket =
-      acquisitionProcessor.getEEGPacket(eegData, hasQualityChecker)
-      ?: return null
+    /// Process the brain activty measurement received and return the processed
+    /// data.
+    /// - Parameters:
+    ///     - data: *Data* received from MBT Headset EEGs.
+    /// - Returns: *Dictionnary* with the packet Index (key: "packetIndex") and
+    /// array of P3 and P4 samples arrays ( key: "packet" )
+    fun generateEegPacket(eegData: ByteArray): MbtEEGPacket? {
+        val eegPacket =
+            acquisitionProcessor.getEEGPacket(eegData, hasQualityChecker)
+                ?: return null
 
 
-    if (isRecording) {
-      eegPacketManager.saveEEGPacket(eegPacket)
+        if (isRecording) {
+            eegPacketManager.saveEEGPacket(eegPacket)
+        }
+
+        return eegPacket
     }
-
-    return eegPacket
-  }
-
 
 
 }

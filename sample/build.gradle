@@ -120,6 +120,7 @@ dependencies {
     implementation 'com.github.aakira:expandable-layout:1.6.0@aar'
     implementation 'com.github.florent37:viewanimator:1.0.5'
     implementation 'com.github.woxthebox:draglistview:1.4.4'
+    implementation 'com.google.android:flexbox:1.0.0'
 
 
     //animation

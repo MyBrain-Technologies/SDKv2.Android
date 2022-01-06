@@ -6,14 +6,12 @@ import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.content.Context
 import android.os.Handler
+import com.mybraintech.sdk.core.acquisition.eeg.EEGAcquisier
 import com.mybraintech.sdk.core.bluetooth.IMbtBleManager
 import com.mybraintech.sdk.core.bluetooth.MbtBleUtils
 import com.mybraintech.sdk.core.bluetooth.attributes.characteristiccontainer.characteristics.PostIndus5Characteristic
 import com.mybraintech.sdk.core.bluetooth.attributes.characteristiccontainer.services.PostIndus5Service
-import com.mybraintech.sdk.core.listener.BatteryLevelListener
-import com.mybraintech.sdk.core.listener.ConnectionListener
-import com.mybraintech.sdk.core.listener.DeviceInformationListener
-import com.mybraintech.sdk.core.listener.ScanResultListener
+import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.BleConnectionStatus
 import com.mybraintech.sdk.core.model.DeviceInformation
 import com.mybraintech.sdk.core.model.MbtDevice
@@ -52,7 +50,11 @@ class Indus5BleManager(ctx: Context) :
     override fun getGattCallback(): BleManagerGattCallback = Indus5GattCallback(this)
 
     override fun log(priority: Int, message: String) {
-        Timber.log(priority, message)
+        if (message.contains("value: (0x) 40")) {
+            Timber.v(message)
+        } else {
+            Timber.log(priority, message)
+        }
     }
 
     override fun getBatteryLevel(batteryLevelListener: BatteryLevelListener) {
@@ -88,6 +90,9 @@ class Indus5BleManager(ctx: Context) :
                 }
                 is Indus5Response.DeviceName -> {
                     deviceInformation.productName = indus5Response.name
+                }
+                is Indus5Response.EegFrame -> {
+                    eegAcquisier?.onEEGFrame(indus5Response.data)
                 }
                 else -> {
                     Timber.e("this type is not supported : ${indus5Response.javaClass.simpleName}")
@@ -218,6 +223,20 @@ class Indus5BleManager(ctx: Context) :
                 deviceInformationListener.onDeviceInformationError(Throwable("fail to retrieve device information : status = $status"))
             }
             .enqueue()
+    }
+
+    override fun startEeg(eegAcquisier: EEGAcquisier) {
+        this.eegAcquisier = eegAcquisier
+        writeCharacteristic(
+            txCharacteristic,
+            EnumIndus5FrameSuffix.MBX_START_EEG_ACQUISITION.bytes,
+            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        )
+            .enqueue()
+    }
+
+    override fun stopEeg() {
+        TODO("Not yet implemented")
     }
 
     override fun hasA2dpConnectedDevice(): Boolean {

@@ -2,14 +2,11 @@ package com.mybraintech.sdk
 
 import android.content.Context
 import com.mybraintech.sdk.core.MbtClientV2
+import com.mybraintech.sdk.core.model.EnumMBTDevice
 
 object MbtClientFactory {
 
-    fun createMbtClient(context: Context, isQPlusDevice: Boolean): MbtClient {
-        return if (isQPlusDevice) {
-            MbtClientV2(context)
-        } else {
-            TODO("Melomind : to implement")
-        }
+    fun createMbtClient(context: Context, deviceType: EnumMBTDevice): MbtClient {
+        return MbtClientV2(context, deviceType)
     }
 }

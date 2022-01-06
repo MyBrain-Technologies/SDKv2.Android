@@ -1,14 +1,16 @@
 package com.mybraintech.sdk.core.bluetooth
 
-import com.mybraintech.sdk.core.listener.BatteryLevelListener
-import com.mybraintech.sdk.core.listener.ConnectionListener
-import com.mybraintech.sdk.core.listener.DeviceInformationListener
-import com.mybraintech.sdk.core.listener.ScanResultListener
+import com.mybraintech.sdk.core.acquisition.eeg.EEGAcquisier
+import com.mybraintech.sdk.core.acquisition.eeg.SignalProcessingManager
+import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.BleConnectionStatus
 import com.mybraintech.sdk.core.model.MbtDevice
 
 
 interface IMbtBleManager {
+
+    var eegAcquisier: EEGAcquisier?
+
     //----------------------------------------------------------------------------
     // scanning + connection
     //----------------------------------------------------------------------------
@@ -37,4 +39,10 @@ interface IMbtBleManager {
     fun getBatteryLevel(batteryLevelListener: BatteryLevelListener)
 
     fun getDeviceInformation(deviceInformationListener: DeviceInformationListener)
+
+    //----------------------------------------------------------------------------
+    // MARK: streaming
+    //----------------------------------------------------------------------------
+    fun startEeg(eegAcquisier: EEGAcquisier)
+    fun stopEeg()
 }

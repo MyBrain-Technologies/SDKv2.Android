@@ -8,11 +8,9 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.mybraintech.sdk.MbtClient
 import com.mybraintech.sdk.MbtClientFactory
-import com.mybraintech.sdk.core.listener.BatteryLevelListener
-import com.mybraintech.sdk.core.listener.ConnectionListener
-import com.mybraintech.sdk.core.listener.DeviceInformationListener
-import com.mybraintech.sdk.core.listener.ScanResultListener
+import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.DeviceInformation
+import com.mybraintech.sdk.core.model.EnumMBTDevice
 import com.mybraintech.sdk.core.model.MbtDevice
 import com.mybraintech.sdk.sample.databinding.ActivityQplusBinding
 import com.mybraintech.sdk.util.toJson
@@ -30,7 +28,7 @@ class QplusActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListe
         binding = ActivityQplusBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        mbtClient = MbtClientFactory.createMbtClient(applicationContext, true)
+        mbtClient = MbtClientFactory.createMbtClient(applicationContext, EnumMBTDevice.Q_PLUS)
 
         initView()
     }
@@ -121,6 +119,19 @@ class QplusActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListe
         binding.btnClearText.setOnClickListener {
             buffer.clear()
             binding.txtStatus.text = ""
+        }
+
+        binding.btnStartEeg.setOnClickListener {
+            mbtClient.startEEG(object : EEGListener {
+                override fun onEegPackage() {
+                    TODO("Not yet implemented")
+                }
+
+                override fun onEegError() {
+                    TODO("Not yet implemented")
+                }
+
+            })
         }
     }
 
