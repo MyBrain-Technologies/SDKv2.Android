@@ -1,5 +1,6 @@
 package core.eeg.acquisition
 
+import com.mybraintech.sdk.util.ErrorDataHelper2
 import org.junit.Test
 import org.junit.jupiter.api.Assertions.assertEquals
 
@@ -14,7 +15,6 @@ internal class ErrorDataHelperTest {
 
     private val eegInputs = arrayListOf<ByteArray>(
             byteArrayOf(
-                    0x11, 0x11,
                     0x01, 0x10, 0x02, 0x20, 0x03, 0x30, 0x04, 0x40,
                     0x01, 0x11, 0x02, 0x21, 0x03, 0x31, 0x04, 0x41,
                     0x01, 0x12, 0x02, 0x22, 0x03, 0x32, 0x04, 0x42,
@@ -22,7 +22,6 @@ internal class ErrorDataHelperTest {
                     0x01, 0x14, 0x02, 0x24, 0x03, 0x34, 0x04, 0x44
             ),
             byteArrayOf(
-                    0x11, 0x11,
                     ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO,
                     0x01, 0x11, 0x02, 0x21, 0x03, 0x31, 0x04, 0x41,
                     0x01, 0x12, 0x02, 0x22, 0x03, 0x32, 0x04, 0x42,
@@ -30,7 +29,6 @@ internal class ErrorDataHelperTest {
                     0x01, 0x14, 0x02, 0x24, 0x03, 0x34, 0x04, 0x44
             ),
             byteArrayOf(
-                    0x11, 0x11,
                     ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO,
                     ZERO, ZERO, 0x02, 0x21, 0x03, 0x31, 0x04, 0x41,
                     0x01, 0x12, ZERO, 0x22, 0x03, 0x32, 0x04, 0x42,
@@ -38,7 +36,6 @@ internal class ErrorDataHelperTest {
                     0x01, 0x14, 0x02, 0x24, 0x03, 0x34, 0x04, 0x44
             ),
             byteArrayOf(
-                    0x11, 0x11,
                     ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO,
                     ZERO, ZERO, 0x02, 0x21, 0x03, 0x31, 0x04, 0x41,
                     0x01, 0x12, ZERO, ZERO, 0x03, 0x32, 0x04, 0x42,
@@ -56,10 +53,12 @@ internal class ErrorDataHelperTest {
 
     @Test
     fun testCountZeroSample() {
+        println("testCountZeroSample")
         for (i in 0 until eegInputs.size) {
+            println("input $i")
             val eegInput = eegInputs[i]
             val expected = expecteds[i]
-            val result = ErrorDataHelper.countZeroSample(eegInput, channelNb)
+            val result = ErrorDataHelper2.countZeroSample(eegInput, channelNb)
             assertEquals(expected.first, result.first)
             assertEquals(expected.second, result.second)
         }

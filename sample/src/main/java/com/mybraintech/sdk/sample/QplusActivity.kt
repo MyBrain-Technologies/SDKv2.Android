@@ -8,8 +8,10 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.mybraintech.sdk.MbtClient
 import com.mybraintech.sdk.MbtClientFactory
+import com.mybraintech.sdk.core.acquisition.eeg.MbtEEGPacket2
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.DeviceInformation
+import com.mybraintech.sdk.core.model.EEGParams
 import com.mybraintech.sdk.core.model.EnumMBTDevice
 import com.mybraintech.sdk.core.model.MbtDevice
 import com.mybraintech.sdk.sample.databinding.ActivityQplusBinding
@@ -49,6 +51,7 @@ class QplusActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListe
         }
 
         binding.btnScan.setOnClickListener {
+            addResultText("scanning...")
             mbtClient.startScan(object : ScanResultListener {
                 override fun onMbtDevices(mbtDevices: List<MbtDevice>) {
                     Timber.i("onMbtDevices size = ${mbtDevices.size}")
@@ -63,7 +66,7 @@ class QplusActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListe
                 override fun onOtherDevices(otherDevices: List<BluetoothDevice>) {
                     Timber.i("onOtherDevices size = ${otherDevices.size}")
                     for (device in otherDevices) {
-                        if (device.name !=null) {
+                        if (device.name != null) {
                             Timber.d("onOtherDevices name = ${device.name}")
                         }
                     }
@@ -122,16 +125,25 @@ class QplusActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListe
         }
 
         binding.btnStartEeg.setOnClickListener {
-            mbtClient.startEEG(object : EEGListener {
-                override fun onEegPackage() {
-                    TODO("Not yet implemented")
-                }
+            mbtClient.startEEG(
+                object : EEGListener {
+                    override fun onEegPacket(mbtEEGPacket2: MbtEEGPacket2) {
+                        Timber.d("onEegPacket : ${mbtEEGPacket2.timeStamp}")
+                    }
 
-                override fun onEegError() {
-                    TODO("Not yet implemented")
-                }
+                    override fun onEegError(error: Throwable) {
+                        Timber.e(error)
+                    }
+                },
+                EEGParams(
+                    sampleRate = 250,
+                    isStatusEnabled = false,
+                    isQualityCheckerEnabled = true)
+            )
+        }
 
-            })
+        binding.btnStopEeg.setOnClickListener {
+            mbtClient.stopEEG()
         }
     }
 

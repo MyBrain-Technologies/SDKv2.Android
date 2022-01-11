@@ -6,7 +6,7 @@ import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.content.Context
 import android.os.Handler
-import com.mybraintech.sdk.core.acquisition.eeg.EEGAcquisier
+import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessing
 import com.mybraintech.sdk.core.bluetooth.IMbtBleManager
 import com.mybraintech.sdk.core.bluetooth.MbtBleUtils
 import com.mybraintech.sdk.core.bluetooth.attributes.characteristiccontainer.characteristics.PostIndus5Characteristic
@@ -28,6 +28,7 @@ import timber.log.Timber
 class Indus5BleManager(ctx: Context) :
     BleManager(ctx), IMbtBleManager, DataReceivedCallback {
 
+    private var eegSignalProcessing: EEGSignalProcessing? = null
     private val MTU_SIZE = 47
 
     private var isScanning: Boolean = false
@@ -91,8 +92,11 @@ class Indus5BleManager(ctx: Context) :
                 is Indus5Response.DeviceName -> {
                     deviceInformation.productName = indus5Response.name
                 }
-                is Indus5Response.EegFrame -> {
-                    eegAcquisier?.onEEGFrame(indus5Response.data)
+                is Indus5Response.EEGStatus -> {
+                    eegSignalProcessing?.onEEGStatusChange(indus5Response.isEnabled)
+                }
+                is Indus5Response.EEGFrame -> {
+                    eegSignalProcessing?.onEEGFrame(indus5Response.data)
                 }
                 else -> {
                     Timber.e("this type is not supported : ${indus5Response.javaClass.simpleName}")
@@ -225,8 +229,8 @@ class Indus5BleManager(ctx: Context) :
             .enqueue()
     }
 
-    override fun startEeg(eegAcquisier: EEGAcquisier) {
-        this.eegAcquisier = eegAcquisier
+    override fun startEeg(eegSignalProcessing: EEGSignalProcessing) {
+        this.eegSignalProcessing = eegSignalProcessing
         writeCharacteristic(
             txCharacteristic,
             EnumIndus5FrameSuffix.MBX_START_EEG_ACQUISITION.bytes,
@@ -236,7 +240,12 @@ class Indus5BleManager(ctx: Context) :
     }
 
     override fun stopEeg() {
-        TODO("Not yet implemented")
+        writeCharacteristic(
+            txCharacteristic,
+            EnumIndus5FrameSuffix.MBX_STOP_EEG_ACQUISITION.bytes,
+            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        )
+            .enqueue()
     }
 
     override fun hasA2dpConnectedDevice(): Boolean {

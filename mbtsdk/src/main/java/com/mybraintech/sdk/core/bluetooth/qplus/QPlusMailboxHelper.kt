@@ -41,15 +41,15 @@ object QPlusMailboxHelper {
                     Indus5Response.TriggerConfiguration(byteArray[1].toInt())
                 }
                 EnumIndus5FrameSuffix.MBX_EEG_DATA_FRAME_EVT.getOperationCode() -> {
-                    // remove command code
+                    // remove operation code
                     val data = byteArray.copyOfRange(1, byteArray.size)
-                    Indus5Response.EegFrame(data)
+                    Indus5Response.EEGFrame(data)
                 }
                 EnumIndus5FrameSuffix.MBX_START_EEG_ACQUISITION.getOperationCode() -> {
-                    Indus5Response.EegStatus(true)
+                    Indus5Response.EEGStatus(true)
                 }
                 EnumIndus5FrameSuffix.MBX_STOP_EEG_ACQUISITION.getOperationCode() -> {
-                    Indus5Response.EegStatus(false)
+                    Indus5Response.EEGStatus(false)
                 }
                 EnumIndus5FrameSuffix.MBX_START_IMS_ACQUISITION.getOperationCode() -> {
                     Indus5Response.ImsStatus(true)

@@ -10,7 +10,7 @@ internal class JsonUtilsKtTest {
     @Test
     fun toJson() {
         println("test toJson started")
-        val di = DeviceInformation().apply { name = "alpha" }
+        val di = DeviceInformation()
         val result = di.toJson()
         println(result)
         assert(!result.isNullOrBlank())

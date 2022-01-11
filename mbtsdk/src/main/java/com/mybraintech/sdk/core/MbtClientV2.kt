@@ -7,6 +7,7 @@ import com.mybraintech.sdk.core.bluetooth.IMbtBleManager
 import com.mybraintech.sdk.core.bluetooth.qplus.Indus5BleManager
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.BleConnectionStatus
+import com.mybraintech.sdk.core.model.EEGParams
 import com.mybraintech.sdk.core.model.EnumMBTDevice
 import com.mybraintech.sdk.core.model.MbtDevice
 
@@ -59,10 +60,10 @@ class MbtClientV2(private val context: Context, private val deviceType: EnumMBTD
         mbtBleManager.getDeviceInformation(deviceInformationListener)
     }
 
-    override fun startEEG(eegListener: EEGListener) {
-        signalProcessingManager = SignalProcessingManager(deviceType)
-        signalProcessingManager?.eegListener = eegListener
-        signalProcessingManager?.eegAcquisier?.let {
+    override fun startEEG(eegListener: EEGListener, eegParams: EEGParams) {
+        signalProcessingManager = SignalProcessingManager(deviceType, eegParams)
+        signalProcessingManager?.eegSignalProcessing?.eegListener = eegListener
+        signalProcessingManager?.eegSignalProcessing?.let {
             mbtBleManager.startEeg(it)
         }
     }

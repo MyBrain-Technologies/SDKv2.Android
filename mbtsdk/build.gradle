@@ -40,8 +40,6 @@ android {
         }
         debug {
         }
-        unitTests {
-        }
     }
     
     externalNativeBuild {
@@ -58,16 +56,6 @@ android {
             dimension "package"
         }
     }
-
-    testBuildType "unitTests"
-
-    externalNativeBuild {
-        ndkBuild {
-            path 'jni/Android.mk'
-        }
-    }
-
-
 
     testOptions {
         unitTests.returnDefaultValues = true
@@ -133,6 +121,7 @@ dependencies {
     testImplementation 'org.greenrobot:eventbus:3.1.1'
     testImplementation 'org.robolectric:robolectric:3.7.1'
     testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'junit:junit:4.12'
     androidTestImplementation 'org.mockito:mockito-android:2.25.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.0'

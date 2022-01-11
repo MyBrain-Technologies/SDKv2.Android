@@ -1,15 +1,12 @@
 package com.mybraintech.sdk.core.bluetooth
 
-import com.mybraintech.sdk.core.acquisition.eeg.EEGAcquisier
-import com.mybraintech.sdk.core.acquisition.eeg.SignalProcessingManager
+import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessing
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.BleConnectionStatus
 import com.mybraintech.sdk.core.model.MbtDevice
 
 
 interface IMbtBleManager {
-
-    var eegAcquisier: EEGAcquisier?
 
     //----------------------------------------------------------------------------
     // scanning + connection
@@ -43,6 +40,6 @@ interface IMbtBleManager {
     //----------------------------------------------------------------------------
     // MARK: streaming
     //----------------------------------------------------------------------------
-    fun startEeg(eegAcquisier: EEGAcquisier)
+    fun startEeg(eegSignalProcessing: EEGSignalProcessing)
     fun stopEeg()
 }

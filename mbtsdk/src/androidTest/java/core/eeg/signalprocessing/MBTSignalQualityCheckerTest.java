@@ -17,7 +17,7 @@ import java.util.Arrays;
 
 import core.eeg.Log;
 
-import static androidx.test.platform.app.InstrumentationRegistry.getContext;
+import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
 import static org.junit.Assert.*;
 
 public class MBTSignalQualityCheckerTest {
@@ -49,7 +49,7 @@ public class MBTSignalQualityCheckerTest {
         Log.d("quality checker", "setup");
         samprate = 250;
         packetLength = 250;
-        context = getContext();
+        context = getInstrumentation().getTargetContext();
         testInitQualityChecker();
     }
 

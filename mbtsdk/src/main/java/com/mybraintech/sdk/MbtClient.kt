@@ -2,6 +2,7 @@ package com.mybraintech.sdk
 
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.BleConnectionStatus
+import com.mybraintech.sdk.core.model.EEGParams
 import com.mybraintech.sdk.core.model.EnumMBTDevice
 import com.mybraintech.sdk.core.model.MbtDevice
 
@@ -14,6 +15,6 @@ interface MbtClient {
     fun disconnect()
     fun getBatteryLevel(batteryLevelListener: BatteryLevelListener)
     fun getDeviceInformation(deviceInformationListener: DeviceInformationListener)
-    fun startEEG(eegListener: EEGListener)
+    fun startEEG(eegListener: EEGListener, eegParams: EEGParams)
     fun stopEEG()
 }

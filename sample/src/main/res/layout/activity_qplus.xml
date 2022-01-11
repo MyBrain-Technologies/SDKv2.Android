@@ -78,6 +78,13 @@
             android:layout_margin="2dp"
             android:text="btn_start_eeg" />
 
+        <Button
+            android:id="@+id/btn_stop_eeg"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="2dp"
+            android:text="btn_stop_eeg" />
+
     </com.google.android.flexbox.FlexboxLayout>
 
     <ScrollView
