@@ -34,7 +34,8 @@ class SplashActivity : AppCompatActivity() {
                 requestPermissions(permissions, REQUEST_CODE_PERMISSIONS)
             }
         } else {
-            Intent(this, QplusActivity::class.java)
+//            Intent(this, QplusActivity::class.java)
+            Intent(this, MainActivity::class.java)
                 .also {
                     startActivity(it)
                 }

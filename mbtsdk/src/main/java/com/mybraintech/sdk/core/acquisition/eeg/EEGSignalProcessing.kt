@@ -21,17 +21,9 @@ abstract class EEGSignalProcessing(
     protocol: EnumBluetoothProtocol,
     protected val statusAlloc: Int,
     private val isQualityCheckerEnabled: Boolean,
-//    private val signalProcessor: SignalProcessingManager,
-//    private val acquisitionProcessor: EEGAcquisitionProcessor,
 //    private val eegPacketManager: EEGPacketManager = EEGPacketManager(),
 //    private val acquisisitonSaver: EEGAcquisitionSaver = EEGAcquisitionSaver()
 ) {
-
-    //----------------------------------------------------------------------------
-    // MARK: - Properties
-    //----------------------------------------------------------------------------
-
-    /********************  Parameters ********************/
 
     //==============================================================================
     // MARK: - Packets
@@ -144,12 +136,12 @@ abstract class EEGSignalProcessing(
 
     private var qualityChecker: QualityChecker? = null
 
-    //use 3 disposables to safely handle data and optimize memory by clearing one by one
+    //use 3 CompositeDisposable to safely handle data and optimize memory by clearing one by one
     private var disposableCount = 0
-    private val containerPerDisposable = 20
-    private var disposable1 = CompositeDisposable()
-    private var disposable2 = CompositeDisposable()
-    private var disposable3 = CompositeDisposable()
+    private val disposablePerContainer = 20
+    private var container1 = CompositeDisposable()
+    private var container2 = CompositeDisposable()
+    private var container3 = CompositeDisposable()
 
     fun onEEGStatusChange(isEnabled: Boolean) {
         this.isEEGEnabled = isEnabled
@@ -166,19 +158,19 @@ abstract class EEGSignalProcessing(
         if (isQualityCheckerEnabled) {
             qualityChecker = QualityChecker(sampleRate)
         }
-        disposable1.clear()
-        disposable2.clear()
-        disposable3.clear()
+        container1.clear()
+        container2.clear()
+        container3.clear()
     }
 
     fun onEEGFrame(eegFrame: ByteArray) {
         Timber.d("onEEGFrame : ${NumericalUtils.bytesToShortString(eegFrame)}")
         //switch work to not-main thread
-        if (disposableCount >= 3 * containerPerDisposable) {
+        if (disposableCount >= 3 * disposablePerContainer) {
             disposableCount = 0
         }
         disposableCount++
-        val disposable = selectDisposable(disposableCount)
+        val disposable = clearContainerAndSelectDisposable(disposableCount)
         Observable.just(eegFrame)
             .subscribeOn(Schedulers.trampoline()) //executes tasks in a FIFO (First In, First Out) manner
             .map {
@@ -195,19 +187,19 @@ abstract class EEGSignalProcessing(
     /**
      * disposable 1 will be used first then 2 then 3 then 1 again...
      */
-    private fun selectDisposable(disposableCount: Int): CompositeDisposable {
-        when (disposableCount / containerPerDisposable) {
+    private fun clearContainerAndSelectDisposable(disposableCount: Int): CompositeDisposable {
+        when (disposableCount / disposablePerContainer) {
             1 -> {
-                disposable3.clear()
-                return disposable2
+                container3.clear()
+                return container2
             }
             2 -> {
-                disposable1.clear()
-                return disposable3
+                container1.clear()
+                return container3
             }
             else -> {
-                disposable2.clear()
-                return disposable1
+                container2.clear()
+                return container1
             }
         }
     }

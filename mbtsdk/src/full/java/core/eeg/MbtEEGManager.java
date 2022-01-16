@@ -7,6 +7,8 @@ import androidx.annotation.VisibleForTesting;
 
 import com.mybraintech.android.jnibrainbox.BrainBoxVersion;
 import com.mybraintech.android.jnibrainbox.QualityChecker;
+import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessing;
+import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessingIndus5;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.greenrobot.eventbus.Subscribe;
@@ -380,6 +382,8 @@ public final class MbtEEGManager extends BaseModuleManager {
         }
     }
 
+    static public EEGSignalProcessing newSignalProcessing = new EEGSignalProcessingIndus5(250, 0, true);
+
     /**
      * Handles the raw EEG data acquired by the headset and transmitted to the application
      * onEvent is called by the Event Bus when a BluetoothEEGEvent event is posted
@@ -392,6 +396,7 @@ public final class MbtEEGManager extends BaseModuleManager {
     public void onEvent(BluetoothEEGEvent event) { //warning : this method is used
         try {
             dataAcquisition.handleDataAcquired(event.getData(), getNumberOfChannels());
+            newSignalProcessing.onEEGFrame(event.getData());
         } catch (Exception e) {
             Timber.e(e);
         }

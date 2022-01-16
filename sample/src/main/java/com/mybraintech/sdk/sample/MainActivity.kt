@@ -8,11 +8,14 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
 import androidx.core.app.ActivityCompat
+import com.mybraintech.sdk.core.acquisition.eeg.MbtEEGPacket2
+import com.mybraintech.sdk.core.listener.EEGListener
 import com.mybraintech.sdk.sample.databinding.ActivityMainBinding
 import config.ConnectionConfig
 import config.StreamConfig
 import core.bluetooth.StreamState
 import core.device.model.MbtDevice
+import core.eeg.MbtEEGManager
 import core.eeg.storage.MbtEEGPacket
 import engine.MbtClient
 import engine.clientevents.BaseError
@@ -21,6 +24,7 @@ import engine.clientevents.DeviceBatteryListener
 import engine.clientevents.EegListener
 import features.MbtDeviceType
 import timber.log.Timber
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
@@ -28,6 +32,8 @@ class MainActivity : AppCompatActivity() {
     lateinit var mbtClient: MbtClient
     private lateinit var binding: ActivityMainBinding
 
+    private var list1 = LinkedList<MbtEEGPacket>()
+    private var list2 = LinkedList<MbtEEGPacket2>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -88,9 +94,21 @@ class MainActivity : AppCompatActivity() {
         }
         binding.btnStartStreaming.setOnClickListener {
             startStreamingEeg()
-        }
-        binding.btnStartStreaming.setOnClickListener {
+            MbtEEGManager.newSignalProcessing.onEEGStatusChange(true)
+            MbtEEGManager.newSignalProcessing.eegListener = object : EEGListener {
+                override fun onEegPacket(mbtEEGPacket2: MbtEEGPacket2) {
+                    list2.add(mbtEEGPacket2)
+                    if (list2.size > 10) {
+                        list2.removeFirst()
+                    }
+                    checkLists()
+                }
 
+                override fun onEegError(error: Throwable) {
+                    Timber.e(error)
+                }
+
+            }
         }
     }
 
@@ -102,6 +120,11 @@ class MainActivity : AppCompatActivity() {
 
             override fun onNewPackets(eegPackets: MbtEEGPacket) {
                 binding.txtEegPackage.text = eegPackets.toString()
+                list1.add(eegPackets)
+                if (list1.size > 10) {
+                    list1.removeFirst()
+                }
+                checkLists()
             }
 
             override fun onNewStreamState(streamState: StreamState) {
@@ -111,6 +134,26 @@ class MainActivity : AppCompatActivity() {
         val streamConfig = StreamConfig.Builder(eegListener)
             .createForDevice(MbtDeviceType.MELOMIND)
         mbtClient.startStream(streamConfig)
+    }
+
+    private fun checkLists() {
+        val pos = list2.size-1
+        if (list1.size == list2.size) {
+            Timber.i("compare here")
+            for (i in 0..249) {
+                if (list1[pos].channelsData[i] != list2[pos].channelsData[i]) {
+                    Timber.e("false : mbt packet is not identical : eeg $i : ${list1[pos].channelsData[i]} # ${list2[pos].channelsData[i]} ")
+                    return
+                }
+            }
+            for (j in 0..3) {
+                if (list1[pos].qualities[j] != list2[pos].qualities[j]) {
+                    Timber.e("false : mbt packet qualities is not identical :  $j : ${list1[pos].qualities[j]} # ${list2[pos].qualities[j]} ")
+                    return
+                }
+            }
+        }
+        Timber.e("mbt packet is identical")
     }
 
     private fun readFirmwareVersion() {

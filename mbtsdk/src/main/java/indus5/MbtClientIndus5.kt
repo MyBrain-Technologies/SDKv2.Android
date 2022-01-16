@@ -375,7 +375,7 @@ object MbtClientIndus5 {
         bluetoothGatt.disconnect()
 
         // TODO: 13/09/2021 secure a firmware bug, the bug should be fix in the new firmware version then we can remove this function
-        removeBond(bluetoothGatt.device)
+//        removeBond(bluetoothGatt.device)
     }
 
     private fun removeBond(device: BluetoothDevice) {
@@ -404,7 +404,7 @@ object MbtClientIndus5 {
 
         try {
             // TODO: 13/09/2021 secure a firmware bug, the bug should be fix in the new firmware version then we can remove this function
-            removeBond(device)
+//            removeBond(device)
         } catch (e: Exception) {
             Timber.e(e)
         }
