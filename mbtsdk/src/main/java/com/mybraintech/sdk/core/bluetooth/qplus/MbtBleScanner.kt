@@ -13,7 +13,7 @@ class MbtBleScanner {
         val settings: ScanSettings = ScanSettings.Builder()
             .setLegacy(false)
             .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-            .setReportDelay(0)
+            .setReportDelay(150)
             .setUseHardwareBatchingIfSupported(true)
             .build()
         scanner.startScan(null, settings, scanCallback)

@@ -51,6 +51,13 @@
             android:text="Disconnect" />
 
         <Button
+            android:id="@+id/btn_de_bond"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="2dp"
+            android:text="De-bond" />
+
+        <Button
             android:id="@+id/btn_read_battery"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

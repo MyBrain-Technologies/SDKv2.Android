@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.mybraintech.sdk.MbtClient
 import com.mybraintech.sdk.MbtClientFactory
 import com.mybraintech.sdk.core.acquisition.eeg.MbtEEGPacket2
+import com.mybraintech.sdk.core.bluetooth.MbtBleUtils
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
 import com.mybraintech.sdk.sample.databinding.ActivityQplusBinding
@@ -93,6 +94,21 @@ class QplusActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListe
             mbtClient.disconnect()
         }
 
+        binding.btnDeBond.setOnClickListener {
+            mbtDevice?.let { nnDevice ->
+                MbtBleUtils.getBondedDevices(applicationContext).find {
+                    nnDevice.bluetoothDevice.address == it.address
+                }?.let { bonded ->
+                    try {
+                        bonded::class.java.getMethod("removeBond").invoke(bonded)
+                        addResultText("debonded!!")
+                    } catch (e: Exception) {
+                        Timber.e("Removing bond has been failed. ${e.message}")
+                    }
+                }
+            }
+        }
+
         binding.btnReadBattery.setOnClickListener {
             mbtClient.getBatteryLevel(object : BatteryLevelListener {
                 override fun onBatteryLevel(float: Float) {
@@ -138,7 +154,10 @@ class QplusActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListe
                         runOnUiThread {
                             eegCount++
                             binding.txtEegCount.text = eegCount.toString()
-                            binding.txtRecordingCount.text = mbtClient.getRecordingBufferSize().toString()
+                            if (mbtClient.isRecordingEnabled()) {
+                                binding.txtRecordingCount.text =
+                                    mbtClient.getRecordingBufferSize().toString()
+                            }
                         }
                     }
 
@@ -154,9 +173,14 @@ class QplusActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListe
             eegCount = 0
         }
         binding.btnStartRecording.setOnClickListener {
-            val folder = File(Environment.getExternalStorageDirectory().toString() + "/MBT")
-            folder.mkdirs()
-            val outputFile = File(folder, "record-${getTimeNow()}.json")
+            val name = "record-${getTimeNow()}.json"
+            val mbtFolder = File(Environment.getExternalStorageDirectory().toString() + "/MBT")
+            mbtFolder.mkdirs()
+            var outputFile = File(mbtFolder, name)
+            if (!outputFile.canWrite()) {
+                addResultText("do not have storage permissions on MBT folder, file will be create in private memory")
+                outputFile = File(cacheDir, name)
+            }
 
             mbtClient.startEEGRecording(
                 RecordingOption(
@@ -173,6 +197,7 @@ class QplusActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListe
 
                     override fun onRecordingError(error: Throwable) {
                         Timber.e(error)
+                        addResultText(error.message ?: "onRecordingError")
                     }
 
                 }
@@ -234,10 +259,11 @@ class QplusActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListe
     @SuppressLint("SimpleDateFormat")
     fun getTimeNow(): String {
         try {
-            val c = Calendar.getInstance();
-            val tf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            return tf.format(c)
+            val date = Date()
+            val tf = SimpleDateFormat("yyyy-MM-dd-HH:mm:ss");
+            return tf.format(date)
         } catch (e: Exception) {
+            Timber.e(e)
             return System.currentTimeMillis().toString()
         }
     }
