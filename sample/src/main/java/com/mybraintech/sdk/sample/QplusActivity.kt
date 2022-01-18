@@ -174,13 +174,8 @@ class QplusActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListe
         }
         binding.btnStartRecording.setOnClickListener {
             val name = "record-${getTimeNow()}.json"
-            val mbtFolder = File(Environment.getExternalStorageDirectory().toString() + "/MBT")
-            mbtFolder.mkdirs()
-            var outputFile = File(mbtFolder, name)
-            if (!outputFile.canWrite()) {
-                addResultText("do not have storage permissions on MBT folder, file will be create in private memory")
-                outputFile = File(cacheDir, name)
-            }
+            val folder = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString())
+            val outputFile = File(folder, name)
 
             mbtClient.startEEGRecording(
                 RecordingOption(
@@ -192,7 +187,7 @@ class QplusActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListe
                 object : RecordingListener {
                     override fun onRecordingSaved(outputFile: File) {
                         Timber.i("output file name = ${outputFile.name}")
-                        addResultText("output file name = ${outputFile.name}")
+                        addResultText("output file name = ${outputFile.path}")
                     }
 
                     override fun onRecordingError(error: Throwable) {
