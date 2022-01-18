@@ -14,6 +14,7 @@ import com.mybraintech.sdk.core.bluetooth.attributes.characteristiccontainer.ser
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.BleConnectionStatus
 import com.mybraintech.sdk.core.model.DeviceInformation
+import com.mybraintech.sdk.core.model.EnumAcquisitionLocation
 import com.mybraintech.sdk.core.model.MbtDevice
 import com.mybraintech.sdk.util.NumericalUtils
 import com.mybraintech.sdk.util.getString
@@ -24,6 +25,7 @@ import no.nordicsemi.android.ble.data.Data
 import no.nordicsemi.android.support.v18.scanner.ScanCallback
 import no.nordicsemi.android.support.v18.scanner.ScanResult
 import timber.log.Timber
+import java.util.*
 
 class Indus5BleManager(ctx: Context) :
     BleManager(ctx), IMbtBleManager, DataReceivedCallback {
@@ -72,7 +74,7 @@ class Indus5BleManager(ctx: Context) :
     //----------------------------------------------------------------------------
     override fun onDataReceived(device: BluetoothDevice, data: Data) {
         if (data.value != null) {
-            Timber.i("onDataReceived : ${NumericalUtils.bytesToHex(data.value)}")
+//            Timber.i("onDataReceived : ${NumericalUtils.bytesToHex(data.value)}")
             when (val indus5Response = QPlusMailboxHelper.parseRawIndus5Response(data.value!!)) {
                 is Indus5Response.MtuChange -> {
                     Timber.i("Mailbox MTU changed successfully")

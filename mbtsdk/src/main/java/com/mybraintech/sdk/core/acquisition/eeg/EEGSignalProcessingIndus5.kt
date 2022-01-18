@@ -1,6 +1,9 @@
 package com.mybraintech.sdk.core.acquisition.eeg
 
+import com.mybraintech.sdk.core.model.Kwak
+import com.mybraintech.sdk.core.model.KwakHeader
 import com.mybraintech.sdk.core.model.RawEEGSample2
+import com.mybraintech.sdk.core.model.RecordingOption
 import com.mybraintech.sdk.util.NumericalUtils
 import timber.log.Timber
 
@@ -79,6 +82,17 @@ class EEGSignalProcessingIndus5(
         } catch (e: Exception) {
             Timber.e(e)
             return null
+        }
+    }
+
+    override fun createKwak(recordingOption: RecordingOption): Kwak {
+        return Kwak().apply {
+            context = recordingOption.context
+            header = KwakHeader.getQPlusHeader().apply {
+                deviceInfo = recordingOption.deviceInformation
+                setRecordingNb(recordingOption.recordingNb)
+            }
+            recording.recordID = recordingOption.recordId
         }
     }
 }

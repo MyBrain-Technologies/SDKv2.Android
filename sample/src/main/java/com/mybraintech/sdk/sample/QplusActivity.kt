@@ -1,29 +1,32 @@
 package com.mybraintech.sdk.sample
 
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothManager
-import android.bluetooth.BluetoothProfile
-import android.content.Context
 import android.os.Bundle
+import android.os.Environment
 import androidx.appcompat.app.AppCompatActivity
 import com.mybraintech.sdk.MbtClient
 import com.mybraintech.sdk.MbtClientFactory
 import com.mybraintech.sdk.core.acquisition.eeg.MbtEEGPacket2
 import com.mybraintech.sdk.core.listener.*
-import com.mybraintech.sdk.core.model.DeviceInformation
-import com.mybraintech.sdk.core.model.EEGParams
-import com.mybraintech.sdk.core.model.EnumMBTDevice
-import com.mybraintech.sdk.core.model.MbtDevice
+import com.mybraintech.sdk.core.model.*
 import com.mybraintech.sdk.sample.databinding.ActivityQplusBinding
 import com.mybraintech.sdk.util.toJson
 import timber.log.Timber
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.*
 
 class QplusActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListener {
 
     private lateinit var binding: ActivityQplusBinding
     lateinit var mbtClient: MbtClient
     var mbtDevice: MbtDevice? = null
-    val buffer = StringBuilder()
+    var deviceInformation = DeviceInformation()
+    private val sb = StringBuilder()
+
+    var eegCount = 0
+    var recordingCount = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,18 +39,9 @@ class QplusActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListe
     }
 
     private fun initView() {
-        binding.btnCount.setOnClickListener {
-            val bluetoothManager =
-                this.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-            val gattCount = bluetoothManager.getConnectedDevices(BluetoothProfile.GATT);
-            buffer.appendLine("gatt btnCount = ${gattCount.size}")
-            binding.txtStatus.text = buffer.toString()
-        }
-
         binding.btnIsConnected.setOnClickListener {
             val bleConnectionStatus = mbtClient.getBleConnectionStatus()
-            buffer.appendLine("getBleConnectionStatus = ${bleConnectionStatus.mbtDevice.toJson()} | ${bleConnectionStatus.isConnectionEstablished}")
-            binding.txtStatus.text = buffer.toString()
+            addResultText("getBleConnectionStatus = ${bleConnectionStatus.mbtDevice.toJson()} | ${bleConnectionStatus.isConnectionEstablished}")
         }
 
         binding.btnScan.setOnClickListener {
@@ -55,12 +49,13 @@ class QplusActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListe
             mbtClient.startScan(object : ScanResultListener {
                 override fun onMbtDevices(mbtDevices: List<MbtDevice>) {
                     Timber.i("onMbtDevices size = ${mbtDevices.size}")
-                    addResultText("found devices")
                     for (device in mbtDevices) {
                         Timber.i("device ${device.bluetoothDevice.name}")
                     }
                     mbtClient.stopScan()
                     mbtDevice = mbtDevices[0]
+                    addResultText("found devices ${mbtDevice?.bluetoothDevice?.name}")
+                    addResultText("stop scan")
                 }
 
                 override fun onOtherDevices(otherDevices: List<BluetoothDevice>) {
@@ -78,6 +73,11 @@ class QplusActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListe
                 }
 
             })
+        }
+
+        binding.btnStopScan.setOnClickListener {
+            mbtClient.stopScan()
+            addResultText("stop scan")
         }
 
         binding.btnConnect.setOnClickListener {
@@ -109,6 +109,7 @@ class QplusActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListe
         binding.btnReadDeviceInfos.setOnClickListener {
             mbtClient.getDeviceInformation(object : DeviceInformationListener {
                 override fun onDeviceInformation(deviceInformation: DeviceInformation) {
+                    this@QplusActivity.deviceInformation = deviceInformation
                     addResultText(deviceInformation.toJson())
                 }
 
@@ -120,36 +121,73 @@ class QplusActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListe
         }
 
         binding.btnClearText.setOnClickListener {
-            buffer.clear()
+            sb.clear()
             binding.txtStatus.text = ""
         }
 
         binding.btnStartEeg.setOnClickListener {
             mbtClient.startEEG(
+                EEGParams(
+                    sampleRate = 250,
+                    isStatusEnabled = false,
+                    isQualityCheckerEnabled = true
+                ),
                 object : EEGListener {
                     override fun onEegPacket(mbtEEGPacket2: MbtEEGPacket2) {
                         Timber.d("onEegPacket : ${mbtEEGPacket2.timeStamp}")
+                        runOnUiThread {
+                            eegCount++
+                            binding.txtEegCount.text = eegCount.toString()
+                            binding.txtRecordingCount.text = mbtClient.getRecordingBufferSize().toString()
+                        }
                     }
 
                     override fun onEegError(error: Throwable) {
                         Timber.e(error)
                     }
                 },
-                EEGParams(
-                    sampleRate = 250,
-                    isStatusEnabled = false,
-                    isQualityCheckerEnabled = true)
             )
         }
 
         binding.btnStopEeg.setOnClickListener {
             mbtClient.stopEEG()
+            eegCount = 0
+        }
+        binding.btnStartRecording.setOnClickListener {
+            val folder = File(Environment.getExternalStorageDirectory().toString() + "/MBT")
+            folder.mkdirs()
+            val outputFile = File(folder, "record-${getTimeNow()}.json")
+
+            mbtClient.startEEGRecording(
+                RecordingOption(
+                    outputFile,
+                    KwakContext().apply { ownerId = "1" },
+                    deviceInformation,
+                    "record-" + UUID.randomUUID().toString()
+                ),
+                object : RecordingListener {
+                    override fun onRecordingSaved(outputFile: File) {
+                        Timber.i("output file name = ${outputFile.name}")
+                        addResultText("output file name = ${outputFile.name}")
+                    }
+
+                    override fun onRecordingError(error: Throwable) {
+                        Timber.e(error)
+                    }
+
+                }
+            )
+        }
+        binding.btnStopRecording.setOnClickListener {
+            mbtClient.stopEEGRecording()
         }
     }
 
     fun addResultText(text: String) {
-        buffer.appendLine(text)
-        binding.txtStatus.text = buffer.toString()
+        runOnUiThread {
+            sb.appendLine(text)
+            binding.txtStatus.text = sb.toString()
+        }
     }
 
     override fun onServiceDiscovered() {
@@ -173,8 +211,8 @@ class QplusActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListe
     }
 
     override fun onConnectionError(error: Throwable) {
-        buffer.appendLine("onConnectionError = ${error.message}")
-        binding.txtStatus.text = buffer.toString()
+        sb.appendLine("onConnectionError = ${error.message}")
+        binding.txtStatus.text = sb.toString()
     }
 
     override fun onDeviceDisconnected() {
@@ -185,13 +223,23 @@ class QplusActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListe
     // MARK: battery
     //----------------------------------------------------------------------------
     override fun onBatteryLevel(float: Float) {
-        buffer.appendLine("onBatteryLevel = $float")
-        binding.txtStatus.text = buffer.toString()
+        sb.appendLine("onBatteryLevel = $float")
+        binding.txtStatus.text = sb.toString()
     }
 
     override fun onBatteryLevelError(error: Throwable) {
         Timber.e(error)
     }
 
+    @SuppressLint("SimpleDateFormat")
+    fun getTimeNow(): String {
+        try {
+            val c = Calendar.getInstance();
+            val tf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            return tf.format(c)
+        } catch (e: Exception) {
+            return System.currentTimeMillis().toString()
+        }
+    }
 
 }

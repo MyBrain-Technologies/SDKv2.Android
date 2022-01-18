@@ -46,9 +46,6 @@ class SignalProcessingManager(deviceType: EnumMBTDevice, eegParams: EEGParams) {
     var hasComputedCalibration: Boolean = hasComputedCalibrationDefaultValue
         private set
 
-    ///
-    internal var eegPacketLength: Int = 0
-
 
     /******************** Versioning ********************/
 

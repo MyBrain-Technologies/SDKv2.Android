@@ -3,6 +3,7 @@ package com.mybraintech.sdk.core.model
 import com.google.gson.annotations.SerializedName
 
 class DeviceInformation {
+
     @SerializedName("productName")
     var productName: String = ""
 

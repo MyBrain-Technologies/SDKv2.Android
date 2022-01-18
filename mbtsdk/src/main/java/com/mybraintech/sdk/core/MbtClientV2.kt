@@ -6,10 +6,8 @@ import com.mybraintech.sdk.core.acquisition.eeg.SignalProcessingManager
 import com.mybraintech.sdk.core.bluetooth.IMbtBleManager
 import com.mybraintech.sdk.core.bluetooth.qplus.Indus5BleManager
 import com.mybraintech.sdk.core.listener.*
-import com.mybraintech.sdk.core.model.BleConnectionStatus
-import com.mybraintech.sdk.core.model.EEGParams
-import com.mybraintech.sdk.core.model.EnumMBTDevice
-import com.mybraintech.sdk.core.model.MbtDevice
+import com.mybraintech.sdk.core.model.*
+import timber.log.Timber
 
 /**
  * DO NOT USE THIS CLASS OUTSIDE OF THE SDK
@@ -17,7 +15,7 @@ import com.mybraintech.sdk.core.model.MbtDevice
  */
 class MbtClientV2(private val context: Context, private val deviceType: EnumMBTDevice) : MbtClient {
 
-    private val mbtBleManager : IMbtBleManager
+    private val mbtBleManager: IMbtBleManager
     private var signalProcessingManager: SignalProcessingManager? = null
 
     init {
@@ -60,7 +58,7 @@ class MbtClientV2(private val context: Context, private val deviceType: EnumMBTD
         mbtBleManager.getDeviceInformation(deviceInformationListener)
     }
 
-    override fun startEEG(eegListener: EEGListener, eegParams: EEGParams) {
+    override fun startEEG(eegParams: EEGParams, eegListener: EEGListener) {
         signalProcessingManager = SignalProcessingManager(deviceType, eegParams)
         signalProcessingManager?.eegSignalProcessing?.eegListener = eegListener
         signalProcessingManager?.eegSignalProcessing?.let {
@@ -70,5 +68,47 @@ class MbtClientV2(private val context: Context, private val deviceType: EnumMBTD
 
     override fun stopEEG() {
         mbtBleManager.stopEeg()
+    }
+
+    override fun startEEGRecording(
+        recordingOption: RecordingOption,
+        recordingListener: RecordingListener
+    ) {
+        if (isEEGEnabled()) {
+            if (!isRecordingEnabled()) {
+                signalProcessingManager!!.eegSignalProcessing.startRecording(
+                    recordingListener,
+                    recordingOption
+                )
+            } else {
+                recordingListener.onRecordingError(Throwable("Recording is enabled already"))
+            }
+        } else {
+            recordingListener.onRecordingError(Throwable("EEG is not enabled"))
+        }
+    }
+
+    override fun stopEEGRecording() {
+        if (isRecordingEnabled()) {
+            signalProcessingManager?.eegSignalProcessing?.stopRecording()
+        } else {
+            Timber.e("Recording is not enabled")
+        }
+    }
+
+    override fun isEEGEnabled(): Boolean {
+        return (signalProcessingManager?.eegSignalProcessing?.isEEGEnabled == true)
+    }
+
+    override fun isRecordingEnabled(): Boolean {
+        return isEEGEnabled() && (signalProcessingManager?.eegSignalProcessing?.isRecording == true)
+    }
+
+    override fun getRecordingBufferSize(): Int {
+        if (!isRecordingEnabled()) {
+            return 0
+        } else {
+            return signalProcessingManager?.eegSignalProcessing?.getEEGBufferSize() ?: -1
+        }
     }
 }
