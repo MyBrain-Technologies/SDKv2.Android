@@ -6,16 +6,17 @@ apply plugin: 'maven-publish'
 
 android {
     compileSdkVersion 30
-    buildToolsVersion '28.0.3'
+    buildToolsVersion '30.0.3'
 
     defaultConfig {
         minSdkVersion 22
         targetSdkVersion 30
 
-        versionCode 31
-        versionName '2.2.21.rc1'
+        versionCode 100
+        versionName '3.0.0.rc2'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
 
+        //TODO: move to other java module to isolate legacy code
         buildConfigField "boolean", "EEG_ENABLED", "true"
         buildConfigField "boolean", "BLUETOOTH_ENABLED", "true"
         buildConfigField "boolean", "DEVICE_ENABLED", "true"
