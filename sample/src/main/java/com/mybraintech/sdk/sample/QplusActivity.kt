@@ -2,9 +2,13 @@ package com.mybraintech.sdk.sample
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
+import android.content.ClipData
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.FileProvider
 import com.mybraintech.sdk.MbtClient
 import com.mybraintech.sdk.MbtClientFactory
 import com.mybraintech.sdk.core.acquisition.eeg.MbtEEGPacket2
@@ -23,7 +27,7 @@ class QplusActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListe
     private lateinit var binding: ActivityQplusBinding
     lateinit var mbtClient: MbtClient
     var mbtDevice: MbtDevice? = null
-    var deviceInformation = DeviceInformation()
+    var deviceInformation: DeviceInformation? = null
     private val sb = StringBuilder()
 
     var eegCount = 0
@@ -142,65 +146,102 @@ class QplusActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListe
         }
 
         binding.btnStartEeg.setOnClickListener {
-            mbtClient.startEEG(
-                EEGParams(
-                    sampleRate = 250,
-                    isStatusEnabled = false,
-                    isQualityCheckerEnabled = true
-                ),
-                object : EEGListener {
-                    override fun onEegPacket(mbtEEGPacket2: MbtEEGPacket2) {
-                        Timber.d("onEegPacket : ${mbtEEGPacket2.timeStamp}")
-                        runOnUiThread {
-                            eegCount++
-                            binding.txtEegCount.text = eegCount.toString()
-                            if (mbtClient.isRecordingEnabled()) {
-                                binding.txtRecordingCount.text =
-                                    mbtClient.getRecordingBufferSize().toString()
-                            }
-                        }
-                    }
-
-                    override fun onEegError(error: Throwable) {
-                        Timber.e(error)
-                    }
-                },
-            )
+            onBtnStartEEGClicked()
         }
 
         binding.btnStopEeg.setOnClickListener {
             mbtClient.stopEEG()
             eegCount = 0
         }
+
         binding.btnStartRecording.setOnClickListener {
-            val name = "record-${getTimeNow()}.json"
-            val folder = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString())
-            val outputFile = File(folder, name)
-
-            mbtClient.startEEGRecording(
-                RecordingOption(
-                    outputFile,
-                    KwakContext().apply { ownerId = "1" },
-                    deviceInformation,
-                    "record-" + UUID.randomUUID().toString()
-                ),
-                object : RecordingListener {
-                    override fun onRecordingSaved(outputFile: File) {
-                        Timber.i("output file name = ${outputFile.name}")
-                        addResultText("output file name = ${outputFile.path}")
-                    }
-
-                    override fun onRecordingError(error: Throwable) {
-                        Timber.e(error)
-                        addResultText(error.message ?: "onRecordingError")
-                    }
-
-                }
-            )
+            onBtnStartRecordingClicked()
         }
+
         binding.btnStopRecording.setOnClickListener {
             mbtClient.stopEEGRecording()
         }
+    }
+
+    private fun onBtnStartEEGClicked() {
+        mbtClient.startEEG(
+            EEGParams(
+                sampleRate = 250,
+                isStatusEnabled = false,
+                isQualityCheckerEnabled = true
+            ),
+            object : EEGListener {
+                override fun onEegPacket(mbtEEGPacket2: MbtEEGPacket2) {
+                    Timber.d("onEegPacket : ${mbtEEGPacket2.timeStamp}")
+                    runOnUiThread {
+                        eegCount++
+                        binding.txtEegCount.text = eegCount.toString()
+                        if (mbtClient.isRecordingEnabled()) {
+                            binding.txtRecordingCount.text =
+                                mbtClient.getRecordingBufferSize().toString()
+                        }
+                    }
+                }
+
+                override fun onEegError(error: Throwable) {
+                    Timber.e(error)
+                }
+            },
+        )
+    }
+
+    private fun onBtnStartRecordingClicked() {
+        if (deviceInformation == null) {
+            addResultText("Please retrieve device information before start recording")
+            return
+        }
+
+        val name = "${deviceInformation?.productName}-${getTimeNow()}.json"
+        var folder = File(Environment.getExternalStorageDirectory().toString() + "/MBT_SAMPLES")
+        if (!(folder.isDirectory || folder.mkdirs())) {
+            addResultText("do not have permission on external storage, file will be created in private memory")
+            folder = cacheDir
+        }
+        val outputFile = File(folder, name)
+
+        mbtClient.startEEGRecording(
+            RecordingOption(
+                outputFile,
+                KwakContext().apply { ownerId = "1" },
+                deviceInformation!!,
+                "record-" + UUID.randomUUID().toString()
+            ),
+            object : RecordingListener {
+                override fun onRecordingSaved(outputFile: File) {
+                    val path = outputFile.path
+                    Timber.i("output file path = $path")
+                    addResultText("output file path = $path")
+
+                    if (path.isPrivateMemory()) {
+                        val contentUri: Uri = FileProvider.getUriForFile(
+                            this@QplusActivity,
+                            "com.mybraintech.sdk.sample",
+                            outputFile
+                        )
+                        Intent(Intent.ACTION_SEND).apply {
+                            type = "text/json"
+                            data = contentUri
+                            putExtra(Intent.EXTRA_STREAM, contentUri);
+                            clipData = ClipData.newRawUri("", contentUri)
+                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        }.also {
+                            startActivity(it)
+                        }
+                    }
+                }
+
+                override fun onRecordingError(error: Throwable) {
+                    Timber.e(error)
+                    addResultText(error.message ?: "onRecordingError")
+                }
+
+            }
+        )
     }
 
     fun addResultText(text: String) {
@@ -236,6 +277,7 @@ class QplusActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListe
     }
 
     override fun onDeviceDisconnected() {
+        deviceInformation = null
         addResultText("onDeviceDisconnected")
     }
 
@@ -255,7 +297,7 @@ class QplusActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListe
     fun getTimeNow(): String {
         try {
             val date = Date()
-            val tf = SimpleDateFormat("yyyy-MM-dd-HH:mm:ss");
+            val tf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
             return tf.format(date)
         } catch (e: Exception) {
             Timber.e(e)
@@ -263,4 +305,9 @@ class QplusActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListe
         }
     }
 
+    private fun String.isPrivateMemory(): Boolean {
+        return this.contains(this@QplusActivity.packageName)
+    }
 }
+
+
