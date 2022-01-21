@@ -52,7 +52,7 @@ android {
 
 dependencies {
     // MBT SDK
-    implementation project(path: ':mbtsdk')
+    implementation project(path: ':sdk-v3')
 
     implementation deps.app_compat
 

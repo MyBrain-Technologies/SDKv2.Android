@@ -1,0 +1,89 @@
+plugins {
+    id 'com.android.library'
+    id 'kotlin-android'
+    id 'maven-publish'
+}
+
+android {
+    compileSdkVersion 31
+
+    defaultConfig {
+        minSdkVersion 21
+        targetSdkVersion 31
+
+        versionCode 100
+        versionName '3.0.0.rc2'
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles "consumer-rules.pro"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    Properties properties = new Properties()
+    properties.load(project.rootProject.file('local.properties').newDataInputStream())
+    def ndk_version = properties.getProperty('ndk_version')
+    ndkVersion ndk_version //type this in your local.properties file: ndk_version="<local_ndk_version>"; for example: ndk_version="21.1.6352462"
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+}
+
+configurations {
+    doclava
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    def useLocalJni = false
+    if (useLocalJni) {
+        implementation project(path: ':JniBrainBox')
+    } else {
+        implementation "com.mybraintech.android:jnibrainbox:3.0.0rc2"
+    }
+
+    implementation deps.kotlin.stdlib
+
+    implementation 'androidx.core:core-ktx:1.5.0'
+
+    implementation 'com.jakewharton.timber:timber:4.7.1'
+    implementation 'org.mod4j.org.apache.commons:lang:2.1.0'
+    implementation 'androidx.appcompat:appcompat:1.0.0'
+    implementation 'org.greenrobot:eventbus:3.1.1'
+    implementation 'com.google.code.gson:gson:2.8.5'
+    doclava 'com.google.doclava:doclava:1.0.6'
+
+    // rxjava
+    implementation deps.rx_android
+    implementation deps.rx_kotlin
+    implementation deps.rxjava2
+
+    // coroutines
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.2'
+
+    //bluetooth
+    implementation 'no.nordicsemi.android.support.v18:scanner:1.5.1' //use old version since we do not target Android api 31, update later
+    def useCustomizedBle = true
+    if (useCustomizedBle) {
+        implementation project(path: ':ble')
+        implementation project(path: ':ble-common')
+    } else {
+        implementation 'no.nordicsemi.android:ble:2.3.1'
+    }
+
+    testImplementation 'junit:junit:4.+'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.3'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
+}

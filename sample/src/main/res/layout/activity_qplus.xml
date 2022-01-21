@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context=".QplusActivity">
+    tools:context=".Indus5Activity">
 
     <com.google.android.flexbox.FlexboxLayout
         android:layout_width="match_parent"

@@ -8,6 +8,7 @@ import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import androidx.core.app.ActivityCompat
+import timber.log.Timber
 
 class SplashActivity : AppCompatActivity() {
 
@@ -24,8 +25,6 @@ class SplashActivity : AppCompatActivity() {
 
     private fun requestPermissions() {
         val permissions = arrayOf(
-            Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.READ_EXTERNAL_STORAGE,
             Manifest.permission.ACCESS_COARSE_LOCATION,
             Manifest.permission.ACCESS_FINE_LOCATION)
 
@@ -34,8 +33,8 @@ class SplashActivity : AppCompatActivity() {
                 requestPermissions(permissions, REQUEST_CODE_PERMISSIONS)
             }
         } else {
-            Intent(this, QplusActivity::class.java)
-//            Intent(this, MainActivity::class.java)
+            Timber.i("launch activity")
+            Intent(this, Indus5Activity::class.java)
                 .also {
                     startActivity(it)
                 }
