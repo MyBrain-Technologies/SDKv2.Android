@@ -164,10 +164,6 @@ class QplusActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListe
     }
 
     private fun onBtnStartEEGClicked() {
-        if (deviceInformation == null) {
-
-        }
-
         mbtClient.startEEG(
             EEGParams(
                 sampleRate = 250,
