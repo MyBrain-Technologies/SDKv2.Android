@@ -170,10 +170,8 @@ object MbtClientIndus5 {
             if (discoveringService) {
                 //subscribe rx on new thread
                 discoveringService = false
-                Thread {
-                    isSubscribingRx = true
-                    subscribeRx()
-                }.start()
+                isSubscribingRx = true
+                subscribeRx()
             }
         }
 
@@ -378,8 +376,8 @@ object MbtClientIndus5 {
     fun disconnectBluetooth() {
         bluetoothGatt.disconnect()
 
-//        // TODO: 13/09/2021 secure a firmware bug, the bug should be fix in the new firmware version then we can remove this function
-//        removeBond(bluetoothGatt.device)
+        // TODO: 13/09/2021 secure a firmware bug, the bug should be fix in the new firmware version then we can remove this function
+        removeBond(bluetoothGatt.device)
     }
 
     private fun removeBond(device: BluetoothDevice) {
@@ -406,12 +404,12 @@ object MbtClientIndus5 {
     private fun connectGattServer(device: BluetoothDevice) {
         Timber.d("connectGattServer")
 
-//        try {
-//            // TODO: 13/09/2021 secure a firmware bug, the bug should be fix in the new firmware version then we can remove this function
-//            removeBond(device)
-//        } catch (e: Exception) {
-//            Timber.e(e)
-//        }
+        try {
+            // TODO: 13/09/2021 secure a firmware bug, the bug should be fix in the new firmware version then we can remove this function
+            removeBond(device)
+        } catch (e: Exception) {
+            Timber.e(e)
+        }
 
         this.device = device
         bluetoothGatt = device.connectGatt(context, false, gattCallback)
