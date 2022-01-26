@@ -34,6 +34,7 @@ import java.util.*
 @SuppressLint("StaticFieldLeak")
 object MbtClientIndus5 {
 
+    private var transparentService: BluetoothGattService? = null
     private var deviceName: String? = null
     private var triggerListener: TriggerListener? = null
     private var deviceBatteryListener: DeviceBatteryListener<BaseError>? = null
@@ -161,6 +162,9 @@ object MbtClientIndus5 {
             Timber.v("services =")
             for (service in gatt.services) {
                 Timber.v("uuid = ${service.uuid}")
+                if (service.uuid.toString() == MelomindCharacteristics.INDUS_5_TRANSPARENT_SERVICE.toString()) {
+                    transparentService = service
+                }
             }
 
             if (discoveringService) {
@@ -374,8 +378,8 @@ object MbtClientIndus5 {
     fun disconnectBluetooth() {
         bluetoothGatt.disconnect()
 
-        // TODO: 13/09/2021 secure a firmware bug, the bug should be fix in the new firmware version then we can remove this function
-        removeBond(bluetoothGatt.device)
+//        // TODO: 13/09/2021 secure a firmware bug, the bug should be fix in the new firmware version then we can remove this function
+//        removeBond(bluetoothGatt.device)
     }
 
     private fun removeBond(device: BluetoothDevice) {
@@ -402,12 +406,12 @@ object MbtClientIndus5 {
     private fun connectGattServer(device: BluetoothDevice) {
         Timber.d("connectGattServer")
 
-        try {
-            // TODO: 13/09/2021 secure a firmware bug, the bug should be fix in the new firmware version then we can remove this function
-            removeBond(device)
-        } catch (e: Exception) {
-            Timber.e(e)
-        }
+//        try {
+//            // TODO: 13/09/2021 secure a firmware bug, the bug should be fix in the new firmware version then we can remove this function
+//            removeBond(device)
+//        } catch (e: Exception) {
+//            Timber.e(e)
+//        }
 
         this.device = device
         bluetoothGatt = device.connectGatt(context, false, gattCallback)
@@ -579,7 +583,13 @@ object MbtClientIndus5 {
     }
 
     private fun getService(): BluetoothGattService {
-        return bluetoothGatt.getService(MelomindCharacteristics.INDUS_5_TRANSPARENT_SERVICE)
+        return if (transparentService != null) {
+            transparentService!!
+        } else {
+            transparentService =
+                bluetoothGatt.getService(MelomindCharacteristics.INDUS_5_TRANSPARENT_SERVICE)
+            transparentService!!
+        }
     }
 
     private fun getRx(): BluetoothGattCharacteristic {
