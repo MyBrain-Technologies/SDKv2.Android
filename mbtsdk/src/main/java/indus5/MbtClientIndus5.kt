@@ -34,6 +34,7 @@ import java.util.*
 @SuppressLint("StaticFieldLeak")
 object MbtClientIndus5 {
 
+    private var transparentService: BluetoothGattService? = null
     private var deviceName: String? = null
     private var triggerListener: TriggerListener? = null
     private var deviceBatteryListener: DeviceBatteryListener<BaseError>? = null
@@ -161,15 +162,16 @@ object MbtClientIndus5 {
             Timber.v("services =")
             for (service in gatt.services) {
                 Timber.v("uuid = ${service.uuid}")
+                if (service.uuid.toString() == MelomindCharacteristics.INDUS_5_TRANSPARENT_SERVICE.toString()) {
+                    transparentService = service
+                }
             }
 
             if (discoveringService) {
                 //subscribe rx on new thread
                 discoveringService = false
-                Thread {
-                    isSubscribingRx = true
-                    subscribeRx()
-                }.start()
+                isSubscribingRx = true
+                subscribeRx()
             }
         }
 
@@ -579,7 +581,13 @@ object MbtClientIndus5 {
     }
 
     private fun getService(): BluetoothGattService {
-        return bluetoothGatt.getService(MelomindCharacteristics.INDUS_5_TRANSPARENT_SERVICE)
+        return if (transparentService != null) {
+            transparentService!!
+        } else {
+            transparentService =
+                bluetoothGatt.getService(MelomindCharacteristics.INDUS_5_TRANSPARENT_SERVICE)
+            transparentService!!
+        }
     }
 
     private fun getRx(): BluetoothGattCharacteristic {
