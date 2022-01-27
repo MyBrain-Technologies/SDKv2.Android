@@ -1,12 +1,12 @@
 include ':JniBrainBox'
-include ':mbtsdk'
+//include ':mbtsdk'
 include ':sample'
 
 //add the customized version of Nordic Android Ble
-include ':ble'
-project(':ble').projectDir = new File(settingsDir, 'Android-BLE-Library/ble')
-include ':ble-common'
-project(':ble-common').projectDir = new File(settingsDir, 'Android-BLE-Library/ble-common')
+//include ':ble'
+//project(':ble').projectDir = new File(settingsDir, 'Android-BLE-Library/ble')
+//include ':ble-common'
+//project(':ble-common').projectDir = new File(settingsDir, 'Android-BLE-Library/ble-common')
 
 //include ':app'
 include ':sdk-v3'

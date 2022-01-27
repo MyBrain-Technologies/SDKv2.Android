@@ -17,13 +17,13 @@ internal class MbtClientImpl(private val context: Context) : MbtClient {
 
     private lateinit var mbtBleManager: IMbtBleManager
     private var signalProcessingManager: SignalProcessingManager? = null
-    private lateinit var deviceType: EnumMBTDevice
+    private var deviceType: EnumMBTDevice = EnumMBTDevice.UNDEFINED
 
     override fun setDeviceType(mbtDevice: EnumMBTDevice) {
         if (this.deviceType == mbtDevice) {
             return //do nothing
         } else {
-            if (deviceType == EnumMBTDevice.Q_PLUS) {
+            if (mbtDevice == EnumMBTDevice.Q_PLUS) {
                 mbtBleManager = Indus5BleManager(context)
                 signalProcessingManager = null
             } else {
