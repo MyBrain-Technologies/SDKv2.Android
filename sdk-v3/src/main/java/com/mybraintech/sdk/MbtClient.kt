@@ -4,6 +4,7 @@ import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
 
 interface MbtClient {
+    fun setDeviceType(mbtDevice: EnumMBTDevice)
     fun getDeviceType() : EnumMBTDevice
     fun getBleConnectionStatus(): BleConnectionStatus
     fun startScan(scanResultListener: ScanResultListener)
