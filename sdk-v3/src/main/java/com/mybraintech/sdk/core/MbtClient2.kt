@@ -13,7 +13,7 @@ import timber.log.Timber
  * DO NOT USE THIS CLASS OUTSIDE OF THE SDK
  * MbtClientV2 is new class to support Q+ device, Melomind device...
  */
-class MbtClientV2(private val context: Context, private val deviceType: EnumMBTDevice) : MbtClient {
+class MbtClient2(private val context: Context, private val deviceType: EnumMBTDevice) : MbtClient {
 
     private val mbtBleManager: IMbtBleManager
     private var signalProcessingManager: SignalProcessingManager? = null
@@ -60,8 +60,8 @@ class MbtClientV2(private val context: Context, private val deviceType: EnumMBTD
 
     override fun startEEG(eegParams: EEGParams, eegListener: EEGListener) {
         signalProcessingManager = SignalProcessingManager(deviceType, eegParams)
-        signalProcessingManager?.eegSignalProcessing?.eegListener = eegListener
         signalProcessingManager?.eegSignalProcessing?.let {
+            it.eegListener = eegListener
             mbtBleManager.startEeg(it)
         }
     }

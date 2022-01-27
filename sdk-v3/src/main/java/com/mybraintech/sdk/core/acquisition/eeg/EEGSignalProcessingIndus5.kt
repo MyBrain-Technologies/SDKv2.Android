@@ -1,22 +1,16 @@
 package com.mybraintech.sdk.core.acquisition.eeg
 
-import com.mybraintech.sdk.core.model.Kwak
-import com.mybraintech.sdk.core.model.KwakHeader
-import com.mybraintech.sdk.core.model.RawEEGSample2
-import com.mybraintech.sdk.core.model.RecordingOption
+import com.mybraintech.android.jnibrainbox.BrainBoxVersion
+import com.mybraintech.sdk.core.model.*
 import com.mybraintech.sdk.util.NumericalUtils
 import timber.log.Timber
 
-class EEGSignalProcessingIndus5(
-    sampleRate: Int,
-    statusAllocationSize: Int,
-    isQualityCheckerEnabled: Boolean
-) :
+class EEGSignalProcessingIndus5(eegParams: EEGParams) :
     EEGSignalProcessing(
-        sampleRate,
-        EnumBluetoothProtocol.BLE,
-        statusAllocationSize,
-        isQualityCheckerEnabled
+        sampleRate = eegParams.sampleRate,
+        protocol = EnumBluetoothProtocol.BLE,
+        isTriggerStatusEnabled = eegParams.isTriggerStatusEnabled,
+        isQualityCheckerEnabled = eegParams.isQualityCheckerEnabled
     ) {
 
     override fun getFrameIndex(eegFrame: ByteArray): Long {
@@ -38,6 +32,7 @@ class EEGSignalProcessingIndus5(
 
     override fun getEEGData(eegFrame: ByteArray): List<RawEEGSample2> {
         val list = mutableListOf<RawEEGSample2>()
+        val hasStatus = (statusAlloc != 0)
         val triggerBytes = if (hasStatus) {
             eegFrame.copyOfRange(indexAlloc, headerAlloc)
         } else {
@@ -45,7 +40,7 @@ class EEGSignalProcessingIndus5(
         }
         for (i in 0 until getNumberOfTimes(eegFrame)) {
             val status = if (hasStatus) {
-                getStatus(i, triggerBytes)
+                getTriggerStatus(i, triggerBytes)
             } else {
                 Float.NaN
             }
@@ -54,14 +49,14 @@ class EEGSignalProcessingIndus5(
         return list
     }
 
-    private fun getStatus(pos: Int, statusBytes: ByteArray): Float {
+    private fun getTriggerStatus(pos: Int, triggerStatusBytes: ByteArray): Float {
         try {
-            val byte = statusBytes[pos / 8] //one byte has 8 bits
+            val byte = triggerStatusBytes[pos / 8] //one byte has 8 bits
             val bitPos = pos % 8
             return NumericalUtils.isBitSet(byte, bitPos)
         } catch (e: Exception) {
             Timber.e(e)
-            Timber.e("pos = $pos, statusBytes = ${NumericalUtils.bytesToShortString(statusBytes)}")
+            Timber.e("pos = $pos, statusBytes = ${NumericalUtils.bytesToShortString(triggerStatusBytes)}")
             return Float.NaN
         }
     }
@@ -93,6 +88,11 @@ class EEGSignalProcessingIndus5(
                 setRecordingNb(recordingOption.recordingNb)
             }
             recording.recordID = recordingOption.recordId
+            if (isQualityCheckerEnabled) {
+                recording.recordingType.spVersion = BrainBoxVersion.getVersion()
+            } else {
+                recording.recordingType.spVersion = "0.0.0"
+            }
         }
     }
 }

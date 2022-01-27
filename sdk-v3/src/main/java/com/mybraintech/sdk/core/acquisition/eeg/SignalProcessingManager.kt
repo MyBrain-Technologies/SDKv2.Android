@@ -7,7 +7,6 @@ import com.mybraintech.sdk.core.model.EnumMBTDevice
 
 class SignalProcessingManager(deviceType: EnumMBTDevice, eegParams: EEGParams) {
     private val hasComputedCalibrationDefaultValue: Boolean = false
-    private val sampleRate: Int = 250
 //    private val eegQualityProcessor: EEGQualityProcessor =
 //        EEGQualityProcessor(sampleRate)
 //    private val eegRelaxIndexProcessor: EEGToRelaxIndexProcessor = EEGToRelaxIndexProcessor()
@@ -16,24 +15,9 @@ class SignalProcessingManager(deviceType: EnumMBTDevice, eegParams: EEGParams) {
 
     init {
         if (deviceType == EnumMBTDevice.Q_PLUS) {
-            val statusAlloc = if (eegParams.isStatusEnabled) {
-                deviceType.getStatusAllocationSize()
-            } else {
-                0
-            }
-            eegSignalProcessing = EEGSignalProcessingIndus5(
-                sampleRate,
-                statusAlloc,
-                eegParams.isQualityCheckerEnabled
-            )
+            eegSignalProcessing = EEGSignalProcessingIndus5(eegParams)
         } else {
             TODO("not qplus, to implement")
         }
     }
-
-    val brainBoxVersion: String
-        get() {
-            return BrainBoxVersion.getVersion()
-        }
-
 }

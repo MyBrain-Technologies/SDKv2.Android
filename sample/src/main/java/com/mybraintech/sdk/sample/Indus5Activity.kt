@@ -143,8 +143,12 @@ class Indus5Activity : AppCompatActivity(), ConnectionListener, BatteryLevelList
             binding.txtStatus.text = ""
         }
 
-        binding.btnStartEeg.setOnClickListener {
-            onBtnStartEEGClicked()
+        binding.btnStartEegWithTrigger.setOnClickListener {
+            onBtnStartEEGClicked(true)
+        }
+
+        binding.btnStartEegWithoutTrigger.setOnClickListener {
+            onBtnStartEEGClicked(false)
         }
 
         binding.btnStopEeg.setOnClickListener {
@@ -161,11 +165,11 @@ class Indus5Activity : AppCompatActivity(), ConnectionListener, BatteryLevelList
         }
     }
 
-    private fun onBtnStartEEGClicked() {
+    private fun onBtnStartEEGClicked(isStatusEnabled: Boolean) {
         mbtClient.startEEG(
             EEGParams(
                 sampleRate = 250,
-                isStatusEnabled = false,
+                isTriggerStatusEnabled = isStatusEnabled,
                 isQualityCheckerEnabled = true
             ),
             object : EEGListener {
