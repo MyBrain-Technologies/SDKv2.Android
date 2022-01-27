@@ -60,8 +60,8 @@ class MbtClient2(private val context: Context, private val deviceType: EnumMBTDe
 
     override fun startEEG(eegParams: EEGParams, eegListener: EEGListener) {
         signalProcessingManager = SignalProcessingManager(deviceType, eegParams)
-        signalProcessingManager?.eegSignalProcessing?.eegListener = eegListener
         signalProcessingManager?.eegSignalProcessing?.let {
+            it.eegListener = eegListener
             mbtBleManager.startEeg(it)
         }
     }

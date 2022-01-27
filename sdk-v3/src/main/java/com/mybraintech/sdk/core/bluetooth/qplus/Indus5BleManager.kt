@@ -11,12 +11,13 @@ import com.mybraintech.sdk.core.bluetooth.IMbtBleManager
 import com.mybraintech.sdk.core.bluetooth.MbtBleUtils
 import com.mybraintech.sdk.core.bluetooth.attributes.characteristiccontainer.characteristics.PostIndus5Characteristic
 import com.mybraintech.sdk.core.bluetooth.attributes.characteristiccontainer.services.PostIndus5Service
-import com.mybraintech.sdk.core.listener.*
+import com.mybraintech.sdk.core.listener.BatteryLevelListener
+import com.mybraintech.sdk.core.listener.ConnectionListener
+import com.mybraintech.sdk.core.listener.DeviceInformationListener
+import com.mybraintech.sdk.core.listener.ScanResultListener
 import com.mybraintech.sdk.core.model.BleConnectionStatus
 import com.mybraintech.sdk.core.model.DeviceInformation
-import com.mybraintech.sdk.core.model.EnumAcquisitionLocation
 import com.mybraintech.sdk.core.model.MbtDevice
-import com.mybraintech.sdk.util.NumericalUtils
 import com.mybraintech.sdk.util.getString
 import no.nordicsemi.android.ble.BleManager
 import no.nordicsemi.android.ble.WriteRequest
@@ -25,7 +26,6 @@ import no.nordicsemi.android.ble.data.Data
 import no.nordicsemi.android.support.v18.scanner.ScanCallback
 import no.nordicsemi.android.support.v18.scanner.ScanResult
 import timber.log.Timber
-import java.util.*
 
 class Indus5BleManager(ctx: Context) :
     BleManager(ctx), IMbtBleManager, DataReceivedCallback {
@@ -99,6 +99,9 @@ class Indus5BleManager(ctx: Context) :
                 }
                 is Indus5Response.EEGFrame -> {
                     eegSignalProcessing?.onEEGFrame(indus5Response.data)
+                }
+                is Indus5Response.TriggerStatusConfiguration -> {
+                    eegSignalProcessing?.onTriggerStatusConfiguration(indus5Response.triggerStatusAllocationSize)
                 }
                 else -> {
                     Timber.e("this type is not supported : ${indus5Response.javaClass.simpleName}")
@@ -233,11 +236,33 @@ class Indus5BleManager(ctx: Context) :
 
     override fun startEeg(eegSignalProcessing: EEGSignalProcessing) {
         this.eegSignalProcessing = eegSignalProcessing
-        writeCharacteristic(
+
+        // create status operation
+        val statusCommand = EnumIndus5FrameSuffix.MBX_P300_ENABLE.bytes.toMutableList()
+        statusCommand.add(
+            if (eegSignalProcessing.isTriggerStatusEnabled) {
+                0x01
+            } else {
+                0x00
+            }
+        )
+        val statusOperation = writeCharacteristic(
+            txCharacteristic,
+            statusCommand.toByteArray(),
+            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        )
+
+        // eeg streaming operation
+        val eegOperation = writeCharacteristic(
             txCharacteristic,
             EnumIndus5FrameSuffix.MBX_START_EEG_ACQUISITION.bytes,
             BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
         )
+
+        // operation queue
+        beginAtomicRequestQueue()
+            .add(statusOperation)
+            .add(eegOperation)
             .enqueue()
     }
 

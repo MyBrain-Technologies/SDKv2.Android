@@ -3,6 +3,7 @@ package com.mybraintech.sdk.core.bluetooth
 import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessing
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.BleConnectionStatus
+import com.mybraintech.sdk.core.model.EEGParams
 import com.mybraintech.sdk.core.model.MbtDevice
 
 

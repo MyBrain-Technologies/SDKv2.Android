@@ -38,7 +38,7 @@ object QPlusMailboxHelper {
                     Indus5Response.SerialNumber(String(data))
                 }
                 EnumIndus5FrameSuffix.MBX_P300_ENABLE.getOperationCode() -> {
-                    Indus5Response.TriggerConfiguration(byteArray[1].toInt())
+                    Indus5Response.TriggerStatusConfiguration(byteArray[1].toInt())
                 }
                 EnumIndus5FrameSuffix.MBX_EEG_DATA_FRAME_EVT.getOperationCode() -> {
                     // remove operation code

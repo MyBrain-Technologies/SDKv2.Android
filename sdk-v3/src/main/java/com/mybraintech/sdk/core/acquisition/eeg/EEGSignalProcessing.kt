@@ -17,8 +17,8 @@ import java.io.FileWriter
 abstract class EEGSignalProcessing(
     private val sampleRate: Int,
     protocol: EnumBluetoothProtocol,
-    protected val statusAlloc: Int,
-    private val isQualityCheckerEnabled: Boolean,
+    val isTriggerStatusEnabled: Boolean,
+    protected val isQualityCheckerEnabled: Boolean,
 ) {
 
     private var recordingOption: RecordingOption? = null
@@ -33,6 +33,8 @@ abstract class EEGSignalProcessing(
      */
     var indexAlloc = protocol.getFrameIndexAllocationSize()
 
+    protected var statusAlloc = 0
+
     /**
      * frame = header + data
      *
@@ -40,8 +42,8 @@ abstract class EEGSignalProcessing(
      *
      * data = eeg signals : For QPlus : ch1-t0 | ch2-t0 | ... | ch4-t0 | ch1-t1 | ch2-t1 | ... | ch4-t1 | ...
      */
-    val headerAlloc = indexAlloc + statusAlloc
-    protected val hasStatus = (statusAlloc > 0)
+    var headerAlloc = indexAlloc
+        protected set
 
     private var previousIndex = -1L
 
@@ -95,7 +97,7 @@ abstract class EEGSignalProcessing(
                 try {
                     if (recordingOption?.outputFile != null) {
                         val isOk = kwak.serializeJson(
-                            hasStatus,
+                            isTriggerStatusEnabled,
                             recordingBuffer,
                             recordingErrorData,
                             FileWriter(recordingOption?.outputFile!!)
@@ -316,6 +318,12 @@ abstract class EEGSignalProcessing(
 
     fun getEEGBufferSize(): Int {
         return recordingBuffer.size
+    }
+
+    fun onTriggerStatusConfiguration(statusAllocationSize: Int) {
+        statusAlloc = statusAllocationSize
+        headerAlloc = indexAlloc + statusAlloc
+        Timber.d("indexAlloc = $indexAlloc | statusAlloc = $statusAlloc | headerAlloc = $headerAlloc")
     }
 
     companion object {

@@ -9,7 +9,7 @@ sealed class Indus5Response {
     class HardwareVersion(val version: String) : Indus5Response()
     class SerialNumber(val serialNumber: String) : Indus5Response()
     class MtuChange(val size: Int) : Indus5Response()
-    class TriggerConfiguration(val triggerSize: Int) : Indus5Response()
+    class TriggerStatusConfiguration(val triggerStatusAllocationSize: Int) : Indus5Response()
     class EEGFrame(val data: ByteArray) : Indus5Response()
     class EEGStatus(val isEnabled: Boolean) : Indus5Response()
     class BatteryLevel(val percent: Float) : Indus5Response()
