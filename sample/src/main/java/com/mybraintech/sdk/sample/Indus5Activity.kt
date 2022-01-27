@@ -10,7 +10,7 @@ import android.os.Environment
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
 import com.mybraintech.sdk.MbtClient
-import com.mybraintech.sdk.MbtClientFactory
+import com.mybraintech.sdk.MbtClientManager
 import com.mybraintech.sdk.core.bluetooth.MbtBleUtils
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
@@ -36,7 +36,7 @@ class Indus5Activity : AppCompatActivity(), ConnectionListener, BatteryLevelList
         binding = ActivityQplusBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        mbtClient = MbtClientFactory.createMbtClient(applicationContext, EnumMBTDevice.Q_PLUS)
+        mbtClient = MbtClientManager.getMbtClient(applicationContext, EnumMBTDevice.Q_PLUS)
 
         initView()
     }
