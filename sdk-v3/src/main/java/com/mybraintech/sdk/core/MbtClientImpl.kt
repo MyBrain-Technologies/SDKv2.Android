@@ -13,22 +13,18 @@ import timber.log.Timber
  * DO NOT USE THIS CLASS OUTSIDE OF THE SDK
  * MbtClientV2 is new class to support Q+ device, Melomind device...
  */
-internal class MbtClientImpl(private val context: Context) : MbtClient {
+internal class MbtClientImpl(private val context: Context, private var deviceType: EnumMBTDevice) :
+    MbtClient {
 
-    private lateinit var mbtBleManager: IMbtBleManager
+    private var mbtBleManager: IMbtBleManager
     private var signalProcessingManager: SignalProcessingManager? = null
-    private var deviceType: EnumMBTDevice = EnumMBTDevice.UNDEFINED
 
-    override fun setDeviceType(mbtDevice: EnumMBTDevice) {
-        if (this.deviceType == mbtDevice) {
-            return //do nothing
+    init {
+        if (deviceType == EnumMBTDevice.Q_PLUS) {
+            mbtBleManager = Indus5BleManager(context)
+            signalProcessingManager = null
         } else {
-            if (mbtDevice == EnumMBTDevice.Q_PLUS) {
-                mbtBleManager = Indus5BleManager(context)
-                signalProcessingManager = null
-            } else {
-                TODO("implement for other device types than Q Plus")
-            }
+            TODO("implement for other device types than Q Plus")
         }
     }
 

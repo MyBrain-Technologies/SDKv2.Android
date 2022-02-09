@@ -51,7 +51,7 @@ dependencies {
     // brainbox
     def useLocalJni = false
     if (useLocalJni) {
-        implementation project(path: ':JniBrainBox')
+//        implementation project(path: ':JniBrainBox')
     } else {
         implementation "com.mybraintech.android:jnibrainbox:3.0.0rc2"
     }
@@ -60,7 +60,7 @@ dependencies {
     implementation 'no.nordicsemi.android.support.v18:scanner:1.6.0'
     def useCustomizedBle = true
     if (useCustomizedBle) {
-        implementation 'no.nordicsemi.android:ble-common:2.3.1.mbt.rc1'
+        implementation 'no.nordicsemi.android:ble-common:2.3.1.mbt.rc2'
 //        implementation project(path: ':ble')
 //        implementation project(path: ':ble-common')
     } else {

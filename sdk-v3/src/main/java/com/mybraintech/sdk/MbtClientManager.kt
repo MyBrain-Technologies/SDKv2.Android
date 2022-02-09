@@ -6,15 +6,16 @@ import com.mybraintech.sdk.core.model.EnumMBTDevice
 
 object MbtClientManager {
 
-    private var mbtClient: MbtClient? = null
+    private var clientMap = hashMapOf<EnumMBTDevice, MbtClient>()
+    private val lock = Unit
 
     fun getMbtClient(context: Context, deviceType: EnumMBTDevice): MbtClient {
-        if (mbtClient == null || mbtClient?.getDeviceType() != deviceType) {
-            if (mbtClient == null) {
-                mbtClient = MbtClientImpl(context)
+        synchronized(lock) {
+            if (!clientMap.containsKey(deviceType)) {
+                val newClient = MbtClientImpl(context, deviceType)
+                clientMap[deviceType] = newClient
             }
-            mbtClient?.setDeviceType(deviceType)
+            return clientMap[deviceType]!!
         }
-        return mbtClient!!
     }
 }
