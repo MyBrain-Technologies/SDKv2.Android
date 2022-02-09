@@ -6,13 +6,13 @@ apply plugin: 'com.google.firebase.crashlytics'
 
 
 android {
-    compileSdkVersion 30
+    compileSdkVersion 31
     buildToolsVersion "30.0.3"
 
     defaultConfig {
         applicationId "com.mybraintech.sdk.sample"
         minSdkVersion 22
-        targetSdkVersion 30
+        targetSdkVersion 31
         versionCode 4
         versionName "0.0.3"
 
@@ -52,7 +52,8 @@ android {
 
 dependencies {
     // MBT SDK
-    implementation project(path: ':sdk-v3')
+//    implementation project(path: ':sdk-v3')
+    implementation "com.mybraintech.android:sdk:3.0.0.rc3"
 
     implementation deps.app_compat
 
