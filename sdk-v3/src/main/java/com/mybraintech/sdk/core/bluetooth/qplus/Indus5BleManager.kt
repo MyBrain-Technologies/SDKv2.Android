@@ -1,9 +1,6 @@
 package com.mybraintech.sdk.core.bluetooth.qplus
 
-import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothGatt
-import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.*
 import android.content.Context
 import android.os.Handler
 import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessing
@@ -26,6 +23,7 @@ import no.nordicsemi.android.ble.data.Data
 import no.nordicsemi.android.support.v18.scanner.ScanCallback
 import no.nordicsemi.android.support.v18.scanner.ScanResult
 import timber.log.Timber
+
 
 class Indus5BleManager(ctx: Context) :
     BleManager(ctx), IMbtBleManager, DataReceivedCallback {
@@ -134,7 +132,7 @@ class Indus5BleManager(ctx: Context) :
             isScanning = true
             mbtBleScanner.startScan(getScanCallback())
         } else {
-            scanResultListener.onScanError(Throwable("a scan process is in progress already, can not launch another!"))
+            Timber.w("a scan process is in progress already!")
         }
     }
 
