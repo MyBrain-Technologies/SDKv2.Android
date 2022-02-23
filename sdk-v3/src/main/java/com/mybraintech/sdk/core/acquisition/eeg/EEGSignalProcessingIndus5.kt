@@ -88,6 +88,7 @@ class EEGSignalProcessingIndus5(eegParams: EEGParams) :
                 setRecordingNb(recordingOption.recordingNb)
             }
             recording.recordID = recordingOption.recordId
+            recording.recordingType.recordType = recordingOption.recordingType
             if (isQualityCheckerEnabled) {
                 recording.recordingType.spVersion = BrainBoxVersion.getVersion()
             } else {

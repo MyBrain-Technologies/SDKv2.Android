@@ -9,4 +9,5 @@ data class RecordingOption(
     val recordId: String
 ) {
     var recordingNb: Int = 0
+    var recordingType : EnumRecordingType2 = EnumRecordingType2.ACQUISITION
 }
