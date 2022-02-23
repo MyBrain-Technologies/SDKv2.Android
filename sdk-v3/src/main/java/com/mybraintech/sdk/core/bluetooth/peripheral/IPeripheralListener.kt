@@ -1,6 +1,6 @@
 package com.mybraintech.sdk.core.bluetooth.peripheral
 
-import com.mybraintech.sdk.core.bluetooth.deviceinformation.DeviceInformation
+import com.mybraintech.sdk.core.model.DeviceInformation
 
 interface IPeripheralListener {
   fun onBatteryValueUpdate(batteryLevel: Float)

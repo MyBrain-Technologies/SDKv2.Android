@@ -1,8 +1,8 @@
 package com.mybraintech.sdk.core.bluetooth.peripheral.peripheralgateway
 
 import android.bluetooth.BluetoothGattCharacteristic
-import com.mybraintech.sdk.core.bluetooth.deviceinformation.DeviceInformation
 import com.mybraintech.sdk.core.bluetooth.peripheral.IPeripheralListener
+import com.mybraintech.sdk.core.model.DeviceInformation
 import java.lang.Error
 
 class PeripheralGatewayPreIndus5 : IPeripheralGateway {
