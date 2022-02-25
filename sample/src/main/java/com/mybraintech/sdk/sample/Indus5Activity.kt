@@ -168,7 +168,6 @@ class Indus5Activity : AppCompatActivity(), ConnectionListener, BatteryLevelList
     private fun onBtnStartEEGClicked(isStatusEnabled: Boolean) {
         mbtClient.startEEG(
             EEGParams(
-                sampleRate = 250,
                 isTriggerStatusEnabled = isStatusEnabled,
                 isQualityCheckerEnabled = true
             ),
