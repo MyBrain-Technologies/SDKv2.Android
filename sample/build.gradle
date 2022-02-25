@@ -52,8 +52,8 @@ android {
 
 dependencies {
     // MBT SDK
-//    implementation project(path: ':sdk-v3')
-    implementation "com.mybraintech.android:sdk:3.0.0.rc3"
+    implementation project(path: ':sdk-v3')
+//    implementation "com.mybraintech.android:sdk:3.0.0.rc3"
 
     implementation deps.app_compat
 

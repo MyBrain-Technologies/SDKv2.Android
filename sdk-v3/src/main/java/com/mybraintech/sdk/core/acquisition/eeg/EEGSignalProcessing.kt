@@ -9,8 +9,10 @@ import com.mybraintech.sdk.util.MatrixUtils2
 import com.mybraintech.sdk.util.NumericalUtils
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.plugins.RxJavaPlugins
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.schedulers.Schedulers
+import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import java.io.FileWriter
 
@@ -20,6 +22,14 @@ abstract class EEGSignalProcessing(
     val isTriggerStatusEnabled: Boolean,
     protected val isQualityCheckerEnabled: Boolean,
 ) {
+
+    /**
+     * this scheduler is reserved to handle eeg frame tasks
+     */
+    private var eegFrameScheduler = RxJavaPlugins.createSingleScheduler(EEGThreadFactory)
+
+    private val eegFrameSubject = PublishSubject.create<ByteArray>()
+    private val eegPacketSubject = PublishSubject.create<MbtEEGPacket2>()
 
     private var recordingOption: RecordingOption? = null
     private var kwak: Kwak = Kwak()
@@ -69,14 +79,28 @@ abstract class EEGSignalProcessing(
 
     private var qualityChecker: QualityChecker? = null
 
-    //use 3 CompositeDisposable to safely handle data and optimize memory by clearing one by one
-    private var disposableCount = 0
-    private val disposablePerContainer = 20
-    private var container1 = CompositeDisposable()
-    private var container2 = CompositeDisposable()
-    private var container3 = CompositeDisposable()
-
     private var recordingContainer = CompositeDisposable()
+    private var otherContainer = CompositeDisposable()
+
+    init {
+        eegPacketSubject
+            .observeOn(Schedulers.io())
+            .subscribe {
+                eegListener?.onEegPacket(it)
+            }
+            .addTo(otherContainer)
+
+        eegFrameSubject
+            .observeOn(eegFrameScheduler)
+            .subscribe {
+                try {
+                    consumeEEGFrame(it)
+                } catch (e: Exception) {
+                    Timber.e(e)
+                }
+            }
+            .addTo(otherContainer)
+    }
 
     fun startRecording(recordingListener: RecordingListener, recordingOption: RecordingOption) {
         isRecording = true
@@ -139,61 +163,19 @@ abstract class EEGSignalProcessing(
         if (isQualityCheckerEnabled) {
             qualityChecker = QualityChecker(sampleRate)
         }
-        container1.clear()
-        container2.clear()
-        container3.clear()
     }
 
     fun onEEGFrame(eegFrame: ByteArray) {
         Timber.v("onEEGFrame : ${NumericalUtils.bytesToShortString(eegFrame)}")
-        //switch work to not-main thread
-        if (disposableCount >= 3 * disposablePerContainer) {
-            disposableCount = 0
-        }
-        disposableCount++
-        val disposable = clearContainerAndSelectDisposable(disposableCount)
-        Observable.just(eegFrame)
-            .subscribeOn(Schedulers.trampoline()) //executes tasks in a FIFO (First In, First Out) manner
-            .map {
-                try {
-                    consumeEEGFrame(it)
-                } catch (e: Exception) {
-                    Timber.e(e)
-                }
-            }
-            .subscribe()
-            .addTo(disposable)
+        eegFrameSubject.onNext(eegFrame)
     }
-
-    /**
-     * disposable 1 will be used first then 2 then 3 then 1 again...
-     */
-    private fun clearContainerAndSelectDisposable(disposableCount: Int): CompositeDisposable {
-        when (disposableCount / disposablePerContainer) {
-            1 -> {
-                container3.clear()
-                return container2
-            }
-            2 -> {
-                container1.clear()
-                return container3
-            }
-            else -> {
-                container2.clear()
-                return container1
-            }
-        }
-    }
-
-    val lock = Unit
 
     /**
      * please wrap this method in try catch to avoid crashing
      */
     @Throws(Exception::class)
     private fun consumeEEGFrame(eegFrame: ByteArray) {
-//        synchronized(lock) {
-        Timber.v("onEEGFrameComputation")
+//        Timber.v("onEEGFrameComputation")
         if (!isValidFrame(eegFrame)) {
             Timber.e("bad format eeg frame : ${NumericalUtils.bytesToShortString(eegFrame)}")
             return
@@ -233,7 +215,7 @@ abstract class EEGSignalProcessing(
 
         //2nd step : Fill gap by NaN samples if there is missing frames
         if (indexDifference != 1L) {
-            Timber.v("diff is $indexDifference. Current index : $newFrameIndex | previousIndex : $previousIndex")
+            Timber.w("diff is $indexDifference. Current index : $newFrameIndex | previousIndex : $previousIndex")
             for (i in 1..indexDifference) {
                 //one frame contains n times of sample
                 for (j in 1..getNumberOfTimes(eegFrame)) {
@@ -288,10 +270,10 @@ abstract class EEGSignalProcessing(
                 if (isRecording) {
                     recordingBuffer.add(newPacket)
                 }
-                eegListener?.onEegPacket(newPacket)
+
+                eegPacketSubject.onNext(newPacket)
             }
         }
-//        } //end lock
     }
 
     /**
