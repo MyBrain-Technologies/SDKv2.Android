@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import timber.log.Timber
@@ -21,9 +22,18 @@ class SplashActivity : AppCompatActivity() {
         setContentView(R.layout.activity_new_sdk)
 
         requestPermissions()
+
+        findViewById<View>(R.id.btn_melomind).setOnClickListener {
+            requestPermissions(Intent(this, MelomindActivity::class.java))
+        }
+
+        findViewById<View>(R.id.btn_q_plus).setOnClickListener {
+            requestPermissions(Intent(this, Indus5Activity::class.java))
+        }
+
     }
 
-    private fun requestPermissions() {
+    private fun requestPermissions(activityIntent: Intent? = null) {
         var permissions =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 arrayOf(
@@ -45,10 +55,9 @@ class SplashActivity : AppCompatActivity() {
             }
         } else {
             Timber.i("launch activity")
-            Intent(this, Indus5Activity::class.java)
-                .also {
-                    startActivity(it)
-                }
+            activityIntent?.let {
+                startActivity(it)
+            }
         }
     }
 

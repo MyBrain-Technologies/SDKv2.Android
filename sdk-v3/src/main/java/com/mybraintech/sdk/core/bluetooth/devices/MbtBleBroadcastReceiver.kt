@@ -1,4 +1,4 @@
-package com.mybraintech.sdk.core.bluetooth.qplus
+package com.mybraintech.sdk.core.bluetooth.devices
 
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice

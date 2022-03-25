@@ -1,8 +1,8 @@
-package com.mybraintech.sdk.core.bluetooth.attributes.characteristiccontainer.characteristics
+package com.mybraintech.sdk.core.bluetooth.devices.qplus
 
 import java.util.*
 
-enum class PostIndus5Characteristic(val uuid: UUID) {
+enum class QPlusCharacteristic(val uuid: UUID) {
 
   Rx(UUID.fromString("49535343-1E4D-4BD9-BA61-23C647249616")),
   Tx(UUID.fromString("49535343-8841-43F4-A8D4-ECBE34729BB3")),
@@ -16,7 +16,7 @@ enum class PostIndus5Characteristic(val uuid: UUID) {
       Unknown.uuid to Unknown
     )
 
-    fun ofRaw(raw: UUID): PostIndus5Characteristic? {
+    fun ofRaw(raw: UUID): QPlusCharacteristic? {
       return rawToEnum[raw]
     }
   }

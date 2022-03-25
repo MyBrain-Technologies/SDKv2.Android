@@ -1,14 +1,15 @@
-package com.mybraintech.sdk.core.bluetooth.qplus
+package com.mybraintech.sdk.core.bluetooth.devices
 
 import no.nordicsemi.android.support.v18.scanner.BluetoothLeScannerCompat
 import no.nordicsemi.android.support.v18.scanner.ScanCallback
+import no.nordicsemi.android.support.v18.scanner.ScanFilter
 import no.nordicsemi.android.support.v18.scanner.ScanSettings
 
 class MbtBleScanner {
     private val scanner: BluetoothLeScannerCompat = BluetoothLeScannerCompat.getScanner()
     lateinit var scanCallback: ScanCallback
 
-    fun startScan(scanCallback: ScanCallback) {
+    fun startScan(filters: List<ScanFilter>?, scanCallback: ScanCallback) {
         this.scanCallback = scanCallback
         val settings: ScanSettings = ScanSettings.Builder()
             .setLegacy(false)
@@ -16,7 +17,7 @@ class MbtBleScanner {
             .setReportDelay(150)
             .setUseHardwareBatchingIfSupported(true)
             .build()
-        scanner.startScan(null, settings, scanCallback)
+        scanner.startScan(filters, settings, scanCallback)
     }
 
     fun stopScan() {

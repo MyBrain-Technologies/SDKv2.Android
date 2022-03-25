@@ -4,10 +4,12 @@ import android.content.Context
 import com.mybraintech.sdk.MbtClient
 import com.mybraintech.sdk.core.acquisition.eeg.SignalProcessingManager
 import com.mybraintech.sdk.core.bluetooth.IMbtBleManager
-import com.mybraintech.sdk.core.bluetooth.qplus.Indus5BleManager
+import com.mybraintech.sdk.core.bluetooth.devices.melomind.MelomindBleManager
+import com.mybraintech.sdk.core.bluetooth.devices.qplus.QPlusBleManager
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
 import timber.log.Timber
+import java.lang.UnsupportedOperationException
 
 /**
  * DO NOT USE THIS CLASS OUTSIDE OF THE SDK
@@ -20,11 +22,18 @@ internal class MbtClientImpl(private val context: Context, private var deviceTyp
     private var signalProcessingManager: SignalProcessingManager? = null
 
     init {
-        if (deviceType == EnumMBTDevice.Q_PLUS) {
-            mbtBleManager = Indus5BleManager(context)
-            signalProcessingManager = null
-        } else {
-            TODO("implement for other device types than Q Plus")
+        when (deviceType) {
+            EnumMBTDevice.Q_PLUS -> {
+                mbtBleManager = QPlusBleManager(context)
+                signalProcessingManager = null
+            }
+            EnumMBTDevice.MELOMIND -> {
+                mbtBleManager = MelomindBleManager(context)
+                signalProcessingManager = null
+            }
+            else -> {
+                throw UnsupportedOperationException("device type is not supported!")
+            }
         }
     }
 

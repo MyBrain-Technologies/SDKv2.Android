@@ -3,6 +3,7 @@ package com.mybraintech.sdk.core.acquisition.eeg
 import com.mybraintech.android.jnibrainbox.BrainBoxVersion
 import com.mybraintech.sdk.core.model.EEGParams
 import com.mybraintech.sdk.core.model.EnumMBTDevice
+import java.lang.UnsupportedOperationException
 
 
 class SignalProcessingManager(deviceType: EnumMBTDevice, eegParams: EEGParams) {
@@ -11,13 +12,16 @@ class SignalProcessingManager(deviceType: EnumMBTDevice, eegParams: EEGParams) {
 //        EEGQualityProcessor(sampleRate)
 //    private val eegRelaxIndexProcessor: EEGToRelaxIndexProcessor = EEGToRelaxIndexProcessor()
 
-    var eegSignalProcessing: EEGSignalProcessing
-
-    init {
-        if (deviceType == EnumMBTDevice.Q_PLUS) {
-            eegSignalProcessing = EEGSignalProcessingIndus5(eegParams)
-        } else {
-            TODO("not qplus, to implement")
+    var eegSignalProcessing: EEGSignalProcessing = when (deviceType) {
+        EnumMBTDevice.Q_PLUS -> {
+            EEGSignalProcessingIndus5(eegParams)
+        }
+        EnumMBTDevice.MELOMIND -> {
+            EEGSignalProcessingMelomind(eegParams)
+        }
+        else -> {
+            throw UnsupportedOperationException("device type ")
         }
     }
+
 }

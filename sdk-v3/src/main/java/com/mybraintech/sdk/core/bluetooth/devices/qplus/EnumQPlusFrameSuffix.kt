@@ -1,10 +1,10 @@
-package com.mybraintech.sdk.core.bluetooth.qplus
+package com.mybraintech.sdk.core.bluetooth.devices.qplus
 
 /**
  * indus 5 mailbox command:
  * https://mybrain.atlassian.net/wiki/spaces/FI/pages/1957659071/INDUS5+Specification+-+Mailbox#List-of-current-mailbox-command
  */
-enum class EnumIndus5FrameSuffix(vararg val bytes: Byte) {
+enum class EnumQPlusFrameSuffix(vararg val bytes: Byte) {
     //----------------------------------------------------------------------------
     // MARK: commands
     //----------------------------------------------------------------------------
