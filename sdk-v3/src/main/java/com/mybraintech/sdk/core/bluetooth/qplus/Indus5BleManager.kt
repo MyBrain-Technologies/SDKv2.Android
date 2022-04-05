@@ -1,6 +1,8 @@
 package com.mybraintech.sdk.core.bluetooth.qplus
 
 import android.bluetooth.*
+import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanResult
 import android.content.Context
 import android.os.Handler
 import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessing
@@ -20,8 +22,6 @@ import no.nordicsemi.android.ble.BleManager
 import no.nordicsemi.android.ble.WriteRequest
 import no.nordicsemi.android.ble.callback.DataReceivedCallback
 import no.nordicsemi.android.ble.data.Data
-import no.nordicsemi.android.support.v18.scanner.ScanCallback
-import no.nordicsemi.android.support.v18.scanner.ScanResult
 import timber.log.Timber
 
 

@@ -1,22 +1,16 @@
 package com.mybraintech.sdk.core.bluetooth.qplus
 
-import no.nordicsemi.android.support.v18.scanner.BluetoothLeScannerCompat
-import no.nordicsemi.android.support.v18.scanner.ScanCallback
-import no.nordicsemi.android.support.v18.scanner.ScanSettings
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.le.ScanCallback
 
 class MbtBleScanner {
-    private val scanner: BluetoothLeScannerCompat = BluetoothLeScannerCompat.getScanner()
+    private val scanner = BluetoothAdapter.getDefaultAdapter().bluetoothLeScanner
+
     lateinit var scanCallback: ScanCallback
 
     fun startScan(scanCallback: ScanCallback) {
         this.scanCallback = scanCallback
-        val settings: ScanSettings = ScanSettings.Builder()
-            .setLegacy(false)
-            .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-            .setReportDelay(150)
-            .setUseHardwareBatchingIfSupported(true)
-            .build()
-        scanner.startScan(null, settings, scanCallback)
+        scanner.startScan(scanCallback)
     }
 
     fun stopScan() {

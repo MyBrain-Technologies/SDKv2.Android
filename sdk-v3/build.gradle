@@ -5,14 +5,14 @@ plugins {
 }
 
 android {
-    compileSdkVersion 31
+    compileSdkVersion 30
 
     defaultConfig {
         minSdkVersion 22
-        targetSdkVersion 31
+        targetSdkVersion 30
 
-        versionCode 104
-        versionName '3.0.2.rc1'
+        versionCode 105
+        versionName '3.0.2.rc2'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -57,7 +57,6 @@ dependencies {
     }
 
     // bluetooth
-    implementation 'no.nordicsemi.android.support.v18:scanner:1.6.0'
     def useCustomizedBle = true
     if (useCustomizedBle) {
         implementation 'no.nordicsemi.android:ble-common:2.3.1.mbt.rc2'
