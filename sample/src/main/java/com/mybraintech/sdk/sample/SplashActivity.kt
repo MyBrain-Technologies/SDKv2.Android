@@ -35,19 +35,22 @@ class SplashActivity : AppCompatActivity() {
 
     private fun requestPermissions(activityIntent: Intent? = null) {
         var permissions =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+//                Timber.w("requires BLUETOOTH_CONNECT and BLUETOOTH_SCAN")
+//                arrayOf(
+//                    Manifest.permission.ACCESS_COARSE_LOCATION,
+//                    Manifest.permission.ACCESS_FINE_LOCATION,
+//                    Manifest.permission.BLUETOOTH_CONNECT,
+//                    Manifest.permission.BLUETOOTH_SCAN
+//                )
+//            } else {
                 arrayOf(
                     Manifest.permission.ACCESS_COARSE_LOCATION,
                     Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.BLUETOOTH_CONNECT,
-                    Manifest.permission.BLUETOOTH_SCAN
+                    Manifest.permission.BLUETOOTH_ADMIN,
+                    Manifest.permission.BLUETOOTH,
                 )
-            } else {
-                arrayOf(
-                    Manifest.permission.ACCESS_COARSE_LOCATION,
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                )
-            }
+//            }
 
         if (!hasPermissions(this, permissions)) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {

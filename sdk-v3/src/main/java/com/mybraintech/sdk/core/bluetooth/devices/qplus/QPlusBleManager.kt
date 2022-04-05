@@ -3,6 +3,7 @@ package com.mybraintech.sdk.core.bluetooth.devices.qplus
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.le.ScanResult
 import android.content.Context
 import android.os.Handler
 import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessing
@@ -17,7 +18,6 @@ import com.mybraintech.sdk.core.model.MbtDevice
 import no.nordicsemi.android.ble.WriteRequest
 import no.nordicsemi.android.ble.callback.DataReceivedCallback
 import no.nordicsemi.android.ble.data.Data
-import no.nordicsemi.android.support.v18.scanner.ScanFilter
 import timber.log.Timber
 
 
@@ -101,7 +101,7 @@ class QPlusBleManager(ctx: Context) :
         val gattConnectedDevices = MbtBleUtils.getGattConnectedDevices(context)
         var connectedIndus5: BluetoothDevice? = null
         for (device in gattConnectedDevices) {
-            if (MbtBleUtils.isQPlus(device, context)) {
+            if (MbtBleUtils.isQPlus(device)) {
                 Timber.i("found a connected indus5")
                 connectedIndus5 = device
                 break
@@ -128,17 +128,14 @@ class QPlusBleManager(ctx: Context) :
 
     override fun getDeviceType() = EnumMBTDevice.Q_PLUS
 
-    override fun getScanFilters(): List<ScanFilter>? {
-        return null
-    }
-
-    override fun handleScanResults(results: List<BluetoothDevice>) {
-        val indus5Devices = results.filter { MbtBleUtils.isQPlus(it, context) }
+    override fun handleScanResults(results: List<ScanResult>) {
+        val devices = results.map { it.device }
+        val indus5Devices = devices.filter { MbtBleUtils.isQPlus(it) }
         if (indus5Devices.isNotEmpty()) {
             Timber.d("found indus5 devices : number = ${indus5Devices.size}")
             scanResultListener.onMbtDevices(indus5Devices.map { MbtDevice(it) })
         }
-        val otherDevices = results.filter { !MbtBleUtils.isQPlus(it, context) }
+        val otherDevices = devices.filter { !MbtBleUtils.isQPlus(it) }
         if (otherDevices.isNotEmpty()) {
             Timber.d("found other devices : number = ${otherDevices.size}")
             scanResultListener.onOtherDevices(otherDevices)
@@ -147,7 +144,7 @@ class QPlusBleManager(ctx: Context) :
 
     override fun getDeviceInformation(deviceInformationListener: DeviceInformationListener) {
         this.deviceInformation = DeviceInformation().also {
-            it.productName = MbtBleUtils.getDeviceName(targetMbtDevice?.bluetoothDevice, context)
+            it.productName = targetMbtDevice?.bluetoothDevice?.name ?: ""
         }
         this.deviceInformationListener = deviceInformationListener
         beginAtomicRequestQueue()

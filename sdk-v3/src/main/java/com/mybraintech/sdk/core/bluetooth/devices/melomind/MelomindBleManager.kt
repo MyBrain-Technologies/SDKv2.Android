@@ -1,14 +1,12 @@
 package com.mybraintech.sdk.core.bluetooth.devices.melomind
 
-import android.Manifest
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattService
+import android.bluetooth.le.ScanResult
 import android.content.Context
-import android.content.pm.PackageManager
-import android.os.ParcelUuid
-import androidx.core.app.ActivityCompat
 import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessing
+import com.mybraintech.sdk.core.bluetooth.DataConversionUtils
 import com.mybraintech.sdk.core.bluetooth.MbtBleUtils
 import com.mybraintech.sdk.core.bluetooth.devices.MbtBaseBleManager
 import com.mybraintech.sdk.core.listener.BatteryLevelListener
@@ -18,7 +16,6 @@ import com.mybraintech.sdk.core.model.DeviceInformation
 import com.mybraintech.sdk.core.model.EnumMBTDevice
 import com.mybraintech.sdk.core.model.MbtDevice
 import no.nordicsemi.android.ble.BleManager
-import no.nordicsemi.android.support.v18.scanner.ScanFilter
 import timber.log.Timber
 
 class MelomindBleManager(ctx: Context) : MbtBaseBleManager(ctx) {
@@ -44,7 +41,22 @@ class MelomindBleManager(ctx: Context) : MbtBaseBleManager(ctx) {
 
     override fun getBatteryLevel(batteryLevelListener: BatteryLevelListener) {
         this.batteryLevelListener = batteryLevelListener
-        TODO()
+
+        val batteryLevelChar =
+            measurementService!!.getCharacteristic(MelomindCharacteristic.BATTERY_LEVEL.uuid)
+
+        readCharacteristic(batteryLevelChar)
+            .done {
+                this.batteryLevelListener?.onBatteryLevel(
+                    DataConversionUtils.getBatteryPercentageFromByteValue(
+                        batteryLevelChar.value[0]
+                    ).toFloat()
+                )
+            }
+            .fail { _, _ ->
+                this.batteryLevelListener?.onBatteryLevelError(Throwable("L57 : Cannot read battery level!"))
+            }
+            .enqueue()
     }
 
     //----------------------------------------------------------------------------
@@ -54,7 +66,7 @@ class MelomindBleManager(ctx: Context) : MbtBaseBleManager(ctx) {
         val gattConnectedDevices = MbtBleUtils.getGattConnectedDevices(context)
         var connectedIndus5: BluetoothDevice? = null
         for (device in gattConnectedDevices) {
-            if (MbtBleUtils.isQPlus(device, context)) {
+            if (MbtBleUtils.isQPlus(device)) {
                 Timber.i("found a connected indus5")
                 connectedIndus5 = device
                 break
@@ -81,20 +93,40 @@ class MelomindBleManager(ctx: Context) : MbtBaseBleManager(ctx) {
 
     override fun getDeviceType() = EnumMBTDevice.MELOMIND
 
-    override fun getScanFilters(): List<ScanFilter>? {
-        val filters: MutableList<ScanFilter> = ArrayList()
-        filters.add(
-            ScanFilter.Builder().setServiceUuid(ParcelUuid(MelomindService.MEASUREMENT.uuid))
-                .build()
-        )
-        return filters
-    }
-
     override fun getDeviceInformation(deviceInformationListener: DeviceInformationListener) {
+        this.deviceInformationListener = deviceInformationListener
+
         this.deviceInformation = DeviceInformation().also {
-            it.productName = MbtBleUtils.getDeviceName(targetMbtDevice?.bluetoothDevice, context)
+            it.productName = targetMbtDevice?.bluetoothDevice?.name ?: ""
         }
-        TODO()
+
+        val fwVersion = deviceInformationService!!.getCharacteristic(MelomindCharacteristic.FIRMWARE_VERSION.uuid)
+        val hwVersion = deviceInformationService!!.getCharacteristic(MelomindCharacteristic.HARDWARE_VERSION.uuid)
+        val sn = deviceInformationService!!.getCharacteristic(MelomindCharacteristic.SERIAL_NUMBER.uuid)
+        beginAtomicRequestQueue()
+            .add(
+                readCharacteristic(fwVersion)
+                    .done {
+                        this.deviceInformation.firmwareVersion = fwVersion.getStringValue(0)
+                    }
+            )
+            .add(
+                readCharacteristic(hwVersion)
+                    .done {
+                        this.deviceInformation.hardwareVersion = hwVersion.getStringValue(0)
+                    }
+            )
+            .add(
+                readCharacteristic(sn)
+                    .done {
+                        this.deviceInformation.uniqueDeviceIdentifier = sn.getStringValue(0)
+                        this.deviceInformationListener?.onDeviceInformation(deviceInformation)
+                    }
+                    .fail { _, _ ->
+                        this.deviceInformationListener?.onDeviceInformation(deviceInformation)
+                    }
+            )
+            .enqueue()
     }
 
     override fun startEeg(eegSignalProcessing: EEGSignalProcessing) {
@@ -106,16 +138,17 @@ class MelomindBleManager(ctx: Context) : MbtBaseBleManager(ctx) {
 
         // disable/enable status trigger operation
         val triggerChar =
-            measurementService!!.getCharacteristic(MelomindCharacteristic.HEADSET_STATUS.uuid)
-        val triggerOp = if (eegSignalProcessing.isEEGEnabled) {
-            enableNotifications(triggerChar)
-                .done { Timber.d("HEADSET_STATUS enabled") }
-                .fail { _, _ -> Timber.e("Could not subscribe HEADSET_STATUS!") }
-        } else {
-            disableNotifications(triggerChar)
-                .done { Timber.d("HEADSET_STATUS disabled") }
-                .fail { _, _ -> Timber.e("Could not subscribe HEADSET_STATUS!") }
-        }
+            measurementService!!.getCharacteristic(MelomindCharacteristic.TRIGGER_STATUS.uuid)
+//        TODO: verify how trigger in Melomind works
+//        val triggerOp = if (eegSignalProcessing.isTriggerStatusEnabled) {
+//            enableNotifications(triggerChar)
+//                .done { Timber.d("HEADSET_STATUS enabled") }
+//                .fail { _, _ -> Timber.e("Could not subscribe HEADSET_STATUS!") }
+//        } else {
+//            disableNotifications(triggerChar)
+//                .done { Timber.d("HEADSET_STATUS disabled") }
+//                .fail { _, _ -> Timber.e("Could not subscribe HEADSET_STATUS!") }
+//        }
 
         // eeg characteristic
         val eegChar =
@@ -132,7 +165,7 @@ class MelomindBleManager(ctx: Context) : MbtBaseBleManager(ctx) {
 
         // configure headset trigger status then enable EEG
         beginAtomicRequestQueue()
-            .add(triggerOp)
+//            .add(triggerOp)
             .add(
                 enableNotifications(eegChar)
                     .done {
@@ -197,11 +230,36 @@ class MelomindBleManager(ctx: Context) : MbtBaseBleManager(ctx) {
         TODO("Not yet implemented")
     }
 
-    override fun handleScanResults(results: List<BluetoothDevice>) {
-        Timber.d("found melomind devices : number = ${results.size}")
-        val list = results.map { MbtDevice(it) }
-        if (list.isNotEmpty()) {
-            scanResultListener.onMbtDevices(list)
+    override fun handleScanResults(results: List<ScanResult>) {
+        val melomindDevices = mutableListOf<BluetoothDevice>()
+        val otherDevices = mutableListOf<BluetoothDevice>()
+
+        val serviceUuid = MelomindService.MEASUREMENT.uuid.toString()
+
+        for (result in results) {
+            var isMelomind = false
+            if (result.scanRecord?.serviceUuids != null) {
+                for (uuid in result.scanRecord!!.serviceUuids) {
+                    if (uuid.uuid.toString() == serviceUuid) {
+                        isMelomind = true
+                        break
+                    }
+                }
+            } else {
+                isMelomind = false
+            }
+            if (isMelomind) {
+                melomindDevices.add(result.device)
+            } else {
+                otherDevices.add(result.device)
+            }
+        }
+        if (melomindDevices.isNotEmpty()) {
+            Timber.d("found melomind devices : number = ${melomindDevices.size}")
+            scanResultListener.onMbtDevices(melomindDevices.map { MbtDevice(it) })
+        }
+        if (otherDevices.isNotEmpty()) {
+            scanResultListener.onOtherDevices(otherDevices)
         }
     }
 
@@ -222,15 +280,15 @@ class MelomindBleManager(ctx: Context) : MbtBaseBleManager(ctx) {
 
         override fun initialize() {
             Timber.d("start initialize Melomind")
-            if (ActivityCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.BLUETOOTH_CONNECT
-                ) == PackageManager.PERMISSION_GRANTED
-            ) {
-                if (bluetoothDevice.bondState != BluetoothDevice.BOND_BONDED) {
-                    bluetoothDevice.createBond()
-                }
+
+            if (bluetoothDevice.bondState != BluetoothDevice.BOND_BONDED) {
+                // read battery to create bond (an old firmware engineer told me to do this)
+                val batteryLevelChar =
+                    measurementService!!.getCharacteristic(MelomindCharacteristic.BATTERY_LEVEL.uuid)
+                readCharacteristic(batteryLevelChar)
+                    .enqueue()
             }
+
             beginAtomicRequestQueue()
                 .add(
                     requestMtu(MTU_SIZE)

@@ -1,11 +1,10 @@
 package com.mybraintech.sdk.core.bluetooth.devices
 
-import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanResult
 import android.content.Context
-import android.content.pm.PackageManager
-import androidx.core.app.ActivityCompat
 import com.mybraintech.sdk.core.bluetooth.IMbtBleManager
 import com.mybraintech.sdk.core.bluetooth.MbtBleUtils
 import com.mybraintech.sdk.core.listener.BatteryLevelListener
@@ -18,9 +17,6 @@ import com.mybraintech.sdk.core.model.EnumMBTDevice
 import com.mybraintech.sdk.core.model.MbtDevice
 import com.mybraintech.sdk.util.getString
 import no.nordicsemi.android.ble.BleManager
-import no.nordicsemi.android.support.v18.scanner.ScanCallback
-import no.nordicsemi.android.support.v18.scanner.ScanFilter
-import no.nordicsemi.android.support.v18.scanner.ScanResult
 import timber.log.Timber
 
 
@@ -61,14 +57,11 @@ abstract class MbtBaseBleManager(ctx: Context) :
 
         if (!isScanning) {
             isScanning = true
-
-            mbtBleScanner.startScan(getScanFilters(), getScanCallback())
+            mbtBleScanner.startScan(getScanCallback())
         } else {
-            Timber.w("a scan process is in progress already!")
+            Timber.w("scan is running already!")
         }
     }
-
-    protected abstract fun getScanFilters() : List<ScanFilter>?
 
     override fun stopScan() {
         isScanning = false
@@ -87,25 +80,22 @@ abstract class MbtBaseBleManager(ctx: Context) :
         this.connectionListener = connectionListener
         this.targetMbtDevice = mbtDevice
         broadcastReceiver.register(context, mbtDevice.bluetoothDevice, connectionListener)
+
         connect(mbtDevice.bluetoothDevice)
             .useAutoConnect(false)
-            .timeout(5000)
+            .timeout(30000)
             .done {
                 Timber.i("ble connect done")
             }
             .fail { device, status ->
-                val name = if (ActivityCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.BLUETOOTH_CONNECT
-                    ) == PackageManager.PERMISSION_GRANTED
-                ) {
-                    device?.name
-                } else {
-                    ""
-                }
+                val name = device?.name
                 connectionListener.onConnectionError(Throwable("fail to connect to MbtDevice : name = $name | status = $status"))
             }
             .enqueue()
+    }
+
+    override fun shouldClearCacheWhenDisconnected(): Boolean {
+        return true
     }
 
     override fun disconnectMbt() {
@@ -118,14 +108,14 @@ abstract class MbtBaseBleManager(ctx: Context) :
         }
     }
 
-    protected abstract fun getDeviceType() : EnumMBTDevice
+    protected abstract fun getDeviceType(): EnumMBTDevice
 
     override fun getBleConnectionStatus(): BleConnectionStatus {
         val gattConnectedDevices = MbtBleUtils.getGattConnectedDevices(context)
         var connectedDevice: BluetoothDevice? = null
         for (device in gattConnectedDevices) {
             if (getDeviceType() == EnumMBTDevice.Q_PLUS) {
-                if (MbtBleUtils.isQPlus(device, context)) {
+                if (MbtBleUtils.isQPlus(device)) {
                     Timber.i("found a connected indus5")
                     connectedDevice = device
                     break
@@ -182,25 +172,18 @@ abstract class MbtBaseBleManager(ctx: Context) :
         TODO("Not yet implemented")
     }
 
-    abstract fun handleScanResults(results: List<BluetoothDevice>)
+    abstract fun handleScanResults(results: List<ScanResult>)
 
     private fun getScanCallback(): ScanCallback {
         return object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
-                Timber.d(
-                    "onScanResult : name = ${
-                        MbtBleUtils.getDeviceName(
-                            result.device,
-                            context
-                        )
-                    } | address = ${result.device.address} "
-                )
-                handleScanResults(listOf(result.device))
+                Timber.d("onScanResult : name = ${result.device.name} | address = ${result.device.address}")
+                handleScanResults(listOf(result))
             }
 
             override fun onBatchScanResults(results: MutableList<ScanResult>) {
                 Timber.d("onBatchScanResults : size = ${results.size}")
-                handleScanResults(results.map { it.device })
+                handleScanResults(results)
             }
 
             override fun onScanFailed(errorCode: Int) {

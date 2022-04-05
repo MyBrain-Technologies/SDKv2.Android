@@ -1,23 +1,28 @@
 package com.mybraintech.sdk.core.bluetooth.devices
 
-import no.nordicsemi.android.support.v18.scanner.BluetoothLeScannerCompat
-import no.nordicsemi.android.support.v18.scanner.ScanCallback
-import no.nordicsemi.android.support.v18.scanner.ScanFilter
-import no.nordicsemi.android.support.v18.scanner.ScanSettings
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.le.BluetoothLeScanner
+import android.bluetooth.le.ScanCallback
 
 class MbtBleScanner {
-    private val scanner: BluetoothLeScannerCompat = BluetoothLeScannerCompat.getScanner()
+    private val scanner: BluetoothLeScanner =
+        BluetoothAdapter.getDefaultAdapter().bluetoothLeScanner
+
     lateinit var scanCallback: ScanCallback
 
-    fun startScan(filters: List<ScanFilter>?, scanCallback: ScanCallback) {
+    /**
+     * Important : after few days of work with Melomind, we find out that the function <pre>startScan(scanCallback)}</pre>
+     * perform so much better in compare with function startScan(scanFilters, scanSettings, scanCallback).
+     *
+     * If you need to filter result, please do it in function handleScanResults(scanResults)
+     *
+     * @see com.mybraintech.sdk.core.bluetooth.devices.MbtBaseBleManager.handleScanResults
+     * @see android.bluetooth.le.BluetoothLeScanner.startScan(android.bluetooth.le.ScanCallback)
+     * @see android.bluetooth.le.BluetoothLeScanner.startScan(java.util.List<android.bluetooth.le.ScanFilter>, android.bluetooth.le.ScanSettings, android.bluetooth.le.ScanCallback)
+     */
+    fun startScan(scanCallback: ScanCallback) {
         this.scanCallback = scanCallback
-        val settings: ScanSettings = ScanSettings.Builder()
-            .setLegacy(false)
-            .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-            .setReportDelay(150)
-            .setUseHardwareBatchingIfSupported(true)
-            .build()
-        scanner.startScan(filters, settings, scanCallback)
+        scanner.startScan(scanCallback)
     }
 
     fun stopScan() {

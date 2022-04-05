@@ -4,14 +4,14 @@ import java.util.*
 
 enum class MelomindCharacteristic(val uuid: UUID) {
 
-  ProductName(UUID.fromString("00002a24-0000-1000-8000-00805f9b34fb")),
-  SerialNumber(UUID.fromString("00002a25-0000-1000-8000-00805f9b34fb")),
-  HardwareRevision(UUID.fromString("00002a27-0000-1000-8000-00805f9b34fb")),
-  FirmwareRevision(UUID.fromString("00002a26-0000-1000-8000-00805f9b34fb")),
+  PRODUCT_NAME(UUID.fromString("00002a24-0000-1000-8000-00805f9b34fb")),
+  SERIAL_NUMBER(UUID.fromString("00002a25-0000-1000-8000-00805f9b34fb")),
+  HARDWARE_VERSION(UUID.fromString("00002a27-0000-1000-8000-00805f9b34fb")),
+  FIRMWARE_VERSION(UUID.fromString("00002a26-0000-1000-8000-00805f9b34fb")),
   EEG_ACQUISITION(UUID.fromString("0000b2a5-0000-1000-8000-00805f9b34fb")),
-  DeviceBatteryStatus(UUID.fromString("0000b2a2-0000-1000-8000-00805f9b34fb")),
-  HEADSET_STATUS(UUID.fromString("0000b2a3-0000-1000-8000-00805f9b34fb")),
-  OadTransfert(UUID.fromString("0000b2a6-0000-1000-8000-00805f9b34fb")),
-  MailBox(UUID.fromString("0000b2a4-0000-1000-8000-00805f9b34fb"));
+  BATTERY_LEVEL(UUID.fromString("0000b2a2-0000-1000-8000-00805f9b34fb")),
+  TRIGGER_STATUS(UUID.fromString("0000b2a3-0000-1000-8000-00805f9b34fb")),
+  OAD_TRANSFER(UUID.fromString("0000b2a6-0000-1000-8000-00805f9b34fb")),
+  MAIL_BOX(UUID.fromString("0000b2a4-0000-1000-8000-00805f9b34fb"));
 
 }
