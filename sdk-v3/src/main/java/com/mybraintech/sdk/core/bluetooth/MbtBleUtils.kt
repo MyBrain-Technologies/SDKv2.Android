@@ -21,10 +21,9 @@ object MbtBleUtils {
     }
 
     fun isQPlus(device: BluetoothDevice): Boolean {
-        val qPlusPrefix1 = "melo_2"
-        val qPlusPrefix2 = "qp_"
+        val qPlusPrefix = "qp_"
         val name = device.name ?: ""
-        return (name.startsWith(qPlusPrefix1) || name.startsWith(qPlusPrefix2))
+        return name.startsWith(qPlusPrefix)
     }
 
     fun isBonded(bluetoothDevice: BluetoothDevice): Boolean {
