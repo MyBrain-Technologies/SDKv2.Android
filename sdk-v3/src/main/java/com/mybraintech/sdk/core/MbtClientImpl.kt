@@ -13,7 +13,7 @@ import java.lang.UnsupportedOperationException
 
 /**
  * DO NOT USE THIS CLASS OUTSIDE OF THE SDK
- * MbtClientV2 is new class to support Q+ device, Melomind device...
+ * This is new class to support Q+ device, Melomind device...
  */
 internal class MbtClientImpl(private val context: Context, private var deviceType: EnumMBTDevice) :
     MbtClient {
