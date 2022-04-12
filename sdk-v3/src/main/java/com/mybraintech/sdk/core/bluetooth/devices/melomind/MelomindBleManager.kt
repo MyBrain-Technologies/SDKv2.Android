@@ -2,6 +2,7 @@ package com.mybraintech.sdk.core.bluetooth.devices.melomind
 
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.le.ScanResult
 import android.content.Context
@@ -32,7 +33,7 @@ class MelomindBleManager(ctx: Context) : MbtBaseBleManager(ctx) {
     override fun getGattCallback(): BleManager.BleManagerGattCallback = MelomindGattCallback()
 
     override fun log(priority: Int, message: String) {
-        if (message.contains("value: (0x) 40")) {
+        if (message.contains("Notification received from 0000b2a5")) {
             Timber.v(message)
         } else {
             Timber.log(priority, message)
@@ -100,9 +101,12 @@ class MelomindBleManager(ctx: Context) : MbtBaseBleManager(ctx) {
             it.productName = targetMbtDevice?.bluetoothDevice?.name ?: ""
         }
 
-        val fwVersion = deviceInformationService!!.getCharacteristic(MelomindCharacteristic.FIRMWARE_VERSION.uuid)
-        val hwVersion = deviceInformationService!!.getCharacteristic(MelomindCharacteristic.HARDWARE_VERSION.uuid)
-        val sn = deviceInformationService!!.getCharacteristic(MelomindCharacteristic.SERIAL_NUMBER.uuid)
+        val fwVersion =
+            deviceInformationService!!.getCharacteristic(MelomindCharacteristic.FIRMWARE_VERSION.uuid)
+        val hwVersion =
+            deviceInformationService!!.getCharacteristic(MelomindCharacteristic.HARDWARE_VERSION.uuid)
+        val sn =
+            deviceInformationService!!.getCharacteristic(MelomindCharacteristic.SERIAL_NUMBER.uuid)
         beginAtomicRequestQueue()
             .add(
                 readCharacteristic(fwVersion)
@@ -137,27 +141,47 @@ class MelomindBleManager(ctx: Context) : MbtBaseBleManager(ctx) {
         this.eegSignalProcessing = eegSignalProcessing
 
         // disable/enable status trigger operation
-        val triggerChar =
-            measurementService!!.getCharacteristic(MelomindCharacteristic.TRIGGER_STATUS.uuid)
-//        TODO: verify how trigger in Melomind works
-//        val triggerOp = if (eegSignalProcessing.isTriggerStatusEnabled) {
-//            enableNotifications(triggerChar)
-//                .done { Timber.d("HEADSET_STATUS enabled") }
-//                .fail { _, _ -> Timber.e("Could not subscribe HEADSET_STATUS!") }
-//        } else {
-//            disableNotifications(triggerChar)
-//                .done { Timber.d("HEADSET_STATUS disabled") }
-//                .fail { _, _ -> Timber.e("Could not subscribe HEADSET_STATUS!") }
-//        }
+        val mailbox =
+            measurementService!!.getCharacteristic(MelomindCharacteristic.MAIL_BOX.uuid)
+        val data = if (eegSignalProcessing.isTriggerStatusEnabled) {
+            EnumMelomindMailBoxCommand.TRIGGER_STATUS.bytes + 0x01
+        } else {
+            EnumMelomindMailBoxCommand.TRIGGER_STATUS.bytes + 0x00
+        }
+        val triggerOp =
+            writeCharacteristic(mailbox, data, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
+                .done {
+                    Timber.d("Trigger status command sent successfully")
+                    val response = mailbox.value
+                    try {
+                        if (response[0] == EnumMelomindMailBoxCommand.TRIGGER_STATUS.bytes[0]) {
+                            val size = response[1].toInt()
+                            Timber.w("trigger status allocation size = $size")
+                            if (size > 0) {
+                                if (mtu == 47) {
+                                    // bug in firmware v1.7.26 : jira ticket = FM-486
+                                    eegSignalProcessing.onTriggerStatusConfiguration(2)
+                                } else {
+                                    eegSignalProcessing.onTriggerStatusConfiguration(size)
+                                }
+                            } else {
+                                eegSignalProcessing.onTriggerStatusConfiguration(0)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Timber.w(e)
+                    }
+                }
+                .fail { _, _ -> Timber.e("Fail to write trigger status command") }
 
         // eeg characteristic
         val eegChar =
             measurementService!!.getCharacteristic(MelomindCharacteristic.EEG_ACQUISITION.uuid)
 
         // setup eeg callback
-        setNotificationCallback(eegChar).with { device, data ->
-            if (data.value != null) {
-                eegSignalProcessing.onEEGFrame(data.value!!)
+        setNotificationCallback(eegChar).with { _, eegFrame ->
+            if (eegFrame.value != null) {
+                eegSignalProcessing.onEEGFrame(eegFrame.value!!)
             } else {
                 eegSignalProcessing.eegListener?.onEegError(Throwable("received empty eeg frame!"))
             }
@@ -165,7 +189,7 @@ class MelomindBleManager(ctx: Context) : MbtBaseBleManager(ctx) {
 
         // configure headset trigger status then enable EEG
         beginAtomicRequestQueue()
-//            .add(triggerOp)
+            .add(triggerOp)
             .add(
                 enableNotifications(eegChar)
                     .done {

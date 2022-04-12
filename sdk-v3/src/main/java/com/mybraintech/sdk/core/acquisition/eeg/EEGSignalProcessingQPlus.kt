@@ -5,7 +5,7 @@ import com.mybraintech.sdk.core.model.*
 import com.mybraintech.sdk.util.NumericalUtils
 import timber.log.Timber
 
-class EEGSignalProcessingIndus5(eegParams: EEGParams) :
+class EEGSignalProcessingQPlus(eegParams: EEGParams) :
     EEGSignalProcessing(
         sampleRate = eegParams.sampleRate,
         protocol = EnumBluetoothProtocol.BLE,

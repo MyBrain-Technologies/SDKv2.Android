@@ -1,6 +1,5 @@
 package com.mybraintech.sdk.core.acquisition.eeg
 
-import com.mybraintech.android.jnibrainbox.BrainBoxVersion
 import com.mybraintech.sdk.core.model.EEGParams
 import com.mybraintech.sdk.core.model.EnumMBTDevice
 import java.lang.UnsupportedOperationException
@@ -14,7 +13,7 @@ class SignalProcessingManager(deviceType: EnumMBTDevice, eegParams: EEGParams) {
 
     var eegSignalProcessing: EEGSignalProcessing = when (deviceType) {
         EnumMBTDevice.Q_PLUS -> {
-            EEGSignalProcessingIndus5(eegParams)
+            EEGSignalProcessingQPlus(eegParams)
         }
         EnumMBTDevice.MELOMIND -> {
             EEGSignalProcessingMelomind(eegParams)
