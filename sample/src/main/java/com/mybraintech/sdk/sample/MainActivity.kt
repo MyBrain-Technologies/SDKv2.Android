@@ -1,18 +1,13 @@
 package com.mybraintech.sdk.sample
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import android.content.ClipData
-import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import androidx.core.content.FileProvider
 import com.mybraintech.sdk.MbtClient
 import com.mybraintech.sdk.MbtClientManager
@@ -26,7 +21,7 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
-class MelomindActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListener {
+class MainActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListener {
 
     private lateinit var binding: ActivityQplusBinding
     lateinit var mbtClient: MbtClient
@@ -36,16 +31,27 @@ class MelomindActivity : AppCompatActivity(), ConnectionListener, BatteryLevelLi
 
     var eegCount = 0
 
+    companion object {
+        val DEVICE_TYPE_KEY = "DEVICE_TYPE"
+        val MELOMIND_DEVICE = "MELOMIND"
+        val Q_PLUS_DEVICE = "Q_PLUS"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityQplusBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        mbtClient = MbtClientManager.getMbtClient(applicationContext, EnumMBTDevice.MELOMIND)
+        val type = intent.getStringExtra(DEVICE_TYPE_KEY)
+        mbtClient = if (type == MELOMIND_DEVICE) {
+            MbtClientManager.getMbtClient(applicationContext, EnumMBTDevice.MELOMIND)
+        } else {
+            MbtClientManager.getMbtClient(applicationContext, EnumMBTDevice.Q_PLUS)
+        }
+
+        supportActionBar?.title = type
 
         initView()
-
-        requestPermissions()
     }
 
     private fun initView() {
@@ -57,7 +63,6 @@ class MelomindActivity : AppCompatActivity(), ConnectionListener, BatteryLevelLi
         binding.btnScan.setOnClickListener {
             addResultText("scanning...")
             mbtClient.startScan(object : ScanResultListener {
-
                 override fun onMbtDevices(mbtDevices: List<MbtDevice>) {
                     Timber.i("onMbtDevices size = ${mbtDevices.size}")
                     for (device in mbtDevices) {
@@ -135,7 +140,7 @@ class MelomindActivity : AppCompatActivity(), ConnectionListener, BatteryLevelLi
         binding.btnReadDeviceInfos.setOnClickListener {
             mbtClient.getDeviceInformation(object : DeviceInformationListener {
                 override fun onDeviceInformation(deviceInformation: DeviceInformation) {
-                    this@MelomindActivity.deviceInformation = deviceInformation
+                    this@MainActivity.deviceInformation = deviceInformation
                     addResultText(deviceInformation.toJson())
                 }
 
@@ -229,7 +234,7 @@ class MelomindActivity : AppCompatActivity(), ConnectionListener, BatteryLevelLi
 
                     if (path.isPrivateMemory()) {
                         val contentUri: Uri = FileProvider.getUriForFile(
-                            this@MelomindActivity,
+                            this@MainActivity,
                             "com.mybraintech.sdk.sample",
                             outputFile
                         )
@@ -316,69 +321,8 @@ class MelomindActivity : AppCompatActivity(), ConnectionListener, BatteryLevelLi
     }
 
     private fun String.isPrivateMemory(): Boolean {
-        return this.contains(this@MelomindActivity.packageName)
+        return this.contains(this@MainActivity.packageName)
     }
-
-    //----------------------------------------------------------------------------
-    // MARK: permissions
-    //----------------------------------------------------------------------------
-
-    private fun requestPermissions(activityIntent: Intent? = null) {
-        var permissions =
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-//                Timber.w("requires BLUETOOTH_CONNECT and BLUETOOTH_SCAN")
-//                arrayOf(
-//                    Manifest.permission.ACCESS_COARSE_LOCATION,
-//                    Manifest.permission.ACCESS_FINE_LOCATION,
-//                    Manifest.permission.BLUETOOTH_CONNECT,
-//                    Manifest.permission.BLUETOOTH_SCAN
-//                )
-//            } else {
-            arrayOf(
-                Manifest.permission.ACCESS_COARSE_LOCATION,
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.BLUETOOTH_ADMIN,
-                Manifest.permission.BLUETOOTH,
-            )
-//            }
-
-        if (!hasPermissions(this, permissions)) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                requestPermissions(permissions, SplashActivity.REQUEST_CODE_PERMISSIONS)
-            }
-        } else {
-            Timber.i("launch activity")
-            activityIntent?.let {
-                startActivity(it)
-            }
-        }
-    }
-
-    private fun hasPermissions(context: Context, permissions: Array<String>): Boolean {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            for (permission in permissions) {
-                if (ActivityCompat.checkSelfPermission(
-                        context,
-                        permission
-                    ) != PackageManager.PERMISSION_GRANTED
-                ) {
-                    return false
-                }
-            }
-        }
-        return true
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        if (requestCode == SplashActivity.REQUEST_CODE_PERMISSIONS) {
-            requestPermissions() // request permissions util all is permitted
-        } else {
-            super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        }
-    }
-
 }
+
+

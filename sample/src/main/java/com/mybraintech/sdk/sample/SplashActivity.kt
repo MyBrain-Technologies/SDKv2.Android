@@ -24,11 +24,19 @@ class SplashActivity : AppCompatActivity() {
         requestPermissions()
 
         findViewById<View>(R.id.btn_melomind).setOnClickListener {
-            requestPermissions(Intent(this, MelomindActivity::class.java))
+            requestPermissions(
+                Intent(this, MainActivity::class.java)
+                    .apply {
+                        putExtra(MainActivity.DEVICE_TYPE_KEY, MainActivity.MELOMIND_DEVICE)
+                    })
         }
 
         findViewById<View>(R.id.btn_q_plus).setOnClickListener {
-            requestPermissions(Intent(this, Indus5Activity::class.java))
+            requestPermissions(
+                Intent(this, MainActivity::class.java)
+                    .apply {
+                        putExtra(MainActivity.DEVICE_TYPE_KEY, MainActivity.Q_PLUS_DEVICE)
+                    })
         }
 
     }
@@ -44,12 +52,12 @@ class SplashActivity : AppCompatActivity() {
 //                    Manifest.permission.BLUETOOTH_SCAN
 //                )
 //            } else {
-                arrayOf(
-                    Manifest.permission.ACCESS_COARSE_LOCATION,
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.BLUETOOTH_ADMIN,
-                    Manifest.permission.BLUETOOTH,
-                )
+            arrayOf(
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.BLUETOOTH_ADMIN,
+                Manifest.permission.BLUETOOTH,
+            )
 //            }
 
         if (!hasPermissions(this, permissions)) {
