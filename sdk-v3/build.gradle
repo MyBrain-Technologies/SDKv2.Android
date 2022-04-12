@@ -11,8 +11,8 @@ android {
         minSdkVersion 21
         targetSdkVersion 30
 
-        versionCode 104
-        versionName '3.0.2.rc1'
+        versionCode 105
+        versionName '3.1.0-SNAPSHOT'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -24,12 +24,6 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
-
-//    Properties properties = new Properties()
-//    properties.load(project.rootProject.file('local.properties').newDataInputStream())
-//    def ndk_version = properties.getProperty('ndk_version')
-//    ndkVersion ndk_version
-    //declare in your local.properties file: ndk_version="<local_ndk_version>"; for example: ndk_version="21.1.6352462"
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
