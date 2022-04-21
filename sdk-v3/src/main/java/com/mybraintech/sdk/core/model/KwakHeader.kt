@@ -58,5 +58,16 @@ class KwakHeader {
                 this.referenceLocations = listOf(EnumAcquisitionLocation.M1);
             }
         }
+
+        fun getMelomindHeader(): KwakHeader {
+            return KwakHeader().apply {
+                this.nbChannels = 2 //2 channels for Melomind
+                this.acquisitionLocations = listOf(
+                    EnumAcquisitionLocation.P3,
+                    EnumAcquisitionLocation.P4)
+                this.groundLocations = listOf(EnumAcquisitionLocation.M2);
+                this.referenceLocations = listOf(EnumAcquisitionLocation.M1);
+            }
+        }
     }
 }

@@ -21,7 +21,7 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
-class Indus5Activity : AppCompatActivity(), ConnectionListener, BatteryLevelListener {
+class MainActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListener {
 
     private lateinit var binding: ActivityQplusBinding
     lateinit var mbtClient: MbtClient
@@ -31,12 +31,25 @@ class Indus5Activity : AppCompatActivity(), ConnectionListener, BatteryLevelList
 
     var eegCount = 0
 
+    companion object {
+        val DEVICE_TYPE_KEY = "DEVICE_TYPE"
+        val MELOMIND_DEVICE = "MELOMIND"
+        val Q_PLUS_DEVICE = "Q_PLUS"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityQplusBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        mbtClient = MbtClientManager.getMbtClient(applicationContext, EnumMBTDevice.Q_PLUS)
+        val type = intent.getStringExtra(DEVICE_TYPE_KEY)
+        mbtClient = if (type == MELOMIND_DEVICE) {
+            MbtClientManager.getMbtClient(applicationContext, EnumMBTDevice.MELOMIND)
+        } else {
+            MbtClientManager.getMbtClient(applicationContext, EnumMBTDevice.Q_PLUS)
+        }
+
+        supportActionBar?.title = type
 
         initView()
     }
@@ -127,7 +140,7 @@ class Indus5Activity : AppCompatActivity(), ConnectionListener, BatteryLevelList
         binding.btnReadDeviceInfos.setOnClickListener {
             mbtClient.getDeviceInformation(object : DeviceInformationListener {
                 override fun onDeviceInformation(deviceInformation: DeviceInformation) {
-                    this@Indus5Activity.deviceInformation = deviceInformation
+                    this@MainActivity.deviceInformation = deviceInformation
                     addResultText(deviceInformation.toJson())
                 }
 
@@ -221,7 +234,7 @@ class Indus5Activity : AppCompatActivity(), ConnectionListener, BatteryLevelList
 
                     if (path.isPrivateMemory()) {
                         val contentUri: Uri = FileProvider.getUriForFile(
-                            this@Indus5Activity,
+                            this@MainActivity,
                             "com.mybraintech.sdk.sample",
                             outputFile
                         )
@@ -308,7 +321,7 @@ class Indus5Activity : AppCompatActivity(), ConnectionListener, BatteryLevelList
     }
 
     private fun String.isPrivateMemory(): Boolean {
-        return this.contains(this@Indus5Activity.packageName)
+        return this.contains(this@MainActivity.packageName)
     }
 }
 

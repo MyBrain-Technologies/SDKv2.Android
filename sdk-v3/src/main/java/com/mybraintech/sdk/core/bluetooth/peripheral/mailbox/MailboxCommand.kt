@@ -1,8 +1,5 @@
 package com.mybraintech.sdk.core.bluetooth.peripheral.mailbox
 
-import com.mybraintech.sdk.core.bluetooth.attributes.characteristiccontainer.characteristics.PreIndus5Characteristic
-import java.util.*
-
 // TODO: Or use sealed class?
 enum class MailboxCommand(val raw: Byte) {
   // Product name configuration request

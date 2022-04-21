@@ -2,7 +2,7 @@ package com.mybraintech.sdk.core.bluetooth.peripheral.peripheralvaluereceiver
 
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
-import com.mybraintech.sdk.core.bluetooth.attributes.characteristiccontainer.characteristics.PostIndus5Characteristic
+import com.mybraintech.sdk.core.bluetooth.devices.qplus.QPlusCharacteristic
 import com.mybraintech.sdk.core.bluetooth.peripheral.mailbox.MailboxCommand
 import com.mybraintech.sdk.core.bluetooth.peripheral.peripheralvaluereceiver.batterylevel.PostIndus5BatteryLevelDecoder
 import java.lang.Exception
@@ -65,7 +65,7 @@ class PostIndus5PeripheralValueReceiver: IPeripheralValueReceiver {
 
     val characteristicUUID = characteristic.uuid
     val mbtCharacteristic =
-      PostIndus5Characteristic.ofRaw(characteristicUUID) ?: run {
+      QPlusCharacteristic.ofRaw(characteristicUUID) ?: run {
         val error =
           MbtCharacteristicConversionError("Invalid characteristic uuid")
         listener?.onError(error)
@@ -75,9 +75,9 @@ class PostIndus5PeripheralValueReceiver: IPeripheralValueReceiver {
     val characteristicData = characteristic.value
 
     when(mbtCharacteristic) {
-      PostIndus5Characteristic.Tx -> handleTxUpdate(characteristicData)
-      PostIndus5Characteristic.Rx -> handleRxUpdate(characteristicData)
-      PostIndus5Characteristic.Unknown -> {
+      QPlusCharacteristic.Tx -> handleTxUpdate(characteristicData)
+      QPlusCharacteristic.Rx -> handleRxUpdate(characteristicData)
+      QPlusCharacteristic.Unknown -> {
         println("Unknown Characteristic")
         return
       }

@@ -1,7 +1,6 @@
 package com.mybraintech.sdk.util
 
 import com.mybraintech.sdk.core.model.DeviceInformation
-import org.junit.jupiter.api.Assertions.*
 
 import org.junit.Test
 

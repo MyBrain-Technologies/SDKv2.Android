@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import timber.log.Timber
@@ -21,11 +22,29 @@ class SplashActivity : AppCompatActivity() {
         setContentView(R.layout.activity_new_sdk)
 
         requestPermissions()
+
+        findViewById<View>(R.id.btn_melomind).setOnClickListener {
+            requestPermissions(
+                Intent(this, MainActivity::class.java)
+                    .apply {
+                        putExtra(MainActivity.DEVICE_TYPE_KEY, MainActivity.MELOMIND_DEVICE)
+                    })
+        }
+
+        findViewById<View>(R.id.btn_q_plus).setOnClickListener {
+            requestPermissions(
+                Intent(this, MainActivity::class.java)
+                    .apply {
+                        putExtra(MainActivity.DEVICE_TYPE_KEY, MainActivity.Q_PLUS_DEVICE)
+                    })
+        }
+
     }
 
-    private fun requestPermissions() {
+    private fun requestPermissions(activityIntent: Intent? = null) {
         var permissions =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                Timber.w("requires BLUETOOTH_CONNECT and BLUETOOTH_SCAN")
                 arrayOf(
                     Manifest.permission.ACCESS_COARSE_LOCATION,
                     Manifest.permission.ACCESS_FINE_LOCATION,
@@ -35,7 +54,9 @@ class SplashActivity : AppCompatActivity() {
             } else {
                 arrayOf(
                     Manifest.permission.ACCESS_COARSE_LOCATION,
-                    Manifest.permission.ACCESS_FINE_LOCATION
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.BLUETOOTH_ADMIN,
+                    Manifest.permission.BLUETOOTH,
                 )
             }
 
@@ -45,10 +66,9 @@ class SplashActivity : AppCompatActivity() {
             }
         } else {
             Timber.i("launch activity")
-            Intent(this, Indus5Activity::class.java)
-                .also {
-                    startActivity(it)
-                }
+            activityIntent?.let {
+                startActivity(it)
+            }
         }
     }
 

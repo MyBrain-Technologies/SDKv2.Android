@@ -43,6 +43,9 @@ abstract class EEGSignalProcessing(
      */
     var indexAlloc = protocol.getFrameIndexAllocationSize()
 
+    /**
+     * status allocation size must be set in real time when trigger command is sent. By default it is set to 0
+     */
     protected var statusAlloc = 0
 
     /**

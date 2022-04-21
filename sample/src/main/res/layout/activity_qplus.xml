@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context=".Indus5Activity">
+    tools:context=".MainActivity">
 
     <com.google.android.flexbox.FlexboxLayout
         android:layout_width="match_parent"
@@ -133,7 +133,7 @@
             android:id="@+id/txt_eeg_count"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:gravity="center|left"
+            android:gravity="center|start"
             android:hint="0"
             android:minWidth="40dp" />
 

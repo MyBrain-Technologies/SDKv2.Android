@@ -5,7 +5,7 @@ import com.mybraintech.sdk.core.model.*
 import com.mybraintech.sdk.util.NumericalUtils
 import timber.log.Timber
 
-class EEGSignalProcessingIndus5(eegParams: EEGParams) :
+class EEGSignalProcessingMelomind(eegParams: EEGParams) :
     EEGSignalProcessing(
         sampleRate = eegParams.sampleRate,
         protocol = EnumBluetoothProtocol.BLE,
@@ -28,7 +28,7 @@ class EEGSignalProcessingIndus5(eegParams: EEGParams) :
     /**
      * F3 F4 AF3 AF4
      */
-    override fun getNumberOfChannels(): Int = 4
+    override fun getNumberOfChannels(): Int = 2
 
     override fun getEEGData(eegFrame: ByteArray): List<RawEEGSample2> {
         val list = mutableListOf<RawEEGSample2>()
@@ -56,7 +56,13 @@ class EEGSignalProcessingIndus5(eegParams: EEGParams) :
             return NumericalUtils.isBitSet(byte, bitPos)
         } catch (e: Exception) {
             Timber.e(e)
-            Timber.e("pos = $pos, statusBytes = ${NumericalUtils.bytesToShortString(triggerStatusBytes)}")
+            Timber.e(
+                "pos = $pos, statusBytes = ${
+                    NumericalUtils.bytesToShortString(
+                        triggerStatusBytes
+                    )
+                }"
+            )
             return Float.NaN
         }
     }
@@ -83,7 +89,7 @@ class EEGSignalProcessingIndus5(eegParams: EEGParams) :
     override fun createKwak(recordingOption: RecordingOption): Kwak {
         return Kwak().apply {
             context = recordingOption.context
-            header = KwakHeader.getQPlusHeader().apply {
+            header = KwakHeader.getMelomindHeader().apply {
                 deviceInfo = recordingOption.deviceInformation
                 setRecordingNb(recordingOption.recordingNb)
             }
