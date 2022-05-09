@@ -1,13 +1,13 @@
 package com.mybraintech.sdk.core.bluetooth
 
-import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessing
+import com.mybraintech.sdk.core.acquisition.MbtDeviceStatusCallback
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.BleConnectionStatus
-import com.mybraintech.sdk.core.model.EEGParams
 import com.mybraintech.sdk.core.model.MbtDevice
+import com.mybraintech.sdk.core.model.StreamingParams
 
 
-interface IMbtBleManager {
+interface MbtDeviceInterface {
 
     //----------------------------------------------------------------------------
     // scanning + connection
@@ -27,8 +27,8 @@ interface IMbtBleManager {
     fun getCurrentDeviceInformation()
 
     fun getCurrentDeviceA2DPName(): String?
-    fun isListeningToEEG(): Boolean
-    fun isListeningToIMS(): Boolean
+    fun isEEGEnabled(): Boolean
+    fun isIMSEnabled(): Boolean
     fun isListeningToHeadsetStatus(): Boolean
 
     //----------------------------------------------------------------------------
@@ -41,6 +41,6 @@ interface IMbtBleManager {
     //----------------------------------------------------------------------------
     // MARK: streaming
     //----------------------------------------------------------------------------
-    fun startEeg(eegSignalProcessing: EEGSignalProcessing)
-    fun stopEeg()
+    fun enableSensors(streamingParams: StreamingParams, dataReceiver: MbtDataReceiver, deviceStatusCallback: MbtDeviceStatusCallback)
+    fun disableSensors()
 }

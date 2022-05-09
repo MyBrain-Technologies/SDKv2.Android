@@ -12,10 +12,12 @@ interface MbtClient {
     fun disconnect()
     fun getBatteryLevel(batteryLevelListener: BatteryLevelListener)
     fun getDeviceInformation(deviceInformationListener: DeviceInformationListener)
-    fun startEEG(eegParams: EEGParams, eegListener: EEGListener)
-    fun stopEEG()
-    fun startEEGRecording(recordingOption: RecordingOption, recordingListener: RecordingListener)
-    fun stopEEGRecording()
+    fun startStreaming(streamingParams: StreamingParams)
+    fun stopStreaming()
+    fun setEEGListener(eegListener: EEGListener)
+    fun setAccelerometerListener(accelerometerListener: AccelerometerListener)
+    fun startRecording(recordingOption: RecordingOption, recordingListener: RecordingListener)
+    fun stopRecording()
     fun isEEGEnabled(): Boolean
     fun isRecordingEnabled(): Boolean
     fun getRecordingBufferSize(): Int

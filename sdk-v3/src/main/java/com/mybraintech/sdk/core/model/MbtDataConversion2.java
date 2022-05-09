@@ -2,7 +2,7 @@ package com.mybraintech.sdk.core.model;
 
 import androidx.annotation.NonNull;
 
-import com.mybraintech.sdk.core.acquisition.eeg.EnumBluetoothProtocol;
+import com.mybraintech.sdk.core.acquisition.EnumBluetoothProtocol;
 
 import java.util.ArrayList;
 import java.util.List;

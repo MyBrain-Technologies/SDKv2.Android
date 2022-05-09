@@ -5,7 +5,7 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.content.Context
-import com.mybraintech.sdk.core.bluetooth.IMbtBleManager
+import com.mybraintech.sdk.core.bluetooth.MbtDeviceInterface
 import com.mybraintech.sdk.core.bluetooth.MbtBleUtils
 import com.mybraintech.sdk.core.listener.BatteryLevelListener
 import com.mybraintech.sdk.core.listener.ConnectionListener
@@ -20,12 +20,15 @@ import no.nordicsemi.android.ble.BleManager
 import timber.log.Timber
 
 
-abstract class MbtBaseBleManager(ctx: Context) :
-    BleManager(ctx), IMbtBleManager {
+abstract class BaseMbtDeviceInterface(ctx: Context) :
+    BleManager(ctx), MbtDeviceInterface {
 
     protected val MTU_SIZE = 47
 
     protected var isScanning: Boolean = false
+    private var isEEGEnabled: Boolean = false
+    private var isIMSEnabled: Boolean = false
+
     protected var broadcastReceiver = MbtBleBroadcastReceiver()
     protected val mbtBleScanner = MbtBleScanner()
     protected lateinit var scanResultListener: ScanResultListener
@@ -160,12 +163,12 @@ abstract class MbtBaseBleManager(ctx: Context) :
         TODO("Not yet implemented")
     }
 
-    override fun isListeningToEEG(): Boolean {
-        TODO("Not yet implemented")
+    override fun isEEGEnabled(): Boolean {
+        return isEEGEnabled
     }
 
-    override fun isListeningToIMS(): Boolean {
-        TODO("Not yet implemented")
+    override fun isIMSEnabled(): Boolean {
+        return isIMSEnabled
     }
 
     override fun isListeningToHeadsetStatus(): Boolean {

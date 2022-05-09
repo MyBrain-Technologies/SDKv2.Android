@@ -2,34 +2,43 @@ package com.mybraintech.sdk.core
 
 import android.content.Context
 import com.mybraintech.sdk.MbtClient
-import com.mybraintech.sdk.core.acquisition.eeg.SignalProcessingManager
-import com.mybraintech.sdk.core.bluetooth.IMbtBleManager
-import com.mybraintech.sdk.core.bluetooth.devices.melomind.MelomindBleManager
-import com.mybraintech.sdk.core.bluetooth.devices.qplus.QPlusBleManager
+import com.mybraintech.sdk.core.acquisition.MbtDeviceStatusCallback
+import com.mybraintech.sdk.core.acquisition.RecordingInterface
+import com.mybraintech.sdk.core.acquisition.SignalProcessingManager
+import com.mybraintech.sdk.core.bluetooth.MbtDeviceInterface
+import com.mybraintech.sdk.core.bluetooth.devices.melomind.MelomindDeviceImpl
+import com.mybraintech.sdk.core.bluetooth.devices.qplus.QPlusDeviceImpl
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
 import timber.log.Timber
-import java.lang.UnsupportedOperationException
 
 /**
  * DO NOT USE THIS CLASS OUTSIDE OF THE SDK
  * This is new class to support Q+ device, Melomind device...
  */
 internal class MbtClientImpl(private val context: Context, private var deviceType: EnumMBTDevice) :
-    MbtClient {
+    MbtClient, MbtDeviceStatusCallback {
 
-    private var mbtBleManager: IMbtBleManager
-    private var signalProcessingManager: SignalProcessingManager? = null
+    private var mbtDeviceInterface: MbtDeviceInterface
+    private var recordingInterface: RecordingInterface? = null
+    private var dataReceiver: MbtDataReceiver? = null
+
+    private var eegListener: EEGListener? = null
+    private var accelerometerListener: AccelerometerListener? = null
+
+    private var isStreaming = false
+    private var isEEGEnabled = false
+    private var isIMSEnabled = false
 
     init {
         when (deviceType) {
             EnumMBTDevice.Q_PLUS -> {
-                mbtBleManager = QPlusBleManager(context)
-                signalProcessingManager = null
+                mbtDeviceInterface = QPlusDeviceImpl(context)
+                recordingInterface = null
             }
             EnumMBTDevice.MELOMIND -> {
-                mbtBleManager = MelomindBleManager(context)
-                signalProcessingManager = null
+                mbtDeviceInterface = MelomindDeviceImpl(context)
+                recordingInterface = null
             }
             else -> {
                 throw UnsupportedOperationException("device type is not supported!")
@@ -42,84 +51,116 @@ internal class MbtClientImpl(private val context: Context, private var deviceTyp
     }
 
     override fun getBleConnectionStatus(): BleConnectionStatus {
-        return mbtBleManager.getBleConnectionStatus()
+        return mbtDeviceInterface.getBleConnectionStatus()
     }
 
     override fun startScan(scanResultListener: ScanResultListener) {
-        mbtBleManager.startScan(scanResultListener)
+        mbtDeviceInterface.startScan(scanResultListener)
     }
 
     override fun stopScan() {
-        mbtBleManager.stopScan()
+        mbtDeviceInterface.stopScan()
     }
 
     override fun connect(mbtDevice: MbtDevice, connectionListener: ConnectionListener) {
-        mbtBleManager.connectMbt(mbtDevice, connectionListener)
+        mbtDeviceInterface.connectMbt(mbtDevice, connectionListener)
     }
 
     override fun disconnect() {
-        mbtBleManager.disconnectMbt()
+        mbtDeviceInterface.disconnectMbt()
     }
 
     override fun getBatteryLevel(batteryLevelListener: BatteryLevelListener) {
-        mbtBleManager.getBatteryLevel(batteryLevelListener)
+        mbtDeviceInterface.getBatteryLevel(batteryLevelListener)
     }
 
     override fun getDeviceInformation(deviceInformationListener: DeviceInformationListener) {
-        mbtBleManager.getDeviceInformation(deviceInformationListener)
+        mbtDeviceInterface.getDeviceInformation(deviceInformationListener)
     }
 
-    override fun startEEG(eegParams: EEGParams, eegListener: EEGListener) {
-        signalProcessingManager = SignalProcessingManager(deviceType, eegParams)
-        signalProcessingManager?.eegSignalProcessing?.let {
-            it.eegListener = eegListener
-            mbtBleManager.startEeg(it)
+    override fun startStreaming(streamingParams: StreamingParams) {
+        val manager = SignalProcessingManager(deviceType, streamingParams)
+        this.recordingInterface = manager
+        this.dataReceiver = manager.apply {
+            setEEGListener(eegListener)
+            setIMSListener(accelerometerListener)
         }
+        mbtDeviceInterface.enableSensors(streamingParams, dataReceiver!!, this)
+        isStreaming = true
     }
 
-    override fun stopEEG() {
-        mbtBleManager.stopEeg()
+    override fun stopStreaming() {
+        isStreaming = false
+        if (isRecordingEnabled()) {
+            stopRecording()
+        }
+        mbtDeviceInterface.disableSensors()
     }
 
-    override fun startEEGRecording(
+    override fun setEEGListener(eegListener: EEGListener) {
+        this.eegListener = eegListener
+        this.dataReceiver?.setEEGListener(eegListener)
+    }
+
+    override fun setAccelerometerListener(accelerometerListener: AccelerometerListener) {
+        this.accelerometerListener = accelerometerListener
+        this.dataReceiver?.setIMSListener(accelerometerListener)
+    }
+
+    override fun startRecording(
         recordingOption: RecordingOption,
         recordingListener: RecordingListener
     ) {
-        if (isEEGEnabled()) {
-            if (!isRecordingEnabled()) {
-                signalProcessingManager!!.eegSignalProcessing.startRecording(
-                    recordingListener,
-                    recordingOption
-                )
-            } else {
-                recordingListener.onRecordingError(Throwable("Recording is enabled already"))
-            }
+        if (isStreaming) {
+            recordingInterface?.startRecording(
+                recordingListener,
+                recordingOption
+            )
         } else {
-            recordingListener.onRecordingError(Throwable("EEG is not enabled"))
+            recordingListener.onRecordingError(Throwable("Streaming is not activated yet!"))
         }
     }
 
-    override fun stopEEGRecording() {
+    override fun stopRecording() {
         if (isRecordingEnabled()) {
-            signalProcessingManager?.eegSignalProcessing?.stopRecording()
+            recordingInterface?.stopRecording()
         } else {
             Timber.e("Recording is not enabled")
         }
     }
 
     override fun isEEGEnabled(): Boolean {
-        return (signalProcessingManager?.eegSignalProcessing?.isEEGEnabled == true)
+        return isEEGEnabled
     }
 
     override fun isRecordingEnabled(): Boolean {
-        return isEEGEnabled() && (signalProcessingManager?.eegSignalProcessing?.isRecording == true)
+        return (recordingInterface?.isRecordingEnabled() == true)
     }
 
     override fun getRecordingBufferSize(): Int {
-        if (!isRecordingEnabled()) {
-            return 0
+        return if (!isRecordingEnabled()) {
+            0
         } else {
-            return signalProcessingManager?.eegSignalProcessing?.getEEGBufferSize() ?: -1
+            recordingInterface?.getRecordingBufferSize() ?: -1
         }
+    }
+
+    //----------------------------------------------------------------------------
+    // MARK: MbtDeviceStatusCallback
+    //----------------------------------------------------------------------------
+    override fun onEEGStatusChange(isEnabled: Boolean) {
+        Timber.i("onEEGStatusChange = $isEnabled")
+        isEEGEnabled = isEnabled
+        eegListener?.onEEGStatusChange(isEnabled)
+    }
+
+    override fun onIMSStatusChange(isEnabled: Boolean) {
+        Timber.i("onIMSStatusChange = $isEnabled")
+        isIMSEnabled = isEnabled
+        accelerometerListener?.onIMSStatusChange(isEnabled)
+    }
+
+    override fun onDeviceStatusError(error: Throwable) {
+        Timber.e(error)
     }
 }
