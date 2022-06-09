@@ -5,7 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context=".MainActivity">
+    tools:context=".MainActivity"
+    tools:ignore="HardcodedText, SpUsage">
 
     <com.google.android.flexbox.FlexboxLayout
         android:layout_width="match_parent"
@@ -186,7 +187,7 @@
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_marginStart="2dp"
-            android:gravity="center|left"
+            android:gravity="center|start"
             android:hint="0"
             android:minWidth="40dp"
             android:textStyle="bold" />
