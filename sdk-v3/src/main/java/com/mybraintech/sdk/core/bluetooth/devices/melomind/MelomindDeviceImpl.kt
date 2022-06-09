@@ -138,11 +138,11 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDeviceInterface(ctx) {
         deviceStatusCallback: MbtDeviceStatusCallback
     ) {
         if (!streamingParams.isEEGEnabled) {
-            deviceStatusCallback.onDeviceStatusError(Throwable("EEG can not be disabled for Melomind device!"))
+            deviceStatusCallback.onEEGStatusError(Throwable("EEG can not be disabled for Melomind device!"))
             return
         }
         if (deviceInformationService == null || measurementService == null) {
-            deviceStatusCallback.onDeviceStatusError(Throwable("Required services not found!"))
+            deviceStatusCallback.onEEGStatusError(Throwable("Required services not found!"))
             return
         }
         this.dataReceiver = dataReceiver
@@ -209,7 +209,7 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDeviceInterface(ctx) {
                     }
                     .fail { _, _ ->
                         Timber.e("Could not enable EEG_ACQUISITION")
-                        this.deviceStatusCallback?.onDeviceStatusError(Throwable("could not start EEG"))
+                        this.deviceStatusCallback?.onEEGStatusError(Throwable("could not start EEG"))
                     }
             )
             .enqueue()
@@ -217,7 +217,7 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDeviceInterface(ctx) {
 
     override fun disableSensors() {
         if (deviceInformationService == null || measurementService == null) {
-            deviceStatusCallback?.onDeviceStatusError(Throwable("required services not found!"))
+            deviceStatusCallback?.onEEGStatusError(Throwable("required services not found!"))
             return
         }
 
@@ -232,7 +232,7 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDeviceInterface(ctx) {
             }
             .fail { _, _ ->
                 Timber.e("Could not disable EEG_ACQUISITION")
-                deviceStatusCallback?.onDeviceStatusError(Throwable("could not stop EEG"))
+                deviceStatusCallback?.onEEGStatusError(Throwable("could not stop EEG"))
             }
             .enqueue()
     }

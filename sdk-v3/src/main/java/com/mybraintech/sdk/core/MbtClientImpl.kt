@@ -22,6 +22,7 @@ internal class MbtClientImpl(private val context: Context, private var deviceTyp
     private var mbtDeviceInterface: MbtDeviceInterface
     private var recordingInterface: RecordingInterface? = null
     private var dataReceiver: MbtDataReceiver? = null
+    private var streamingParams: StreamingParams? = null
 
     private var eegListener: EEGListener? = null
     private var accelerometerListener: AccelerometerListener? = null
@@ -79,6 +80,7 @@ internal class MbtClientImpl(private val context: Context, private var deviceTyp
     }
 
     override fun startStreaming(streamingParams: StreamingParams) {
+        this.streamingParams = streamingParams
         val manager = SignalProcessingManager(deviceType, streamingParams)
         this.recordingInterface = manager
         this.dataReceiver = manager.apply {
@@ -86,15 +88,14 @@ internal class MbtClientImpl(private val context: Context, private var deviceTyp
             setIMSListener(accelerometerListener)
         }
         mbtDeviceInterface.enableSensors(streamingParams, dataReceiver!!, this)
-        isStreaming = true
     }
 
     override fun stopStreaming() {
-        isStreaming = false
         if (isRecordingEnabled()) {
             stopRecording()
         }
         mbtDeviceInterface.disableSensors()
+        isStreaming = false
     }
 
     override fun setEEGListener(eegListener: EEGListener) {
@@ -151,16 +152,31 @@ internal class MbtClientImpl(private val context: Context, private var deviceTyp
     override fun onEEGStatusChange(isEnabled: Boolean) {
         Timber.i("onEEGStatusChange = $isEnabled")
         isEEGEnabled = isEnabled
+        updateStreamingStatus()
         eegListener?.onEEGStatusChange(isEnabled)
     }
 
     override fun onIMSStatusChange(isEnabled: Boolean) {
         Timber.i("onIMSStatusChange = $isEnabled")
         isIMSEnabled = isEnabled
+        updateStreamingStatus()
         accelerometerListener?.onIMSStatusChange(isEnabled)
     }
 
-    override fun onDeviceStatusError(error: Throwable) {
-        Timber.e(error)
+    override fun onEEGStatusError(error: Throwable) {
+        eegListener?.onEegError(error)
+    }
+
+    override fun onIMSStatusError(error: Throwable) {
+        accelerometerListener?.onAccelerometerError(error)
+    }
+
+    private fun updateStreamingStatus() {
+        if (streamingParams == null) {
+            isStreaming = false
+        } else {
+            isStreaming = (isEEGEnabled == streamingParams!!.isEEGEnabled)
+                    && (isIMSEnabled == streamingParams!!.isAccelerometerEnabled)
+        }
     }
 }

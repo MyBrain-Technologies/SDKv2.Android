@@ -206,6 +206,7 @@ class MainActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListen
                 }
 
                 override fun onEegError(error: Throwable) {
+                    addResultText(error.javaClass.simpleName + error.message)
                     Timber.e(error)
                 }
             })
@@ -230,6 +231,7 @@ class MainActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListen
 
                 override fun onAccelerometerError(error: Throwable) {
                     Timber.e(error)
+                    addResultText(error.javaClass.simpleName + error.message)
                 }
 
             }
