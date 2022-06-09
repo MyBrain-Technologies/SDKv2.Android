@@ -211,7 +211,7 @@ internal class SignalProcessingManager(
                     recordingListener?.onRecordingError(e)
                 } finally {
                     recordingListener = null
-                    recordingContainer.clear() //TODO: verify if this works well
+                    recordingContainer.clear()
                 }
             }
             .addTo(recordingContainer)
