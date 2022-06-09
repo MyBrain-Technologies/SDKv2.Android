@@ -7,6 +7,9 @@ class DeviceInformation {
     @SerializedName("productName")
     var productName: String = ""
 
+    @SerializedName("a2dpName")
+    var a2dpName: String = ""
+
     @SerializedName("uniqueDeviceIdentifier")
     var uniqueDeviceIdentifier: String = ""
 

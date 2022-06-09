@@ -78,7 +78,7 @@ class QPlusDeviceImpl(ctx: Context) :
                     deviceInformation.uniqueDeviceIdentifier = indus5Response.serialNumber
                 }
                 is QPlusResponse.DeviceName -> {
-                    deviceInformation.productName = indus5Response.name
+                    deviceInformation.a2dpName = "QP${indus5Response.name}"
                 }
                 is QPlusResponse.EEGStatus -> {
                     deviceStatusCallback?.onEEGStatusChange(indus5Response.isEnabled)
@@ -158,7 +158,7 @@ class QPlusDeviceImpl(ctx: Context) :
         }
         this.deviceInformationListener = deviceInformationListener
         beginAtomicRequestQueue()
-//            .add(getDeviceNameMailboxRequest()) //do not need to call this, we have already device name
+            .add(getDeviceNameMailboxRequest()) //do not need to call this, we have already device name
             .add(getFirmwareVersionMailboxRequest())
             .add(getHardwareVersionMailboxRequest())
             .add(getSerialNumberMailboxRequest())

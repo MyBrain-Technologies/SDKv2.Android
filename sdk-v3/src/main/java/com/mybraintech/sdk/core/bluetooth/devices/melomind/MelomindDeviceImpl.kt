@@ -106,7 +106,15 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDeviceInterface(ctx) {
             deviceInformationService!!.getCharacteristic(MelomindCharacteristic.HARDWARE_VERSION.uuid)
         val sn =
             deviceInformationService!!.getCharacteristic(MelomindCharacteristic.SERIAL_NUMBER.uuid)
+        val a2dpName =
+            deviceInformationService!!.getCharacteristic(MelomindCharacteristic.PRODUCT_NAME.uuid)
         beginAtomicRequestQueue()
+            .add(
+                readCharacteristic(a2dpName)
+                    .done {
+                        this.deviceInformation.a2dpName = a2dpName.getStringValue(0)
+                    }
+            )
             .add(
                 readCharacteristic(fwVersion)
                     .done {
