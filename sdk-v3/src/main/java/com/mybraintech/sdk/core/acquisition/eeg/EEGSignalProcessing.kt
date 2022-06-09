@@ -73,7 +73,7 @@ abstract class EEGSignalProcessing(
 
     private val dataConversion = MbtDataConversion2.Builder().buildForQPlus()
 
-    private var qualityChecker: QualityChecker? = null
+    private var qualityChecker: QualityChecker = QualityChecker(sampleRate)
 
     private var disposable = CompositeDisposable()
 
@@ -102,8 +102,7 @@ abstract class EEGSignalProcessing(
      */
     fun startRecording() {
         isRecording = true
-        this.recordingBuffer.clear()
-        this.recordingErrorData.resetData()
+        clearBuffer()
     }
 
     fun stopRecording() {
@@ -209,7 +208,7 @@ abstract class EEGSignalProcessing(
                 val newPacket = MbtEEGPacket2(newEegData, newStatusData)
                 if (isQualityCheckerEnabled) {
                     try {
-                        val qualities = qualityChecker?.computeQualityChecker(newEegData)
+                        val qualities = qualityChecker.computeQualityChecker(newEegData)
                         if (qualities != null) {
                             newPacket.qualities = ArrayList(qualities.toList())
                         } else {

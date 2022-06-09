@@ -108,7 +108,11 @@ internal class SignalProcessingManager(
     }
 
     override fun getRecordingBufferSize(): Int {
-        return eegSignalProcessing.getEEGBufferSize()
+        return if (streamingParams.isEEGEnabled) {
+            eegSignalProcessing.getEEGBufferSize()
+        } else {
+            imsSignalProcessing.getIMSBufferSize()
+        }
     }
 
     //----------------------------------------------------------------------------

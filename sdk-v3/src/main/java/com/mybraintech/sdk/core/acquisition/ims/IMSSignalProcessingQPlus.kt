@@ -1,6 +1,5 @@
 package com.mybraintech.sdk.core.acquisition.ims
 
-import android.util.Log
 import com.mybraintech.sdk.core.acquisition.AcquisierThreadFactory
 import com.mybraintech.sdk.core.acquisition.EnumBluetoothProtocol
 import com.mybraintech.sdk.core.acquisition.Indus5Utils
@@ -8,7 +7,6 @@ import com.mybraintech.sdk.core.listener.AccelerometerListener
 import com.mybraintech.sdk.core.model.AccelerometerFrame
 import com.mybraintech.sdk.core.model.ImsPacket
 import com.mybraintech.sdk.core.model.ThreeDimensionalPosition
-import com.mybraintech.sdk.util.NumericalUtils
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.plugins.RxJavaPlugins
 import io.reactivex.rxkotlin.addTo
@@ -82,7 +80,7 @@ class IMSSignalProcessingQPlus(
     }
 
     override fun getIMSBufferSize(): Int {
-        return rawBuffer.size
+        return (recordingBuffer.size / sampleRate)
     }
 
     override fun isIMSRecording(): Boolean {

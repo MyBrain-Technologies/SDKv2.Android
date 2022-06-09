@@ -30,6 +30,7 @@ class MainActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListen
     private val sb = StringBuilder()
 
     var eegCount = 0
+    var imsCount = 0
 
     companion object {
         val DEVICE_TYPE_KEY = "DEVICE_TYPE"
@@ -164,6 +165,7 @@ class MainActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListen
         binding.btnStopStreaming.setOnClickListener {
             mbtClient.stopStreaming()
             eegCount = 0
+            imsCount = 0
         }
 
         binding.btnStartRecording.setOnClickListener {
@@ -216,6 +218,14 @@ class MainActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListen
 
                 override fun onAccelerometerPacket(imsPacket: ImsPacket) {
                     Timber.i("onAccelerometerPacket : Size = ${imsPacket.positions.size}")
+                    runOnUiThread {
+                        imsCount++
+                        binding.txtImsCount.text = imsCount.toString()
+                        if (mbtClient.isRecordingEnabled()) {
+                            binding.txtRecordingCount.text =
+                                mbtClient.getRecordingBufferSize().toString()
+                        }
+                    }
                 }
 
                 override fun onAccelerometerError(error: Throwable) {
