@@ -5,7 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context=".MainActivity">
+    tools:context=".MainActivity"
+    tools:ignore="HardcodedText, SpUsage">
 
     <com.google.android.flexbox.FlexboxLayout
         android:layout_width="match_parent"
@@ -73,25 +74,18 @@
 
 
         <Button
-            android:id="@+id/btn_start_eeg_with_trigger"
+            android:id="@+id/btn_start_streaming"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="2dp"
-            android:text="start eeg with status" />
+            android:text="start streaming" />
 
         <Button
-            android:id="@+id/btn_start_eeg_without_trigger"
+            android:id="@+id/btn_stop_streaming"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="2dp"
-            android:text="start eeg without status" />
-
-        <Button
-            android:id="@+id/btn_stop_eeg"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="2dp"
-            android:text="stop eeg" />
+            android:text="stop streaming" />
 
         <Button
             android:id="@+id/btn_start_recording"
@@ -113,6 +107,33 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
+        <CheckBox
+            android:id="@+id/chb_eeg"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:minWidth="100dp"
+            android:text="EEG" />
+
+        <CheckBox
+            android:id="@+id/chb_trigger"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="100dp"
+            android:text="Trigger" />
+
+        <CheckBox
+            android:id="@+id/chb_ims"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="100dp"
+            android:text="IMS" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
         <Button
             android:id="@+id/btn_clear_text"
             android:layout_width="wrap_content"
@@ -125,34 +146,51 @@
             android:layout_height="match_parent"
             android:layout_marginStart="8dp"
             android:gravity="center"
-            android:text="EEG count =" />
+            android:text="EEG =" />
 
         <TextView
-            android:layout_marginStart="2dp"
-            android:textStyle="bold"
             android:id="@+id/txt_eeg_count"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
+            android:layout_marginStart="2dp"
             android:gravity="center|start"
             android:hint="0"
-            android:minWidth="40dp" />
+            android:minWidth="40dp"
+            android:textStyle="bold" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_marginStart="8dp"
             android:gravity="center"
-            android:text="Recording count =" />
+            android:text="IMS =" />
 
         <TextView
+            android:id="@+id/txt_ims_count"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
             android:layout_marginStart="2dp"
-            android:textStyle="bold"
+            android:gravity="center|start"
+            android:hint="0"
+            android:minWidth="40dp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_marginStart="8dp"
+            android:gravity="center"
+            android:text="Recording =" />
+
+        <TextView
             android:id="@+id/txt_recording_count"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:gravity="center|left"
+            android:layout_marginStart="2dp"
+            android:gravity="center|start"
             android:hint="0"
-            android:minWidth="40dp" />
+            android:minWidth="40dp"
+            android:textStyle="bold" />
 
     </LinearLayout>
 

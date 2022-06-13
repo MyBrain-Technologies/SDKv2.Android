@@ -11,15 +11,17 @@ class Kwak {
 
     fun serializeJson(
         hasStatus: Boolean,
-        recordingBuffer: List<MbtEEGPacket2>,
-        recordingErrorData: RecordingErrorData2,
+        eegBuffer: List<MbtEEGPacket2>,
+        eegErrorData: RecordingErrorData2,
+        imsBuffer: List<ThreeDimensionalPosition>,
         fileWriter: FileWriter
     ): Boolean {
         return MbtJsonBuilder2.serializeRecording(
             context.ownerId,
             header,
             recording,
-            RecordingData2(hasStatus, header.nbChannels, recordingBuffer, recordingErrorData),
+            EEGRecordingData(hasStatus, header.nbChannels, eegBuffer, eegErrorData),
+            imsBuffer,
             fileWriter
         )
     }

@@ -30,6 +30,7 @@ class MainActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListen
     private val sb = StringBuilder()
 
     var eegCount = 0
+    var imsCount = 0
 
     companion object {
         val DEVICE_TYPE_KEY = "DEVICE_TYPE"
@@ -54,6 +55,7 @@ class MainActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListen
         initView()
     }
 
+    @SuppressLint("MissingPermission")
     private fun initView() {
         binding.btnIsConnected.setOnClickListener {
             val bleConnectionStatus = mbtClient.getBleConnectionStatus()
@@ -156,17 +158,14 @@ class MainActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListen
             binding.txtStatus.text = ""
         }
 
-        binding.btnStartEegWithTrigger.setOnClickListener {
-            onBtnStartEEGClicked(true)
+        binding.btnStartStreaming.setOnClickListener {
+            onBtnStartEEGClicked()
         }
 
-        binding.btnStartEegWithoutTrigger.setOnClickListener {
-            onBtnStartEEGClicked(false)
-        }
-
-        binding.btnStopEeg.setOnClickListener {
-            mbtClient.stopEEG()
+        binding.btnStopStreaming.setOnClickListener {
+            mbtClient.stopStreaming()
             eegCount = 0
+            imsCount = 0
         }
 
         binding.btnStartRecording.setOnClickListener {
@@ -174,17 +173,26 @@ class MainActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListen
         }
 
         binding.btnStopRecording.setOnClickListener {
-            mbtClient.stopEEGRecording()
+            mbtClient.stopRecording()
         }
     }
 
-    private fun onBtnStartEEGClicked(isStatusEnabled: Boolean) {
-        mbtClient.startEEG(
-            EEGParams(
-                isTriggerStatusEnabled = isStatusEnabled,
-                isQualityCheckerEnabled = true
-            ),
+    private fun onBtnStartEEGClicked() {
+
+        val streamingParams = StreamingParams.Builder()
+            .setEEG(binding.chbEeg.isChecked)
+            .setQualityChecker(true)
+            .setTriggerStatus(binding.chbTrigger.isChecked)
+            .setAccelerometer(binding.chbIms.isChecked)
+            .build()
+
+        Timber.i("streamingParams : isEEGEnabled = ${streamingParams.isEEGEnabled} | isAccelerometerEnabled = ${streamingParams.isAccelerometerEnabled}")
+        mbtClient.setEEGListener(
             object : EEGListener {
+                override fun onEEGStatusChange(isEnabled: Boolean) {
+                    Timber.i("onEEGStatusChange : $isEnabled")
+                }
+
                 override fun onEegPacket(mbtEEGPacket2: MbtEEGPacket2) {
                     Timber.d("onEegPacket : ${mbtEEGPacket2.timeStamp}")
                     runOnUiThread {
@@ -198,10 +206,37 @@ class MainActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListen
                 }
 
                 override fun onEegError(error: Throwable) {
+                    addResultText(error.javaClass.simpleName + error.message)
                     Timber.e(error)
                 }
-            },
+            })
+
+        mbtClient.setAccelerometerListener(
+            object : AccelerometerListener {
+                override fun onIMSStatusChange(isEnabled: Boolean) {
+                    Timber.i("onIMSStatusChange = $isEnabled")
+                }
+
+                override fun onAccelerometerPacket(imsPacket: ImsPacket) {
+                    Timber.i("onAccelerometerPacket : Size = ${imsPacket.positions.size}")
+                    runOnUiThread {
+                        imsCount++
+                        binding.txtImsCount.text = imsCount.toString()
+                        if (mbtClient.isRecordingEnabled()) {
+                            binding.txtRecordingCount.text =
+                                mbtClient.getRecordingBufferSize().toString()
+                        }
+                    }
+                }
+
+                override fun onAccelerometerError(error: Throwable) {
+                    Timber.e(error)
+                    addResultText(error.javaClass.simpleName + error.message)
+                }
+
+            }
         )
+        mbtClient.startStreaming(streamingParams)
     }
 
     private fun onBtnStartRecordingClicked() {
@@ -219,7 +254,7 @@ class MainActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListen
         }
         val outputFile = File(folder, name)
 
-        mbtClient.startEEGRecording(
+        mbtClient.startRecording(
             RecordingOption(
                 outputFile,
                 KwakContext().apply { ownerId = "1" },

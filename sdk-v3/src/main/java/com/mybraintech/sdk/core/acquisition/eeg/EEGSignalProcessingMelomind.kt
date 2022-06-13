@@ -1,16 +1,20 @@
 package com.mybraintech.sdk.core.acquisition.eeg
 
 import com.mybraintech.android.jnibrainbox.BrainBoxVersion
+import com.mybraintech.sdk.core.acquisition.EnumBluetoothProtocol
+import com.mybraintech.sdk.core.acquisition.Indus5Utils
+import com.mybraintech.sdk.core.listener.EEGListener
 import com.mybraintech.sdk.core.model.*
 import com.mybraintech.sdk.util.NumericalUtils
 import timber.log.Timber
 
-class EEGSignalProcessingMelomind(eegParams: EEGParams) :
+class EEGSignalProcessingMelomind(streamingParams: StreamingParams, eegListener: EEGListener) :
     EEGSignalProcessing(
-        sampleRate = eegParams.sampleRate,
+        sampleRate = streamingParams.eegSampleRate,
         protocol = EnumBluetoothProtocol.BLE,
-        isTriggerStatusEnabled = eegParams.isTriggerStatusEnabled,
-        isQualityCheckerEnabled = eegParams.isQualityCheckerEnabled
+        isTriggerStatusEnabled = streamingParams.isTriggerStatusEnabled,
+        isQualityCheckerEnabled = streamingParams.isQualityCheckerEnabled,
+        eegListener = eegListener
     ) {
 
     override fun getFrameIndex(eegFrame: ByteArray): Long {

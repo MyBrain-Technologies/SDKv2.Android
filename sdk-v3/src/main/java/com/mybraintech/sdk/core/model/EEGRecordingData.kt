@@ -1,7 +1,9 @@
 package com.mybraintech.sdk.core.model
 
+import timber.log.Timber
 
-class RecordingData2(
+
+class EEGRecordingData(
     hasStatus: Boolean,
     nbChannels: Int,
     eegPackets: List<MbtEEGPacket2>,
@@ -39,6 +41,7 @@ class RecordingData2(
     }
 
     private fun init(nbChannels: Int) {
+        Timber.d("nbChannels = $nbChannels")
         eegData = arrayListOf()
         statusData = arrayListOf()
         qualities = arrayListOf()

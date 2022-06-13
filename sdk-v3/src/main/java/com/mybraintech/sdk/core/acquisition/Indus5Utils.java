@@ -1,4 +1,4 @@
-package com.mybraintech.sdk.core.acquisition.eeg;
+package com.mybraintech.sdk.core.acquisition;
 
 
 public class Indus5Utils {

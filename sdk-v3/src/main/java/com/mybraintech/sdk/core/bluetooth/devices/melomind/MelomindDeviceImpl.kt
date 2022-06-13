@@ -6,31 +6,30 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.le.ScanResult
 import android.content.Context
-import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessing
+import com.mybraintech.sdk.core.acquisition.MbtDeviceStatusCallback
 import com.mybraintech.sdk.core.bluetooth.DataConversionUtils
 import com.mybraintech.sdk.core.bluetooth.MbtBleUtils
-import com.mybraintech.sdk.core.bluetooth.devices.MbtBaseBleManager
+import com.mybraintech.sdk.core.bluetooth.devices.BaseMbtDeviceInterface
 import com.mybraintech.sdk.core.listener.BatteryLevelListener
 import com.mybraintech.sdk.core.listener.DeviceInformationListener
-import com.mybraintech.sdk.core.model.BleConnectionStatus
-import com.mybraintech.sdk.core.model.DeviceInformation
-import com.mybraintech.sdk.core.model.EnumMBTDevice
-import com.mybraintech.sdk.core.model.MbtDevice
+import com.mybraintech.sdk.core.listener.MbtDataReceiver
+import com.mybraintech.sdk.core.model.*
 import no.nordicsemi.android.ble.BleManager
 import timber.log.Timber
 
-class MelomindBleManager(ctx: Context) : MbtBaseBleManager(ctx) {
+class MelomindDeviceImpl(ctx: Context) : BaseMbtDeviceInterface(ctx) {
 
     // required services
     private var deviceInformationService: BluetoothGattService? = null
     private var measurementService: BluetoothGattService? = null
 
-    private var eegSignalProcessing: EEGSignalProcessing? = null
+    private var dataReceiver: MbtDataReceiver? = null
+    private var deviceStatusCallback: MbtDeviceStatusCallback? = null
 
     //----------------------------------------------------------------------------
     // MARK: ble manager
     //----------------------------------------------------------------------------
-    override fun getGattCallback(): BleManager.BleManagerGattCallback = MelomindGattCallback()
+    override fun getGattCallback(): BleManagerGattCallback = MelomindGattCallback()
 
     override fun log(priority: Int, message: String) {
         if (message.contains("Notification received from 0000b2a5")) {
@@ -133,17 +132,25 @@ class MelomindBleManager(ctx: Context) : MbtBaseBleManager(ctx) {
             .enqueue()
     }
 
-    override fun startEeg(eegSignalProcessing: EEGSignalProcessing) {
-        if (deviceInformationService == null || measurementService == null) {
-            eegSignalProcessing.eegListener?.onEegError(Throwable("required services not found!"))
+    override fun enableSensors(
+        streamingParams: StreamingParams,
+        dataReceiver: MbtDataReceiver,
+        deviceStatusCallback: MbtDeviceStatusCallback
+    ) {
+        if (!streamingParams.isEEGEnabled) {
+            deviceStatusCallback.onEEGStatusError(Throwable("EEG can not be disabled for Melomind device!"))
             return
         }
-        this.eegSignalProcessing = eegSignalProcessing
-
+        if (deviceInformationService == null || measurementService == null) {
+            deviceStatusCallback.onEEGStatusError(Throwable("Required services not found!"))
+            return
+        }
+        this.dataReceiver = dataReceiver
+        this.deviceStatusCallback = deviceStatusCallback
         // disable/enable status trigger operation
         val mailbox =
             measurementService!!.getCharacteristic(MelomindCharacteristic.MAIL_BOX.uuid)
-        val data = if (eegSignalProcessing.isTriggerStatusEnabled) {
+        val data = if (streamingParams.isTriggerStatusEnabled) {
             EnumMelomindMailBoxCommand.TRIGGER_STATUS.bytes + 0x01
         } else {
             EnumMelomindMailBoxCommand.TRIGGER_STATUS.bytes + 0x00
@@ -160,12 +167,16 @@ class MelomindBleManager(ctx: Context) : MbtBaseBleManager(ctx) {
                             if (size > 0) {
                                 if (mtu == 47) {
                                     // bug in firmware v1.7.26 : jira ticket = FM-486
-                                    eegSignalProcessing.onTriggerStatusConfiguration(2)
+                                    this.dataReceiver?.onTriggerStatusConfiguration(
+                                        2
+                                    )
                                 } else {
-                                    eegSignalProcessing.onTriggerStatusConfiguration(size)
+                                    this.dataReceiver?.onTriggerStatusConfiguration(
+                                        size
+                                    )
                                 }
                             } else {
-                                eegSignalProcessing.onTriggerStatusConfiguration(0)
+                                this.dataReceiver?.onTriggerStatusConfiguration(0)
                             }
                         }
                     } catch (e: Exception) {
@@ -181,9 +192,9 @@ class MelomindBleManager(ctx: Context) : MbtBaseBleManager(ctx) {
         // setup eeg callback
         setNotificationCallback(eegChar).with { _, eegFrame ->
             if (eegFrame.value != null) {
-                eegSignalProcessing.onEEGFrame(eegFrame.value!!)
+                this.dataReceiver?.onEEGFrame(eegFrame.value!!)
             } else {
-                eegSignalProcessing.eegListener?.onEegError(Throwable("received empty eeg frame!"))
+                this.dataReceiver?.onEEGDataError(Throwable("received empty eeg frame!"))
             }
         }
 
@@ -194,19 +205,19 @@ class MelomindBleManager(ctx: Context) : MbtBaseBleManager(ctx) {
                 enableNotifications(eegChar)
                     .done {
                         Timber.d("EEG_ACQUISITION enabled")
-                        eegSignalProcessing.onEEGStatusChange(true)
+                        this.deviceStatusCallback?.onEEGStatusChange(true)
                     }
                     .fail { _, _ ->
                         Timber.e("Could not enable EEG_ACQUISITION")
-                        eegSignalProcessing.eegListener?.onEegError(Throwable("could not start EEG"))
+                        this.deviceStatusCallback?.onEEGStatusError(Throwable("could not start EEG"))
                     }
             )
             .enqueue()
     }
 
-    override fun stopEeg() {
+    override fun disableSensors() {
         if (deviceInformationService == null || measurementService == null) {
-            eegSignalProcessing?.eegListener?.onEegError(Throwable("required services not found!"))
+            deviceStatusCallback?.onEEGStatusError(Throwable("required services not found!"))
             return
         }
 
@@ -217,11 +228,11 @@ class MelomindBleManager(ctx: Context) : MbtBaseBleManager(ctx) {
         disableNotifications(eegChar)
             .done {
                 Timber.d("EEG_ACQUISITION disabled")
-                eegSignalProcessing?.onEEGStatusChange(false)
+                deviceStatusCallback?.onEEGStatusChange(false)
             }
             .fail { _, _ ->
                 Timber.e("Could not disable EEG_ACQUISITION")
-                eegSignalProcessing?.eegListener?.onEegError(Throwable("could not stop EEG"))
+                deviceStatusCallback?.onEEGStatusError(Throwable("could not stop EEG"))
             }
             .enqueue()
     }
@@ -242,11 +253,11 @@ class MelomindBleManager(ctx: Context) : MbtBaseBleManager(ctx) {
         TODO("Not yet implemented")
     }
 
-    override fun isListeningToEEG(): Boolean {
+    override fun isEEGEnabled(): Boolean {
         TODO("Not yet implemented")
     }
 
-    override fun isListeningToIMS(): Boolean {
+    override fun isIMSEnabled(): Boolean {
         TODO("Not yet implemented")
     }
 

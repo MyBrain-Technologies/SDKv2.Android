@@ -6,25 +6,26 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.le.ScanResult
 import android.content.Context
 import android.os.Handler
-import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessing
+import com.mybraintech.sdk.core.acquisition.MbtDeviceStatusCallback
 import com.mybraintech.sdk.core.bluetooth.MbtBleUtils
-import com.mybraintech.sdk.core.bluetooth.devices.MbtBaseBleManager
+import com.mybraintech.sdk.core.bluetooth.devices.BaseMbtDeviceInterface
 import com.mybraintech.sdk.core.listener.BatteryLevelListener
 import com.mybraintech.sdk.core.listener.DeviceInformationListener
-import com.mybraintech.sdk.core.model.BleConnectionStatus
-import com.mybraintech.sdk.core.model.DeviceInformation
-import com.mybraintech.sdk.core.model.EnumMBTDevice
-import com.mybraintech.sdk.core.model.MbtDevice
+import com.mybraintech.sdk.core.listener.MbtDataReceiver
+import com.mybraintech.sdk.core.model.*
+import no.nordicsemi.android.ble.Operation
 import no.nordicsemi.android.ble.WriteRequest
 import no.nordicsemi.android.ble.callback.DataReceivedCallback
 import no.nordicsemi.android.ble.data.Data
 import timber.log.Timber
 
 
-class QPlusBleManager(ctx: Context) :
-    MbtBaseBleManager(ctx), DataReceivedCallback {
+class QPlusDeviceImpl(ctx: Context) :
+    BaseMbtDeviceInterface(ctx), DataReceivedCallback {
 
-    private var eegSignalProcessing: EEGSignalProcessing? = null
+    private var streamingParams: StreamingParams? = null
+    private var dataReceiver: MbtDataReceiver? = null
+    private var deviceStatusCallback: MbtDeviceStatusCallback? = null
 
     private var txCharacteristic: BluetoothGattCharacteristic? = null
     private var rxCharacteristic: BluetoothGattCharacteristic? = null
@@ -35,8 +36,11 @@ class QPlusBleManager(ctx: Context) :
     override fun getGattCallback(): BleManagerGattCallback = Indus5GattCallback(this)
 
     override fun log(priority: Int, message: String) {
-        if (message.contains("value: (0x) 40")) {
-            Timber.v(message)
+        if (message.contains("value: (0x) 40")
+            || message.contains("value: (0x) 50")
+            || message.contains("value: (0x) 60")
+        ) {
+//            Timber.v(message)
         } else {
             Timber.log(priority, message)
         }
@@ -56,7 +60,7 @@ class QPlusBleManager(ctx: Context) :
     //----------------------------------------------------------------------------
     override fun onDataReceived(device: BluetoothDevice, data: Data) {
         if (data.value != null) {
-//            Timber.i("onDataReceived : ${NumericalUtils.bytesToHex(data.value)}")
+//            Timber.v("onDataReceived : ${NumericalUtils.bytesToHex(data.value)}")
             when (val indus5Response = QPlusMailboxHelper.parseRawIndus5Response(data.value!!)) {
                 is QPlusResponse.MtuChange -> {
                     Timber.i("Mailbox MTU changed successfully")
@@ -77,13 +81,19 @@ class QPlusBleManager(ctx: Context) :
                     deviceInformation.productName = indus5Response.name
                 }
                 is QPlusResponse.EEGStatus -> {
-                    eegSignalProcessing?.onEEGStatusChange(indus5Response.isEnabled)
+                    deviceStatusCallback?.onEEGStatusChange(indus5Response.isEnabled)
                 }
                 is QPlusResponse.EEGFrame -> {
-                    eegSignalProcessing?.onEEGFrame(indus5Response.data)
+                    dataReceiver?.onEEGFrame(indus5Response.data)
                 }
                 is QPlusResponse.TriggerStatusConfiguration -> {
-                    eegSignalProcessing?.onTriggerStatusConfiguration(indus5Response.triggerStatusAllocationSize)
+                    dataReceiver?.onTriggerStatusConfiguration(indus5Response.triggerStatusAllocationSize)
+                }
+                is QPlusResponse.ImsStatus -> {
+                    deviceStatusCallback?.onIMSStatusChange(indus5Response.isEnabled)
+                }
+                is QPlusResponse.ImsFrame -> {
+                    dataReceiver?.onIMSFrame(indus5Response.data)
                 }
                 else -> {
                     Timber.e("this type is not supported : ${indus5Response.javaClass.simpleName}")
@@ -170,45 +180,94 @@ class QPlusBleManager(ctx: Context) :
             .enqueue()
     }
 
-    override fun startEeg(eegSignalProcessing: EEGSignalProcessing) {
-        this.eegSignalProcessing = eegSignalProcessing
+    override fun enableSensors(
+        streamingParams: StreamingParams,
+        dataReceiver: MbtDataReceiver,
+        deviceStatusCallback: MbtDeviceStatusCallback
+    ) {
+        this.streamingParams = streamingParams
+        this.dataReceiver = dataReceiver
+        this.deviceStatusCallback = deviceStatusCallback
 
+        val requestQueue = beginAtomicRequestQueue()
+        if (streamingParams.isEEGEnabled) {
+            requestQueue.add(getTriggerStatusOperation(streamingParams.isTriggerStatusEnabled))
+            if (streamingParams.isAccelerometerEnabled) {
+                requestQueue.add(getStartIMSOperation())
+            } else {
+                requestQueue.add(getStopIMSOperation())
+            }
+            requestQueue.add(getStartEEGOperation())
+        } else {
+            requestQueue.add(getStopEEGOperation())
+            if (streamingParams.isAccelerometerEnabled) {
+                requestQueue.add(getStartIMSOperation())
+            } else {
+                requestQueue.add(getStopIMSOperation())
+            }
+        }
+        requestQueue.enqueue()
+    }
+
+    override fun disableSensors() {
+        val requestQueue = beginAtomicRequestQueue()
+        if (streamingParams?.isAccelerometerEnabled == true) {
+            requestQueue.add(getStopIMSOperation())
+        }
+        if (streamingParams?.isEEGEnabled == true) {
+            requestQueue.add(getStopEEGOperation())
+        }
+        requestQueue.enqueue()
+    }
+
+    private fun getStartIMSOperation(): Operation {
+        return writeCharacteristic(
+            txCharacteristic,
+            EnumQPlusFrameSuffix.MBX_START_IMS_ACQUISITION.bytes,
+            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        )
+    }
+
+    private fun getStopIMSOperation(): Operation {
+        return writeCharacteristic(
+            txCharacteristic,
+            EnumQPlusFrameSuffix.MBX_STOP_IMS_ACQUISITION.bytes,
+            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        )
+    }
+
+    private fun getTriggerStatusOperation(isTriggerStatusEnabled: Boolean): Operation {
         // create status operation
         val statusCommand = EnumQPlusFrameSuffix.MBX_P300_ENABLE.bytes.toMutableList()
         statusCommand.add(
-            if (eegSignalProcessing.isTriggerStatusEnabled) {
+            if (isTriggerStatusEnabled) {
                 0x01
             } else {
                 0x00
             }
         )
-        val statusOperation = writeCharacteristic(
+        return writeCharacteristic(
             txCharacteristic,
             statusCommand.toByteArray(),
             BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
         )
+    }
 
-        // eeg streaming operation
-        val eegOperation = writeCharacteristic(
+    private fun getStartEEGOperation(): Operation {
+        return writeCharacteristic(
             txCharacteristic,
             EnumQPlusFrameSuffix.MBX_START_EEG_ACQUISITION.bytes,
             BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
         )
-
-        // operation queue
-        beginAtomicRequestQueue()
-            .add(statusOperation)
-            .add(eegOperation)
-            .enqueue()
     }
 
-    override fun stopEeg() {
-        writeCharacteristic(
+    private fun getStopEEGOperation(): Operation {
+        return writeCharacteristic(
             txCharacteristic,
             EnumQPlusFrameSuffix.MBX_STOP_EEG_ACQUISITION.bytes,
             BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
         )
-            .enqueue()
+
     }
 
     override fun hasA2dpConnectedDevice(): Boolean {
@@ -227,11 +286,11 @@ class QPlusBleManager(ctx: Context) :
         TODO("Not yet implemented")
     }
 
-    override fun isListeningToEEG(): Boolean {
+    override fun isEEGEnabled(): Boolean {
         TODO("Not yet implemented")
     }
 
-    override fun isListeningToIMS(): Boolean {
+    override fun isIMSEnabled(): Boolean {
         TODO("Not yet implemented")
     }
 
@@ -255,6 +314,7 @@ class QPlusBleManager(ctx: Context) :
         )
     }
 
+    @Suppress("unused")
     private fun getDeviceNameMailboxRequest(): WriteRequest {
         return writeCharacteristic(
             txCharacteristic,

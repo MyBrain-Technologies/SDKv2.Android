@@ -1,42 +1,40 @@
 package com.mybraintech.sdk.core.acquisition.eeg
 
 import com.mybraintech.android.jnibrainbox.QualityChecker
+import com.mybraintech.sdk.core.acquisition.AcquisierThreadFactory
+import com.mybraintech.sdk.core.acquisition.EnumBluetoothProtocol
 import com.mybraintech.sdk.core.listener.EEGListener
-import com.mybraintech.sdk.core.listener.RecordingListener
+import com.mybraintech.sdk.core.listener.StreamListener
 import com.mybraintech.sdk.core.model.*
 import com.mybraintech.sdk.util.ErrorDataHelper2
 import com.mybraintech.sdk.util.MatrixUtils2
 import com.mybraintech.sdk.util.NumericalUtils
-import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.plugins.RxJavaPlugins
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
-import java.io.FileWriter
 
 abstract class EEGSignalProcessing(
     private val sampleRate: Int,
     protocol: EnumBluetoothProtocol,
     val isTriggerStatusEnabled: Boolean,
     protected val isQualityCheckerEnabled: Boolean,
+    var eegListener: EEGListener?
 ) {
 
     /**
      * this scheduler is reserved to handle eeg frame tasks
      */
-    private var eegFrameScheduler = RxJavaPlugins.createSingleScheduler(EEGThreadFactory)
+    private var eegFrameScheduler = RxJavaPlugins.createSingleScheduler(AcquisierThreadFactory)
 
     private val eegFrameSubject = PublishSubject.create<ByteArray>()
     private val eegPacketSubject = PublishSubject.create<MbtEEGPacket2>()
 
-    private var recordingOption: RecordingOption? = null
-    private var kwak: Kwak = Kwak()
     private var recordingBuffer = mutableListOf<MbtEEGPacket2>()
-    private var recordingListener: RecordingListener? = null
-    var isRecording: Boolean = false
-        private set
+    private var recordingErrorData = RecordingErrorData2()
+    private var isRecording: Boolean = false
 
     /**
      * index allocation size in the eeg frame
@@ -60,12 +58,7 @@ abstract class EEGSignalProcessing(
 
     private var previousIndex = -1L
 
-    var isEEGEnabled = false
-        private set
-
-    var eegListener: EEGListener? = null
-
-    private var recordingErrorData = RecordingErrorData2()
+    var streamListener: StreamListener? = null
 
     /**
      * Buffer that will manage the EEG <b>RAW</b> data. It stores {@link RawEEGSample2} objects.
@@ -80,10 +73,9 @@ abstract class EEGSignalProcessing(
 
     private val dataConversion = MbtDataConversion2.Builder().buildForQPlus()
 
-    private var qualityChecker: QualityChecker? = null
+    private var qualityChecker: QualityChecker = QualityChecker(sampleRate)
 
-    private var recordingContainer = CompositeDisposable()
-    private var otherContainer = CompositeDisposable()
+    private var disposable = CompositeDisposable()
 
     init {
         eegPacketSubject
@@ -91,7 +83,7 @@ abstract class EEGSignalProcessing(
             .subscribe {
                 eegListener?.onEegPacket(it)
             }
-            .addTo(otherContainer)
+            .addTo(disposable)
 
         eegFrameSubject
             .observeOn(eegFrameScheduler)
@@ -102,64 +94,24 @@ abstract class EEGSignalProcessing(
                     Timber.e(e)
                 }
             }
-            .addTo(otherContainer)
+            .addTo(disposable)
     }
 
-    fun startRecording(recordingListener: RecordingListener, recordingOption: RecordingOption) {
+    /**
+     * this will clear the buffer
+     */
+    fun startRecording() {
         isRecording = true
-        this.recordingOption = recordingOption
-        this.recordingListener = recordingListener
-        this.recordingErrorData.resetData()
-        this.recordingBuffer.clear()
-        this.kwak = createKwak(recordingOption)
+        clearBuffer()
+    }
+
+    fun stopRecording() {
+        isRecording = false
     }
 
     abstract fun createKwak(recordingOption: RecordingOption): Kwak
 
-    fun stopRecording() {
-        isRecording = false
-        Observable.just(1)
-            .subscribeOn(Schedulers.computation())
-            .subscribe {
-                try {
-                    if (recordingOption?.outputFile != null) {
-                        val isOk = kwak.serializeJson(
-                            isTriggerStatusEnabled,
-                            recordingBuffer,
-                            recordingErrorData,
-                            FileWriter(recordingOption?.outputFile!!)
-                        )
-                        if (!isOk) {
-                            recordingListener?.onRecordingError(Throwable("Can not serialize file"))
-                        } else {
-                            recordingListener?.onRecordingSaved(recordingOption?.outputFile!!)
-                        }
-                    } else {
-                        recordingListener?.onRecordingError(Throwable("Recording file not found"))
-                    }
-                } catch (e: Exception) {
-                    Timber.e(e)
-                    recordingListener?.onRecordingError(e)
-                } finally {
-                    recordingListener = null
-                }
-            }
-            .addTo(recordingContainer)
-    }
-
-    fun onEEGStatusChange(isEnabled: Boolean) {
-        this.isEEGEnabled = isEnabled
-        if (isEnabled) {
-            //reset buffer when starting streaming
-            restart()
-        } else {
-            if (isRecording) {
-                stopRecording()
-            }
-        }
-    }
-
-    private fun restart() {
+    fun clearBuffer() {
         recordingErrorData = RecordingErrorData2()
         rawBuffer = mutableListOf()
         recordingBuffer = mutableListOf()
@@ -169,7 +121,7 @@ abstract class EEGSignalProcessing(
     }
 
     fun onEEGFrame(eegFrame: ByteArray) {
-        Timber.v("onEEGFrame : ${NumericalUtils.bytesToShortString(eegFrame)}")
+//        Timber.v("onEEGFrame : ${NumericalUtils.bytesToShortString(eegFrame)}")
         eegFrameSubject.onNext(eegFrame)
     }
 
@@ -178,7 +130,7 @@ abstract class EEGSignalProcessing(
      */
     @Throws(Exception::class)
     private fun consumeEEGFrame(eegFrame: ByteArray) {
-//        Timber.v("onEEGFrameComputation")
+//        Timber.v("consumeEEGFrame")
         if (!isValidFrame(eegFrame)) {
             Timber.e("bad format eeg frame : ${NumericalUtils.bytesToShortString(eegFrame)}")
             return
@@ -200,8 +152,11 @@ abstract class EEGSignalProcessing(
 
         val indexDifference = newFrameIndex - previousIndex
         if (indexDifference != 1L) {
+            Timber.w("diff is $indexDifference. Current index : $newFrameIndex | previousIndex : $previousIndex")
             recordingErrorData.increaseMissingEegFrame(indexDifference - 1)
         }
+
+        previousIndex = newFrameIndex
 
         //this block is to count zero signals
         val eegData = eegFrame.copyOfRange(headerAlloc, eegFrame.size)
@@ -218,7 +173,6 @@ abstract class EEGSignalProcessing(
 
         //2nd step : Fill gap by NaN samples if there is missing frames
         if (indexDifference != 1L) {
-            Timber.w("diff is $indexDifference. Current index : $newFrameIndex | previousIndex : $previousIndex")
             for (i in 1..indexDifference) {
                 //one frame contains n times of sample
                 for (j in 1..getNumberOfTimes(eegFrame)) {
@@ -233,8 +187,6 @@ abstract class EEGSignalProcessing(
 
         //4th step: save raw eeg data to buffer
         rawBuffer.addAll(rawEEGList)
-
-        previousIndex = newFrameIndex
 
         //5th step: if raw buffer is reach threshold, generate consolidated eeg
         if (rawBuffer.size >= DEFAULT_MAX_PENDING_RAW_DATA_BUFFER_SIZE) {
@@ -256,7 +208,7 @@ abstract class EEGSignalProcessing(
                 val newPacket = MbtEEGPacket2(newEegData, newStatusData)
                 if (isQualityCheckerEnabled) {
                     try {
-                        val qualities = qualityChecker?.computeQualityChecker(newEegData)
+                        val qualities = qualityChecker.computeQualityChecker(newEegData)
                         if (qualities != null) {
                             newPacket.qualities = ArrayList(qualities.toList())
                         } else {
@@ -309,6 +261,14 @@ abstract class EEGSignalProcessing(
         statusAlloc = statusAllocationSize
         headerAlloc = indexAlloc + statusAlloc
         Timber.d("indexAlloc = $indexAlloc | statusAlloc = $statusAlloc | headerAlloc = $headerAlloc")
+    }
+
+    fun getEEGBuffer(): List<MbtEEGPacket2> {
+        return recordingBuffer
+    }
+
+    fun getRecordingErrorData(): RecordingErrorData2 {
+        return recordingErrorData
     }
 
     companion object {

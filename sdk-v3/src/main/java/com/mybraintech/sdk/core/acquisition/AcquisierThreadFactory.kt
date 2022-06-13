@@ -1,8 +1,8 @@
-package com.mybraintech.sdk.core.acquisition.eeg
+package com.mybraintech.sdk.core.acquisition
 
 import java.util.concurrent.ThreadFactory
 
-object EEGThreadFactory : ThreadFactory {
+object AcquisierThreadFactory : ThreadFactory {
 
     override fun newThread(r: Runnable?): Thread {
         return Thread(r)
