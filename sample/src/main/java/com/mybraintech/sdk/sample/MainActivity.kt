@@ -4,6 +4,8 @@ import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import android.content.ClipData
 import android.content.Intent
+import android.media.AudioManager
+import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
@@ -53,6 +55,16 @@ class MainActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListen
         supportActionBar?.title = type
 
         initView()
+
+        playMusic()
+    }
+
+    private fun playMusic() {
+        val mPlayer = MediaPlayer.create(this, R.raw.piano_32kbps)
+//        mPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC)
+//        mPlayer.prepare()
+        mPlayer.isLooping = true // for repeat song
+        mPlayer.start()
     }
 
     @SuppressLint("MissingPermission")
