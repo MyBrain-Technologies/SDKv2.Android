@@ -9,7 +9,6 @@ import com.mybraintech.sdk.core.bluetooth.devices.qplus.QPlusBleManager
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
 import timber.log.Timber
-import java.lang.UnsupportedOperationException
 
 /**
  * DO NOT USE THIS CLASS OUTSIDE OF THE SDK
@@ -121,5 +120,9 @@ internal class MbtClientImpl(private val context: Context, private var deviceTyp
         } else {
             return signalProcessingManager?.eegSignalProcessing?.getEEGBufferSize() ?: -1
         }
+    }
+
+    override fun getDataLossPercent(): Float {
+        return signalProcessingManager?.eegSignalProcessing?.getDataLossPercent() ?: 0.0f
     }
 }
