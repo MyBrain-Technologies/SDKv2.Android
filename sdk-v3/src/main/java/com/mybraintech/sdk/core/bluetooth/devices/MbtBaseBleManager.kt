@@ -69,6 +69,15 @@ abstract class MbtBaseBleManager(ctx: Context) :
     }
 
     override fun connectMbt(mbtDevice: MbtDevice, connectionListener: ConnectionListener) {
+        connectMbtWithRetries(mbtDevice, connectionListener, 0, 2)
+    }
+
+    private fun connectMbtWithRetries(
+        mbtDevice: MbtDevice,
+        connectionListener: ConnectionListener,
+        currentRetry: Int = 0,
+        maxRetry: Int = 3
+    ) {
         if (!isBluetoothEnabled()) {
             connectionListener.onConnectionError(Throwable("Bluetooth is not enabled"))
             return
@@ -83,19 +92,25 @@ abstract class MbtBaseBleManager(ctx: Context) :
 
         connect(mbtDevice.bluetoothDevice)
             .useAutoConnect(false)
-            .timeout(30000)
+            .timeout(5000)
             .done {
                 Timber.i("ble connect done")
             }
             .fail { device, status ->
-                val name = device?.name
-                connectionListener.onConnectionError(Throwable("fail to connect to MbtDevice : name = $name | status = $status"))
+                if (currentRetry <= maxRetry) {
+                    val delay = 10L
+                    Timber.i("Retry ${currentRetry + 1}. Wait $delay ms")
+                    val runnable = Runnable {
+                        Thread.sleep(delay)
+                        connectMbtWithRetries(mbtDevice, connectionListener, currentRetry + 1, maxRetry)
+                    }
+                    Thread(runnable).run()
+                } else {
+                    val name = device?.name
+                    connectionListener.onConnectionError(Throwable("fail to connect to MbtDevice : name = $name | status = $status"))
+                }
             }
             .enqueue()
-    }
-
-    override fun shouldClearCacheWhenDisconnected(): Boolean {
-        return true
     }
 
     override fun disconnectMbt() {
