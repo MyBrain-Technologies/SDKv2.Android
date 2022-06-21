@@ -115,6 +115,10 @@ internal class SignalProcessingManager(
         }
     }
 
+    override fun getDataLossPercentage(): Float {
+        return eegSignalProcessing.getRecordingErrorData().getMissingPercent()
+    }
+
     //----------------------------------------------------------------------------
     // MARK: MbtDataReceiver
     //----------------------------------------------------------------------------

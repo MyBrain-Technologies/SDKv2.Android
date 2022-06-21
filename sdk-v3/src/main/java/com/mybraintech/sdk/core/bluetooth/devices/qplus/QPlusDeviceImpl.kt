@@ -5,11 +5,13 @@ import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.le.ScanResult
 import android.content.Context
+import android.os.Build
 import android.os.Handler
 import com.mybraintech.sdk.core.acquisition.MbtDeviceStatusCallback
 import com.mybraintech.sdk.core.bluetooth.MbtBleUtils
 import com.mybraintech.sdk.core.bluetooth.devices.BaseMbtDeviceInterface
 import com.mybraintech.sdk.core.listener.BatteryLevelListener
+import com.mybraintech.sdk.core.listener.ConnectionListener
 import com.mybraintech.sdk.core.listener.DeviceInformationListener
 import com.mybraintech.sdk.core.listener.MbtDataReceiver
 import com.mybraintech.sdk.core.model.*
@@ -107,6 +109,19 @@ class QPlusDeviceImpl(ctx: Context) :
     //----------------------------------------------------------------------------
     // MARK: internal ble manager
     //----------------------------------------------------------------------------
+    override fun connectMbt(mbtDevice: MbtDevice, connectionListener: ConnectionListener) {
+        /**
+         * remove bond to fix data loss bug on Android 9 (SDK-415).
+         * We do not apply this for Android 10 and later since this will show a popup to ask
+         * user permission each time.
+         */
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+            removeBond(mbtDevice.bluetoothDevice)
+        }
+
+        super.connectMbt(mbtDevice, connectionListener)
+    }
+
     override fun getBleConnectionStatus(): BleConnectionStatus {
         val gattConnectedDevices = MbtBleUtils.getGattConnectedDevices(context)
         var connectedIndus5: BluetoothDevice? = null
@@ -408,6 +423,14 @@ class QPlusDeviceImpl(ctx: Context) :
         override fun onDeviceDisconnected() {
             Timber.i("onDeviceDisconnected")
             connectionListener?.onDeviceDisconnected()
+        }
+    }
+
+    private fun removeBond(device: BluetoothDevice) {
+        try {
+            device::class.java.getMethod("removeBond").invoke(device)
+        } catch (e: Exception) {
+            Timber.i("Removing bond has been failed: ${e.message}")
         }
     }
 }

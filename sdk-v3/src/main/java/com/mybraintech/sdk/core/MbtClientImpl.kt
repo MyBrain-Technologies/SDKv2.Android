@@ -179,4 +179,8 @@ internal class MbtClientImpl(private val context: Context, private var deviceTyp
                     && (isIMSEnabled == streamingParams!!.isAccelerometerEnabled)
         }
     }
+
+    override fun getDataLossPercent(): Float {
+        return recordingInterface?.getDataLossPercentage() ?: 0.0f
+    }
 }

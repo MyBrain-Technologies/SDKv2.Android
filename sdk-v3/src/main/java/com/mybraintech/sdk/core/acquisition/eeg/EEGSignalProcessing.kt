@@ -271,6 +271,10 @@ abstract class EEGSignalProcessing(
         return recordingErrorData
     }
 
+    fun getDataLossPercent(): Float {
+        return recordingErrorData.getMissingPercent()
+    }
+
     companion object {
         const val SIGNAL_ALLOC = 2 //one EEG signal is 2 bytes
 
