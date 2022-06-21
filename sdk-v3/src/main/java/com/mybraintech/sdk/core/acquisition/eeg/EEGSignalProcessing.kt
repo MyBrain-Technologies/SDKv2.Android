@@ -15,6 +15,7 @@ import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import java.io.FileWriter
+import kotlin.math.pow
 
 abstract class EEGSignalProcessing(
     private val sampleRate: Int,
@@ -42,6 +43,7 @@ abstract class EEGSignalProcessing(
      * index allocation size in the eeg frame
      */
     var indexAlloc = protocol.getFrameIndexAllocationSize()
+    private val indexCycle = 2.0.pow(indexAlloc * 8).toLong()
 
     /**
      * status allocation size must be set in real time when trigger command is sent. By default it is set to 0
@@ -58,6 +60,7 @@ abstract class EEGSignalProcessing(
     var headerAlloc = indexAlloc
         protected set
 
+    private var baseIndex = 0L
     private var previousIndex = -1L
 
     var isEEGEnabled = false
@@ -103,6 +106,8 @@ abstract class EEGSignalProcessing(
                 }
             }
             .addTo(otherContainer)
+
+        Timber.i("BLE frame indexCycle = $indexCycle")
     }
 
     fun startRecording(recordingListener: RecordingListener, recordingOption: RecordingOption) {
@@ -169,7 +174,7 @@ abstract class EEGSignalProcessing(
     }
 
     fun onEEGFrame(eegFrame: ByteArray) {
-        Timber.v("onEEGFrame : ${NumericalUtils.bytesToShortString(eegFrame)}")
+//        Timber.v("onEEGFrame : ${NumericalUtils.bytesToShortString(eegFrame)}")
         eegFrameSubject.onNext(eegFrame)
     }
 
@@ -185,11 +190,18 @@ abstract class EEGSignalProcessing(
         }
 
         //1st step : check index
-        val newFrameIndex = getFrameIndex(eegFrame)
-//        Timber.v("newFrameIndex = $newFrameIndex")
+        var newFrameIndex = getFrameIndex(eegFrame)
+        if (newFrameIndex + baseIndex < previousIndex) {
+            //index in ble frame is from 0 to (2^16 - 1)
+            baseIndex += indexCycle
+            Timber.i("increase base index : baseIndex = $baseIndex")
+        }
+        newFrameIndex += baseIndex
+        Timber.v("newFrameIndex = $newFrameIndex")
 
         if (previousIndex == -1L) {
             //init first frame index
+            baseIndex = 0
             previousIndex = newFrameIndex - 1
         }
 

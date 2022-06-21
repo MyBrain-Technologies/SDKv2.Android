@@ -38,7 +38,7 @@ class QPlusBleManager(ctx: Context) :
 
     override fun log(priority: Int, message: String) {
         if (message.contains("value: (0x) 40")) {
-            Timber.v(message)
+//            Timber.v(message)
         } else {
             Timber.log(priority, message)
         }
