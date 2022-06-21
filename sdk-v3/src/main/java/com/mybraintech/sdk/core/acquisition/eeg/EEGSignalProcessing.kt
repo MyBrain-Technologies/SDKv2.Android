@@ -60,7 +60,10 @@ abstract class EEGSignalProcessing(
     var headerAlloc = indexAlloc
         protected set
 
-    private var baseIndex = 0L
+    /**
+     * number of time the ble frame index does overflow
+     */
+    private var indexOverflowCount = 0L
     private var previousIndex = -1L
 
     var isEEGEnabled = false
@@ -190,18 +193,18 @@ abstract class EEGSignalProcessing(
         }
 
         //1st step : check index
-        var newFrameIndex = getFrameIndex(eegFrame)
-        if (newFrameIndex + baseIndex < previousIndex) {
-            //index in ble frame is from 0 to (2^16 - 1)
-            baseIndex += indexCycle
-            Timber.i("increase base index : baseIndex = $baseIndex")
+        var rawIndex = getFrameIndex(eegFrame)
+        val indexCandidate = indexOverflowCount * indexCycle + rawIndex
+        if (indexCandidate < previousIndex) {
+            //index in ble frame is from 0 to (2^16 - 1), this bracket is entered when the raw index does overflow
+            indexOverflowCount++
+            Timber.i("increase indexOverflowCount : indexOverflowCount = $indexOverflowCount")
         }
-        newFrameIndex += baseIndex
+        val newFrameIndex = indexOverflowCount * indexCycle + rawIndex
         Timber.v("newFrameIndex = $newFrameIndex")
 
         if (previousIndex == -1L) {
             //init first frame index
-            baseIndex = 0
             previousIndex = newFrameIndex - 1
         }
 
