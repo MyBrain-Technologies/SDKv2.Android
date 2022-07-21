@@ -2,6 +2,7 @@ package core.eeg.acquisition;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -66,6 +67,7 @@ public class MbtDataAcquisition {
 
         //1st step : check index
         final int currentIndex = (data[protocol == BLUETOOTH_LE ? 0 : 1] & 0xff) << 8 | (data[protocol == BLUETOOTH_LE ? 1 : 2] & 0xff); //index bytes are the 2 first bytes for BLE only
+        Log.d(TAG, "currentIndex = " + currentIndex);
 
         if(previousIndex == -1){
             previousIndex = currentIndex -1;
