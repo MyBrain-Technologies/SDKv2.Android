@@ -186,9 +186,9 @@ class MainActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListen
             ),
             object : EEGListener {
                 override fun onEegPacket(mbtEEGPacket2: MbtEEGPacket2) {
-                    Timber.d("onEegPacket : ${mbtEEGPacket2.timeStamp}")
                     runOnUiThread {
                         eegCount++
+                        Timber.d("onEegPacket : ${mbtEEGPacket2.timeStamp} : $eegCount")
                         binding.txtEegCount.text = eegCount.toString()
                         if (mbtClient.isRecordingEnabled()) {
                             binding.txtRecordingCount.text =

@@ -214,8 +214,9 @@ abstract class EEGSignalProcessing(
         recordingErrorData.currentIndex = newFrameIndex
 
         val indexDifference = newFrameIndex - previousIndex
-        if (indexDifference != 1L) {
-            recordingErrorData.increaseMissingEegFrame(indexDifference - 1)
+        val missingFrame = indexDifference - 1
+        if (missingFrame > 0) {
+            recordingErrorData.increaseMissingEegFrame(missingFrame)
         }
 
         //this block is to count zero signals
@@ -232,14 +233,15 @@ abstract class EEGSignalProcessing(
         val rawEEGList = mutableListOf<RawEEGSample2>()
 
         //2nd step : Fill gap by NaN samples if there is missing frames
-        if (indexDifference != 1L) {
+        if (missingFrame > 0) {
             Timber.w("diff is $indexDifference. Current index : $newFrameIndex | previousIndex : $previousIndex")
-            for (i in 1..indexDifference) {
+            for (i in 1..missingFrame) {
                 //one frame contains n times of sample
                 for (j in 1..getNumberOfTimes(eegFrame)) {
                     rawEEGList.add(RawEEGSample2.NAN_PACKET)
                 }
             }
+//            Timber.i("missing size = n channels * sample per frame = ${rawEEGList.size}")
         }
 
         //3rd step: Parse the new frame
