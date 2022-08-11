@@ -7,6 +7,7 @@ import android.bluetooth.le.ScanResult
 import android.content.Context
 import android.os.Build
 import android.os.Handler
+import android.os.Looper
 import com.mybraintech.sdk.core.acquisition.MbtDeviceStatusCallback
 import com.mybraintech.sdk.core.bluetooth.MbtBleUtils
 import com.mybraintech.sdk.core.bluetooth.devices.BaseMbtDeviceInterface
@@ -116,10 +117,14 @@ class QPlusDeviceImpl(ctx: Context) :
          * user permission each time.
          */
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+            Timber.w("removeBond and sleep 200 ms to avoid false bonding notification")
             removeBond(mbtDevice.bluetoothDevice)
+            Handler(Looper.getMainLooper()).postDelayed({
+                super.connectMbt(mbtDevice, connectionListener)
+            }, 200)
+        } else {
+            super.connectMbt(mbtDevice, connectionListener)
         }
-
-        super.connectMbt(mbtDevice, connectionListener)
     }
 
     override fun getBleConnectionStatus(): BleConnectionStatus {
