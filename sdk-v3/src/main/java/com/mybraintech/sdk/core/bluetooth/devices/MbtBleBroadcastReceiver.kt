@@ -80,8 +80,8 @@ class MbtBleBroadcastReceiver : BroadcastReceiver() {
             Timber.d("ignore intent : not target device")
             return
         }
-        lastBondState = intentDevice?.bondState ?: -1
-        when (lastBondState) {
+        val currentState = intentDevice?.bondState ?: -1
+        when (currentState) {
             -1 -> {
                 Timber.e("fatal error: bond state is not recognized")
             }
@@ -92,9 +92,12 @@ class MbtBleBroadcastReceiver : BroadcastReceiver() {
                 connectionListener?.onBondingRequired(targetDevice!!)
             }
             BluetoothDevice.BOND_NONE -> {
-                connectionListener?.onBondingFailed(targetDevice!!)
+                if (lastBondState == BluetoothDevice.BOND_BONDING) {
+                    connectionListener?.onBondingFailed(targetDevice!!)
+                }
             }
         }
+        lastBondState = currentState
     }
 
     private fun resetState() {
