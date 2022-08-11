@@ -9,4 +9,5 @@ interface RecordingInterface {
     fun isRecordingEnabled(): Boolean
     fun clearBuffer()
     fun getRecordingBufferSize(): Int
+    fun getDataLossPercentage(): Float
 }

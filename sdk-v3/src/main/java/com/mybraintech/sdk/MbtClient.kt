@@ -21,4 +21,5 @@ interface MbtClient {
     fun isEEGEnabled(): Boolean
     fun isRecordingEnabled(): Boolean
     fun getRecordingBufferSize(): Int
+    fun getDataLossPercent(): Float
 }
