@@ -93,9 +93,11 @@ abstract class BaseMbtDeviceInterface(ctx: Context) :
         this.targetMbtDevice = mbtDevice
         broadcastReceiver.register(context, mbtDevice.bluetoothDevice, connectionListener)
 
+        val timeout = 10000L
+        Timber.i("connect : timeout = $timeout")
         connect(mbtDevice.bluetoothDevice)
             .useAutoConnect(false)
-            .timeout(5000)
+            .timeout(timeout)
             .done {
                 Timber.i("ble connect done")
             }

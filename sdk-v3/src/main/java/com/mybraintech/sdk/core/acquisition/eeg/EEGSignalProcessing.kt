@@ -15,7 +15,6 @@ import io.reactivex.rxkotlin.addTo
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
-import java.io.FileWriter
 import kotlin.math.pow
 
 abstract class EEGSignalProcessing(
@@ -130,7 +129,7 @@ abstract class EEGSignalProcessing(
     }
 
     fun onEEGFrame(eegFrame: ByteArray) {
-        Timber.v("onEEGFrame : ${NumericalUtils.bytesToShortString(eegFrame)}")
+//        Timber.v("onEEGFrame : ${NumericalUtils.bytesToShortString(eegFrame)}")
         eegFrameSubject.onNext(eegFrame)
     }
 
@@ -167,12 +166,10 @@ abstract class EEGSignalProcessing(
         recordingErrorData.currentIndex = newFrameIndex
 
         val indexDifference = newFrameIndex - previousIndex
-        if (indexDifference != 1L) {
-            Timber.w("diff is $indexDifference. Current index : $newFrameIndex | previousIndex : $previousIndex")
-            recordingErrorData.increaseMissingEegFrame(indexDifference - 1)
+        val missingFrame = indexDifference - 1
+        if (missingFrame > 0) {
+            recordingErrorData.increaseMissingEegFrame(missingFrame)
         }
-
-        previousIndex = newFrameIndex
 
         //this block is to count zero signals
         val eegData = eegFrame.copyOfRange(headerAlloc, eegFrame.size)
@@ -188,13 +185,15 @@ abstract class EEGSignalProcessing(
         val rawEEGList = mutableListOf<RawEEGSample2>()
 
         //2nd step : Fill gap by NaN samples if there is missing frames
-        if (indexDifference != 1L) {
-            for (i in 1..indexDifference) {
+        if (missingFrame > 0) {
+            Timber.w("diff is $indexDifference. Current index : $newFrameIndex | previousIndex : $previousIndex")
+            for (i in 1..missingFrame) {
                 //one frame contains n times of sample
                 for (j in 1..getNumberOfTimes(eegFrame)) {
                     rawEEGList.add(RawEEGSample2.NAN_PACKET)
                 }
             }
+//            Timber.i("missing size = n channels * sample per frame = ${rawEEGList.size}")
         }
 
         //3rd step: Parse the new frame
@@ -203,6 +202,8 @@ abstract class EEGSignalProcessing(
 
         //4th step: save raw eeg data to buffer
         rawBuffer.addAll(rawEEGList)
+
+        previousIndex = newFrameIndex
 
         //5th step: if raw buffer is reach threshold, generate consolidated eeg
         if (rawBuffer.size >= DEFAULT_MAX_PENDING_RAW_DATA_BUFFER_SIZE) {
