@@ -43,7 +43,7 @@ class SplashActivity : AppCompatActivity() {
 
     private fun requestPermissions(activityIntent: Intent? = null) {
         var permissions =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 Timber.w("requires BLUETOOTH_CONNECT and BLUETOOTH_SCAN")
                 arrayOf(
                     Manifest.permission.ACCESS_COARSE_LOCATION,
