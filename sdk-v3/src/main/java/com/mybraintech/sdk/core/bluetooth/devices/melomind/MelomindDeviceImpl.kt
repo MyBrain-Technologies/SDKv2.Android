@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.le.ScanResult
 import android.content.Context
+import android.os.SystemClock
 import com.mybraintech.sdk.core.acquisition.MbtDeviceStatusCallback
 import com.mybraintech.sdk.core.bluetooth.DataConversionUtils
 import com.mybraintech.sdk.core.bluetooth.MbtBleUtils
@@ -192,7 +193,7 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDeviceInterface(ctx) {
         // setup eeg callback
         setNotificationCallback(eegChar).with { _, eegFrame ->
             if (eegFrame.value != null) {
-                this.dataReceiver?.onEEGFrame(eegFrame.value!!)
+                this.dataReceiver?.onEEGFrame(TimedBLEFrame(SystemClock.elapsedRealtime(), eegFrame.value!!))
             } else {
                 this.dataReceiver?.onEEGDataError(Throwable("received empty eeg frame!"))
             }

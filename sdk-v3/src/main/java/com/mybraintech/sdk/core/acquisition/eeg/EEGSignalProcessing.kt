@@ -30,7 +30,7 @@ abstract class EEGSignalProcessing(
      */
     private var eegFrameScheduler = RxJavaPlugins.createSingleScheduler(AcquisierThreadFactory)
 
-    private val eegFrameSubject = PublishSubject.create<ByteArray>()
+    private val eegFrameSubject = PublishSubject.create<TimedBLEFrame>()
     private val eegPacketSubject = PublishSubject.create<MbtEEGPacket2>()
 
     private var recordingBuffer = mutableListOf<MbtEEGPacket2>()
@@ -128,7 +128,7 @@ abstract class EEGSignalProcessing(
         }
     }
 
-    fun onEEGFrame(eegFrame: ByteArray) {
+    fun onEEGFrame(eegFrame: TimedBLEFrame) {
 //        Timber.v("onEEGFrame : ${NumericalUtils.bytesToShortString(eegFrame)}")
         eegFrameSubject.onNext(eegFrame)
     }
@@ -137,8 +137,9 @@ abstract class EEGSignalProcessing(
      * please wrap this method in try catch to avoid crashing
      */
     @Throws(Exception::class)
-    private fun consumeEEGFrame(eegFrame: ByteArray) {
+    private fun consumeEEGFrame(timedEegFrame: TimedBLEFrame) {
 //        Timber.v("consumeEEGFrame")
+        val eegFrame = timedEegFrame.data
         if (!isValidFrame(eegFrame)) {
             Timber.e("bad format eeg frame : ${NumericalUtils.bytesToShortString(eegFrame)}")
             return

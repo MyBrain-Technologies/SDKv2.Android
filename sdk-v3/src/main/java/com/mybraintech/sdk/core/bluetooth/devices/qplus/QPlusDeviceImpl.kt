@@ -8,6 +8,7 @@ import android.content.Context
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import com.mybraintech.sdk.core.acquisition.MbtDeviceStatusCallback
 import com.mybraintech.sdk.core.bluetooth.MbtBleUtils
 import com.mybraintech.sdk.core.bluetooth.devices.BaseMbtDeviceInterface
@@ -87,7 +88,7 @@ class QPlusDeviceImpl(ctx: Context) :
                     deviceStatusCallback?.onEEGStatusChange(indus5Response.isEnabled)
                 }
                 is QPlusResponse.EEGFrame -> {
-                    dataReceiver?.onEEGFrame(indus5Response.data)
+                    dataReceiver?.onEEGFrame(TimedBLEFrame(SystemClock.elapsedRealtime(), indus5Response.data))
                 }
                 is QPlusResponse.TriggerStatusConfiguration -> {
                     dataReceiver?.onTriggerStatusConfiguration(indus5Response.triggerStatusAllocationSize)
