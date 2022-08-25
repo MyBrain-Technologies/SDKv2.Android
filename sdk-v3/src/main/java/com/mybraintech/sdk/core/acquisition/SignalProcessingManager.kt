@@ -126,7 +126,7 @@ internal class SignalProcessingManager(
         eegSignalProcessing.onTriggerStatusConfiguration(triggerStatusAllocationSize)
     }
 
-    override fun onEEGFrame(data: ByteArray) {
+    override fun onEEGFrame(data: TimedBLEFrame) {
         eegSignalProcessing.onEEGFrame(data)
     }
 
