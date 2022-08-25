@@ -38,6 +38,15 @@ abstract class EEGSignalProcessing(
     private var isRecording: Boolean = false
 
     /**
+     * we use timestamps to construct MBTPacket
+     */
+    private var timeCalibrationPhase: TimeCalibrationPhase = TimeCalibrationPhase.INACTIVE
+    private var calibratingQueue = mutableListOf<TimedBLEFrame>()
+    private var firstStartTime: Long = 0L
+    private var currentStartTime: Long = 0L
+    private var calibratedEndTime: Long = 0L
+
+    /**
      * index allocation size in the eeg frame
      */
     var indexAlloc = protocol.getFrameIndexAllocationSize()
@@ -95,7 +104,7 @@ abstract class EEGSignalProcessing(
             .observeOn(eegFrameScheduler)
             .subscribe {
                 try {
-                    consumeEEGFrame(it)
+                    internalOnEEGFrame(it)
                 } catch (e: Exception) {
                     Timber.e(e)
                 }
@@ -131,6 +140,96 @@ abstract class EEGSignalProcessing(
     fun onEEGFrame(eegFrame: TimedBLEFrame) {
 //        Timber.v("onEEGFrame : ${NumericalUtils.bytesToShortString(eegFrame)}")
         eegFrameSubject.onNext(eegFrame)
+    }
+
+    /**
+     * please wrap this method in try catch to avoid crashing
+     */
+    @Throws(Exception::class)
+    private fun internalOnEEGFrame(timedEegFrame: TimedBLEFrame) {
+        Timber.d("internalOnEEGFrame : frame timestamp = ${timedEegFrame.timestamp}")
+        when (timeCalibrationPhase) {
+            TimeCalibrationPhase.INACTIVE -> {
+                timeCalibrationPhase = TimeCalibrationPhase.CALIBRATING
+                Timber.d("timeCalibrationPhase = ${timeCalibrationPhase.name}")
+                addDataToCalibratingQueue(timedEegFrame)
+            }
+            TimeCalibrationPhase.CALIBRATING -> {
+                if (timedEegFrame.timestamp - calibratingQueue[0].timestamp < ONE_SECOND) {
+                    addDataToCalibratingQueue(timedEegFrame)
+                } else {
+                    timeCalibrationPhase = TimeCalibrationPhase.CALIBRATED
+                    Timber.d("timeCalibrationPhase = ${timeCalibrationPhase.name}")
+                    calibrateTimestamps(timedEegFrame)
+                }
+            }
+            TimeCalibrationPhase.CALIBRATED -> {
+                if (timedEegFrame.timestamp >= firstStartTime) {
+                    timeCalibrationPhase = TimeCalibrationPhase.BUFFERING
+                    Timber.d("timeCalibrationPhase = ${timeCalibrationPhase.name}")
+                    consumeEEGFrame(timedEegFrame)
+                } else {
+                    // CALIBRATED phase but the packet is not in the first start - end range, ignore frame
+                }
+            }
+            TimeCalibrationPhase.BUFFERING -> {
+                consumeEEGFrame(timedEegFrame)
+            }
+            TimeCalibrationPhase.ERROR -> {
+                // if we can not calibrate timestamps, we proceeds without it
+                consumeEEGFrame(timedEegFrame)
+            }
+        }
+    }
+
+    private fun calibrateTimestamps(nextSecondEegFrame: TimedBLEFrame) {
+        Timber.d("calibrateTimestamps")
+        if (calibratingQueue.size < MINIMUM_CALIBRATING_QUEUE_SIZE) {
+            Timber.e("EEG samples received in calibrating phase is not enough : frame count = ${calibratingQueue.size}")
+
+            // mark calibration process as Error and continue without Frequency Control
+            timeCalibrationPhase = TimeCalibrationPhase.ERROR
+            Timber.d("timeCalibrationPhase = ${timeCalibrationPhase.name}")
+            consumeEEGFrame(nextSecondEegFrame)
+            return //end procedure
+        }
+        var sum = 0L
+        for (entry in calibratingQueue) {
+            sum += entry.timestamp
+        }
+        val zeroCenterPoint: Long = sum / calibratingQueue.size
+        Timber.d("zeroCenterPoint = $zeroCenterPoint")
+        firstStartTime = zeroCenterPoint + HALF_SECOND
+        currentStartTime = firstStartTime
+        Timber.d("currentStartTime = $currentStartTime")
+        val currentEndTime = currentStartTime + ONE_SECOND
+
+        // consume data arrive after current start time which is in calibrating queue
+        var afterStartTimeIndex = -1
+        var index = calibratingQueue.size - 1
+        while ((index >= 0) && (calibratingQueue[index].timestamp >= currentStartTime)) {
+            afterStartTimeIndex = index
+            index--
+        }
+        if (afterStartTimeIndex != -1) {
+            for (i in afterStartTimeIndex until calibratingQueue.size) {
+                Timber.d("push frame to next MBTPacket")
+                if (timeCalibrationPhase == TimeCalibrationPhase.CALIBRATED) {
+                    timeCalibrationPhase = TimeCalibrationPhase.BUFFERING
+                    Timber.d("timeCalibrationPhase = ${timeCalibrationPhase.name}")
+                }
+                consumeEEGFrame(calibratingQueue[i])
+            }
+        }
+
+        // consume new data
+        if (nextSecondEegFrame.timestamp >= currentStartTime) {
+            if (timeCalibrationPhase == TimeCalibrationPhase.CALIBRATED) {
+                timeCalibrationPhase = TimeCalibrationPhase.BUFFERING
+                Timber.d("timeCalibrationPhase = ${timeCalibrationPhase.name}")
+            }
+            consumeEEGFrame(nextSecondEegFrame)
+        }
     }
 
     /**
@@ -249,6 +348,10 @@ abstract class EEGSignalProcessing(
         }
     }
 
+    private fun addDataToCalibratingQueue(timedEegFrame: TimedBLEFrame) {
+        calibratingQueue.add(timedEegFrame)
+    }
+
     /**
      * @param eegFrame eeg frame starting with index frame number
      */
@@ -296,9 +399,22 @@ abstract class EEGSignalProcessing(
     companion object {
         const val SIGNAL_ALLOC = 2 //one EEG signal is 2 bytes
 
+        const val ONE_SECOND = 1000
+        const val HALF_SECOND = 500
+        const val GRACE_OFFSET = 200 //ms
+
+        /**
+         * (MTE = 47) for Q+ there is around 50 BLE frames each second, for Melomind is around 25 BLE frames
+         */
+        const val MINIMUM_CALIBRATING_QUEUE_SIZE = 5
+
         /**
          * features.MbtFeatures.DEFAULT_MAX_PENDING_RAW_DATA_BUFFER_SIZE
          */
         const val DEFAULT_MAX_PENDING_RAW_DATA_BUFFER_SIZE = 40
+    }
+
+    private enum class TimeCalibrationPhase {
+        INACTIVE, CALIBRATING, CALIBRATED, BUFFERING, ERROR
     }
 }
