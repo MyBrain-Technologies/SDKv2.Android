@@ -39,6 +39,14 @@ class SplashActivity : AppCompatActivity() {
                     })
         }
 
+        findViewById<View>(R.id.btn_hyperion).setOnClickListener {
+            requestPermissions(
+                Intent(this, MainActivity::class.java)
+                    .apply {
+                        putExtra(MainActivity.DEVICE_TYPE_KEY, MainActivity.HYPERION)
+                    })
+        }
+
     }
 
     private fun requestPermissions(activityIntent: Intent? = null) {

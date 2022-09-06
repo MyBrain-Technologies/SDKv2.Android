@@ -8,6 +8,13 @@
     tools:ignore="HardcodedText">
 
     <Button
+        android:id="@+id/btn_q_plus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:text="Q Plus" />
+
+    <Button
         android:id="@+id/btn_melomind"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -15,10 +22,10 @@
         android:text="Melomind" />
 
     <Button
-        android:id="@+id/btn_q_plus"
+        android:id="@+id/btn_hyperion"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
-        android:text="Q Plus" />
+        android:text="Hyperion" />
 
 </LinearLayout>

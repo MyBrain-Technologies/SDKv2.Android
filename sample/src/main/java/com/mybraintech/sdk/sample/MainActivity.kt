@@ -36,6 +36,7 @@ class MainActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListen
         val DEVICE_TYPE_KEY = "DEVICE_TYPE"
         val MELOMIND_DEVICE = "MELOMIND"
         val Q_PLUS_DEVICE = "Q_PLUS"
+        val HYPERION = "HYPERION"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,6 +47,8 @@ class MainActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListen
         val type = intent.getStringExtra(DEVICE_TYPE_KEY)
         mbtClient = if (type == MELOMIND_DEVICE) {
             MbtClientManager.getMbtClient(applicationContext, EnumMBTDevice.MELOMIND)
+        } else if (type == HYPERION)  {
+            MbtClientManager.getMbtClient(applicationContext, EnumMBTDevice.HYPERION)
         } else {
             MbtClientManager.getMbtClient(applicationContext, EnumMBTDevice.Q_PLUS)
         }
