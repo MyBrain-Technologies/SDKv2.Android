@@ -7,13 +7,13 @@ import com.mybraintech.sdk.core.model.KwakHeader
 import com.mybraintech.sdk.core.model.RecordingOption
 import com.mybraintech.sdk.core.model.StreamingParams
 
-class EEGSignalProcessingQPlus(streamingParams: StreamingParams, eegListener: EEGListener) :
+class EEGSignalProcessingHyperion(streamingParams: StreamingParams, eegListener: EEGListener) :
     EEGSignalProcessingIndus5(streamingParams, eegListener) {
 
     override fun createKwak(recordingOption: RecordingOption): Kwak {
         return Kwak().apply {
             context = recordingOption.context
-            header = KwakHeader.getQPlusHeader().apply {
+            header = KwakHeader.getHyperionHeader().apply {
                 deviceInfo = recordingOption.deviceInformation
                 setRecordingNb(recordingOption.recordingNb)
             }

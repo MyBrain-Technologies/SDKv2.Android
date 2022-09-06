@@ -5,8 +5,8 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.content.Context
-import com.mybraintech.sdk.core.bluetooth.MbtDeviceInterface
 import com.mybraintech.sdk.core.bluetooth.MbtBleUtils
+import com.mybraintech.sdk.core.bluetooth.MbtDeviceInterface
 import com.mybraintech.sdk.core.listener.BatteryLevelListener
 import com.mybraintech.sdk.core.listener.ConnectionListener
 import com.mybraintech.sdk.core.listener.DeviceInformationListener
@@ -107,7 +107,12 @@ abstract class BaseMbtDeviceInterface(ctx: Context) :
                     Timber.i("Retry ${currentRetry + 1}. Wait $delay ms")
                     val runnable = Runnable {
                         Thread.sleep(delay)
-                        connectMbtWithRetries(mbtDevice, connectionListener, currentRetry + 1, maxRetry)
+                        connectMbtWithRetries(
+                            mbtDevice,
+                            connectionListener,
+                            currentRetry + 1,
+                            maxRetry
+                        )
                     }
                     Thread(runnable).run()
                 } else {
@@ -135,7 +140,7 @@ abstract class BaseMbtDeviceInterface(ctx: Context) :
         var connectedDevice: BluetoothDevice? = null
         for (device in gattConnectedDevices) {
             if (getDeviceType() == EnumMBTDevice.Q_PLUS) {
-                if (MbtBleUtils.isQPlus(device)) {
+                if (MbtBleUtils.isQPlus(context, device)) {
                     Timber.i("found a connected indus5")
                     connectedDevice = device
                     break

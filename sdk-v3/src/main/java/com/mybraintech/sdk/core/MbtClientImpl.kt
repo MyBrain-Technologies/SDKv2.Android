@@ -6,6 +6,7 @@ import com.mybraintech.sdk.core.acquisition.MbtDeviceStatusCallback
 import com.mybraintech.sdk.core.acquisition.RecordingInterface
 import com.mybraintech.sdk.core.acquisition.SignalProcessingManager
 import com.mybraintech.sdk.core.bluetooth.MbtDeviceInterface
+import com.mybraintech.sdk.core.bluetooth.devices.hyperion.HyperionDeviceImpl
 import com.mybraintech.sdk.core.bluetooth.devices.melomind.MelomindDeviceImpl
 import com.mybraintech.sdk.core.bluetooth.devices.qplus.QPlusDeviceImpl
 import com.mybraintech.sdk.core.listener.*
@@ -39,6 +40,10 @@ internal class MbtClientImpl(private val context: Context, private var deviceTyp
             }
             EnumMBTDevice.MELOMIND -> {
                 mbtDeviceInterface = MelomindDeviceImpl(context)
+                recordingInterface = null
+            }
+            EnumMBTDevice.HYPERION -> {
+                mbtDeviceInterface = HyperionDeviceImpl(context)
                 recordingInterface = null
             }
             else -> {
