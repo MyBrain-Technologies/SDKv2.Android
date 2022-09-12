@@ -14,6 +14,7 @@ interface MbtClient {
     fun getDeviceInformation(deviceInformationListener: DeviceInformationListener)
     fun startStreaming(streamingParams: StreamingParams)
     fun stopStreaming()
+    fun setEEGRealtimeListener(eegRealtimeListener: EEGRealtimeListener)
     fun setEEGListener(eegListener: EEGListener)
     fun setAccelerometerListener(accelerometerListener: AccelerometerListener)
     fun startRecording(recordingOption: RecordingOption, recordingListener: RecordingListener)

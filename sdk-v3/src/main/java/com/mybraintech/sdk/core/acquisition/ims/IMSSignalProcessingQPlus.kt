@@ -2,7 +2,7 @@ package com.mybraintech.sdk.core.acquisition.ims
 
 import com.mybraintech.sdk.core.acquisition.AcquisierThreadFactory
 import com.mybraintech.sdk.core.acquisition.EnumBluetoothProtocol
-import com.mybraintech.sdk.core.acquisition.Indus5Utils
+import com.mybraintech.sdk.core.acquisition.IndexReader
 import com.mybraintech.sdk.core.listener.AccelerometerListener
 import com.mybraintech.sdk.core.model.AccelerometerFrame
 import com.mybraintech.sdk.core.model.ImsPacket
@@ -158,7 +158,7 @@ class IMSSignalProcessingQPlus(
     }
 
     private fun getFrameIndex(imsFrame: ByteArray): Long {
-        return Indus5Utils.getIndex(imsFrame)
+        return IndexReader.decodeIndex(imsFrame)
     }
 
     private fun isValidFrame(imsFrame: ByteArray): Boolean {

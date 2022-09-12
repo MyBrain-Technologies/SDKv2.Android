@@ -20,6 +20,7 @@ import timber.log.Timber
 internal class MbtClientImpl(private val context: Context, private var deviceType: EnumMBTDevice) :
     MbtClient, MbtDeviceStatusCallback {
 
+    private lateinit var manager: SignalProcessingManager
     private var mbtDeviceInterface: MbtDeviceInterface
     private var recordingInterface: RecordingInterface? = null
     private var dataReceiver: MbtDataReceiver? = null
@@ -27,6 +28,8 @@ internal class MbtClientImpl(private val context: Context, private var deviceTyp
 
     private var eegListener: EEGListener? = null
     private var accelerometerListener: AccelerometerListener? = null
+
+    private var eegRealtimeListener: EEGRealtimeListener? = null
 
     private var isStreaming = false
     private var isEEGEnabled = false
@@ -86,7 +89,13 @@ internal class MbtClientImpl(private val context: Context, private var deviceTyp
 
     override fun startStreaming(streamingParams: StreamingParams) {
         this.streamingParams = streamingParams
-        val manager = SignalProcessingManager(deviceType, streamingParams)
+
+        // dispose old SignalProcessingManager then create a new one
+        if (::manager.isInitialized) {
+            manager.terminate()
+        }
+        manager = SignalProcessingManager(deviceType, streamingParams)
+
         this.recordingInterface = manager
         this.dataReceiver = manager.apply {
             setEEGListener(eegListener)
@@ -106,6 +115,11 @@ internal class MbtClientImpl(private val context: Context, private var deviceTyp
     override fun setEEGListener(eegListener: EEGListener) {
         this.eegListener = eegListener
         this.dataReceiver?.setEEGListener(eegListener)
+    }
+
+    override fun setEEGRealtimeListener(eegRealtimeListener: EEGRealtimeListener) {
+        this.eegRealtimeListener = eegRealtimeListener
+        this.dataReceiver?.setEEGRealtimeListener(eegRealtimeListener)
     }
 
     override fun setAccelerometerListener(accelerometerListener: AccelerometerListener) {

@@ -3,7 +3,11 @@ package com.mybraintech.sdk.core.acquisition.eeg
 import com.mybraintech.android.jnibrainbox.QualityChecker
 import com.mybraintech.sdk.core.acquisition.AcquisierThreadFactory
 import com.mybraintech.sdk.core.acquisition.EnumBluetoothProtocol
+import com.mybraintech.sdk.core.acquisition.RealtimeEEGExecutor
+import com.mybraintech.sdk.core.acquisition.RealtimeEEGExecutorImpl
+import com.mybraintech.sdk.core.listener.EEGFrameConversionInterface
 import com.mybraintech.sdk.core.listener.EEGListener
+import com.mybraintech.sdk.core.listener.EEGRealtimeListener
 import com.mybraintech.sdk.core.listener.StreamListener
 import com.mybraintech.sdk.core.model.*
 import com.mybraintech.sdk.util.ErrorDataHelper2
@@ -23,7 +27,7 @@ abstract class EEGSignalProcessing(
     val isTriggerStatusEnabled: Boolean,
     protected val isQualityCheckerEnabled: Boolean,
     var eegListener: EEGListener?
-) {
+) : EEGFrameConversionInterface {
 
     /**
      * this scheduler is reserved to handle eeg frame tasks
@@ -81,6 +85,7 @@ abstract class EEGSignalProcessing(
 
     private var qualityChecker: QualityChecker = QualityChecker(sampleRate)
 
+    private var realtimeEEGExecutor : RealtimeEEGExecutor? = null
     private var disposable = CompositeDisposable()
 
     init {
@@ -139,6 +144,10 @@ abstract class EEGSignalProcessing(
     @Throws(Exception::class)
     private fun consumeEEGFrame(timedEegFrame: TimedBLEFrame) {
 //        Timber.v("consumeEEGFrame")
+        if (realtimeEEGExecutor != null) {
+            realtimeEEGExecutor?.onEEGFrame(timedEegFrame)
+        }
+
         val eegFrame = timedEegFrame.data
         if (!isValidFrame(eegFrame)) {
             Timber.e("bad format eeg frame : ${NumericalUtils.bytesToShortString(eegFrame)}")
@@ -250,11 +259,6 @@ abstract class EEGSignalProcessing(
     }
 
     /**
-     * @param eegFrame eeg frame starting with index frame number
-     */
-    abstract fun getEEGData(eegFrame: ByteArray): List<RawEEGSample2>
-
-    /**
      * We count the number of times eeg signal was captured in one eeg frame.
      *
      * Eg: For mtu = 47, number of channels = 4, there are 5 times of sample in one eeg frame.
@@ -270,6 +274,8 @@ abstract class EEGSignalProcessing(
     abstract fun isValidFrame(eegFrame: ByteArray): Boolean
 
     abstract fun getNumberOfChannels(): Int
+
+    abstract fun getDeviceType() : EnumMBTDevice
 
     fun getEEGBufferSize(): Int {
         return recordingBuffer.size
@@ -291,6 +297,24 @@ abstract class EEGSignalProcessing(
 
     fun getDataLossPercent(): Float {
         return recordingErrorData.getMissingPercent()
+    }
+
+    fun setRealtimeListener(eegRealtimeListener: EEGRealtimeListener?) {
+        if (eegRealtimeListener == null) {
+            if (realtimeEEGExecutor != null) {
+                realtimeEEGExecutor?.terminate()
+                realtimeEEGExecutor = null
+            }
+        } else {
+            if (realtimeEEGExecutor == null) {
+                realtimeEEGExecutor = RealtimeEEGExecutorImpl(this)
+                (realtimeEEGExecutor as RealtimeEEGExecutor).init(getDeviceType())
+            }
+        }
+    }
+
+    fun terminate() {
+        disposable.dispose()
     }
 
     companion object {
