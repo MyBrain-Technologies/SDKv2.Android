@@ -67,7 +67,7 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDeviceInterface(ctx) {
         val gattConnectedDevices = MbtBleUtils.getGattConnectedDevices(context)
         var connectedIndus5: BluetoothDevice? = null
         for (device in gattConnectedDevices) {
-            if (MbtBleUtils.isQPlus(device)) {
+            if (MbtBleUtils.isQPlus(context, device)) {
                 Timber.i("found a connected indus5")
                 connectedIndus5 = device
                 break
@@ -193,7 +193,12 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDeviceInterface(ctx) {
         // setup eeg callback
         setNotificationCallback(eegChar).with { _, eegFrame ->
             if (eegFrame.value != null) {
-                this.dataReceiver?.onEEGFrame(TimedBLEFrame(SystemClock.elapsedRealtime(), eegFrame.value!!))
+                this.dataReceiver?.onEEGFrame(
+                    TimedBLEFrame(
+                        SystemClock.elapsedRealtime(),
+                        eegFrame.value!!
+                    )
+                )
             } else {
                 this.dataReceiver?.onEEGDataError(Throwable("received empty eeg frame!"))
             }

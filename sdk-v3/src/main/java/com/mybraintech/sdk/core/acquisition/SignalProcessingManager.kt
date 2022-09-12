@@ -1,6 +1,7 @@
 package com.mybraintech.sdk.core.acquisition
 
 import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessing
+import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessingHyperion
 import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessingMelomind
 import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessingQPlus
 import com.mybraintech.sdk.core.acquisition.ims.IMSSignalProcessing
@@ -42,6 +43,9 @@ internal class SignalProcessingManager(
         }
         EnumMBTDevice.MELOMIND -> {
             EEGSignalProcessingMelomind(streamingParams, this)
+        }
+        EnumMBTDevice.HYPERION -> {
+            EEGSignalProcessingHyperion(streamingParams, this)
         }
         else -> {
             throw UnsupportedOperationException("device type not known")
