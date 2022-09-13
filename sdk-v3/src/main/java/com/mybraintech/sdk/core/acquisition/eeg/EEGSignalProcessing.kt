@@ -8,7 +8,6 @@ import com.mybraintech.sdk.core.acquisition.RealtimeEEGExecutorImpl
 import com.mybraintech.sdk.core.listener.EEGFrameConversionInterface
 import com.mybraintech.sdk.core.listener.EEGListener
 import com.mybraintech.sdk.core.listener.EEGRealtimeListener
-import com.mybraintech.sdk.core.listener.StreamListener
 import com.mybraintech.sdk.core.model.*
 import com.mybraintech.sdk.util.ErrorDataHelper2
 import com.mybraintech.sdk.util.MatrixUtils2
@@ -67,8 +66,6 @@ abstract class EEGSignalProcessing(
      */
     private var indexOverflowCount = 0L
     private var previousIndex = -1L
-
-    var streamListener: StreamListener? = null
 
     /**
      * Buffer that will manage the EEG <b>RAW</b> data. It stores {@link RawEEGSample2} objects.
