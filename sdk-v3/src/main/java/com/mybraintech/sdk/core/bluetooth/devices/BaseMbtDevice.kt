@@ -20,7 +20,7 @@ import no.nordicsemi.android.ble.BleManager
 import timber.log.Timber
 
 
-abstract class BaseMbtDeviceInterface(ctx: Context) :
+abstract class BaseMbtDevice(ctx: Context) :
     BleManager(ctx), MbtDeviceInterface {
 
     protected val MTU_SIZE = 47
@@ -72,14 +72,14 @@ abstract class BaseMbtDeviceInterface(ctx: Context) :
     }
 
     override fun connectMbt(mbtDevice: MbtDevice, connectionListener: ConnectionListener) {
-        connectMbtWithRetries(mbtDevice, connectionListener, 0, 2)
+        connectMbtWithRetries(mbtDevice, connectionListener, 0, 0)
     }
 
     private fun connectMbtWithRetries(
         mbtDevice: MbtDevice,
         connectionListener: ConnectionListener,
-        currentRetry: Int = 0,
-        maxRetry: Int = 3
+        currentRetry: Int,
+        maxRetry: Int
     ) {
         if (!isBluetoothEnabled()) {
             connectionListener.onConnectionError(Throwable("Bluetooth is not enabled"))
@@ -93,7 +93,11 @@ abstract class BaseMbtDeviceInterface(ctx: Context) :
         this.targetMbtDevice = mbtDevice
         broadcastReceiver.register(context, mbtDevice.bluetoothDevice, connectionListener)
 
-        val timeout = 10000L
+        val timeout = if (mbtDevice.bluetoothDevice.bondState == BluetoothDevice.BOND_BONDED) {
+            10000L
+        } else {
+            35000L
+        }
         Timber.i("connect : timeout = $timeout")
         connect(mbtDevice.bluetoothDevice)
             .useAutoConnect(false)
@@ -102,7 +106,7 @@ abstract class BaseMbtDeviceInterface(ctx: Context) :
                 Timber.i("ble connect done")
             }
             .fail { device, status ->
-                if (currentRetry <= maxRetry) {
+                if (currentRetry < maxRetry) {
                     val delay = 10L
                     Timber.i("Retry ${currentRetry + 1}. Wait $delay ms")
                     val runnable = Runnable {

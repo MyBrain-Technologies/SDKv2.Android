@@ -10,7 +10,7 @@ import android.os.SystemClock
 import com.mybraintech.sdk.core.acquisition.MbtDeviceStatusCallback
 import com.mybraintech.sdk.core.bluetooth.DataConversionUtils
 import com.mybraintech.sdk.core.bluetooth.MbtBleUtils
-import com.mybraintech.sdk.core.bluetooth.devices.BaseMbtDeviceInterface
+import com.mybraintech.sdk.core.bluetooth.devices.BaseMbtDevice
 import com.mybraintech.sdk.core.listener.BatteryLevelListener
 import com.mybraintech.sdk.core.listener.DeviceInformationListener
 import com.mybraintech.sdk.core.listener.MbtDataReceiver
@@ -18,7 +18,7 @@ import com.mybraintech.sdk.core.model.*
 import no.nordicsemi.android.ble.BleManager
 import timber.log.Timber
 
-class MelomindDeviceImpl(ctx: Context) : BaseMbtDeviceInterface(ctx) {
+class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
 
     // required services
     private var deviceInformationService: BluetoothGattService? = null

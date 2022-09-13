@@ -10,7 +10,7 @@ import android.os.Looper
 import android.os.SystemClock
 import com.mybraintech.sdk.core.acquisition.MbtDeviceStatusCallback
 import com.mybraintech.sdk.core.bluetooth.MbtBleUtils
-import com.mybraintech.sdk.core.bluetooth.devices.BaseMbtDeviceInterface
+import com.mybraintech.sdk.core.bluetooth.devices.BaseMbtDevice
 import com.mybraintech.sdk.core.listener.BatteryLevelListener
 import com.mybraintech.sdk.core.listener.ConnectionListener
 import com.mybraintech.sdk.core.listener.DeviceInformationListener
@@ -24,7 +24,7 @@ import timber.log.Timber
 
 
 abstract class Indus5DeviceImpl(ctx: Context) :
-    BaseMbtDeviceInterface(ctx), DataReceivedCallback {
+    BaseMbtDevice(ctx), DataReceivedCallback {
 
     private var streamingParams: StreamingParams? = null
     private var dataReceiver: MbtDataReceiver? = null

@@ -16,7 +16,7 @@ class MbtBleScanner {
      *
      * If you need to filter result, please do it in function handleScanResults(scanResults)
      *
-     * @see com.mybraintech.sdk.core.bluetooth.devices.BaseMbtDeviceInterface.handleScanResults
+     * @see com.mybraintech.sdk.core.bluetooth.devices.BaseMbtDevice.handleScanResults
      * @see android.bluetooth.le.BluetoothLeScanner.startScan(android.bluetooth.le.ScanCallback)
      * @see android.bluetooth.le.BluetoothLeScanner.startScan(java.util.List<android.bluetooth.le.ScanFilter>, android.bluetooth.le.ScanSettings, android.bluetooth.le.ScanCallback)
      */

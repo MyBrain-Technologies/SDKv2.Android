@@ -1,19 +1,32 @@
 package com.mybraintech.sdk.core.listener
 
-import android.bluetooth.BluetoothDevice
-
 /**
  * the equivalent of MBTBLEBluetoothDelegate in ios SDK
  */
 interface ConnectionListener {
-    fun onServiceDiscovered()
-
-    fun onBondingRequired(device: BluetoothDevice)
-    fun onBonded(device: BluetoothDevice)
-    fun onBondingFailed(device: BluetoothDevice)
 
     /**
-     * Called when the headset has been connected after the services and characteristics exploration.
+     * BLE services are discovered
+     */
+    fun onServiceDiscovered()
+
+    /**
+     * bonding process is required, a pairing request may be popped up
+     */
+    fun onBondingRequired()
+
+    /**
+     * a pairing request has been popped, user must validate this request to continue.
+     * A timeout will be triggered if user does not validate in time
+     */
+    fun onParingRequest()
+
+    fun onBonded()
+
+    fun onBondingFailed()
+
+    /**
+     * the connection process has finished
      */
     fun onDeviceReady()
 

@@ -11,7 +11,8 @@ import timber.log.Timber
 
 class MbtBleBroadcastReceiver : BroadcastReceiver() {
 
-    private var isRegistered = false
+    private var isWaitingConsent: Boolean = false
+    private var isBroadcastRegistered = false
     var targetDevice: BluetoothDevice? = null
     var connectionListener: ConnectionListener? = null
     private var lastBondState: Int = -1
@@ -24,6 +25,9 @@ class MbtBleBroadcastReceiver : BroadcastReceiver() {
             BluetoothDevice.ACTION_BOND_STATE_CHANGED -> {
                 onActionBondStateChanged(intent)
             }
+            BluetoothDevice.ACTION_PAIRING_REQUEST -> {
+                onActionPairingRequest(intent)
+            }
         }
     }
 
@@ -32,7 +36,7 @@ class MbtBleBroadcastReceiver : BroadcastReceiver() {
         bluetoothDevice: BluetoothDevice,
         connectionListener: ConnectionListener
     ) {
-        if (isRegistered) {
+        if (isBroadcastRegistered) {
             // new we can remove old register receiver.
             // Old register receiver is not removed on disconnection to keep listening to target device in case "First connection bonding"
             try {
@@ -40,7 +44,7 @@ class MbtBleBroadcastReceiver : BroadcastReceiver() {
             } catch (e: Exception) {
                 Timber.w(e)
             }
-            isRegistered = false
+            isBroadcastRegistered = false
         }
         setState(bluetoothDevice, connectionListener)
         context.registerReceiver(
@@ -51,7 +55,11 @@ class MbtBleBroadcastReceiver : BroadcastReceiver() {
             this,
             IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
         )
-        isRegistered = true
+        context.registerReceiver(
+            this,
+            IntentFilter(BluetoothDevice.ACTION_PAIRING_REQUEST)
+        )
+        isBroadcastRegistered = true
     }
 
     private fun onActionStateChanged(intent: Intent) {
@@ -86,18 +94,38 @@ class MbtBleBroadcastReceiver : BroadcastReceiver() {
                 Timber.e("fatal error: bond state is not recognized")
             }
             BluetoothDevice.BOND_BONDED -> {
-                connectionListener?.onBonded(targetDevice!!)
+                isWaitingConsent = false
+                Timber.d("isWaitingConsent = $isWaitingConsent")
+                connectionListener?.onBonded()
             }
             BluetoothDevice.BOND_BONDING -> {
-                connectionListener?.onBondingRequired(targetDevice!!)
+                connectionListener?.onBondingRequired()
             }
             BluetoothDevice.BOND_NONE -> {
                 if (lastBondState == BluetoothDevice.BOND_BONDING) {
-                    connectionListener?.onBondingFailed(targetDevice!!)
+                    connectionListener?.onBondingFailed()
                 }
             }
         }
         lastBondState = currentState
+    }
+
+    private fun onActionPairingRequest(intent: Intent) {
+        Timber.d("onActionPairingRequest")
+        val intentDevice =
+            intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
+        if (targetDevice?.address != intentDevice?.address) {
+            Timber.d("ignore intent : not target device")
+            return
+        } else {
+            val pairingCode =
+                intent.getIntExtra(BluetoothDevice.EXTRA_PAIRING_VARIANT, -1)
+            if (pairingCode == PAIRING_VARIANT_CONSENT) {
+                isWaitingConsent = true
+                connectionListener?.onParingRequest()
+                Timber.d("isWaitingConsent = $isWaitingConsent")
+            }
+        }
     }
 
     private fun resetState() {
@@ -110,5 +138,14 @@ class MbtBleBroadcastReceiver : BroadcastReceiver() {
         this.targetDevice = bluetoothDevice
         this.connectionListener = listener
         lastBondState = -1
+    }
+
+    companion object {
+
+        /**
+         * we received this intent code when a new pairing request popup is showing on the Android device. User will accept this request to allow the bonding.
+         * @see <a href="https://developer.android.com/reference/com/google/android/things/bluetooth/PairingParams#pairing_variant_consent">Android PairingParams</a>
+         */
+        private const val PAIRING_VARIANT_CONSENT = 3
     }
 }
