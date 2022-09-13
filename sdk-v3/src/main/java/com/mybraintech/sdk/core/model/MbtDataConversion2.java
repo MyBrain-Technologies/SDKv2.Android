@@ -134,9 +134,21 @@ public class MbtDataConversion2 {
         public MbtDataConversion2 build() {
             return new MbtDataConversion2(protocol, nbChannels, gain);
         }
+    }
 
-        public MbtDataConversion2 buildForQPlus() {
-            return new MbtDataConversion2(EnumBluetoothProtocol.BLE, 4, (byte) 0);
+    @NonNull
+    static public MbtDataConversion2 generateInstance(EnumMBTDevice deviceType) {
+        switch (deviceType) {
+            case Q_PLUS:
+            case HYPERION: {
+                return new MbtDataConversion2(EnumBluetoothProtocol.BLE, 4, (byte) 0);
+            }
+            case MELOMIND: {
+                return new MbtDataConversion2(EnumBluetoothProtocol.BLE, 2, (byte) 0);
+            }
+            default: {
+                throw new RuntimeException("Illegal device type : deviceType = " + deviceType.toString());
+            }
         }
     }
 }

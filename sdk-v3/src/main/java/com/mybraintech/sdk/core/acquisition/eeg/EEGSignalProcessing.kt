@@ -81,11 +81,13 @@ abstract class EEGSignalProcessing(
     private var consolidatedEEGBuffer = ArrayList<ArrayList<Float>>()
     private var consolidatedStatusBuffer = ArrayList<Float>()
 
-    private val dataConversion = MbtDataConversion2.Builder().buildForQPlus()
+    private val dataConversion: MbtDataConversion2 by lazy {
+        MbtDataConversion2.generateInstance(getDeviceType())
+    }
 
     private var qualityChecker: QualityChecker = QualityChecker(sampleRate)
 
-    private var realtimeEEGExecutor : RealtimeEEGExecutor? = null
+    private var realtimeEEGExecutor: RealtimeEEGExecutor? = null
     private var disposable = CompositeDisposable()
 
     init {
@@ -109,6 +111,8 @@ abstract class EEGSignalProcessing(
 
         Timber.i("BLE frame indexCycle = $indexCycle")
     }
+
+    protected abstract fun getDeviceType(): EnumMBTDevice
 
     /**
      * this will clear the buffer
@@ -274,8 +278,6 @@ abstract class EEGSignalProcessing(
     abstract fun isValidFrame(eegFrame: ByteArray): Boolean
 
     abstract fun getNumberOfChannels(): Int
-
-    abstract fun getDeviceType() : EnumMBTDevice
 
     fun getEEGBufferSize(): Int {
         return recordingBuffer.size

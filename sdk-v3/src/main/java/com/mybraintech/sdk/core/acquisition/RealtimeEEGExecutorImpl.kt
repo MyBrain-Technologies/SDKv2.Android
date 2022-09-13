@@ -22,20 +22,7 @@ internal class RealtimeEEGExecutorImpl(private val eegFrameConversionInterface: 
     private val disposable = CompositeDisposable()
 
     override fun init(deviceType: EnumMBTDevice) {
-        dataConversion = when (deviceType) {
-            EnumMBTDevice.Q_PLUS -> {
-                MbtDataConversion2.Builder().buildForQPlus()
-            }
-            EnumMBTDevice.MELOMIND -> {
-                MbtDataConversion2.Builder().build()
-            }
-            EnumMBTDevice.HYPERION -> {
-                MbtDataConversion2.Builder().buildForQPlus()
-            }
-            else -> {
-                throw UnsupportedOperationException("device type not known")
-            }
-        }
+        dataConversion = MbtDataConversion2.generateInstance(deviceType)
 
         publishSubject.observeOn(workerScheduler)
             .subscribeOn(workerScheduler)
