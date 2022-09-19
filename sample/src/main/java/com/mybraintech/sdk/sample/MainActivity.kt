@@ -23,6 +23,7 @@ import java.util.*
 
 class MainActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListener {
 
+    private var packQueue: ArrayList<EEGSignalPack> = arrayListOf()
     private lateinit var binding: ActivityQplusBinding
     lateinit var mbtClient: MbtClient
     var mbtDevice: MbtDevice? = null
@@ -47,7 +48,7 @@ class MainActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListen
         val type = intent.getStringExtra(DEVICE_TYPE_KEY)
         mbtClient = if (type == MELOMIND_DEVICE) {
             MbtClientManager.getMbtClient(applicationContext, EnumMBTDevice.MELOMIND)
-        } else if (type == HYPERION)  {
+        } else if (type == HYPERION) {
             MbtClientManager.getMbtClient(applicationContext, EnumMBTDevice.HYPERION)
         } else {
             MbtClientManager.getMbtClient(applicationContext, EnumMBTDevice.Q_PLUS)
@@ -190,6 +191,9 @@ class MainActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListen
             .build()
 
         Timber.i("streamingParams : isEEGEnabled = ${streamingParams.isEEGEnabled} | isAccelerometerEnabled = ${streamingParams.isAccelerometerEnabled}")
+
+        mbtClient.setEEGRealtimeListener(realtimeListener)
+
         mbtClient.setEEGListener(
             object : EEGListener {
                 override fun onEEGStatusChange(isEnabled: Boolean) {
@@ -197,9 +201,12 @@ class MainActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListen
                 }
 
                 override fun onEegPacket(mbtEEGPacket2: MbtEEGPacket2) {
+//                    val isMatched = verifyRealtimeData(mbtEEGPacket2)
+//                    Timber.i("isMatched = $isMatched") // be careful, this is for a quick test, this not functional
+
                     runOnUiThread {
                         eegCount++
-                        Timber.d("onEegPacket : ${mbtEEGPacket2.timeStamp} : $eegCount")
+//                        Timber.d("onEegPacket : ${mbtEEGPacket2.timeStamp} : $eegCount")
                         binding.txtEegCount.text = eegCount.toString()
                         if (mbtClient.isRecordingEnabled()) {
                             binding.txtRecordingCount.text =
@@ -240,6 +247,32 @@ class MainActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListen
             }
         )
         mbtClient.startStreaming(streamingParams)
+    }
+
+    private fun verifyRealtimeData(mbtEEGPacket2: MbtEEGPacket2): Boolean {
+        val consolidated = packQueue.fold(ArrayList<ArrayList<Float>?>()) { acc, eegSignalPack ->
+            for (i in 0 until eegSignalPack.signals.size) {
+                if (acc.size <= i) {
+                    acc.add(ArrayList())
+                }
+                acc[i]!!.addAll(eegSignalPack.signals[i])
+            }
+            acc
+        }
+        Timber.i("consolidated.rows = ${consolidated.size} | consolidated.columns = ${consolidated[0]?.size}")
+        try {
+            for (j in 0 until mbtEEGPacket2.channelsData[0]!!.size) {
+                for (i in 0 until mbtEEGPacket2.channelsData.size) {
+                    if (consolidated[i]!![j] != mbtEEGPacket2.channelsData[i][j]) {
+                        Timber.e("not match data row $i column $j")
+                        return false
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Timber.e(e)
+        }
+        return true
     }
 
     private fun onBtnStartRecordingClicked() {
@@ -344,6 +377,21 @@ class MainActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListen
 
     override fun onBatteryLevelError(error: Throwable) {
         Timber.e(error)
+    }
+
+    private val realtimeListener: EEGRealtimeListener by lazy {
+        object : EEGRealtimeListener {
+            override fun onEEGFrame(pack: EEGSignalPack) {
+                onRealtimeFrame(pack)
+            }
+
+        }
+    }
+
+    private fun onRealtimeFrame(pack: EEGSignalPack) {
+        Timber.d("onRealtimeFrame : index = ${pack.index}")
+        packQueue.add(pack)
+//        Timber.d("rows = ${pack.signals.size} | columns = ${pack.signals[0].size}")
     }
 
     @SuppressLint("SimpleDateFormat")
