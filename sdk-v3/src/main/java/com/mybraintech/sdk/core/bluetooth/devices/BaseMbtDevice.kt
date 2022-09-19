@@ -15,7 +15,7 @@ import com.mybraintech.sdk.core.model.BleConnectionStatus
 import com.mybraintech.sdk.core.model.DeviceInformation
 import com.mybraintech.sdk.core.model.EnumMBTDevice
 import com.mybraintech.sdk.core.model.MbtDevice
-import com.mybraintech.sdk.util.getString
+import com.mybraintech.sdk.util.getHumanReadable
 import no.nordicsemi.android.ble.BleManager
 import timber.log.Timber
 
@@ -26,6 +26,7 @@ abstract class BaseMbtDevice(ctx: Context) :
     protected val MTU_SIZE = 47
 
     protected var isScanning: Boolean = false
+    protected var isConnecting: Boolean = false
     private var isEEGEnabled: Boolean = false
     private var isIMSEnabled: Boolean = false
 
@@ -35,7 +36,7 @@ abstract class BaseMbtDevice(ctx: Context) :
 
     protected var targetMbtDevice: MbtDevice? = null
     protected var deviceInformation = DeviceInformation()
-    protected var connectionListener: ConnectionListener? = null
+    private var connectionListener: ConnectionListener? = null
 
     protected var batteryLevelListener: BatteryLevelListener? = null
     protected var deviceInformationListener: DeviceInformationListener? = null
@@ -72,7 +73,12 @@ abstract class BaseMbtDevice(ctx: Context) :
     }
 
     override fun connectMbt(mbtDevice: MbtDevice, connectionListener: ConnectionListener) {
-        connectMbtWithRetries(mbtDevice, connectionListener, 0, 0)
+        if (isConnecting) {
+            connectionListener.onConnectionError(Throwable("a connection process is already started, please wait"))
+        } else {
+            isConnecting = true
+            connectMbtWithRetries(mbtDevice, connectionListener, 0, 0)
+        }
     }
 
     private fun connectMbtWithRetries(
@@ -82,11 +88,11 @@ abstract class BaseMbtDevice(ctx: Context) :
         maxRetry: Int
     ) {
         if (!isBluetoothEnabled()) {
-            connectionListener.onConnectionError(Throwable("Bluetooth is not enabled"))
+            onGoingConnectionProcessFailed("Bluetooth is not enabled")
             return
         }
         if (isConnectedAndReady()) {
-            connectionListener.onConnectionError(Throwable("Device is connected already : ${bluetoothDevice.getString()}"))
+            onGoingConnectionProcessFailed("Device is connected already : name = ${bluetoothDevice?.name} | address = ${bluetoothDevice?.address}")
             return
         }
         this.connectionListener = connectionListener
@@ -105,7 +111,7 @@ abstract class BaseMbtDevice(ctx: Context) :
             .done {
                 Timber.i("ble connect done")
             }
-            .fail { device, status ->
+            .fail { _, status ->
                 if (currentRetry < maxRetry) {
                     val delay = 10L
                     Timber.i("Retry ${currentRetry + 1}. Wait $delay ms")
@@ -120,11 +126,35 @@ abstract class BaseMbtDevice(ctx: Context) :
                     }
                     Thread(runnable).run()
                 } else {
-                    val name = device?.name
-                    connectionListener.onConnectionError(Throwable("fail to connect to MbtDevice : name = $name | status = $status"))
+                    val bluetoothDevice = targetMbtDevice?.bluetoothDevice
+                    onGoingConnectionProcessFailed("Failed to connect to MbtDevice : name = ${bluetoothDevice?.name} | address = ${bluetoothDevice?.address} | status = ${status.getHumanReadable()}")
                 }
             }
             .enqueue()
+    }
+
+    protected fun onGoingConnectionProcessFailed(error: Throwable) {
+        isConnecting = false
+        connectionListener?.onConnectionError(error)
+    }
+
+    protected fun onGoingConnectionProcessSucceeded() {
+        isConnecting = false
+        connectionListener?.onDeviceReady()
+    }
+
+    protected fun onGoingConnectionProcessFailed(message: String) {
+        onGoingConnectionProcessFailed(Throwable(message))
+    }
+
+    protected fun notifyServiceDiscovered() {
+        connectionListener?.onServiceDiscovered()
+    }
+
+    protected fun notifyDeviceDisconnected() {
+        if (!isConnecting) {
+            connectionListener?.onDeviceDisconnected()
+        }
     }
 
     override fun disconnectMbt() {
@@ -132,8 +162,6 @@ abstract class BaseMbtDevice(ctx: Context) :
             targetMbtDevice = null
             this.broadcastReceiver.targetDevice = null
             disconnect().enqueue()
-        } else {
-            connectionListener?.onConnectionError(Throwable("there is no connected device to disconnect!"))
         }
     }
 

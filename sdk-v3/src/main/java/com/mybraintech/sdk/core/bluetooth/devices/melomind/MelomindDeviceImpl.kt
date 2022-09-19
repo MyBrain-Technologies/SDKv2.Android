@@ -15,6 +15,7 @@ import com.mybraintech.sdk.core.listener.BatteryLevelListener
 import com.mybraintech.sdk.core.listener.DeviceInformationListener
 import com.mybraintech.sdk.core.listener.MbtDataReceiver
 import com.mybraintech.sdk.core.model.*
+import com.mybraintech.sdk.util.getHumanReadable
 import no.nordicsemi.android.ble.BleManager
 import timber.log.Timber
 
@@ -54,8 +55,8 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
                     ).toFloat()
                 )
             }
-            .fail { _, _ ->
-                this.batteryLevelListener?.onBatteryLevelError(Throwable("L57 : Cannot read battery level!"))
+            .fail { _, status ->
+                this.batteryLevelListener?.onBatteryLevelError(Throwable("L57 : Cannot read battery level : status = ${status.getHumanReadable()}"))
             }
             .enqueue()
     }
@@ -126,7 +127,8 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
                         this.deviceInformation.uniqueDeviceIdentifier = sn.getStringValue(0)
                         this.deviceInformationListener?.onDeviceInformation(deviceInformation)
                     }
-                    .fail { _, _ ->
+                    .fail { _, status ->
+                        Timber.e("Failed : readCharacteristic sn : status = ${status.getHumanReadable()}")
                         this.deviceInformationListener?.onDeviceInformation(deviceInformation)
                     }
             )
@@ -184,7 +186,7 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
                         Timber.w(e)
                     }
                 }
-                .fail { _, _ -> Timber.e("Fail to write trigger status command") }
+                .fail { _, status -> Timber.e("Failed to send trigger status command : status = ${status.getHumanReadable()}") }
 
         // eeg characteristic
         val eegChar =
@@ -210,12 +212,13 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
             .add(
                 enableNotifications(eegChar)
                     .done {
-                        Timber.d("EEG_ACQUISITION enabled")
+                        Timber.d("EEG enabled")
                         this.deviceStatusCallback?.onEEGStatusChange(true)
                     }
-                    .fail { _, _ ->
-                        Timber.e("Could not enable EEG_ACQUISITION")
-                        this.deviceStatusCallback?.onEEGStatusError(Throwable("could not start EEG"))
+                    .fail { _, status ->
+                        val msg = "Failed to enable EEG : status = ${status.getHumanReadable()}"
+                        Timber.e(msg)
+                        this.deviceStatusCallback?.onEEGStatusError(Throwable(msg))
                     }
             )
             .enqueue()
@@ -233,12 +236,13 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
 
         disableNotifications(eegChar)
             .done {
-                Timber.d("EEG_ACQUISITION disabled")
+                Timber.d("EEG disabled")
                 deviceStatusCallback?.onEEGStatusChange(false)
             }
-            .fail { _, _ ->
-                Timber.e("Could not disable EEG_ACQUISITION")
-                deviceStatusCallback?.onEEGStatusError(Throwable("could not stop EEG"))
+            .fail { _, status ->
+                val msg = "Failed to disable EEG : status = ${status.getHumanReadable()}"
+                Timber.e(msg)
+                deviceStatusCallback?.onEEGStatusError(Throwable(msg))
             }
             .enqueue()
     }
@@ -311,7 +315,7 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
         BleManager.BleManagerGattCallback() {
 
         override fun isRequiredServiceSupported(gatt: BluetoothGatt): Boolean {
-            connectionListener?.onServiceDiscovered()
+            notifyServiceDiscovered()
             deviceInformationService = gatt.getService(MelomindService.DEVICE_INFORMATION.uuid)
             measurementService = gatt.getService(MelomindService.MEASUREMENT.uuid)
             val isSupported = (deviceInformationService != null && measurementService != null)
@@ -334,7 +338,7 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
                 .add(
                     requestMtu(MTU_SIZE)
                         .done { Timber.d("requestMtu done") }
-                        .fail { _, _ -> Timber.e("Could not requestMtu") }
+                        .fail { _, status -> Timber.e("Failed : requestMtu : status = ${status.getHumanReadable()}") }
                 )
                 .enqueue()
         }
@@ -344,7 +348,7 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
         }
 
         override fun onDeviceReady() {
-            connectionListener?.onDeviceReady()
+            onGoingConnectionProcessSucceeded()
         }
 
         override fun onMtuChanged(gatt: BluetoothGatt, mtu: Int) {
@@ -353,7 +357,7 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
 
         override fun onDeviceDisconnected() {
             Timber.i("onDeviceDisconnected")
-            connectionListener?.onDeviceDisconnected()
+            notifyDeviceDisconnected()
         }
     }
 }

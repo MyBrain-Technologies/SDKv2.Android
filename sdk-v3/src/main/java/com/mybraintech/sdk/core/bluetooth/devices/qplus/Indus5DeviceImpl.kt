@@ -16,6 +16,7 @@ import com.mybraintech.sdk.core.listener.ConnectionListener
 import com.mybraintech.sdk.core.listener.DeviceInformationListener
 import com.mybraintech.sdk.core.listener.MbtDataReceiver
 import com.mybraintech.sdk.core.model.*
+import com.mybraintech.sdk.util.getHumanReadable
 import no.nordicsemi.android.ble.Operation
 import no.nordicsemi.android.ble.WriteRequest
 import no.nordicsemi.android.ble.callback.DataReceivedCallback
@@ -52,8 +53,8 @@ abstract class Indus5DeviceImpl(ctx: Context) :
     override fun getBatteryLevel(batteryLevelListener: BatteryLevelListener) {
         this.batteryLevelListener = batteryLevelListener
         getBatteryLevelMailboxRequest()
-            .fail { _, _ ->
-                batteryLevelListener.onBatteryLevelError(Throwable())
+            .fail { _, status ->
+                batteryLevelListener.onBatteryLevelError(Throwable(status.getHumanReadable()))
             }
             .enqueue()
     }
@@ -186,7 +187,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
                 }
             }
             .fail { _, status ->
-                deviceInformationListener.onDeviceInformationError(Throwable("fail to retrieve device information : status = $status"))
+                deviceInformationListener.onDeviceInformationError(Throwable("fail to retrieve device information : status = ${status.getHumanReadable()}"))
             }
             .enqueue()
     }
@@ -365,7 +366,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
         BleManagerGattCallback() {
 
         override fun isRequiredServiceSupported(gatt: BluetoothGatt): Boolean {
-            connectionListener?.onServiceDiscovered()
+            notifyServiceDiscovered()
             val service = gatt.getService(QPlusService.Transparent.uuid)
             rxCharacteristic =
                 service?.getCharacteristic(QPlusCharacteristic.Rx.uuid)
@@ -387,18 +388,18 @@ abstract class Indus5DeviceImpl(ctx: Context) :
             beginAtomicRequestQueue()
                 .add(
                     enableNotifications(rxCharacteristic)
-                        .done { Timber.d("rx enableNotifications done") }
-                        .fail { _, _ -> Timber.e("Could not subscribe") }
+                        .done { Timber.d("enableNotifications rxCharacteristic done") }
+                        .fail { _, status -> Timber.e("Failed : enableNotifications rxCharacteristic : status = ${status.getHumanReadable()}") }
                 )
                 .add(
                     requestMtu(MTU_SIZE)
                         .done { Timber.d("requestMtu done") }
-                        .fail { _, _ -> Timber.e("Could not requestMtu") }
+                        .fail { _, status -> Timber.e("Failed : requestMtu : MTU_SIZE = $MTU_SIZE | status = ${status.getHumanReadable()}") }
                 )
                 .add(
                     getMtuMailboxRequest()
-                        .done { Timber.d("MtuMailboxRequest done") }
-                        .fail { _, _ -> Timber.e("Could not MtuMailboxRequest") }
+                        .done { Timber.d("change MTU size by mailbox command done") }
+                        .fail { _, status -> Timber.e("Failed : change MTU size by mailbox command : status = ${status.getHumanReadable()}") }
                 )
                 .enqueue()
         }
@@ -409,7 +410,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
         }
 
         override fun onDeviceReady() {
-            connectionListener?.onDeviceReady()
+            onGoingConnectionProcessSucceeded()
         }
 
         override fun onMtuChanged(gatt: BluetoothGatt, mtu: Int) {
@@ -418,7 +419,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
 
         override fun onDeviceDisconnected() {
             Timber.i("onDeviceDisconnected")
-            connectionListener?.onDeviceDisconnected()
+            notifyDeviceDisconnected()
         }
     }
 
