@@ -90,20 +90,18 @@ abstract class EEGSignalProcessing(
     init {
         eegPacketSubject
             .observeOn(Schedulers.io())
-            .subscribe {
-                eegListener?.onEegPacket(it)
-            }
+            .subscribe(
+                { eegListener?.onEegPacket(it) },
+                Timber::e
+            )
             .addTo(disposable)
 
         eegFrameSubject
             .observeOn(eegFrameScheduler)
-            .subscribe {
-                try {
-                    consumeEEGFrame(it)
-                } catch (e: Exception) {
-                    Timber.e(e)
-                }
-            }
+            .subscribe(
+                { consumeEEGFrame(it) },
+                Timber::e
+            )
             .addTo(disposable)
 
         Timber.i("BLE frame indexCycle = $indexCycle")
@@ -309,6 +307,7 @@ abstract class EEGSignalProcessing(
                 realtimeEEGExecutor = RealtimeEEGExecutorImpl(this)
                 (realtimeEEGExecutor as RealtimeEEGExecutor).init(getDeviceType())
             }
+            realtimeEEGExecutor?.setListener(eegRealtimeListener)
         }
     }
 

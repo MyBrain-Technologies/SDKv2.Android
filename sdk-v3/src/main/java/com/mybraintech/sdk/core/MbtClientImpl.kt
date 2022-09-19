@@ -28,7 +28,6 @@ internal class MbtClientImpl(private val context: Context, private var deviceTyp
 
     private var eegListener: EEGListener? = null
     private var accelerometerListener: AccelerometerListener? = null
-
     private var eegRealtimeListener: EEGRealtimeListener? = null
 
     private var isStreaming = false
@@ -100,6 +99,7 @@ internal class MbtClientImpl(private val context: Context, private var deviceTyp
         this.dataReceiver = manager.apply {
             setEEGListener(eegListener)
             setIMSListener(accelerometerListener)
+            setEEGRealtimeListener(eegRealtimeListener)
         }
         mbtDeviceInterface.enableSensors(streamingParams, dataReceiver!!, this)
     }

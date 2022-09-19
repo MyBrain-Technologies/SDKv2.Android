@@ -6,10 +6,12 @@ import com.mybraintech.sdk.core.model.EEGSignalPack
 import com.mybraintech.sdk.core.model.EnumMBTDevice
 import com.mybraintech.sdk.core.model.MbtDataConversion2
 import com.mybraintech.sdk.core.model.TimedBLEFrame
+import com.mybraintech.sdk.util.MatrixUtils2
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.plugins.RxJavaPlugins
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.subjects.PublishSubject
+import timber.log.Timber
 
 internal class RealtimeEEGExecutorImpl(private val eegFrameConversionInterface: EEGFrameConversionInterface) :
     RealtimeEEGExecutor {
@@ -26,9 +28,10 @@ internal class RealtimeEEGExecutorImpl(private val eegFrameConversionInterface: 
 
         publishSubject.observeOn(workerScheduler)
             .subscribeOn(workerScheduler)
-            .subscribe {
-                consumeFrame(it)
-            }
+            .subscribe(
+                { bleFrame -> consumeFrame(bleFrame) },
+                Timber::e
+            )
             .addTo(disposable)
     }
 
@@ -43,7 +46,8 @@ internal class RealtimeEEGExecutorImpl(private val eegFrameConversionInterface: 
     private fun consumeFrame(timedBLEFrame: TimedBLEFrame) {
         val eegSignals = eegFrameConversionInterface.getEEGData(timedBLEFrame.data)
         val index = IndexReader.decodeIndex(timedBLEFrame.data)
-        val standardEEGs = dataConversion.convertRawDataToEEG(eegSignals)
+        val invertedEEGs = dataConversion.convertRawDataToEEG(eegSignals)
+        val standardEEGs = MatrixUtils2.invertFloatMatrix(invertedEEGs)
         listener?.onEEGFrame(
             EEGSignalPack(
                 timestamp = timedBLEFrame.timestamp,
