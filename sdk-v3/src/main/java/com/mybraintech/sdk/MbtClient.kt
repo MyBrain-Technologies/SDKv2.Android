@@ -1,5 +1,6 @@
 package com.mybraintech.sdk
 
+import com.mybraintech.sdk.core.LabStreamingLayer
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
 
@@ -14,7 +15,10 @@ interface MbtClient {
     fun getDeviceInformation(deviceInformationListener: DeviceInformationListener)
     fun startStreaming(streamingParams: StreamingParams)
     fun stopStreaming()
+
+    @LabStreamingLayer
     fun setEEGRealtimeListener(eegRealtimeListener: EEGRealtimeListener)
+
     fun setEEGListener(eegListener: EEGListener)
     fun setAccelerometerListener(accelerometerListener: AccelerometerListener)
     fun startRecording(recordingOption: RecordingOption, recordingListener: RecordingListener)
