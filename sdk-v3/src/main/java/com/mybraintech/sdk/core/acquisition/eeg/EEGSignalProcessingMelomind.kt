@@ -2,7 +2,7 @@ package com.mybraintech.sdk.core.acquisition.eeg
 
 import com.mybraintech.android.jnibrainbox.BrainBoxVersion
 import com.mybraintech.sdk.core.acquisition.EnumBluetoothProtocol
-import com.mybraintech.sdk.core.acquisition.Indus5Utils
+import com.mybraintech.sdk.core.acquisition.IndexReader
 import com.mybraintech.sdk.core.listener.EEGListener
 import com.mybraintech.sdk.core.model.*
 import com.mybraintech.sdk.util.NumericalUtils
@@ -17,8 +17,12 @@ class EEGSignalProcessingMelomind(streamingParams: StreamingParams, eegListener:
         eegListener = eegListener
     ) {
 
+    override fun getDeviceType(): EnumMBTDevice {
+        return EnumMBTDevice.MELOMIND
+    }
+
     override fun getFrameIndex(eegFrame: ByteArray): Long {
-        return Indus5Utils.getIndex(eegFrame)
+        return IndexReader.decodeIndex(eegFrame)
     }
 
     override fun isValidFrame(eegFrame: ByteArray): Boolean {

@@ -1,7 +1,7 @@
 package com.mybraintech.sdk.core.acquisition.eeg
 
 import com.mybraintech.sdk.core.acquisition.EnumBluetoothProtocol
-import com.mybraintech.sdk.core.acquisition.Indus5Utils
+import com.mybraintech.sdk.core.acquisition.IndexReader
 import com.mybraintech.sdk.core.listener.EEGListener
 import com.mybraintech.sdk.core.model.RawEEGSample2
 import com.mybraintech.sdk.core.model.StreamingParams
@@ -21,7 +21,7 @@ abstract class EEGSignalProcessingIndus5(
     ) {
 
     override fun getFrameIndex(eegFrame: ByteArray): Long {
-        return Indus5Utils.getIndex(eegFrame)
+        return IndexReader.decodeIndex(eegFrame)
     }
 
     override fun isValidFrame(eegFrame: ByteArray): Boolean {

@@ -7,10 +7,7 @@ import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessingQPlus
 import com.mybraintech.sdk.core.acquisition.ims.IMSSignalProcessing
 import com.mybraintech.sdk.core.acquisition.ims.IMSSignalProcessingDisabled
 import com.mybraintech.sdk.core.acquisition.ims.IMSSignalProcessingQPlus
-import com.mybraintech.sdk.core.listener.AccelerometerListener
-import com.mybraintech.sdk.core.listener.EEGListener
-import com.mybraintech.sdk.core.listener.MbtDataReceiver
-import com.mybraintech.sdk.core.listener.RecordingListener
+import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
@@ -19,6 +16,9 @@ import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 import java.io.FileWriter
 
+/**
+ * please call [terminate] to release occupied memory when stop using
+ */
 internal class SignalProcessingManager(
     val deviceType: EnumMBTDevice,
     val streamingParams: StreamingParams
@@ -26,6 +26,7 @@ internal class SignalProcessingManager(
     MbtDataReceiver, EEGListener, AccelerometerListener {
 
     private var eegListener: EEGListener? = null
+
     private var accelerometerListener: AccelerometerListener? = null
     private var isRecording = false
 
@@ -35,7 +36,7 @@ internal class SignalProcessingManager(
 
 //    private val eegRelaxIndexProcessor: EEGToRelaxIndexProcessor = EEGToRelaxIndexProcessor()
 
-    private var recordingContainer = CompositeDisposable()
+    private var recordingDisposable = CompositeDisposable()
 
     private var eegSignalProcessing: EEGSignalProcessing = when (deviceType) {
         EnumMBTDevice.Q_PLUS -> {
@@ -62,6 +63,11 @@ internal class SignalProcessingManager(
         else -> {
             IMSSignalProcessingDisabled()
         }
+    }
+
+    fun terminate() {
+        eegSignalProcessing.terminate()
+        recordingDisposable.dispose()
     }
 
     //----------------------------------------------------------------------------
@@ -142,6 +148,10 @@ internal class SignalProcessingManager(
         this.eegListener = eegListener
     }
 
+    override fun setEEGRealtimeListener(eegRealtimeListener: EEGRealtimeListener?) {
+        this.eegSignalProcessing.setRealtimeListener(eegRealtimeListener)
+    }
+
     override fun setIMSListener(accelerometerListener: AccelerometerListener?) {
         this.accelerometerListener = accelerometerListener
     }
@@ -194,7 +204,7 @@ internal class SignalProcessingManager(
         eegErrorData: RecordingErrorData2,
         imsBuffer: List<ThreeDimensionalPosition>
     ) {
-        Observable.just(1)
+        Observable.just(Unit)
             .subscribeOn(Schedulers.computation())
             .subscribe {
                 try {
@@ -219,9 +229,9 @@ internal class SignalProcessingManager(
                     recordingListener?.onRecordingError(e)
                 } finally {
                     recordingListener = null
-                    recordingContainer.clear()
+                    recordingDisposable.clear()
                 }
             }
-            .addTo(recordingContainer)
+            .addTo(recordingDisposable)
     }
 }

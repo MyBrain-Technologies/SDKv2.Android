@@ -2,13 +2,14 @@ package com.mybraintech.sdk.core.acquisition.eeg
 
 import com.mybraintech.android.jnibrainbox.BrainBoxVersion
 import com.mybraintech.sdk.core.listener.EEGListener
-import com.mybraintech.sdk.core.model.Kwak
-import com.mybraintech.sdk.core.model.KwakHeader
-import com.mybraintech.sdk.core.model.RecordingOption
-import com.mybraintech.sdk.core.model.StreamingParams
+import com.mybraintech.sdk.core.model.*
 
 class EEGSignalProcessingHyperion(streamingParams: StreamingParams, eegListener: EEGListener) :
     EEGSignalProcessingIndus5(streamingParams, eegListener) {
+
+    override fun getDeviceType(): EnumMBTDevice {
+        return EnumMBTDevice.HYPERION
+    }
 
     override fun createKwak(recordingOption: RecordingOption): Kwak {
         return Kwak().apply {

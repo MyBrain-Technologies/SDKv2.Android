@@ -9,6 +9,7 @@ interface MbtDataReceiver {
     fun onTriggerStatusConfiguration(triggerStatusAllocationSize: Int)
     fun onEEGFrame(data: TimedBLEFrame)
     fun setEEGListener(eegListener: EEGListener?)
+    fun setEEGRealtimeListener(eegRealtimeListener: EEGRealtimeListener?)
     fun onIMSFrame(data: ByteArray)
     fun setIMSListener(accelerometerListener: AccelerometerListener?)
     fun onEEGDataError(error: Throwable)
