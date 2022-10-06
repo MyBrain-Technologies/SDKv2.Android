@@ -251,11 +251,11 @@ class MainActivity : AppCompatActivity(), ConnectionListener, BatteryLevelListen
 
     private fun verifyRealtimeData(mbtEEGPacket2: MbtEEGPacket2): Boolean {
         val consolidated = packQueue.fold(ArrayList<ArrayList<Float>?>()) { acc, eegSignalPack ->
-            for (i in 0 until eegSignalPack.signals.size) {
+            for (i in 0 until eegSignalPack.eegSignals.size) {
                 if (acc.size <= i) {
                     acc.add(ArrayList())
                 }
-                acc[i]!!.addAll(eegSignalPack.signals[i])
+                acc[i]!!.addAll(eegSignalPack.eegSignals[i])
             }
             acc
         }

@@ -45,6 +45,7 @@ internal class RealtimeEEGExecutorImpl(private val eegFrameConversionInterface: 
 
     private fun consumeFrame(timedBLEFrame: TimedBLEFrame) {
         val eegSignals = eegFrameConversionInterface.getEEGData(timedBLEFrame.data)
+        val statuses: List<Float> = eegSignals.map { it.statusData }
         val index = IndexReader.decodeIndex(timedBLEFrame.data)
         val invertedEEGs = dataConversion.convertRawDataToEEG(eegSignals)
         val standardEEGs = MatrixUtils2.invertFloatMatrix(invertedEEGs)
@@ -52,7 +53,8 @@ internal class RealtimeEEGExecutorImpl(private val eegFrameConversionInterface: 
             EEGSignalPack(
                 timestamp = timedBLEFrame.timestamp,
                 index = index,
-                signals = standardEEGs
+                eegSignals = standardEEGs,
+                triggers = statuses
             )
         )
     }
