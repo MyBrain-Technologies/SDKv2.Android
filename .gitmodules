@@ -1,3 +1,6 @@
 [submodule "Android-BLE-Library"]
 	path = Android-BLE-Library
 	url = git@github.com:mbt-administrator/Android-BLE-Library.git
+[submodule "demo-sdk"]
+	path = demo-sdk
+	url = git@github.com:mbt-administrator/demo-sdk.git

@@ -1,6 +1,5 @@
 //include ':JniBrainBox'
 //include ':mbtsdk'
-include ':sample'
 
 //add the customized version of Nordic Android Ble
 //include ':ble'
@@ -10,3 +9,6 @@ include ':sample'
 
 //include ':app'
 include ':sdk-v3'
+
+include ':sample'
+project(':sample').projectDir = new File(settingsDir, 'demo-sdk/app')
