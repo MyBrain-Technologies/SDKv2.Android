@@ -7,7 +7,6 @@
 //include ':ble-common'
 //project(':ble-common').projectDir = new File(settingsDir, 'Android-BLE-Library/ble-common')
 
-//include ':app'
 include ':sdk-v3'
 
 include ':sample'
