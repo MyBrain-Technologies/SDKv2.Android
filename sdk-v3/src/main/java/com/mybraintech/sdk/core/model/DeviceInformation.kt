@@ -8,9 +8,9 @@ class DeviceInformation {
     var productName: String = ""
 
     /**
-     * Json serialization name follows BrainWeb swagger specification.
+     * Json serialization name *uniqueDeviceIdentifier* follows BrainWeb swagger specification.
      *
-     * Variable name follows hardware specification.
+     * Variable name *serialNumber* follows hardware specification.
      */
     @SerializedName("uniqueDeviceIdentifier")
     var serialNumber: String = ""
