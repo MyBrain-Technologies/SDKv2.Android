@@ -234,7 +234,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
     private fun getStartIMSOperation(): Operation {
         return writeCharacteristic(
             txCharacteristic,
-            EnumQPlusFrameSuffix.MBX_START_IMS_ACQUISITION.bytes,
+            EnumIndus5FrameSuffix.MBX_START_IMS_ACQUISITION.bytes,
             BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
         )
     }
@@ -242,14 +242,14 @@ abstract class Indus5DeviceImpl(ctx: Context) :
     private fun getStopIMSOperation(): Operation {
         return writeCharacteristic(
             txCharacteristic,
-            EnumQPlusFrameSuffix.MBX_STOP_IMS_ACQUISITION.bytes,
+            EnumIndus5FrameSuffix.MBX_STOP_IMS_ACQUISITION.bytes,
             BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
         )
     }
 
     private fun getTriggerStatusOperation(isTriggerStatusEnabled: Boolean): Operation {
         // create status operation
-        val statusCommand = EnumQPlusFrameSuffix.MBX_P300_ENABLE.bytes.toMutableList()
+        val statusCommand = EnumIndus5FrameSuffix.MBX_P300_ENABLE.bytes.toMutableList()
         statusCommand.add(
             if (isTriggerStatusEnabled) {
                 0x01
@@ -267,7 +267,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
     private fun getStartEEGOperation(): Operation {
         return writeCharacteristic(
             txCharacteristic,
-            EnumQPlusFrameSuffix.MBX_START_EEG_ACQUISITION.bytes,
+            EnumIndus5FrameSuffix.MBX_START_EEG_ACQUISITION.bytes,
             BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
         )
     }
@@ -275,7 +275,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
     private fun getStopEEGOperation(): Operation {
         return writeCharacteristic(
             txCharacteristic,
-            EnumQPlusFrameSuffix.MBX_STOP_EEG_ACQUISITION.bytes,
+            EnumIndus5FrameSuffix.MBX_STOP_EEG_ACQUISITION.bytes,
             BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
         )
 
@@ -320,7 +320,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
     private fun getBatteryLevelMailboxRequest(): WriteRequest {
         return writeCharacteristic(
             txCharacteristic,
-            EnumQPlusFrameSuffix.MBX_GET_BATTERY_VALUE.bytes,
+            EnumIndus5FrameSuffix.MBX_GET_BATTERY_VALUE.bytes,
             BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
         )
     }
@@ -329,7 +329,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
     private fun getDeviceNameMailboxRequest(): WriteRequest {
         return writeCharacteristic(
             txCharacteristic,
-            EnumQPlusFrameSuffix.MBX_GET_DEVICE_NAME.bytes,
+            EnumIndus5FrameSuffix.MBX_GET_DEVICE_NAME.bytes,
             BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
         )
     }
@@ -337,7 +337,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
     private fun getFirmwareVersionMailboxRequest(): WriteRequest {
         return writeCharacteristic(
             txCharacteristic,
-            EnumQPlusFrameSuffix.MBX_GET_FIRMWARE_VERSION.bytes,
+            EnumIndus5FrameSuffix.MBX_GET_FIRMWARE_VERSION.bytes,
             BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
         )
     }
@@ -345,7 +345,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
     private fun getHardwareVersionMailboxRequest(): WriteRequest {
         return writeCharacteristic(
             txCharacteristic,
-            EnumQPlusFrameSuffix.MBX_GET_HARDWARE_VERSION.bytes,
+            EnumIndus5FrameSuffix.MBX_GET_HARDWARE_VERSION.bytes,
             BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
         )
     }
@@ -353,7 +353,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
     private fun getSerialNumberMailboxRequest(): WriteRequest {
         return writeCharacteristic(
             txCharacteristic,
-            EnumQPlusFrameSuffix.MBX_GET_SERIAL_NUMBER.bytes,
+            EnumIndus5FrameSuffix.MBX_GET_SERIAL_NUMBER.bytes,
             BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
         )
     }

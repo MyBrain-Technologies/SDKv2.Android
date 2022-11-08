@@ -4,7 +4,7 @@ import timber.log.Timber
 
 object QPlusMailboxHelper {
     fun generateMtuChangeBytes(mtuSize: Int = 47): ByteArray {
-        val result = EnumQPlusFrameSuffix.MBX_TRANSMIT_MTU_SIZE.bytes.toMutableList()
+        val result = EnumIndus5FrameSuffix.MBX_TRANSMIT_MTU_SIZE.bytes.toMutableList()
         result.add(mtuSize.toByte())
         return result.toByteArray()
     }
@@ -12,62 +12,62 @@ object QPlusMailboxHelper {
     fun parseRawIndus5Response(byteArray: ByteArray): QPlusResponse {
         try {
             return when (byteArray[0]) {
-                EnumQPlusFrameSuffix.MBX_TRANSMIT_MTU_SIZE.getOperationCode() -> {
+                EnumIndus5FrameSuffix.MBX_TRANSMIT_MTU_SIZE.getOperationCode() -> {
                     // only keep the 2nd byte where stores sample number
                     QPlusResponse.MtuChange(byteArray[1].toInt())
                 }
-                EnumQPlusFrameSuffix.MBX_GET_BATTERY_VALUE.getOperationCode() -> {
+                EnumIndus5FrameSuffix.MBX_GET_BATTERY_VALUE.getOperationCode() -> {
                     // 0x00 .. 0x04 = 0% | 0x05 = 12,5% -> 0x0C = 100%
                     val percent = if (byteArray[1] < 4) 0f else ((byteArray[1] - 4) * 12.5f)
                     QPlusResponse.BatteryLevel(percent)
                 }
-                EnumQPlusFrameSuffix.MBX_GET_DEVICE_NAME.getOperationCode() -> {
+                EnumIndus5FrameSuffix.MBX_GET_DEVICE_NAME.getOperationCode() -> {
                     val data = byteArray.copyOfRange(1, byteArray.size)
                     QPlusResponse.DeviceName(String(data))
                 }
-                EnumQPlusFrameSuffix.MBX_GET_FIRMWARE_VERSION.getOperationCode() -> {
+                EnumIndus5FrameSuffix.MBX_GET_FIRMWARE_VERSION.getOperationCode() -> {
                     val data = byteArray.copyOfRange(1, byteArray.size)
                     QPlusResponse.FirmwareVersion(String(data))
                 }
-                EnumQPlusFrameSuffix.MBX_GET_HARDWARE_VERSION.getOperationCode() -> {
+                EnumIndus5FrameSuffix.MBX_GET_HARDWARE_VERSION.getOperationCode() -> {
                     val data = byteArray.copyOfRange(1, byteArray.size)
                     QPlusResponse.HardwareVersion(String(data))
                 }
-                EnumQPlusFrameSuffix.MBX_GET_SERIAL_NUMBER.getOperationCode() -> {
+                EnumIndus5FrameSuffix.MBX_GET_SERIAL_NUMBER.getOperationCode() -> {
                     val data = byteArray.copyOfRange(1, byteArray.size)
                     QPlusResponse.SerialNumber(String(data))
                 }
-                EnumQPlusFrameSuffix.MBX_P300_ENABLE.getOperationCode() -> {
+                EnumIndus5FrameSuffix.MBX_P300_ENABLE.getOperationCode() -> {
                     QPlusResponse.TriggerStatusConfiguration(byteArray[1].toInt())
                 }
-                EnumQPlusFrameSuffix.MBX_EEG_DATA_FRAME_EVT.getOperationCode() -> {
+                EnumIndus5FrameSuffix.MBX_EEG_DATA_FRAME_EVT.getOperationCode() -> {
                     // remove operation code
                     val data = byteArray.copyOfRange(1, byteArray.size)
                     QPlusResponse.EEGFrame(data)
                 }
-                EnumQPlusFrameSuffix.MBX_START_EEG_ACQUISITION.getOperationCode() -> {
+                EnumIndus5FrameSuffix.MBX_START_EEG_ACQUISITION.getOperationCode() -> {
                     QPlusResponse.EEGStatus(true)
                 }
-                EnumQPlusFrameSuffix.MBX_STOP_EEG_ACQUISITION.getOperationCode() -> {
+                EnumIndus5FrameSuffix.MBX_STOP_EEG_ACQUISITION.getOperationCode() -> {
                     QPlusResponse.EEGStatus(false)
                 }
-                EnumQPlusFrameSuffix.MBX_START_IMS_ACQUISITION.getOperationCode() -> {
+                EnumIndus5FrameSuffix.MBX_START_IMS_ACQUISITION.getOperationCode() -> {
                     QPlusResponse.ImsStatus(true)
                 }
-                EnumQPlusFrameSuffix.MBX_STOP_IMS_ACQUISITION.getOperationCode() -> {
+                EnumIndus5FrameSuffix.MBX_STOP_IMS_ACQUISITION.getOperationCode() -> {
                     QPlusResponse.ImsStatus(false)
                 }
-                EnumQPlusFrameSuffix.MBX_START_PPG_ACQUISITION.getOperationCode() -> {
+                EnumIndus5FrameSuffix.MBX_START_PPG_ACQUISITION.getOperationCode() -> {
                     QPlusResponse.PpgStatus(true)
                 }
-                EnumQPlusFrameSuffix.MBX_STOP_PPG_ACQUISITION.getOperationCode() -> {
+                EnumIndus5FrameSuffix.MBX_STOP_PPG_ACQUISITION.getOperationCode() -> {
                     QPlusResponse.PpgStatus(false)
                 }
-                EnumQPlusFrameSuffix.MBX_IMS_DATA_FRAME_EVT.getOperationCode() -> {
+                EnumIndus5FrameSuffix.MBX_IMS_DATA_FRAME_EVT.getOperationCode() -> {
                     val data = byteArray.copyOfRange(1, byteArray.size)
                     QPlusResponse.ImsFrame(data)
                 }
-                EnumQPlusFrameSuffix.MBX_PPG_DATA_FRAME_EVT.getOperationCode() -> {
+                EnumIndus5FrameSuffix.MBX_PPG_DATA_FRAME_EVT.getOperationCode() -> {
                     // optimize performance : keep op code in bytes to reduce calculations
                     QPlusResponse.PpgFrame(byteArray)
                 }
