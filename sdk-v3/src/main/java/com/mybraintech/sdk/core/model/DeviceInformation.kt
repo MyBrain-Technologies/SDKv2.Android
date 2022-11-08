@@ -7,8 +7,13 @@ class DeviceInformation {
     @SerializedName("productName")
     var productName: String = ""
 
+    /**
+     * Json serialization name follows BrainWeb swagger specification.
+     *
+     * Variable name follows hardware specification.
+     */
     @SerializedName("uniqueDeviceIdentifier")
-    var uniqueDeviceIdentifier: String = ""
+    var serialNumber: String = ""
 
     @SerializedName("firmwareVersion")
     var firmwareVersion: String = ""
@@ -18,7 +23,7 @@ class DeviceInformation {
 
     fun isCompleted(): Boolean {
         return productName.isNotBlank()
-                && uniqueDeviceIdentifier.isNotBlank()
+                && serialNumber.isNotBlank()
                 && firmwareVersion.isNotBlank()
                 && hardwareVersion.isNotBlank()
     }

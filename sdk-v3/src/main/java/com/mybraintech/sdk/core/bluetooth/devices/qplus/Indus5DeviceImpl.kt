@@ -78,7 +78,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
                     deviceInformation.hardwareVersion = indus5Response.version
                 }
                 is QPlusResponse.SerialNumber -> {
-                    deviceInformation.uniqueDeviceIdentifier = indus5Response.serialNumber
+                    deviceInformation.serialNumber = indus5Response.serialNumber
                 }
                 is QPlusResponse.DeviceName -> {
                     deviceInformation.productName = indus5Response.name
