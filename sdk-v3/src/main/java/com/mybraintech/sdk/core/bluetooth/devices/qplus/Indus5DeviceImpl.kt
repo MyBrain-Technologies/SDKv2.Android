@@ -412,10 +412,12 @@ abstract class Indus5DeviceImpl(ctx: Context) :
             connectionListener?.onDeviceReady()
         }
 
+        @Suppress("OVERRIDE_DEPRECATION")
         override fun onMtuChanged(gatt: BluetoothGatt, mtu: Int) {
             Timber.i("onMtuChanged : mtu = $mtu")
         }
 
+        @Suppress("OVERRIDE_DEPRECATION")
         override fun onDeviceDisconnected() {
             Timber.i("onDeviceDisconnected")
             connectionListener?.onDeviceDisconnected()
