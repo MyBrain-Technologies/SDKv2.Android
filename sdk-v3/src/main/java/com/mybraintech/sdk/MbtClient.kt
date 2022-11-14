@@ -1,6 +1,7 @@
 package com.mybraintech.sdk
 
 import com.mybraintech.sdk.core.LabStreamingLayer
+import com.mybraintech.sdk.core.TestBench
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
 
@@ -27,4 +28,7 @@ interface MbtClient {
     fun isRecordingEnabled(): Boolean
     fun getRecordingBufferSize(): Int
     fun getDataLossPercent(): Float
+
+    @TestBench
+    fun setSerialNumber(serialNumber: String, listener: SerialNumberChangedListener?)
 }

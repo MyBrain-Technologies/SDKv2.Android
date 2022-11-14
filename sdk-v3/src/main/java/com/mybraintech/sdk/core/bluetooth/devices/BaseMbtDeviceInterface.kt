@@ -7,10 +7,7 @@ import android.bluetooth.le.ScanResult
 import android.content.Context
 import com.mybraintech.sdk.core.bluetooth.MbtBleUtils
 import com.mybraintech.sdk.core.bluetooth.MbtDeviceInterface
-import com.mybraintech.sdk.core.listener.BatteryLevelListener
-import com.mybraintech.sdk.core.listener.ConnectionListener
-import com.mybraintech.sdk.core.listener.DeviceInformationListener
-import com.mybraintech.sdk.core.listener.ScanResultListener
+import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.BleConnectionStatus
 import com.mybraintech.sdk.core.model.DeviceInformation
 import com.mybraintech.sdk.core.model.EnumMBTDevice
@@ -37,6 +34,7 @@ abstract class BaseMbtDeviceInterface(ctx: Context) :
     protected var deviceInformation = DeviceInformation()
     protected var connectionListener: ConnectionListener? = null
 
+    protected var serialNumberChangedListener : SerialNumberChangedListener? = null
     protected var batteryLevelListener: BatteryLevelListener? = null
     protected var deviceInformationListener: DeviceInformationListener? = null
 
@@ -217,5 +215,12 @@ abstract class BaseMbtDeviceInterface(ctx: Context) :
                 scanResultListener.onScanError(Throwable(msg))
             }
         }
+    }
+
+    /**
+     * can be implement in subclass of [BaseMbtDeviceInterface]
+     */
+    override fun setSerialNumber(serialNumber: String, listener: SerialNumberChangedListener?) {
+        throw UnsupportedOperationException("under construction")
     }
 }

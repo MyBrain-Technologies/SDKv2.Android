@@ -4,3 +4,8 @@ package com.mybraintech.sdk.core
 @Retention(AnnotationRetention.BINARY)
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
 annotation class LabStreamingLayer
+
+@RequiresOptIn(level = RequiresOptIn.Level.WARNING, message = "This API is reserved for Test Bench application and should not be used outside.")
+@Retention(AnnotationRetention.BINARY)
+@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
+annotation class TestBench

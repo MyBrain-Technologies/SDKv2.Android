@@ -11,16 +11,14 @@ import android.os.SystemClock
 import com.mybraintech.sdk.core.acquisition.MbtDeviceStatusCallback
 import com.mybraintech.sdk.core.bluetooth.MbtBleUtils
 import com.mybraintech.sdk.core.bluetooth.devices.BaseMbtDeviceInterface
-import com.mybraintech.sdk.core.listener.BatteryLevelListener
-import com.mybraintech.sdk.core.listener.ConnectionListener
-import com.mybraintech.sdk.core.listener.DeviceInformationListener
-import com.mybraintech.sdk.core.listener.MbtDataReceiver
+import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
 import no.nordicsemi.android.ble.Operation
 import no.nordicsemi.android.ble.WriteRequest
 import no.nordicsemi.android.ble.callback.DataReceivedCallback
 import no.nordicsemi.android.ble.data.Data
 import timber.log.Timber
+import java.nio.charset.Charset
 
 
 abstract class Indus5DeviceImpl(ctx: Context) :
@@ -65,28 +63,28 @@ abstract class Indus5DeviceImpl(ctx: Context) :
         if (data.value != null) {
 //            Timber.v("onDataReceived : ${NumericalUtils.bytesToHex(data.value)}")
             when (val indus5Response = QPlusMailboxHelper.parseRawIndus5Response(data.value!!)) {
-                is QPlusResponse.MtuChange -> {
+                is Indus5Response.MtuChange -> {
                     Timber.i("Mailbox MTU changed successfully")
                 }
-                is QPlusResponse.BatteryLevel -> {
+                is Indus5Response.BatteryLevel -> {
                     batteryLevelListener?.onBatteryLevel(indus5Response.percent)
                 }
-                is QPlusResponse.FirmwareVersion -> {
+                is Indus5Response.FirmwareVersion -> {
                     deviceInformation.firmwareVersion = indus5Response.version
                 }
-                is QPlusResponse.HardwareVersion -> {
+                is Indus5Response.HardwareVersion -> {
                     deviceInformation.hardwareVersion = indus5Response.version
                 }
-                is QPlusResponse.SerialNumber -> {
+                is Indus5Response.GetSerialNumber -> {
                     deviceInformation.serialNumber = indus5Response.serialNumber
                 }
-                is QPlusResponse.DeviceName -> {
+                is Indus5Response.DeviceName -> {
                     deviceInformation.productName = indus5Response.name
                 }
-                is QPlusResponse.EEGStatus -> {
+                is Indus5Response.EEGStatus -> {
                     deviceStatusCallback?.onEEGStatusChange(indus5Response.isEnabled)
                 }
-                is QPlusResponse.EEGFrame -> {
+                is Indus5Response.EEGFrame -> {
                     dataReceiver?.onEEGFrame(
                         TimedBLEFrame(
                             SystemClock.elapsedRealtime(),
@@ -94,14 +92,17 @@ abstract class Indus5DeviceImpl(ctx: Context) :
                         )
                     )
                 }
-                is QPlusResponse.TriggerStatusConfiguration -> {
+                is Indus5Response.TriggerStatusConfiguration -> {
                     dataReceiver?.onTriggerStatusConfiguration(indus5Response.triggerStatusAllocationSize)
                 }
-                is QPlusResponse.ImsStatus -> {
+                is Indus5Response.ImsStatus -> {
                     deviceStatusCallback?.onIMSStatusChange(indus5Response.isEnabled)
                 }
-                is QPlusResponse.ImsFrame -> {
+                is Indus5Response.ImsFrame -> {
                     dataReceiver?.onIMSFrame(indus5Response.data)
+                }
+                is Indus5Response.SerialNumberChanged -> {
+                    serialNumberChangedListener?.onSerialNumberChanged(indus5Response.newSerialNumber)
                 }
                 else -> {
                     Timber.e("this type is not supported : ${indus5Response.javaClass.simpleName}")
@@ -189,6 +190,23 @@ abstract class Indus5DeviceImpl(ctx: Context) :
                 deviceInformationListener.onDeviceInformationError(Throwable("fail to retrieve device information : status = $status"))
             }
             .enqueue()
+    }
+
+    override fun setSerialNumber(serialNumber: String, listener: SerialNumberChangedListener?) {
+        if (isConnectedAndReady()) {
+            if (serialNumber.length != 10) {
+                listener?.onSerialNumberError("Serial number length must be 10")
+                return
+            }
+            this.serialNumberChangedListener = listener
+            getSetSerialNumberMailboxRequest(serialNumber)
+                .fail { _, failReason ->
+                    this.serialNumberChangedListener?.onSerialNumberError("Error code = $failReason")
+                }
+                .enqueue()
+        } else {
+           listener?.onSerialNumberError("Device is not connected or is not ready")
+        }
     }
 
     override fun enableSensors(
@@ -356,6 +374,20 @@ abstract class Indus5DeviceImpl(ctx: Context) :
             EnumIndus5FrameSuffix.MBX_GET_SERIAL_NUMBER.bytes,
             BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
         )
+    }
+
+    private fun getSetSerialNumberMailboxRequest(newSerialNumber : String) : WriteRequest {
+        return writeCharacteristic(
+            txCharacteristic,
+            buildSetSerialNumberCommand(newSerialNumber),
+            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        )
+    }
+
+    private fun buildSetSerialNumberCommand(newSerialNumber : String) : ByteArray {
+        val command = EnumIndus5FrameSuffix.MBX_SET_SERIAL_NUMBER.bytes.toMutableList()
+        command.addAll(newSerialNumber.toByteArray(Charset.defaultCharset()).toMutableList())
+        return command.toByteArray()
     }
 
     //----------------------------------------------------------------------------

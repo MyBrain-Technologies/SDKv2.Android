@@ -43,4 +43,9 @@ interface MbtDeviceInterface {
     //----------------------------------------------------------------------------
     fun enableSensors(streamingParams: StreamingParams, dataReceiver: MbtDataReceiver, deviceStatusCallback: MbtDeviceStatusCallback)
     fun disableSensors()
+
+    //----------------------------------------------------------------------------
+    // MARK: only for Test Bench
+    //----------------------------------------------------------------------------
+    fun setSerialNumber(serialNumber: String, listener: SerialNumberChangedListener?)
 }
