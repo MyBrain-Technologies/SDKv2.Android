@@ -113,7 +113,7 @@ final class MbtJsonBuilder2 {
                     .value(device.getFirmwareVersion());
 
             jsonWriter.name(SERIAL_NUMBER_KEY)
-                    .value(device.getUniqueDeviceIdentifier());
+                    .value(device.getSerialNumber());
 
             jsonWriter.endObject();     // end of       "deviceInfo"        object
 

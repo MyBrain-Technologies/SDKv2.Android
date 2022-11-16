@@ -202,4 +202,9 @@ internal class MbtClientImpl(private val context: Context, private var deviceTyp
     override fun getDataLossPercent(): Float {
         return recordingInterface?.getDataLossPercentage() ?: 0.0f
     }
+
+    @TestBench
+    override fun setSerialNumber(serialNumber: String, listener: SerialNumberChangedListener?) {
+        mbtDeviceInterface.setSerialNumber(serialNumber, listener)
+    }
 }

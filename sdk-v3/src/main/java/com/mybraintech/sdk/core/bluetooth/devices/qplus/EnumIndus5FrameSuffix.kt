@@ -2,16 +2,17 @@ package com.mybraintech.sdk.core.bluetooth.devices.qplus
 
 /**
  * indus 5 mailbox command:
+ *
  * https://mybrain.atlassian.net/wiki/spaces/FI/pages/1957659071/INDUS5+Specification+-+Mailbox#List-of-current-mailbox-command
  */
-enum class EnumQPlusFrameSuffix(vararg val bytes: Byte) {
+enum class EnumIndus5FrameSuffix(vararg val bytes: Byte) {
     //----------------------------------------------------------------------------
     // MARK: commands
     //----------------------------------------------------------------------------
     MBX_START_OTA_TXF (0x03),
     MBX_SYS_GET_STATUS (0x08),
     MBX_SYS_REBOOT_EVT (0x09, 0x29, 0x08),
-    MBX_SET_SERIAL_NUM (0x0A, 0x53, 0x4D),
+    MBX_SET_SERIAL_NUMBER (0x1A, 0x53, 0x4D),
     MBX_SET_A2DP_NAME (0x0A,  0xAB.toByte(), 0x21),
     MBX_SET_NOTCH_FILT (0x0B),
     MBX_SET_BANDPASS_FILT (0x0C),

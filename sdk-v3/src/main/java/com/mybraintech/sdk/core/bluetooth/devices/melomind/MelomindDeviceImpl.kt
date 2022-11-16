@@ -123,7 +123,7 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDeviceInterface(ctx) {
             .add(
                 readCharacteristic(sn)
                     .done {
-                        this.deviceInformation.uniqueDeviceIdentifier = sn.getStringValue(0)
+                        this.deviceInformation.serialNumber = sn.getStringValue(0)
                         this.deviceInformationListener?.onDeviceInformation(deviceInformation)
                     }
                     .fail { _, _ ->
