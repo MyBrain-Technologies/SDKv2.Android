@@ -1,10 +1,8 @@
 package com.mybraintech.sdk.core.bluetooth.devices.qplus
 
 sealed class Indus5Response {
-    /**
-     * this name should be the suffix of the advertising name. Eg: advertising name = QP1B234567 -> name should be 1B234567
-     */
-    class DeviceName(val name: String) : Indus5Response()
+    class AudioNameFetched(val audioName: String) : Indus5Response()
+    class AudioNameChanged(val newAudioName: String) : Indus5Response()
     class FirmwareVersion(val version: String) : Indus5Response()
     class HardwareVersion(val version: String) : Indus5Response()
     class GetSerialNumber(val serialNumber: String) : Indus5Response()

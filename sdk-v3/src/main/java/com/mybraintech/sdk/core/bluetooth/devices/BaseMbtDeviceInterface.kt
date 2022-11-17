@@ -20,6 +20,11 @@ import timber.log.Timber
 abstract class BaseMbtDeviceInterface(ctx: Context) :
     BleManager(ctx), MbtDeviceInterface {
 
+    protected val INDUS5_BLE_PREFIX = "qp_"
+    protected val INDUS5_AUDIO_PREFIX = "QP"
+    protected val MELOMIND_BLE_PREFIX = "melo_"
+    protected val MELOMIND_AUDIO_PREFIX = "MM"
+
     protected val MTU_SIZE = 47
 
     protected var isScanning: Boolean = false
@@ -35,12 +40,30 @@ abstract class BaseMbtDeviceInterface(ctx: Context) :
     protected var connectionListener: ConnectionListener? = null
 
     protected var serialNumberChangedListener : SerialNumberChangedListener? = null
+    protected var audioNameListener : AudioNameListener? = null
     protected var batteryLevelListener: BatteryLevelListener? = null
     protected var deviceInformationListener: DeviceInformationListener? = null
 
     //----------------------------------------------------------------------------
     // MARK: internal ble manager
     //----------------------------------------------------------------------------
+    override fun getBleConnectionStatus(): BleConnectionStatus {
+        if (isConnectedAndReady()) {
+//            Timber.d("device is ready and is connected")
+            if (bluetoothDevice != null) {
+                return BleConnectionStatus(MbtDevice(bluetoothDevice!!), true)
+            } else {
+                // this case should never happen
+                Timber.e("fatal error: bluetoothDevice is null")
+                return BleConnectionStatus(null, false)
+            }
+
+        } else {
+//            Timber.d("device is NOT ready or is not connected")
+            return BleConnectionStatus(null, false)
+        }
+    }
+
     protected fun isBluetoothEnabled(): Boolean {
         return BluetoothAdapter.getDefaultAdapter().isEnabled
     }
@@ -133,40 +156,6 @@ abstract class BaseMbtDeviceInterface(ctx: Context) :
 
     protected abstract fun getDeviceType(): EnumMBTDevice
 
-    override fun getBleConnectionStatus(): BleConnectionStatus {
-        val gattConnectedDevices = MbtBleUtils.getGattConnectedDevices(context)
-        var connectedDevice: BluetoothDevice? = null
-        for (device in gattConnectedDevices) {
-            if (getDeviceType() == EnumMBTDevice.Q_PLUS) {
-                if (MbtBleUtils.isQPlus(context, device)) {
-                    Timber.i("found a connected indus5")
-                    connectedDevice = device
-                    break
-                }
-            } else {
-                connectedDevice = device
-                break
-            }
-        }
-        if (!isConnectedAndReady()) {
-            Timber.d("device is NOT ready or is not connected")
-            return if (connectedDevice != null) {
-                BleConnectionStatus(MbtDevice(connectedDevice), false)
-            } else {
-                BleConnectionStatus(null, false)
-            }
-        } else {
-            Timber.d("device is ready and is connected")
-            if (bluetoothDevice != null) {
-                return BleConnectionStatus(MbtDevice(bluetoothDevice!!), true)
-            } else {
-                // this case should never happen
-                Timber.e("fatal error: bluetoothDevice is null")
-                return BleConnectionStatus(null, false)
-            }
-        }
-    }
-
     override fun hasA2dpConnectedDevice(): Boolean {
         TODO("Not yet implemented")
     }
@@ -221,6 +210,10 @@ abstract class BaseMbtDeviceInterface(ctx: Context) :
      * can be implement in subclass of [BaseMbtDeviceInterface]
      */
     override fun setSerialNumber(serialNumber: String, listener: SerialNumberChangedListener?) {
-        throw UnsupportedOperationException("under construction")
+        throw UnsupportedOperationException("not supported")
+    }
+
+    override fun setAudioName(audioName: String, listener: AudioNameListener?) {
+        throw UnsupportedOperationException("not supported")
     }
 }
