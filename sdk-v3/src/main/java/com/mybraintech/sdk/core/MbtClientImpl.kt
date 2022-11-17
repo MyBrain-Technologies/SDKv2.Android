@@ -212,4 +212,14 @@ internal class MbtClientImpl(private val context: Context, private var deviceTyp
     override fun setAudioName(audioName: String, listener: AudioNameListener?) {
         mbtDeviceInterface.setAudioName(audioName, listener)
     }
+
+    @TestBench
+    override fun getDeviceSystemStatus(deviceSystemStatusListener: DeviceSystemStatusListener) {
+        mbtDeviceInterface.getDeviceSystemStatus(deviceSystemStatusListener)
+    }
+
+    @TestBench
+    override fun getStreamingState(streamingStateListener: StreamingStateListener) {
+        mbtDeviceInterface.getStreamingState(streamingStateListener)
+    }
 }

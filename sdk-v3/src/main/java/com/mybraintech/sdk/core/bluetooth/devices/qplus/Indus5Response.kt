@@ -1,5 +1,7 @@
 package com.mybraintech.sdk.core.bluetooth.devices.qplus
 
+import com.mybraintech.sdk.core.model.DeviceSystemStatus
+
 sealed class Indus5Response {
     class AudioNameFetched(val audioName: String) : Indus5Response()
     class AudioNameChanged(val newAudioName: String) : Indus5Response()
@@ -16,5 +18,6 @@ sealed class Indus5Response {
     class PpgFrame(val data: ByteArray) : Indus5Response()
     class PpgStatus(val isEnabled: Boolean) : Indus5Response()
     class SerialNumberChanged(val newSerialNumber: String) : Indus5Response()
+    class GetDeviceSystemStatus(val deviceSystemStatus: DeviceSystemStatus) : Indus5Response()
     class UnknownResponse(val bytes: ByteArray) : Indus5Response()
 }

@@ -21,6 +21,7 @@ interface MbtDeviceInterface {
     // device
     //----------------------------------------------------------------------------
     fun getBleConnectionStatus(): BleConnectionStatus
+    fun getStreamingState(streamingStateListener: StreamingStateListener)
     fun hasA2dpConnectedDevice(): Boolean
 
     fun setCurrentDeviceInformationListener(listener: DeviceInformationListener?)
@@ -49,4 +50,5 @@ interface MbtDeviceInterface {
     //----------------------------------------------------------------------------
     fun setSerialNumber(serialNumber: String, listener: SerialNumberChangedListener?)
     fun setAudioName(audioName: String, listener: AudioNameListener?)
+    fun getDeviceSystemStatus(deviceSystemStatusListener: DeviceSystemStatusListener)
 }

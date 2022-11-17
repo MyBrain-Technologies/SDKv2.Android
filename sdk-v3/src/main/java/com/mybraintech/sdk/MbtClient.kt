@@ -33,4 +33,8 @@ interface MbtClient {
     fun setSerialNumber(serialNumber: String, listener: SerialNumberChangedListener?)
     @TestBench
     fun setAudioName(audioName: String, listener: AudioNameListener?)
+    @TestBench
+    fun getDeviceSystemStatus(deviceSystemStatusListener: DeviceSystemStatusListener)
+    @TestBench
+    fun getStreamingState(streamingStateListener: StreamingStateListener)
 }

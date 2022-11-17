@@ -39,6 +39,7 @@ abstract class BaseMbtDeviceInterface(ctx: Context) :
     protected var deviceInformation = DeviceInformation()
     protected var connectionListener: ConnectionListener? = null
 
+    protected var deviceSystemStatusListener : DeviceSystemStatusListener? = null
     protected var serialNumberChangedListener : SerialNumberChangedListener? = null
     protected var audioNameListener : AudioNameListener? = null
     protected var batteryLevelListener: BatteryLevelListener? = null
