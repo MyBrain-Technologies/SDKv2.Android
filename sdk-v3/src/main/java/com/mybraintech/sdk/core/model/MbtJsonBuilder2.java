@@ -104,7 +104,7 @@ final class MbtJsonBuilder2 {
             }
 
             jsonWriter.name(PRODUCT_NAME_KEY)
-                    .value(device.getProductName());
+                    .value(device.getBleName());
 
             jsonWriter.name(HW_VERSION_KEY)
                     .value(device.getHardwareVersion());

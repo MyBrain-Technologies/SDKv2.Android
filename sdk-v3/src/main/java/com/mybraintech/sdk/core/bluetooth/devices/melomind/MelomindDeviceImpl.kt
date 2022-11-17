@@ -9,7 +9,6 @@ import android.content.Context
 import android.os.SystemClock
 import com.mybraintech.sdk.core.acquisition.MbtDeviceStatusCallback
 import com.mybraintech.sdk.core.bluetooth.DataConversionUtils
-import com.mybraintech.sdk.core.bluetooth.MbtBleUtils
 import com.mybraintech.sdk.core.bluetooth.devices.BaseMbtDeviceInterface
 import com.mybraintech.sdk.core.listener.BatteryLevelListener
 import com.mybraintech.sdk.core.listener.DeviceInformationListener
@@ -63,67 +62,47 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDeviceInterface(ctx) {
     //----------------------------------------------------------------------------
     // MARK: internal ble manager
     //----------------------------------------------------------------------------
-    override fun getBleConnectionStatus(): BleConnectionStatus {
-        val gattConnectedDevices = MbtBleUtils.getGattConnectedDevices(context)
-        var connectedIndus5: BluetoothDevice? = null
-        for (device in gattConnectedDevices) {
-            if (MbtBleUtils.isQPlus(context, device)) {
-                Timber.i("found a connected indus5")
-                connectedIndus5 = device
-                break
-            }
-        }
-        if (!isConnectedAndReady()) {
-            Timber.d("device is NOT ready or is not connected")
-            return if (connectedIndus5 != null) {
-                BleConnectionStatus(MbtDevice(connectedIndus5), false)
-            } else {
-                BleConnectionStatus(null, false)
-            }
-        } else {
-            Timber.d("device is ready and is connected")
-            if (bluetoothDevice != null) {
-                return BleConnectionStatus(MbtDevice(bluetoothDevice!!), true)
-            } else {
-                // this case should never happen
-                Timber.e("fatal error: bluetoothDevice is null")
-                return BleConnectionStatus(null, false)
-            }
-        }
-    }
-
     override fun getDeviceType() = EnumMBTDevice.MELOMIND
 
     override fun getDeviceInformation(deviceInformationListener: DeviceInformationListener) {
         this.deviceInformationListener = deviceInformationListener
 
-        this.deviceInformation = DeviceInformation().also {
-            it.productName = targetMbtDevice?.bluetoothDevice?.name ?: ""
-        }
+        this.deviceInformation = DeviceInformation()
 
-        val fwVersion =
+        val audioNameChar =
+            deviceInformationService!!.getCharacteristic(MelomindCharacteristic.AUDIO_NAME.uuid)
+        val fwVersionChar =
             deviceInformationService!!.getCharacteristic(MelomindCharacteristic.FIRMWARE_VERSION.uuid)
-        val hwVersion =
+        val hwVersionChar =
             deviceInformationService!!.getCharacteristic(MelomindCharacteristic.HARDWARE_VERSION.uuid)
-        val sn =
+        val snChar =
             deviceInformationService!!.getCharacteristic(MelomindCharacteristic.SERIAL_NUMBER.uuid)
         beginAtomicRequestQueue()
             .add(
-                readCharacteristic(fwVersion)
+                readCharacteristic(fwVersionChar)
                     .done {
-                        this.deviceInformation.firmwareVersion = fwVersion.getStringValue(0)
+                        this.deviceInformation.firmwareVersion = fwVersionChar.getStringValue(0)
                     }
             )
             .add(
-                readCharacteristic(hwVersion)
+                readCharacteristic(hwVersionChar)
                     .done {
-                        this.deviceInformation.hardwareVersion = hwVersion.getStringValue(0)
+                        this.deviceInformation.hardwareVersion = hwVersionChar.getStringValue(0)
                     }
             )
             .add(
-                readCharacteristic(sn)
+                readCharacteristic(audioNameChar)
                     .done {
-                        this.deviceInformation.serialNumber = sn.getStringValue(0)
+                        this.deviceInformation.audioName =
+                            MELOMIND_AUDIO_PREFIX + audioNameChar.getStringValue(0)
+                    }
+            )
+            .add(
+                readCharacteristic(snChar)
+                    .done {
+                        val sn = snChar.getStringValue(0)
+                        this.deviceInformation.serialNumber = sn
+                        this.deviceInformation.bleName = MELOMIND_BLE_PREFIX + sn
                         this.deviceInformationListener?.onDeviceInformation(deviceInformation)
                     }
                     .fail { _, _ ->

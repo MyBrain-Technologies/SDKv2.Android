@@ -31,4 +31,6 @@ interface MbtClient {
 
     @TestBench
     fun setSerialNumber(serialNumber: String, listener: SerialNumberChangedListener?)
+    @TestBench
+    fun setAudioName(audioName: String, listener: AudioNameListener?)
 }

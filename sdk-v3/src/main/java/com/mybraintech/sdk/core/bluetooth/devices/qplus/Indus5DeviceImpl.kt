@@ -77,9 +77,14 @@ abstract class Indus5DeviceImpl(ctx: Context) :
                 }
                 is Indus5Response.GetSerialNumber -> {
                     deviceInformation.serialNumber = indus5Response.serialNumber
+                    deviceInformation.bleName = INDUS5_BLE_PREFIX + indus5Response.serialNumber
                 }
-                is Indus5Response.DeviceName -> {
-                    deviceInformation.productName = indus5Response.name
+                is Indus5Response.AudioNameFetched -> {
+                    deviceInformation.audioName = INDUS5_AUDIO_PREFIX + indus5Response.audioName
+                }
+                is Indus5Response.AudioNameChanged -> {
+                    deviceInformation.audioName = INDUS5_AUDIO_PREFIX + indus5Response.newAudioName
+                    audioNameListener?.onAudioNameChanged(deviceInformation.audioName)
                 }
                 is Indus5Response.EEGStatus -> {
                     deviceStatusCallback?.onEEGStatusChange(indus5Response.isEnabled)
@@ -133,44 +138,13 @@ abstract class Indus5DeviceImpl(ctx: Context) :
         }
     }
 
-    override fun getBleConnectionStatus(): BleConnectionStatus {
-        val gattConnectedDevices = MbtBleUtils.getGattConnectedDevices(context)
-        var connectedIndus5: BluetoothDevice? = null
-        for (device in gattConnectedDevices) {
-            if (MbtBleUtils.isQPlus(context, device)) {
-                Timber.i("found a connected indus5")
-                connectedIndus5 = device
-                break
-            }
-        }
-        if (!isConnectedAndReady()) {
-            Timber.d("device is NOT ready or is not connected")
-            return if (connectedIndus5 != null) {
-                BleConnectionStatus(MbtDevice(connectedIndus5), false)
-            } else {
-                BleConnectionStatus(null, false)
-            }
-        } else {
-            Timber.d("device is ready and is connected")
-            if (bluetoothDevice != null) {
-                return BleConnectionStatus(MbtDevice(bluetoothDevice!!), true)
-            } else {
-                // this case should never happen
-                Timber.e("fatal error: bluetoothDevice is null")
-                return BleConnectionStatus(null, false)
-            }
-        }
-    }
-
     override fun getDeviceType() = EnumMBTDevice.Q_PLUS
 
     override fun getDeviceInformation(deviceInformationListener: DeviceInformationListener) {
-        this.deviceInformation = DeviceInformation().also {
-            it.productName = targetMbtDevice?.bluetoothDevice?.name ?: ""
-        }
+        this.deviceInformation = DeviceInformation()
         this.deviceInformationListener = deviceInformationListener
         beginAtomicRequestQueue()
-//            .add(getDeviceNameMailboxRequest()) //do not need to call this, we have already device name
+            .add(getDeviceNameMailboxRequest())
             .add(getFirmwareVersionMailboxRequest())
             .add(getHardwareVersionMailboxRequest())
             .add(getSerialNumberMailboxRequest())
@@ -205,7 +179,24 @@ abstract class Indus5DeviceImpl(ctx: Context) :
                 }
                 .enqueue()
         } else {
-           listener?.onSerialNumberError("Device is not connected or is not ready")
+            listener?.onSerialNumberError("Device is not connected or is not ready")
+        }
+    }
+
+    override fun setAudioName(audioName: String, listener: AudioNameListener?) {
+        if (isConnectedAndReady()) {
+            if (audioName.length in 6..10) {
+                this.audioNameListener = listener
+                getSetAudioNameRequest(audioName)
+                    .fail { _, failReason ->
+                        this.audioNameListener?.onAudioNameError("Error code = $failReason")
+                    }
+                    .enqueue()
+            } else {
+                listener?.onAudioNameError("Serial number length is not valid")
+            }
+        } else {
+            listener?.onAudioNameError("Device is not connected or is not ready")
         }
     }
 
@@ -376,7 +367,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
         )
     }
 
-    private fun getSetSerialNumberMailboxRequest(newSerialNumber : String) : WriteRequest {
+    private fun getSetSerialNumberMailboxRequest(newSerialNumber: String): WriteRequest {
         return writeCharacteristic(
             txCharacteristic,
             buildSetSerialNumberCommand(newSerialNumber),
@@ -384,9 +375,23 @@ abstract class Indus5DeviceImpl(ctx: Context) :
         )
     }
 
-    private fun buildSetSerialNumberCommand(newSerialNumber : String) : ByteArray {
+    private fun getSetAudioNameRequest(audioName: String): WriteRequest {
+        return writeCharacteristic(
+            txCharacteristic,
+            buildSetAudioNameCommand(audioName),
+            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        )
+    }
+
+    private fun buildSetSerialNumberCommand(newSerialNumber: String): ByteArray {
         val command = EnumIndus5FrameSuffix.MBX_SET_SERIAL_NUMBER.bytes.toMutableList()
         command.addAll(newSerialNumber.toByteArray(Charset.defaultCharset()).toMutableList())
+        return command.toByteArray()
+    }
+
+    private fun buildSetAudioNameCommand(audioName: String): ByteArray {
+        val command = EnumIndus5FrameSuffix.MBX_SET_A2DP_NAME.bytes.toMutableList()
+        command.addAll(audioName.toByteArray(Charset.defaultCharset()).toMutableList())
         return command.toByteArray()
     }
 

@@ -207,4 +207,9 @@ internal class MbtClientImpl(private val context: Context, private var deviceTyp
     override fun setSerialNumber(serialNumber: String, listener: SerialNumberChangedListener?) {
         mbtDeviceInterface.setSerialNumber(serialNumber, listener)
     }
+
+    @TestBench
+    override fun setAudioName(audioName: String, listener: AudioNameListener?) {
+        mbtDeviceInterface.setAudioName(audioName, listener)
+    }
 }

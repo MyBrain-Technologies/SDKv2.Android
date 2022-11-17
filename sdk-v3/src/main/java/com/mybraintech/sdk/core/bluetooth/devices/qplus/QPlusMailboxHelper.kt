@@ -23,7 +23,11 @@ object QPlusMailboxHelper {
                 }
                 EnumIndus5FrameSuffix.MBX_GET_DEVICE_NAME.getOperationCode() -> {
                     val data = byteArray.copyOfRange(1, byteArray.size)
-                    Indus5Response.DeviceName(String(data))
+                    Indus5Response.AudioNameFetched(String(data))
+                }
+                EnumIndus5FrameSuffix.MBX_SET_A2DP_NAME.getOperationCode() -> {
+                    val data = byteArray.copyOfRange(1, byteArray.size)
+                    Indus5Response.AudioNameChanged(String(data))
                 }
                 EnumIndus5FrameSuffix.MBX_GET_FIRMWARE_VERSION.getOperationCode() -> {
                     val data = byteArray.copyOfRange(1, byteArray.size)
@@ -36,6 +40,10 @@ object QPlusMailboxHelper {
                 EnumIndus5FrameSuffix.MBX_GET_SERIAL_NUMBER.getOperationCode() -> {
                     val data = byteArray.copyOfRange(1, byteArray.size)
                     Indus5Response.GetSerialNumber(String(data))
+                }
+                EnumIndus5FrameSuffix.MBX_SET_SERIAL_NUMBER.getOperationCode() -> {
+                    val newSerialNumber = getNewSerialNumber(byteArray)
+                    Indus5Response.SerialNumberChanged(newSerialNumber)
                 }
                 EnumIndus5FrameSuffix.MBX_P300_ENABLE.getOperationCode() -> {
                     Indus5Response.TriggerStatusConfiguration(byteArray[1].toInt())
@@ -70,10 +78,6 @@ object QPlusMailboxHelper {
                 EnumIndus5FrameSuffix.MBX_PPG_DATA_FRAME_EVT.getOperationCode() -> {
                     // optimize performance : keep op code in bytes to reduce calculations
                     Indus5Response.PpgFrame(byteArray)
-                }
-                EnumIndus5FrameSuffix.MBX_SET_SERIAL_NUMBER.getOperationCode() -> {
-                    val newSerialNumber = getNewSerialNumber(byteArray)
-                    Indus5Response.SerialNumberChanged(newSerialNumber)
                 }
                 else -> {
                     Indus5Response.UnknownResponse(byteArray)

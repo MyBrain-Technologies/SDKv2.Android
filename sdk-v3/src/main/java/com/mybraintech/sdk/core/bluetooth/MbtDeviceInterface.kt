@@ -48,4 +48,5 @@ interface MbtDeviceInterface {
     // MARK: only for Test Bench
     //----------------------------------------------------------------------------
     fun setSerialNumber(serialNumber: String, listener: SerialNumberChangedListener?)
+    fun setAudioName(audioName: String, listener: AudioNameListener?)
 }

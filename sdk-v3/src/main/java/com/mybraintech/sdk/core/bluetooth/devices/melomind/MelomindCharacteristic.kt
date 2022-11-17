@@ -4,7 +4,7 @@ import java.util.*
 
 enum class MelomindCharacteristic(val uuid: UUID) {
 
-  PRODUCT_NAME(UUID.fromString("00002a24-0000-1000-8000-00805f9b34fb")),
+  AUDIO_NAME(UUID.fromString("00002a24-0000-1000-8000-00805f9b34fb")),
   SERIAL_NUMBER(UUID.fromString("00002a25-0000-1000-8000-00805f9b34fb")),
   HARDWARE_VERSION(UUID.fromString("00002a27-0000-1000-8000-00805f9b34fb")),
   FIRMWARE_VERSION(UUID.fromString("00002a26-0000-1000-8000-00805f9b34fb")),
