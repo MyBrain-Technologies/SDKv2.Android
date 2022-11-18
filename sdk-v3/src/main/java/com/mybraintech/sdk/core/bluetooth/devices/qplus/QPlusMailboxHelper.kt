@@ -1,5 +1,6 @@
 package com.mybraintech.sdk.core.bluetooth.devices.qplus
 
+import com.mybraintech.sdk.core.model.DeviceSystemStatus
 import timber.log.Timber
 
 object QPlusMailboxHelper {
@@ -79,6 +80,9 @@ object QPlusMailboxHelper {
                     // optimize performance : keep op code in bytes to reduce calculations
                     Indus5Response.PpgFrame(byteArray)
                 }
+                EnumIndus5FrameSuffix.MBX_SYS_GET_STATUS.getOperationCode() -> {
+                    getDeviceSystemStatus(byteArray)
+                }
                 else -> {
                     Indus5Response.UnknownResponse(byteArray)
                 }
@@ -86,6 +90,33 @@ object QPlusMailboxHelper {
         } catch (e: Exception) {
             Timber.e(e)
             return Indus5Response.UnknownResponse(byteArray)
+        }
+    }
+
+    /**
+     * 1 byte for operation code and 4 bytes for device system statuses
+     */
+    private fun getDeviceSystemStatus(bytes: ByteArray): Indus5Response.GetDeviceSystemStatus {
+        return if (bytes.size != 5) {
+            Timber.e("GetDeviceSystemStatus : response data size is not equal 5")
+            // this case should never happen
+            Indus5Response.GetDeviceSystemStatus(
+                DeviceSystemStatus().apply {
+                    processorStatus = DeviceSystemStatus.EnumState.STATUS_ERROR
+                    externalMemoryStatus = DeviceSystemStatus.EnumState.STATUS_ERROR
+                    audioStatus = DeviceSystemStatus.EnumState.STATUS_ERROR
+                    adsStatus = DeviceSystemStatus.EnumState.STATUS_ERROR
+                }
+            )
+        } else {
+            Indus5Response.GetDeviceSystemStatus(
+                DeviceSystemStatus().apply {
+                    processorStatus = DeviceSystemStatus.parse(bytes[1])
+                    externalMemoryStatus = DeviceSystemStatus.parse(bytes[2])
+                    audioStatus = DeviceSystemStatus.parse(bytes[3])
+                    adsStatus = DeviceSystemStatus.parse(bytes[4])
+                }
+            )
         }
     }
 
