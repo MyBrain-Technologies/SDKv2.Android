@@ -15,6 +15,11 @@ class DeviceInformation {
     var audioName: String = ""
 
     /**
+     * Bluetooth hardware address
+     */
+    var bleAddress: String = ""
+
+    /**
      * Json serialization name *uniqueDeviceIdentifier* follows BrainWeb swagger specification.
      *
      * Variable name *serialNumber* follows firmware specification.

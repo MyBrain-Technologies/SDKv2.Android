@@ -144,7 +144,9 @@ abstract class Indus5DeviceImpl(ctx: Context) :
     override fun getDeviceType() = EnumMBTDevice.Q_PLUS
 
     override fun getDeviceInformation(deviceInformationListener: DeviceInformationListener) {
-        this.deviceInformation = DeviceInformation()
+        this.deviceInformation = DeviceInformation().apply {
+            this.bleAddress = targetMbtDevice?.bluetoothDevice?.address ?: ""
+        }
         this.deviceInformationListener = deviceInformationListener
         beginAtomicRequestQueue()
             .add(getDeviceNameMailboxRequest())

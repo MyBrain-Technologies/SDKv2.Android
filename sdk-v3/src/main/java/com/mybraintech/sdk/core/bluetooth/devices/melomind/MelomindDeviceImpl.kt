@@ -65,7 +65,9 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDeviceInterface(ctx) {
     override fun getDeviceInformation(deviceInformationListener: DeviceInformationListener) {
         this.deviceInformationListener = deviceInformationListener
 
-        this.deviceInformation = DeviceInformation()
+        this.deviceInformation = DeviceInformation().apply {
+            this.bleAddress = targetMbtDevice?.bluetoothDevice?.address ?: ""
+        }
 
         val audioNameChar =
             deviceInformationService!!.getCharacteristic(MelomindCharacteristic.AUDIO_NAME.uuid)
