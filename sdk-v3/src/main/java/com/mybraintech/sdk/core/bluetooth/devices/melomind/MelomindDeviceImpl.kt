@@ -9,13 +9,13 @@ import android.content.Context
 import android.os.SystemClock
 import com.mybraintech.sdk.core.acquisition.MbtDeviceStatusCallback
 import com.mybraintech.sdk.core.bluetooth.DataConversionUtils
-import com.mybraintech.sdk.core.bluetooth.devices.BaseMbtDeviceInterface
+import com.mybraintech.sdk.core.bluetooth.devices.BaseMbtDevice
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
 import no.nordicsemi.android.ble.BleManager
 import timber.log.Timber
 
-class MelomindDeviceImpl(ctx: Context) : BaseMbtDeviceInterface(ctx) {
+class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
 
     // required services
     private var deviceInformationService: BluetoothGattService? = null
@@ -223,18 +223,6 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDeviceInterface(ctx) {
     }
 
     override fun hasA2dpConnectedDevice(): Boolean {
-        TODO("Not yet implemented")
-    }
-
-    override fun setCurrentDeviceInformationListener(listener: DeviceInformationListener?) {
-        TODO("Not yet implemented")
-    }
-
-    override fun getCurrentDeviceInformation() {
-        TODO("Not yet implemented")
-    }
-
-    override fun getCurrentDeviceA2DPName(): String? {
         TODO("Not yet implemented")
     }
 

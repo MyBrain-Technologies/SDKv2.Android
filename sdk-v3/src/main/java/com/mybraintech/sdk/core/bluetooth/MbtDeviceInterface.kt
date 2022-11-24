@@ -24,10 +24,6 @@ interface MbtDeviceInterface {
     fun getStreamingState(streamingStateListener: StreamingStateListener)
     fun hasA2dpConnectedDevice(): Boolean
 
-    fun setCurrentDeviceInformationListener(listener: DeviceInformationListener?)
-    fun getCurrentDeviceInformation()
-
-    fun getCurrentDeviceA2DPName(): String?
     fun isEEGEnabled(): Boolean
     fun isIMSEnabled(): Boolean
     fun isListeningToHeadsetStatus(): Boolean

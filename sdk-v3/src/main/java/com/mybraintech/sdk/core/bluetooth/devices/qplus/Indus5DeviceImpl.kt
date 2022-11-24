@@ -9,8 +9,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import com.mybraintech.sdk.core.acquisition.MbtDeviceStatusCallback
-import com.mybraintech.sdk.core.bluetooth.MbtBleUtils
-import com.mybraintech.sdk.core.bluetooth.devices.BaseMbtDeviceInterface
+import com.mybraintech.sdk.core.bluetooth.devices.BaseMbtDevice
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
 import no.nordicsemi.android.ble.Operation
@@ -22,7 +21,7 @@ import java.nio.charset.Charset
 
 
 abstract class Indus5DeviceImpl(ctx: Context) :
-    BaseMbtDeviceInterface(ctx), DataReceivedCallback {
+    BaseMbtDevice(ctx), DataReceivedCallback {
 
     private var streamingParams: StreamingParams? = null
     private var dataReceiver: MbtDataReceiver? = null
@@ -321,18 +320,6 @@ abstract class Indus5DeviceImpl(ctx: Context) :
     }
 
     override fun hasA2dpConnectedDevice(): Boolean {
-        TODO("Not yet implemented")
-    }
-
-    override fun setCurrentDeviceInformationListener(listener: DeviceInformationListener?) {
-        TODO("Not yet implemented")
-    }
-
-    override fun getCurrentDeviceInformation() {
-        TODO("Not yet implemented")
-    }
-
-    override fun getCurrentDeviceA2DPName(): String? {
         TODO("Not yet implemented")
     }
 
