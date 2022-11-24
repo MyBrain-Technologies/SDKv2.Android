@@ -23,9 +23,14 @@ internal class SignalProcessingManager(
     val deviceType: EnumMBTDevice,
     val streamingParams: StreamingParams
 ) : RecordingInterface,
-    MbtDataReceiver, EEGListener, AccelerometerListener {
+    MbtDataReceiver, AccelerometerListener {
 
     private var eegListener: EEGListener? = null
+    private val eegCallback = object : EEGSignalProcessing.EEGCallback {
+        override fun onNewEEG(eegPacket: MbtEEGPacket2) {
+            eegListener?.onEegPacket(eegPacket)
+        }
+    }
 
     private var accelerometerListener: AccelerometerListener? = null
     private var isRecording = false
@@ -40,13 +45,13 @@ internal class SignalProcessingManager(
 
     private var eegSignalProcessing: EEGSignalProcessing = when (deviceType) {
         EnumMBTDevice.Q_PLUS -> {
-            EEGSignalProcessingQPlus(streamingParams, this)
+            EEGSignalProcessingQPlus(streamingParams, eegCallback)
         }
         EnumMBTDevice.MELOMIND -> {
-            EEGSignalProcessingMelomind(streamingParams, this)
+            EEGSignalProcessingMelomind(streamingParams, eegCallback)
         }
         EnumMBTDevice.HYPERION -> {
-            EEGSignalProcessingHyperion(streamingParams, this)
+            EEGSignalProcessingHyperion(streamingParams, eegCallback)
         }
         else -> {
             throw UnsupportedOperationException("device type not known")
@@ -157,22 +162,6 @@ internal class SignalProcessingManager(
     }
 
     override fun onEEGDataError(error: Throwable) {
-        eegListener?.onEegError(error)
-    }
-
-    //----------------------------------------------------------------------------
-    // MARK: EEGListener
-    //----------------------------------------------------------------------------
-    override fun onEEGStatusChange(isEnabled: Boolean) {
-        // this should not be called since this class only consume data but not eeg status
-        Timber.w("should not be called ! onEEGStatusChange : $isEnabled")
-    }
-
-    override fun onEegPacket(eegPacket: MbtEEGPacket2) {
-        eegListener?.onEegPacket(eegPacket)
-    }
-
-    override fun onEegError(error: Throwable) {
         eegListener?.onEegError(error)
     }
 

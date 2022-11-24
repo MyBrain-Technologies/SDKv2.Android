@@ -2,7 +2,6 @@ package com.mybraintech.sdk.core.acquisition.eeg
 
 import com.mybraintech.sdk.core.acquisition.EnumBluetoothProtocol
 import com.mybraintech.sdk.core.acquisition.IndexReader
-import com.mybraintech.sdk.core.listener.EEGListener
 import com.mybraintech.sdk.core.model.RawEEGSample2
 import com.mybraintech.sdk.core.model.StreamingParams
 import com.mybraintech.sdk.util.NumericalUtils
@@ -10,14 +9,14 @@ import timber.log.Timber
 
 abstract class EEGSignalProcessingIndus5(
     streamingParams: StreamingParams,
-    eegListener: EEGListener
+    eegCallback: EEGCallback
 ) :
     EEGSignalProcessing(
         sampleRate = streamingParams.eegSampleRate,
         protocol = EnumBluetoothProtocol.BLE,
         isTriggerStatusEnabled = streamingParams.isTriggerStatusEnabled,
         isQualityCheckerEnabled = streamingParams.isQualityCheckerEnabled,
-        eegListener = eegListener
+        eegCallback = eegCallback
     ) {
 
     override fun getFrameIndex(eegFrame: ByteArray): Long {

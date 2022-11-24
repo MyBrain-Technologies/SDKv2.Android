@@ -1,11 +1,10 @@
 package com.mybraintech.sdk.core.acquisition.eeg
 
 import com.mybraintech.android.jnibrainbox.BrainBoxVersion
-import com.mybraintech.sdk.core.listener.EEGListener
 import com.mybraintech.sdk.core.model.*
 
-class EEGSignalProcessingHyperion(streamingParams: StreamingParams, eegListener: EEGListener) :
-    EEGSignalProcessingIndus5(streamingParams, eegListener) {
+class EEGSignalProcessingHyperion(streamingParams: StreamingParams, eegCallback: EEGCallback) :
+    EEGSignalProcessingIndus5(streamingParams, eegCallback) {
 
     override fun getDeviceType(): EnumMBTDevice {
         return EnumMBTDevice.HYPERION

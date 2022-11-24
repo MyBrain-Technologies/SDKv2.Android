@@ -6,7 +6,6 @@ import com.mybraintech.sdk.core.acquisition.EnumBluetoothProtocol
 import com.mybraintech.sdk.core.acquisition.RealtimeEEGExecutor
 import com.mybraintech.sdk.core.acquisition.RealtimeEEGExecutorImpl
 import com.mybraintech.sdk.core.listener.EEGFrameConversionInterface
-import com.mybraintech.sdk.core.listener.EEGListener
 import com.mybraintech.sdk.core.listener.EEGRealtimeListener
 import com.mybraintech.sdk.core.model.*
 import com.mybraintech.sdk.util.ErrorDataHelper2
@@ -25,7 +24,7 @@ abstract class EEGSignalProcessing(
     protocol: EnumBluetoothProtocol,
     val isTriggerStatusEnabled: Boolean,
     protected val isQualityCheckerEnabled: Boolean,
-    var eegListener: EEGListener?
+    var eegCallback: EEGCallback?
 ) : EEGFrameConversionInterface {
 
     /**
@@ -91,7 +90,7 @@ abstract class EEGSignalProcessing(
         eegPacketSubject
             .observeOn(Schedulers.io())
             .subscribe(
-                { eegListener?.onEegPacket(it) },
+                { eegCallback?.onNewEEG(it) },
                 Timber::e
             )
             .addTo(disposable)
@@ -313,6 +312,10 @@ abstract class EEGSignalProcessing(
 
     fun terminate() {
         disposable.dispose()
+    }
+
+    interface EEGCallback {
+        fun onNewEEG(eegPacket2: MbtEEGPacket2)
     }
 
     companion object {
