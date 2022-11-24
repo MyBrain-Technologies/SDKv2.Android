@@ -197,7 +197,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
                     }
                     .enqueue()
             } else {
-                listener?.onAudioNameError("Serial number length is not valid")
+                listener?.onAudioNameError("Name length is not valid")
             }
         } else {
             listener?.onAudioNameError("Device is not connected or is not ready")
