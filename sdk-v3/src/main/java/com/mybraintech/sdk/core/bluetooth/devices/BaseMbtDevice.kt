@@ -1,11 +1,9 @@
 package com.mybraintech.sdk.core.bluetooth.devices
 
 import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothDevice
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.content.Context
-import com.mybraintech.sdk.core.bluetooth.MbtBleUtils
 import com.mybraintech.sdk.core.bluetooth.MbtDeviceInterface
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.BleConnectionStatus
@@ -17,7 +15,7 @@ import no.nordicsemi.android.ble.BleManager
 import timber.log.Timber
 
 
-abstract class BaseMbtDeviceInterface(ctx: Context) :
+abstract class BaseMbtDevice(ctx: Context) :
     BleManager(ctx), MbtDeviceInterface {
 
     protected val INDUS5_BLE_PREFIX = "qp_"
@@ -161,18 +159,6 @@ abstract class BaseMbtDeviceInterface(ctx: Context) :
         TODO("Not yet implemented")
     }
 
-    override fun setCurrentDeviceInformationListener(listener: DeviceInformationListener?) {
-        TODO("Not yet implemented")
-    }
-
-    override fun getCurrentDeviceInformation() {
-        TODO("Not yet implemented")
-    }
-
-    override fun getCurrentDeviceA2DPName(): String? {
-        TODO("Not yet implemented")
-    }
-
     override fun isEEGEnabled(): Boolean {
         return isEEGEnabled
     }
@@ -208,7 +194,7 @@ abstract class BaseMbtDeviceInterface(ctx: Context) :
     }
 
     /**
-     * can be implement in subclass of [BaseMbtDeviceInterface]
+     * can be implement in subclass of [BaseMbtDevice]
      */
     override fun setSerialNumber(serialNumber: String, listener: SerialNumberChangedListener?) {
         throw UnsupportedOperationException("not supported")
