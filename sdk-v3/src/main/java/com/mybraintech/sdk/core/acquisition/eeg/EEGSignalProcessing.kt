@@ -120,6 +120,9 @@ abstract class EEGSignalProcessing(
         isRecording = false
     }
 
+    /**
+     * TODO : move to [SignalProcessingManager]
+     */
     abstract fun createKwak(recordingOption: RecordingOption): Kwak
 
     fun clearBuffer() {
