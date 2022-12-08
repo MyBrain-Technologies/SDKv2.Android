@@ -108,8 +108,10 @@ internal class SignalProcessingManager(
         }
 
         val eegBuffer = eegSignalProcessing.getEEGBuffer()
+        Timber.d("eegBuffer.size = ${eegBuffer.size}")
         val eegErrorData = eegSignalProcessing.getRecordingErrorData()
         val imsBuffer = imsSignalProcessing.getIMSBuffer()
+        Timber.d("imsBuffer.size = ${imsBuffer.size}")
         generateRecording(eegBuffer, eegErrorData, imsBuffer)
     }
 

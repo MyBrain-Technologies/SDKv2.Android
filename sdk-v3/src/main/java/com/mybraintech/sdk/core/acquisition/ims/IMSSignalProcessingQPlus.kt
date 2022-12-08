@@ -7,6 +7,7 @@ import com.mybraintech.sdk.core.listener.AccelerometerListener
 import com.mybraintech.sdk.core.model.AccelerometerFrame
 import com.mybraintech.sdk.core.model.ImsPacket
 import com.mybraintech.sdk.core.model.ThreeDimensionalPosition
+import com.mybraintech.sdk.util.NumericalUtils
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.plugins.RxJavaPlugins
 import io.reactivex.rxkotlin.addTo
@@ -99,7 +100,7 @@ class IMSSignalProcessingQPlus(
     private fun consumeIMSFrame(data: ByteArray) {
 //        Timber.v("consumeIMSFrame")
         if (!isValidFrame(data)) {
-//            Timber.e("bad format ims frame : ${NumericalUtils.bytesToShortString(data)}")
+            Timber.e("bad format ims frame : ${NumericalUtils.bytesToShortString(data)}")
 //            Log.e("consumeIMSFrame", "bad format ims frame : ${NumericalUtils.bytesToShortString(data)}")
             return
         }
@@ -118,7 +119,7 @@ class IMSSignalProcessingQPlus(
 
         val indexDifference = newFrameIndex - previousIndex
         if (indexDifference != 1L) {
-//            Timber.w("ims diff is $indexDifference. Current index : $newFrameIndex | previousIndex : $previousIndex")
+            Timber.w("ims diff is $indexDifference. Current index : $newFrameIndex | previousIndex : $previousIndex")
 //            Log.w("consumeIMSFrame", "ims diff is $indexDifference. Current index : $newFrameIndex | previousIndex : $previousIndex")
         }
 
@@ -130,7 +131,7 @@ class IMSSignalProcessingQPlus(
         if (indexDifference != 1L) {
             val missingPositionNumber = imsBleFrame.positions.size * indexDifference
             for (i in 1..missingPositionNumber) {
-                positions.add(ThreeDimensionalPosition(0f, 0f, 0f))
+                positions.add(ThreeDimensionalPosition(Float.NaN, Float.NaN, Float.NaN))
             }
         }
 
