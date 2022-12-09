@@ -219,7 +219,7 @@ internal class MbtClientImpl(private val context: Context, private var deviceTyp
     }
 
     @TestBench
-    override fun getStreamingState(streamingStateListener: StreamingStateListener) {
-        mbtDeviceInterface.getStreamingState(streamingStateListener)
+    override fun getStreamingState(sensorStatusListener: SensorStatusListener) {
+        mbtDeviceInterface.getSensorStatuses(sensorStatusListener)
     }
 }

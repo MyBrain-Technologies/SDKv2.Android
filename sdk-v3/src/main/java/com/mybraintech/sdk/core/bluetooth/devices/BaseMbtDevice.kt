@@ -42,6 +42,7 @@ abstract class BaseMbtDevice(ctx: Context) :
     protected var audioNameListener : AudioNameListener? = null
     protected var batteryLevelListener: BatteryLevelListener? = null
     protected var deviceInformationListener: DeviceInformationListener? = null
+    protected var sensorStatusListener: SensorStatusListener? = null
 
     //----------------------------------------------------------------------------
     // MARK: internal ble manager

@@ -39,6 +39,7 @@ enum class EnumIndus5FrameSuffix(vararg val bytes: Byte) {
     MBX_STOP_IMS_ACQUISITION (0x34),
     MBX_START_PPG_ACQUISITION (0x35),
     MBX_STOP_PPG_ACQUISITION (0x36),
+    MBX_GET_SENSOR_STATUS (0x42),
 
     //----------------------------------------------------------------------------
     // MARK: events

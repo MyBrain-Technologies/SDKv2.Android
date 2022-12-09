@@ -328,7 +328,7 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
         throw UnsupportedOperationException("not supported") // TODO: 17/11/2022
     }
 
-    override fun getStreamingState(streamingStateListener: StreamingStateListener) {
+    override fun getSensorStatuses(sensorStatusListener: SensorStatusListener) {
         throw UnsupportedOperationException("not supported") // TODO: 17/11/2022
     }
 }

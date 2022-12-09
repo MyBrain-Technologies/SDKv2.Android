@@ -21,7 +21,7 @@ interface MbtDeviceInterface {
     // device
     //----------------------------------------------------------------------------
     fun getBleConnectionStatus(): BleConnectionStatus
-    fun getStreamingState(streamingStateListener: StreamingStateListener)
+    fun getSensorStatuses(sensorStatusListener: SensorStatusListener)
     fun hasA2dpConnectedDevice(): Boolean
 
     fun isEEGEnabled(): Boolean

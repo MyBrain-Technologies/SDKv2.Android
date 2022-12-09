@@ -36,5 +36,5 @@ interface MbtClient {
     @TestBench
     fun getDeviceSystemStatus(deviceSystemStatusListener: DeviceSystemStatusListener)
     @TestBench
-    fun getStreamingState(streamingStateListener: StreamingStateListener)
+    fun getStreamingState(sensorStatusListener: SensorStatusListener)
 }

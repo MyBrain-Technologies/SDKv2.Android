@@ -111,6 +111,9 @@ abstract class Indus5DeviceImpl(ctx: Context) :
                 is Indus5Response.GetDeviceSystemStatus -> {
                     deviceSystemStatusListener?.onDeviceSystemStatusFetched(indus5Response.deviceSystemStatus)
                 }
+                is Indus5Response.GetSensorStatuses -> {
+                    sensorStatusListener?.onSensorStatusFetched(indus5Response.sensorStatuses)
+                }
                 else -> {
                     Timber.e("this type is not supported : ${indus5Response.javaClass.simpleName}")
                 }
@@ -299,11 +302,27 @@ abstract class Indus5DeviceImpl(ctx: Context) :
             EnumIndus5FrameSuffix.MBX_STOP_EEG_ACQUISITION.bytes,
             BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
         )
-
     }
 
-    override fun getStreamingState(streamingStateListener: StreamingStateListener) {
-        throw UnsupportedOperationException("not supported") // TODO: 17/11/2022
+    private fun getSensorStatusRequest(): WriteRequest {
+        return writeCharacteristic(
+            txCharacteristic,
+            EnumIndus5FrameSuffix.MBX_GET_SENSOR_STATUS.bytes,
+            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        )
+    }
+
+    override fun getSensorStatuses(sensorStatusListener: SensorStatusListener) {
+        if (isConnectedAndReady()) {
+            this.sensorStatusListener = sensorStatusListener
+            getSensorStatusRequest()
+                .fail { _, errorCode ->
+                    this.sensorStatusListener?.onSensorStatusError("errorCode = $errorCode")
+                }
+                .enqueue()
+        } else {
+            sensorStatusListener.onSensorStatusError("device is not connected or not ready")
+        }
     }
 
     override fun getDeviceSystemStatus(deviceSystemStatusListener: DeviceSystemStatusListener) {

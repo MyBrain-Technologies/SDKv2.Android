@@ -1,6 +1,7 @@
 package com.mybraintech.sdk.core.bluetooth.devices.qplus
 
 import com.mybraintech.sdk.core.model.DeviceSystemStatus
+import com.mybraintech.sdk.core.model.Indus5SensorStatus
 import timber.log.Timber
 
 object QPlusMailboxHelper {
@@ -82,6 +83,9 @@ object QPlusMailboxHelper {
                 }
                 EnumIndus5FrameSuffix.MBX_SYS_GET_STATUS.getOperationCode() -> {
                     getDeviceSystemStatus(byteArray)
+                }
+                EnumIndus5FrameSuffix.MBX_GET_SENSOR_STATUS.getOperationCode() -> {
+                    Indus5SensorStatus.parse(byteArray)
                 }
                 else -> {
                     Indus5Response.UnknownResponse(byteArray)
