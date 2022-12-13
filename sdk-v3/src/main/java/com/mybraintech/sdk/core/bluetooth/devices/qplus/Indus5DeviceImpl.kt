@@ -103,7 +103,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
                     deviceStatusCallback?.onIMSStatusChange(indus5Response.isEnabled)
                 }
                 is Indus5Response.ImsFrame -> {
-                    dataReceiver?.onIMSFrame(indus5Response.data)
+                    dataReceiver?.onAccelerometerFrame(indus5Response.data)
                 }
                 is Indus5Response.SerialNumberChanged -> {
                     serialNumberChangedListener?.onSerialNumberChanged(indus5Response.newSerialNumber)

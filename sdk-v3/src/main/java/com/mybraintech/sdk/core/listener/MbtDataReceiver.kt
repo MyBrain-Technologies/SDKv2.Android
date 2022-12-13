@@ -10,7 +10,7 @@ interface MbtDataReceiver {
     fun onEEGFrame(data: TimedBLEFrame)
     fun setEEGListener(eegListener: EEGListener?)
     fun setEEGRealtimeListener(eegRealtimeListener: EEGRealtimeListener?)
-    fun onIMSFrame(data: ByteArray)
-    fun setIMSListener(accelerometerListener: AccelerometerListener?)
+    fun onAccelerometerFrame(data: ByteArray)
+    fun setAccelerometerListener(accelerometerListener: AccelerometerListener?)
     fun onEEGDataError(error: Throwable)
 }

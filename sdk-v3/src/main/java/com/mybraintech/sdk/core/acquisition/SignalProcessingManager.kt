@@ -4,9 +4,9 @@ import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessing
 import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessingHyperion
 import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessingMelomind
 import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessingQPlus
-import com.mybraintech.sdk.core.acquisition.ims.IMSSignalProcessing
-import com.mybraintech.sdk.core.acquisition.ims.IMSSignalProcessingDisabled
-import com.mybraintech.sdk.core.acquisition.ims.IMSSignalProcessingQPlus
+import com.mybraintech.sdk.core.acquisition.ims.AccelerometerSignalProcessing
+import com.mybraintech.sdk.core.acquisition.ims.AccelerometerSignalProcessingDisabled
+import com.mybraintech.sdk.core.acquisition.ims.AccelerometerSignalProcessingQPlus
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
 import io.reactivex.Observable
@@ -33,6 +33,12 @@ internal class SignalProcessingManager(
     }
 
     private var accelerometerListener: AccelerometerListener? = null
+    private val accelerometerCallback = object : AccelerometerSignalProcessingQPlus.AccelerometerCallback {
+        override fun onAccelerometerPacket(packet: AccelerometerPacket) {
+            accelerometerListener?.onAccelerometerPacket(packet)
+        }
+    }
+
     private var isRecording = false
 
     private var recordingOption: RecordingOption? = null
@@ -58,15 +64,15 @@ internal class SignalProcessingManager(
         }
     }
 
-    private var imsSignalProcessing: IMSSignalProcessing = when (deviceType) {
+    private var accelerometerSignalProcessing: AccelerometerSignalProcessing = when (deviceType) {
         EnumMBTDevice.Q_PLUS -> {
-            IMSSignalProcessingQPlus(
+            AccelerometerSignalProcessingQPlus(
                 sampleRate = 100, protocol = EnumBluetoothProtocol.BLE,
-                accelerometerListener = this
+                accelerometerCallback = accelerometerCallback
             )
         }
         else -> {
-            IMSSignalProcessingDisabled()
+            AccelerometerSignalProcessingDisabled()
         }
     }
 
@@ -93,7 +99,7 @@ internal class SignalProcessingManager(
             eegSignalProcessing.startRecording()
         }
         if (streamingParams.isAccelerometerEnabled) {
-            imsSignalProcessing.startIMSRecording()
+            accelerometerSignalProcessing.startRecording()
         }
     }
 
@@ -104,20 +110,20 @@ internal class SignalProcessingManager(
             eegSignalProcessing.stopRecording()
         }
         if (streamingParams.isAccelerometerEnabled) {
-            imsSignalProcessing.stopIMSRecording()
+            accelerometerSignalProcessing.stopRecording()
         }
 
-        val eegBuffer = eegSignalProcessing.getEEGBuffer()
+        val eegBuffer = eegSignalProcessing.getBuffer()
         Timber.d("eegBuffer.size = ${eegBuffer.size}")
         val eegErrorData = eegSignalProcessing.getRecordingErrorData()
-        val imsBuffer = imsSignalProcessing.getIMSBuffer()
+        val imsBuffer = accelerometerSignalProcessing.getBuffer()
         Timber.d("imsBuffer.size = ${imsBuffer.size}")
         generateRecording(eegBuffer, eegErrorData, imsBuffer)
     }
 
     override fun clearBuffer() {
         eegSignalProcessing.clearBuffer()
-        imsSignalProcessing.clearIMSBuffer()
+        accelerometerSignalProcessing.clearBuffer()
     }
 
     override fun isRecordingEnabled(): Boolean {
@@ -128,7 +134,7 @@ internal class SignalProcessingManager(
         return if (streamingParams.isEEGEnabled) {
             eegSignalProcessing.getEEGBufferSize()
         } else {
-            imsSignalProcessing.getIMSBufferSize()
+            accelerometerSignalProcessing.getBufferSize()
         }
     }
 
@@ -147,8 +153,8 @@ internal class SignalProcessingManager(
         eegSignalProcessing.onEEGFrame(data)
     }
 
-    override fun onIMSFrame(data: ByteArray) {
-        imsSignalProcessing.onIMSFrame(data)
+    override fun onAccelerometerFrame(data: ByteArray) {
+        accelerometerSignalProcessing.onFrame(data)
     }
 
     override fun setEEGListener(eegListener: EEGListener?) {
@@ -159,7 +165,7 @@ internal class SignalProcessingManager(
         this.eegSignalProcessing.setRealtimeListener(eegRealtimeListener)
     }
 
-    override fun setIMSListener(accelerometerListener: AccelerometerListener?) {
+    override fun setAccelerometerListener(accelerometerListener: AccelerometerListener?) {
         this.accelerometerListener = accelerometerListener
     }
 
@@ -170,13 +176,13 @@ internal class SignalProcessingManager(
     //----------------------------------------------------------------------------
     // MARK: AccelerometerListener
     //----------------------------------------------------------------------------
-    override fun onIMSStatusChange(isEnabled: Boolean) {
+    override fun onAccelerometerStatusChange(isEnabled: Boolean) {
         // this should not be called since this class only consume data but not eeg status
         Timber.w("should not be called ! onIMSStatusChange : $isEnabled")
     }
 
-    override fun onAccelerometerPacket(imsPacket: ImsPacket) {
-        accelerometerListener?.onAccelerometerPacket(imsPacket)
+    override fun onAccelerometerPacket(accelerometerPacket: AccelerometerPacket) {
+        accelerometerListener?.onAccelerometerPacket(accelerometerPacket)
     }
 
     override fun onAccelerometerError(error: Throwable) {

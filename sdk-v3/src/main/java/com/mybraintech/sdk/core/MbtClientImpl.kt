@@ -98,7 +98,7 @@ internal class MbtClientImpl(private val context: Context, private var deviceTyp
         this.recordingInterface = manager
         this.dataReceiver = manager.apply {
             setEEGListener(eegListener)
-            setIMSListener(accelerometerListener)
+            setAccelerometerListener(accelerometerListener)
             setEEGRealtimeListener(eegRealtimeListener)
         }
         mbtDeviceInterface.enableSensors(streamingParams, dataReceiver!!, this)
@@ -124,7 +124,7 @@ internal class MbtClientImpl(private val context: Context, private var deviceTyp
 
     override fun setAccelerometerListener(accelerometerListener: AccelerometerListener) {
         this.accelerometerListener = accelerometerListener
-        this.dataReceiver?.setIMSListener(accelerometerListener)
+        this.dataReceiver?.setAccelerometerListener(accelerometerListener)
     }
 
     override fun startRecording(
@@ -179,7 +179,7 @@ internal class MbtClientImpl(private val context: Context, private var deviceTyp
         Timber.i("onIMSStatusChange = $isEnabled")
         isIMSEnabled = isEnabled
         updateStreamingStatus()
-        accelerometerListener?.onIMSStatusChange(isEnabled)
+        accelerometerListener?.onAccelerometerStatusChange(isEnabled)
     }
 
     override fun onEEGStatusError(error: Throwable) {

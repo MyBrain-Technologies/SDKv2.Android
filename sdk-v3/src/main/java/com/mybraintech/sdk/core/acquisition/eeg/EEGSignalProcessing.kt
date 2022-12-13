@@ -286,7 +286,7 @@ abstract class EEGSignalProcessing(
         Timber.d("indexAlloc = $indexAlloc | statusAlloc = $statusAlloc | headerAlloc = $headerAlloc")
     }
 
-    fun getEEGBuffer(): List<MbtEEGPacket> {
+    fun getBuffer(): List<MbtEEGPacket> {
         return recordingBuffer
     }
 

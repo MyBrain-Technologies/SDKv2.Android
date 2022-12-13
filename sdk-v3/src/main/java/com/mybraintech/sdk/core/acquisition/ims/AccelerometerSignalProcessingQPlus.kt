@@ -3,9 +3,8 @@ package com.mybraintech.sdk.core.acquisition.ims
 import com.mybraintech.sdk.core.acquisition.AcquisierThreadFactory
 import com.mybraintech.sdk.core.acquisition.EnumBluetoothProtocol
 import com.mybraintech.sdk.core.acquisition.IndexReader
-import com.mybraintech.sdk.core.listener.AccelerometerListener
 import com.mybraintech.sdk.core.model.AccelerometerFrame
-import com.mybraintech.sdk.core.model.ImsPacket
+import com.mybraintech.sdk.core.model.AccelerometerPacket
 import com.mybraintech.sdk.core.model.ThreeDimensionalPosition
 import com.mybraintech.sdk.util.NumericalUtils
 import io.reactivex.disposables.CompositeDisposable
@@ -15,11 +14,11 @@ import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 
-class IMSSignalProcessingQPlus(
+class AccelerometerSignalProcessingQPlus(
     val sampleRate: Int,
     protocol: EnumBluetoothProtocol,
-    var accelerometerListener: AccelerometerListener? = null
-) : IMSSignalProcessing {
+    var accelerometerCallback: AccelerometerCallback? = null
+) : AccelerometerSignalProcessing {
 
     private var isRecording: Boolean = false
 
@@ -28,7 +27,7 @@ class IMSSignalProcessingQPlus(
      */
     private var imsFrameScheduler = RxJavaPlugins.createSingleScheduler(AcquisierThreadFactory)
 
-    private val imsPacketSubject = PublishSubject.create<ImsPacket>()
+    private val accelerometerPacketSubject = PublishSubject.create<AccelerometerPacket>()
     private val imsFrameSubject = PublishSubject.create<ByteArray>()
 
     private var previousIndex = -1L
@@ -39,10 +38,10 @@ class IMSSignalProcessingQPlus(
     private var disposable = CompositeDisposable()
 
     init {
-        imsPacketSubject
+        accelerometerPacketSubject
             .observeOn(Schedulers.io())
             .subscribe {
-                accelerometerListener?.onAccelerometerPacket(it)
+                accelerometerCallback?.onAccelerometerPacket(it)
             }
             .addTo(disposable)
 
@@ -61,34 +60,34 @@ class IMSSignalProcessingQPlus(
     //----------------------------------------------------------------------------
     // MARK: interface IMSSignalProcessing implementation
     //----------------------------------------------------------------------------
-    override fun startIMSRecording() {
+    override fun startRecording() {
         isRecording = true
         rawBuffer = mutableListOf()
         recordingBuffer = mutableListOf()
     }
 
-    override fun onIMSFrame(data: ByteArray) {
+    override fun onFrame(data: ByteArray) {
 //        Timber.v("onIMSFrame : ${NumericalUtils.bytesToShortString(data)}")
         imsFrameSubject.onNext(data)
     }
 
-    override fun getIMSBuffer(): List<ThreeDimensionalPosition> {
+    override fun getBuffer(): List<ThreeDimensionalPosition> {
         return recordingBuffer
     }
 
-    override fun stopIMSRecording() {
+    override fun stopRecording() {
         isRecording = false
     }
 
-    override fun getIMSBufferSize(): Int {
+    override fun getBufferSize(): Int {
         return (recordingBuffer.size / sampleRate)
     }
 
-    override fun isIMSRecording(): Boolean {
+    override fun isRecording(): Boolean {
         return isRecording
     }
 
-    override fun clearIMSBuffer() {
+    override fun clearBuffer() {
         rawBuffer = mutableListOf()
         recordingBuffer = mutableListOf()
     }
@@ -146,7 +145,7 @@ class IMSSignalProcessingQPlus(
         if (count >= sampleRate) {
 //            Timber.d("construct an IMS packet")
             val oneSecond = ArrayList(rawBuffer.subList(0, sampleRate))
-            val imsPacket = ImsPacket(oneSecond)
+            val accelerometerPacket = AccelerometerPacket(oneSecond)
             rawBuffer = ArrayList(rawBuffer.subList(sampleRate, count))
 
             if (isRecording) {
@@ -154,7 +153,7 @@ class IMSSignalProcessingQPlus(
 //                Log.w("recordingBuffer", "size = ${recordingBuffer.size}")
             }
 
-            accelerometerListener?.onAccelerometerPacket(imsPacket)
+            accelerometerCallback?.onAccelerometerPacket(accelerometerPacket)
         }
     }
 
@@ -170,5 +169,9 @@ class IMSSignalProcessingQPlus(
         }
         val dataLength = size - AccelerometerFrame.INDEX_ALLOCATION
         return (dataLength % AccelerometerFrame.SAMPLE_ALLOCATION == 0)
+    }
+    
+    interface AccelerometerCallback {
+        fun onAccelerometerPacket(packet: AccelerometerPacket)
     }
 }
