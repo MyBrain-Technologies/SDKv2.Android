@@ -33,9 +33,9 @@ abstract class EEGSignalProcessing(
     private var eegFrameScheduler = RxJavaPlugins.createSingleScheduler(AcquisierThreadFactory)
 
     private val eegFrameSubject = PublishSubject.create<TimedBLEFrame>()
-    private val eegPacketSubject = PublishSubject.create<MbtEEGPacket2>()
+    private val eegPacketSubject = PublishSubject.create<MbtEEGPacket>()
 
-    private var recordingBuffer = mutableListOf<MbtEEGPacket2>()
+    private var recordingBuffer = mutableListOf<MbtEEGPacket>()
     private var recordingErrorData = RecordingErrorData2()
     private var isRecording: Boolean = false
 
@@ -233,7 +233,7 @@ abstract class EEGSignalProcessing(
                 consolidatedEEGBuffer = ArrayList(consolidatedEEGBuffer.subList(sampleRate, count))
                 consolidatedStatusBuffer =
                     ArrayList(consolidatedStatusBuffer.subList(sampleRate, count))
-                val newPacket = MbtEEGPacket2(newEegData, newStatusData)
+                val newPacket = MbtEEGPacket(newEegData, newStatusData)
                 if (isQualityCheckerEnabled) {
                     try {
                         val qualities = qualityChecker.computeQualityChecker(newEegData)
@@ -286,7 +286,7 @@ abstract class EEGSignalProcessing(
         Timber.d("indexAlloc = $indexAlloc | statusAlloc = $statusAlloc | headerAlloc = $headerAlloc")
     }
 
-    fun getEEGBuffer(): List<MbtEEGPacket2> {
+    fun getEEGBuffer(): List<MbtEEGPacket> {
         return recordingBuffer
     }
 
@@ -318,7 +318,7 @@ abstract class EEGSignalProcessing(
     }
 
     interface EEGCallback {
-        fun onNewEEG(eegPacket2: MbtEEGPacket2)
+        fun onNewEEG(eegPacket: MbtEEGPacket)
     }
 
     companion object {

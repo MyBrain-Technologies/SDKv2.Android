@@ -11,7 +11,7 @@ class Kwak {
 
     fun serializeJson(
         hasStatus: Boolean,
-        eegBuffer: List<MbtEEGPacket2>,
+        eegBuffer: List<MbtEEGPacket>,
         eegErrorData: RecordingErrorData2,
         imsBuffer: List<ThreeDimensionalPosition>,
         fileWriter: FileWriter

@@ -6,7 +6,7 @@ import timber.log.Timber
 class EEGRecordingData(
     hasStatus: Boolean,
     nbChannels: Int,
-    eegPackets: List<MbtEEGPacket2>,
+    eegPackets: List<MbtEEGPacket>,
     recordingErrorData: RecordingErrorData2
 ) {
     var nbPackets: Int = -1

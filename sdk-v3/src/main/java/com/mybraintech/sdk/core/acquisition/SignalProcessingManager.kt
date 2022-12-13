@@ -27,7 +27,7 @@ internal class SignalProcessingManager(
 
     private var eegListener: EEGListener? = null
     private val eegCallback = object : EEGSignalProcessing.EEGCallback {
-        override fun onNewEEG(eegPacket: MbtEEGPacket2) {
+        override fun onNewEEG(eegPacket: MbtEEGPacket) {
             eegListener?.onEegPacket(eegPacket)
         }
     }
@@ -191,7 +191,7 @@ internal class SignalProcessingManager(
     }
 
     private fun generateRecording(
-        eegBuffer: List<MbtEEGPacket2>,
+        eegBuffer: List<MbtEEGPacket>,
         eegErrorData: RecordingErrorData2,
         imsBuffer: List<ThreeDimensionalPosition>
     ) {
