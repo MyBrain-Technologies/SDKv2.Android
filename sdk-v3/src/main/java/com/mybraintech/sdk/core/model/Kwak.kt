@@ -4,6 +4,9 @@ import java.io.FileWriter
 import java.util.*
 
 class Kwak {
+    /**
+     * unique id
+     */
     val uuidJsonFile: String = UUID.randomUUID().toString()
     var context: KwakContext = KwakContext()
     var header: KwakHeader = KwakHeader()
