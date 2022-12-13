@@ -33,9 +33,11 @@ internal class SignalProcessingManager(
     }
 
     private var accelerometerListener: AccelerometerListener? = null
-    private val accelerometerCallback = object : AccelerometerSignalProcessingQPlus.AccelerometerCallback {
-        override fun onAccelerometerPacket(packet: AccelerometerPacket) {
-            accelerometerListener?.onAccelerometerPacket(packet)
+    private val accelerometerCallback by lazy {
+        object : AccelerometerSignalProcessingQPlus.AccelerometerCallback {
+            override fun onAccelerometerPacket(packet: AccelerometerPacket) {
+                accelerometerListener?.onAccelerometerPacket(packet)
+            }
         }
     }
 
