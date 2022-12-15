@@ -9,12 +9,14 @@ import com.mybraintech.sdk.core.acquisition.ims.AccelerometerSignalProcessingDis
 import com.mybraintech.sdk.core.acquisition.ims.AccelerometerSignalProcessingQPlus
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
+import com.mybraintech.sdk.util.toJson
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 import java.io.FileWriter
+import kotlin.math.max
 
 /**
  * please call [terminate] to release occupied memory when stop using
@@ -42,6 +44,8 @@ internal class SignalProcessingManager(
     }
 
     private var isRecording = false
+    private var isWaitingLateSignals = false
+    private val lateSignals by lazy { mutableListOf<EnumSignalType>() }
 
     private var recordingOption: RecordingOption? = null
     private var kwak: Kwak = Kwak()
@@ -97,6 +101,8 @@ internal class SignalProcessingManager(
         this.kwak = eegSignalProcessing.createKwak(recordingOption)
 
         isRecording = true
+        isWaitingLateSignals = false
+
         if (streamingParams.isEEGEnabled) {
             eegSignalProcessing.startRecording()
         }
@@ -107,20 +113,92 @@ internal class SignalProcessingManager(
 
     override fun stopRecording() {
         Timber.d("stopRecording")
-        isRecording = false
-        if (streamingParams.isEEGEnabled) {
-            eegSignalProcessing.stopRecording()
-        }
-        if (streamingParams.isAccelerometerEnabled) {
-            accelerometerSignalProcessing.stopRecording()
+        internalStopRecording(NO_TRIM)
+    }
+
+    override fun stopRecording(length: Long) {
+        Timber.d("stopRecording : length = $length")
+        internalStopRecording(length)
+    }
+
+    /**
+     * stop the recording process and handle recording lengths.
+     *
+     * For example if there is 30 seconds of EEG but only 29 seconds of Accelerometer,
+     * we may wait a little bit to receive the 30th second of Accelerometer to have a completed
+     * recording.
+     *
+     * But if user want to trim it to 25 seconds, we can stop the recording on both EEG and
+     * Accelerometer immediately and export the data.
+     */
+    private fun internalStopRecording(length: Long) {
+        Timber.d("internalStopRecording")
+
+        if (streamingParams.isEEGEnabled && streamingParams.isAccelerometerEnabled) {
+            Timber.d("start to stop recording : streaming options = isEEGEnabled ON | isAccelerometerEnabled ON")
+            val eegSize = eegSignalProcessing.getBufferSize()
+            val imsSize = accelerometerSignalProcessing.getBufferSize()
+            if (eegSize == imsSize) {
+                Timber.d("recording is completed on both EEG and Accelerometer : isRecording is set to False ")
+                isWaitingLateSignals = false
+            } else {
+                if (length == NO_TRIM) {
+                    lateSignals.clear()
+                    val expected = max(eegSize, imsSize)
+                    if (expected > eegSize) {
+                        lateSignals.add(EnumSignalType.EEG)
+                    } else {
+                        eegSignalProcessing.stopRecording()
+                    }
+                    if (expected > imsSize) {
+                        lateSignals.add(EnumSignalType.ACCELEROMETER)
+                    } else {
+                        accelerometerSignalProcessing.stopRecording()
+                    }
+                    if (lateSignals.isEmpty()) {
+                        Timber.e("error: lateSignals is empty | Action : Ignore | Expected : lateSignals is not empty.")
+                        isWaitingLateSignals = false
+                    } else {
+                        Timber.i("wait late signals : ${lateSignals.toJson()}")
+                        isWaitingLateSignals = true
+                    }
+                } else {
+
+                }
+            }
         }
 
-        val eegBuffer = eegSignalProcessing.getBuffer()
-        Timber.d("eegBuffer.size = ${eegBuffer.size}")
-        val eegErrorData = eegSignalProcessing.getRecordingErrorData()
-        val imsBuffer = accelerometerSignalProcessing.getBuffer()
-        Timber.d("imsBuffer.size = ${imsBuffer.size}")
-        generateRecording(eegBuffer, eegErrorData, imsBuffer)
+        if (isWaitingLateSignals) {
+            if (!isRecording) {
+                Timber.e("error: isRecording is False | Action : Ignore | Expected : we would continue to record on the late signals.")
+            }
+            if (streamingParams.isEEGEnabled) {
+                if (!lateSignals.contains(EnumSignalType.EEG)) {
+                    eegSignalProcessing.stopRecording()
+                }
+            }
+            if (streamingParams.isAccelerometerEnabled) {
+                if (!lateSignals.contains(EnumSignalType.ACCELEROMETER)) {
+                    accelerometerSignalProcessing.stopRecording()
+                }
+            }
+        } else {
+            Timber.v("isRecording is set to False")
+            isRecording = false
+            if (streamingParams.isEEGEnabled) {
+                eegSignalProcessing.stopRecording()
+            }
+            if (streamingParams.isAccelerometerEnabled) {
+                accelerometerSignalProcessing.stopRecording()
+            }
+            //todo here
+            val eegBuffer = eegSignalProcessing.getBuffer()
+            Timber.d("eegBuffer.size = ${eegBuffer.size}")
+            val eegErrorData = eegSignalProcessing.getRecordingErrorData()
+            val imsBuffer = accelerometerSignalProcessing.getBuffer()
+            Timber.d("imsBuffer.size = ${imsBuffer.size}")
+            generateRecording(eegBuffer, eegErrorData, imsBuffer)
+        }
     }
 
     override fun clearBuffer() {
@@ -134,7 +212,7 @@ internal class SignalProcessingManager(
 
     override fun getRecordingBufferSize(): Int {
         return if (streamingParams.isEEGEnabled) {
-            eegSignalProcessing.getEEGBufferSize()
+            eegSignalProcessing.getBufferSize()
         } else {
             accelerometerSignalProcessing.getBufferSize()
         }
@@ -185,6 +263,10 @@ internal class SignalProcessingManager(
 
     override fun onAccelerometerPacket(accelerometerPacket: AccelerometerPacket) {
         accelerometerListener?.onAccelerometerPacket(accelerometerPacket)
+
+        if (isRecording) {
+
+        }
     }
 
     override fun onAccelerometerError(error: Throwable) {
@@ -232,5 +314,9 @@ internal class SignalProcessingManager(
                 }
             }
             .addTo(recordingDisposable)
+    }
+
+    companion object {
+        private const val NO_TRIM = -1L
     }
 }

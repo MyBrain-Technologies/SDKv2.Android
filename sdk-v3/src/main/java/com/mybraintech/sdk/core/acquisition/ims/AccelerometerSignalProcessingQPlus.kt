@@ -76,6 +76,7 @@ class AccelerometerSignalProcessingQPlus(
     }
 
     override fun stopRecording() {
+        Timber.v("stopRecording")
         isRecording = false
     }
 

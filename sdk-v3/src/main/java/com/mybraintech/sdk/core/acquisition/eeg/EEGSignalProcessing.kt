@@ -117,6 +117,7 @@ abstract class EEGSignalProcessing(
     }
 
     fun stopRecording() {
+        Timber.v("stopRecording")
         isRecording = false
     }
 
@@ -276,7 +277,7 @@ abstract class EEGSignalProcessing(
 
     abstract fun getNumberOfChannels(): Int
 
-    fun getEEGBufferSize(): Int {
+    fun getBufferSize(): Int {
         return recordingBuffer.size
     }
 

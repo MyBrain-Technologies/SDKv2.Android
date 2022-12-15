@@ -24,6 +24,12 @@ interface MbtClient {
     fun setAccelerometerListener(accelerometerListener: AccelerometerListener)
     fun startRecording(recordingOption: RecordingOption, recordingListener: RecordingListener)
     fun stopRecording()
+
+    /**
+     * @param length (in seconds) allow to trim the recording size
+     */
+    fun stopRecording(length: Long)
+
     fun isEEGEnabled(): Boolean
     fun isRecordingEnabled(): Boolean
     fun getRecordingBufferSize(): Int
