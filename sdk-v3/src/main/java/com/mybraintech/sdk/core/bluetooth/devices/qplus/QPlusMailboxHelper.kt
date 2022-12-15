@@ -1,83 +1,129 @@
 package com.mybraintech.sdk.core.bluetooth.devices.qplus
 
+import com.mybraintech.sdk.core.model.DeviceSystemStatus
 import timber.log.Timber
 
 object QPlusMailboxHelper {
     fun generateMtuChangeBytes(mtuSize: Int = 47): ByteArray {
-        val result = EnumQPlusFrameSuffix.MBX_TRANSMIT_MTU_SIZE.bytes.toMutableList()
+        val result = EnumIndus5FrameSuffix.MBX_TRANSMIT_MTU_SIZE.bytes.toMutableList()
         result.add(mtuSize.toByte())
         return result.toByteArray()
     }
 
-    fun parseRawIndus5Response(byteArray: ByteArray): QPlusResponse {
+    fun parseRawIndus5Response(byteArray: ByteArray): Indus5Response {
         try {
             return when (byteArray[0]) {
-                EnumQPlusFrameSuffix.MBX_TRANSMIT_MTU_SIZE.getOperationCode() -> {
+                EnumIndus5FrameSuffix.MBX_TRANSMIT_MTU_SIZE.getOperationCode() -> {
                     // only keep the 2nd byte where stores sample number
-                    QPlusResponse.MtuChange(byteArray[1].toInt())
+                    Indus5Response.MtuChange(byteArray[1].toInt())
                 }
-                EnumQPlusFrameSuffix.MBX_GET_BATTERY_VALUE.getOperationCode() -> {
+                EnumIndus5FrameSuffix.MBX_GET_BATTERY_VALUE.getOperationCode() -> {
                     // 0x00 .. 0x04 = 0% | 0x05 = 12,5% -> 0x0C = 100%
                     val percent = if (byteArray[1] < 4) 0f else ((byteArray[1] - 4) * 12.5f)
-                    QPlusResponse.BatteryLevel(percent)
+                    Indus5Response.BatteryLevel(percent)
                 }
-                EnumQPlusFrameSuffix.MBX_GET_DEVICE_NAME.getOperationCode() -> {
+                EnumIndus5FrameSuffix.MBX_GET_DEVICE_NAME.getOperationCode() -> {
                     val data = byteArray.copyOfRange(1, byteArray.size)
-                    QPlusResponse.DeviceName(String(data))
+                    Indus5Response.AudioNameFetched(String(data))
                 }
-                EnumQPlusFrameSuffix.MBX_GET_FIRMWARE_VERSION.getOperationCode() -> {
+                EnumIndus5FrameSuffix.MBX_SET_A2DP_NAME.getOperationCode() -> {
                     val data = byteArray.copyOfRange(1, byteArray.size)
-                    QPlusResponse.FirmwareVersion(String(data))
+                    Indus5Response.AudioNameChanged(String(data))
                 }
-                EnumQPlusFrameSuffix.MBX_GET_HARDWARE_VERSION.getOperationCode() -> {
+                EnumIndus5FrameSuffix.MBX_GET_FIRMWARE_VERSION.getOperationCode() -> {
                     val data = byteArray.copyOfRange(1, byteArray.size)
-                    QPlusResponse.HardwareVersion(String(data))
+                    Indus5Response.FirmwareVersion(String(data))
                 }
-                EnumQPlusFrameSuffix.MBX_GET_SERIAL_NUMBER.getOperationCode() -> {
+                EnumIndus5FrameSuffix.MBX_GET_HARDWARE_VERSION.getOperationCode() -> {
                     val data = byteArray.copyOfRange(1, byteArray.size)
-                    QPlusResponse.SerialNumber(String(data))
+                    Indus5Response.HardwareVersion(String(data))
                 }
-                EnumQPlusFrameSuffix.MBX_P300_ENABLE.getOperationCode() -> {
-                    QPlusResponse.TriggerStatusConfiguration(byteArray[1].toInt())
+                EnumIndus5FrameSuffix.MBX_GET_SERIAL_NUMBER.getOperationCode() -> {
+                    val data = byteArray.copyOfRange(1, byteArray.size)
+                    Indus5Response.GetSerialNumber(String(data))
                 }
-                EnumQPlusFrameSuffix.MBX_EEG_DATA_FRAME_EVT.getOperationCode() -> {
+                EnumIndus5FrameSuffix.MBX_SET_SERIAL_NUMBER.getOperationCode() -> {
+                    val newSerialNumber = getNewSerialNumber(byteArray)
+                    Indus5Response.SerialNumberChanged(newSerialNumber)
+                }
+                EnumIndus5FrameSuffix.MBX_P300_ENABLE.getOperationCode() -> {
+                    Indus5Response.TriggerStatusConfiguration(byteArray[1].toInt())
+                }
+                EnumIndus5FrameSuffix.MBX_EEG_DATA_FRAME_EVT.getOperationCode() -> {
                     // remove operation code
                     val data = byteArray.copyOfRange(1, byteArray.size)
-                    QPlusResponse.EEGFrame(data)
+                    Indus5Response.EEGFrame(data)
                 }
-                EnumQPlusFrameSuffix.MBX_START_EEG_ACQUISITION.getOperationCode() -> {
-                    QPlusResponse.EEGStatus(true)
+                EnumIndus5FrameSuffix.MBX_START_EEG_ACQUISITION.getOperationCode() -> {
+                    Indus5Response.EEGStatus(true)
                 }
-                EnumQPlusFrameSuffix.MBX_STOP_EEG_ACQUISITION.getOperationCode() -> {
-                    QPlusResponse.EEGStatus(false)
+                EnumIndus5FrameSuffix.MBX_STOP_EEG_ACQUISITION.getOperationCode() -> {
+                    Indus5Response.EEGStatus(false)
                 }
-                EnumQPlusFrameSuffix.MBX_START_IMS_ACQUISITION.getOperationCode() -> {
-                    QPlusResponse.ImsStatus(true)
+                EnumIndus5FrameSuffix.MBX_START_IMS_ACQUISITION.getOperationCode() -> {
+                    Indus5Response.ImsStatus(true)
                 }
-                EnumQPlusFrameSuffix.MBX_STOP_IMS_ACQUISITION.getOperationCode() -> {
-                    QPlusResponse.ImsStatus(false)
+                EnumIndus5FrameSuffix.MBX_STOP_IMS_ACQUISITION.getOperationCode() -> {
+                    Indus5Response.ImsStatus(false)
                 }
-                EnumQPlusFrameSuffix.MBX_START_PPG_ACQUISITION.getOperationCode() -> {
-                    QPlusResponse.PpgStatus(true)
+                EnumIndus5FrameSuffix.MBX_START_PPG_ACQUISITION.getOperationCode() -> {
+                    Indus5Response.PpgStatus(true)
                 }
-                EnumQPlusFrameSuffix.MBX_STOP_PPG_ACQUISITION.getOperationCode() -> {
-                    QPlusResponse.PpgStatus(false)
+                EnumIndus5FrameSuffix.MBX_STOP_PPG_ACQUISITION.getOperationCode() -> {
+                    Indus5Response.PpgStatus(false)
                 }
-                EnumQPlusFrameSuffix.MBX_IMS_DATA_FRAME_EVT.getOperationCode() -> {
+                EnumIndus5FrameSuffix.MBX_IMS_DATA_FRAME_EVT.getOperationCode() -> {
                     val data = byteArray.copyOfRange(1, byteArray.size)
-                    QPlusResponse.ImsFrame(data)
+                    Indus5Response.ImsFrame(data)
                 }
-                EnumQPlusFrameSuffix.MBX_PPG_DATA_FRAME_EVT.getOperationCode() -> {
+                EnumIndus5FrameSuffix.MBX_PPG_DATA_FRAME_EVT.getOperationCode() -> {
                     // optimize performance : keep op code in bytes to reduce calculations
-                    QPlusResponse.PpgFrame(byteArray)
+                    Indus5Response.PpgFrame(byteArray)
+                }
+                EnumIndus5FrameSuffix.MBX_SYS_GET_STATUS.getOperationCode() -> {
+                    getDeviceSystemStatus(byteArray)
                 }
                 else -> {
-                    QPlusResponse.UnknownResponse(byteArray)
+                    Indus5Response.UnknownResponse(byteArray)
                 }
             }
         } catch (e: Exception) {
             Timber.e(e)
-            return QPlusResponse.UnknownResponse(byteArray)
+            return Indus5Response.UnknownResponse(byteArray)
         }
+    }
+
+    /**
+     * 1 byte for operation code and 4 bytes for device system statuses
+     */
+    private fun getDeviceSystemStatus(bytes: ByteArray): Indus5Response.GetDeviceSystemStatus {
+        return if (bytes.size != 5) {
+            Timber.e("GetDeviceSystemStatus : response data size is not equal 5")
+            // this case should never happen
+            Indus5Response.GetDeviceSystemStatus(
+                DeviceSystemStatus().apply {
+                    processorStatus = DeviceSystemStatus.EnumState.STATUS_ERROR
+                    externalMemoryStatus = DeviceSystemStatus.EnumState.STATUS_ERROR
+                    audioStatus = DeviceSystemStatus.EnumState.STATUS_ERROR
+                    adsStatus = DeviceSystemStatus.EnumState.STATUS_ERROR
+                }
+            )
+        } else {
+            Indus5Response.GetDeviceSystemStatus(
+                DeviceSystemStatus().apply {
+                    processorStatus = DeviceSystemStatus.parse(bytes[1])
+                    externalMemoryStatus = DeviceSystemStatus.parse(bytes[2])
+                    audioStatus = DeviceSystemStatus.parse(bytes[3])
+                    adsStatus = DeviceSystemStatus.parse(bytes[4])
+                }
+            )
+        }
+    }
+
+    @Suppress("LocalVariableName")
+    private fun getNewSerialNumber(byteArray: ByteArray): String {
+        val SERIAL_CHANGED_COMMAND_SUFFIX_SIZE = 4
+        val size = byteArray.size
+        return String(byteArray.copyOfRange(SERIAL_CHANGED_COMMAND_SUFFIX_SIZE, size))
     }
 }

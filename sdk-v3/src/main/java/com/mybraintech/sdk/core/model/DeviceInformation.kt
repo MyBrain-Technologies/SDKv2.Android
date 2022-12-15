@@ -4,11 +4,28 @@ import com.google.gson.annotations.SerializedName
 
 class DeviceInformation {
 
+    /**
+     * Json serialization name *productName* follows BrainWeb swagger specification.
+     *
+     * Variable name [bleName] is the Bluetooth Low Energy name.
+     */
     @SerializedName("productName")
-    var productName: String = ""
+    var bleName: String = ""
 
+    var audioName: String = ""
+
+    /**
+     * Bluetooth hardware address
+     */
+    var bleAddress: String = ""
+
+    /**
+     * Json serialization name *uniqueDeviceIdentifier* follows BrainWeb swagger specification.
+     *
+     * Variable name *serialNumber* follows firmware specification.
+     */
     @SerializedName("uniqueDeviceIdentifier")
-    var uniqueDeviceIdentifier: String = ""
+    var serialNumber: String = ""
 
     @SerializedName("firmwareVersion")
     var firmwareVersion: String = ""
@@ -17,8 +34,8 @@ class DeviceInformation {
     var hardwareVersion: String = ""
 
     fun isCompleted(): Boolean {
-        return productName.isNotBlank()
-                && uniqueDeviceIdentifier.isNotBlank()
+        return bleName.isNotBlank()
+                && serialNumber.isNotBlank()
                 && firmwareVersion.isNotBlank()
                 && hardwareVersion.isNotBlank()
     }

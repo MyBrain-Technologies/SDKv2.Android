@@ -64,7 +64,8 @@ final class MbtJsonBuilder2 {
             @NonNull final String ownerId,
             @NonNull final KwakHeader kwakHeader,
             @NonNull final KwakRecording kwakRecording,
-            @NonNull final RecordingData2 recordingData,
+            @NonNull final EEGRecordingData recordingData,
+            @NonNull final List<ThreeDimensionalPosition> imsBuffer,
             @NonNull final FileWriter fileWriter) {
 
         if (recordingData.eegData.size() == 0)
@@ -103,7 +104,7 @@ final class MbtJsonBuilder2 {
             }
 
             jsonWriter.name(PRODUCT_NAME_KEY)
-                    .value(device.getProductName());
+                    .value(device.getBleName());
 
             jsonWriter.name(HW_VERSION_KEY)
                     .value(device.getHardwareVersion());
@@ -112,7 +113,7 @@ final class MbtJsonBuilder2 {
                     .value(device.getFirmwareVersion());
 
             jsonWriter.name(SERIAL_NUMBER_KEY)
-                    .value(device.getUniqueDeviceIdentifier());
+                    .value(device.getSerialNumber());
 
             jsonWriter.endObject();     // end of       "deviceInfo"        object
 
@@ -248,55 +249,55 @@ final class MbtJsonBuilder2 {
             // start ims
             //----------------------------------------------------------------------------
 
-//            if (kwakRecording.getAccelerometerPositions() != null && !kwakRecording.getAccelerometerPositions().isEmpty()) {
-//                Timber.d("write IMS");
-//
-//                jsonWriter.name("ims");
-//                jsonWriter.beginObject();    // beginning of "ims"
-//
-//                jsonWriter.name("sampRate").value(100);
-//
-//                jsonWriter.name("imsData");
-//                jsonWriter.beginArray(); //start to write ims data (ims)
-//
-//                //write X
-//                jsonWriter.beginArray(); //start to write X (x)
-//                for (int i = 0; i < kwakRecording.getAccelerometerPositions().size(); i++) {
-//                    Position3D position = kwakRecording.getAccelerometerPositions().get(i);
-//                    if (position != null) {
-//                        jsonWriter.value(position.getX());
-//                    } else {
-//                        Timber.w("found null Position3D in IMS buffer");
-//                    }
-//                }
-//                jsonWriter.endArray(); //end to write X (x)
-//
-//                //write Y
-//                jsonWriter.beginArray(); //start to write Y (y)
-//                for (int i = 0; i < kwakRecording.getAccelerometerPositions().size(); i++) {
-//                    Position3D position = kwakRecording.getAccelerometerPositions().get(i);
-//                    if (position != null) {
-//                        jsonWriter.value(position.getY());
-//                    }
-//                }
-//                jsonWriter.endArray(); //end to write Y (y)
-//
-//                //write Z
-//                jsonWriter.beginArray(); //start to write Z (z)
-//                for (int i = 0; i < kwakRecording.getAccelerometerPositions().size(); i++) {
-//                    Position3D position = kwakRecording.getAccelerometerPositions().get(i);
-//                    if (position != null) {
-//                        jsonWriter.value(position.getZ());
-//                    }
-//                }
-//                jsonWriter.endArray(); //end to write Z (z)
-//
-//                jsonWriter.endArray(); //end writing ims (ims)
-//
-//                jsonWriter.endObject();
-//            } else {
-//                Timber.d("json writing: no IMS");
-//            }
+            if (imsBuffer != null && !imsBuffer.isEmpty()) {
+                Timber.d("write IMS : size = " + imsBuffer.size());
+
+                jsonWriter.name("ims");
+                jsonWriter.beginObject();    // beginning of "ims"
+
+                jsonWriter.name("sampRate").value(100);
+
+                jsonWriter.name("imsData");
+                jsonWriter.beginArray(); //start to write ims data (ims)
+
+                //write X
+                jsonWriter.beginArray(); //start to write X (x)
+                for (int i = 0; i < imsBuffer.size(); i++) {
+                    ThreeDimensionalPosition position = imsBuffer.get(i);
+                    if (position != null) {
+                        jsonWriter.value(position.getX());
+                    } else {
+                        Timber.w("found null Position3D in IMS buffer");
+                    }
+                }
+                jsonWriter.endArray(); //end to write X (x)
+
+                //write Y
+                jsonWriter.beginArray(); //start to write Y (y)
+                for (int i = 0; i < imsBuffer.size(); i++) {
+                    ThreeDimensionalPosition position = imsBuffer.get(i);
+                    if (position != null) {
+                        jsonWriter.value(position.getY());
+                    }
+                }
+                jsonWriter.endArray(); //end to write Y (y)
+
+                //write Z
+                jsonWriter.beginArray(); //start to write Z (z)
+                for (int i = 0; i < imsBuffer.size(); i++) {
+                    ThreeDimensionalPosition position = imsBuffer.get(i);
+                    if (position != null) {
+                        jsonWriter.value(position.getZ());
+                    }
+                }
+                jsonWriter.endArray(); //end to write Z (z)
+
+                jsonWriter.endArray(); //end writing ims (ims)
+
+                jsonWriter.endObject();
+            } else {
+                Timber.d("json writing: no IMS");
+            }
 
             //----------------------------------------------------------------------------
             // start ppg
