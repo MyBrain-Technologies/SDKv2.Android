@@ -149,9 +149,9 @@ internal class MbtClientImpl(private val context: Context, private var deviceTyp
         }
     }
 
-    override fun stopRecording(length: Long) {
+    override fun stopRecording(trim: Long) {
         if (isRecordingEnabled()) {
-            recordingInterface?.stopRecording(length)
+            recordingInterface?.stopRecording(trim)
         } else {
             Timber.e("Recording is not enabled")
         }

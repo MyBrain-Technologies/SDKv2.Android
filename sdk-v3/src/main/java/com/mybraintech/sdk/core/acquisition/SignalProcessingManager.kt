@@ -16,6 +16,8 @@ import io.reactivex.rxkotlin.addTo
 import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 import java.io.FileWriter
+import java.util.*
+import kotlin.collections.HashMap
 import kotlin.math.max
 
 /**
@@ -44,8 +46,27 @@ internal class SignalProcessingManager(
     }
 
     private var isRecording = false
-    private var isWaitingLateSignals = false
+
+    /**
+     * use to calibrate multi signal recordings
+     */
+    private val recordingSignals by lazy { ArrayList<EnumSignalType>() }
+
+    /**
+     * use to calibrate multi signal recordings
+     */
     private val lateSignals by lazy { mutableListOf<EnumSignalType>() }
+
+    /**
+     * use to calibrate multi signal recordings
+     */
+    private var isWaitingLateSignals = false
+
+    /**
+     * use to calibrate multi signal recordings
+     */
+    @Suppress("ReplaceWithEnumMap")
+    private val recordingLengths by lazy { HashMap<EnumSignalType, Long>() }
 
     private var recordingOption: RecordingOption? = null
     private var kwak: Kwak = Kwak()
@@ -103,10 +124,13 @@ internal class SignalProcessingManager(
         isRecording = true
         isWaitingLateSignals = false
 
+        recordingSignals.clear()
         if (streamingParams.isEEGEnabled) {
+            recordingSignals.add(EnumSignalType.EEG)
             eegSignalProcessing.startRecording()
         }
         if (streamingParams.isAccelerometerEnabled) {
+            recordingSignals.add(EnumSignalType.ACCELEROMETER)
             accelerometerSignalProcessing.startRecording()
         }
     }
@@ -116,9 +140,21 @@ internal class SignalProcessingManager(
         internalStopRecording(NO_TRIM)
     }
 
-    override fun stopRecording(length: Long) {
-        Timber.d("stopRecording : length = $length")
-        internalStopRecording(length)
+    /**
+     * follows these steps to calibrate recording file :
+     * 1. Step 1 :
+     *     - calculate the min values of recording buffer lengths (of EEG, Accelerometer,...).
+     * 2. Step 2 (end ) :
+     *     - if min >= trim value : stop all recording and trim.
+     *     - if min < trim value : try to get the signals of second (min + 1) for all signals.
+     */
+    override fun stopRecording(trim: Long) {
+        Timber.d("stopRecording : length = $trim")
+        var min = 0
+        for (signalType in recordingSignals) {
+            if ()
+                //todo here
+        }
     }
 
     /**
@@ -182,7 +218,9 @@ internal class SignalProcessingManager(
                     accelerometerSignalProcessing.stopRecording()
                 }
             }
-        } else {
+
+            setupTimeoutForLateSignals(1000)
+        } else { // signal length are good, stop all recording
             Timber.v("isRecording is set to False")
             isRecording = false
             if (streamingParams.isEEGEnabled) {
@@ -191,7 +229,6 @@ internal class SignalProcessingManager(
             if (streamingParams.isAccelerometerEnabled) {
                 accelerometerSignalProcessing.stopRecording()
             }
-            //todo here
             val eegBuffer = eegSignalProcessing.getBuffer()
             Timber.d("eegBuffer.size = ${eegBuffer.size}")
             val eegErrorData = eegSignalProcessing.getRecordingErrorData()
@@ -199,6 +236,10 @@ internal class SignalProcessingManager(
             Timber.d("imsBuffer.size = ${imsBuffer.size}")
             generateRecording(eegBuffer, eegErrorData, imsBuffer)
         }
+    }
+
+    private fun setupTimeoutForLateSignals(delay: Long) {
+        TODO("Not yet implemented")
     }
 
     override fun clearBuffer() {
