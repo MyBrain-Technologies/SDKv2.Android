@@ -17,7 +17,10 @@ import timber.log.Timber
  * DO NOT USE THIS CLASS OUTSIDE OF THE SDK
  * This is new class to support Q+ device, Melomind device...
  */
-internal class MbtClientImpl(private val context: Context, private var deviceType: EnumMBTDevice) :
+internal class MbtClientImpl(
+    @Suppress("CanBeParameter") private val context: Context,
+    private var deviceType: EnumMBTDevice
+) :
     MbtClient, MbtDeviceStatusCallback {
 
     private lateinit var manager: SignalProcessingManager
@@ -117,6 +120,7 @@ internal class MbtClientImpl(private val context: Context, private var deviceTyp
         this.dataReceiver?.setEEGListener(eegListener)
     }
 
+    @LabStreamingLayer
     override fun setEEGRealtimeListener(eegRealtimeListener: EEGRealtimeListener) {
         this.eegRealtimeListener = eegRealtimeListener
         this.dataReceiver?.setEEGRealtimeListener(eegRealtimeListener)
@@ -149,7 +153,7 @@ internal class MbtClientImpl(private val context: Context, private var deviceTyp
         }
     }
 
-    override fun stopRecording(trim: Long) {
+    override fun stopRecording(trim: Int) {
         if (isRecordingEnabled()) {
             recordingInterface?.stopRecording(trim)
         } else {

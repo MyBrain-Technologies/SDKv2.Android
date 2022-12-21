@@ -6,7 +6,7 @@ import com.mybraintech.sdk.core.model.RecordingOption
 interface RecordingInterface {
     fun startRecording(recordingListener: RecordingListener, recordingOption: RecordingOption)
     fun stopRecording()
-    fun stopRecording(trim: Long)
+    fun stopRecording(trim: Int)
     fun isRecordingEnabled(): Boolean
     fun clearBuffer()
     fun getRecordingBufferSize(): Int

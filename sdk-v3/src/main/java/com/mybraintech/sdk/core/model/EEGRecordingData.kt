@@ -7,13 +7,13 @@ class EEGRecordingData(
     hasStatus: Boolean,
     nbChannels: Int,
     eegPackets: List<MbtEEGPacket>,
-    recordingErrorData: RecordingErrorData2
+    recordingErrorData: EEGStreamingErrorCounter
 ) {
     var nbPackets: Int = -1
     lateinit var eegData: ArrayList<ArrayList<Float>>
     lateinit var statusData: ArrayList<Float>
     lateinit var qualities: ArrayList<ArrayList<Float>>
-    var recordingErrorData: RecordingErrorData2? = recordingErrorData
+    var recordingErrorData: EEGStreamingErrorCounter? = recordingErrorData
 
     init {
         init(nbChannels)

@@ -36,7 +36,7 @@ abstract class EEGSignalProcessingIndus5(
      */
     override fun getNumberOfChannels(): Int = 4
 
-    override fun getEEGData(eegFrame: ByteArray): List<RawEEGSample2> {
+    override fun decodeEEGData(eegFrame: ByteArray): List<RawEEGSample2> {
         val list = mutableListOf<RawEEGSample2>()
         val hasStatus = (statusAlloc != 0)
         val triggerBytes = if (hasStatus) {

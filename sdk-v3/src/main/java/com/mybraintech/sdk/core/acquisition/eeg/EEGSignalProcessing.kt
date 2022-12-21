@@ -5,9 +5,10 @@ import com.mybraintech.sdk.core.acquisition.AcquisierThreadFactory
 import com.mybraintech.sdk.core.acquisition.EnumBluetoothProtocol
 import com.mybraintech.sdk.core.acquisition.RealtimeEEGExecutor
 import com.mybraintech.sdk.core.acquisition.RealtimeEEGExecutorImpl
-import com.mybraintech.sdk.core.listener.EEGFrameConversionInterface
+import com.mybraintech.sdk.core.listener.EEGFrameDecodeInterface
 import com.mybraintech.sdk.core.listener.EEGRealtimeListener
 import com.mybraintech.sdk.core.model.*
+import com.mybraintech.sdk.core.recording.BaseEEGRecording
 import com.mybraintech.sdk.util.ErrorDataHelper2
 import com.mybraintech.sdk.util.MatrixUtils2
 import com.mybraintech.sdk.util.NumericalUtils
@@ -25,7 +26,7 @@ abstract class EEGSignalProcessing(
     val isTriggerStatusEnabled: Boolean,
     protected val isQualityCheckerEnabled: Boolean,
     var eegCallback: EEGCallback?
-) : EEGFrameConversionInterface {
+) : BaseEEGRecording(), EEGFrameDecodeInterface {
 
     /**
      * this scheduler is reserved to handle eeg frame tasks
@@ -36,8 +37,8 @@ abstract class EEGSignalProcessing(
     private val eegPacketSubject = PublishSubject.create<MbtEEGPacket>()
 
     private var recordingBuffer = mutableListOf<MbtEEGPacket>()
-    private var recordingErrorData = RecordingErrorData2()
-    private var isRecording: Boolean = false
+    private var eegStreamingErrorCounter = EEGStreamingErrorCounter()
+    private var _isRecording: Boolean = false
 
     /**
      * index allocation size in the eeg frame
@@ -111,23 +112,27 @@ abstract class EEGSignalProcessing(
     /**
      * this will clear the buffer
      */
-    fun startRecording() {
-        isRecording = true
+    override fun startRecording() {
+        _isRecording = true
         clearBuffer()
     }
 
-    fun stopRecording() {
+    override fun stopRecording() {
         Timber.v("stopRecording")
-        isRecording = false
+        _isRecording = false
+    }
+
+    override fun isRecording(): Boolean {
+        return _isRecording
     }
 
     /**
-     * TODO : move to [SignalProcessingManager]
+     * TODO : move to `SignalProcessingManager`
      */
     abstract fun createKwak(recordingOption: RecordingOption): Kwak
 
-    fun clearBuffer() {
-        recordingErrorData = RecordingErrorData2()
+    override fun clearBuffer() {
+        eegStreamingErrorCounter = EEGStreamingErrorCounter()
         rawBuffer = mutableListOf()
         recordingBuffer = mutableListOf()
         if (isQualityCheckerEnabled) {
@@ -135,9 +140,9 @@ abstract class EEGSignalProcessing(
         }
     }
 
-    fun onEEGFrame(eegFrame: TimedBLEFrame) {
+    override fun onFrame(data: TimedBLEFrame) {
 //        Timber.v("onEEGFrame : ${NumericalUtils.bytesToShortString(eegFrame)}")
-        eegFrameSubject.onNext(eegFrame)
+        eegFrameSubject.onNext(data)
     }
 
     /**
@@ -157,7 +162,7 @@ abstract class EEGSignalProcessing(
         }
 
         //1st step : check index
-        var rawIndex = getFrameIndex(eegFrame)
+        val rawIndex = getFrameIndex(eegFrame)
         val indexCandidate = indexOverflowCount * indexCycle + rawIndex
         if (indexCandidate < previousIndex) {
             //index in ble frame is from 0 to (2^16 - 1), this bracket is entered when the raw index does overflow
@@ -172,25 +177,25 @@ abstract class EEGSignalProcessing(
             previousIndex = newFrameIndex - 1
         }
 
-        if (recordingErrorData.startingIndex == -1L) {
-            recordingErrorData.startingIndex = newFrameIndex
+        if (eegStreamingErrorCounter.startingIndex == -1L) {
+            eegStreamingErrorCounter.startingIndex = newFrameIndex
         }
-        recordingErrorData.currentIndex = newFrameIndex
+        eegStreamingErrorCounter.currentIndex = newFrameIndex
 
         val indexDifference = newFrameIndex - previousIndex
         val missingFrame = indexDifference - 1
         if (missingFrame > 0) {
-            recordingErrorData.increaseMissingEegFrame(missingFrame)
+            eegStreamingErrorCounter.increaseMissingEegFrame(missingFrame)
         }
 
         //this block is to count zero signals
         val eegData = eegFrame.copyOfRange(headerAlloc, eegFrame.size)
         with(ErrorDataHelper2.countZeroSample(eegData, getNumberOfChannels())) {
             if (this.first != 1) {
-                recordingErrorData.increaseZeroSampleCounter(this.first.toLong())
+                eegStreamingErrorCounter.increaseZeroSampleCounter(this.first.toLong())
             }
             if (this.second != 1) {
-                recordingErrorData.increaseZeroTimeCounter(this.second.toLong())
+                eegStreamingErrorCounter.increaseZeroTimeCounter(this.second.toLong())
             }
         }
 
@@ -209,7 +214,7 @@ abstract class EEGSignalProcessing(
         }
 
         //3rd step: Parse the new frame
-        val rawEEGSamples: List<RawEEGSample2> = getEEGData(eegFrame)
+        val rawEEGSamples: List<RawEEGSample2> = decodeEEGData(eegFrame)
         rawEEGList.addAll(rawEEGSamples)
 
         //4th step: save raw eeg data to buffer
@@ -251,7 +256,7 @@ abstract class EEGSignalProcessing(
                     }
                 }
 
-                if (isRecording) {
+                if (_isRecording) {
                     recordingBuffer.add(newPacket)
                 }
 
@@ -277,7 +282,7 @@ abstract class EEGSignalProcessing(
 
     abstract fun getNumberOfChannels(): Int
 
-    fun getBufferSize(): Int {
+    override fun getBufferSize(): Int {
         return recordingBuffer.size
     }
 
@@ -287,16 +292,16 @@ abstract class EEGSignalProcessing(
         Timber.d("indexAlloc = $indexAlloc | statusAlloc = $statusAlloc | headerAlloc = $headerAlloc")
     }
 
-    fun getBuffer(): List<MbtEEGPacket> {
+    override fun getBuffer(): List<MbtEEGPacket> {
         return recordingBuffer
     }
 
-    fun getRecordingErrorData(): RecordingErrorData2 {
-        return recordingErrorData
+    fun getRecordingErrorData(): EEGStreamingErrorCounter {
+        return eegStreamingErrorCounter
     }
 
     fun getDataLossPercent(): Float {
-        return recordingErrorData.getMissingPercent()
+        return eegStreamingErrorCounter.getMissingPercent()
     }
 
     fun setRealtimeListener(eegRealtimeListener: EEGRealtimeListener?) {

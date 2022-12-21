@@ -37,7 +37,7 @@ class EEGSignalProcessingMelomind(streamingParams: StreamingParams, eegCallback:
      */
     override fun getNumberOfChannels(): Int = 2
 
-    override fun getEEGData(eegFrame: ByteArray): List<RawEEGSample2> {
+    override fun decodeEEGData(eegFrame: ByteArray): List<RawEEGSample2> {
         val list = mutableListOf<RawEEGSample2>()
         val hasStatus = (statusAlloc != 0)
         val triggerBytes = if (hasStatus) {

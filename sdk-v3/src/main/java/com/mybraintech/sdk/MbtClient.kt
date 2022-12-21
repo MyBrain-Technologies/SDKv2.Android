@@ -28,7 +28,7 @@ interface MbtClient {
     /**
      * @param trim (in seconds) allow to trim the recording size
      */
-    fun stopRecording(trim: Long)
+    fun stopRecording(trim: Int)
 
     fun isEEGEnabled(): Boolean
     fun isRecordingEnabled(): Boolean

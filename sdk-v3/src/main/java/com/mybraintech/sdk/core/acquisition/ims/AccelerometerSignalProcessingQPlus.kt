@@ -1,11 +1,11 @@
 package com.mybraintech.sdk.core.acquisition.ims
 
 import com.mybraintech.sdk.core.acquisition.AcquisierThreadFactory
-import com.mybraintech.sdk.core.acquisition.EnumBluetoothProtocol
 import com.mybraintech.sdk.core.acquisition.IndexReader
 import com.mybraintech.sdk.core.model.AccelerometerFrame
 import com.mybraintech.sdk.core.model.AccelerometerPacket
 import com.mybraintech.sdk.core.model.ThreeDimensionalPosition
+import com.mybraintech.sdk.core.recording.BaseAccelerometerRecording
 import com.mybraintech.sdk.util.NumericalUtils
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.plugins.RxJavaPlugins
@@ -16,9 +16,8 @@ import timber.log.Timber
 
 class AccelerometerSignalProcessingQPlus(
     val sampleRate: Int,
-    protocol: EnumBluetoothProtocol,
     var accelerometerCallback: AccelerometerCallback? = null
-) : AccelerometerSignalProcessing {
+) : BaseAccelerometerRecording() {
 
     private var isRecording: Boolean = false
 

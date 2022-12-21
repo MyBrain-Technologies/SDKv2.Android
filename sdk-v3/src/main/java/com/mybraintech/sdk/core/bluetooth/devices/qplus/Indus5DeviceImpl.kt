@@ -10,6 +10,7 @@ import android.os.Looper
 import android.os.SystemClock
 import com.mybraintech.sdk.core.acquisition.MbtDeviceStatusCallback
 import com.mybraintech.sdk.core.bluetooth.devices.BaseMbtDevice
+import com.mybraintech.sdk.core.bluetooth.devices.Indus5MailboxDecoder
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
 import no.nordicsemi.android.ble.Operation
@@ -61,7 +62,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
     override fun onDataReceived(device: BluetoothDevice, data: Data) {
         if (data.value != null) {
 //            Timber.v("onDataReceived : ${NumericalUtils.bytesToHex(data.value)}")
-            when (val indus5Response = QPlusMailboxHelper.parseRawIndus5Response(data.value!!)) {
+            when (val indus5Response = Indus5MailboxDecoder.decodeRawIndus5Response(data.value!!)) {
                 is Indus5Response.MtuChange -> {
                     Timber.i("Mailbox MTU changed successfully")
                 }
@@ -357,9 +358,15 @@ abstract class Indus5DeviceImpl(ctx: Context) :
     private fun getMtuMailboxRequest(): WriteRequest {
         return writeCharacteristic(
             txCharacteristic,
-            QPlusMailboxHelper.generateMtuChangeBytes(MTU_SIZE),
+            generateMtuChangeCommand(MTU_SIZE),
             BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
         )
+    }
+
+    private fun generateMtuChangeCommand(mtuSize: Int = 47): ByteArray {
+        val result = EnumIndus5FrameSuffix.MBX_TRANSMIT_MTU_SIZE.bytes.toMutableList()
+        result.add(mtuSize.toByte())
+        return result.toByteArray()
     }
 
     private fun getBatteryLevelMailboxRequest(): WriteRequest {

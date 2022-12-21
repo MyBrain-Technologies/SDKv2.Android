@@ -7,6 +7,7 @@ class Kwak {
     /**
      * unique id
      */
+    @Suppress("unused")
     val uuidJsonFile: String = UUID.randomUUID().toString()
     var context: KwakContext = KwakContext()
     var header: KwakHeader = KwakHeader()
@@ -15,7 +16,7 @@ class Kwak {
     fun serializeJson(
         hasStatus: Boolean,
         eegBuffer: List<MbtEEGPacket>,
-        eegErrorData: RecordingErrorData2,
+        eegStreamingErrorCounter: EEGStreamingErrorCounter,
         imsBuffer: List<ThreeDimensionalPosition>,
         fileWriter: FileWriter
     ): Boolean {
@@ -23,7 +24,7 @@ class Kwak {
             context.ownerId,
             header,
             recording,
-            EEGRecordingData(hasStatus, header.nbChannels, eegBuffer, eegErrorData),
+            EEGRecordingData(hasStatus, header.nbChannels, eegBuffer, eegStreamingErrorCounter),
             imsBuffer,
             fileWriter
         )

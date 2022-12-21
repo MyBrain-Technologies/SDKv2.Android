@@ -1,8 +1,9 @@
 package com.mybraintech.sdk.core.acquisition.ims
 
 import com.mybraintech.sdk.core.model.ThreeDimensionalPosition
+import com.mybraintech.sdk.core.recording.BaseAccelerometerRecording
 
-class AccelerometerSignalProcessingDisabled : AccelerometerSignalProcessing {
+class AccelerometerSignalProcessingDisabled : BaseAccelerometerRecording() {
     override fun clearBuffer() {}
     override fun stopRecording() {}
     override fun isRecording() = false

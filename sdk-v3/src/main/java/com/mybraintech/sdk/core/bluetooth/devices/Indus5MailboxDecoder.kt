@@ -1,19 +1,34 @@
-package com.mybraintech.sdk.core.bluetooth.devices.qplus
+package com.mybraintech.sdk.core.bluetooth.devices
 
+import com.mybraintech.sdk.core.bluetooth.devices.qplus.EnumIndus5FrameSuffix
+import com.mybraintech.sdk.core.bluetooth.devices.qplus.Indus5Response
 import com.mybraintech.sdk.core.model.DeviceSystemStatus
 import com.mybraintech.sdk.core.model.Indus5SensorStatus
 import timber.log.Timber
 
-object QPlusMailboxHelper {
-    fun generateMtuChangeBytes(mtuSize: Int = 47): ByteArray {
-        val result = EnumIndus5FrameSuffix.MBX_TRANSMIT_MTU_SIZE.bytes.toMutableList()
-        result.add(mtuSize.toByte())
-        return result.toByteArray()
-    }
-
-    fun parseRawIndus5Response(byteArray: ByteArray): Indus5Response {
+object Indus5MailboxDecoder {
+    fun decodeRawIndus5Response(byteArray: ByteArray): Indus5Response {
         try {
             return when (byteArray[0]) {
+                EnumIndus5FrameSuffix.MBX_EEG_DATA_FRAME_EVT.getOperationCode() -> {
+                    // remove operation code
+                    val data = byteArray.copyOfRange(1, byteArray.size)
+                    Indus5Response.EEGFrame(data)
+                }
+                EnumIndus5FrameSuffix.MBX_IMS_DATA_FRAME_EVT.getOperationCode() -> {
+                    val data = byteArray.copyOfRange(1, byteArray.size)
+                    Indus5Response.ImsFrame(data)
+                }
+                EnumIndus5FrameSuffix.MBX_PPG_DATA_FRAME_EVT.getOperationCode() -> {
+                    // optimize performance : keep op code in bytes to reduce calculations
+                    Indus5Response.PpgFrame(byteArray)
+                }
+                EnumIndus5FrameSuffix.MBX_SYS_GET_STATUS.getOperationCode() -> {
+                    getDeviceSystemStatus(byteArray)
+                }
+                EnumIndus5FrameSuffix.MBX_GET_SENSOR_STATUS.getOperationCode() -> {
+                    Indus5Response.GetSensorStatuses(Indus5SensorStatus.parse(byteArray))
+                }
                 EnumIndus5FrameSuffix.MBX_TRANSMIT_MTU_SIZE.getOperationCode() -> {
                     // only keep the 2nd byte where stores sample number
                     Indus5Response.MtuChange(byteArray[1].toInt())
@@ -50,11 +65,6 @@ object QPlusMailboxHelper {
                 EnumIndus5FrameSuffix.MBX_P300_ENABLE.getOperationCode() -> {
                     Indus5Response.TriggerStatusConfiguration(byteArray[1].toInt())
                 }
-                EnumIndus5FrameSuffix.MBX_EEG_DATA_FRAME_EVT.getOperationCode() -> {
-                    // remove operation code
-                    val data = byteArray.copyOfRange(1, byteArray.size)
-                    Indus5Response.EEGFrame(data)
-                }
                 EnumIndus5FrameSuffix.MBX_START_EEG_ACQUISITION.getOperationCode() -> {
                     Indus5Response.EEGStatus(true)
                 }
@@ -72,20 +82,6 @@ object QPlusMailboxHelper {
                 }
                 EnumIndus5FrameSuffix.MBX_STOP_PPG_ACQUISITION.getOperationCode() -> {
                     Indus5Response.PpgStatus(false)
-                }
-                EnumIndus5FrameSuffix.MBX_IMS_DATA_FRAME_EVT.getOperationCode() -> {
-                    val data = byteArray.copyOfRange(1, byteArray.size)
-                    Indus5Response.ImsFrame(data)
-                }
-                EnumIndus5FrameSuffix.MBX_PPG_DATA_FRAME_EVT.getOperationCode() -> {
-                    // optimize performance : keep op code in bytes to reduce calculations
-                    Indus5Response.PpgFrame(byteArray)
-                }
-                EnumIndus5FrameSuffix.MBX_SYS_GET_STATUS.getOperationCode() -> {
-                    getDeviceSystemStatus(byteArray)
-                }
-                EnumIndus5FrameSuffix.MBX_GET_SENSOR_STATUS.getOperationCode() -> {
-                    Indus5SensorStatus.parse(byteArray)
                 }
                 else -> {
                     Indus5Response.UnknownResponse(byteArray)
