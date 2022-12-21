@@ -7,7 +7,7 @@ interface SignalRecordingInterface<T,R> {
     fun startRecording()
     fun stopRecording()
     fun isRecording(): Boolean
-    fun onFrame(data: T)
+    fun onSignalData(data: T)
     fun getBuffer(): List<R>
     fun getBufferSize(): Int
     fun clearBuffer()

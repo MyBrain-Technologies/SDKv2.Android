@@ -65,7 +65,7 @@ class AccelerometerSignalProcessingQPlus(
         recordingBuffer = mutableListOf()
     }
 
-    override fun onFrame(data: ByteArray) {
+    override fun onSignalData(data: ByteArray) {
 //        Timber.v("onIMSFrame : ${NumericalUtils.bytesToShortString(data)}")
         imsFrameSubject.onNext(data)
     }

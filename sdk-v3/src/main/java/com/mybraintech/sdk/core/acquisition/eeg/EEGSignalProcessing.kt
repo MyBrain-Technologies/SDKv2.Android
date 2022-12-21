@@ -140,7 +140,7 @@ abstract class EEGSignalProcessing(
         }
     }
 
-    override fun onFrame(data: TimedBLEFrame) {
+    override fun onSignalData(data: TimedBLEFrame) {
 //        Timber.v("onEEGFrame : ${NumericalUtils.bytesToShortString(eegFrame)}")
         eegFrameSubject.onNext(data)
     }

@@ -337,11 +337,11 @@ internal class SignalProcessingManager(
     }
 
     override fun onEEGFrame(data: TimedBLEFrame) {
-        eegSignalProcessing.onFrame(data)
+        eegSignalProcessing.onSignalData(data)
     }
 
     override fun onAccelerometerFrame(data: ByteArray) {
-        accelerometerSignalProcessing.onFrame(data)
+        accelerometerSignalProcessing.onSignalData(data)
     }
 
     override fun setEEGListener(eegListener: EEGListener?) {
