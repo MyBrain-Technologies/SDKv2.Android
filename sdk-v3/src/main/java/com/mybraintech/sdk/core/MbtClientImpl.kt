@@ -75,10 +75,10 @@ internal class MbtClientImpl(
 
     override fun connect(mbtDevice: MbtDevice, connectionListener: ConnectionListener) {
         val connectionStatus = mbtDeviceInterface.getBleConnectionStatus()
-        if (connectionStatus.isConnectionEstablished && connectionStatus.mbtDevice != mbtDevice) {
-            mbtDeviceInterface.connectMbt(mbtDevice, connectionListener)
-        } else {
+        if (connectionStatus.isConnectionEstablished && connectionStatus.mbtDevice == mbtDevice) {
             connectionListener.onDeviceReady()
+        } else {
+            mbtDeviceInterface.connectMbt(mbtDevice, connectionListener)
         }
     }
 
