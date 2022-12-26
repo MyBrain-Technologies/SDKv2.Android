@@ -18,10 +18,11 @@ class StreamingParams private constructor(
      */
     val isAccelerometerEnabled: Boolean,
 
-    var accelerometerSampleRate: Int
+    var accelerometerSampleRate: EnumAccelerometerSampleRate
 ) {
     val eegSampleRate: Int = 250
 
+    @Suppress("unused")
     class Builder() {
         private var isEEGEnabled: Boolean = true
 
@@ -31,7 +32,7 @@ class StreamingParams private constructor(
 
         private var isAccelerometerEnabled: Boolean = false
 
-        private var accelerometerSampleRate: Int = 50
+        private var accelerometerSampleRate = EnumAccelerometerSampleRate.F_100_HZ
 
         fun setEEG(isEnabled: Boolean): Builder {
             this.isEEGEnabled = isEnabled
@@ -54,7 +55,7 @@ class StreamingParams private constructor(
         }
 
         fun setAccelerometerSampleRate(sampleRate: EnumAccelerometerSampleRate) {
-            this.accelerometerSampleRate = sampleRate.level
+            this.accelerometerSampleRate = sampleRate
         }
 
         fun build(): StreamingParams {

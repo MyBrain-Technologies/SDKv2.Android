@@ -94,6 +94,10 @@ internal class MbtClientImpl(
         mbtDeviceInterface.getDeviceInformation(deviceInformationListener)
     }
 
+    override fun getStreamingState(sensorStatusListener: SensorStatusListener) {
+        mbtDeviceInterface.getSensorStatuses(sensorStatusListener)
+    }
+
     override fun startStreaming(streamingParams: StreamingParams) {
         this.streamingParams = streamingParams
 
@@ -233,10 +237,5 @@ internal class MbtClientImpl(
     @TestBench
     override fun getDeviceSystemStatus(deviceSystemStatusListener: DeviceSystemStatusListener) {
         mbtDeviceInterface.getDeviceSystemStatus(deviceSystemStatusListener)
-    }
-
-    @TestBench
-    override fun getStreamingState(sensorStatusListener: SensorStatusListener) {
-        mbtDeviceInterface.getSensorStatuses(sensorStatusListener)
     }
 }

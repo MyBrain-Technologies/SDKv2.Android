@@ -14,6 +14,8 @@ interface MbtClient {
     fun disconnect()
     fun getBatteryLevel(batteryLevelListener: BatteryLevelListener)
     fun getDeviceInformation(deviceInformationListener: DeviceInformationListener)
+
+    fun getStreamingState(sensorStatusListener: SensorStatusListener)
     fun startStreaming(streamingParams: StreamingParams)
     fun stopStreaming()
 
@@ -41,6 +43,4 @@ interface MbtClient {
     fun setAudioName(audioName: String, listener: AudioNameListener?)
     @TestBench
     fun getDeviceSystemStatus(deviceSystemStatusListener: DeviceSystemStatusListener)
-    @TestBench
-    fun getStreamingState(sensorStatusListener: SensorStatusListener)
 }

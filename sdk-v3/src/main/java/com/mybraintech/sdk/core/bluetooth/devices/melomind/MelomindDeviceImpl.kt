@@ -274,8 +274,7 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
     //----------------------------------------------------------------------------
     // MARK: private inner class
     //----------------------------------------------------------------------------
-    private inner class MelomindGattCallback() :
-        BleManager.BleManagerGattCallback() {
+    private inner class MelomindGattCallback : BleManagerGattCallback() {
 
         override fun isRequiredServiceSupported(gatt: BluetoothGatt): Boolean {
             connectionListener?.onServiceDiscovered()
@@ -325,10 +324,10 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
     }
 
     override fun getDeviceSystemStatus(deviceSystemStatusListener: DeviceSystemStatusListener) {
-        throw UnsupportedOperationException("not supported") // TODO: 17/11/2022
+        deviceSystemStatusListener.onDeviceSystemStatusError("not supported yet")
     }
 
     override fun getSensorStatuses(sensorStatusListener: SensorStatusListener) {
-        throw UnsupportedOperationException("not supported") // TODO: 17/11/2022
+        sensorStatusListener.onSensorStatusError("not supported yet")
     }
 }

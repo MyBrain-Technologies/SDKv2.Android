@@ -229,6 +229,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
         if (streamingParams.isEEGEnabled) {
             requestQueue.add(getTriggerStatusOperation(streamingParams.isTriggerStatusEnabled))
             if (streamingParams.isAccelerometerEnabled) {
+                requestQueue.add(setAccelerometerConfigRequest(streamingParams.accelerometerSampleRate))
                 requestQueue.add(getStartIMSOperation())
             } else {
                 requestQueue.add(getStopIMSOperation())
@@ -254,6 +255,27 @@ abstract class Indus5DeviceImpl(ctx: Context) :
             requestQueue.add(getStopEEGOperation())
         }
         requestQueue.enqueue()
+    }
+
+    private fun setAccelerometerConfigRequest(sampleRate: EnumAccelerometerSampleRate): WriteRequest {
+        val operationByte = EnumIndus5FrameSuffix.MBX_SET_IMS_CONFIG.bytes
+        val sampleRateByte = sampleRate.mailboxValue
+        val enableAxisByte : Byte = 0x07 // Default value: 0x07 : all axis are enabled
+        val fullScaleByte : Byte = 0x00 // Default value: 0x00 : ±2g
+        val command = operationByte + sampleRateByte + enableAxisByte + fullScaleByte
+        return writeCharacteristic(
+            txCharacteristic,
+            command,
+            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        )
+    }
+
+    private fun getAccelerometerConfigRequest(): WriteRequest {
+        return writeCharacteristic(
+            txCharacteristic,
+            EnumIndus5FrameSuffix.MBX_GET_IMS_CONFIG.bytes,
+            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        )
     }
 
     private fun getStartIMSOperation(): Operation {
