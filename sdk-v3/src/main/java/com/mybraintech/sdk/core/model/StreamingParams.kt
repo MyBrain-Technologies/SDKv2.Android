@@ -54,8 +54,9 @@ class StreamingParams private constructor(
             return this
         }
 
-        fun setAccelerometerSampleRate(sampleRate: EnumAccelerometerSampleRate) {
+        fun setAccelerometerSampleRate(sampleRate: EnumAccelerometerSampleRate): Builder {
             this.accelerometerSampleRate = sampleRate
+            return this
         }
 
         fun build(): StreamingParams {

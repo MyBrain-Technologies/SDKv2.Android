@@ -2,6 +2,7 @@ package com.mybraintech.sdk.core.bluetooth.devices
 
 import com.mybraintech.sdk.core.bluetooth.devices.qplus.EnumIndus5FrameSuffix
 import com.mybraintech.sdk.core.bluetooth.devices.qplus.Indus5Response
+import com.mybraintech.sdk.core.model.AccelerometerConfig
 import com.mybraintech.sdk.core.model.DeviceSystemStatus
 import com.mybraintech.sdk.core.model.Indus5SensorStatus
 import timber.log.Timber
@@ -28,6 +29,12 @@ object Indus5MailboxDecoder {
                 }
                 EnumIndus5FrameSuffix.MBX_GET_SENSOR_STATUS.getOperationCode() -> {
                     Indus5Response.GetSensorStatuses(Indus5SensorStatus.parse(byteArray))
+                }
+                EnumIndus5FrameSuffix.MBX_SET_IMS_CONFIG.getOperationCode() -> {
+                    Indus5Response.SetIMSConfig(byteArray)
+                }
+                EnumIndus5FrameSuffix.MBX_GET_IMS_CONFIG.getOperationCode() -> {
+                    Indus5Response.GetIMSConfig(AccelerometerConfig.parse(byteArray).sampleRate)
                 }
                 EnumIndus5FrameSuffix.MBX_TRANSMIT_MTU_SIZE.getOperationCode() -> {
                     // only keep the 2nd byte where stores sample number

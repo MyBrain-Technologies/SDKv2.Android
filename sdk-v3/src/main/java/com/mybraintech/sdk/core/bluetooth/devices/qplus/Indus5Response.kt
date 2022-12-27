@@ -1,6 +1,7 @@
 package com.mybraintech.sdk.core.bluetooth.devices.qplus
 
 import com.mybraintech.sdk.core.model.DeviceSystemStatus
+import com.mybraintech.sdk.core.model.EnumAccelerometerSampleRate
 import com.mybraintech.sdk.core.model.Indus5SensorStatus
 
 sealed class Indus5Response {
@@ -21,6 +22,10 @@ sealed class Indus5Response {
     class SerialNumberChanged(val newSerialNumber: String) : Indus5Response()
     class GetDeviceSystemStatus(val deviceSystemStatus: DeviceSystemStatus) : Indus5Response()
     class GetSensorStatuses(val sensorStatuses: Indus5SensorStatus) : Indus5Response()
+    class SetIMSConfig(val bytes: ByteArray) : Indus5Response()
+    class GetIMSConfig(val sampleRate: EnumAccelerometerSampleRate?) : Indus5Response()
     class UnknownResponse(val bytes: ByteArray) : Indus5Response()
+
+    @Suppress("unused")
     class Error(val error: String) : Indus5Response()
 }

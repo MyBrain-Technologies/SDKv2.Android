@@ -14,7 +14,7 @@ import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 
-class AccelerometerSignalProcessingQPlus(
+class AccelerometerSignalProcessingIndus5(
     val sampleRate: Int,
     var accelerometerCallback: AccelerometerCallback? = null
 ) : BaseAccelerometerRecording() {
@@ -117,7 +117,8 @@ class AccelerometerSignalProcessingQPlus(
         }
 
         val indexDifference = newFrameIndex - previousIndex
-        if (indexDifference != 1L) {
+        val missingFrame = indexDifference - 1
+        if (missingFrame != 0L) {
             Timber.w("ims diff is $indexDifference. Current index : $newFrameIndex | previousIndex : $previousIndex")
 //            Log.w("consumeIMSFrame", "ims diff is $indexDifference. Current index : $newFrameIndex | previousIndex : $previousIndex")
         }
@@ -126,13 +127,16 @@ class AccelerometerSignalProcessingQPlus(
 
         val positions = mutableListOf<ThreeDimensionalPosition>()
 
-        //2nd step : Fill gap by 0.0 voltages if there is missing frames
+        //2nd step : Fill gap by NaN if there is missing frames
+        var missingCount = 0L
         if (indexDifference != 1L) {
-            val missingPositionNumber = imsBleFrame.positions.size * indexDifference
+            val missingPositionNumber = imsBleFrame.positions.size * missingFrame
             for (i in 1..missingPositionNumber) {
                 positions.add(ThreeDimensionalPosition(Float.NaN, Float.NaN, Float.NaN))
+                missingCount++
             }
         }
+        assert(missingCount == missingFrame * imsBleFrame.positions.size)
 
         //3rd step: add the new frame data
         positions.addAll(imsBleFrame.positions)
@@ -170,7 +174,7 @@ class AccelerometerSignalProcessingQPlus(
         val dataLength = size - AccelerometerFrame.INDEX_ALLOCATION
         return (dataLength % AccelerometerFrame.SAMPLE_ALLOCATION == 0)
     }
-    
+
     interface AccelerometerCallback {
         fun onAccelerometerPacket(packet: AccelerometerPacket)
     }

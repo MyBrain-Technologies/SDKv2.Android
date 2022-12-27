@@ -12,7 +12,6 @@ import com.mybraintech.sdk.core.bluetooth.DataConversionUtils
 import com.mybraintech.sdk.core.bluetooth.devices.BaseMbtDevice
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
-import no.nordicsemi.android.ble.BleManager
 import timber.log.Timber
 
 class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
@@ -222,22 +221,6 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
             .enqueue()
     }
 
-    override fun hasA2dpConnectedDevice(): Boolean {
-        TODO("Not yet implemented")
-    }
-
-    override fun isEEGEnabled(): Boolean {
-        TODO("Not yet implemented")
-    }
-
-    override fun isIMSEnabled(): Boolean {
-        TODO("Not yet implemented")
-    }
-
-    override fun isListeningToHeadsetStatus(): Boolean {
-        TODO("Not yet implemented")
-    }
-
     override fun handleScanResults(results: List<ScanResult>) {
         val melomindDevices = mutableListOf<BluetoothDevice>()
         val otherDevices = mutableListOf<BluetoothDevice>()
@@ -329,5 +312,9 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
 
     override fun getSensorStatuses(sensorStatusListener: SensorStatusListener) {
         sensorStatusListener.onSensorStatusError("not supported yet")
+    }
+
+    override fun getAccelerometerConfig(accelerometerConfigListener: AccelerometerConfigListener) {
+        accelerometerConfigListener.onAccelerometerConfigError("not supported yet")
     }
 }

@@ -22,11 +22,9 @@ interface MbtDeviceInterface {
     //----------------------------------------------------------------------------
     fun getBleConnectionStatus(): BleConnectionStatus
     fun getSensorStatuses(sensorStatusListener: SensorStatusListener)
-    fun hasA2dpConnectedDevice(): Boolean
 
     fun isEEGEnabled(): Boolean
     fun isIMSEnabled(): Boolean
-    fun isListeningToHeadsetStatus(): Boolean
 
     //----------------------------------------------------------------------------
     // battery
@@ -47,4 +45,5 @@ interface MbtDeviceInterface {
     fun setSerialNumber(serialNumber: String, listener: SerialNumberChangedListener?)
     fun setAudioName(audioName: String, listener: AudioNameListener?)
     fun getDeviceSystemStatus(deviceSystemStatusListener: DeviceSystemStatusListener)
+    fun getAccelerometerConfig(accelerometerConfigListener: AccelerometerConfigListener)
 }

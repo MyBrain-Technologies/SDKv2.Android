@@ -38,7 +38,7 @@ abstract class EEGSignalProcessing(
 
     private var recordingBuffer = mutableListOf<MbtEEGPacket>()
     private var eegStreamingErrorCounter = EEGStreamingErrorCounter()
-    private var _isRecording: Boolean = false
+    private var isRecording: Boolean = false
 
     /**
      * index allocation size in the eeg frame
@@ -113,17 +113,17 @@ abstract class EEGSignalProcessing(
      * this will clear the buffer
      */
     override fun startRecording() {
-        _isRecording = true
+        isRecording = true
         clearBuffer()
     }
 
     override fun stopRecording() {
         Timber.v("stopRecording")
-        _isRecording = false
+        isRecording = false
     }
 
     override fun isRecording(): Boolean {
-        return _isRecording
+        return isRecording
     }
 
     /**
@@ -135,6 +135,8 @@ abstract class EEGSignalProcessing(
         eegStreamingErrorCounter = EEGStreamingErrorCounter()
         rawBuffer = mutableListOf()
         recordingBuffer = mutableListOf()
+        consolidatedEEGBuffer.clear()
+        consolidatedStatusBuffer.clear()
         if (isQualityCheckerEnabled) {
             qualityChecker = QualityChecker(sampleRate)
         }
@@ -203,13 +205,17 @@ abstract class EEGSignalProcessing(
 
         //2nd step : Fill gap by NaN samples if there is missing frames
         if (missingFrame > 0) {
+            var missingCount = 0L
+            val sampleNb = getNumberOfTimes(eegFrame)
             Timber.w("diff is $indexDifference. Current index : $newFrameIndex | previousIndex : $previousIndex")
             for (i in 1..missingFrame) {
                 //one frame contains n times of sample
-                for (j in 1..getNumberOfTimes(eegFrame)) {
+                for (j in 1..sampleNb) {
                     rawEEGList.add(RawEEGSample2.NAN_PACKET)
+                    missingCount++
                 }
             }
+            assert(missingCount == missingFrame * sampleNb)
 //            Timber.i("missing size = n channels * sample per frame = ${rawEEGList.size}")
         }
 
@@ -256,7 +262,7 @@ abstract class EEGSignalProcessing(
                     }
                 }
 
-                if (_isRecording) {
+                if (isRecording) {
                     recordingBuffer.add(newPacket)
                 }
 

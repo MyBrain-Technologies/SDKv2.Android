@@ -135,6 +135,15 @@ internal class MbtClientImpl(
         this.dataReceiver?.setEEGRealtimeListener(eegRealtimeListener)
     }
 
+    @TestBench
+    override fun getAccelerometerConfig(accelerometerConfigListener: AccelerometerConfigListener) {
+        if (isIMSEnabled) {
+            accelerometerConfigListener.onAccelerometerConfigError("cannot retrieve accelerometer config while streaming!")
+        } else {
+            mbtDeviceInterface.getAccelerometerConfig(accelerometerConfigListener)
+        }
+    }
+
     override fun setAccelerometerListener(accelerometerListener: AccelerometerListener) {
         this.accelerometerListener = accelerometerListener
         this.dataReceiver?.setAccelerometerListener(accelerometerListener)

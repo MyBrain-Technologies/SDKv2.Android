@@ -115,6 +115,14 @@ abstract class Indus5DeviceImpl(ctx: Context) :
                 is Indus5Response.GetSensorStatuses -> {
                     sensorStatusListener?.onSensorStatusFetched(indus5Response.sensorStatuses)
                 }
+                is Indus5Response.GetIMSConfig -> {
+                    accelerometerConfigListener?.onAccelerometerConfigFetched(
+                        indus5Response.sampleRate?.value ?: -1
+                    )
+                }
+                is Indus5Response.SetIMSConfig -> {
+                    Timber.d("onDataReceived : SetIMSConfig")
+                }
                 else -> {
                     Timber.e("this type is not supported : ${indus5Response.javaClass.simpleName}")
                 }
@@ -228,20 +236,15 @@ abstract class Indus5DeviceImpl(ctx: Context) :
         val requestQueue = beginAtomicRequestQueue()
         if (streamingParams.isEEGEnabled) {
             requestQueue.add(getTriggerStatusOperation(streamingParams.isTriggerStatusEnabled))
-            if (streamingParams.isAccelerometerEnabled) {
-                requestQueue.add(setAccelerometerConfigRequest(streamingParams.accelerometerSampleRate))
-                requestQueue.add(getStartIMSOperation())
-            } else {
-                requestQueue.add(getStopIMSOperation())
-            }
             requestQueue.add(getStartEEGOperation())
         } else {
             requestQueue.add(getStopEEGOperation())
-            if (streamingParams.isAccelerometerEnabled) {
-                requestQueue.add(getStartIMSOperation())
-            } else {
-                requestQueue.add(getStopIMSOperation())
-            }
+        }
+        if (streamingParams.isAccelerometerEnabled) {
+            requestQueue.add(setAccelerometerConfigRequest(streamingParams.accelerometerSampleRate))
+            requestQueue.add(getStartIMSOperation())
+        } else {
+            requestQueue.add(getStopIMSOperation())
         }
         requestQueue.enqueue()
     }
@@ -259,9 +262,9 @@ abstract class Indus5DeviceImpl(ctx: Context) :
 
     private fun setAccelerometerConfigRequest(sampleRate: EnumAccelerometerSampleRate): WriteRequest {
         val operationByte = EnumIndus5FrameSuffix.MBX_SET_IMS_CONFIG.bytes
-        val sampleRateByte = sampleRate.mailboxValue
-        val enableAxisByte : Byte = 0x07 // Default value: 0x07 : all axis are enabled
-        val fullScaleByte : Byte = 0x00 // Default value: 0x00 : ±2g
+        val sampleRateByte : Byte = sampleRate.mailboxValue
+        val enableAxisByte: Byte = 0x07 // Default value: 0x07 : all axis are enabled
+        val fullScaleByte: Byte = 0x00 // Default value: 0x00 : ±2g
         val command = operationByte + sampleRateByte + enableAxisByte + fullScaleByte
         return writeCharacteristic(
             txCharacteristic,
@@ -361,20 +364,13 @@ abstract class Indus5DeviceImpl(ctx: Context) :
         }
     }
 
-    override fun hasA2dpConnectedDevice(): Boolean {
-        TODO("Not yet implemented")
-    }
-
-    override fun isEEGEnabled(): Boolean {
-        TODO("Not yet implemented")
-    }
-
-    override fun isIMSEnabled(): Boolean {
-        TODO("Not yet implemented")
-    }
-
-    override fun isListeningToHeadsetStatus(): Boolean {
-        TODO("Not yet implemented")
+    override fun getAccelerometerConfig(accelerometerConfigListener: AccelerometerConfigListener) {
+        this.accelerometerConfigListener = accelerometerConfigListener
+        getAccelerometerConfigRequest()
+            .fail { _, errorCode ->
+                accelerometerConfigListener.onAccelerometerConfigError("errorCode=$errorCode")
+            }
+            .enqueue()
     }
 
     private fun getMtuMailboxRequest(): WriteRequest {

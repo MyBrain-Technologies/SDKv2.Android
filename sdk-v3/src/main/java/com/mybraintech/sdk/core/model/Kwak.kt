@@ -14,7 +14,7 @@ class Kwak {
     var recording: KwakRecording = KwakRecording()
 
     fun serializeJson(
-        hasStatus: Boolean,
+        streamingParams: StreamingParams,
         eegBuffer: List<MbtEEGPacket>,
         eegStreamingErrorCounter: EEGStreamingErrorCounter,
         imsBuffer: List<ThreeDimensionalPosition>,
@@ -24,8 +24,8 @@ class Kwak {
             context.ownerId,
             header,
             recording,
-            EEGRecordingData(hasStatus, header.nbChannels, eegBuffer, eegStreamingErrorCounter),
-            imsBuffer,
+            EEGRecordingData(streamingParams.isTriggerStatusEnabled, header.nbChannels, eegBuffer, eegStreamingErrorCounter),
+            AccelerometerRecordingData(streamingParams.accelerometerSampleRate.value, imsBuffer),
             fileWriter
         )
     }

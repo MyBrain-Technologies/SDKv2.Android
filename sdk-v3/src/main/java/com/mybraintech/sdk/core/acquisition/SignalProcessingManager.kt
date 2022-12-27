@@ -7,7 +7,7 @@ import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessingHyperion
 import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessingMelomind
 import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessingQPlus
 import com.mybraintech.sdk.core.acquisition.ims.AccelerometerSignalProcessingDisabled
-import com.mybraintech.sdk.core.acquisition.ims.AccelerometerSignalProcessingQPlus
+import com.mybraintech.sdk.core.acquisition.ims.AccelerometerSignalProcessingIndus5
 import com.mybraintech.sdk.core.acquisition.ppg.PPGSignalProcessingDisabled
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
@@ -40,7 +40,7 @@ internal class SignalProcessingManager(
 
     private var accelerometerListener: AccelerometerListener? = null
     private val accelerometerCallback by lazy {
-        object : AccelerometerSignalProcessingQPlus.AccelerometerCallback {
+        object : AccelerometerSignalProcessingIndus5.AccelerometerCallback {
             override fun onAccelerometerPacket(packet: AccelerometerPacket) {
                 accelerometerListener?.onAccelerometerPacket(packet)
             }
@@ -90,8 +90,8 @@ internal class SignalProcessingManager(
 
     private var accelerometerSignalProcessing: BaseAccelerometerRecording = when (deviceType) {
         EnumMBTDevice.Q_PLUS -> {
-            AccelerometerSignalProcessingQPlus(
-                sampleRate = 100,
+            AccelerometerSignalProcessingIndus5(
+                sampleRate = streamingParams.accelerometerSampleRate.value,
                 accelerometerCallback = accelerometerCallback
             )
         }
@@ -147,7 +147,7 @@ internal class SignalProcessingManager(
     override fun stopRecording() {
         Timber.d("stopRecording")
 
-        var minLen = 0
+        var minLen = Int.MAX_VALUE
         for (signalType in recordingSignals) {
             minLen = when (signalType) {
                 EnumSignalType.EEG -> {
@@ -274,6 +274,7 @@ internal class SignalProcessingManager(
                 }
             }
         }
+        isRecording = false
     }
 
     private fun saveRecording(trim: Int) {
@@ -298,14 +299,16 @@ internal class SignalProcessingManager(
         var imsBuffer: List<ThreeDimensionalPosition>
         if (recordingSignals.contains(EnumSignalType.ACCELEROMETER)) {
             imsBuffer = accelerometerSignalProcessing.getBuffer()
-            if (imsBuffer.size < trim) {
-                imsBuffer = imsBuffer.subList(0, trim - 1)
+            val multipliedBySampleRate = trim * streamingParams.accelerometerSampleRate.value
+            if (imsBuffer.size > multipliedBySampleRate) {
+                val endIndex = multipliedBySampleRate - 1
+                imsBuffer = imsBuffer.subList(0, endIndex)
             }
         } else {
             imsBuffer = emptyList()
         }
 
-        saveRecording(eegBuffer, eegErrorCounter, imsBuffer)
+        saveRecording(streamingParams, eegBuffer, eegErrorCounter, imsBuffer)
     }
 
     override fun clearBuffer() {
@@ -369,6 +372,7 @@ internal class SignalProcessingManager(
     }
 
     private fun saveRecording(
+        streamingParams: StreamingParams,
         eegBuffer: List<MbtEEGPacket>,
         eegErrorData: EEGStreamingErrorCounter,
         imsBuffer: List<ThreeDimensionalPosition>
@@ -379,7 +383,7 @@ internal class SignalProcessingManager(
                 try {
                     if (recordingOption?.outputFile != null) {
                         val isOk = kwak.serializeJson(
-                            eegSignalProcessing.isTriggerStatusEnabled,
+                            streamingParams,
                             eegBuffer,
                             eegErrorData,
                             imsBuffer,

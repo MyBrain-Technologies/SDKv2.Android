@@ -43,4 +43,6 @@ interface MbtClient {
     fun setAudioName(audioName: String, listener: AudioNameListener?)
     @TestBench
     fun getDeviceSystemStatus(deviceSystemStatusListener: DeviceSystemStatusListener)
+    @TestBench
+    fun getAccelerometerConfig(accelerometerConfigListener : AccelerometerConfigListener)
 }
