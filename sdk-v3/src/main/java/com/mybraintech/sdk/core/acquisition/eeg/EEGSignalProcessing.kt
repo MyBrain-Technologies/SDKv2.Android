@@ -172,7 +172,7 @@ abstract class EEGSignalProcessing(
             Timber.i("increase indexOverflowCount : indexOverflowCount = $indexOverflowCount")
         }
         val newFrameIndex = indexOverflowCount * indexCycle + rawIndex
-        Timber.v("newFrameIndex = $newFrameIndex")
+//        Timber.v("newFrameIndex = $newFrameIndex")
 
         if (previousIndex == -1L) {
             //init first frame index
@@ -264,6 +264,7 @@ abstract class EEGSignalProcessing(
 
                 if (isRecording) {
                     recordingBuffer.add(newPacket)
+                    Timber.d("eeg recordingBuffer size = ${recordingBuffer.size}")
                 }
 
                 eegPacketSubject.onNext(newPacket)
@@ -336,9 +337,6 @@ abstract class EEGSignalProcessing(
     companion object {
         const val SIGNAL_ALLOC = 2 //one EEG signal is 2 bytes
 
-        /**
-         * features.MbtFeatures.DEFAULT_MAX_PENDING_RAW_DATA_BUFFER_SIZE
-         */
         const val DEFAULT_MAX_PENDING_RAW_DATA_BUFFER_SIZE = 40
     }
 }

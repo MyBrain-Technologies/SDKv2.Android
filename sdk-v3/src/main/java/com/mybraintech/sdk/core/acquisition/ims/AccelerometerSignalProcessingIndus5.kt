@@ -154,7 +154,7 @@ class AccelerometerSignalProcessingIndus5(
 
             if (isRecording) {
                 recordingBuffer.addAll(oneSecond)
-//                Log.w("recordingBuffer", "size = ${recordingBuffer.size}")
+                Timber.d("ims recordingBuffer size = ${recordingBuffer.size}")
             }
 
             accelerometerCallback?.onAccelerometerPacket(accelerometerPacket)
@@ -167,7 +167,7 @@ class AccelerometerSignalProcessingIndus5(
 
     private fun isValidFrame(imsFrame: ByteArray): Boolean {
         val size = imsFrame.size
-        Timber.v("imsFrame.size = $size")
+//        Timber.v("imsFrame.size = $size")
         if (size <= AccelerometerFrame.INDEX_ALLOCATION) {
             return false
         }

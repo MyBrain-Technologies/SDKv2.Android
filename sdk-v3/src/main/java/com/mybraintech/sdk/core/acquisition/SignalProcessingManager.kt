@@ -261,6 +261,8 @@ internal class SignalProcessingManager(
     }
 
     private fun stopAllRecording() {
+        Timber.d("stopAllRecording")
+
         for (signalType in recordingSignals) {
             when (signalType) {
                 EnumSignalType.EEG -> {
@@ -288,7 +290,7 @@ internal class SignalProcessingManager(
         if (recordingSignals.contains(EnumSignalType.EEG)) {
             eegBuffer = eegSignalProcessing.getBuffer()
             if (eegBuffer.size > trim) {
-                eegBuffer = eegBuffer.subList(0, trim - 1)
+                eegBuffer = eegBuffer.subList(0, trim)
             }
             eegErrorCounter = eegSignalProcessing.getRecordingErrorData()
         } else {
@@ -299,9 +301,8 @@ internal class SignalProcessingManager(
         var imsBuffer: List<ThreeDimensionalPosition>
         if (recordingSignals.contains(EnumSignalType.ACCELEROMETER)) {
             imsBuffer = accelerometerSignalProcessing.getBuffer()
-            val multipliedBySampleRate = trim * streamingParams.accelerometerSampleRate.value
-            if (imsBuffer.size > multipliedBySampleRate) {
-                val endIndex = multipliedBySampleRate - 1
+            val endIndex = trim * streamingParams.accelerometerSampleRate.value
+            if (imsBuffer.size > endIndex) {
                 imsBuffer = imsBuffer.subList(0, endIndex)
             }
         } else {
