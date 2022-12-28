@@ -91,7 +91,7 @@ internal class SignalProcessingManager(
     private var accelerometerSignalProcessing: BaseAccelerometerRecording = when (deviceType) {
         EnumMBTDevice.Q_PLUS -> {
             AccelerometerSignalProcessingIndus5(
-                sampleRate = streamingParams.accelerometerSampleRate.value,
+                sampleRate = streamingParams.accelerometerSampleRate.sampleRate,
                 accelerometerCallback = accelerometerCallback
             )
         }
@@ -301,7 +301,7 @@ internal class SignalProcessingManager(
         var imsBuffer: List<ThreeDimensionalPosition>
         if (recordingSignals.contains(EnumSignalType.ACCELEROMETER)) {
             imsBuffer = accelerometerSignalProcessing.getBuffer()
-            val endIndex = trim * streamingParams.accelerometerSampleRate.value
+            val endIndex = trim * streamingParams.accelerometerSampleRate.sampleRate
             if (imsBuffer.size > endIndex) {
                 imsBuffer = imsBuffer.subList(0, endIndex)
             }

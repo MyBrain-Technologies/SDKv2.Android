@@ -25,7 +25,7 @@ class Kwak {
             header,
             recording,
             EEGRecordingData(streamingParams.isTriggerStatusEnabled, header.nbChannels, eegBuffer, eegStreamingErrorCounter),
-            AccelerometerRecordingData(streamingParams.accelerometerSampleRate.value, imsBuffer),
+            AccelerometerRecordingData(streamingParams.accelerometerSampleRate.sampleRate, imsBuffer),
             fileWriter
         )
     }

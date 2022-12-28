@@ -117,7 +117,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
                 }
                 is Indus5Response.GetIMSConfig -> {
                     accelerometerConfigListener?.onAccelerometerConfigFetched(
-                        indus5Response.sampleRate?.value ?: -1
+                        indus5Response.sampleRate?.sampleRate ?: -1
                     )
                 }
                 is Indus5Response.SetIMSConfig -> {

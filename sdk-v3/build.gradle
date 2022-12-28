@@ -13,8 +13,8 @@ android {
         //noinspection ExpiredTargetSdkVersion
         targetSdkVersion 30
 
-        versionCode 122
-        versionName '3.3.0-SNAPSHOT'
+        versionCode 123
+        versionName '3.3.0-beta'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
