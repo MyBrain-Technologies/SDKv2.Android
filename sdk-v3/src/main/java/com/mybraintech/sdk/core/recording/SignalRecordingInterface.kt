@@ -7,8 +7,14 @@ interface SignalRecordingInterface<T,R> {
     fun startRecording()
     fun stopRecording()
     fun isRecording(): Boolean
-    fun onSignalData(data: T)
+    fun addSignalData(data: T)
     fun getBuffer(): List<R>
     fun getBufferSize(): Int
     fun clearBuffer()
+    fun getSampleRate() : Int
+
+    /**
+     * dispose occupied resources
+     */
+    fun dispose()
 }

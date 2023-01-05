@@ -1,71 +1,76 @@
 package com.mybraintech.sdk.core.acquisition.ims
 
-import com.mybraintech.sdk.core.acquisition.AcquisierThreadFactory
+import com.mybraintech.sdk.BuildConfig
 import com.mybraintech.sdk.core.acquisition.IndexReader
-import com.mybraintech.sdk.core.model.AccelerometerFrame
-import com.mybraintech.sdk.core.model.AccelerometerPacket
-import com.mybraintech.sdk.core.model.ThreeDimensionalPosition
-import com.mybraintech.sdk.core.recording.BaseAccelerometerRecording
+import com.mybraintech.sdk.core.model.*
+import com.mybraintech.sdk.core.recording.BaseAccelerometerRecorder
 import com.mybraintech.sdk.util.NumericalUtils
-import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.plugins.RxJavaPlugins
+import io.reactivex.Scheduler
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
+import kotlin.math.pow
 
 class AccelerometerSignalProcessingIndus5(
-    val sampleRate: Int,
-    var accelerometerCallback: AccelerometerCallback? = null
-) : BaseAccelerometerRecording() {
+    var accelerometerCallback: AccelerometerCallback? = null,
+    @Suppress("CanBeParameter") private val imsFrameScheduler: Scheduler
+) : BaseAccelerometerRecorder() {
 
     private var isRecording: Boolean = false
-
-    /**
-     * this scheduler is reserved to handle ims frame tasks
-     */
-    private var imsFrameScheduler = RxJavaPlugins.createSingleScheduler(AcquisierThreadFactory)
 
     private val accelerometerPacketSubject = PublishSubject.create<AccelerometerPacket>()
     private val imsFrameSubject = PublishSubject.create<ByteArray>()
 
+    /**
+     * index allocation size in the ims frame
+     */
+    private val indexAlloc = 2
+    private val indexCycle = 2.0.pow(indexAlloc * 8).toLong()
     private var previousIndex = -1L
+
+    /**
+     * number of time the ble frame index does overflow
+     */
+    private var indexOverflowCount = 0L
 
     private var rawBuffer: MutableList<ThreeDimensionalPosition> = mutableListOf()
     private var recordingBuffer = mutableListOf<ThreeDimensionalPosition>()
 
-    private var disposable = CompositeDisposable()
-
     init {
         accelerometerPacketSubject
             .observeOn(Schedulers.io())
-            .subscribe {
-                accelerometerCallback?.onAccelerometerPacket(it)
-            }
+            .subscribe(
+                {
+                    accelerometerCallback?.onAccelerometerPacket(it)
+                },
+                Timber::e
+            )
             .addTo(disposable)
 
         imsFrameSubject
             .observeOn(imsFrameScheduler)
-            .subscribe {
-                try {
-                    consumeIMSFrame(it)
-                } catch (e: Exception) {
-                    Timber.e(e)
-                }
-            }
+            .subscribe(
+                ::consumeIMSFrame,
+                Timber::e
+            )
             .addTo(disposable)
     }
 
     //----------------------------------------------------------------------------
     // MARK: interface IMSSignalProcessing implementation
     //----------------------------------------------------------------------------
+    override fun onAccelerometerConfiguration(accelerometerConfig: AccelerometerConfig) {
+        setSampleRate(accelerometerConfig.sampleRate)
+    }
+
     override fun startRecording() {
         isRecording = true
         rawBuffer = mutableListOf()
         recordingBuffer = mutableListOf()
     }
 
-    override fun onSignalData(data: ByteArray) {
+    override fun addSignalData(data: ByteArray) {
 //        Timber.v("onIMSFrame : ${NumericalUtils.bytesToShortString(data)}")
         imsFrameSubject.onNext(data)
     }
@@ -80,7 +85,7 @@ class AccelerometerSignalProcessingIndus5(
     }
 
     override fun getBufferSize(): Int {
-        return (recordingBuffer.size / sampleRate)
+        return (recordingBuffer.size / getSampleRate())
     }
 
     override fun isRecording(): Boolean {
@@ -105,7 +110,15 @@ class AccelerometerSignalProcessingIndus5(
         }
 
         //1st step : check index
-        val newFrameIndex = getFrameIndex(data)
+        val rawIndex = getFrameIndex(data)
+        val indexCandidate = indexOverflowCount * indexCycle + rawIndex
+        if (indexCandidate < previousIndex) {
+            //index in ble frame is from 0 to (2^16 - 1), this bracket is entered when the raw index does overflow
+            indexOverflowCount++
+            Timber.d("increase indexOverflowCount : indexOverflowCount = $indexOverflowCount")
+        }
+        val newFrameIndex = indexOverflowCount * indexCycle + rawIndex
+
         val imsBleFrame = AccelerometerFrame(data).apply {
             packetIndex = newFrameIndex
         }
@@ -136,7 +149,9 @@ class AccelerometerSignalProcessingIndus5(
                 missingCount++
             }
         }
-        assert(missingCount == missingFrame * imsBleFrame.positions.size)
+        if (BuildConfig.DEBUG) {
+            assert(missingCount == missingFrame * imsBleFrame.positions.size)
+        }
 
         //3rd step: add the new frame data
         positions.addAll(imsBleFrame.positions)
@@ -146,6 +161,7 @@ class AccelerometerSignalProcessingIndus5(
 
         //5th step: if buffer reach 1 second, construct imsPacket and notify
         val count = rawBuffer.size
+        val sampleRate = getSampleRate()
         if (count >= sampleRate) {
 //            Timber.d("construct an IMS packet")
             val oneSecond = ArrayList(rawBuffer.subList(0, sampleRate))

@@ -14,7 +14,7 @@ class AccelerometerConfig private constructor(
         private const val DEFAULT_FULL_SCALE_CODE: Byte = 0x00 // ±2g
 
         /**
-         * starts with `MBX_GET_IMS_CONFIG 0x3A`, the array length should be 3 or 4
+         * starts with `MBX_GET_IMS_CONFIG [0x3A]` or `MBX_SET_IMS_CONFIG [0x39]`, the array length should be 3 or 4
          */
         fun parse(bytes: ByteArray): AccelerometerConfig {
             var sampRate = DEFAULT_SAMPLE_RATE

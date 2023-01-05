@@ -62,69 +62,67 @@ abstract class Indus5DeviceImpl(ctx: Context) :
     override fun onDataReceived(device: BluetoothDevice, data: Data) {
         if (data.value != null) {
 //            Timber.v("onDataReceived : ${NumericalUtils.bytesToHex(data.value)}")
-            when (val indus5Response = Indus5MailboxDecoder.decodeRawIndus5Response(data.value!!)) {
+            when (val response = Indus5MailboxDecoder.decodeRawIndus5Response(data.value!!)) {
                 is Indus5Response.MtuChange -> {
                     Timber.i("Mailbox MTU changed successfully")
                 }
                 is Indus5Response.BatteryLevel -> {
-                    batteryLevelListener?.onBatteryLevel(indus5Response.percent)
+                    batteryLevelListener?.onBatteryLevel(response.percent)
                 }
                 is Indus5Response.FirmwareVersion -> {
-                    deviceInformation.firmwareVersion = indus5Response.version
+                    deviceInformation.firmwareVersion = response.version
                 }
                 is Indus5Response.HardwareVersion -> {
-                    deviceInformation.hardwareVersion = indus5Response.version
+                    deviceInformation.hardwareVersion = response.version
                 }
                 is Indus5Response.GetSerialNumber -> {
-                    deviceInformation.serialNumber = indus5Response.serialNumber
-                    deviceInformation.bleName = INDUS5_BLE_PREFIX + indus5Response.serialNumber
+                    deviceInformation.serialNumber = response.serialNumber
+                    deviceInformation.bleName = INDUS5_BLE_PREFIX + response.serialNumber
                 }
                 is Indus5Response.AudioNameFetched -> {
-                    deviceInformation.audioName = INDUS5_AUDIO_PREFIX + indus5Response.audioName
+                    deviceInformation.audioName = INDUS5_AUDIO_PREFIX + response.audioName
                 }
                 is Indus5Response.AudioNameChanged -> {
-                    deviceInformation.audioName = INDUS5_AUDIO_PREFIX + indus5Response.newAudioName
+                    deviceInformation.audioName = INDUS5_AUDIO_PREFIX + response.newAudioName
                     audioNameListener?.onAudioNameChanged(deviceInformation.audioName)
                 }
                 is Indus5Response.EEGStatus -> {
-                    deviceStatusCallback?.onEEGStatusChange(indus5Response.isEnabled)
+                    deviceStatusCallback?.onEEGStatusChange(response.isEnabled)
                 }
                 is Indus5Response.EEGFrame -> {
                     dataReceiver?.onEEGFrame(
                         TimedBLEFrame(
                             SystemClock.elapsedRealtime(),
-                            indus5Response.data
+                            response.data
                         )
                     )
                 }
                 is Indus5Response.TriggerStatusConfiguration -> {
-                    dataReceiver?.onTriggerStatusConfiguration(indus5Response.triggerStatusAllocationSize)
+                    dataReceiver?.onTriggerStatusConfiguration(response.triggerStatusAllocationSize)
                 }
                 is Indus5Response.ImsStatus -> {
-                    deviceStatusCallback?.onIMSStatusChange(indus5Response.isEnabled)
+                    deviceStatusCallback?.onIMSStatusChange(response.isEnabled)
                 }
                 is Indus5Response.ImsFrame -> {
-                    dataReceiver?.onAccelerometerFrame(indus5Response.data)
+                    dataReceiver?.onAccelerometerFrame(response.data)
                 }
                 is Indus5Response.SerialNumberChanged -> {
-                    serialNumberChangedListener?.onSerialNumberChanged(indus5Response.newSerialNumber)
+                    serialNumberChangedListener?.onSerialNumberChanged(response.newSerialNumber)
                 }
                 is Indus5Response.GetDeviceSystemStatus -> {
-                    deviceSystemStatusListener?.onDeviceSystemStatusFetched(indus5Response.deviceSystemStatus)
+                    deviceSystemStatusListener?.onDeviceSystemStatusFetched(response.deviceSystemStatus)
                 }
                 is Indus5Response.GetSensorStatuses -> {
-                    sensorStatusListener?.onSensorStatusFetched(indus5Response.sensorStatuses)
+                    sensorStatusListener?.onSensorStatusFetched(response.sensorStatuses)
                 }
                 is Indus5Response.GetIMSConfig -> {
-                    accelerometerConfigListener?.onAccelerometerConfigFetched(
-                        indus5Response.sampleRate?.sampleRate ?: -1
-                    )
+                    accelerometerConfigListener?.onAccelerometerConfigFetched(response.accelerometerConfig)
                 }
                 is Indus5Response.SetIMSConfig -> {
-                    Timber.d("onDataReceived : SetIMSConfig")
+                    dataReceiver?.onAccelerometerConfiguration(response.accelerometerConfig)
                 }
                 else -> {
-                    Timber.e("this type is not supported : ${indus5Response.javaClass.simpleName}")
+                    Timber.e("this type is not supported : ${response.javaClass.simpleName}")
                 }
             }
         } else {
@@ -262,7 +260,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
 
     private fun setAccelerometerConfigRequest(sampleRate: EnumAccelerometerSampleRate): WriteRequest {
         val operationByte = EnumIndus5FrameSuffix.MBX_SET_IMS_CONFIG.bytes
-        val sampleRateByte : Byte = sampleRate.mailboxValue
+        val sampleRateByte: Byte = sampleRate.mailboxValue
         val enableAxisByte: Byte = 0x07 // Default value: 0x07 : all axis are enabled
         val fullScaleByte: Byte = 0x00 // Default value: 0x00 : ±2g
         val command = operationByte + sampleRateByte + enableAxisByte + fullScaleByte

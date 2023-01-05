@@ -23,9 +23,6 @@ interface MbtDeviceInterface {
     fun getBleConnectionStatus(): BleConnectionStatus
     fun getSensorStatuses(sensorStatusListener: SensorStatusListener)
 
-    fun isEEGEnabled(): Boolean
-    fun isIMSEnabled(): Boolean
-
     //----------------------------------------------------------------------------
     // battery
     //----------------------------------------------------------------------------

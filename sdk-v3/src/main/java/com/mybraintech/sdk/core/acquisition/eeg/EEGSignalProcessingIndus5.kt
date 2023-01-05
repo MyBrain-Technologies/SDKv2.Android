@@ -5,18 +5,20 @@ import com.mybraintech.sdk.core.acquisition.IndexReader
 import com.mybraintech.sdk.core.model.RawEEGSample2
 import com.mybraintech.sdk.core.model.StreamingParams
 import com.mybraintech.sdk.util.NumericalUtils
+import io.reactivex.Scheduler
 import timber.log.Timber
 
 abstract class EEGSignalProcessingIndus5(
     streamingParams: StreamingParams,
-    eegCallback: EEGCallback
+    callback: EEGCallback,
+    bleFrameScheduler: Scheduler
 ) :
     EEGSignalProcessing(
-        sampleRate = streamingParams.eegSampleRate,
         protocol = EnumBluetoothProtocol.BLE,
         isTriggerStatusEnabled = streamingParams.isTriggerStatusEnabled,
         isQualityCheckerEnabled = streamingParams.isQualityCheckerEnabled,
-        eegCallback = eegCallback
+        callback = callback,
+        eegFrameScheduler = bleFrameScheduler
     ) {
 
     override fun getFrameIndex(eegFrame: ByteArray): Long {

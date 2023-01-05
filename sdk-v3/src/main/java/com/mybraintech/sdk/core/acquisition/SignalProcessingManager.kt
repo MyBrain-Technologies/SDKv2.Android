@@ -2,7 +2,6 @@ package com.mybraintech.sdk.core.acquisition
 
 import android.os.Handler
 import android.os.Looper
-import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessing
 import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessingHyperion
 import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessingMelomind
 import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessingQPlus
@@ -11,9 +10,11 @@ import com.mybraintech.sdk.core.acquisition.ims.AccelerometerSignalProcessingInd
 import com.mybraintech.sdk.core.acquisition.ppg.PPGSignalProcessingDisabled
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
-import com.mybraintech.sdk.core.recording.BaseAccelerometerRecording
+import com.mybraintech.sdk.core.recording.BaseAccelerometerRecorder
+import com.mybraintech.sdk.core.recording.BaseEEGRecorder
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.plugins.RxJavaPlugins
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
@@ -23,16 +24,16 @@ import kotlin.math.max
 import kotlin.math.min
 
 /**
- * please call [terminate] to release occupied memory when stop using
+ * please call [dispose] to release occupied memory when stop using
  */
 internal class SignalProcessingManager(
-    val deviceType: EnumMBTDevice,
-    val streamingParams: StreamingParams
-) : RecordingInterface,
-    MbtDataReceiver {
+    val deviceType: EnumMBTDevice, val streamingParams: StreamingParams
+) : RecordingInterface, MbtDataReceiver {
+
+    private val bleFrameScheduler = RxJavaPlugins.createSingleScheduler(AcquisierThreadFactory)
 
     private var eegListener: EEGListener? = null
-    private val eegCallback = object : EEGSignalProcessing.EEGCallback {
+    private val eegCallback = object : BaseEEGRecorder.EEGCallback {
         override fun onNewEEG(eegPacket: MbtEEGPacket) {
             eegListener?.onEegPacket(eegPacket)
         }
@@ -69,31 +70,24 @@ internal class SignalProcessingManager(
 
     private var recordingDisposable = CompositeDisposable()
 
-    /**
-     * TODO : replace all signal processing units to a list
-     * ([eegSignalProcessing], [accelerometerSignalProcessing], [ppgSignalProcessing])
-     */
-    private var eegSignalProcessing: EEGSignalProcessing = when (deviceType) {
+    private var eegSignalProcessing: BaseEEGRecorder = when (deviceType) {
         EnumMBTDevice.Q_PLUS -> {
-            EEGSignalProcessingQPlus(streamingParams, eegCallback)
+            EEGSignalProcessingQPlus(streamingParams, eegCallback, bleFrameScheduler)
         }
         EnumMBTDevice.MELOMIND -> {
-            EEGSignalProcessingMelomind(streamingParams, eegCallback)
+            EEGSignalProcessingMelomind(streamingParams, eegCallback, bleFrameScheduler)
         }
         EnumMBTDevice.HYPERION -> {
-            EEGSignalProcessingHyperion(streamingParams, eegCallback)
+            EEGSignalProcessingHyperion(streamingParams, eegCallback, bleFrameScheduler)
         }
         else -> {
             throw UnsupportedOperationException("device type not known")
         }
     }
 
-    private var accelerometerSignalProcessing: BaseAccelerometerRecording = when (deviceType) {
+    private var accelerometerSignalProcessing: BaseAccelerometerRecorder = when (deviceType) {
         EnumMBTDevice.Q_PLUS -> {
-            AccelerometerSignalProcessingIndus5(
-                sampleRate = streamingParams.accelerometerSampleRate.sampleRate,
-                accelerometerCallback = accelerometerCallback
-            )
+            AccelerometerSignalProcessingIndus5(accelerometerCallback, bleFrameScheduler)
         }
         else -> {
             AccelerometerSignalProcessingDisabled()
@@ -102,8 +96,8 @@ internal class SignalProcessingManager(
 
     private val ppgSignalProcessing by lazy { PPGSignalProcessingDisabled() }
 
-    fun terminate() {
-        eegSignalProcessing.terminate()
+    fun dispose() {
+        eegSignalProcessing.dispose()
         recordingDisposable.dispose()
     }
 
@@ -111,14 +105,15 @@ internal class SignalProcessingManager(
     // MARK: RecordingInterface
     //----------------------------------------------------------------------------
     override fun startRecording(
-        recordingListener: RecordingListener,
-        recordingOption: RecordingOption
+        recordingListener: RecordingListener, recordingOption: RecordingOption
     ) {
         Timber.d("startRecording")
 
         this.recordingOption = recordingOption
         this.recordingListener = recordingListener
-        this.kwak = eegSignalProcessing.createKwak(recordingOption)
+        this.kwak = KwakBuilder().createKwak(
+            deviceType, recordingOption, streamingParams.isQualityCheckerEnabled
+        )
 
         isRecording = true
         isWaitingLateSignals = false
@@ -194,8 +189,7 @@ internal class SignalProcessingManager(
                             stopAllRecording()
                             saveRecording(minLen + 1)
                         }
-                    },
-                    1000
+                    }, 1000
                 )
             }
         }
@@ -253,8 +247,7 @@ internal class SignalProcessingManager(
                             stopAllRecording()
                             saveRecording(trim)
                         }
-                    },
-                    1000
+                    }, 1000
                 )
             }
         }
@@ -340,12 +333,29 @@ internal class SignalProcessingManager(
         eegSignalProcessing.onTriggerStatusConfiguration(triggerStatusAllocationSize)
     }
 
+    override fun onAccelerometerConfiguration(accelerometerConfig: AccelerometerConfig) {
+        accelerometerSignalProcessing.onAccelerometerConfiguration(accelerometerConfig)
+        if (streamingParams.isAccelerometerEnabled) {
+            /**
+             * if headset does not support [EnumAccelerometerSampleRate] change:
+             * we overwrite the real value in the [streamingParams] and notify user if needed
+             */
+            if (streamingParams.accelerometerSampleRate != accelerometerConfig.sampleRate) {
+                with("Accelerometer frequency is ${accelerometerConfig.sampleRate.sampleRate} Hz, it is not equal expected value [${streamingParams.accelerometerSampleRate.sampleRate}]") {
+                    Timber.e(this)
+                    accelerometerListener?.onAccelerometerError(Throwable(this))
+                }
+                streamingParams.accelerometerSampleRate = accelerometerConfig.sampleRate
+            }
+        }
+    }
+
     override fun onEEGFrame(data: TimedBLEFrame) {
-        eegSignalProcessing.onSignalData(data)
+        eegSignalProcessing.addSignalData(data)
     }
 
     override fun onAccelerometerFrame(data: ByteArray) {
-        accelerometerSignalProcessing.onSignalData(data)
+        accelerometerSignalProcessing.addSignalData(data)
     }
 
     override fun setEEGListener(eegListener: EEGListener?) {
@@ -367,45 +377,40 @@ internal class SignalProcessingManager(
     //----------------------------------------------------------------------------
     // MARK:
     //----------------------------------------------------------------------------
-    @Suppress("unused")
-    fun isTriggerStatusEnabled(): Boolean {
-        return eegSignalProcessing.isTriggerStatusEnabled
-    }
-
     private fun saveRecording(
         streamingParams: StreamingParams,
         eegBuffer: List<MbtEEGPacket>,
         eegErrorData: EEGStreamingErrorCounter,
         imsBuffer: List<ThreeDimensionalPosition>
     ) {
-        Observable.just(Unit)
-            .subscribeOn(Schedulers.computation())
-            .subscribe {
-                try {
-                    if (recordingOption?.outputFile != null) {
-                        val isOk = kwak.serializeJson(
-                            streamingParams,
-                            eegBuffer,
-                            eegErrorData,
-                            imsBuffer,
-                            FileWriter(recordingOption?.outputFile!!)
-                        )
-                        if (!isOk) {
-                            recordingListener?.onRecordingError(Throwable("Can not serialize file"))
-                        } else {
-                            recordingListener?.onRecordingSaved(recordingOption?.outputFile!!)
-                        }
+        Observable.fromCallable {
+            try {
+                if (recordingOption?.outputFile != null) {
+                    val isOk = kwak.serializeJson(
+                        streamingParams,
+                        eegBuffer,
+                        eegErrorData,
+                        imsBuffer,
+                        FileWriter(recordingOption?.outputFile!!)
+                    )
+                    if (!isOk) {
+                        recordingListener?.onRecordingError(Throwable("Can not serialize file"))
                     } else {
-                        recordingListener?.onRecordingError(Throwable("Recording file not found"))
+                        recordingListener?.onRecordingSaved(recordingOption?.outputFile!!)
                     }
-                } catch (e: Exception) {
-                    Timber.e(e)
-                    recordingListener?.onRecordingError(e)
-                } finally {
-                    recordingListener = null
-                    recordingDisposable.clear()
+                } else {
+                    recordingListener?.onRecordingError(Throwable("Recording file not found"))
                 }
+            } catch (e: Exception) {
+                Timber.e(e)
+                recordingListener?.onRecordingError(e)
+            } finally {
+                recordingListener = null
+                recordingDisposable.clear()
             }
+        }
+            .observeOn(Schedulers.computation())
+            .subscribe()
             .addTo(recordingDisposable)
     }
 }

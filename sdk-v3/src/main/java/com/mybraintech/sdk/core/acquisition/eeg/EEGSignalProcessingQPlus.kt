@@ -1,29 +1,17 @@
 package com.mybraintech.sdk.core.acquisition.eeg
 
-import com.mybraintech.android.jnibrainbox.BrainBoxVersion
 import com.mybraintech.sdk.core.model.*
+import io.reactivex.Scheduler
 
-class EEGSignalProcessingQPlus(streamingParams: StreamingParams, eegCallback: EEGCallback) :
-    EEGSignalProcessingIndus5(streamingParams, eegCallback) {
+class EEGSignalProcessingQPlus(
+    streamingParams: StreamingParams,
+    eegCallback: EEGCallback,
+    bleFrameScheduler: Scheduler
+) :
+    EEGSignalProcessingIndus5(streamingParams, eegCallback, bleFrameScheduler) {
 
     override fun getDeviceType(): EnumMBTDevice {
         return EnumMBTDevice.Q_PLUS
     }
 
-    override fun createKwak(recordingOption: RecordingOption): Kwak {
-        return Kwak().apply {
-            context = recordingOption.context
-            header = KwakHeader.getQPlusHeader().apply {
-                deviceInfo = recordingOption.deviceInformation
-                setRecordingNb(recordingOption.recordingNb)
-            }
-            recording.recordID = recordingOption.recordId
-            recording.recordingType.recordType = recordingOption.recordingType
-            if (isQualityCheckerEnabled) {
-                recording.recordingType.spVersion = BrainBoxVersion.getVersion()
-            } else {
-                recording.recordingType.spVersion = "0.0.0"
-            }
-        }
-    }
 }

@@ -45,45 +45,47 @@ class KwakHeader {
         this.recordingNb = "0x" + String.format("%02X", recordingNb)
     }
 
-    companion object {
-        fun getQPlusHeader(): KwakHeader {
-            return KwakHeader().apply {
-                this.nbChannels = 4 //4 channels for Q Plus
-                this.acquisitionLocations = listOf(
-                    EnumAcquisitionLocation.P3,
-                    EnumAcquisitionLocation.P4,
-                    EnumAcquisitionLocation.AF3,
-                    EnumAcquisitionLocation.AF4
-                )
-                this.groundLocations = listOf(EnumAcquisitionLocation.M2);
-                this.referenceLocations = listOf(EnumAcquisitionLocation.M1);
-            }
+    fun getQPlusHeader(): KwakHeader {
+        return KwakHeader().apply {
+            this.nbChannels = 4 //4 channels for Q Plus
+            this.acquisitionLocations = listOf(
+                EnumAcquisitionLocation.P3,
+                EnumAcquisitionLocation.P4,
+                EnumAcquisitionLocation.AF3,
+                EnumAcquisitionLocation.AF4
+            )
+            this.groundLocations = listOf(EnumAcquisitionLocation.M2)
+            this.referenceLocations = listOf(EnumAcquisitionLocation.M1)
         }
+    }
 
-        fun getMelomindHeader(): KwakHeader {
-            return KwakHeader().apply {
-                this.nbChannels = 2 //2 channels for Melomind
-                this.acquisitionLocations = listOf(
-                    EnumAcquisitionLocation.P3,
-                    EnumAcquisitionLocation.P4
-                )
-                this.groundLocations = listOf(EnumAcquisitionLocation.M2);
-                this.referenceLocations = listOf(EnumAcquisitionLocation.M1);
-            }
+    fun getMelomindHeader(): KwakHeader {
+        return KwakHeader().apply {
+            this.nbChannels = 2 //2 channels for Melomind
+            this.acquisitionLocations = listOf(
+                EnumAcquisitionLocation.P3,
+                EnumAcquisitionLocation.P4
+            )
+            this.groundLocations = listOf(EnumAcquisitionLocation.M2)
+            this.referenceLocations = listOf(EnumAcquisitionLocation.M1)
         }
+    }
 
-        fun getHyperionHeader(): KwakHeader {
-            return KwakHeader().apply {
-                this.nbChannels = 4 //4 channels for Hyperion
-                this.acquisitionLocations = listOf(
-                    EnumAcquisitionLocation.Cz,
-                    EnumAcquisitionLocation.Pz,
-                    EnumAcquisitionLocation.AF3,
-                    EnumAcquisitionLocation.AF4
-                )
-                this.groundLocations = listOf(EnumAcquisitionLocation.M2);
-                this.referenceLocations = listOf(EnumAcquisitionLocation.M1);
-            }
+    fun getHyperionHeader(): KwakHeader {
+        return KwakHeader().apply {
+            this.nbChannels = 4 //4 channels for Hyperion
+            this.acquisitionLocations = listOf(
+                EnumAcquisitionLocation.Cz,
+                EnumAcquisitionLocation.Pz,
+                EnumAcquisitionLocation.AF3,
+                EnumAcquisitionLocation.AF4
+            )
+            this.groundLocations = listOf(EnumAcquisitionLocation.M2)
+            this.referenceLocations = listOf(EnumAcquisitionLocation.M1)
         }
+    }
+
+    fun getBaseHeader() : KwakHeader {
+        return KwakHeader()
     }
 }

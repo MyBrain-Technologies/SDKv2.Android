@@ -31,10 +31,10 @@ object Indus5MailboxDecoder {
                     Indus5Response.GetSensorStatuses(Indus5SensorStatus.parse(byteArray))
                 }
                 EnumIndus5FrameSuffix.MBX_SET_IMS_CONFIG.getOperationCode() -> {
-                    Indus5Response.SetIMSConfig(byteArray)
+                    Indus5Response.SetIMSConfig(AccelerometerConfig.parse(byteArray))
                 }
                 EnumIndus5FrameSuffix.MBX_GET_IMS_CONFIG.getOperationCode() -> {
-                    Indus5Response.GetIMSConfig(AccelerometerConfig.parse(byteArray).sampleRate)
+                    Indus5Response.GetIMSConfig(AccelerometerConfig.parse(byteArray))
                 }
                 EnumIndus5FrameSuffix.MBX_TRANSMIT_MTU_SIZE.getOperationCode() -> {
                     // only keep the 2nd byte where stores sample number

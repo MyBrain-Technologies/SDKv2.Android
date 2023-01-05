@@ -1,39 +1,33 @@
 package com.mybraintech.sdk.core.acquisition.eeg
 
 import com.mybraintech.android.jnibrainbox.QualityChecker
-import com.mybraintech.sdk.core.acquisition.AcquisierThreadFactory
-import com.mybraintech.sdk.core.acquisition.EnumBluetoothProtocol
-import com.mybraintech.sdk.core.acquisition.RealtimeEEGExecutor
-import com.mybraintech.sdk.core.acquisition.RealtimeEEGExecutorImpl
+import com.mybraintech.sdk.BuildConfig
+import com.mybraintech.sdk.core.acquisition.*
 import com.mybraintech.sdk.core.listener.EEGFrameDecodeInterface
-import com.mybraintech.sdk.core.listener.EEGRealtimeListener
 import com.mybraintech.sdk.core.model.*
-import com.mybraintech.sdk.core.recording.BaseEEGRecording
+import com.mybraintech.sdk.core.recording.BaseEEGRecorder
 import com.mybraintech.sdk.util.ErrorDataHelper2
 import com.mybraintech.sdk.util.MatrixUtils2
 import com.mybraintech.sdk.util.NumericalUtils
-import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.plugins.RxJavaPlugins
+import io.reactivex.Scheduler
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
+import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.math.pow
 
 abstract class EEGSignalProcessing(
-    private val sampleRate: Int,
     protocol: EnumBluetoothProtocol,
     val isTriggerStatusEnabled: Boolean,
     protected val isQualityCheckerEnabled: Boolean,
-    var eegCallback: EEGCallback?
-) : BaseEEGRecording(), EEGFrameDecodeInterface {
-
-    /**
-     * this scheduler is reserved to handle eeg frame tasks
-     */
-    private var eegFrameScheduler = RxJavaPlugins.createSingleScheduler(AcquisierThreadFactory)
+    callback: EEGCallback?,
+    val eegFrameScheduler: Scheduler
+) : BaseEEGRecorder(callback), EEGFrameDecodeInterface {
 
     private val eegFrameSubject = PublishSubject.create<TimedBLEFrame>()
+    private val eegRealtimeSubject = PublishSubject.create<EEGSignalPack>()
     private val eegPacketSubject = PublishSubject.create<MbtEEGPacket>()
 
     private var recordingBuffer = mutableListOf<MbtEEGPacket>()
@@ -43,7 +37,7 @@ abstract class EEGSignalProcessing(
     /**
      * index allocation size in the eeg frame
      */
-    var indexAlloc = protocol.getFrameIndexAllocationSize()
+    protected var indexAlloc = protocol.getFrameIndexAllocationSize()
     private val indexCycle = 2.0.pow(indexAlloc * 8).toLong()
 
     /**
@@ -68,38 +62,39 @@ abstract class EEGSignalProcessing(
     private var previousIndex = -1L
 
     /**
-     * Buffer that will manage the EEG <b>RAW</b> data. It stores {@link RawEEGSample2} objects.
-     */
-    private var rawBuffer: MutableList<RawEEGSample2> = mutableListOf()
-
-    /**
-     * Object that will manage the EEG <b>CONSOLIDATED</b> data.
+     * table : size = [ number of samples * number of channels ]
      */
     private var consolidatedEEGBuffer = ArrayList<ArrayList<Float>>()
+
     private var consolidatedStatusBuffer = ArrayList<Float>()
 
     private val dataConversion: MbtDataConversion2 by lazy {
         MbtDataConversion2.generateInstance(getDeviceType())
     }
 
-    private var qualityChecker: QualityChecker = QualityChecker(sampleRate)
-
-    private var realtimeEEGExecutor: RealtimeEEGExecutor? = null
-    private var disposable = CompositeDisposable()
+    private var qualityChecker: QualityChecker = QualityChecker(250)
 
     init {
-        eegPacketSubject
-            .observeOn(Schedulers.io())
+        eegFrameSubject
+            .observeOn(eegFrameScheduler)
             .subscribe(
-                { eegCallback?.onNewEEG(it) },
+                ::consumeEEGFrame,
                 Timber::e
             )
             .addTo(disposable)
 
-        eegFrameSubject
-            .observeOn(eegFrameScheduler)
+        eegRealtimeSubject
+            .observeOn(Schedulers.io())
             .subscribe(
-                { consumeEEGFrame(it) },
+                ::notifyRealtime,
+                Timber::e
+            )
+            .addTo(disposable)
+
+        eegPacketSubject
+            .observeOn(Schedulers.io())
+            .subscribe(
+                ::notifyPacket,
                 Timber::e
             )
             .addTo(disposable)
@@ -126,23 +121,17 @@ abstract class EEGSignalProcessing(
         return isRecording
     }
 
-    /**
-     * TODO : move to `SignalProcessingManager`
-     */
-    abstract fun createKwak(recordingOption: RecordingOption): Kwak
-
     override fun clearBuffer() {
         eegStreamingErrorCounter = EEGStreamingErrorCounter()
-        rawBuffer = mutableListOf()
         recordingBuffer = mutableListOf()
         consolidatedEEGBuffer.clear()
         consolidatedStatusBuffer.clear()
         if (isQualityCheckerEnabled) {
-            qualityChecker = QualityChecker(sampleRate)
+            qualityChecker = QualityChecker(getSampleRate())
         }
     }
 
-    override fun onSignalData(data: TimedBLEFrame) {
+    override fun addSignalData(data: TimedBLEFrame) {
 //        Timber.v("onEEGFrame : ${NumericalUtils.bytesToShortString(eegFrame)}")
         eegFrameSubject.onNext(data)
     }
@@ -151,28 +140,39 @@ abstract class EEGSignalProcessing(
      * please wrap this method in try catch to avoid crashing
      */
     @Throws(Exception::class)
-    private fun consumeEEGFrame(timedEegFrame: TimedBLEFrame) {
+    private fun consumeEEGFrame(timedBLEFrame: TimedBLEFrame) {
 //        Timber.v("consumeEEGFrame")
-        if (realtimeEEGExecutor != null) {
-            realtimeEEGExecutor?.onEEGFrame(timedEegFrame)
-        }
-
-        val eegFrame = timedEegFrame.data
+        val eegFrame = timedBLEFrame.data
         if (!isValidFrame(eegFrame)) {
             Timber.e("bad format eeg frame : ${NumericalUtils.bytesToShortString(eegFrame)}")
             return
         }
 
-        //1st step : check index
+        // 1st step : check index
         val rawIndex = getFrameIndex(eegFrame)
         val indexCandidate = indexOverflowCount * indexCycle + rawIndex
         if (indexCandidate < previousIndex) {
             //index in ble frame is from 0 to (2^16 - 1), this bracket is entered when the raw index does overflow
             indexOverflowCount++
-            Timber.i("increase indexOverflowCount : indexOverflowCount = $indexOverflowCount")
+            Timber.d("increase indexOverflowCount : indexOverflowCount = $indexOverflowCount")
         }
         val newFrameIndex = indexOverflowCount * indexCycle + rawIndex
 //        Timber.v("newFrameIndex = $newFrameIndex")
+
+        // 2st step : parse raw data to standard table and notify realtime if needed
+        val eegSignals = decodeEEGData(timedBLEFrame.data)
+        val statuses: List<Float> = eegSignals.map { it.statusData }
+        val standardEEGs = dataConversion.convertRawDataToEEG(eegSignals)
+        if (hasRealtimeListener()) {
+            eegRealtimeSubject.onNext(
+                EEGSignalPack(
+                    timestamp = timedBLEFrame.timestamp,
+                    index = newFrameIndex,
+                    eegSignals = standardEEGs,
+                    triggers = statuses
+                )
+            )
+        }
 
         if (previousIndex == -1L) {
             //init first frame index
@@ -201,9 +201,9 @@ abstract class EEGSignalProcessing(
             }
         }
 
-        val rawEEGList = mutableListOf<RawEEGSample2>()
+        val missingEEGSamples = mutableListOf<RawEEGSample2>()
 
-        //2nd step : Fill gap by NaN samples if there is missing frames
+        // 3rd step : Fill gap by NaN samples if there is missing frames
         if (missingFrame > 0) {
             var missingCount = 0L
             val sampleNb = getNumberOfTimes(eegFrame)
@@ -211,64 +211,68 @@ abstract class EEGSignalProcessing(
             for (i in 1..missingFrame) {
                 //one frame contains n times of sample
                 for (j in 1..sampleNb) {
-                    rawEEGList.add(RawEEGSample2.NAN_PACKET)
+                    missingEEGSamples.add(RawEEGSample2.NAN_PACKET)
                     missingCount++
                 }
             }
-            assert(missingCount == missingFrame * sampleNb)
+            if (BuildConfig.DEBUG) {
+                assert(missingCount == missingFrame * sampleNb)
+            }
 //            Timber.i("missing size = n channels * sample per frame = ${rawEEGList.size}")
         }
+        val missingStatuses: List<Float> = missingEEGSamples.map { it.statusData }
+        val standardMissingEEGs = dataConversion.convertRawDataToEEG(missingEEGSamples)
+        consolidatedEEGBuffer.addAll(standardMissingEEGs)
+        consolidatedStatusBuffer.addAll(missingStatuses)
 
-        //3rd step: Parse the new frame
-        val rawEEGSamples: List<RawEEGSample2> = decodeEEGData(eegFrame)
-        rawEEGList.addAll(rawEEGSamples)
-
-        //4th step: save raw eeg data to buffer
-        rawBuffer.addAll(rawEEGList)
+        // 4th step: save raw eeg data to buffer
+        consolidatedEEGBuffer.addAll(standardEEGs)
+        consolidatedStatusBuffer.addAll(statuses)
 
         previousIndex = newFrameIndex
 
         //5th step: if raw buffer is reach threshold, generate consolidated eeg
-        if (rawBuffer.size >= DEFAULT_MAX_PENDING_RAW_DATA_BUFFER_SIZE) {
-            val consolidatedEEG = dataConversion.convertRawDataToEEG(rawBuffer)
-            val statuses = rawBuffer.map { it.statusData }
-            //all raw data is converted to consolidated data, clear raw buffer
-            rawBuffer.clear()
-            consolidatedEEGBuffer.addAll(consolidatedEEG)
-            consolidatedStatusBuffer.addAll(statuses)
-            val count = consolidatedEEGBuffer.size
-            if (count >= sampleRate) {
-                //consolidated buffer can emit a MBTPacket
-                val dataInverted = ArrayList(consolidatedEEGBuffer.subList(0, sampleRate))
-                val newEegData = MatrixUtils2.invertFloatMatrix(dataInverted)
-                val newStatusData = ArrayList(consolidatedStatusBuffer.subList(0, sampleRate))
-                consolidatedEEGBuffer = ArrayList(consolidatedEEGBuffer.subList(sampleRate, count))
-                consolidatedStatusBuffer =
-                    ArrayList(consolidatedStatusBuffer.subList(sampleRate, count))
-                val newPacket = MbtEEGPacket(newEegData, newStatusData)
-                if (isQualityCheckerEnabled) {
-                    try {
-                        val qualities = qualityChecker.computeQualityChecker(newEegData)
-                        if (qualities != null) {
-                            newPacket.qualities = ArrayList(qualities.toList())
-                        } else {
-                            newPacket.qualities = ArrayList<Float>(sampleRate)
-                            newPacket.qualities.fill(Float.NaN)
-                        }
-                    } catch (e: Exception) {
-                        Timber.e(e)
+        val count = consolidatedEEGBuffer.size
+        val sampleRate = getSampleRate()
+        if (count >= sampleRate) {
+            //consolidated buffer can emit a MBTPacket
+            Timber.v("consolidatedEEGBuffer = [${consolidatedEEGBuffer.size}x${consolidatedEEGBuffer[0].size}]")
+            Timber.v("consolidatedStatusBuffer = [${consolidatedStatusBuffer.size}]")
+            val invertedEegData = ArrayList(consolidatedEEGBuffer.subList(0, sampleRate))
+            val newStatusData = ArrayList(consolidatedStatusBuffer.subList(0, sampleRate))
+            consolidatedEEGBuffer = ArrayList(consolidatedEEGBuffer.subList(sampleRate, count))
+            consolidatedStatusBuffer =
+                ArrayList(consolidatedStatusBuffer.subList(sampleRate, count))
+
+            // invert table : from [nbSample * nbChannel]  to [nbChannel * nbSample]
+            @Suppress("NAME_SHADOWING")
+            val eegData = MatrixUtils2.invertFloatMatrix(invertedEegData)
+
+            val newPacket = MbtEEGPacket(eegData, newStatusData)
+            if (isQualityCheckerEnabled) {
+                try {
+//                    Timber.d("new packet : ${Arrays.toString(eegData.toArray())}")
+                    val qualities = qualityChecker.computeQualityChecker(eegData)
+                    if (qualities != null) {
+                        newPacket.qualities = ArrayList(qualities.toList())
+                    } else {
                         newPacket.qualities = ArrayList<Float>(sampleRate)
                         newPacket.qualities.fill(Float.NaN)
                     }
+                } catch (e: Exception) {
+                    Timber.e(e)
+                    newPacket.qualities = ArrayList<Float>(sampleRate)
+                    newPacket.qualities.fill(Float.NaN)
                 }
-
-                if (isRecording) {
-                    recordingBuffer.add(newPacket)
-                    Timber.d("eeg recordingBuffer size = ${recordingBuffer.size}")
-                }
-
-                eegPacketSubject.onNext(newPacket)
             }
+//            Timber.d("new qualities : ${newPacket.qualities.toJson()}")
+
+            if (isRecording) {
+                recordingBuffer.add(newPacket)
+                Timber.d("eeg recordingBuffer size = ${recordingBuffer.size}")
+            }
+
+            eegPacketSubject.onNext(newPacket)
         }
     }
 
@@ -293,7 +297,7 @@ abstract class EEGSignalProcessing(
         return recordingBuffer.size
     }
 
-    fun onTriggerStatusConfiguration(statusAllocationSize: Int) {
+    override fun onTriggerStatusConfiguration(statusAllocationSize: Int) {
         statusAlloc = statusAllocationSize
         headerAlloc = indexAlloc + statusAlloc
         Timber.d("indexAlloc = $indexAlloc | statusAlloc = $statusAlloc | headerAlloc = $headerAlloc")
@@ -303,7 +307,7 @@ abstract class EEGSignalProcessing(
         return recordingBuffer
     }
 
-    fun getRecordingErrorData(): EEGStreamingErrorCounter {
+    override fun getRecordingErrorData(): EEGStreamingErrorCounter {
         return eegStreamingErrorCounter
     }
 
@@ -311,32 +315,7 @@ abstract class EEGSignalProcessing(
         return eegStreamingErrorCounter.getMissingPercent()
     }
 
-    fun setRealtimeListener(eegRealtimeListener: EEGRealtimeListener?) {
-        if (eegRealtimeListener == null) {
-            if (realtimeEEGExecutor != null) {
-                realtimeEEGExecutor?.terminate()
-                realtimeEEGExecutor = null
-            }
-        } else {
-            if (realtimeEEGExecutor == null) {
-                realtimeEEGExecutor = RealtimeEEGExecutorImpl(this)
-                (realtimeEEGExecutor as RealtimeEEGExecutor).init(getDeviceType())
-            }
-            realtimeEEGExecutor?.setListener(eegRealtimeListener)
-        }
-    }
-
-    fun terminate() {
-        disposable.dispose()
-    }
-
-    interface EEGCallback {
-        fun onNewEEG(eegPacket: MbtEEGPacket)
-    }
-
     companion object {
         const val SIGNAL_ALLOC = 2 //one EEG signal is 2 bytes
-
-        const val DEFAULT_MAX_PENDING_RAW_DATA_BUFFER_SIZE = 40
     }
 }

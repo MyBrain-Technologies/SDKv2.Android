@@ -33,7 +33,10 @@ internal class MbtClientImpl(
     private var accelerometerListener: AccelerometerListener? = null
     private var eegRealtimeListener: EEGRealtimeListener? = null
 
-    private var isStreaming = false
+    /**
+     * [startStreaming] takes times, this value is to prevent recording function while the [startStreaming] procedure is not finished
+     */
+    private var isRecordingAllowed = false
     private var isEEGEnabled = false
     private var isIMSEnabled = false
 
@@ -103,7 +106,7 @@ internal class MbtClientImpl(
 
         // dispose old SignalProcessingManager then create a new one
         if (::manager.isInitialized) {
-            manager.terminate()
+            manager.dispose()
         }
         manager = SignalProcessingManager(deviceType, streamingParams)
 
@@ -117,11 +120,11 @@ internal class MbtClientImpl(
     }
 
     override fun stopStreaming() {
+        isRecordingAllowed = false
         if (isRecordingEnabled()) {
             stopRecording()
         }
         mbtDeviceInterface.disableSensors()
-        isStreaming = false
     }
 
     override fun setEEGListener(eegListener: EEGListener) {
@@ -137,11 +140,7 @@ internal class MbtClientImpl(
 
     @TestBench
     override fun getAccelerometerConfig(accelerometerConfigListener: AccelerometerConfigListener) {
-        if (isIMSEnabled) {
-            accelerometerConfigListener.onAccelerometerConfigError("cannot retrieve accelerometer config while streaming!")
-        } else {
-            mbtDeviceInterface.getAccelerometerConfig(accelerometerConfigListener)
-        }
+        mbtDeviceInterface.getAccelerometerConfig(accelerometerConfigListener)
     }
 
     override fun setAccelerometerListener(accelerometerListener: AccelerometerListener) {
@@ -153,7 +152,7 @@ internal class MbtClientImpl(
         recordingOption: RecordingOption,
         recordingListener: RecordingListener
     ) {
-        if (isStreaming) {
+        if (isRecordingAllowed) {
             recordingInterface?.startRecording(
                 recordingListener,
                 recordingOption
@@ -165,6 +164,7 @@ internal class MbtClientImpl(
 
     override fun stopRecording() {
         if (isRecordingEnabled()) {
+            isRecordingAllowed = false
             recordingInterface?.stopRecording()
         } else {
             Timber.e("Recording is not enabled")
@@ -177,10 +177,6 @@ internal class MbtClientImpl(
         } else {
             Timber.e("Recording is not enabled")
         }
-    }
-
-    override fun isEEGEnabled(): Boolean {
-        return isEEGEnabled
     }
 
     override fun isRecordingEnabled(): Boolean {
@@ -201,14 +197,14 @@ internal class MbtClientImpl(
     override fun onEEGStatusChange(isEnabled: Boolean) {
         Timber.i("onEEGStatusChange = $isEnabled")
         isEEGEnabled = isEnabled
-        updateStreamingStatus()
+        isRecordingAllowed = isRecordingAllowed()
         eegListener?.onEEGStatusChange(isEnabled)
     }
 
     override fun onIMSStatusChange(isEnabled: Boolean) {
         Timber.i("onIMSStatusChange = $isEnabled")
         isIMSEnabled = isEnabled
-        updateStreamingStatus()
+        isRecordingAllowed = isRecordingAllowed()
         accelerometerListener?.onAccelerometerStatusChange(isEnabled)
     }
 
@@ -220,12 +216,14 @@ internal class MbtClientImpl(
         accelerometerListener?.onAccelerometerError(error)
     }
 
-    private fun updateStreamingStatus() {
-        if (streamingParams == null) {
-            isStreaming = false
+    @Suppress("LiftReturnOrAssignment")
+    private fun isRecordingAllowed(): Boolean {
+        if (streamingParams != null) {
+            val eegCondition = (isEEGEnabled == streamingParams!!.isEEGEnabled)
+            val imsCondition = (isIMSEnabled == streamingParams!!.isAccelerometerEnabled)
+            return eegCondition && imsCondition
         } else {
-            isStreaming = (isEEGEnabled == streamingParams!!.isEEGEnabled)
-                    && (isIMSEnabled == streamingParams!!.isAccelerometerEnabled)
+            return false
         }
     }
 
@@ -246,5 +244,16 @@ internal class MbtClientImpl(
     @TestBench
     override fun getDeviceSystemStatus(deviceSystemStatusListener: DeviceSystemStatusListener) {
         mbtDeviceInterface.getDeviceSystemStatus(deviceSystemStatusListener)
+    }
+
+    /**
+     * @see [getStreamingState]
+     */
+    @Deprecated(
+        "this function is no longer available",
+        ReplaceWith("getStreamingState()")
+    )
+    override fun isEEGEnabled(): Boolean {
+        throw UnsupportedOperationException()
     }
 }

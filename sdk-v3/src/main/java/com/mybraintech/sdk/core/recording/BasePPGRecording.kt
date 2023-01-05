@@ -7,4 +7,8 @@ abstract class BasePPGRecording : SignalRecordingInterface<ByteArray, PPGPacket>
     override fun getSignalType(): EnumSignalType {
         return EnumSignalType.PPG
     }
+
+    override fun getSampleRate(): Int {
+        throw UnsupportedOperationException()
+    }
 }

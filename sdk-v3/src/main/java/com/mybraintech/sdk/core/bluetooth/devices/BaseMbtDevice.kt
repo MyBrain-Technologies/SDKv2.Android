@@ -26,8 +26,6 @@ abstract class BaseMbtDevice(ctx: Context) :
     protected val MTU_SIZE = 47
 
     protected var isScanning: Boolean = false
-    private var isEEGEnabled: Boolean = false
-    private var isIMSEnabled: Boolean = false
 
     protected var broadcastReceiver = MbtBleBroadcastReceiver()
     protected val mbtBleScanner = MbtBleScanner()
@@ -136,7 +134,7 @@ abstract class BaseMbtDevice(ctx: Context) :
                             maxRetry
                         )
                     }
-                    Thread(runnable).run()
+                    Thread(runnable).start()
                 } else {
                     val name = device?.name
                     connectionListener.onConnectionError(Throwable("fail to connect to MbtDevice : name = $name | status = $status"))
@@ -156,14 +154,6 @@ abstract class BaseMbtDevice(ctx: Context) :
     }
 
     protected abstract fun getDeviceType(): EnumMBTDevice
-
-    override fun isEEGEnabled(): Boolean {
-        return isEEGEnabled
-    }
-
-    override fun isIMSEnabled(): Boolean {
-        return isIMSEnabled
-    }
 
     abstract fun handleScanResults(results: List<ScanResult>)
 

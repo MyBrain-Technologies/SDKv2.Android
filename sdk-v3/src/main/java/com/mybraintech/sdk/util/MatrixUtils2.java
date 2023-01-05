@@ -6,12 +6,10 @@ import java.util.ArrayList;
 
 public class MatrixUtils2 {
 
+    @NonNull
     public static ArrayList<ArrayList<Float>> invertFloatMatrix(@NonNull ArrayList<ArrayList<Float>> source){
-
-        if(source == null)
-            return null;
         if (source.size() == 0 )
-            return null;
+            return new ArrayList<>();
 
         int nbLinesDestination = source.get(0).size();
         int nbColumnsDestination = source.size();
