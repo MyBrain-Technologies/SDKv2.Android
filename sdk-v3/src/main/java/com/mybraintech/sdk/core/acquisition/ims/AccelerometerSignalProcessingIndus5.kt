@@ -170,7 +170,7 @@ class AccelerometerSignalProcessingIndus5(
 
             if (isRecording) {
                 recordingBuffer.addAll(oneSecond)
-                Timber.d("ims recordingBuffer size = ${recordingBuffer.size}")
+//                Timber.d("ims recordingBuffer size = ${recordingBuffer.size}")
             }
 
             accelerometerCallback?.onAccelerometerPacket(accelerometerPacket)

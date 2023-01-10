@@ -236,8 +236,8 @@ abstract class EEGSignalProcessing(
         val sampleRate = getSampleRate()
         if (count >= sampleRate) {
             //consolidated buffer can emit a MBTPacket
-            Timber.v("consolidatedEEGBuffer = [${consolidatedEEGBuffer.size}x${consolidatedEEGBuffer[0].size}]")
-            Timber.v("consolidatedStatusBuffer = [${consolidatedStatusBuffer.size}]")
+//            Timber.v("consolidatedEEGBuffer = [${consolidatedEEGBuffer.size}x${consolidatedEEGBuffer[0].size}]")
+//            Timber.v("consolidatedStatusBuffer = [${consolidatedStatusBuffer.size}]")
             val invertedEegData = ArrayList(consolidatedEEGBuffer.subList(0, sampleRate))
             val newStatusData = ArrayList(consolidatedStatusBuffer.subList(0, sampleRate))
             consolidatedEEGBuffer = ArrayList(consolidatedEEGBuffer.subList(sampleRate, count))
@@ -269,7 +269,7 @@ abstract class EEGSignalProcessing(
 
             if (isRecording) {
                 recordingBuffer.add(newPacket)
-                Timber.d("eeg recordingBuffer size = ${recordingBuffer.size}")
+//                Timber.v("eeg recordingBuffer size = ${recordingBuffer.size}")
             }
 
             eegPacketSubject.onNext(newPacket)

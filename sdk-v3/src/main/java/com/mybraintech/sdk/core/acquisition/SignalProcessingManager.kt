@@ -12,14 +12,13 @@ import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
 import com.mybraintech.sdk.core.recording.BaseAccelerometerRecorder
 import com.mybraintech.sdk.core.recording.BaseEEGRecorder
-import io.reactivex.Observable
+import io.reactivex.Maybe
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.plugins.RxJavaPlugins
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 import java.io.FileWriter
-import java.util.*
 import kotlin.math.max
 import kotlin.math.min
 
@@ -383,30 +382,22 @@ internal class SignalProcessingManager(
         eegErrorData: EEGStreamingErrorCounter,
         imsBuffer: List<ThreeDimensionalPosition>
     ) {
-        Observable.fromCallable {
-            try {
-                if (recordingOption?.outputFile != null) {
-                    val isOk = kwak.serializeJson(
-                        streamingParams,
-                        eegBuffer,
-                        eegErrorData,
-                        imsBuffer,
-                        FileWriter(recordingOption?.outputFile!!)
-                    )
-                    if (!isOk) {
-                        recordingListener?.onRecordingError(Throwable("Can not serialize file"))
-                    } else {
-                        recordingListener?.onRecordingSaved(recordingOption?.outputFile!!)
-                    }
+        Maybe.fromCallable {
+            if (recordingOption?.outputFile != null) {
+                val isOk = kwak.serializeJson(
+                    streamingParams,
+                    eegBuffer,
+                    eegErrorData,
+                    imsBuffer,
+                    FileWriter(recordingOption?.outputFile!!)
+                )
+                if (!isOk) {
+                    recordingListener?.onRecordingError(RuntimeException("Can not serialize file"))
                 } else {
-                    recordingListener?.onRecordingError(Throwable("Recording file not found"))
+                    recordingListener?.onRecordingSaved(recordingOption?.outputFile!!)
                 }
-            } catch (e: Exception) {
-                Timber.e(e)
-                recordingListener?.onRecordingError(e)
-            } finally {
-                recordingListener = null
-                recordingDisposable.clear()
+            } else {
+                recordingListener?.onRecordingError(RuntimeException("outputFile is null"))
             }
         }
             .observeOn(Schedulers.computation())
