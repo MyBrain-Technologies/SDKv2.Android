@@ -6,7 +6,7 @@ import timber.log.Timber
  * copy from old sdk
  * this class is to debug data loss bug, it may be removed in release version
  */
-class RecordingErrorData2 {
+class EEGStreamingErrorCounter {
 
     var startingIndex: Long = -1
     var currentIndex: Long = -1
@@ -45,7 +45,7 @@ class RecordingErrorData2 {
         return missingFrame.toFloat() * 100 / (currentIndex - startingIndex + 1)
     }
 
-    @JvmOverloads
+    @Suppress("unused")
     fun resetData() {
         Timber.d("resetData")
         missingFrame = 0
@@ -55,8 +55,9 @@ class RecordingErrorData2 {
         currentIndex = -1
     }
 
-    fun clone(): RecordingErrorData2 {
-        val clone = RecordingErrorData2()
+    @Suppress("unused")
+    fun clone(): EEGStreamingErrorCounter {
+        val clone = EEGStreamingErrorCounter()
         clone.missingFrame = missingFrame
         clone.zeroTimeNumber = zeroTimeNumber
         clone.zeroSampleNumber = zeroSampleNumber

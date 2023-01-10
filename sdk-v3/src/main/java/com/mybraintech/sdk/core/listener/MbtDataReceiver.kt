@@ -1,5 +1,6 @@
 package com.mybraintech.sdk.core.listener
 
+import com.mybraintech.sdk.core.model.AccelerometerConfig
 import com.mybraintech.sdk.core.model.TimedBLEFrame
 
 /**
@@ -7,10 +8,11 @@ import com.mybraintech.sdk.core.model.TimedBLEFrame
  */
 interface MbtDataReceiver {
     fun onTriggerStatusConfiguration(triggerStatusAllocationSize: Int)
+    fun onAccelerometerConfiguration(accelerometerConfig: AccelerometerConfig)
     fun onEEGFrame(data: TimedBLEFrame)
     fun setEEGListener(eegListener: EEGListener?)
     fun setEEGRealtimeListener(eegRealtimeListener: EEGRealtimeListener?)
-    fun onIMSFrame(data: ByteArray)
-    fun setIMSListener(accelerometerListener: AccelerometerListener?)
+    fun onAccelerometerFrame(data: ByteArray)
+    fun setAccelerometerListener(accelerometerListener: AccelerometerListener?)
     fun onEEGDataError(error: Throwable)
 }

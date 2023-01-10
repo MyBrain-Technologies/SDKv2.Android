@@ -12,7 +12,6 @@ import com.mybraintech.sdk.core.bluetooth.DataConversionUtils
 import com.mybraintech.sdk.core.bluetooth.devices.BaseMbtDevice
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
-import no.nordicsemi.android.ble.BleManager
 import timber.log.Timber
 
 class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
@@ -222,22 +221,6 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
             .enqueue()
     }
 
-    override fun hasA2dpConnectedDevice(): Boolean {
-        TODO("Not yet implemented")
-    }
-
-    override fun isEEGEnabled(): Boolean {
-        TODO("Not yet implemented")
-    }
-
-    override fun isIMSEnabled(): Boolean {
-        TODO("Not yet implemented")
-    }
-
-    override fun isListeningToHeadsetStatus(): Boolean {
-        TODO("Not yet implemented")
-    }
-
     override fun handleScanResults(results: List<ScanResult>) {
         val melomindDevices = mutableListOf<BluetoothDevice>()
         val otherDevices = mutableListOf<BluetoothDevice>()
@@ -274,8 +257,7 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
     //----------------------------------------------------------------------------
     // MARK: private inner class
     //----------------------------------------------------------------------------
-    private inner class MelomindGattCallback() :
-        BleManager.BleManagerGattCallback() {
+    private inner class MelomindGattCallback : BleManagerGattCallback() {
 
         override fun isRequiredServiceSupported(gatt: BluetoothGatt): Boolean {
             connectionListener?.onServiceDiscovered()
@@ -325,10 +307,14 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
     }
 
     override fun getDeviceSystemStatus(deviceSystemStatusListener: DeviceSystemStatusListener) {
-        throw UnsupportedOperationException("not supported") // TODO: 17/11/2022
+        deviceSystemStatusListener.onDeviceSystemStatusError("not supported yet")
     }
 
-    override fun getStreamingState(streamingStateListener: StreamingStateListener) {
-        throw UnsupportedOperationException("not supported") // TODO: 17/11/2022
+    override fun getSensorStatuses(sensorStatusListener: SensorStatusListener) {
+        sensorStatusListener.onSensorStatusError("not supported yet")
+    }
+
+    override fun getAccelerometerConfig(accelerometerConfigListener: AccelerometerConfigListener) {
+        accelerometerConfigListener.onAccelerometerConfigError("not supported yet")
     }
 }

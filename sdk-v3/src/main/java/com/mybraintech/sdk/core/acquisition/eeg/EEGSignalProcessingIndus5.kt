@@ -2,22 +2,23 @@ package com.mybraintech.sdk.core.acquisition.eeg
 
 import com.mybraintech.sdk.core.acquisition.EnumBluetoothProtocol
 import com.mybraintech.sdk.core.acquisition.IndexReader
-import com.mybraintech.sdk.core.listener.EEGListener
 import com.mybraintech.sdk.core.model.RawEEGSample2
 import com.mybraintech.sdk.core.model.StreamingParams
 import com.mybraintech.sdk.util.NumericalUtils
+import io.reactivex.Scheduler
 import timber.log.Timber
 
 abstract class EEGSignalProcessingIndus5(
     streamingParams: StreamingParams,
-    eegListener: EEGListener
+    callback: EEGCallback,
+    bleFrameScheduler: Scheduler
 ) :
     EEGSignalProcessing(
-        sampleRate = streamingParams.eegSampleRate,
         protocol = EnumBluetoothProtocol.BLE,
         isTriggerStatusEnabled = streamingParams.isTriggerStatusEnabled,
         isQualityCheckerEnabled = streamingParams.isQualityCheckerEnabled,
-        eegListener = eegListener
+        callback = callback,
+        eegFrameScheduler = bleFrameScheduler
     ) {
 
     override fun getFrameIndex(eegFrame: ByteArray): Long {
@@ -37,7 +38,7 @@ abstract class EEGSignalProcessingIndus5(
      */
     override fun getNumberOfChannels(): Int = 4
 
-    override fun getEEGData(eegFrame: ByteArray): List<RawEEGSample2> {
+    override fun decodeEEGData(eegFrame: ByteArray): List<RawEEGSample2> {
         val list = mutableListOf<RawEEGSample2>()
         val hasStatus = (statusAlloc != 0)
         val triggerBytes = if (hasStatus) {

@@ -10,6 +10,7 @@ import android.os.Looper
 import android.os.SystemClock
 import com.mybraintech.sdk.core.acquisition.MbtDeviceStatusCallback
 import com.mybraintech.sdk.core.bluetooth.devices.BaseMbtDevice
+import com.mybraintech.sdk.core.bluetooth.devices.Indus5MailboxDecoder
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
 import no.nordicsemi.android.ble.Operation
@@ -61,58 +62,67 @@ abstract class Indus5DeviceImpl(ctx: Context) :
     override fun onDataReceived(device: BluetoothDevice, data: Data) {
         if (data.value != null) {
 //            Timber.v("onDataReceived : ${NumericalUtils.bytesToHex(data.value)}")
-            when (val indus5Response = QPlusMailboxHelper.parseRawIndus5Response(data.value!!)) {
+            when (val response = Indus5MailboxDecoder.decodeRawIndus5Response(data.value!!)) {
                 is Indus5Response.MtuChange -> {
                     Timber.i("Mailbox MTU changed successfully")
                 }
                 is Indus5Response.BatteryLevel -> {
-                    batteryLevelListener?.onBatteryLevel(indus5Response.percent)
+                    batteryLevelListener?.onBatteryLevel(response.percent)
                 }
                 is Indus5Response.FirmwareVersion -> {
-                    deviceInformation.firmwareVersion = indus5Response.version
+                    deviceInformation.firmwareVersion = response.version
                 }
                 is Indus5Response.HardwareVersion -> {
-                    deviceInformation.hardwareVersion = indus5Response.version
+                    deviceInformation.hardwareVersion = response.version
                 }
                 is Indus5Response.GetSerialNumber -> {
-                    deviceInformation.serialNumber = indus5Response.serialNumber
-                    deviceInformation.bleName = INDUS5_BLE_PREFIX + indus5Response.serialNumber
+                    deviceInformation.serialNumber = response.serialNumber
+                    deviceInformation.bleName = INDUS5_BLE_PREFIX + response.serialNumber
                 }
                 is Indus5Response.AudioNameFetched -> {
-                    deviceInformation.audioName = INDUS5_AUDIO_PREFIX + indus5Response.audioName
+                    deviceInformation.audioName = INDUS5_AUDIO_PREFIX + response.audioName
                 }
                 is Indus5Response.AudioNameChanged -> {
-                    deviceInformation.audioName = INDUS5_AUDIO_PREFIX + indus5Response.newAudioName
+                    deviceInformation.audioName = INDUS5_AUDIO_PREFIX + response.newAudioName
                     audioNameListener?.onAudioNameChanged(deviceInformation.audioName)
                 }
                 is Indus5Response.EEGStatus -> {
-                    deviceStatusCallback?.onEEGStatusChange(indus5Response.isEnabled)
+                    deviceStatusCallback?.onEEGStatusChange(response.isEnabled)
                 }
                 is Indus5Response.EEGFrame -> {
                     dataReceiver?.onEEGFrame(
                         TimedBLEFrame(
                             SystemClock.elapsedRealtime(),
-                            indus5Response.data
+                            response.data
                         )
                     )
                 }
                 is Indus5Response.TriggerStatusConfiguration -> {
-                    dataReceiver?.onTriggerStatusConfiguration(indus5Response.triggerStatusAllocationSize)
+                    dataReceiver?.onTriggerStatusConfiguration(response.triggerStatusAllocationSize)
                 }
                 is Indus5Response.ImsStatus -> {
-                    deviceStatusCallback?.onIMSStatusChange(indus5Response.isEnabled)
+                    deviceStatusCallback?.onIMSStatusChange(response.isEnabled)
                 }
                 is Indus5Response.ImsFrame -> {
-                    dataReceiver?.onIMSFrame(indus5Response.data)
+                    dataReceiver?.onAccelerometerFrame(response.data)
                 }
                 is Indus5Response.SerialNumberChanged -> {
-                    serialNumberChangedListener?.onSerialNumberChanged(indus5Response.newSerialNumber)
+                    serialNumberChangedListener?.onSerialNumberChanged(response.newSerialNumber)
                 }
                 is Indus5Response.GetDeviceSystemStatus -> {
-                    deviceSystemStatusListener?.onDeviceSystemStatusFetched(indus5Response.deviceSystemStatus)
+                    deviceSystemStatusListener?.onDeviceSystemStatusFetched(response.deviceSystemStatus)
+                }
+                is Indus5Response.GetSensorStatuses -> {
+                    sensorStatusListener?.onSensorStatusFetched(response.sensorStatuses)
+                }
+                is Indus5Response.GetIMSConfig -> {
+                    accelerometerConfigListener?.onAccelerometerConfigFetched(response.accelerometerConfig)
+                }
+                is Indus5Response.SetIMSConfig -> {
+                    dataReceiver?.onAccelerometerConfiguration(response.accelerometerConfig)
                 }
                 else -> {
-                    Timber.e("this type is not supported : ${indus5Response.javaClass.simpleName}")
+                    Timber.e("this type is not supported : ${response.javaClass.simpleName}")
                 }
             }
         } else {
@@ -224,19 +234,15 @@ abstract class Indus5DeviceImpl(ctx: Context) :
         val requestQueue = beginAtomicRequestQueue()
         if (streamingParams.isEEGEnabled) {
             requestQueue.add(getTriggerStatusOperation(streamingParams.isTriggerStatusEnabled))
-            if (streamingParams.isAccelerometerEnabled) {
-                requestQueue.add(getStartIMSOperation())
-            } else {
-                requestQueue.add(getStopIMSOperation())
-            }
             requestQueue.add(getStartEEGOperation())
         } else {
             requestQueue.add(getStopEEGOperation())
-            if (streamingParams.isAccelerometerEnabled) {
-                requestQueue.add(getStartIMSOperation())
-            } else {
-                requestQueue.add(getStopIMSOperation())
-            }
+        }
+        if (streamingParams.isAccelerometerEnabled) {
+            requestQueue.add(setAccelerometerConfigRequest(streamingParams.accelerometerSampleRate))
+            requestQueue.add(getStartIMSOperation())
+        } else {
+            requestQueue.add(getStopIMSOperation())
         }
         requestQueue.enqueue()
     }
@@ -250,6 +256,27 @@ abstract class Indus5DeviceImpl(ctx: Context) :
             requestQueue.add(getStopEEGOperation())
         }
         requestQueue.enqueue()
+    }
+
+    private fun setAccelerometerConfigRequest(sampleRate: EnumAccelerometerSampleRate): WriteRequest {
+        val operationByte = EnumIndus5FrameSuffix.MBX_SET_IMS_CONFIG.bytes
+        val sampleRateByte: Byte = sampleRate.mailboxValue
+        val enableAxisByte: Byte = 0x07 // Default value: 0x07 : all axis are enabled
+        val fullScaleByte: Byte = 0x00 // Default value: 0x00 : ±2g
+        val command = operationByte + sampleRateByte + enableAxisByte + fullScaleByte
+        return writeCharacteristic(
+            txCharacteristic,
+            command,
+            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        )
+    }
+
+    private fun getAccelerometerConfigRequest(): WriteRequest {
+        return writeCharacteristic(
+            txCharacteristic,
+            EnumIndus5FrameSuffix.MBX_GET_IMS_CONFIG.bytes,
+            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        )
     }
 
     private fun getStartIMSOperation(): Operation {
@@ -299,11 +326,27 @@ abstract class Indus5DeviceImpl(ctx: Context) :
             EnumIndus5FrameSuffix.MBX_STOP_EEG_ACQUISITION.bytes,
             BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
         )
-
     }
 
-    override fun getStreamingState(streamingStateListener: StreamingStateListener) {
-        throw UnsupportedOperationException("not supported") // TODO: 17/11/2022
+    private fun getSensorStatusRequest(): WriteRequest {
+        return writeCharacteristic(
+            txCharacteristic,
+            EnumIndus5FrameSuffix.MBX_GET_SENSOR_STATUS.bytes,
+            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        )
+    }
+
+    override fun getSensorStatuses(sensorStatusListener: SensorStatusListener) {
+        if (isConnectedAndReady()) {
+            this.sensorStatusListener = sensorStatusListener
+            getSensorStatusRequest()
+                .fail { _, errorCode ->
+                    this.sensorStatusListener?.onSensorStatusError("errorCode = $errorCode")
+                }
+                .enqueue()
+        } else {
+            sensorStatusListener.onSensorStatusError("device is not connected or not ready")
+        }
     }
 
     override fun getDeviceSystemStatus(deviceSystemStatusListener: DeviceSystemStatusListener) {
@@ -319,28 +362,27 @@ abstract class Indus5DeviceImpl(ctx: Context) :
         }
     }
 
-    override fun hasA2dpConnectedDevice(): Boolean {
-        TODO("Not yet implemented")
-    }
-
-    override fun isEEGEnabled(): Boolean {
-        TODO("Not yet implemented")
-    }
-
-    override fun isIMSEnabled(): Boolean {
-        TODO("Not yet implemented")
-    }
-
-    override fun isListeningToHeadsetStatus(): Boolean {
-        TODO("Not yet implemented")
+    override fun getAccelerometerConfig(accelerometerConfigListener: AccelerometerConfigListener) {
+        this.accelerometerConfigListener = accelerometerConfigListener
+        getAccelerometerConfigRequest()
+            .fail { _, errorCode ->
+                accelerometerConfigListener.onAccelerometerConfigError("errorCode=$errorCode")
+            }
+            .enqueue()
     }
 
     private fun getMtuMailboxRequest(): WriteRequest {
         return writeCharacteristic(
             txCharacteristic,
-            QPlusMailboxHelper.generateMtuChangeBytes(MTU_SIZE),
+            generateMtuChangeCommand(MTU_SIZE),
             BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
         )
+    }
+
+    private fun generateMtuChangeCommand(mtuSize: Int = 47): ByteArray {
+        val result = EnumIndus5FrameSuffix.MBX_TRANSMIT_MTU_SIZE.bytes.toMutableList()
+        result.add(mtuSize.toByte())
+        return result.toByteArray()
     }
 
     private fun getBatteryLevelMailboxRequest(): WriteRequest {

@@ -16,10 +16,13 @@ class StreamingParams private constructor(
     /**
      * this option is only available for QPlus device, it will be ignored for Melomind device
      */
-    val isAccelerometerEnabled: Boolean
+    val isAccelerometerEnabled: Boolean,
+
+    var accelerometerSampleRate: EnumAccelerometerSampleRate
 ) {
     val eegSampleRate: Int = 250
 
+    @Suppress("unused")
     class Builder() {
         private var isEEGEnabled: Boolean = true
 
@@ -28,6 +31,8 @@ class StreamingParams private constructor(
         private var isQualityCheckerEnabled: Boolean = true
 
         private var isAccelerometerEnabled: Boolean = false
+
+        private var accelerometerSampleRate = EnumAccelerometerSampleRate.F_100_HZ
 
         fun setEEG(isEnabled: Boolean): Builder {
             this.isEEGEnabled = isEnabled
@@ -49,23 +54,29 @@ class StreamingParams private constructor(
             return this
         }
 
+        fun setAccelerometerSampleRate(sampleRate: EnumAccelerometerSampleRate): Builder {
+            this.accelerometerSampleRate = sampleRate
+            return this
+        }
+
         fun build(): StreamingParams {
             return if (isEEGEnabled) {
                 StreamingParams(
                     isEEGEnabled = true,
                     isTriggerStatusEnabled = isTriggerStatusEnabled,
                     isQualityCheckerEnabled = isQualityCheckerEnabled,
-                    isAccelerometerEnabled = isAccelerometerEnabled
+                    isAccelerometerEnabled = isAccelerometerEnabled,
+                    accelerometerSampleRate = accelerometerSampleRate
                 )
             } else {
                 StreamingParams(
                     isEEGEnabled = false,
                     isTriggerStatusEnabled = false,
                     isQualityCheckerEnabled = false,
-                    isAccelerometerEnabled = true
+                    isAccelerometerEnabled = true,
+                    accelerometerSampleRate = accelerometerSampleRate
                 )
             }
         }
     }
-
 }
