@@ -6,14 +6,14 @@ import timber.log.Timber
 class EEGRecordingData(
     hasStatus: Boolean,
     nbChannels: Int,
-    eegPackets: List<MbtEEGPacket2>,
-    recordingErrorData: RecordingErrorData2
+    eegPackets: List<MbtEEGPacket>,
+    recordingErrorData: EEGStreamingErrorCounter
 ) {
     var nbPackets: Int = -1
     lateinit var eegData: ArrayList<ArrayList<Float>>
     lateinit var statusData: ArrayList<Float>
     lateinit var qualities: ArrayList<ArrayList<Float>>
-    var recordingErrorData: RecordingErrorData2? = recordingErrorData
+    var recordingErrorData: EEGStreamingErrorCounter? = recordingErrorData
 
     init {
         init(nbChannels)

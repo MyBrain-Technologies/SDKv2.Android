@@ -65,7 +65,7 @@ final class MbtJsonBuilder2 {
             @NonNull final KwakHeader kwakHeader,
             @NonNull final KwakRecording kwakRecording,
             @NonNull final EEGRecordingData recordingData,
-            @NonNull final List<ThreeDimensionalPosition> imsBuffer,
+            @NonNull final AccelerometerRecordingData accelerometerRecordingData,
             @NonNull final FileWriter fileWriter) {
 
         if (recordingData.eegData.size() == 0)
@@ -248,14 +248,14 @@ final class MbtJsonBuilder2 {
             //----------------------------------------------------------------------------
             // start ims
             //----------------------------------------------------------------------------
-
+            List<ThreeDimensionalPosition> imsBuffer = accelerometerRecordingData.getBuffer();
             if (imsBuffer != null && !imsBuffer.isEmpty()) {
                 Timber.d("write IMS : size = " + imsBuffer.size());
 
                 jsonWriter.name("ims");
                 jsonWriter.beginObject();    // beginning of "ims"
 
-                jsonWriter.name("sampRate").value(100);
+                jsonWriter.name("sampRate").value(accelerometerRecordingData.getSampleRate());
 
                 jsonWriter.name("imsData");
                 jsonWriter.beginArray(); //start to write ims data (ims)
@@ -265,7 +265,7 @@ final class MbtJsonBuilder2 {
                 for (int i = 0; i < imsBuffer.size(); i++) {
                     ThreeDimensionalPosition position = imsBuffer.get(i);
                     if (position != null) {
-                        jsonWriter.value(position.getX());
+                        jsonWriter.value(!Float.isNaN(position.getX()) ? position.getX() : null);
                     } else {
                         Timber.w("found null Position3D in IMS buffer");
                     }
@@ -277,7 +277,7 @@ final class MbtJsonBuilder2 {
                 for (int i = 0; i < imsBuffer.size(); i++) {
                     ThreeDimensionalPosition position = imsBuffer.get(i);
                     if (position != null) {
-                        jsonWriter.value(position.getY());
+                        jsonWriter.value(!Float.isNaN(position.getY()) ? position.getY() : null);
                     }
                 }
                 jsonWriter.endArray(); //end to write Y (y)
@@ -287,7 +287,7 @@ final class MbtJsonBuilder2 {
                 for (int i = 0; i < imsBuffer.size(); i++) {
                     ThreeDimensionalPosition position = imsBuffer.get(i);
                     if (position != null) {
-                        jsonWriter.value(position.getZ());
+                        jsonWriter.value(!Float.isNaN(position.getZ()) ? position.getZ() : null);
                     }
                 }
                 jsonWriter.endArray(); //end to write Z (z)

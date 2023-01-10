@@ -1,20 +1,23 @@
 package com.mybraintech.sdk.core.acquisition.eeg
 
-import com.mybraintech.android.jnibrainbox.BrainBoxVersion
 import com.mybraintech.sdk.core.acquisition.EnumBluetoothProtocol
 import com.mybraintech.sdk.core.acquisition.IndexReader
-import com.mybraintech.sdk.core.listener.EEGListener
 import com.mybraintech.sdk.core.model.*
 import com.mybraintech.sdk.util.NumericalUtils
+import io.reactivex.Scheduler
 import timber.log.Timber
 
-class EEGSignalProcessingMelomind(streamingParams: StreamingParams, eegListener: EEGListener) :
+class EEGSignalProcessingMelomind(
+    streamingParams: StreamingParams,
+    eegCallback: EEGCallback,
+    bleFrameScheduler: Scheduler
+) :
     EEGSignalProcessing(
-        sampleRate = streamingParams.eegSampleRate,
         protocol = EnumBluetoothProtocol.BLE,
         isTriggerStatusEnabled = streamingParams.isTriggerStatusEnabled,
         isQualityCheckerEnabled = streamingParams.isQualityCheckerEnabled,
-        eegListener = eegListener
+        callback = eegCallback,
+        eegFrameScheduler = bleFrameScheduler
     ) {
 
     override fun getDeviceType(): EnumMBTDevice {
@@ -38,7 +41,7 @@ class EEGSignalProcessingMelomind(streamingParams: StreamingParams, eegListener:
      */
     override fun getNumberOfChannels(): Int = 2
 
-    override fun getEEGData(eegFrame: ByteArray): List<RawEEGSample2> {
+    override fun decodeEEGData(eegFrame: ByteArray): List<RawEEGSample2> {
         val list = mutableListOf<RawEEGSample2>()
         val hasStatus = (statusAlloc != 0)
         val triggerBytes = if (hasStatus) {
@@ -94,20 +97,4 @@ class EEGSignalProcessingMelomind(streamingParams: StreamingParams, eegListener:
         }
     }
 
-    override fun createKwak(recordingOption: RecordingOption): Kwak {
-        return Kwak().apply {
-            context = recordingOption.context
-            header = KwakHeader.getMelomindHeader().apply {
-                deviceInfo = recordingOption.deviceInformation
-                setRecordingNb(recordingOption.recordingNb)
-            }
-            recording.recordID = recordingOption.recordId
-            recording.recordingType.recordType = recordingOption.recordingType
-            if (isQualityCheckerEnabled) {
-                recording.recordingType.spVersion = BrainBoxVersion.getVersion()
-            } else {
-                recording.recordingType.spVersion = "0.0.0"
-            }
-        }
-    }
 }

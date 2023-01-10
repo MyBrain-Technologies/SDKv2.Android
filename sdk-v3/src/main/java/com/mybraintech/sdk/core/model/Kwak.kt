@@ -4,15 +4,19 @@ import java.io.FileWriter
 import java.util.*
 
 class Kwak {
+    /**
+     * unique id
+     */
+    @Suppress("unused")
     val uuidJsonFile: String = UUID.randomUUID().toString()
     var context: KwakContext = KwakContext()
     var header: KwakHeader = KwakHeader()
     var recording: KwakRecording = KwakRecording()
 
     fun serializeJson(
-        hasStatus: Boolean,
-        eegBuffer: List<MbtEEGPacket2>,
-        eegErrorData: RecordingErrorData2,
+        streamingParams: StreamingParams,
+        eegBuffer: List<MbtEEGPacket>,
+        eegStreamingErrorCounter: EEGStreamingErrorCounter,
         imsBuffer: List<ThreeDimensionalPosition>,
         fileWriter: FileWriter
     ): Boolean {
@@ -20,8 +24,8 @@ class Kwak {
             context.ownerId,
             header,
             recording,
-            EEGRecordingData(hasStatus, header.nbChannels, eegBuffer, eegErrorData),
-            imsBuffer,
+            EEGRecordingData(streamingParams.isTriggerStatusEnabled, header.nbChannels, eegBuffer, eegStreamingErrorCounter),
+            AccelerometerRecordingData(streamingParams.accelerometerSampleRate.sampleRate, imsBuffer),
             fileWriter
         )
     }

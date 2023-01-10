@@ -14,6 +14,8 @@ interface MbtClient {
     fun disconnect()
     fun getBatteryLevel(batteryLevelListener: BatteryLevelListener)
     fun getDeviceInformation(deviceInformationListener: DeviceInformationListener)
+
+    fun getStreamingState(sensorStatusListener: SensorStatusListener)
     fun startStreaming(streamingParams: StreamingParams)
     fun stopStreaming()
 
@@ -24,6 +26,12 @@ interface MbtClient {
     fun setAccelerometerListener(accelerometerListener: AccelerometerListener)
     fun startRecording(recordingOption: RecordingOption, recordingListener: RecordingListener)
     fun stopRecording()
+
+    /**
+     * @param trim (in seconds) allow to trim the recording size
+     */
+    fun stopRecording(trim: Int)
+
     fun isEEGEnabled(): Boolean
     fun isRecordingEnabled(): Boolean
     fun getRecordingBufferSize(): Int
@@ -36,5 +44,5 @@ interface MbtClient {
     @TestBench
     fun getDeviceSystemStatus(deviceSystemStatusListener: DeviceSystemStatusListener)
     @TestBench
-    fun getStreamingState(streamingStateListener: StreamingStateListener)
+    fun getAccelerometerConfig(accelerometerConfigListener : AccelerometerConfigListener)
 }

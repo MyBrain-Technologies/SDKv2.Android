@@ -26,8 +26,6 @@ abstract class BaseMbtDevice(ctx: Context) :
     protected val MTU_SIZE = 47
 
     protected var isScanning: Boolean = false
-    private var isEEGEnabled: Boolean = false
-    private var isIMSEnabled: Boolean = false
 
     protected var broadcastReceiver = MbtBleBroadcastReceiver()
     protected val mbtBleScanner = MbtBleScanner()
@@ -37,11 +35,13 @@ abstract class BaseMbtDevice(ctx: Context) :
     protected var deviceInformation = DeviceInformation()
     protected var connectionListener: ConnectionListener? = null
 
-    protected var deviceSystemStatusListener : DeviceSystemStatusListener? = null
-    protected var serialNumberChangedListener : SerialNumberChangedListener? = null
-    protected var audioNameListener : AudioNameListener? = null
+    protected var deviceSystemStatusListener: DeviceSystemStatusListener? = null
+    protected var serialNumberChangedListener: SerialNumberChangedListener? = null
+    protected var audioNameListener: AudioNameListener? = null
     protected var batteryLevelListener: BatteryLevelListener? = null
     protected var deviceInformationListener: DeviceInformationListener? = null
+    protected var sensorStatusListener: SensorStatusListener? = null
+    protected var accelerometerConfigListener: AccelerometerConfigListener? = null
 
     //----------------------------------------------------------------------------
     // MARK: internal ble manager
@@ -134,7 +134,7 @@ abstract class BaseMbtDevice(ctx: Context) :
                             maxRetry
                         )
                     }
-                    Thread(runnable).run()
+                    Thread(runnable).start()
                 } else {
                     val name = device?.name
                     connectionListener.onConnectionError(Throwable("fail to connect to MbtDevice : name = $name | status = $status"))
@@ -154,22 +154,6 @@ abstract class BaseMbtDevice(ctx: Context) :
     }
 
     protected abstract fun getDeviceType(): EnumMBTDevice
-
-    override fun hasA2dpConnectedDevice(): Boolean {
-        TODO("Not yet implemented")
-    }
-
-    override fun isEEGEnabled(): Boolean {
-        return isEEGEnabled
-    }
-
-    override fun isIMSEnabled(): Boolean {
-        return isIMSEnabled
-    }
-
-    override fun isListeningToHeadsetStatus(): Boolean {
-        TODO("Not yet implemented")
-    }
 
     abstract fun handleScanResults(results: List<ScanResult>)
 

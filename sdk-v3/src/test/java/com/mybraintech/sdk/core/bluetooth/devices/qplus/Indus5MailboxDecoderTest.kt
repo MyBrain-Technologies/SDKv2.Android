@@ -1,9 +1,10 @@
 package com.mybraintech.sdk.core.bluetooth.devices.qplus
 
+import com.mybraintech.sdk.core.bluetooth.devices.Indus5MailboxDecoder
 import org.junit.Assert
 import org.junit.Test
 
-class QPlusMailboxHelperTest {
+class Indus5MailboxDecoderTest {
 
     private val SERIAL_NUMBER_CHANGED_RESPONSE_SUFFIX = byteArrayOf(0x1A, 0x71, 0x70, 0x5F)
 
@@ -18,7 +19,7 @@ class QPlusMailboxHelperTest {
     @Test
     fun test_parseRawIndus5Response() {
         for (i in responses.indices) {
-            val response = QPlusMailboxHelper.parseRawIndus5Response(responses[i])
+            val response = Indus5MailboxDecoder.decodeRawIndus5Response(responses[i])
             Assert.assertEquals(
                 Indus5Response.SerialNumberChanged::class.java,
                 response::class.java
