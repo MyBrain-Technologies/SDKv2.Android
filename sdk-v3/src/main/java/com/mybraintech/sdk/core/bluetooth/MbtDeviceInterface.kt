@@ -35,6 +35,7 @@ interface MbtDeviceInterface {
     //----------------------------------------------------------------------------
     fun enableSensors(streamingParams: StreamingParams, dataReceiver: MbtDataReceiver, deviceStatusCallback: MbtDeviceStatusCallback)
     fun disableSensors()
+    fun isEEGEnabled() : Boolean
 
     //----------------------------------------------------------------------------
     // MARK: only for Test Bench

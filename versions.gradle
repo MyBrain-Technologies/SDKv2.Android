@@ -207,7 +207,7 @@ deps.recyclerview = "androidx.recyclerview:recyclerview:$versions.recyclerview"
 def retrofit = [:]
 retrofit.runtime = "com.squareup.retrofit2:retrofit:$versions.retrofit"
 retrofit.gson = "com.squareup.retrofit2:converter-gson:$versions.retrofit"
-retrofit.adapter_rxjava2 = "com.squareup.retrofit2:adapter-rxjava2:2.3.0"
+retrofit.adapter_rxjava2 = "com.squareup.retrofit2:adapter-rxjava2:$versions.retrofit"
 retrofit.mock = "com.squareup.retrofit2:retrofit-mock:$versions.retrofit"
 deps.retrofit = retrofit
 

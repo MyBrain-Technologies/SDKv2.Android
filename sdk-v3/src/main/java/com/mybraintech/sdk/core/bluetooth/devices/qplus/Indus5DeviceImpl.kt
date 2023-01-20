@@ -31,6 +31,8 @@ abstract class Indus5DeviceImpl(ctx: Context) :
     private var txCharacteristic: BluetoothGattCharacteristic? = null
     private var rxCharacteristic: BluetoothGattCharacteristic? = null
 
+    private var _isEEGEnabled = false
+
     //----------------------------------------------------------------------------
     // MARK: ble manager
     //----------------------------------------------------------------------------
@@ -87,6 +89,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
                     audioNameListener?.onAudioNameChanged(deviceInformation.audioName)
                 }
                 is Indus5Response.EEGStatus -> {
+                    _isEEGEnabled = response.isEnabled
                     deviceStatusCallback?.onEEGStatusChange(response.isEnabled)
                 }
                 is Indus5Response.EEGFrame -> {
@@ -257,6 +260,8 @@ abstract class Indus5DeviceImpl(ctx: Context) :
         }
         requestQueue.enqueue()
     }
+
+    override fun isEEGEnabled(): Boolean = _isEEGEnabled
 
     private fun setAccelerometerConfigRequest(sampleRate: EnumAccelerometerSampleRate): WriteRequest {
         val operationByte = EnumIndus5FrameSuffix.MBX_SET_IMS_CONFIG.bytes
@@ -516,6 +521,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
         @Suppress("OVERRIDE_DEPRECATION")
         override fun onDeviceDisconnected() {
             Timber.i("onDeviceDisconnected")
+            _isEEGEnabled = false
             connectionListener?.onDeviceDisconnected()
         }
     }

@@ -23,6 +23,8 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
     private var dataReceiver: MbtDataReceiver? = null
     private var deviceStatusCallback: MbtDeviceStatusCallback? = null
 
+    private var _isEEGEnabled: Boolean = false
+
     //----------------------------------------------------------------------------
     // MARK: ble manager
     //----------------------------------------------------------------------------
@@ -189,6 +191,7 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
                 enableNotifications(eegChar)
                     .done {
                         Timber.d("EEG_ACQUISITION enabled")
+                        _isEEGEnabled = true
                         this.deviceStatusCallback?.onEEGStatusChange(true)
                     }
                     .fail { _, _ ->
@@ -212,6 +215,7 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
         disableNotifications(eegChar)
             .done {
                 Timber.d("EEG_ACQUISITION disabled")
+                _isEEGEnabled = false
                 deviceStatusCallback?.onEEGStatusChange(false)
             }
             .fail { _, _ ->
@@ -220,6 +224,8 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
             }
             .enqueue()
     }
+
+    override fun isEEGEnabled(): Boolean = _isEEGEnabled
 
     override fun handleScanResults(results: List<ScanResult>) {
         val melomindDevices = mutableListOf<BluetoothDevice>()
@@ -296,12 +302,15 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
             connectionListener?.onDeviceReady()
         }
 
+        @Suppress("OVERRIDE_DEPRECATION")
         override fun onMtuChanged(gatt: BluetoothGatt, mtu: Int) {
             Timber.i("onMtuChanged : mtu = $mtu")
         }
 
+        @Suppress("OVERRIDE_DEPRECATION")
         override fun onDeviceDisconnected() {
             Timber.i("onDeviceDisconnected")
+            _isEEGEnabled = false
             connectionListener?.onDeviceDisconnected()
         }
     }
