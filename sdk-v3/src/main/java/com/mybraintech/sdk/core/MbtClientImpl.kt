@@ -127,6 +127,10 @@ internal class MbtClientImpl(
         mbtDeviceInterface.disableSensors()
     }
 
+    override fun isEEGEnabled(): Boolean {
+        return mbtDeviceInterface.isEEGEnabled()
+    }
+
     override fun setEEGListener(eegListener: EEGListener) {
         this.eegListener = eegListener
         this.dataReceiver?.setEEGListener(eegListener)
@@ -244,16 +248,5 @@ internal class MbtClientImpl(
     @TestBench
     override fun getDeviceSystemStatus(deviceSystemStatusListener: DeviceSystemStatusListener) {
         mbtDeviceInterface.getDeviceSystemStatus(deviceSystemStatusListener)
-    }
-
-    /**
-     * @see [getStreamingState]
-     */
-    @Deprecated(
-        "this function is no longer available",
-        ReplaceWith("getStreamingState()")
-    )
-    override fun isEEGEnabled(): Boolean {
-        throw UnsupportedOperationException()
     }
 }
