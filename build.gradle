@@ -2,10 +2,6 @@
 
 buildscript {
     apply from: 'versions.gradle'
-    ext {
-        kotlinVersion = '1.7.20'
-        kotlin_version = '1.7.20'
-    }
     addRepos(repositories)
     dependencies {
         classpath deps.android_gradle_plugin
