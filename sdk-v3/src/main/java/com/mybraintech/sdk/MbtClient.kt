@@ -18,6 +18,7 @@ interface MbtClient {
     fun getStreamingState(sensorStatusListener: SensorStatusListener)
     fun startStreaming(streamingParams: StreamingParams)
     fun stopStreaming()
+    fun isEEGEnabled(): Boolean
 
     @LabStreamingLayer
     fun setEEGRealtimeListener(eegRealtimeListener: EEGRealtimeListener)
@@ -32,7 +33,6 @@ interface MbtClient {
      */
     fun stopRecording(trim: Int)
 
-    fun isEEGEnabled(): Boolean
     fun isRecordingEnabled(): Boolean
     fun getRecordingBufferSize(): Int
     fun getDataLossPercent(): Float

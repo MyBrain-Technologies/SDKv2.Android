@@ -127,6 +127,10 @@ internal class MbtClientImpl(
         mbtDeviceInterface.disableSensors()
     }
 
+    override fun isEEGEnabled(): Boolean {
+        return mbtDeviceInterface.isEEGEnabled()
+    }
+
     override fun setEEGListener(eegListener: EEGListener) {
         this.eegListener = eegListener
         this.dataReceiver?.setEEGListener(eegListener)
@@ -164,7 +168,7 @@ internal class MbtClientImpl(
 
     override fun stopRecording() {
         if (isRecordingEnabled()) {
-            isRecordingAllowed = false
+            isRecordingAllowed = isStreamingFullyStarted()
             recordingInterface?.stopRecording()
         } else {
             Timber.e("Recording is not enabled")
@@ -197,14 +201,14 @@ internal class MbtClientImpl(
     override fun onEEGStatusChange(isEnabled: Boolean) {
         Timber.i("onEEGStatusChange = $isEnabled")
         isEEGEnabled = isEnabled
-        isRecordingAllowed = isRecordingAllowed()
+        isRecordingAllowed = isStreamingFullyStarted()
         eegListener?.onEEGStatusChange(isEnabled)
     }
 
     override fun onIMSStatusChange(isEnabled: Boolean) {
         Timber.i("onIMSStatusChange = $isEnabled")
         isIMSEnabled = isEnabled
-        isRecordingAllowed = isRecordingAllowed()
+        isRecordingAllowed = isStreamingFullyStarted()
         accelerometerListener?.onAccelerometerStatusChange(isEnabled)
     }
 
@@ -217,14 +221,17 @@ internal class MbtClientImpl(
     }
 
     @Suppress("LiftReturnOrAssignment")
-    private fun isRecordingAllowed(): Boolean {
-        if (streamingParams != null) {
-            val eegCondition = (isEEGEnabled == streamingParams!!.isEEGEnabled)
-            val imsCondition = (isIMSEnabled == streamingParams!!.isAccelerometerEnabled)
-            return eegCondition && imsCondition
-        } else {
-            return false
-        }
+    private fun isStreamingFullyStarted(): Boolean {
+        val result =
+            if (streamingParams != null) {
+                val eegCondition = (isEEGEnabled == streamingParams!!.isEEGEnabled)
+                val imsCondition = (isIMSEnabled == streamingParams!!.isAccelerometerEnabled)
+                eegCondition && imsCondition
+            } else {
+                false
+            }
+        Timber.d("isStreamingFullyStarted = $result")
+        return result
     }
 
     override fun getDataLossPercent(): Float {
@@ -244,16 +251,5 @@ internal class MbtClientImpl(
     @TestBench
     override fun getDeviceSystemStatus(deviceSystemStatusListener: DeviceSystemStatusListener) {
         mbtDeviceInterface.getDeviceSystemStatus(deviceSystemStatusListener)
-    }
-
-    /**
-     * @see [getStreamingState]
-     */
-    @Deprecated(
-        "this function is no longer available",
-        ReplaceWith("getStreamingState()")
-    )
-    override fun isEEGEnabled(): Boolean {
-        throw UnsupportedOperationException()
     }
 }
