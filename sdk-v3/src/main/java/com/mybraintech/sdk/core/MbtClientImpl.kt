@@ -230,7 +230,7 @@ internal class MbtClientImpl(
             } else {
                 false
             }
-        Timber.d("isRecordingAllowed is $result")
+        Timber.d("isStreamingFullyStarted = $result")
         return result
     }
 
