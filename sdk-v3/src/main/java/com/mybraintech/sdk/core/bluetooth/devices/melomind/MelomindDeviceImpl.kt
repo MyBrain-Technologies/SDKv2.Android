@@ -8,7 +8,7 @@ import android.bluetooth.le.ScanResult
 import android.content.Context
 import android.os.SystemClock
 import com.mybraintech.sdk.core.acquisition.MbtDeviceStatusCallback
-import com.mybraintech.sdk.core.bluetooth.DataConversionUtils
+import com.mybraintech.sdk.core.bluetooth.BatteryLevelConversion
 import com.mybraintech.sdk.core.bluetooth.devices.BaseMbtDevice
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
@@ -47,9 +47,7 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
         readCharacteristic(batteryLevelChar)
             .done {
                 this.batteryLevelListener?.onBatteryLevel(
-                    DataConversionUtils.getBatteryPercentageFromByteValue(
-                        batteryLevelChar.value[0]
-                    ).toFloat()
+                    BatteryLevelConversion().parseForMelomind(batteryLevelChar.value[0])
                 )
             }
             .fail { _, _ ->

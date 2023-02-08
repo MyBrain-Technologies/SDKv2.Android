@@ -1,5 +1,6 @@
 package com.mybraintech.sdk.core.bluetooth.devices
 
+import com.mybraintech.sdk.core.bluetooth.BatteryLevelConversion
 import com.mybraintech.sdk.core.bluetooth.devices.qplus.EnumIndus5FrameSuffix
 import com.mybraintech.sdk.core.bluetooth.devices.qplus.Indus5Response
 import com.mybraintech.sdk.core.model.AccelerometerConfig
@@ -42,7 +43,7 @@ object Indus5MailboxDecoder {
                 }
                 EnumIndus5FrameSuffix.MBX_GET_BATTERY_VALUE.getOperationCode() -> {
                     // 0x00 .. 0x04 = 0% | 0x05 = 12,5% -> 0x0C = 100%
-                    val percent = if (byteArray[1] < 4) 0f else ((byteArray[1] - 4) * 12.5f)
+                    val percent = BatteryLevelConversion().parseForIndus5(byteArray[1])
                     Indus5Response.BatteryLevel(percent)
                 }
                 EnumIndus5FrameSuffix.MBX_GET_DEVICE_NAME.getOperationCode() -> {
