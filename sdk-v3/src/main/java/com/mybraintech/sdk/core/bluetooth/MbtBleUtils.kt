@@ -4,9 +4,14 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.content.Context
-import com.mybraintech.sdk.R
 
 object MbtBleUtils {
+
+    private val firstGenerationHyperions = listOf(
+        "qp_2220100001",
+        "qp_2220100002",
+        "qp_2220100003"
+    )
 
     fun getGattConnectedDevices(context: Context): List<BluetoothDevice> {
         val bluetoothManager =
@@ -20,9 +25,9 @@ object MbtBleUtils {
         return bluetoothManager.adapter.bondedDevices.toList()
     }
 
-    fun isQPlus(context: Context, device: BluetoothDevice): Boolean {
+    fun isQPlus(device: BluetoothDevice): Boolean {
         val isIndus5 = isIndus5(device)
-        val isNotHyperion = !isHyperion(context, device)
+        val isNotHyperion = !isHyperion(device)
         return (isIndus5 && isNotHyperion)
     }
 
@@ -32,9 +37,10 @@ object MbtBleUtils {
         return name.startsWith(indus5Prefix)
     }
 
-    fun isHyperion(context: Context, device: BluetoothDevice): Boolean {
-        val hyperions = context.resources.getStringArray(R.array.hyperion_devices)
-        return hyperions.contains(device.name)
+    fun isHyperion(device: BluetoothDevice): Boolean {
+        val isFirstGenerationHyperion = firstGenerationHyperions.contains(device.name)
+        val hasHyperionNamePattern = device.name?.startsWith("qp_9999") ?: false
+        return (isFirstGenerationHyperion || hasHyperionNamePattern)
     }
 
     fun isBonded(bluetoothDevice: BluetoothDevice): Boolean {
