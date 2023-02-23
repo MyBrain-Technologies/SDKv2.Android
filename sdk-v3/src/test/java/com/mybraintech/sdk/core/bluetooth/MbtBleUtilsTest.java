@@ -24,30 +24,35 @@ public class MbtBleUtilsTest {
     public String inputName;
 
     @Parameterized.Parameter(value = 1)
-    public Boolean isQPlus;
+    public boolean isQPlus;
 
     @Parameterized.Parameter(value = 2)
-    public Boolean isHyperion;
+    public boolean isHyperion;
 
     @Parameterized.Parameters
     public static Collection<Object[]> initParameters() {
+        boolean IS_Q_PLUS = true;
+        boolean NOT_Q_PLUS = false;
+        boolean IS_HYPERION = true;
+        boolean NOT_HYPERION = false;
+
         return Arrays.asList(new Object[][]{
-                {"qp_2220100000", true, false},
+                {"qp_2220100000", IS_Q_PLUS, NOT_HYPERION},
 
-                {"qp_2220100001", false, true},
-                {"mm_2220100001", false, false},
+                {"qp_2220100001", NOT_Q_PLUS, IS_HYPERION},
+                {"mm_2220100001", NOT_Q_PLUS, NOT_HYPERION},
 
-                {"qp_2220100002", false, true},
-                {"qp_2220100003", false, true},
+                {"qp_2220100002", NOT_Q_PLUS, IS_HYPERION},
+                {"qp_2220100003", NOT_Q_PLUS, IS_HYPERION},
 
-                {"qp_2220100004", true, false},
+                {"qp_2220100004", IS_Q_PLUS, NOT_HYPERION},
 
-                {"qp_9999123456", false, true},
-                {"mm_9999123456", false, false},
+                {"qp_9999123456", NOT_Q_PLUS, IS_HYPERION},
+                {"mm_9999123456", NOT_Q_PLUS, NOT_HYPERION},
 
-                {"qp_9999654321", false, true},
+                {"qp_9999654321", NOT_Q_PLUS, IS_HYPERION},
 
-                {"qp_9991234567", true, false},
+                {"qp_9991234567", IS_Q_PLUS, NOT_HYPERION},
         });
     }
 
