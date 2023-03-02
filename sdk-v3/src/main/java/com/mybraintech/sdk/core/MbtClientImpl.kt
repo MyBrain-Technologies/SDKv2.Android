@@ -84,6 +84,7 @@ internal class MbtClientImpl(private val context: Context, private var deviceTyp
         recordingOption: RecordingOption,
         recordingListener: RecordingListener
     ) {
+        Timber.d("ART : startEEGRecording : ${System.currentTimeMillis()}")
         if (isEEGEnabled()) {
             if (!isRecordingEnabled()) {
                 signalProcessingManager!!.eegSignalProcessing.startRecording(

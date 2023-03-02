@@ -39,6 +39,8 @@ abstract class EEGSignalProcessing(
     var isRecording: Boolean = false
         private set
 
+    var isWaitingFirstFrame = false
+    
     /**
      * index allocation size in the eeg frame
      */
@@ -114,17 +116,21 @@ abstract class EEGSignalProcessing(
     }
 
     fun startRecording(recordingListener: RecordingListener, recordingOption: RecordingOption) {
+        Timber.d("ART : startRecording : ${System.currentTimeMillis()}")
         isRecording = true
+        isWaitingFirstFrame = true
         this.recordingOption = recordingOption
         this.recordingListener = recordingListener
         this.recordingErrorData.resetData()
         this.recordingBuffer.clear()
         this.kwak = createKwak(recordingOption)
+        Timber.d("ART : kwak : recordingTime = ${kwak.recording.recordingTime}")
     }
 
     abstract fun createKwak(recordingOption: RecordingOption): Kwak
 
     fun stopRecording() {
+        Timber.d("ART : stopRecording : ${System.currentTimeMillis()}")
         isRecording = false
         Observable.just(1)
             .subscribeOn(Schedulers.computation())
@@ -187,6 +193,12 @@ abstract class EEGSignalProcessing(
     @Throws(Exception::class)
     private fun consumeEEGFrame(eegFrame: ByteArray) {
 //        Timber.v("onEEGFrameComputation")
+
+        if (isRecording && isWaitingFirstFrame) {
+            isWaitingFirstFrame = false
+            Timber.d("ART : first frame recorded : ${System.currentTimeMillis()}")
+        }
+
         if (!isValidFrame(eegFrame)) {
             Timber.e("bad format eeg frame : ${NumericalUtils.bytesToShortString(eegFrame)}")
             return
@@ -288,6 +300,7 @@ abstract class EEGSignalProcessing(
                 }
 
                 if (isRecording) {
+                    Timber.d("ART : new packet recorded : ${System.currentTimeMillis()}")
                     recordingBuffer.add(newPacket)
                 }
 
