@@ -157,6 +157,8 @@ internal class MbtClientImpl(
         recordingListener: RecordingListener
     ) {
         if (isRecordingAllowed) {
+            Timber.d("ART1 : MBTClient : startRecording : ts = ${System.currentTimeMillis()}")
+
             recordingInterface?.startRecording(
                 recordingListener,
                 recordingOption

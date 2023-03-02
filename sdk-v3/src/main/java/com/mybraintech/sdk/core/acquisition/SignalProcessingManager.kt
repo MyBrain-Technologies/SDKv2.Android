@@ -114,12 +114,18 @@ internal class SignalProcessingManager(
             deviceType, recordingOption, streamingParams.isQualityCheckerEnabled
         )
 
+        Timber.d("ART1 : kwak recordingTime = ${kwak.recording.recordingTime}")
+
+
         isRecording = true
         isWaitingLateSignals = false
 
         recordingSignals.clear()
         if (streamingParams.isEEGEnabled) {
             recordingSignals.add(EnumSignalType.EEG)
+
+            Timber.d("ART1 : eegSignalProcessing startRecording : ts = ${System.currentTimeMillis()}")
+
             eegSignalProcessing.startRecording()
         }
         if (streamingParams.isAccelerometerEnabled) {
@@ -140,6 +146,8 @@ internal class SignalProcessingManager(
      */
     override fun stopRecording() {
         Timber.d("stopRecording")
+
+        Timber.d("ART1 : stopRecording : ts = ${System.currentTimeMillis()}")
 
         var minLen = Int.MAX_VALUE
         for (signalType in recordingSignals) {

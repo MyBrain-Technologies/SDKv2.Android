@@ -33,6 +33,7 @@ abstract class EEGSignalProcessing(
     private var recordingBuffer = mutableListOf<MbtEEGPacket>()
     private var eegStreamingErrorCounter = EEGStreamingErrorCounter()
     private var isRecording: Boolean = false
+    private var isWaitingFirstFrame = false
 
     /**
      * index allocation size in the eeg frame
@@ -109,6 +110,7 @@ abstract class EEGSignalProcessing(
      */
     override fun startRecording() {
         isRecording = true
+        isWaitingFirstFrame = true
         clearBuffer()
     }
 
@@ -142,6 +144,12 @@ abstract class EEGSignalProcessing(
     @Throws(Exception::class)
     private fun consumeEEGFrame(timedBLEFrame: TimedBLEFrame) {
 //        Timber.v("consumeEEGFrame")
+
+        if (isRecording && isWaitingFirstFrame) {
+            isWaitingFirstFrame = false
+            Timber.d("ART1 : first frame recorded : ts = ${System.currentTimeMillis()}")
+        }
+
         val eegFrame = timedBLEFrame.data
         if (!isValidFrame(eegFrame)) {
             Timber.e("bad format eeg frame : ${NumericalUtils.bytesToShortString(eegFrame)}")
@@ -268,6 +276,8 @@ abstract class EEGSignalProcessing(
 //            Timber.d("new qualities : ${newPacket.qualities.toJson()}")
 
             if (isRecording) {
+                Timber.d("ART1 : new packed recorded : ts = ${System.currentTimeMillis()}")
+
                 recordingBuffer.add(newPacket)
 //                Timber.v("eeg recordingBuffer size = ${recordingBuffer.size}")
             }
