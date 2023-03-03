@@ -71,9 +71,13 @@ android {
         unitTests.returnDefaultValues = true
     }
     compileOptions {
-        targetCompatibility 1.8
-        sourceCompatibility 1.8
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_1_8.toString()
+    }
+
     ndkVersion "21.0.6113669"
 
 }
@@ -83,7 +87,6 @@ configurations {
 }
 
 dependencies {
-    compile "androidx.core:core-ktx:+"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'org.mod4j.org.apache.commons:lang:2.1.0'
