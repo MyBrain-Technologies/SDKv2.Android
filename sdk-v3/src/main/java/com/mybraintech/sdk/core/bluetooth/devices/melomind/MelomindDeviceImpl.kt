@@ -13,6 +13,7 @@ import com.mybraintech.sdk.core.bluetooth.devices.BaseMbtDevice
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
 import timber.log.Timber
+import java.io.InputStream
 
 class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
 
@@ -323,5 +324,13 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
 
     override fun getAccelerometerConfig(accelerometerConfigListener: AccelerometerConfigListener) {
         accelerometerConfigListener.onAccelerometerConfigError("not supported yet")
+    }
+
+    override fun prepareDFU(firmware: InputStream): Boolean {
+        throw UnsupportedOperationException("not yet implemented for Melomind headset")
+    }
+
+    override fun startDFU(listener: DriverFirmwareUpgradeListener): Boolean {
+        throw UnsupportedOperationException("not yet implemented for Melomind headset")
     }
 }

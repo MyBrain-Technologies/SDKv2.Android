@@ -18,15 +18,19 @@ import no.nordicsemi.android.ble.WriteRequest
 import no.nordicsemi.android.ble.callback.DataReceivedCallback
 import no.nordicsemi.android.ble.data.Data
 import timber.log.Timber
+import java.io.InputStream
 import java.nio.charset.Charset
 
 
 abstract class Indus5DeviceImpl(ctx: Context) :
     BaseMbtDevice(ctx), DataReceivedCallback {
 
+    private val DEVICE_IS_NOT_READY = "Device is not connected or is not ready"
+
     private var streamingParams: StreamingParams? = null
     private var dataReceiver: MbtDataReceiver? = null
     private var deviceStatusCallback: MbtDeviceStatusCallback? = null
+    private var dfuBuilder: DFUBuilder? = null
 
     private var txCharacteristic: BluetoothGattCharacteristic? = null
     private var rxCharacteristic: BluetoothGattCharacteristic? = null
@@ -42,6 +46,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
         if (message.contains("value: (0x) 40")
             || message.contains("value: (0x) 50")
             || message.contains("value: (0x) 60")
+            || message.contains("value: (0x) 13")
         ) {
 //            Timber.v(message)
         } else {
@@ -124,6 +129,28 @@ abstract class Indus5DeviceImpl(ctx: Context) :
                 is Indus5Response.SetIMSConfig -> {
                     dataReceiver?.onAccelerometerConfiguration(response.accelerometerConfig)
                 }
+                is Indus5Response.OTAModeInitialized -> {
+                    Timber.d("OTAModeInitialized : isInitialized = ${response.isInitialized}")
+                    isCRCResultReceived = false
+                    dfuListener?.onDFUInitialized()
+                }
+                is Indus5Response.OTAIndexReset -> {
+                    Timber.d("OTAIndexReset : index = ${response.index}")
+                    stopCurrentPack = true
+                    startToSendPacks(response.index)
+                }
+                is Indus5Response.OTACRCResult -> {
+                    val isOk = response.isOk
+                    isCRCResultReceived = true
+                    Timber.d("OTACRCResult : isOk = $isOk")
+                    if (isOk) {
+                        dfuListener?.onOTAResult(true, "device will be restarted")
+                        rebootDevice()
+                    } else {
+                        dfuListener?.onOTAResult(false, "CRC is invalid.")
+                        abortDFU(dfuListener)
+                    }
+                }
                 else -> {
                     Timber.e("this type is not supported : ${response.javaClass.simpleName}")
                 }
@@ -196,7 +223,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
                 }
                 .enqueue()
         } else {
-            listener?.onSerialNumberError("Device is not connected or is not ready")
+            listener?.onSerialNumberError(DEVICE_IS_NOT_READY)
         }
     }
 
@@ -213,7 +240,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
                 listener?.onAudioNameError("Name length is not valid")
             }
         } else {
-            listener?.onAudioNameError("Device is not connected or is not ready")
+            listener?.onAudioNameError(DEVICE_IS_NOT_READY)
         }
     }
 
@@ -532,5 +559,164 @@ abstract class Indus5DeviceImpl(ctx: Context) :
         } catch (e: Exception) {
             Timber.i("Removing bond has been failed: ${e.message}")
         }
+    }
+
+    override fun prepareDFU(firmware: InputStream): Boolean {
+        val bytes = firmware.readBytes()
+        return try {
+            dfuBuilder = DFUBuilder().also {
+                it.integrateFileLength(bytes)
+            }
+            true
+        } catch (e: Exception) {
+            Timber.e(e)
+            false
+        }
+    }
+
+    override fun startDFU(listener: DriverFirmwareUpgradeListener): Boolean {
+        return if (isConnectedAndReady()) {
+            if (dfuBuilder != null) {
+                this.dfuListener = listener
+                getStartOTARequest(
+                    dfuBuilder!!.firmwareVersion,
+                    dfuBuilder!!.dataBlockSize
+                )
+                    .fail { _, _ ->
+                        dfuListener?.onDFUError("fail to start driver firmware upgrade process !")
+                        abortDFU(dfuListener)
+                    }
+                    .enqueue()
+                true
+            } else {
+                listener.onDFUError("please call prepareDFU first !")
+                abortDFU(listener)
+                false
+            }
+        } else {
+            listener.onDFUError(DEVICE_IS_NOT_READY)
+            abortDFU(listener)
+            false
+        }
+    }
+
+    @Suppress("LocalVariableName")
+    private fun getStartOTARequest(firmwareVersion: ByteArray, dataBlockSize: Int): WriteRequest {
+        val lsb = byteArrayOf((dataBlockSize % 256).toByte())
+        val msb = byteArrayOf((dataBlockSize / 256).toByte())
+        val command: ByteArray =
+            EnumIndus5FrameSuffix.MBX_START_OTA_TXF.bytes + firmwareVersion + lsb + msb
+        return writeCharacteristic(
+            txCharacteristic,
+            command,
+            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        )
+    }
+
+    private fun getResetRequest(): WriteRequest {
+        return writeCharacteristic(
+            txCharacteristic,
+            EnumIndus5FrameSuffix.MBX_SYS_REBOOT_EVT.bytes,
+            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+//            BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
+        )
+    }
+
+    private fun rebootDevice() {
+        getResetRequest()
+            .done {
+                disconnect().enqueue()
+            }
+            .enqueue()
+    }
+
+    private fun getOTATransferRequest(index: Int): WriteRequest {
+        val lsb = byteArrayOf((index % 256).toUByte().toByte())
+        val msb = byteArrayOf((index / 256).toUByte().toByte())
+        val data = dfuBuilder!!.getBlock(index)
+        val command: ByteArray =
+            EnumIndus5FrameSuffix.MBX_UPGRADE_FIRMWARE.bytes + lsb + msb + data
+        return writeCharacteristic(
+            txCharacteristic,
+            command,
+            BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
+        )
+    }
+
+    private var stopCurrentPack = false
+    private var isSendingPack = false
+    private val packSize = 40
+
+    /**
+     * sending by pack of [packSize] packets to assure that device can receive data completely
+     * before sending the next pack.
+     */
+    private fun startToSendPacks(index: Int) {
+        assert(dfuBuilder != null)
+        if (dfuBuilder!!.dataBlockSize < index) {
+            dfuListener?.onDFUError("index out of bound ! max index = ${dfuBuilder!!.dataBlockSize} while index = $index")
+            return
+        }
+        if (!isSendingPack) {
+            Timber.d("start to send a block")
+            isSendingPack = true
+            stopCurrentPack = false
+            sendFirmwarePackets(index = index, limit = index + packSize)
+        } else {
+            // OTA reset is required while sending a pack, stop sending current pack to re-send demanding index
+            stopCurrentPack = true
+        }
+    }
+
+    private fun sendFirmwarePackets(index: Int, limit: Int) {
+        Timber.d("sendFirmwarePackets : index = $index")
+        getOTATransferRequest(index)
+            .done {
+                if (index >= limit - 1) {
+                    isSendingPack = false
+                    // wait device asking for new packets
+                } else {
+                    val next = index + 1
+                    if (dfuBuilder!!.dataBlockSize > next) {
+                        if (stopCurrentPack) {
+                            isSendingPack = false
+                        } else {
+                            sendFirmwarePackets(next, limit)
+                        }
+                    } else {
+                        Timber.d("last packet sent. Waiting for CRC result...")
+                        isSendingPack = false
+                        startCRCTimeout()
+                    }
+                }
+            }
+            .enqueue()
+    }
+
+    private var isCRCResultReceived = false
+    private fun startCRCTimeout() {
+        Timber.d("startCRCTimeout")
+        try {
+            Handler(Looper.myLooper()!!).postDelayed(
+                {
+                    if (!isCRCResultReceived) {
+                        Timber.e("CRC Timeout triggered !")
+                        dfuListener?.onDFUError("CRC Timeout !")
+                        abortDFU(dfuListener)
+                    } else {
+                        Timber.d("CRC Result is received : CRC Timeout does not trigger.")
+                    }
+                },
+                2500
+            )
+        } catch (e: Exception) {
+            Timber.e(e)
+            dfuListener?.onDFUError(e.message ?: "")
+            abortDFU(dfuListener)
+        }
+    }
+
+    private fun abortDFU(listener: DriverFirmwareUpgradeListener?) {
+        listener?.onDFUAborted()
     }
 }

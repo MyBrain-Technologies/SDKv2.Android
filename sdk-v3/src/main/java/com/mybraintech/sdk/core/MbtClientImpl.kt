@@ -12,6 +12,8 @@ import com.mybraintech.sdk.core.bluetooth.devices.qplus.QPlusDeviceImpl
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
 import timber.log.Timber
+import java.io.File
+import java.io.InputStream
 
 /**
  * DO NOT USE THIS CLASS OUTSIDE OF THE SDK
@@ -251,5 +253,13 @@ internal class MbtClientImpl(
     @TestBench
     override fun getDeviceSystemStatus(deviceSystemStatusListener: DeviceSystemStatusListener) {
         mbtDeviceInterface.getDeviceSystemStatus(deviceSystemStatusListener)
+    }
+
+    override fun prepareDFU(firmware: InputStream): Boolean {
+        return mbtDeviceInterface.prepareDFU(firmware)
+    }
+
+    override fun startDFU(listener: DriverFirmwareUpgradeListener): Boolean {
+        return mbtDeviceInterface.startDFU(listener)
     }
 }

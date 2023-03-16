@@ -91,6 +91,24 @@ object Indus5MailboxDecoder {
                 EnumIndus5FrameSuffix.MBX_STOP_PPG_ACQUISITION.getOperationCode() -> {
                     Indus5Response.PpgStatus(false)
                 }
+                EnumIndus5FrameSuffix.MBX_OTA_MODE_EVT.getOperationCode() -> {
+                    val isOk: Boolean = (byteArray[1] == 0x01.toByte())
+                    Indus5Response.OTAModeInitialized(isOk)
+                }
+                EnumIndus5FrameSuffix.MBX_OTA_IDX_RESET_EVT.getOperationCode() -> {
+                    val index: Int = (byteArray[1].toUByte().toInt()
+                            + byteArray[2].toUByte().toInt() * 256)
+                    Indus5Response.OTAIndexReset(index)
+                }
+                EnumIndus5FrameSuffix.MBX_OTA_STATUS_EVT.getOperationCode() -> {
+                    Timber.d("MBX_OTA_STATUS_EVT")
+                    val isOk: Boolean = (byteArray[1] == 0x01.toByte())
+                    Indus5Response.OTACRCResult(isOk)
+                }
+                EnumIndus5FrameSuffix.MBX_UPGRADE_FIRMWARE.getOperationCode() -> {
+                    Timber.d("MBX_UPGRADE_FIRMWARE")
+                    Indus5Response.UnknownResponse(byteArray)
+                }
                 else -> {
                     Indus5Response.UnknownResponse(byteArray)
                 }

@@ -4,6 +4,8 @@ import com.mybraintech.sdk.core.LabStreamingLayer
 import com.mybraintech.sdk.core.TestBench
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
+import java.io.File
+import java.io.InputStream
 
 interface MbtClient {
     fun getDeviceType() : EnumMBTDevice
@@ -45,4 +47,14 @@ interface MbtClient {
     fun getDeviceSystemStatus(deviceSystemStatusListener: DeviceSystemStatusListener)
     @TestBench
     fun getAccelerometerConfig(accelerometerConfigListener : AccelerometerConfigListener)
+
+    /**
+     * @return true if firmware input stream is valid and preparation phase is ok
+     */
+    fun prepareDFU(firmware : InputStream) : Boolean
+
+    /**
+     * @return true if DFU is started successfully
+     */
+    fun startDFU(listener: DriverFirmwareUpgradeListener) : Boolean
 }

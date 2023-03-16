@@ -10,7 +10,6 @@ enum class EnumIndus5FrameSuffix(vararg val bytes: Byte) {
     //----------------------------------------------------------------------------
     // MARK: commands
     //----------------------------------------------------------------------------
-    MBX_START_OTA_TXF(0x03),
     MBX_SYS_GET_STATUS(0x08),
     MBX_SYS_REBOOT_EVT(0x09, 0x29, 0x08),
     MBX_SET_SERIAL_NUMBER(0x1A, 0x53, 0x4D),
@@ -23,7 +22,6 @@ enum class EnumIndus5FrameSuffix(vararg val bytes: Byte) {
     MBX_DC_OFFSET_ENABLE(0x10),
     MBX_CONNECT_IN_A2DP(0x11),
     MBX_DISCONNECT_A2DP(0x12),
-    MBX_UPGRADE_FIRMWARE(0x13),
     MBX_GET_BATTERY_VALUE(0x20),
     MBX_GET_SERIAL_NUMBER(0x22),
     MBX_GET_DEVICE_NAME(0x23),
@@ -49,9 +47,11 @@ enum class EnumIndus5FrameSuffix(vararg val bytes: Byte) {
     //----------------------------------------------------------------------------
     // MARK: events
     //----------------------------------------------------------------------------
+    MBX_START_OTA_TXF(0x03),
     MBX_OTA_MODE_EVT(0x05),
     MBX_OTA_IDX_RESET_EVT(0x06),
     MBX_OTA_STATUS_EVT(0x07),
+    MBX_UPGRADE_FIRMWARE(0x13),
     MBX_EEG_DATA_FRAME_EVT(0x40),
     MBX_IMS_DATA_FRAME_EVT(0x50),
     MBX_PPG_DATA_FRAME_EVT(0x60),

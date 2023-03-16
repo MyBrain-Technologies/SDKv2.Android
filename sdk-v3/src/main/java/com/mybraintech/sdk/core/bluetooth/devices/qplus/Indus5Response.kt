@@ -24,6 +24,18 @@ sealed class Indus5Response {
     class GetSensorStatuses(val sensorStatuses: Indus5SensorStatus) : Indus5Response()
     class SetIMSConfig(val accelerometerConfig: AccelerometerConfig) : Indus5Response()
     class GetIMSConfig(val accelerometerConfig: AccelerometerConfig) : Indus5Response()
+
+    /**
+     * @see OTAIndexReset
+     */
+    class OTAModeInitialized(val isInitialized: Boolean) : Indus5Response()
+
+    /**
+     * should be triggered after [OTAModeInitialized]
+     */
+    class OTAIndexReset(val index: Int) : Indus5Response()
+
+    class OTACRCResult(val isOk: Boolean) : Indus5Response()
     class UnknownResponse(val bytes: ByteArray) : Indus5Response()
 
     @Suppress("unused")
