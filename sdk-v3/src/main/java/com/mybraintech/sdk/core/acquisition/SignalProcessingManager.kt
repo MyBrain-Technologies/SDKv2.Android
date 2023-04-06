@@ -369,6 +369,10 @@ internal class SignalProcessingManager(
         this.accelerometerListener = accelerometerListener
     }
 
+    override fun onEEGFilterConfig(config: EnumEEGFilterConfig) {
+        Timber.d("onEEGFilterConfig : ${config.name}")
+    }
+
     override fun onEEGDataError(error: Throwable) {
         eegListener?.onEegError(error)
     }

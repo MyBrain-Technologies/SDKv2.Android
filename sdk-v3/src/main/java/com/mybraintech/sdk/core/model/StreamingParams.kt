@@ -1,5 +1,7 @@
 package com.mybraintech.sdk.core.model
 
+import com.mybraintech.sdk.core.ResearchStudy
+
 class StreamingParams private constructor(
     val isEEGEnabled: Boolean,
 
@@ -18,7 +20,9 @@ class StreamingParams private constructor(
      */
     val isAccelerometerEnabled: Boolean,
 
-    var accelerometerSampleRate: EnumAccelerometerSampleRate
+    var accelerometerSampleRate: EnumAccelerometerSampleRate,
+
+    val filterConfig: EnumEEGFilterConfig,
 ) {
     val eegSampleRate: Int = 250
 
@@ -33,6 +37,8 @@ class StreamingParams private constructor(
         private var isAccelerometerEnabled: Boolean = false
 
         private var accelerometerSampleRate = EnumAccelerometerSampleRate.F_100_HZ
+
+        private var filterConfig: EnumEEGFilterConfig = EnumEEGFilterConfig.DEFAULT
 
         fun setEEG(isEnabled: Boolean): Builder {
             this.isEEGEnabled = isEnabled
@@ -59,6 +65,12 @@ class StreamingParams private constructor(
             return this
         }
 
+        @ResearchStudy
+        fun setEEGFilterConfig(config: EnumEEGFilterConfig): Builder {
+            this.filterConfig = config
+            return this
+        }
+
         fun build(): StreamingParams {
             return if (isEEGEnabled) {
                 StreamingParams(
@@ -66,7 +78,8 @@ class StreamingParams private constructor(
                     isTriggerStatusEnabled = isTriggerStatusEnabled,
                     isQualityCheckerEnabled = isQualityCheckerEnabled,
                     isAccelerometerEnabled = isAccelerometerEnabled,
-                    accelerometerSampleRate = accelerometerSampleRate
+                    accelerometerSampleRate = accelerometerSampleRate,
+                    filterConfig = filterConfig,
                 )
             } else {
                 StreamingParams(
@@ -74,7 +87,8 @@ class StreamingParams private constructor(
                     isTriggerStatusEnabled = false,
                     isQualityCheckerEnabled = false,
                     isAccelerometerEnabled = true,
-                    accelerometerSampleRate = accelerometerSampleRate
+                    accelerometerSampleRate = accelerometerSampleRate,
+                    filterConfig = filterConfig,
                 )
             }
         }

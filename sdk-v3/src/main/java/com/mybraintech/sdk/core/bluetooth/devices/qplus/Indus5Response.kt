@@ -2,6 +2,7 @@ package com.mybraintech.sdk.core.bluetooth.devices.qplus
 
 import com.mybraintech.sdk.core.model.AccelerometerConfig
 import com.mybraintech.sdk.core.model.DeviceSystemStatus
+import com.mybraintech.sdk.core.model.EnumEEGFilterConfig
 import com.mybraintech.sdk.core.model.Indus5SensorStatus
 
 sealed class Indus5Response {
@@ -24,6 +25,8 @@ sealed class Indus5Response {
     class GetSensorStatuses(val sensorStatuses: Indus5SensorStatus) : Indus5Response()
     class SetIMSConfig(val accelerometerConfig: AccelerometerConfig) : Indus5Response()
     class GetIMSConfig(val accelerometerConfig: AccelerometerConfig) : Indus5Response()
+    class GetEEGFilterConfig(val config: EnumEEGFilterConfig) : Indus5Response()
+    class SetEEGFilterConfig(val appliedConfig: EnumEEGFilterConfig) : Indus5Response()
     class UnknownResponse(val bytes: ByteArray) : Indus5Response()
 
     @Suppress("unused")

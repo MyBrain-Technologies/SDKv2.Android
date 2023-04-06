@@ -124,6 +124,12 @@ abstract class Indus5DeviceImpl(ctx: Context) :
                 is Indus5Response.SetIMSConfig -> {
                     dataReceiver?.onAccelerometerConfiguration(response.accelerometerConfig)
                 }
+                is Indus5Response.GetEEGFilterConfig -> {
+                    eegFilterConfigListener?.onEEGFilterConfig(response.config)
+                }
+                is Indus5Response.SetEEGFilterConfig -> {
+                    dataReceiver?.onEEGFilterConfig(response.appliedConfig)
+                }
                 else -> {
                     Timber.e("this type is not supported : ${response.javaClass.simpleName}")
                 }
@@ -236,6 +242,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
 
         val requestQueue = beginAtomicRequestQueue()
         if (streamingParams.isEEGEnabled) {
+            requestQueue.add(setFilterConfigRequest(streamingParams.filterConfig))
             requestQueue.add(getTriggerStatusOperation(streamingParams.isTriggerStatusEnabled))
             requestQueue.add(getStartEEGOperation())
         } else {
@@ -262,6 +269,23 @@ abstract class Indus5DeviceImpl(ctx: Context) :
     }
 
     override fun isEEGEnabled(): Boolean = _isEEGEnabled
+
+    private fun getFilterConfigRequest(): WriteRequest {
+        return writeCharacteristic(
+            txCharacteristic,
+            EnumIndus5FrameSuffix.MBX_GET_FILTER_CONFIG_TYPE.bytes,
+            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        )
+    }
+
+    private fun setFilterConfigRequest(config: EnumEEGFilterConfig): WriteRequest {
+        val command = EnumIndus5FrameSuffix.MBX_SET_FILTER_CONFIG_TYPE.bytes + config.byteCode
+        return writeCharacteristic(
+            txCharacteristic,
+            command,
+            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        )
+    }
 
     private fun setAccelerometerConfigRequest(sampleRate: EnumAccelerometerSampleRate): WriteRequest {
         val operationByte = EnumIndus5FrameSuffix.MBX_SET_IMS_CONFIG.bytes
@@ -365,6 +389,15 @@ abstract class Indus5DeviceImpl(ctx: Context) :
         } else {
             deviceSystemStatusListener.onDeviceSystemStatusError("device is not connected or not ready")
         }
+    }
+
+    override fun getEEGFilterConfig(eegFilterConfigListener: EEGFilterConfigListener) {
+        this.eegFilterConfigListener = eegFilterConfigListener
+        getFilterConfigRequest()
+            .fail { _, errorCode ->
+                eegFilterConfigListener.onEEGFilterConfigError("errorCode=$errorCode")
+            }
+            .enqueue()
     }
 
     override fun getAccelerometerConfig(accelerometerConfigListener: AccelerometerConfigListener) {

@@ -44,4 +44,5 @@ interface MbtDeviceInterface {
     fun setAudioName(audioName: String, listener: AudioNameListener?)
     fun getDeviceSystemStatus(deviceSystemStatusListener: DeviceSystemStatusListener)
     fun getAccelerometerConfig(accelerometerConfigListener: AccelerometerConfigListener)
+    fun getEEGFilterConfig(eegFilterConfigListener: EEGFilterConfigListener)
 }
