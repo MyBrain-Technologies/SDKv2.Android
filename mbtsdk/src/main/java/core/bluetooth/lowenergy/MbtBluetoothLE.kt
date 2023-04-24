@@ -329,7 +329,7 @@ class MbtBluetoothLE(manager: MbtBluetoothManager) : MainBluetooth(BluetoothProt
           .getMethod(REMOVE_BOND_METHOD, *null as Array<Class<*>?>)
       m.invoke(device, null as Array<Any?>?)
     } catch (e: Exception) {
-      Log.e(TAG, e.message)
+      Log.e(TAG, e.message ?: "", e)
     }
   }
 
