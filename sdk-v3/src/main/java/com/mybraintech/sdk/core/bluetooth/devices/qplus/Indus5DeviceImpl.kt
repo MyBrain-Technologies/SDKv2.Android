@@ -202,7 +202,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
 
     override fun setAudioName(audioName: String, listener: AudioNameListener?) {
         if (isConnectedAndReady()) {
-            if (audioName.length in 6..10) {
+            if (audioName.length <= 11) {
                 this.audioNameListener = listener
                 getSetAudioNameRequest(audioName)
                     .fail { _, failReason ->
