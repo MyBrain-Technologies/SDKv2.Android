@@ -185,8 +185,8 @@ abstract class Indus5DeviceImpl(ctx: Context) :
 
     override fun setSerialNumber(serialNumber: String, listener: SerialNumberChangedListener?) {
         if (isConnectedAndReady()) {
-            if (serialNumber.length != 10) {
-                listener?.onSerialNumberError("Serial number length must be 10")
+            if (serialNumber.length != 10 && serialNumber.length != 11) {
+                listener?.onSerialNumberError("Serial number length must be 10 or 11")
                 return
             }
             this.serialNumberChangedListener = listener
@@ -202,7 +202,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
 
     override fun setAudioName(audioName: String, listener: AudioNameListener?) {
         if (isConnectedAndReady()) {
-            if (audioName.length in 6..10) {
+            if (audioName.length <= 11) {
                 this.audioNameListener = listener
                 getSetAudioNameRequest(audioName)
                     .fail { _, failReason ->
