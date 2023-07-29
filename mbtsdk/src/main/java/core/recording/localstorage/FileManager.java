@@ -73,18 +73,12 @@ public final class FileManager {
      * Retrieve (or create if not existing) the folder to store the recording
      * @param context
      * @param folder
-     * @param useExternalStorage
      * @return the absolute path of the folder created
      */
     public static String createDirectory(@NonNull final Context context,
-                                         @Nullable String folder,
-                                         boolean useExternalStorage)
+                                         @Nullable String folder)
     {
-        File parent = new File(
-                (useExternalStorage && ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                        == PackageManager.PERMISSION_GRANTED ?
-                        Environment.getExternalStorageDirectory()
-                        : context.getFilesDir())
+        File parent = new File(context.getFilesDir()
                         + FOLDER_SEPARATOR
                         + (folder != null ? folder : RECORDING_FOLDER));
 
@@ -105,7 +99,7 @@ public final class FileManager {
                                   @NonNull String filename,
                                   boolean useExternalStorage)
     {
-        String absolutePath = createDirectory(context, folder, useExternalStorage);
+        String absolutePath = createDirectory(context, folder);
         if (absolutePath == null){
             Log.e(TAG, "Impossible to create the folder: "+folder);
             return null;
