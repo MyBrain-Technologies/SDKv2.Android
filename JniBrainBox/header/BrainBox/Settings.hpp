@@ -64,7 +64,6 @@ struct Settings {
     T iaf_inf{6};
     T iaf_sup{13};
     T iaf_sliding_window_sec{8.0};
-    int iaf_sliding_windows_in_second{8};
     T iaf_min_quality_per_packet{0.5};
     T iaf_general_quality_threshold{0.5};
     T iaf_channel_quality_threshold{0.5};

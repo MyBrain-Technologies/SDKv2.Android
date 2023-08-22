@@ -75,6 +75,8 @@ class TrainingData
                         const std::vector<T>& wFile);
 
 
+    const static CSPtr GetFrontalTraining();
+    const static CSPtr GetFrontoparietalTraining();
     const static CSPtr GetGoodTraining();
     const static CSPtr GetBadTraining();
     const static std::vector<T>& GetSpectrumClean();
