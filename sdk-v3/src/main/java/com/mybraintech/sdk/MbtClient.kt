@@ -1,6 +1,7 @@
 package com.mybraintech.sdk
 
 import com.mybraintech.sdk.core.LabStreamingLayer
+import com.mybraintech.sdk.core.ResearchStudy
 import com.mybraintech.sdk.core.TestBench
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
@@ -19,6 +20,9 @@ interface MbtClient {
     fun startStreaming(streamingParams: StreamingParams)
     fun stopStreaming()
     fun isEEGEnabled(): Boolean
+
+    @ResearchStudy
+    fun getEEGFilterConfig(listener: EEGFilterConfigListener)
 
     @LabStreamingLayer
     fun setEEGRealtimeListener(eegRealtimeListener: EEGRealtimeListener)

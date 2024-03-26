@@ -9,3 +9,8 @@ annotation class LabStreamingLayer
 @Retention(AnnotationRetention.BINARY)
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
 annotation class TestBench
+
+@RequiresOptIn(level = RequiresOptIn.Level.WARNING, message = "This API is reserved for ResearchStudy application.")
+@Retention(AnnotationRetention.BINARY)
+@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
+annotation class ResearchStudy

@@ -168,7 +168,7 @@ abstract class EEGSignalProcessing(
                 EEGSignalPack(
                     timestamp = timedBLEFrame.timestamp,
                     index = newFrameIndex,
-                    eegSignals = standardEEGs,
+                    eegSignals = MatrixUtils2.invertFloatMatrix(standardEEGs), // invert table : from [nbSample * nbChannel]  to [nbChannel * nbSample]
                     triggers = statuses
                 )
             )
