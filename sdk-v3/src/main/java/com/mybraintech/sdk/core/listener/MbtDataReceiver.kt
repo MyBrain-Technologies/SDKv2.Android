@@ -1,6 +1,7 @@
 package com.mybraintech.sdk.core.listener
 
 import com.mybraintech.sdk.core.model.AccelerometerConfig
+import com.mybraintech.sdk.core.model.EnumEEGFilterConfig
 import com.mybraintech.sdk.core.model.TimedBLEFrame
 
 /**
@@ -14,5 +15,6 @@ interface MbtDataReceiver {
     fun setEEGRealtimeListener(eegRealtimeListener: EEGRealtimeListener?)
     fun onAccelerometerFrame(data: ByteArray)
     fun setAccelerometerListener(accelerometerListener: AccelerometerListener?)
+    fun onEEGFilterConfig(config: EnumEEGFilterConfig)
     fun onEEGDataError(error: Throwable)
 }

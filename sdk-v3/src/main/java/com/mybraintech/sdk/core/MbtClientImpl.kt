@@ -32,6 +32,7 @@ internal class MbtClientImpl(
     private var eegListener: EEGListener? = null
     private var accelerometerListener: AccelerometerListener? = null
     private var eegRealtimeListener: EEGRealtimeListener? = null
+    private var eegFilterConfigListener: EEGFilterConfigListener? = null
 
     /**
      * [startStreaming] takes times, this value is to prevent recording function while the [startStreaming] procedure is not finished
@@ -140,6 +141,12 @@ internal class MbtClientImpl(
     override fun setEEGRealtimeListener(eegRealtimeListener: EEGRealtimeListener) {
         this.eegRealtimeListener = eegRealtimeListener
         this.dataReceiver?.setEEGRealtimeListener(eegRealtimeListener)
+    }
+
+    @ResearchStudy
+    override fun getEEGFilterConfig(listener: EEGFilterConfigListener) {
+        this.eegFilterConfigListener = listener
+        mbtDeviceInterface.getEEGFilterConfig(listener)
     }
 
     @TestBench

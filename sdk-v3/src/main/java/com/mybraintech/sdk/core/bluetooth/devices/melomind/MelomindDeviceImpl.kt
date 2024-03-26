@@ -324,4 +324,9 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
     override fun getAccelerometerConfig(accelerometerConfigListener: AccelerometerConfigListener) {
         accelerometerConfigListener.onAccelerometerConfigError("not supported yet")
     }
+
+    override fun getEEGFilterConfig(eegFilterConfigListener: EEGFilterConfigListener) {
+        Timber.e("Not yet implemented")
+        eegFilterConfigListener.onEEGFilterConfigError("Not yet implemented")
+    }
 }

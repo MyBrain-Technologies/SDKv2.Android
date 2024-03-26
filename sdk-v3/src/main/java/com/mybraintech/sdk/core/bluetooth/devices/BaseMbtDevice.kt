@@ -42,6 +42,7 @@ abstract class BaseMbtDevice(ctx: Context) :
     protected var deviceInformationListener: DeviceInformationListener? = null
     protected var sensorStatusListener: SensorStatusListener? = null
     protected var accelerometerConfigListener: AccelerometerConfigListener? = null
+    protected var eegFilterConfigListener: EEGFilterConfigListener? = null
 
     //----------------------------------------------------------------------------
     // MARK: internal ble manager

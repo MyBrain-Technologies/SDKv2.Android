@@ -5,6 +5,7 @@ import com.mybraintech.sdk.core.bluetooth.devices.qplus.EnumIndus5FrameSuffix
 import com.mybraintech.sdk.core.bluetooth.devices.qplus.Indus5Response
 import com.mybraintech.sdk.core.model.AccelerometerConfig
 import com.mybraintech.sdk.core.model.DeviceSystemStatus
+import com.mybraintech.sdk.core.model.EnumEEGFilterConfig
 import com.mybraintech.sdk.core.model.Indus5SensorStatus
 import timber.log.Timber
 
@@ -90,6 +91,22 @@ object Indus5MailboxDecoder {
                 }
                 EnumIndus5FrameSuffix.MBX_STOP_PPG_ACQUISITION.getOperationCode() -> {
                     Indus5Response.PpgStatus(false)
+                }
+                EnumIndus5FrameSuffix.MBX_GET_FILTER_CONFIG_TYPE.getOperationCode() -> {
+                    val config = if (byteArray.size > 1) {
+                        EnumEEGFilterConfig.parse(byteArray[1])
+                    } else {
+                        EnumEEGFilterConfig.NO_FILTER // ref : https://mybrain.atlassian.net/browse/FM-497
+                    }
+                    Indus5Response.GetEEGFilterConfig(config)
+                }
+                EnumIndus5FrameSuffix.MBX_SET_FILTER_CONFIG_TYPE.getOperationCode() -> {
+                    val config = if (byteArray.size > 1) {
+                        EnumEEGFilterConfig.parse(byteArray[1])
+                    } else {
+                        EnumEEGFilterConfig.NO_FILTER // ref : https://mybrain.atlassian.net/browse/FM-497
+                    }
+                    Indus5Response.SetEEGFilterConfig(config)
                 }
                 else -> {
                     Indus5Response.UnknownResponse(byteArray)
