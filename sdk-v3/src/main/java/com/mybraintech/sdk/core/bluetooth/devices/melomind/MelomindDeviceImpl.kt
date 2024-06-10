@@ -10,11 +10,21 @@ import android.os.SystemClock
 import com.mybraintech.sdk.core.acquisition.MbtDeviceStatusCallback
 import com.mybraintech.sdk.core.bluetooth.BatteryLevelConversion
 import com.mybraintech.sdk.core.bluetooth.devices.BaseMbtDevice
-import com.mybraintech.sdk.core.listener.*
-import com.mybraintech.sdk.core.model.*
+import com.mybraintech.sdk.core.listener.AccelerometerConfigListener
+import com.mybraintech.sdk.core.listener.BatteryLevelListener
+import com.mybraintech.sdk.core.listener.DeviceInformationListener
+import com.mybraintech.sdk.core.listener.DeviceSystemStatusListener
+import com.mybraintech.sdk.core.listener.EEGFilterConfigListener
+import com.mybraintech.sdk.core.listener.MbtDataReceiver
+import com.mybraintech.sdk.core.listener.SensorStatusListener
+import com.mybraintech.sdk.core.model.DeviceInformation
+import com.mybraintech.sdk.core.model.EnumMBTDevice
+import com.mybraintech.sdk.core.model.MbtDevice
+import com.mybraintech.sdk.core.model.StreamingParams
+import com.mybraintech.sdk.core.model.TimedBLEFrame
 import timber.log.Timber
 
-class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
+class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
 
     // required services
     private var deviceInformationService: BluetoothGattService? = null
@@ -24,6 +34,7 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
     private var deviceStatusCallback: MbtDeviceStatusCallback? = null
 
     private var _isEEGEnabled: Boolean = false
+    //classic Bluetooth
 
     //----------------------------------------------------------------------------
     // MARK: ble manager
@@ -92,8 +103,11 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
             .add(
                 readCharacteristic(audioNameChar)
                     .done {
+                        val orgAudioName =   audioNameChar.getStringValue(0)
+                        targetDeviceAudio =  orgAudioName
+                        startBluetoothScanning()
                         this.deviceInformation.audioName =
-                            MELOMIND_AUDIO_PREFIX + audioNameChar.getStringValue(0)
+                            MELOMIND_AUDIO_PREFIX +orgAudioName
                     }
             )
             .add(
@@ -251,6 +265,8 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
         }
         if (melomindDevices.isNotEmpty()) {
             Timber.d("found melomind devices : number = ${melomindDevices.size}")
+            //de scan audio ble device
+
             scanResultListener.onMbtDevices(melomindDevices.map { MbtDevice(it) })
         }
         if (otherDevices.isNotEmpty()) {
@@ -264,11 +280,28 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
     private inner class MelomindGattCallback : BleManagerGattCallback() {
 
         override fun isRequiredServiceSupported(gatt: BluetoothGatt): Boolean {
-            connectionListener?.onServiceDiscovered()
+            connectionListener?.onServiceDiscovered("BLE device(MeloMind) discovered")
             deviceInformationService = gatt.getService(MelomindService.DEVICE_INFORMATION.uuid)
             measurementService = gatt.getService(MelomindService.MEASUREMENT.uuid)
             val isSupported = (deviceInformationService != null && measurementService != null)
             Timber.i("isRequiredServiceSupported = $isSupported")
+
+            val audioNameChar =
+                deviceInformationService!!.getCharacteristic(MelomindCharacteristic.AUDIO_NAME.uuid)
+
+            beginAtomicRequestQueue()
+
+                .add(
+                    readCharacteristic(audioNameChar)
+                        .done {
+                            targetDeviceAudio = audioNameChar.getStringValue(0)
+                            Timber.i("isRequiredServiceSupported readCharacteristic MelomindGattCallback audioNameChar 2 = ${targetDeviceAudio}")
+                            startBluetoothScanning()
+                        }
+                )
+                .enqueue()
+
+
             return isSupported
         }
 
@@ -297,7 +330,8 @@ class MelomindDeviceImpl(ctx: Context) : BaseMbtDevice(ctx) {
         }
 
         override fun onDeviceReady() {
-            connectionListener?.onDeviceReady()
+            connectionListener?.onDeviceReady("BLE device")
+            startBluetoothScanning()
         }
 
         @Suppress("OVERRIDE_DEPRECATION")

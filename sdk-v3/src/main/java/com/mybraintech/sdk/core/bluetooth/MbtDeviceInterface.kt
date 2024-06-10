@@ -1,6 +1,7 @@
 package com.mybraintech.sdk.core.bluetooth
 
 import com.mybraintech.sdk.core.acquisition.MbtDeviceStatusCallback
+import com.mybraintech.sdk.core.bluetooth.devices.EnumBluetoothConnection
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.BleConnectionStatus
 import com.mybraintech.sdk.core.model.MbtDevice
@@ -14,7 +15,7 @@ interface MbtDeviceInterface {
     //----------------------------------------------------------------------------
     fun startScan(scanResultListener: ScanResultListener)
     fun stopScan()
-    fun connectMbt(mbtDevice: MbtDevice, connectionListener: ConnectionListener)
+    fun connectMbt(mbtDevice: MbtDevice, connectionListener: ConnectionListener, connectionMode: EnumBluetoothConnection)
     fun disconnectMbt()
 
     //----------------------------------------------------------------------------

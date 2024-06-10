@@ -1,14 +1,20 @@
 package com.mybraintech.sdk.core.bluetooth.devices
 
+import android.bluetooth.BluetoothA2dp
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothProfile
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.content.Context
+import com.mybraintech.sdk.core.bluetooth.MbtAudioDeviceInterface
 import com.mybraintech.sdk.core.bluetooth.MbtDeviceInterface
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.BleConnectionStatus
 import com.mybraintech.sdk.core.model.DeviceInformation
 import com.mybraintech.sdk.core.model.EnumMBTDevice
+import com.mybraintech.sdk.core.model.MBTErrorCode
 import com.mybraintech.sdk.core.model.MbtDevice
 import com.mybraintech.sdk.util.getString
 import no.nordicsemi.android.ble.BleManager
@@ -43,6 +49,61 @@ abstract class BaseMbtDevice(ctx: Context) :
     protected var sensorStatusListener: SensorStatusListener? = null
     protected var accelerometerConfigListener: AccelerometerConfigListener? = null
     protected var eegFilterConfigListener: EEGFilterConfigListener? = null
+
+    //classic bluetooth
+    protected var targetDeviceAudio:String = ""
+        get() {
+          return  field
+        }
+        set(value) {
+            field = value
+            broadcastReceiver.targetAudioDevice = value
+        }
+
+    private var device: BluetoothDevice? = null
+    private lateinit var a2dp: BluetoothA2dp  //class to connect to an A2dp device
+    private val bluetoothAdapter: BluetoothAdapter? by lazy {
+        val bluetoothManager = ctx.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        bluetoothManager.adapter
+    }
+
+    fun connectUsingBluetoothA2dp(
+        deviceToConnect: BluetoothDevice?
+    ) {
+        try {
+            device = deviceToConnect
+            BluetoothAdapter.getDefaultAdapter().getProfileProxy(
+                context,
+                object : BluetoothProfile.ServiceListener {
+                    override fun onServiceDisconnected(profile: Int) {
+                        //disConnectUsingBluetoothA2dp(device)
+                    }
+                    override fun onServiceConnected(
+                        profile: Int,
+                        proxy: BluetoothProfile
+                    ) {
+                        a2dp = proxy as BluetoothA2dp
+                        try {
+                            //reconnect
+                            a2dp.javaClass
+                                .getMethod("connect", BluetoothDevice::class.java)
+                                .invoke(a2dp, deviceToConnect)
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                }, BluetoothProfile.A2DP
+            )
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    open fun startBluetoothScanning() {
+        Timber.d("MelomindDeviceImpl startBluetoothScanning bluetoothAdapter:$bluetoothAdapter")
+        bluetoothAdapter?.startDiscovery()
+
+    }
 
     //----------------------------------------------------------------------------
     // MARK: internal ble manager
@@ -92,27 +153,51 @@ abstract class BaseMbtDevice(ctx: Context) :
         mbtBleScanner.stopScan()
     }
 
-    override fun connectMbt(mbtDevice: MbtDevice, connectionListener: ConnectionListener) {
-        connectMbtWithRetries(mbtDevice, connectionListener, 0, 2)
+    override fun connectMbt(mbtDevice: MbtDevice, connectionListener: ConnectionListener, connectionMode:EnumBluetoothConnection) {
+        connectMbtWithRetries(mbtDevice, connectionListener, 0, 2, connectionMode)
     }
 
     private fun connectMbtWithRetries(
         mbtDevice: MbtDevice,
         connectionListener: ConnectionListener,
         currentRetry: Int = 0,
-        maxRetry: Int = 3
+        maxRetry: Int = 3,
+        connectionMode: EnumBluetoothConnection
     ) {
         if (!isBluetoothEnabled()) {
-            connectionListener.onConnectionError(Throwable("Bluetooth is not enabled"))
+            connectionListener.onConnectionError(Throwable("Bluetooth is not enabled"),MBTErrorCode.BLUETOOTH_DISABLED)
             return
         }
         if (isConnectedAndReady()) {
-            connectionListener.onConnectionError(Throwable("Device is connected already : ${bluetoothDevice.getString()}"))
+            connectionListener.onConnectionError(
+                Throwable("Device is connected already : ${bluetoothDevice.getString()}"),
+                MBTErrorCode.DEVICE_CONNECTED_ALREADY
+            )
             return
         }
         this.connectionListener = connectionListener
         this.targetMbtDevice = mbtDevice
         broadcastReceiver.register(context, mbtDevice.bluetoothDevice, connectionListener)
+        if (connectionMode == EnumBluetoothConnection.BLE_AUDIO) {
+            broadcastReceiver.registerAudioDevice(object : MbtAudioDeviceInterface {
+                override fun onMbtAudioDeviceFound(
+                    device: BluetoothDevice,
+                    action: String,
+                    state: Int
+                ) {
+                    if (action == BluetoothDevice.ACTION_FOUND) {
+                        if (state == BluetoothDevice.BOND_BONDED) {
+                            connectUsingBluetoothA2dp(device)
+                        } else {
+                            device.createBond()
+                        }
+                        bluetoothAdapter?.cancelDiscovery()
+                    } else if (action == BluetoothDevice.ACTION_ACL_CONNECTED) {
+                        connectionListener.onDeviceReady("audio connected")
+                    }
+                }
+            })
+        }
 
         val timeout = 10000L
         Timber.i("connect : timeout = $timeout")
@@ -132,13 +217,16 @@ abstract class BaseMbtDevice(ctx: Context) :
                             mbtDevice,
                             connectionListener,
                             currentRetry + 1,
-                            maxRetry
+                            maxRetry, connectionMode
                         )
                     }
                     Thread(runnable).start()
                 } else {
                     val name = device?.name
-                    connectionListener.onConnectionError(Throwable("fail to connect to MbtDevice : name = $name | status = $status"))
+                    connectionListener.onConnectionError(
+                        Throwable("fail to connect to MbtDevice : name = $name | status = $status"),
+                        MBTErrorCode.FAILED_TO_CONNECTED_TO_DEVICE
+                    )
                 }
             }
             .enqueue()
@@ -150,7 +238,10 @@ abstract class BaseMbtDevice(ctx: Context) :
             this.broadcastReceiver.targetDevice = null
             disconnect().enqueue()
         } else {
-            connectionListener?.onConnectionError(Throwable("there is no connected device to disconnect!"))
+            connectionListener?.onConnectionError(
+                Throwable("there is no connected device to disconnect!"),
+                MBTErrorCode.NO_CONNECTED_DEVICE_TO_CONNECT
+            )
         }
     }
 
@@ -161,7 +252,7 @@ abstract class BaseMbtDevice(ctx: Context) :
     private fun getScanCallback(): ScanCallback {
         return object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
-                Timber.d("onScanResult : name = ${result.device.name} | address = ${result.device.address}")
+                Timber.d("onScanResult : name = ${result.device.name} | address = ${result.device.address} ")
                 handleScanResults(listOf(result))
             }
 

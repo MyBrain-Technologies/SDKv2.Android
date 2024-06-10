@@ -3,6 +3,7 @@ package com.mybraintech.sdk
 import com.mybraintech.sdk.core.LabStreamingLayer
 import com.mybraintech.sdk.core.ResearchStudy
 import com.mybraintech.sdk.core.TestBench
+import com.mybraintech.sdk.core.bluetooth.devices.EnumBluetoothConnection
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
 
@@ -11,7 +12,7 @@ interface MbtClient {
     fun getBleConnectionStatus(): BleConnectionStatus
     fun startScan(scanResultListener: ScanResultListener)
     fun stopScan()
-    fun connect(mbtDevice: MbtDevice, connectionListener: ConnectionListener)
+    fun connect(mbtDevice: MbtDevice, connectionListener: ConnectionListener, connectionMode: EnumBluetoothConnection = EnumBluetoothConnection.BLE)
     fun disconnect()
     fun getBatteryLevel(batteryLevelListener: BatteryLevelListener)
     fun getDeviceInformation(deviceInformationListener: DeviceInformationListener)

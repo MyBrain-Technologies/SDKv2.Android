@@ -10,6 +10,7 @@ import android.os.Looper
 import android.os.SystemClock
 import com.mybraintech.sdk.core.acquisition.MbtDeviceStatusCallback
 import com.mybraintech.sdk.core.bluetooth.devices.BaseMbtDevice
+import com.mybraintech.sdk.core.bluetooth.devices.EnumBluetoothConnection
 import com.mybraintech.sdk.core.bluetooth.devices.Indus5MailboxDecoder
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
@@ -142,7 +143,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
     //----------------------------------------------------------------------------
     // MARK: internal ble manager
     //----------------------------------------------------------------------------
-    override fun connectMbt(mbtDevice: MbtDevice, connectionListener: ConnectionListener) {
+    override fun connectMbt(mbtDevice: MbtDevice, connectionListener: ConnectionListener, connectionMode:EnumBluetoothConnection) {
         /**
          * remove bond to fix data loss bug on Android 9 (SDK-415).
          * We do not apply this for Android 10 and later since this will show a popup to ask
@@ -152,10 +153,10 @@ abstract class Indus5DeviceImpl(ctx: Context) :
             Timber.w("removeBond and sleep 200 ms to avoid false bonding notification")
             removeBond(mbtDevice.bluetoothDevice)
             Handler(Looper.getMainLooper()).postDelayed({
-                super.connectMbt(mbtDevice, connectionListener)
+                super.connectMbt(mbtDevice, connectionListener,connectionMode)
             }, 200)
         } else {
-            super.connectMbt(mbtDevice, connectionListener)
+            super.connectMbt(mbtDevice, connectionListener,connectionMode)
         }
     }
 
@@ -499,7 +500,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
         BleManagerGattCallback() {
 
         override fun isRequiredServiceSupported(gatt: BluetoothGatt): Boolean {
-            connectionListener?.onServiceDiscovered()
+            connectionListener?.onServiceDiscovered("BLE device(Indus5) discovered")
             val service = gatt.getService(QPlusService.Transparent.uuid)
             rxCharacteristic =
                 service?.getCharacteristic(QPlusCharacteristic.Rx.uuid)
@@ -543,7 +544,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
         }
 
         override fun onDeviceReady() {
-            connectionListener?.onDeviceReady()
+            connectionListener?.onDeviceReady("BLE device")
         }
 
         @Suppress("OVERRIDE_DEPRECATION")

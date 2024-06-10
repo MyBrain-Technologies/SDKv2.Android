@@ -6,6 +6,7 @@ import com.mybraintech.sdk.core.acquisition.MbtDeviceStatusCallback
 import com.mybraintech.sdk.core.acquisition.RecordingInterface
 import com.mybraintech.sdk.core.acquisition.SignalProcessingManager
 import com.mybraintech.sdk.core.bluetooth.MbtDeviceInterface
+import com.mybraintech.sdk.core.bluetooth.devices.EnumBluetoothConnection
 import com.mybraintech.sdk.core.bluetooth.devices.hyperion.HyperionDeviceImpl
 import com.mybraintech.sdk.core.bluetooth.devices.melomind.MelomindDeviceImpl
 import com.mybraintech.sdk.core.bluetooth.devices.qplus.QPlusDeviceImpl
@@ -76,13 +77,13 @@ internal class MbtClientImpl(
     override fun stopScan() {
         mbtDeviceInterface.stopScan()
     }
-
-    override fun connect(mbtDevice: MbtDevice, connectionListener: ConnectionListener) {
+    //TODO: optional parameter
+    override fun connect(mbtDevice: MbtDevice, connectionListener: ConnectionListener, connectionMode: EnumBluetoothConnection) {
         val connectionStatus = mbtDeviceInterface.getBleConnectionStatus()
         if (connectionStatus.isConnectionEstablished && connectionStatus.mbtDevice == mbtDevice) {
-            connectionListener.onDeviceReady()
+            connectionListener.onDeviceReady("BLE device")
         } else {
-            mbtDeviceInterface.connectMbt(mbtDevice, connectionListener)
+            mbtDeviceInterface.connectMbt(mbtDevice, connectionListener, connectionMode)
         }
     }
 
