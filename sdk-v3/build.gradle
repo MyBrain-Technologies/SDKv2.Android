@@ -14,7 +14,7 @@ android {
         targetSdkVersion 30
 
         versionCode 134
-        versionName '3.4.0.2'
+        versionName '3.5.0.1-SNAPSHOT'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -101,15 +101,19 @@ def mavenUsername = properties.getProperty('maven_user')
 def mavenPassword = properties.getProperty('maven_password')
 def releasesRepoUrl = 'https://package.mybraintech.com/repository/maven-2-releases/'
 def snapshotsRepoUrl = 'https://package.mybraintech.com/repository/maven-2-snapshots/'
+//maven_user='ngotuan'
+//maven_password='gEM28mEcWk3hc6r'
 
+//Tuannexus0
+//anhtuan
 project.afterEvaluate {
     publishing {
         repositories {
             maven {
                 url = android.defaultConfig.versionName.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
                 credentials {
-                    username mavenUsername
-                    password mavenPassword
+                    username 'anhtuan'
+                    password 'Tuannexus0'
                 }
             }
         }

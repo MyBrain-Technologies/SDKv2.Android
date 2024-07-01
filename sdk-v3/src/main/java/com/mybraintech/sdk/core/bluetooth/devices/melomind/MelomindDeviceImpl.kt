@@ -43,7 +43,7 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
 
     override fun log(priority: Int, message: String) {
         if (message.contains("Notification received from 0000b2a5")) {
-            Timber.v(message)
+//            Timber.v(message)
         } else {
             Timber.log(priority, message)
         }
@@ -73,6 +73,8 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
     override fun getDeviceType() = EnumMBTDevice.MELOMIND
 
     override fun getDeviceInformation(deviceInformationListener: DeviceInformationListener) {
+
+        Timber.d("MelomindDeviceImpl getDeviceInformation deviceInformationListener:${deviceInformationListener}")
         this.deviceInformationListener = deviceInformationListener
 
         this.deviceInformation = DeviceInformation().apply {
@@ -105,7 +107,7 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
                     .done {
                         val orgAudioName =   audioNameChar.getStringValue(0)
                         targetDeviceAudio =  orgAudioName
-                        startBluetoothScanning()
+                        startBluetoothScanning("in getDeviceInformation the audioname callback")
                         this.deviceInformation.audioName =
                             MELOMIND_AUDIO_PREFIX +orgAudioName
                     }
@@ -296,7 +298,7 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
                         .done {
                             targetDeviceAudio = audioNameChar.getStringValue(0)
                             Timber.i("isRequiredServiceSupported readCharacteristic MelomindGattCallback audioNameChar 2 = ${targetDeviceAudio}")
-                            startBluetoothScanning()
+                            startBluetoothScanning("in MelomindGattCallback isRequiredServiceSupported audioname callback")
                         }
                 )
                 .enqueue()
@@ -330,8 +332,9 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
         }
 
         override fun onDeviceReady() {
+            Timber.d("BleManagerGattCallback onDeviceReady of BLE device")
             connectionListener?.onDeviceReady("BLE device")
-            startBluetoothScanning()
+            startBluetoothScanning(" on device reeady on BLE connected")
         }
 
         @Suppress("OVERRIDE_DEPRECATION")

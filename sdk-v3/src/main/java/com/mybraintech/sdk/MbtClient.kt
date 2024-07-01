@@ -3,6 +3,8 @@ package com.mybraintech.sdk
 import com.mybraintech.sdk.core.LabStreamingLayer
 import com.mybraintech.sdk.core.ResearchStudy
 import com.mybraintech.sdk.core.TestBench
+import com.mybraintech.sdk.core.acquisition.EEGCalibrateResult
+import com.mybraintech.sdk.core.acquisition.EEGRecordedDatas
 import com.mybraintech.sdk.core.bluetooth.devices.EnumBluetoothConnection
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
@@ -42,6 +44,8 @@ interface MbtClient {
     fun getRecordingBufferSize(): Int
     fun getDataLossPercent(): Float
 
+    fun eegCalibration(data: EEGRecordedDatas): EEGCalibrateResult
+    fun eegRelaxingIndex(data: EEGCalibrateResult,eegs:EEGRecordedDatas): Float
     @TestBench
     fun setSerialNumber(serialNumber: String, listener: SerialNumberChangedListener?)
     @TestBench

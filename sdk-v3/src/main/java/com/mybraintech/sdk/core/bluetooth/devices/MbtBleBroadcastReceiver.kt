@@ -41,6 +41,7 @@ class MbtBleBroadcastReceiver : BroadcastReceiver() {
                 device?.let {
                     Timber.d("MbtBleBroadcastReceiver onReceive ===========================================")
                     Timber.d("MbtBleBroadcastReceiver onReceive receiver bluetooth name:${it.name}")
+                    Timber.d("MbtBleBroadcastReceiver onReceive receiver bluetooth targetAudioDevice:${targetAudioDevice}")
                     val bondState = it.bondState
                     Timber.d("MbtBleBroadcastReceiver onReceive receiver bluetooth bond stats:${it.bondState}")
                     // Optionally, add logic to connect to a specific device
@@ -126,6 +127,7 @@ class MbtBleBroadcastReceiver : BroadcastReceiver() {
         val bondChangedDeviceName = intentDevice?.name
         if (bondChangedDeviceName == targetAudioDevice) {
             if (currentState == BluetoothDevice.BOND_BONDED) {
+                Timber.d("onDeviceReady audio call from onActionBondStateChanged")
                 connectionListener?.onDeviceReady("audio connected")
             }
         }

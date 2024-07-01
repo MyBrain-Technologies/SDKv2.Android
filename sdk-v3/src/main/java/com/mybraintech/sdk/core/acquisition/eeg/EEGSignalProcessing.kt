@@ -18,6 +18,9 @@ import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.math.pow
 
+/**
+ * Process all the EEG.
+ */
 abstract class EEGSignalProcessing(
     protocol: EnumBluetoothProtocol,
     val isTriggerStatusEnabled: Boolean,

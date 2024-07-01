@@ -36,6 +36,8 @@ public class MbtEEGPacket {
         this.features = packetToClone.getFeatures();
     }
 
+
+
     /**
      * Initializes a new instance of the MbtEEGPacket class.
      *
@@ -47,7 +49,11 @@ public class MbtEEGPacket {
         this.statusData = statusData;
         this.timestamp = System.currentTimeMillis();
     }
+    public MbtEEGPacket(@NonNull final ArrayList<ArrayList<Float>> channelsData) {
 
+        this.channelsData = channelsData;
+        this.timestamp = System.currentTimeMillis();
+    }
     /**
      * Gets the TimeStamp
      *
@@ -111,6 +117,10 @@ public class MbtEEGPacket {
 
     public float[][] getFeatures() {
         return features;
+    }
+
+    public void setChannelsData(ArrayList<ArrayList<Float>> list) {
+        this.channelsData = list;
     }
 
     public ArrayList<Float> getFeature(int frequency) {

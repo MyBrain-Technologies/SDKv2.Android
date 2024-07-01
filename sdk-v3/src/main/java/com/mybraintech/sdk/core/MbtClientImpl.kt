@@ -2,6 +2,8 @@ package com.mybraintech.sdk.core
 
 import android.content.Context
 import com.mybraintech.sdk.MbtClient
+import com.mybraintech.sdk.core.acquisition.EEGCalibrateResult
+import com.mybraintech.sdk.core.acquisition.EEGRecordedDatas
 import com.mybraintech.sdk.core.acquisition.MbtDeviceStatusCallback
 import com.mybraintech.sdk.core.acquisition.RecordingInterface
 import com.mybraintech.sdk.core.acquisition.SignalProcessingManager
@@ -244,6 +246,14 @@ internal class MbtClientImpl(
 
     override fun getDataLossPercent(): Float {
         return recordingInterface?.getDataLossPercentage() ?: 0.0f
+    }
+
+    override fun eegCalibration(data: EEGRecordedDatas): EEGCalibrateResult {
+     return manager.eegCalibrate(data)
+    }
+
+    override fun eegRelaxingIndex(data: EEGCalibrateResult,eegs:EEGRecordedDatas): Float {
+        return manager.eegRelaxingIndex(data,eegs)
     }
 
     @TestBench

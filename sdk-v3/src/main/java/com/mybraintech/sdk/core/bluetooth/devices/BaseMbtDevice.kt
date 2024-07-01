@@ -83,11 +83,30 @@ abstract class BaseMbtDevice(ctx: Context) :
                         proxy: BluetoothProfile
                     ) {
                         a2dp = proxy as BluetoothA2dp
+                        val connectedDevice = a2dp.connectedDevices
+                        var founded = false
                         try {
+                            Timber.d("MelomindDeviceImpl getProfileProxy connectedDevice number:${connectedDevice.size}")
+                            if (connectedDevice.size>0) {
+                                for (device in connectedDevice) {
+                                    val deviceName = device.name
+
+                                    Timber.d("MelomindDeviceImpl getProfileProxy a2dp connectedDevice name:${device.name}")
+                                    if (deviceName.equals(targetDeviceAudio)) {
+                                        founded = true
+                                        Timber.d("onDeviceReady call from r getProfileProxy a2dp with device already connected")
+                                        connectionListener?.onDeviceReady("audio connected")
+                                        break
+                                    }
+                                }
+                            }
                             //reconnect
-                            a2dp.javaClass
-                                .getMethod("connect", BluetoothDevice::class.java)
-                                .invoke(a2dp, deviceToConnect)
+                            Timber.d("MelomindDeviceImpl getProfileProxy device was founded and connected before:${founded}")
+                            if (!founded) {
+                                a2dp.javaClass
+                                    .getMethod("connect", BluetoothDevice::class.java)
+                                    .invoke(a2dp, deviceToConnect)
+                            }
                         } catch (e: Exception) {
                             e.printStackTrace()
                         }
@@ -99,9 +118,31 @@ abstract class BaseMbtDevice(ctx: Context) :
         }
     }
 
-    open fun startBluetoothScanning() {
-        Timber.d("MelomindDeviceImpl startBluetoothScanning bluetoothAdapter:$bluetoothAdapter")
-        bluetoothAdapter?.startDiscovery()
+    open fun startBluetoothScanning(caller:String) {
+
+        Timber.d("MelomindDeviceImpl tobe startBluetoothScanning bluetoothAdapter:$bluetoothAdapter withCaller:$caller")
+        val pairedDevices: MutableSet<BluetoothDevice>? = bluetoothAdapter?.bondedDevices
+        var found = false
+        if (pairedDevices != null) {
+            for (device in pairedDevices) {
+                val deviceName = device.name
+                val macAddress = device.address
+                // Do something with the device (e.g., display in a list)
+                Timber.d("MelomindDeviceImpl Paired device: $deviceName at $macAddress")
+                if (deviceName.equals(targetDeviceAudio)) {
+                    found = true
+                    break
+                }
+            }
+        }
+        if (found) {
+            Timber.d("not found paired device call on audio paired device")
+            connectionListener?.onDeviceReady("audio connected")
+        } else {
+            Timber.d("not found paired device start to trigger scan by startDiscovery")
+            bluetoothAdapter?.startDiscovery()
+        }
+
 
     }
 
@@ -185,14 +226,20 @@ abstract class BaseMbtDevice(ctx: Context) :
                     action: String,
                     state: Int
                 ) {
+                    Timber.d("BaseMbtDevice MbtAudioDeviceInterface callback with info action:$action state:$state device:${device.name}")
+
                     if (action == BluetoothDevice.ACTION_FOUND) {
+
+                        Timber.d("BaseMbtDevice MbtAudioDeviceInterface device audio found")
+
                         if (state == BluetoothDevice.BOND_BONDED) {
                             connectUsingBluetoothA2dp(device)
                         } else {
                             device.createBond()
                         }
                         bluetoothAdapter?.cancelDiscovery()
-                    } else if (action == BluetoothDevice.ACTION_ACL_CONNECTED) {
+                    } else if (action == BluetoothDevice.ACTION_ACL_CONNECTED && state == BluetoothDevice.BOND_BONDED) {
+                        Timber.d("onDeviceReady call from registerAudioDevice call back with action ACTION_ACL_CONNECTED")
                         connectionListener.onDeviceReady("audio connected")
                     }
                 }
