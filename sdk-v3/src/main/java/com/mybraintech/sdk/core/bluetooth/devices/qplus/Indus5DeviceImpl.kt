@@ -83,7 +83,9 @@ abstract class Indus5DeviceImpl(ctx: Context) :
                     deviceInformation.bleName = INDUS5_BLE_PREFIX + response.serialNumber
                 }
                 is Indus5Response.AudioNameFetched -> {
-                    deviceInformation.audioName = INDUS5_AUDIO_PREFIX + response.audioName
+                    val audioName = INDUS5_AUDIO_PREFIX + response.audioName
+                    startBluetoothScanning(audioName,"call from onDataReceived Indus5DeviceImpl")
+                    deviceInformation.audioName = audioName
                 }
                 is Indus5Response.AudioNameChanged -> {
                     deviceInformation.audioName = INDUS5_AUDIO_PREFIX + response.newAudioName

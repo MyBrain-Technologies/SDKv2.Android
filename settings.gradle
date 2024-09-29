@@ -1,4 +1,4 @@
-include ':JniBrainBox'
+//include ':JniBrainBox'
 
 //add the customized version of Nordic Android Ble
 //include ':ble'

@@ -47,9 +47,10 @@ dependencies {
     // brainbox
     def useLocalJni = false
     if (useLocalJni) {
-//        implementation project(path: ':JniBrainBox')
+        implementation project(path: ':JniBrainBox')
     } else {
-        implementation "com.mybraintech.android:jnibrainbox:3.0.0rc2"
+//        implementation "com.mybraintech.android:jnibrainbox:3.0.0rc2"
+        implementation 'com.mybraintech.android:jnibrainbox-debug:+'
     }
 
     // bluetooth
@@ -59,7 +60,7 @@ dependencies {
 //        implementation project(path: ':ble')
 //        implementation project(path: ':ble-common')
     } else {
-        implementation 'no.nordicsemi.android:ble:2.3.1'
+        implementation 'no.nordicsemi.android:ble:2.7.5'
     }
 
     implementation deps.kotlin.stdlib
@@ -112,20 +113,27 @@ project.afterEvaluate {
             maven {
                 url = android.defaultConfig.versionName.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
                 credentials {
-                    username 'anhtuan'
-                    password 'Tuannexus0'
+                    username mavenUsername
+                    password mavenPassword
                 }
             }
         }
         publications {
             // Creates a Maven publication called "release".
-            release(MavenPublication) {
-                from components.release
-
+//            release(MavenPublication) {
+//                from components.release
+//
+//                groupId = 'com.mybraintech.android'
+//                artifactId = 'sdk'
+//                version = android.defaultConfig.versionName
+//            }
+            debug(MavenPublication) {
+                from components.debug
                 groupId = 'com.mybraintech.android'
-                artifactId = 'sdk'
-                version = android.defaultConfig.versionName
+                artifactId = 'sdk-debug'
+                version = '3.5.0.1-SNAPSHOT'
             }
+
         }
     }
 }

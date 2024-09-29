@@ -51,7 +51,7 @@ abstract class BaseMbtDevice(ctx: Context) :
     protected var eegFilterConfigListener: EEGFilterConfigListener? = null
 
     //classic bluetooth
-    protected var targetDeviceAudio:String = ""
+    private var targetDeviceAudio:String = ""
         get() {
           return  field
         }
@@ -86,12 +86,12 @@ abstract class BaseMbtDevice(ctx: Context) :
                         val connectedDevice = a2dp.connectedDevices
                         var founded = false
                         try {
-                            Timber.d("MelomindDeviceImpl getProfileProxy connectedDevice number:${connectedDevice.size}")
+                            Timber.d("  getProfileProxy connectedDevice number:${connectedDevice.size}")
                             if (connectedDevice.size>0) {
                                 for (device in connectedDevice) {
                                     val deviceName = device.name
 
-                                    Timber.d("MelomindDeviceImpl getProfileProxy a2dp connectedDevice name:${device.name}")
+                                    Timber.d("  getProfileProxy a2dp connectedDevice name:${device.name}")
                                     if (deviceName.equals(targetDeviceAudio)) {
                                         founded = true
                                         Timber.d("onDeviceReady call from r getProfileProxy a2dp with device already connected")
@@ -101,7 +101,7 @@ abstract class BaseMbtDevice(ctx: Context) :
                                 }
                             }
                             //reconnect
-                            Timber.d("MelomindDeviceImpl getProfileProxy device was founded and connected before:${founded}")
+                            Timber.d("  getProfileProxy device was founded and connected before:${founded}")
                             if (!founded) {
                                 a2dp.javaClass
                                     .getMethod("connect", BluetoothDevice::class.java)
@@ -118,9 +118,13 @@ abstract class BaseMbtDevice(ctx: Context) :
         }
     }
 
-    open fun startBluetoothScanning(caller:String) {
+    var connectedToAudioDevice =false
 
-        Timber.d("MelomindDeviceImpl tobe startBluetoothScanning bluetoothAdapter:$bluetoothAdapter withCaller:$caller")
+
+    open fun startBluetoothScanning(audioName:String,caller:String) {
+        targetDeviceAudio = audioName
+
+        Timber.d("  tobe startBluetoothScanning bluetoothAdapter:$bluetoothAdapter withCaller:$caller targetDeviceAudio$targetDeviceAudio")
         val pairedDevices: MutableSet<BluetoothDevice>? = bluetoothAdapter?.bondedDevices
         var found = false
         if (pairedDevices != null) {
@@ -128,16 +132,18 @@ abstract class BaseMbtDevice(ctx: Context) :
                 val deviceName = device.name
                 val macAddress = device.address
                 // Do something with the device (e.g., display in a list)
-                Timber.d("MelomindDeviceImpl Paired device: $deviceName at $macAddress")
+                Timber.d("  Paired device: $deviceName at $macAddress")
                 if (deviceName.equals(targetDeviceAudio)) {
                     found = true
+                    connectUsingBluetoothA2dp(device)
                     break
                 }
             }
         }
         if (found) {
-            Timber.d("not found paired device call on audio paired device")
+            Timber.d(" found paired device call on audio paired device")
             connectionListener?.onDeviceReady("audio connected")
+            connectedToAudioDevice = true
         } else {
             Timber.d("not found paired device start to trigger scan by startDiscovery")
             bluetoothAdapter?.startDiscovery()

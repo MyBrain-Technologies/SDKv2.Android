@@ -74,7 +74,6 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
 
     override fun getDeviceInformation(deviceInformationListener: DeviceInformationListener) {
 
-        Timber.d("MelomindDeviceImpl getDeviceInformation deviceInformationListener:${deviceInformationListener}")
         this.deviceInformationListener = deviceInformationListener
 
         this.deviceInformation = DeviceInformation().apply {
@@ -106,8 +105,7 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
                 readCharacteristic(audioNameChar)
                     .done {
                         val orgAudioName =   audioNameChar.getStringValue(0)
-                        targetDeviceAudio =  orgAudioName
-                        startBluetoothScanning("in getDeviceInformation the audioname callback")
+                        startBluetoothScanning(orgAudioName,"in getDeviceInformation the audioname callback")
                         this.deviceInformation.audioName =
                             MELOMIND_AUDIO_PREFIX +orgAudioName
                     }
@@ -175,7 +173,7 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
                             }
                         }
                     } catch (e: Exception) {
-                        Timber.w(e)
+                        Timber.w("on write character exception:${e.message}")
                     }
                 }
                 .fail { _, _ -> Timber.e("Fail to write trigger status command") }
@@ -296,9 +294,9 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
                 .add(
                     readCharacteristic(audioNameChar)
                         .done {
-                            targetDeviceAudio = audioNameChar.getStringValue(0)
+                            val targetDeviceAudio = audioNameChar.getStringValue(0)
                             Timber.i("isRequiredServiceSupported readCharacteristic MelomindGattCallback audioNameChar 2 = ${targetDeviceAudio}")
-                            startBluetoothScanning("in MelomindGattCallback isRequiredServiceSupported audioname callback")
+                            startBluetoothScanning(targetDeviceAudio,"in MelomindGattCallback isRequiredServiceSupported audioname callback")
                         }
                 )
                 .enqueue()
@@ -334,7 +332,6 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
         override fun onDeviceReady() {
             Timber.d("BleManagerGattCallback onDeviceReady of BLE device")
             connectionListener?.onDeviceReady("BLE device")
-            startBluetoothScanning(" on device reeady on BLE connected")
         }
 
         @Suppress("OVERRIDE_DEPRECATION")

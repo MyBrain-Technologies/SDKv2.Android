@@ -78,6 +78,10 @@ public class Calibration implements AutoCloseable  {
         return get_relative_rms();
     }
 
+    public float[] GetSmoothRMS() {
+        return get_smoothed_rms();
+    }
+
     public float[] GetHistFreq() {
         return get_hist_freq();
     }

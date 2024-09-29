@@ -23,7 +23,7 @@ class MbtBleBroadcastReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
 
         val action = intent?.action
-        Timber.d("MbtBleBroadcastReceiver onReceive action:$action")
+//        Timber.d(" onReceive action:$action")
 
         when (intent?.action) {
             BluetoothAdapter.ACTION_STATE_CHANGED -> {
@@ -39,11 +39,9 @@ class MbtBleBroadcastReceiver : BroadcastReceiver() {
                 val device: BluetoothDevice? =
                     intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
                 device?.let {
-                    Timber.d("MbtBleBroadcastReceiver onReceive ===========================================")
-                    Timber.d("MbtBleBroadcastReceiver onReceive receiver bluetooth name:${it.name}")
-                    Timber.d("MbtBleBroadcastReceiver onReceive receiver bluetooth targetAudioDevice:${targetAudioDevice}")
+                    Timber.d(" onReceive receiver bluetooth name:${it.name} targetAudioDevice:${targetAudioDevice}")
                     val bondState = it.bondState
-                    Timber.d("MbtBleBroadcastReceiver onReceive receiver bluetooth bond stats:${it.bondState}")
+//                    Timber.d(" onReceive receiver bluetooth bond stats:${it.bondState}")
                     // Optionally, add logic to connect to a specific device
                     //scan the list of bluetooth devices. if the name is the same Audio name of connected BLE headset. request pair
                     if (it.name == targetAudioDevice) {

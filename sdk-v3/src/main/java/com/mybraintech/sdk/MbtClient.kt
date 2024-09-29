@@ -1,5 +1,6 @@
 package com.mybraintech.sdk
 
+import com.mybraintech.android.jnibrainbox.RelaxIndexSessionOutputData
 import com.mybraintech.sdk.core.LabStreamingLayer
 import com.mybraintech.sdk.core.ResearchStudy
 import com.mybraintech.sdk.core.TestBench
@@ -45,7 +46,10 @@ interface MbtClient {
     fun getDataLossPercent(): Float
 
     fun eegCalibration(data: EEGRecordedDatas): EEGCalibrateResult
-    fun eegRelaxingIndex(data: EEGCalibrateResult,eegs:EEGRecordedDatas): Float
+    fun eegRelaxingIndex(eegs:EEGRecordedDatas): Float
+    fun eggStartRelaxingIndexSession(data: EEGCalibrateResult)
+    fun eggEngRelaxingIndexSession():RelaxIndexSessionOutputData?
+
     @TestBench
     fun setSerialNumber(serialNumber: String, listener: SerialNumberChangedListener?)
     @TestBench
@@ -54,4 +58,5 @@ interface MbtClient {
     fun getDeviceSystemStatus(deviceSystemStatusListener: DeviceSystemStatusListener)
     @TestBench
     fun getAccelerometerConfig(accelerometerConfigListener : AccelerometerConfigListener)
+    fun computeStatistics(threshold:Float, snrValues:Array<Float>): HashMap<String, Float>?
 }

@@ -5,6 +5,8 @@ import android.os.Looper
 import android.util.Log
 import com.mybraintech.android.jnibrainbox.Calibration
 import com.mybraintech.android.jnibrainbox.RelaxIndex
+import com.mybraintech.android.jnibrainbox.RelaxIndexSessionOutputData
+import com.mybraintech.android.jnibrainbox.TypeConverter
 import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessingHyperion
 import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessingMelomind
 import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessingQPlus
@@ -37,6 +39,7 @@ import io.reactivex.rxkotlin.addTo
 import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 import java.io.FileWriter
+import java.util.HashMap
 import kotlin.math.max
 import kotlin.math.min
 
@@ -81,6 +84,7 @@ internal class SignalProcessingManager(
      * use to calibrate multi signal recordings
      */
     private var isWaitingLateSignals = false
+    private var relaxingIndex:RelaxIndex? = null
 
     private var recordingOption: RecordingOption? = null
     private var kwak: Kwak = Kwak()
@@ -212,26 +216,41 @@ internal class SignalProcessingManager(
             }
         }
     }
-
-    fun eegRelaxingIndex(calibratedData:EEGCalibrateResult,tobeIndexEEGDatas:EEGRecordedDatas):Float {
+    fun innitRelaxingIndex(calibratedData: EEGCalibrateResult) {
+        Log.d("TAG", "Dev_debug innitRelaxingIndex  calibratedData:${calibratedData}")
         val sampling_rate = 250
-        val packetLength = sampling_rate
         val iaf: FloatArray = calibratedData.iaf
-        val rms: FloatArray = calibratedData.rms
-
-
+        val smoothRms: FloatArray = calibratedData.smoothRms
         val iaf_median_inf = iaf[0]
         val iaf_median_sup = iaf[1]
-        val ri = RelaxIndex(sampling_rate, rms, iaf_median_inf, iaf_median_sup)
+        relaxingIndex = RelaxIndex(sampling_rate, smoothRms, iaf_median_inf, iaf_median_sup)
+
+        Log.d("TAG", "Dev_debug innitRelaxingIndex  relaxingIndex:${relaxingIndex}")
+    }
+
+    fun endSessionRelaxingIndex():RelaxIndexSessionOutputData? {
+        Log.d("TAG", "Dev_debug endSessionRelaxingIndex ")
+
+       return relaxingIndex?.endSession()
+    }
+
+
+    fun eegRelaxingIndex(tobeIndexEEGDatas:EEGRecordedDatas):Float {
+        Log.d("TAG","Dev_debug eegRelaxingIndex error eegRelaxingIndex:${tobeIndexEEGDatas.eegPackets.size} relaxingIndex:$relaxingIndex")
+        val sampling_rate = 250
+
+
+        val ri = relaxingIndex
         val packets = tobeIndexEEGDatas.eegPackets
         val qualities = Array(2) {
             FloatArray(
                 packets.size
             )
         }
-        val mainMatrix = Array(2) {
+        val mainMatrixSize: Int = packets.size * sampling_rate
+        val signals = Array(2) {
             FloatArray(
-                packets.size * packetLength
+                packets.size * mainMatrixSize
             )
         }
 
@@ -249,10 +268,10 @@ internal class SignalProcessingManager(
                 qualities[1][qtCnt++] = current.qualities[1]
             }
             val matrix: Array<FloatArray> =
-                channelsToMatrixFloat(current.channelsData)
+                TypeConverter.channelsToMatrixFloat(current.channelsData)
             for (it in 0 until sampling_rate) {
-                mainMatrix[0][chanCnt] = matrix[0][it]
-                mainMatrix[1][chanCnt++] = matrix[1][it]
+                signals[0][chanCnt] = matrix[0][it]
+                signals[1][chanCnt++] = matrix[1][it]
             }
         }
 
@@ -262,12 +281,23 @@ internal class SignalProcessingManager(
             qualities[1][packets.size - 1]
         )
 
-        // Simulate a session live of 3 seconds
-        val volume = ri.computeVolume(mainMatrix, lastPacketQualities)
+        Log.d("TAG","Dev_debug SDKV3 computeRelaxIndex    lastPacketQualities :${ lastPacketQualities[0]} ${ lastPacketQualities[1]}")
 
+
+        // Simulate a session live of 3 seconds
+        val volume = ri?.computeVolume(signals, lastPacketQualities)?:-1f
 
         // Simulate the end of session
 //        val session = ri.endSession()
+//        Log.d(
+//            "TAG",
+//            "Dev_debug: eegRelaxingIndex volume:$volume session:${session.toString()}"
+//        )
+
+        // Simulate the end of session
+        Log.d("TAG","Dev_debug SDKV3 computeRelaxIndex    volume :${volume}")
+
+
         return volume
     }
     fun eegCalibrate(recordedData:EEGRecordedDatas):EEGCalibrateResult {
@@ -301,8 +331,7 @@ internal class SignalProcessingManager(
                 qualities[0][qtCnt] = current.qualities[0]
                 qualities[1][qtCnt++] = current.qualities[1]
             }
-            val matrix: Array<FloatArray> =
-            channelsToMatrixFloat(current.channelsData)
+            val matrix: Array<FloatArray> = TypeConverter.channelsToMatrixFloat(current.channelsData)
             for (it in 0 until sampling_rate) {
                 mainMatrix[0][chanCnt] = matrix[0][it]
                 mainMatrix[1][chanCnt++] = matrix[1][it]
@@ -315,6 +344,7 @@ internal class SignalProcessingManager(
         val result = EEGCalibrateResult(error == 0,error.toString())
         result.iaf = calibrator.GetIAF()
         result.rms = calibrator.GetRelativeRMS()
+        result.smoothRms = calibrator.GetSmoothRMS()
         return result
     }
 
@@ -535,22 +565,4 @@ internal class SignalProcessingManager(
             .addTo(recordingDisposable)
     }
 
-    fun channelsToMatrixFloat(channels: java.util.ArrayList<java.util.ArrayList<Float>>?): Array<FloatArray> {
-        require(!(channels == null || channels.size == 0)) { "there MUST be at least ONE or MORE channel(s) !" }
-        val height = channels.size
-        val samprate = channels[0].size
-
-        val matrix = Array(height) {
-            FloatArray(
-                samprate
-            )
-        }
-
-        for (it in 0 until height) {
-            val current = channels[it]
-            require(current.size == samprate) { "ERRROR : samprate not consistent in all provided channels!" }
-            for (it2 in 0 until samprate) matrix[it][it2] = current[it2]
-        }
-        return matrix
-    }
 }

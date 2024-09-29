@@ -1,6 +1,9 @@
 package com.mybraintech.sdk.core
 
 import android.content.Context
+import android.util.Log
+import com.mybraintech.android.jnibrainbox.ComputeStatistics
+import com.mybraintech.android.jnibrainbox.RelaxIndexSessionOutputData
 import com.mybraintech.sdk.MbtClient
 import com.mybraintech.sdk.core.acquisition.EEGCalibrateResult
 import com.mybraintech.sdk.core.acquisition.EEGRecordedDatas
@@ -15,6 +18,7 @@ import com.mybraintech.sdk.core.bluetooth.devices.qplus.QPlusDeviceImpl
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
 import timber.log.Timber
+import java.util.HashMap
 
 /**
  * DO NOT USE THIS CLASS OUTSIDE OF THE SDK
@@ -252,8 +256,16 @@ internal class MbtClientImpl(
      return manager.eegCalibrate(data)
     }
 
-    override fun eegRelaxingIndex(data: EEGCalibrateResult,eegs:EEGRecordedDatas): Float {
-        return manager.eegRelaxingIndex(data,eegs)
+    override fun eegRelaxingIndex(eegs:EEGRecordedDatas): Float {
+        return manager.eegRelaxingIndex(eegs)
+    }
+
+    override fun eggStartRelaxingIndexSession(data: EEGCalibrateResult) {
+         manager.innitRelaxingIndex(data)
+    }
+
+    override fun eggEngRelaxingIndexSession(): RelaxIndexSessionOutputData? {
+       return manager.endSessionRelaxingIndex()
     }
 
     @TestBench
@@ -269,5 +281,25 @@ internal class MbtClientImpl(
     @TestBench
     override fun getDeviceSystemStatus(deviceSystemStatusListener: DeviceSystemStatusListener) {
         mbtDeviceInterface.getDeviceSystemStatus(deviceSystemStatusListener)
+    }
+
+    override fun computeStatistics(threshold: Float, snrValues: Array<Float>): HashMap<String, Float>?{
+        Log.d("TAG",
+            "Dev_debug SDKV3 computeStatistics called threshold:$threshold snrValues:$snrValues "
+        )
+        try {
+            val computer = ComputeStatistics()
+            Log.d("TAG",
+                "Dev_debug SDKV3 computeStatistics computer:$computer"
+            )
+            val result = computer.computeStatisticsSNR(threshold,snrValues)
+            Log.d("TAG",
+                "Dev_debug SDKV3 computeStatistics result:$result"
+            )
+            return  result
+        } catch (ex:Exception) {
+            return null
+        }
+
     }
 }
