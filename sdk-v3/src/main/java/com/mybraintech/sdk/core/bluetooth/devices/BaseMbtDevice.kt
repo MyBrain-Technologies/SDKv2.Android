@@ -59,6 +59,14 @@ abstract class BaseMbtDevice(ctx: Context) :
             field = value
             broadcastReceiver.targetAudioDevice = value
         }
+    private var targetDeviceAudioAddress:String = ""
+    get() {
+        return  field
+    }
+    set(value) {
+        field = value
+        broadcastReceiver.targetAudioAddress = value
+    }
 
     private var device: BluetoothDevice? = null
     private lateinit var a2dp: BluetoothA2dp  //class to connect to an A2dp device
@@ -121,8 +129,9 @@ abstract class BaseMbtDevice(ctx: Context) :
     var connectedToAudioDevice =false
 
 
-    open fun startBluetoothScanning(audioName:String,caller:String) {
+    open fun startBluetoothScanning(audioName:String, caller:String) {
         targetDeviceAudio = audioName
+        targetDeviceAudioAddress = audioName
 
         Timber.d("  tobe startBluetoothScanning bluetoothAdapter:$bluetoothAdapter withCaller:$caller targetDeviceAudio$targetDeviceAudio")
         val pairedDevices: MutableSet<BluetoothDevice>? = bluetoothAdapter?.bondedDevices

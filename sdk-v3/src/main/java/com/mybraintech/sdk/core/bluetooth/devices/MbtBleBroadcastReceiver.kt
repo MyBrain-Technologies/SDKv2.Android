@@ -15,6 +15,7 @@ class MbtBleBroadcastReceiver : BroadcastReceiver() {
     private var isRegistered = false
     var targetDevice: BluetoothDevice? = null
     var targetAudioDevice:String = ""
+    var targetAudioAddress:String = ""
     var connectionListener: ConnectionListener? = null
     var audioConnectionListener: MbtAudioDeviceInterface? = null
     private var lastBondState: Int = -1
@@ -40,6 +41,7 @@ class MbtBleBroadcastReceiver : BroadcastReceiver() {
                     intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
                 device?.let {
                     Timber.d(" onReceive receiver bluetooth name:${it.name} targetAudioDevice:${targetAudioDevice}")
+                    Timber.d(" onReceive receiver bluetooth name:${it.address} targetAudioDevice:${targetAudioDevice}")
                     val bondState = it.bondState
 //                    Timber.d(" onReceive receiver bluetooth bond stats:${it.bondState}")
                     // Optionally, add logic to connect to a specific device
