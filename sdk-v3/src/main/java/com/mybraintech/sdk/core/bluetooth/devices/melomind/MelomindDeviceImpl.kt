@@ -10,8 +10,10 @@ import android.os.SystemClock
 import com.mybraintech.sdk.core.acquisition.MbtDeviceStatusCallback
 import com.mybraintech.sdk.core.bluetooth.BatteryLevelConversion
 import com.mybraintech.sdk.core.bluetooth.devices.BaseMbtDevice
+import com.mybraintech.sdk.core.bluetooth.devices.EnumBluetoothConnection
 import com.mybraintech.sdk.core.listener.AccelerometerConfigListener
 import com.mybraintech.sdk.core.listener.BatteryLevelListener
+import com.mybraintech.sdk.core.listener.ConnectionListener
 import com.mybraintech.sdk.core.listener.DeviceInformationListener
 import com.mybraintech.sdk.core.listener.DeviceSystemStatusListener
 import com.mybraintech.sdk.core.listener.EEGFilterConfigListener
@@ -19,9 +21,11 @@ import com.mybraintech.sdk.core.listener.MbtDataReceiver
 import com.mybraintech.sdk.core.listener.SensorStatusListener
 import com.mybraintech.sdk.core.model.DeviceInformation
 import com.mybraintech.sdk.core.model.EnumMBTDevice
+import com.mybraintech.sdk.core.model.MBTErrorCode
 import com.mybraintech.sdk.core.model.MbtDevice
 import com.mybraintech.sdk.core.model.StreamingParams
 import com.mybraintech.sdk.core.model.TimedBLEFrame
+import com.mybraintech.sdk.util.BLE_CONNECTED_STATUS
 import timber.log.Timber
 
 class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
@@ -34,12 +38,49 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
     private var deviceStatusCallback: MbtDeviceStatusCallback? = null
 
     private var _isEEGEnabled: Boolean = false
+
+    var connectionMode = EnumBluetoothConnection.BLE
     //classic Bluetooth
 
     //----------------------------------------------------------------------------
     // MARK: ble manager
     //----------------------------------------------------------------------------
     override fun getGattCallback(): BleManagerGattCallback = MelomindGattCallback()
+    override fun connectAudio(mbtDevice: MbtDevice, connectionListener: ConnectionListener) {
+        val currentThread = Thread.currentThread()
+        Timber.d("Dev_debug connectAudio:${mbtDevice.bluetoothDevice.name} connectionListener:$connectionListener Current thread: ${currentThread.name}")
+        this.connectionListener = connectionListener
+        val pairedDevices: MutableSet<BluetoothDevice>? = bluetoothAdapter?.bondedDevices
+        var found = false
+        if (pairedDevices != null) {
+            for (device in pairedDevices) {
+                val deviceName = device.name
+                val macAddress = device.address
+                // Do something with the device (e.g., display in a list)
+                Timber.d("Dev_debug connectAudio Paired device: $deviceName at $macAddress")
+                var targetAudioname = mbtDevice.bluetoothDevice.name
+                Timber.d("Dev_debug tobe connectAudio o Paired targetAudioname:$targetAudioname")
+                if (deviceName.equals(targetAudioname)) {
+                    found = true
+                    break
+                }
+            }
+
+        }
+        Timber.d("Dev_debug tobe connectAudio found:$found")
+        if (found) {
+            //if device already bond (paired device list). do the connection again
+            connectUsingBluetoothA2dpBinder(mbtDevice.bluetoothDevice)
+        } else {
+            //request pair new device
+            mbtDevice.bluetoothDevice.createBond()
+        }
+    }
+
+
+    override fun disconnectAudio(mbtDevice: MbtDevice) {
+        disConnectUsingBluetoothA2dpBinder(mbtDevice.bluetoothDevice)
+    }
 
     override fun log(priority: Int, message: String) {
         if (message.contains("Notification received from 0000b2a5")) {
@@ -104,10 +145,13 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
             .add(
                 readCharacteristic(audioNameChar)
                     .done {
-                        val orgAudioName =   audioNameChar.getStringValue(0)
-                        startBluetoothScanning(orgAudioName,"in getDeviceInformation the audioname callback")
-                        this.deviceInformation.audioName =
-                            MELOMIND_AUDIO_PREFIX +orgAudioName
+                        val orgAudioName = audioNameChar.getStringValue(0)
+                        if (!orgAudioName.uppercase().contains("MM")) {
+                            this.deviceInformation.audioName =
+                                MELOMIND_AUDIO_PREFIX + orgAudioName
+                        } else {
+                            this.deviceInformation.audioName = orgAudioName
+                        }
                     }
             )
             .add(
@@ -130,6 +174,7 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
         dataReceiver: MbtDataReceiver,
         deviceStatusCallback: MbtDeviceStatusCallback
     ) {
+        Timber.d("Dev_debug enableSensors streamingParams:${streamingParams.isEEGEnabled}")
         if (!streamingParams.isEEGEnabled) {
             deviceStatusCallback.onEEGStatusError(Throwable("EEG can not be disabled for Melomind device!"))
             return
@@ -141,9 +186,12 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
         this.dataReceiver = dataReceiver
         this.deviceStatusCallback = deviceStatusCallback
         // disable/enable status trigger operation
+        val enableTriggerOperation = streamingParams.isTriggerStatusEnabled
+        Timber.w("Dev_debug trigger status enableTriggerOperation  = $enableTriggerOperation")
         val mailbox =
             measurementService!!.getCharacteristic(MelomindCharacteristic.MAIL_BOX.uuid)
-        val data = if (streamingParams.isTriggerStatusEnabled) {
+        Timber.w("Dev_debug trigger status mailbox  = $mailbox")
+        val data = if (enableTriggerOperation) {
             EnumMelomindMailBoxCommand.TRIGGER_STATUS.bytes + 0x01
         } else {
             EnumMelomindMailBoxCommand.TRIGGER_STATUS.bytes + 0x00
@@ -151,12 +199,12 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
         val triggerOp =
             writeCharacteristic(mailbox, data, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
                 .done {
-                    Timber.d("Trigger status command sent successfully")
+                    Timber.d("Dev_debug Trigger status command sent successfully")
                     val response = mailbox.value
                     try {
                         if (response[0] == EnumMelomindMailBoxCommand.TRIGGER_STATUS.bytes[0]) {
                             val size = response[1].toInt()
-                            Timber.w("trigger status allocation size = $size")
+                            Timber.w("Dev_debug trigger status allocation size = $size")
                             if (size > 0) {
                                 if (mtu == 47) {
                                     // bug in firmware v1.7.26 : jira ticket = FM-486
@@ -173,16 +221,30 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
                             }
                         }
                     } catch (e: Exception) {
-                        Timber.w("on write character exception:${e.message}")
+                        Timber.w("Dev_debug on write character exception:${e.message}")
+                        connectionListener?.onConnectionError(Throwable(e.message),
+                            MBTErrorCode.BLE_SIGNAL_COULD_NOT_BE_READY
+                        )
+
                     }
                 }
-                .fail { _, _ -> Timber.e("Fail to write trigger status command") }
+                .fail {btdevice, errorCode ->
+                    Timber.e("Dev_debug Fail to write trigger status command:${btdevice?.name} error:$errorCode")
+                    connectionListener?.onConnectionError(Throwable("Fail to write trigger status command error $errorCode"),
+                        MBTErrorCode.BLE_SIGNAL_COULD_NOT_BE_READY
+                    )
+
+                }
 
         // eeg characteristic
+
+        Timber.d("Dev_debug eeg characteristic eegChar")
         val eegChar =
             measurementService!!.getCharacteristic(MelomindCharacteristic.EEG_ACQUISITION.uuid)
 
         // setup eeg callback
+
+        Timber.d("Dev_debug eeg characteristic eegChar result:$eegChar")
         setNotificationCallback(eegChar).with { _, eegFrame ->
             if (eegFrame.value != null) {
                 this.dataReceiver?.onEEGFrame(
@@ -192,6 +254,7 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
                     )
                 )
             } else {
+                Timber.w("Dev_debug eeg onEEGDataError  received empty eeg frame!")
                 this.dataReceiver?.onEEGDataError(Throwable("received empty eeg frame!"))
             }
         }
@@ -202,12 +265,12 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
             .add(
                 enableNotifications(eegChar)
                     .done {
-                        Timber.d("EEG_ACQUISITION enabled")
+                        Timber.d("Dev_debug EEG_ACQUISITION enabled")
                         _isEEGEnabled = true
                         this.deviceStatusCallback?.onEEGStatusChange(true)
                     }
-                    .fail { _, _ ->
-                        Timber.e("Could not enable EEG_ACQUISITION")
+                    .fail { device, errorCode ->
+                        Timber.e("Dev_debug Could not enable EEG_ACQUISITION error:$errorCode")
                         this.deviceStatusCallback?.onEEGStatusError(Throwable("could not start EEG"))
                     }
             )
@@ -226,12 +289,12 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
 
         disableNotifications(eegChar)
             .done {
-                Timber.d("EEG_ACQUISITION disabled")
+                Timber.d("Dev_debug EEG_ACQUISITION disabled")
                 _isEEGEnabled = false
                 deviceStatusCallback?.onEEGStatusChange(false)
             }
             .fail { _, _ ->
-                Timber.e("Could not disable EEG_ACQUISITION")
+                Timber.e("Dev_debug Could not disable EEG_ACQUISITION")
                 deviceStatusCallback?.onEEGStatusError(Throwable("could not stop EEG"))
             }
             .enqueue()
@@ -239,9 +302,12 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
 
     override fun isEEGEnabled(): Boolean = _isEEGEnabled
 
-    override fun handleScanResults(results: List<ScanResult>) {
+    override fun handleScanResults(targetName:String,results: List<ScanResult>) {
         val melomindDevices = mutableListOf<BluetoothDevice>()
         val otherDevices = mutableListOf<BluetoothDevice>()
+        val hasFilter = targetName.isNotEmpty()
+
+        Timber.i("Dev_debug handleScanResults hasFilter:$hasFilter targetName:$targetName")
 
         val serviceUuid = MelomindService.MEASUREMENT.uuid.toString()
 
@@ -257,6 +323,14 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
             } else {
                 isMelomind = false
             }
+            if (hasFilter && isMelomind) {
+                if (result.device.name.contains(targetName)) {
+                    isMelomind = true
+                } else {
+                    //if has the filter. device name doesnt contain. treat it as other device
+                    isMelomind = false
+                }
+            }
             if (isMelomind) {
                 melomindDevices.add(result.device)
             } else {
@@ -264,7 +338,7 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
             }
         }
         if (melomindDevices.isNotEmpty()) {
-            Timber.d("found melomind devices : number = ${melomindDevices.size}")
+            Timber.d("Dev_debug found melomind devices : number = ${melomindDevices.size}")
             //de scan audio ble device
 
             scanResultListener.onMbtDevices(melomindDevices.map { MbtDevice(it) })
@@ -284,29 +358,34 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
             deviceInformationService = gatt.getService(MelomindService.DEVICE_INFORMATION.uuid)
             measurementService = gatt.getService(MelomindService.MEASUREMENT.uuid)
             val isSupported = (deviceInformationService != null && measurementService != null)
-            Timber.i("isRequiredServiceSupported = $isSupported")
+            Timber.i("Dev_debug isRequiredServiceSupported = $isSupported")
 
-            val audioNameChar =
-                deviceInformationService!!.getCharacteristic(MelomindCharacteristic.AUDIO_NAME.uuid)
-
-            beginAtomicRequestQueue()
-
-                .add(
-                    readCharacteristic(audioNameChar)
-                        .done {
-                            val targetDeviceAudio = audioNameChar.getStringValue(0)
-                            Timber.i("isRequiredServiceSupported readCharacteristic MelomindGattCallback audioNameChar 2 = ${targetDeviceAudio}")
-                            startBluetoothScanning(targetDeviceAudio,"in MelomindGattCallback isRequiredServiceSupported audioname callback")
-                        }
-                )
-                .enqueue()
+//            val audioNameChar =
+//                deviceInformationService!!.getCharacteristic(MelomindCharacteristic.AUDIO_NAME.uuid)
+//
+//            beginAtomicRequestQueue()
+//
+//                .add(
+//                    readCharacteristic(audioNameChar)
+//                        .done {
+//                            val targetDeviceAudio = audioNameChar.getStringValue(0)
+//                            Timber.i("isRequiredServiceSupported readCharacteristic MelomindGattCallback audioNameChar 2 = ${targetDeviceAudio}")
+//                            if (connectionMode == EnumBluetoothConnection.BLE_AUDIO) {
+//                                startBluetoothScanning(
+//                                    targetDeviceAudio,
+//                                    "in MelomindGattCallback isRequiredServiceSupported audioname callback"
+//                                )
+//                            }
+//                        }
+//                )
+//                .enqueue()
 
 
             return isSupported
         }
 
         override fun initialize() {
-            Timber.d("start initialize Melomind")
+            Timber.d("Dev_debug start initialize Melomind")
 
             if (bluetoothDevice.bondState != BluetoothDevice.BOND_BONDED) {
                 // read battery to create bond (an old firmware engineer told me to do this)
@@ -330,18 +409,23 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
         }
 
         override fun onDeviceReady() {
-            Timber.d("BleManagerGattCallback onDeviceReady of BLE device")
-            connectionListener?.onDeviceReady("BLE device")
+            val bondStatus = bluetoothDevice.bondState
+            Timber.i("Dev_debug BleManagerGattCallback onDeviceReady of BLE device with status:$bondStatus")
+            if (bondStatus == BluetoothDevice.BOND_BONDED ) {
+
+                Timber.i("Dev_debug onDeviceReady in MelomindGattCallback  BLE_CONNECTED_STATUS called")
+                connectionListener?.onDeviceReady(BLE_CONNECTED_STATUS)
+            }
         }
 
         @Suppress("OVERRIDE_DEPRECATION")
         override fun onMtuChanged(gatt: BluetoothGatt, mtu: Int) {
-            Timber.i("onMtuChanged : mtu = $mtu")
+            Timber.i("Dev_debug onMtuChanged : mtu = $mtu")
         }
 
         @Suppress("OVERRIDE_DEPRECATION")
         override fun onDeviceDisconnected() {
-            Timber.i("onDeviceDisconnected")
+            Timber.e("Dev_debug onDeviceDisconnected")
             _isEEGEnabled = false
             connectionListener?.onDeviceDisconnected()
         }

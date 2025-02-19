@@ -14,6 +14,7 @@ import com.mybraintech.sdk.core.bluetooth.devices.EnumBluetoothConnection
 import com.mybraintech.sdk.core.bluetooth.devices.Indus5MailboxDecoder
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
+import com.mybraintech.sdk.util.BLE_CONNECTED_STATUS
 import no.nordicsemi.android.ble.Operation
 import no.nordicsemi.android.ble.WriteRequest
 import no.nordicsemi.android.ble.callback.DataReceivedCallback
@@ -38,7 +39,13 @@ abstract class Indus5DeviceImpl(ctx: Context) :
     // MARK: ble manager
     //----------------------------------------------------------------------------
     override fun getGattCallback(): BleManagerGattCallback = Indus5GattCallback(this)
+    override fun connectAudio(mbtDevice: MbtDevice, connectionListener: ConnectionListener) {
+        // TODO("Not yet implemented")
+    }
 
+    override fun disconnectAudio(mbtDevice: MbtDevice) {
+        //
+    }
     override fun log(priority: Int, message: String) {
         if (message.contains("value: (0x) 40")
             || message.contains("value: (0x) 50")
@@ -84,7 +91,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
                 }
                 is Indus5Response.AudioNameFetched -> {
                     val audioName = INDUS5_AUDIO_PREFIX + response.audioName
-                    startBluetoothScanning(audioName,"call from onDataReceived Indus5DeviceImpl")
+//                    startBluetoothScanning(audioName,"call from onDataReceived Indus5DeviceImpl")
                     deviceInformation.audioName = audioName
                 }
                 is Indus5Response.AudioNameChanged -> {
@@ -546,7 +553,8 @@ abstract class Indus5DeviceImpl(ctx: Context) :
         }
 
         override fun onDeviceReady() {
-            connectionListener?.onDeviceReady("BLE device")
+            Timber.i("Dev_debug onDeviceReady of BLE device(QPlus) BLE_CONNECTED_STATUcalledS")
+            connectionListener?.onDeviceReady(BLE_CONNECTED_STATUS)
         }
 
         @Suppress("OVERRIDE_DEPRECATION")

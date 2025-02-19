@@ -1,5 +1,6 @@
 package com.mybraintech.sdk
 
+import android.bluetooth.BluetoothA2dp
 import com.mybraintech.android.jnibrainbox.RelaxIndexSessionOutputData
 import com.mybraintech.sdk.core.LabStreamingLayer
 import com.mybraintech.sdk.core.ResearchStudy
@@ -13,10 +14,19 @@ import com.mybraintech.sdk.core.model.*
 interface MbtClient {
     fun getDeviceType() : EnumMBTDevice
     fun getBleConnectionStatus(): BleConnectionStatus
-    fun startScan(scanResultListener: ScanResultListener)
+    fun startScan(targetName:String,scanResultListener: ScanResultListener)
     fun stopScan()
+
+    fun startScanAudio(targetName:String,scanResultListener: ScanResultListener)
+    fun stopScanAudio()
+
     fun connect(mbtDevice: MbtDevice, connectionListener: ConnectionListener, connectionMode: EnumBluetoothConnection = EnumBluetoothConnection.BLE)
+    fun connectAudio(mbtDevice:MbtDevice,connectionListener: ConnectionListener)
+    fun disconnectAudio(mbtDevice:MbtDevice)
+    fun getA2DP(): BluetoothA2dp?
+    fun initA2DP()
     fun disconnect()
+    fun removeBondBle()
     fun getBatteryLevel(batteryLevelListener: BatteryLevelListener)
     fun getDeviceInformation(deviceInformationListener: DeviceInformationListener)
 

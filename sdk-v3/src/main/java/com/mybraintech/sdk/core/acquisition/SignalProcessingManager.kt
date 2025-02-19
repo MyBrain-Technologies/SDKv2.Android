@@ -50,7 +50,7 @@ import kotlin.math.min
 internal class SignalProcessingManager(
     val deviceType: EnumMBTDevice, val streamingParams: StreamingParams
 ) : RecordingInterface, MbtDataReceiver {
-
+    private val TAG = "SignalProcessingManager"
     private val bleFrameScheduler = RxJavaPlugins.createSingleScheduler(AcquisierThreadFactory)
 
     private var eegListener: EEGListener? = null
@@ -217,7 +217,7 @@ internal class SignalProcessingManager(
         }
     }
     fun innitRelaxingIndex(calibratedData: EEGCalibrateResult) {
-        Log.d("TAG", "Dev_debug innitRelaxingIndex  calibratedData:${calibratedData}")
+        Log.d(TAG, "Dev_debug innitRelaxingIndex  calibratedData:${calibratedData}")
         val sampling_rate = 250
         val iaf: FloatArray = calibratedData.iaf
         val smoothRms: FloatArray = calibratedData.smoothRms
@@ -225,18 +225,18 @@ internal class SignalProcessingManager(
         val iaf_median_sup = iaf[1]
         relaxingIndex = RelaxIndex(sampling_rate, smoothRms, iaf_median_inf, iaf_median_sup)
 
-        Log.d("TAG", "Dev_debug innitRelaxingIndex  relaxingIndex:${relaxingIndex}")
+        Log.d(TAG, "Dev_debug innitRelaxingIndex  relaxingIndex:${relaxingIndex}")
     }
 
     fun endSessionRelaxingIndex():RelaxIndexSessionOutputData? {
-        Log.d("TAG", "Dev_debug endSessionRelaxingIndex ")
+        Log.d(TAG, "Dev_debug endSessionRelaxingIndex ")
 
        return relaxingIndex?.endSession()
     }
 
 
     fun eegRelaxingIndex(tobeIndexEEGDatas:EEGRecordedDatas):Float {
-        Log.d("TAG","Dev_debug eegRelaxingIndex error eegRelaxingIndex:${tobeIndexEEGDatas.eegPackets.size} relaxingIndex:$relaxingIndex")
+        Log.d(TAG,"Dev_debug eegRelaxingIndex error eegRelaxingIndex:${tobeIndexEEGDatas.eegPackets.size} relaxingIndex:$relaxingIndex")
         val sampling_rate = 250
 
 
@@ -260,7 +260,7 @@ internal class SignalProcessingManager(
             // Merging qualities
             if (current.qualities == null) {
                 Log.e(
-                    "TAG",
+                    TAG,
                     "NULL QUALITIES"
                 )
             } else {
@@ -281,7 +281,7 @@ internal class SignalProcessingManager(
             qualities[1][packets.size - 1]
         )
 
-        Log.d("TAG","Dev_debug SDKV3 computeRelaxIndex    lastPacketQualities :${ lastPacketQualities[0]} ${ lastPacketQualities[1]}")
+        Log.d(TAG,"Dev_debug SDKV3 computeRelaxIndex    lastPacketQualities :${ lastPacketQualities[0]} ${ lastPacketQualities[1]}")
 
 
         // Simulate a session live of 3 seconds
@@ -290,12 +290,12 @@ internal class SignalProcessingManager(
         // Simulate the end of session
 //        val session = ri.endSession()
 //        Log.d(
-//            "TAG",
+//            TAG,
 //            "Dev_debug: eegRelaxingIndex volume:$volume session:${session.toString()}"
 //        )
 
         // Simulate the end of session
-        Log.d("TAG","Dev_debug SDKV3 computeRelaxIndex    volume :${volume}")
+        Log.d(TAG,"Dev_debug SDKV3 computeRelaxIndex    volume :${volume}")
 
 
         return volume
@@ -324,7 +324,7 @@ internal class SignalProcessingManager(
             // Merging qualities
             if (current.qualities == null) {
                 Log.e(
-                    "TAG",
+                    TAG,
                     "NULL QUALITIES"
                 )
             } else {
@@ -340,7 +340,7 @@ internal class SignalProcessingManager(
 
 
         val error = calibrator.computeCalibration(mainMatrix,qualities)
-        Log.d("TAG"," calibrate error code:$error")
+        Log.d(TAG," calibrate error code:$error")
         val result = EEGCalibrateResult(error == 0,error.toString())
         result.iaf = calibrator.GetIAF()
         result.rms = calibrator.GetRelativeRMS()
@@ -483,6 +483,8 @@ internal class SignalProcessingManager(
     // MARK: MbtDataReceiver
     //----------------------------------------------------------------------------
     override fun onTriggerStatusConfiguration(triggerStatusAllocationSize: Int) {
+
+        Timber.d("%s%d", "Dev_debug onTriggerStatusConfiguration triggerStatusAllocationSize:", triggerStatusAllocationSize)
         eegSignalProcessing.onTriggerStatusConfiguration(triggerStatusAllocationSize)
     }
 
