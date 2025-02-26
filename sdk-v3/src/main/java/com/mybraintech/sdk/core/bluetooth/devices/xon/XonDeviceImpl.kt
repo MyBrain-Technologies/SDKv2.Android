@@ -323,13 +323,6 @@ class XonDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
 
             scanResultListener.onMbtDevices(xonDevices.map { MbtDevice(it) })
         }
-        else {
-            val devices = results.map { it.device }
-            val qplusDevices = devices.filter(MbtBleUtils::isQPlus)
-
-            Timber.d("Dev_debug found qplus devices : number = ${qplusDevices.size}")
-            scanResultListener.onMbtDevices(qplusDevices.map { MbtDevice(it) })
-        }
         if (otherDevices.isNotEmpty()) {
             scanResultListener.onOtherDevices(otherDevices)
         }
