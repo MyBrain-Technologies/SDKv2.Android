@@ -10,6 +10,7 @@ import com.mybraintech.android.jnibrainbox.TypeConverter
 import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessingHyperion
 import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessingMelomind
 import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessingQPlus
+import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessingXon
 import com.mybraintech.sdk.core.acquisition.ims.AccelerometerSignalProcessingDisabled
 import com.mybraintech.sdk.core.acquisition.ims.AccelerometerSignalProcessingIndus5
 import com.mybraintech.sdk.core.acquisition.ppg.PPGSignalProcessingDisabled
@@ -101,6 +102,9 @@ internal class SignalProcessingManager(
         }
         EnumMBTDevice.HYPERION -> {
             EEGSignalProcessingHyperion(streamingParams, eegCallback, bleFrameScheduler)
+        }
+        EnumMBTDevice.XON -> {
+            EEGSignalProcessingXon(streamingParams, eegCallback, bleFrameScheduler)
         }
         else -> {
             throw UnsupportedOperationException("device type not known")

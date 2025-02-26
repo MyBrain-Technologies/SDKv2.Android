@@ -42,6 +42,9 @@ class XonDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
 
     private var _isEEGEnabled: Boolean = false
 
+    //TODO: remove later
+    private var count : Int = 0
+
     var connectionMode = EnumBluetoothConnection.BLE
     //classic Bluetooth
 
@@ -59,7 +62,9 @@ class XonDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
     }
 
     override fun log(priority: Int, message: String) {
-        if (message.contains("Notification received from 0000b2a5")) {
+        if (message.contains("Notification received from 0000b2a5")) { //Melomind EEG
+//            Timber.v(message)
+        } else if (message.contains("Notification received from e2952000")) { //Xon EEG
 //            Timber.v(message)
         } else {
             Timber.log(priority, message)
@@ -214,20 +219,25 @@ class XonDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
         // setup eeg callback
 
         Timber.d("Dev_debug eeg characteristic eegChar result:$eegChar")
-        setNotificationCallback(eegChar).with { _, eegFrame ->
-            if (eegFrame.value != null) {
 
-                Timber.d("Dev_debug eeg receive data size:${eegFrame.size()}")
-                Timber.d("Dev_debug eeg receive data:${eegFrame.value!!.encodeToHex()}")
-                this.dataReceiver?.onEEGFrame(
-                    TimedBLEFrame(
-                        SystemClock.elapsedRealtime(),
-                        eegFrame.value!!
+        count = 0
+        setNotificationCallback(eegChar).with { _, eegFrame ->
+            if (count < 20) {
+                if (eegFrame.value != null) {
+                    count++
+                    Timber.v("Dev_debug eeg receive data size:${eegFrame.size()}")
+                    Timber.v("Dev_debug eeg receive data:${eegFrame.value?.encodeToHex()}")
+
+                    this.dataReceiver?.onEEGFrame(
+                        TimedBLEFrame(
+                            SystemClock.elapsedRealtime(),
+                            eegFrame.value!!
+                        )
                     )
-                )
-            } else {
-                Timber.w("Dev_debug eeg onEEGDataError  received empty eeg frame!")
-                this.dataReceiver?.onEEGDataError(Throwable("received empty eeg frame!"))
+                } else {
+                    Timber.w("Dev_debug eeg onEEGDataError  received empty eeg frame!")
+                    this.dataReceiver?.onEEGDataError(Throwable("received empty eeg frame!"))
+                }
             }
         }
 
@@ -349,11 +359,6 @@ class XonDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
             }
 
             beginAtomicRequestQueue()
-                .add(
-                    requestMtu(MTU_SIZE)
-                        .done { Timber.d("requestMtu done") }
-                        .fail { _, _ -> Timber.e("Could not requestMtu") }
-                )
                 .enqueue()
         }
 
@@ -363,12 +368,10 @@ class XonDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
 
         override fun onDeviceReady() {
             val bondStatus = bluetoothDevice.bondState
-            Timber.i("Dev_debug BleManagerGattCallback onDeviceReady of BLE device with status:$bondStatus")
-            if (bondStatus == BluetoothDevice.BOND_BONDED) {
+            Timber.i("bondStatus = ${bluetoothDevice.bondState}")
 
-                Timber.i("Dev_debug onDeviceReady in XonGattCallback  BLE_CONNECTED_STATUS called")
-                connectionListener?.onDeviceReady(BLE_CONNECTED_STATUS)
-            }
+            //xon device does not require bonding
+            connectionListener?.onDeviceReady(BLE_CONNECTED_STATUS)
         }
 
         @Suppress("OVERRIDE_DEPRECATION")

@@ -146,6 +146,9 @@ public class MbtDataConversion2 {
             case MELOMIND: {
                 return new MbtDataConversion2(EnumBluetoothProtocol.BLE, 2, (byte) 0);
             }
+            case XON: {
+                //TODO: implement later
+            }
             default: {
                 throw new RuntimeException("Illegal device type : deviceType = " + deviceType.toString());
             }
