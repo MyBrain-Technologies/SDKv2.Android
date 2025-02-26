@@ -281,19 +281,14 @@ class XonDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
 
         Timber.i("Dev_debug handleScanResults hasFilter:$hasFilter targetName:$targetName")
 
-        val serviceUuid = XonService.XON_SERVICE.uuid.toString()
         for (result in results) {
+            val deviceName = result?.device?.name
+            Timber.i("Dev_debug handleScanResults deviceName:$deviceName")
+
             var isXON = false
 
-            if (result.scanRecord?.serviceUuids != null) {
-                for (uuid in result.scanRecord!!.serviceUuids) {
-                    val scannedUUID = uuid.uuid.toString()
-                    Timber.i("Dev_debug handleScanResults scannedUUID:$scannedUUID")
-                    if (scannedUUID == serviceUuid) {
-                        isXON = true
-                        break
-                    }
-                }
+            if (deviceName!=null && deviceName.contains("X.on")) {
+                isXON = true
             } else {
                 isXON = false
             }
