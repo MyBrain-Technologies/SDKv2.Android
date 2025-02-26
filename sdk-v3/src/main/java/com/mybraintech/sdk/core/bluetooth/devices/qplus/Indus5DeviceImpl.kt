@@ -12,6 +12,7 @@ import com.mybraintech.sdk.core.acquisition.MbtDeviceStatusCallback
 import com.mybraintech.sdk.core.bluetooth.devices.BaseMbtDevice
 import com.mybraintech.sdk.core.bluetooth.devices.EnumBluetoothConnection
 import com.mybraintech.sdk.core.bluetooth.devices.Indus5MailboxDecoder
+import com.mybraintech.sdk.core.bluetooth.devices.xon.encodeToHex
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
 import com.mybraintech.sdk.util.BLE_CONNECTED_STATUS
@@ -71,7 +72,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
     //----------------------------------------------------------------------------
     override fun onDataReceived(device: BluetoothDevice, data: Data) {
         if (data.value != null) {
-//            Timber.v("onDataReceived : ${NumericalUtils.bytesToHex(data.value)}")
+            Timber.v("onDataReceived size:${data.value?.size} hex:${data.value?.encodeToHex()}")
             when (val response = Indus5MailboxDecoder.decodeRawIndus5Response(data.value!!)) {
                 is Indus5Response.MtuChange -> {
                     Timber.i("Mailbox MTU changed successfully")

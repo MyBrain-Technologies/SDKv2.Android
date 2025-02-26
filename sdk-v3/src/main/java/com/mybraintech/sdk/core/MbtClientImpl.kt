@@ -20,6 +20,7 @@ import com.mybraintech.sdk.core.bluetooth.devices.EnumBluetoothConnection
 import com.mybraintech.sdk.core.bluetooth.devices.hyperion.HyperionDeviceImpl
 import com.mybraintech.sdk.core.bluetooth.devices.melomind.MelomindDeviceImpl
 import com.mybraintech.sdk.core.bluetooth.devices.qplus.QPlusDeviceImpl
+import com.mybraintech.sdk.core.bluetooth.devices.xon.XonDeviceImpl
 import com.mybraintech.sdk.core.listener.AccelerometerConfigListener
 import com.mybraintech.sdk.core.listener.AccelerometerListener
 import com.mybraintech.sdk.core.listener.AudioNameListener
@@ -93,6 +94,10 @@ internal class MbtClientImpl(
             }
             EnumMBTDevice.HYPERION -> {
                 mbtDeviceInterface = HyperionDeviceImpl(context)
+                recordingInterface = null
+            }
+            EnumMBTDevice.XON -> {
+                mbtDeviceInterface = XonDeviceImpl(context)
                 recordingInterface = null
             }
             else -> {

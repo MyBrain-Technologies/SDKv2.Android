@@ -42,6 +42,7 @@ abstract class BaseMbtDevice(ctx: Context) :
     protected val INDUS5_BLE_PREFIX = "qp_"
     protected val INDUS5_AUDIO_PREFIX = "QP"
     protected val MELOMIND_BLE_PREFIX = "melo_"
+    protected val XON_BLE_PREFIX = "xon_"
     protected val MELOMIND_AUDIO_PREFIX = "MM"
 
     protected val MTU_SIZE = 47

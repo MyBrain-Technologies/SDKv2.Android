@@ -17,6 +17,7 @@ class KwakBuilder {
             EnumMBTDevice.MELOMIND -> KwakHeader().getMelomindHeader()
             EnumMBTDevice.Q_PLUS -> KwakHeader().getQPlusHeader()
             EnumMBTDevice.UNDEFINED -> KwakHeader().getBaseHeader()
+            EnumMBTDevice.XON -> KwakHeader().getBaseHeader()
         }.apply {
             deviceInfo = recordingOption.deviceInformation
             setRecordingNb(recordingOption.recordingNb)
