@@ -122,7 +122,7 @@ internal class MbtClientImpl(
         mbtDeviceInterface.stopScan()
     }
 
-    override fun startScanAudio(targetName: String, scanResultListener: ScanResultListener) {
+    override fun startScanAudio(targetName: String, scanResultListener: ScanResultListener?) {
         mbtDeviceInterface.startScanAudio(targetName, scanResultListener)
     }
 
@@ -161,8 +161,19 @@ internal class MbtClientImpl(
         mbtDeviceInterface.connectAudio(mbtDevice,connectionListener)
     }
 
-    override fun disconnectAudio(mbtDevice: MbtDevice) {
+    override fun connectAudioViaBLE(connectionListener: ConnectionListener) {
+        (mbtDeviceInterface as? MelomindDeviceImpl)?.connectAudioViaBle()
+    }
+
+    override fun disconnectAudio(mbtDevice: BluetoothDevice?) {
        mbtDeviceInterface.disconnectAudio(mbtDevice)
+    }
+
+    override fun disconnectAudioViaBLE() {
+        (mbtDeviceInterface as? MelomindDeviceImpl)?.disconnectAudioViaBLE()
+    }
+    override fun rebootHeadset() {
+        (mbtDeviceInterface as? MelomindDeviceImpl)?.rebootHeadset()
     }
 
     override fun getA2DP(): BluetoothA2dp? {

@@ -19,6 +19,7 @@ interface ConnectionListener {
     fun onDeviceReady(message:String)// last callback called when all device ready
 
     fun onDeviceDisconnected()
+    fun onAudioDisconnected()
 
     fun onConnectionError(error: Throwable,errorCode: MBTErrorCode)
 

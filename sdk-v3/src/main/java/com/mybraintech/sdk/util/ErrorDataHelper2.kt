@@ -11,6 +11,7 @@ object ErrorDataHelper2 {
      * data do not contains OP code for Indus5 case
      */
     fun countZeroSample(eegData: ByteArray, channelNb: Int): Pair<Int, Int> {
+//        Timber.d("eegData size = %s channelNb=%s", eegData.size,channelNb)
         var zeroSample = 0;
         var zeroTime = 0;
 

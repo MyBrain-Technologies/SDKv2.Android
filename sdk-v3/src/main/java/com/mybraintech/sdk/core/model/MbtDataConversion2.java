@@ -7,6 +7,8 @@ import com.mybraintech.sdk.core.acquisition.EnumBluetoothProtocol;
 import java.util.ArrayList;
 import java.util.List;
 
+import timber.log.Timber;
+
 
 /**
  * copy and optimize from old sdk
@@ -37,13 +39,20 @@ public class MbtDataConversion2 {
     private float sppVoltage = (float) ((0.536d * Math.pow(10, -6)) / 24); //todo VPRO VOLTAGE
 
     private MbtDataConversion2(EnumBluetoothProtocol protocol, int nbChannels, byte gain) {
+
+        Timber.d("Dev_debug MbtDataConversion2 constructor protocol:%s nbChannels:%s gain:%s", protocol,nbChannels,gain);
         this.protocol = protocol;
         this.nbChannels = nbChannels;
         if (gain != 0) {
             eegAmpGain = AmpGainConfig2.getGainFromByteValue(gain);
+            Timber.d("Dev_debug MbtDataConversion2  eegAmpGain:%s",eegAmpGain);
             bleVoltage = (float) ((0.286d * Math.pow(10, -6)) / eegAmpGain);
+
+            Timber.d("Dev_debug MbtDataConversion2  bleVoltage:%s",bleVoltage);
             sppVoltage = (float) ((0.536d * Math.pow(10, -6)) / 24); //todo VPRO VOLTAGE
+            Timber.d("Dev_debug MbtDataConversion2  sppVoltage:%s",sppVoltage);
         }
+
     }
 
     /**
@@ -56,11 +65,12 @@ public class MbtDataConversion2 {
     public ArrayList<ArrayList<Float>> convertRawDataToEEG(@NonNull List<RawEEGSample2> rawEEGdataList) {
         ArrayList<ArrayList<Float>> eegData = new ArrayList<>();
 
+//        Timber.d("Dev_debug MbtDataConversion2 convertRawDataToEEG rawEEGdataList :%s",rawEEGdataList);
         ArrayList<Float> consolidatedEEGSample;
 
         for (RawEEGSample2 singleRawEEGdata : rawEEGdataList) { // for each acquisition of the headset
             consolidatedEEGSample = new ArrayList<>();
-
+//            Timber.d("Dev_debug MbtDataConversion2 convertRawDataToEEG singleRawEEGdata :%s",singleRawEEGdata);
             if (singleRawEEGdata.getEegData() == null) {
 
                 for (int nbChannel = 0; nbChannel < nbChannels; nbChannel++) {
@@ -73,8 +83,11 @@ public class MbtDataConversion2 {
                         temp |= (bytes[i] & 0xFF) << ((isBle()) ? (SHIFT_BLE - i * 8) : (16 - i * 8));
                     }
                     temp = ((temp & ((isBle()) ? CHECK_SIGN_BLE : CHECK_SIGN_SPP)) > 0) ? (temp | ((isBle()) ? NEGATIVE_MASK_BLE : NEGATIVE_MASK_SPP)) : (temp & ((isBle()) ? POSITIVE_MASK_BLE : POSITIVE_MASK_SPP));
-                    consolidatedEEGSample.add(temp * ((isBle()) ? bleVoltage : sppVoltage)); //fill the EEG data matrix with the converted EEG data
 
+//                    Timber.d("Dev_debug MbtDataConversion2 convertRawDataToEEG in singleRawEEGdata temp(before voltage):%s",temp);
+                    float dataTobeAdded = temp * ((isBle()) ? bleVoltage : sppVoltage);
+                    consolidatedEEGSample.add(dataTobeAdded); //fill the EEG data matrix with the converted EEG data
+//                    Timber.d("Dev_debug MbtDataConversion2 convertRawDataToEEG in singleRawEEGdata temp(after voltage):%s",dataTobeAdded);
                     //Here are data from sensors, whom need to be transformed to float
                 }
             }
@@ -147,7 +160,7 @@ public class MbtDataConversion2 {
                 return new MbtDataConversion2(EnumBluetoothProtocol.BLE, 2, (byte) 0);
             }
             case XON: {
-                //TODO: implement later
+                return new MbtDataConversion2(EnumBluetoothProtocol.BLE, 8, (byte) 0);
             }
             default: {
                 throw new RuntimeException("Illegal device type : deviceType = " + deviceType.toString());

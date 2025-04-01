@@ -6,11 +6,20 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.le.ScanResult
 import android.content.Context
+import android.os.Handler
 import android.os.SystemClock
+import com.mybraintech.sdk.core.acquisition.MBTSession
 import com.mybraintech.sdk.core.acquisition.MbtDeviceStatusCallback
 import com.mybraintech.sdk.core.bluetooth.BatteryLevelConversion
 import com.mybraintech.sdk.core.bluetooth.devices.BaseMbtDevice
 import com.mybraintech.sdk.core.bluetooth.devices.EnumBluetoothConnection
+import com.mybraintech.sdk.core.bluetooth.devices.melomind.DeviceCommandEvent.Companion.CMD_CODE_CONNECT_IN_A2DP_FAILED_ALREADY_CONNECTED
+import com.mybraintech.sdk.core.bluetooth.devices.melomind.DeviceCommandEvent.Companion.CMD_CODE_CONNECT_IN_A2DP_FAILED_BAD_BDADDR
+import com.mybraintech.sdk.core.bluetooth.devices.melomind.DeviceCommandEvent.Companion.CMD_CODE_CONNECT_IN_A2DP_FAILED_TIMEOUT
+import com.mybraintech.sdk.core.bluetooth.devices.melomind.DeviceCommandEvent.Companion.CMD_CODE_CONNECT_IN_A2DP_IN_PROGRESS
+import com.mybraintech.sdk.core.bluetooth.devices.melomind.DeviceCommandEvent.Companion.CMD_CODE_CONNECT_IN_A2DP_LINKKEY_INVALID
+import com.mybraintech.sdk.core.bluetooth.devices.melomind.DeviceCommandEvent.Companion.CMD_CODE_CONNECT_IN_A2DP_SUCCESS
+import com.mybraintech.sdk.core.encodeToHex
 import com.mybraintech.sdk.core.listener.AccelerometerConfigListener
 import com.mybraintech.sdk.core.listener.BatteryLevelListener
 import com.mybraintech.sdk.core.listener.ConnectionListener
@@ -25,7 +34,10 @@ import com.mybraintech.sdk.core.model.MBTErrorCode
 import com.mybraintech.sdk.core.model.MbtDevice
 import com.mybraintech.sdk.core.model.StreamingParams
 import com.mybraintech.sdk.core.model.TimedBLEFrame
+import com.mybraintech.sdk.util.AUDIO_CONNECTED_STATUS
 import com.mybraintech.sdk.util.BLE_CONNECTED_STATUS
+import no.nordicsemi.android.ble.callback.DataReceivedCallback
+import no.nordicsemi.android.ble.data.Data
 import timber.log.Timber
 
 class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
@@ -39,6 +51,7 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
 
     private var _isEEGEnabled: Boolean = false
 
+    private var audioBleConnected = false
     var connectionMode = EnumBluetoothConnection.BLE
     //classic Bluetooth
 
@@ -78,8 +91,9 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
     }
 
 
-    override fun disconnectAudio(mbtDevice: MbtDevice) {
-        disConnectUsingBluetoothA2dpBinder(mbtDevice.bluetoothDevice)
+    override fun disconnectAudio(bluetoothDevice: BluetoothDevice?) {
+        disConnectUsingBluetoothA2dpBinder(bluetoothDevice)
+
     }
 
     override fun log(priority: Int, message: String) {
@@ -104,14 +118,247 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
             }
             .fail { _, _ ->
                 this.batteryLevelListener?.onBatteryLevelError(Throwable("L57 : Cannot read battery level!"))
+
             }
             .enqueue()
+    }
+
+    override fun scanConnectedA2DP() {
+        var connectedDevices = a2dp?.connectedDevices ?: arrayListOf()
+        val connectedDeviceSize = connectedDevices.size
+        var founded = false
+
+        val bleName = deviceInformation.bleName
+        val audioName = deviceInformation.audioName
+
+        Timber.d("Dev_debug connectAudioViaBle check connect a2dp list size is:${connectedDeviceSize}")
+        Timber.d("Dev_debug connectAudioViaBle bleName:${bleName} audioName:${audioName}")
+        if (connectedDeviceSize > 0) {
+            for (device in connectedDevices) {
+                val deviceName = device.name
+                if (deviceName.equals(bleName) || deviceName.equals(audioName)) {
+                    Timber.d("Dev_debug connectAudioViaBle  a2dp connectedDevice name:${device.name}")
+                    audioDevice = device
+                    founded = true
+                    break
+                } else if (deviceName.startsWith("ml") || deviceName.startsWith("MM")) {
+                    audioDevice = device
+                    founded = true
+                    break
+                }
+            }
+        }
+
+        if (founded) {
+            audioBleConnected = true
+        } else {
+            audioBleConnected = false
+            audioDevice = null
+        }
     }
 
     //----------------------------------------------------------------------------
     // MARK: internal ble manager
     //----------------------------------------------------------------------------
     override fun getDeviceType() = EnumMBTDevice.MELOMIND
+    fun rebootHeadset() {
+        Timber.i("Dev_debug  rebootHeadset called")
+        val mailbox =
+            measurementService!!.getCharacteristic(MelomindCharacteristic.MAIL_BOX.uuid)
+        val rebootData = DeviceCommandEvent.MBX_SYS_REBOOT_EVT.assembledCodes
+
+        val triggerOp =
+            writeCharacteristic(mailbox, rebootData, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
+                .done {
+                    Timber.d("Dev_debug Trigger rebootHeadset command sent successfully")
+                    audioBleConnected = false
+                }
+                .fail { btdevice, errorCode ->
+                    connectionListener?.let { handleCharacteriseActionFailed(errorCode, it) }
+                    Timber.d("Dev_debug Fail to write trigger rebootHeadset command:${btdevice?.name} error:$errorCode")
+                }
+//        beginAtomicRequestQueue()
+//                .add(triggerOp) .enqueue()
+    }
+
+    fun disconnectAudioViaBLE() {
+        val isConnected = audioBleConnected
+        Timber.i("Dev_debug  disconnectAudioViaBLE : isConnected = $isConnected")
+        if (isConnected) {
+
+//            disConnectUsingBluetoothA2dpBinder(targetMbtDevice?.bluetoothDevice)
+            val mailbox =
+                measurementService!!.getCharacteristic(MelomindCharacteristic.MAIL_BOX.uuid)
+            val disconnectData = DeviceCommandEvent.MBX_DISCONNECT_IN_A2DP.assembledCodes
+
+            val triggerOp =
+                writeCharacteristic(
+                    mailbox,
+                    disconnectData,
+                    BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+                )
+                    .done {
+                        Timber.d("Dev_debug Trigger disconnectAudioViaBLE command sent successfully")
+                        audioBleConnected = false
+                        connectionListener?.onAudioDisconnected()
+                    }
+                    .fail { btdevice, errorCode ->
+                        Timber.d("Dev_debug Fail to write trigger disconnectAudioViaBLE command:${btdevice?.name} error:$errorCode")
+                        if (errorCode == 3) {
+                            //scan audio instance
+                            //disconnect using classic method
+                            disconnectAudio(audioDevice)
+//                            asdasdasd
+                        } else {
+                            connectionListener?.let {
+                                handleCharacteriseActionFailed(
+                                    errorCode,
+                                    it
+                                )
+                            }
+                        }
+
+                    }
+            beginAtomicRequestQueue()
+                .add(triggerOp).enqueue()
+        } else {
+            Timber.e("Dev_debug  disconnectAudioViaBLE no device to connect")
+        }
+    }
+
+    var audioDevice: BluetoothDevice? = null
+    fun connectAudioViaBle() {
+
+
+        scanConnectedA2DP()
+        if (audioBleConnected) {
+            connectionListener?.onDeviceReady(AUDIO_CONNECTED_STATUS)
+        } else {
+
+
+            val mailbox =
+                measurementService!!.getCharacteristic(MelomindCharacteristic.MAIL_BOX.uuid)
+            Timber.d("Dev_debug connectAudioViaBle status mailbox  = $mailbox")
+//        val data = byteArrayOf(0x11.toByte(),0x25.toByte(), 0xA2.toByte())
+            val data = DeviceCommandEvent.MBX_CONNECT_IN_A2DP.assembledCodes
+
+            val triggerOp =
+                writeCharacteristic(mailbox, data, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
+                    .done {
+                        Timber.d("Dev_debug Trigger connectAudioViaBle command sent successfully")
+
+                    }
+                    .fail { btdevice, errorCode ->
+                        Timber.d("Dev_debug Fail to write trigger connectAudioViaBle command:${btdevice?.name} error:$errorCode")
+
+
+                    }
+
+            setNotificationCallback(mailbox).with(object : DataReceivedCallback {
+                override fun onDataReceived(p0: BluetoothDevice, p1: Data) {
+                    Timber.i("Dev_debug connectAudioViaBle onDataReceived data p1  = ${p1.value?.encodeToHex()}")
+                    //remove the firstbyte since it's the identifer byte
+                    val rawData = p1.value
+                    rawData?.let { it ->
+                        val identifier = it.first().toUInt()
+                        val a2dpIdentifier =
+                            DeviceCommandEvent.MBX_CONNECT_IN_A2DP.identifierCode.toUInt()
+                        Timber.d("Dev_debug connectAudioViaBle onDataReceived identifier  = ${identifier} a2dpIdentifier:$a2dpIdentifier")
+                        if (identifier == a2dpIdentifier) {
+                            val response = it.copyOfRange(1, it.size)
+                            val connectedByte =
+                                DeviceCommandEvent.MBX_CONNECT_IN_A2DP.getResponseCodeForKey(
+                                    CMD_CODE_CONNECT_IN_A2DP_SUCCESS
+                                )
+
+                            val connectionInProgressByte =
+                                DeviceCommandEvent.MBX_CONNECT_IN_A2DP.getResponseCodeForKey(
+                                    CMD_CODE_CONNECT_IN_A2DP_IN_PROGRESS
+                                )
+
+                            val connectionBadBoardByte =
+                                DeviceCommandEvent.MBX_CONNECT_IN_A2DP.getResponseCodeForKey(
+                                    CMD_CODE_CONNECT_IN_A2DP_FAILED_BAD_BDADDR
+                                )
+                            val connectionLinkInvalidKeydByte =
+                                DeviceCommandEvent.MBX_CONNECT_IN_A2DP.getResponseCodeForKey(
+                                    CMD_CODE_CONNECT_IN_A2DP_LINKKEY_INVALID
+                                )
+
+                            val connectionTimeoutByte =
+                                DeviceCommandEvent.MBX_CONNECT_IN_A2DP.getResponseCodeForKey(
+                                    CMD_CODE_CONNECT_IN_A2DP_FAILED_TIMEOUT
+                                )
+                            val alreadyConnectedByte =
+                                DeviceCommandEvent.MBX_CONNECT_IN_A2DP.getResponseCodeForKey(
+                                    CMD_CODE_CONNECT_IN_A2DP_FAILED_ALREADY_CONNECTED
+                                )
+
+                            Timber.d("Dev_debug connectAudioViaBle response  = ${response.encodeToHex()}")
+                            Timber.d(
+                                "Dev_debug connectAudioViaBle responseStats= ${
+                                    byteArrayOf(
+                                        connectedByte
+                                    ).encodeToHex()
+                                }"
+                            )
+
+                            val isSuccess = response.contentEquals(byteArrayOf(connectedByte))
+                            val isBadBoard = response.contentEquals(byteArrayOf(connectionBadBoardByte))
+                            val isLinkInvalidKey = response.contentEquals(byteArrayOf(connectionLinkInvalidKeydByte))
+                            val alreadyConnected =
+                                response.contentEquals(byteArrayOf(alreadyConnectedByte))
+                            val isInprogress =
+                                response.contentEquals(byteArrayOf(connectionInProgressByte))
+                            val isInTimeOut =
+                                response.contentEquals(byteArrayOf(connectionTimeoutByte))
+
+                            Timber.d("Dev_debug connectAudioViaBle isSuccess  = ${isSuccess}")
+                            if (isSuccess || alreadyConnected) {
+                                //AudioConnected
+                                audioBleConnected = true
+                                connectionListener?.onDeviceReady(AUDIO_CONNECTED_STATUS)
+
+                            } else if (!isInprogress && !isInTimeOut && !isBadBoard && !isLinkInvalidKey) {
+                                //audio connected failed
+                                connectionListener?.onConnectionError(
+                                    Throwable("connectAudioViaBle failed"),
+                                    MBTErrorCode.FAILED_TO_CONNECT_TO_AUDIO_DEVICE
+                                )
+                            } else {
+                                //connection is in progress
+                                Handler().postDelayed({
+                                    connectAudioViaBle()
+                                }, 2000)
+                                Timber.d("Dev_debug connectAudioViaBle is in progress")
+
+                            }
+                        }
+                    }
+
+
+                }
+
+            })
+
+            beginAtomicRequestQueue()
+                .add(triggerOp).add(
+                    enableNotifications(mailbox)
+                        .done {
+                            Timber.d("Dev_debug enableNotifications mailbox")
+                        }
+                        .fail { device, errorCode ->
+                            Timber.e("Dev_debug Could not enable enableNotifications mailbox error:$errorCode")
+                            connectionListener?.let {
+                                handleCharacteriseActionFailed(
+                                    errorCode,
+                                    it
+                                )
+                            }
+                        }
+                ).enqueue()
+        }
+    }
 
     override fun getDeviceInformation(deviceInformationListener: DeviceInformationListener) {
 
@@ -169,6 +416,31 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
             .enqueue()
     }
 
+    fun handleCharacteriseActionFailed(errorCode: Int, connectionListener: ConnectionListener) {
+        if (errorCode == 3) {
+            scanConnectedA2DP()
+
+            disconnect().enqueue()
+            disconnectAudio(audioDevice)
+            audioBleConnected = false
+            audioDevice = null
+            connectionListener.onConnectionError(
+                Throwable("Write permission error please restart headset"),
+                MBTErrorCode.DEVICE_WRITE_PERMISSION_ERROR
+            )
+        } else if (errorCode == 2) {
+            connectionListener.onConnectionError(
+                Throwable("read permission error"),
+                MBTErrorCode.DEVICE_READ_PERMISSION_ERROR
+            )
+        } else {
+            connectionListener.onConnectionError(
+                Throwable("Fail to write trigger status command error $errorCode"),
+                MBTErrorCode.BLE_SIGNAL_COULD_NOT_BE_READY
+            )
+        }
+    }
+
     override fun enableSensors(
         streamingParams: StreamingParams,
         dataReceiver: MbtDataReceiver,
@@ -222,17 +494,17 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
                         }
                     } catch (e: Exception) {
                         Timber.w("Dev_debug on write character exception:${e.message}")
-                        connectionListener?.onConnectionError(Throwable(e.message),
+                        connectionListener?.onConnectionError(
+                            Throwable(e.message),
                             MBTErrorCode.BLE_SIGNAL_COULD_NOT_BE_READY
                         )
 
                     }
                 }
-                .fail {btdevice, errorCode ->
+                .fail { btdevice, errorCode ->
                     Timber.e("Dev_debug Fail to write trigger status command:${btdevice?.name} error:$errorCode")
-                    connectionListener?.onConnectionError(Throwable("Fail to write trigger status command error $errorCode"),
-                        MBTErrorCode.BLE_SIGNAL_COULD_NOT_BE_READY
-                    )
+                    connectionListener?.let { handleCharacteriseActionFailed(errorCode, it) }
+
 
                 }
 
@@ -248,10 +520,19 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
         setNotificationCallback(eegChar).with { _, eegFrame ->
             if (eegFrame.value != null) {
                 this.dataReceiver?.onEEGFrame(
-                    TimedBLEFrame(
-                        SystemClock.elapsedRealtime(),
-                        eegFrame.value!!
-                    )
+                    if (MBTSession.allowMelomindToXonDebug) {
+                        val data = MBTSession.getXonSampleFrameData()
+                        TimedBLEFrame(
+                            SystemClock.elapsedRealtime(),
+                            data
+                        )
+                    } else {
+
+                        TimedBLEFrame(
+                            SystemClock.elapsedRealtime(),
+                            eegFrame.value!!
+                        )
+                    }
                 )
             } else {
                 Timber.w("Dev_debug eeg onEEGDataError  received empty eeg frame!")
@@ -271,6 +552,7 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
                     }
                     .fail { device, errorCode ->
                         Timber.e("Dev_debug Could not enable EEG_ACQUISITION error:$errorCode")
+                        connectionListener?.let { handleCharacteriseActionFailed(errorCode, it) }
                         this.deviceStatusCallback?.onEEGStatusError(Throwable("could not start EEG"))
                     }
             )
@@ -302,7 +584,7 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
 
     override fun isEEGEnabled(): Boolean = _isEEGEnabled
 
-    override fun handleScanResults(targetName:String,results: List<ScanResult>) {
+    override fun handleScanResults(targetName: String, results: List<ScanResult>) {
         val melomindDevices = mutableListOf<BluetoothDevice>()
         val otherDevices = mutableListOf<BluetoothDevice>()
         val hasFilter = targetName.isNotEmpty()
@@ -389,6 +671,8 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
 
             if (bluetoothDevice.bondState != BluetoothDevice.BOND_BONDED) {
                 // read battery to create bond (an old firmware engineer told me to do this)
+
+                Timber.i("Dev_debug read battery to create bond work around")
                 val batteryLevelChar =
                     measurementService!!.getCharacteristic(MelomindCharacteristic.BATTERY_LEVEL.uuid)
                 readCharacteristic(batteryLevelChar)
@@ -399,7 +683,15 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
                 .add(
                     requestMtu(MTU_SIZE)
                         .done { Timber.d("requestMtu done") }
-                        .fail { _, _ -> Timber.e("Could not requestMtu") }
+                        .fail { _, errorCode ->
+                            Timber.e("Could not requestMtu errorCode:$errorCode")
+                            connectionListener?.let {
+                                handleCharacteriseActionFailed(
+                                    errorCode,
+                                    it
+                                )
+                            }
+                        }
                 )
                 .enqueue()
         }
@@ -411,7 +703,7 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
         override fun onDeviceReady() {
             val bondStatus = bluetoothDevice.bondState
             Timber.i("Dev_debug BleManagerGattCallback onDeviceReady of BLE device with status:$bondStatus")
-            if (bondStatus == BluetoothDevice.BOND_BONDED ) {
+            if (bondStatus == BluetoothDevice.BOND_BONDED) {
 
                 Timber.i("Dev_debug onDeviceReady in MelomindGattCallback  BLE_CONNECTED_STATUS called")
                 connectionListener?.onDeviceReady(BLE_CONNECTED_STATUS)

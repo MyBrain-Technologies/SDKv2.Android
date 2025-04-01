@@ -12,7 +12,7 @@ import com.mybraintech.sdk.core.acquisition.MbtDeviceStatusCallback
 import com.mybraintech.sdk.core.bluetooth.devices.BaseMbtDevice
 import com.mybraintech.sdk.core.bluetooth.devices.EnumBluetoothConnection
 import com.mybraintech.sdk.core.bluetooth.devices.Indus5MailboxDecoder
-import com.mybraintech.sdk.core.bluetooth.devices.xon.encodeToHex
+import com.mybraintech.sdk.core.encodeToHex
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
 import com.mybraintech.sdk.util.BLE_CONNECTED_STATUS
@@ -44,7 +44,11 @@ abstract class Indus5DeviceImpl(ctx: Context) :
         // TODO("Not yet implemented")
     }
 
-    override fun disconnectAudio(mbtDevice: MbtDevice) {
+    override fun scanConnectedA2DP() {
+        //do nothing
+    }
+
+    override fun disconnectAudio(mbtDevice: BluetoothDevice?) {
         //
     }
     override fun log(priority: Int, message: String) {

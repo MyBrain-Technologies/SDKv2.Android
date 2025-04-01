@@ -98,7 +98,13 @@ internal class SignalProcessingManager(
             EEGSignalProcessingQPlus(streamingParams, eegCallback, bleFrameScheduler)
         }
         EnumMBTDevice.MELOMIND -> {
-            EEGSignalProcessingMelomind(streamingParams, eegCallback, bleFrameScheduler)
+            if (MBTSession.allowMelomindToXonDebug) {
+
+                EEGSignalProcessingXon(streamingParams, eegCallback, bleFrameScheduler)
+            } else {
+
+                EEGSignalProcessingMelomind(streamingParams, eegCallback, bleFrameScheduler)
+            }
         }
         EnumMBTDevice.HYPERION -> {
             EEGSignalProcessingHyperion(streamingParams, eegCallback, bleFrameScheduler)

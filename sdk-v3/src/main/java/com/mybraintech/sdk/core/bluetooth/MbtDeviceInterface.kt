@@ -1,5 +1,6 @@
 package com.mybraintech.sdk.core.bluetooth
 
+import android.bluetooth.BluetoothDevice
 import com.mybraintech.sdk.core.acquisition.MbtDeviceStatusCallback
 import com.mybraintech.sdk.core.bluetooth.devices.EnumBluetoothConnection
 import com.mybraintech.sdk.core.listener.*
@@ -16,14 +17,14 @@ interface MbtDeviceInterface {
     fun startScan(targetName:String,scanResultListener: ScanResultListener)
     fun stopScan()
 
-    fun startScanAudio(targetName:String,scanResultListener: ScanResultListener)
+    fun startScanAudio(targetName:String,scanResultListener: ScanResultListener?)
     fun stopScanAudio()
 
     fun connectMbt(mbtDevice: MbtDevice, connectionListener: ConnectionListener, connectionMode: EnumBluetoothConnection)
     fun connectAudio(mbtDevice: MbtDevice,connectionListener: ConnectionListener)
     fun disconnectMbt()
     fun removeBondMbt()
-    fun disconnectAudio(mbtDevice:MbtDevice)
+    fun disconnectAudio(mbtDevice: BluetoothDevice?)
 
     //----------------------------------------------------------------------------
     // device

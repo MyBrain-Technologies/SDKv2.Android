@@ -13,6 +13,7 @@ import com.mybraintech.sdk.core.bluetooth.MbtBleUtils
 import com.mybraintech.sdk.core.bluetooth.devices.BaseMbtDevice
 import com.mybraintech.sdk.core.bluetooth.devices.EnumBluetoothConnection
 import com.mybraintech.sdk.core.bluetooth.devices.melomind.MelomindCharacteristic
+import com.mybraintech.sdk.core.encodeToHex
 import com.mybraintech.sdk.core.listener.AccelerometerConfigListener
 import com.mybraintech.sdk.core.listener.BatteryLevelListener
 import com.mybraintech.sdk.core.listener.ConnectionListener
@@ -56,8 +57,11 @@ class XonDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
         //TODO: do nothing
     }
 
+    override fun scanConnectedA2DP() {
+        //do nothing
+    }
 
-    override fun disconnectAudio(mbtDevice: MbtDevice) {
+    override fun disconnectAudio(mbtDevice: BluetoothDevice?) {
         //TODO: do nothing
     }
 
@@ -403,17 +407,4 @@ class XonDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
         Timber.e("Not yet implemented")
         eegFilterConfigListener.onEEGFilterConfigError("Not yet implemented")
     }
-}
-
-fun ByteArray.encodeToHex(): String {
-    val hexArray = "0123456789ABCDEF".toCharArray()
-
-    val hexChars = CharArray(this.size * 2)
-    for (j in this.indices) {
-        val v = this[j].toInt() and 0xFF
-
-        hexChars[j * 2] = hexArray[v ushr 4]
-        hexChars[j * 2 + 1] = hexArray[v and 0x0F]
-    }
-    return String(hexChars)
 }

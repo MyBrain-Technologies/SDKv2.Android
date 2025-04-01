@@ -1,6 +1,7 @@
 package com.mybraintech.sdk
 
 import android.bluetooth.BluetoothA2dp
+import android.bluetooth.BluetoothDevice
 import com.mybraintech.android.jnibrainbox.RelaxIndexSessionOutputData
 import com.mybraintech.sdk.core.LabStreamingLayer
 import com.mybraintech.sdk.core.ResearchStudy
@@ -17,12 +18,15 @@ interface MbtClient {
     fun startScan(targetName:String,scanResultListener: ScanResultListener)
     fun stopScan()
 
-    fun startScanAudio(targetName:String,scanResultListener: ScanResultListener)
+    fun startScanAudio(targetName:String,scanResultListener: ScanResultListener?)
     fun stopScanAudio()
 
     fun connect(mbtDevice: MbtDevice, connectionListener: ConnectionListener, connectionMode: EnumBluetoothConnection = EnumBluetoothConnection.BLE)
     fun connectAudio(mbtDevice:MbtDevice,connectionListener: ConnectionListener)
-    fun disconnectAudio(mbtDevice:MbtDevice)
+    fun connectAudioViaBLE(connectionListener: ConnectionListener)
+    fun disconnectAudio(mbtDevice: BluetoothDevice?)
+    fun disconnectAudioViaBLE()
+    fun rebootHeadset()
     fun getA2DP(): BluetoothA2dp?
     fun initA2DP()
     fun disconnect()

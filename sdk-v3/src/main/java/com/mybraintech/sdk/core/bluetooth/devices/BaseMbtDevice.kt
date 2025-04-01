@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.bluetooth.BluetoothA2dp
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothProfile.ServiceListener
@@ -13,8 +14,10 @@ import android.content.Context
 import android.media.AudioManager
 import android.os.Handler
 import android.os.Looper
+import com.mybraintech.sdk.core.acquisition.MBTSession
 import com.mybraintech.sdk.core.bluetooth.MbtAudioDeviceInterface
 import com.mybraintech.sdk.core.bluetooth.MbtDeviceInterface
+import com.mybraintech.sdk.core.bluetooth.devices.melomind.MelomindCharacteristic
 import com.mybraintech.sdk.core.listener.AccelerometerConfigListener
 import com.mybraintech.sdk.core.listener.AudioNameListener
 import com.mybraintech.sdk.core.listener.BatteryLevelListener
@@ -80,7 +83,7 @@ abstract class BaseMbtDevice(ctx: Context) :
         val bluetoothManager = ctx.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothManager.adapter
     }
-
+    abstract fun scanConnectedA2DP()
     protected var broadcastReceiver = MbtBleBroadcastReceiver(bluetoothAdapter)
     fun innitA2dpService() {
         Timber.d("Dev_debug innitA2dpService called ")
@@ -100,6 +103,7 @@ abstract class BaseMbtDevice(ctx: Context) :
                     a2dp = proxy as? BluetoothA2dp
 
                     setIsA2dpReady(true)
+                    scanConnectedA2DP()
                 }
             }, BluetoothProfile.A2DP
         )
@@ -126,7 +130,7 @@ abstract class BaseMbtDevice(ctx: Context) :
         } else {
             connectionListener?.onConnectionError(
                 Throwable("there is no connected device to remove!"),
-                MBTErrorCode.NO_CONNECTED_DEVICE_TO_CONNECT
+                MBTErrorCode.NO_CONNECTED_DEVICE_TO_DISCONNECT
             )
         }
     }
@@ -228,6 +232,7 @@ abstract class BaseMbtDevice(ctx: Context) :
                     "disconnect",
                     BluetoothDevice::class.java
                 )?.invoke(a2dp, deviceToConnect)
+
 
 //                BluetoothAdapter.getDefaultAdapter()
 //                    .closeProfileProxy(BluetoothProfile.A2DP, a2dp)
@@ -497,6 +502,8 @@ abstract class BaseMbtDevice(ctx: Context) :
             targetMbtDevice = null
             this.broadcastReceiver.bleTargetDevice = null
             disconnect().enqueue()
+
+
         } else {
             Timber.i("Dev_debug no action to disconnectMbt")
 //            connectionListener?.onConnectionError(
@@ -528,63 +535,72 @@ abstract class BaseMbtDevice(ctx: Context) :
         bluetoothAdapter?.cancelDiscovery()
     }
 
-    override fun startScanAudio(targetName:String,scanResultListener: ScanResultListener) {
-
-        Timber.d("%s%s", "Dev_debug startScanAudio called(SDK) targetName:", targetName)
-        val pairedDevices: MutableSet<BluetoothDevice>? = bluetoothAdapter?.bondedDevices
-        var found = false
-        var foundedDevice:BluetoothDevice? = null
-        var hasFilter =
-            targetName.isNotEmpty()  && targetName.length > 2
-        Timber.d("%s%s", "Dev_debug startScanAudio called(SDK) hasFilter:", hasFilter)
-        if (pairedDevices != null) {
-            for (device in pairedDevices) {
-                val deviceName = device.name
-                val macAddress = device.address
-                // Do something with the device (e.g., display in a list)
-                Timber.d("Dev_debug Paired device: $deviceName at $macAddress")
-                if (deviceName.contains("MM")) {
-                    if (hasFilter) {
-                        if (deviceName.equals(targetName)) {
+    override fun startScanAudio(targetName: String, scanResultListener: ScanResultListener?) {
+        if (MBTSession.forceScanAudioOnly) {
+            Timber.d("Dev_debug startScanAudio called(SDK) forceScanAudioOnly")
+            startDiscovery()
+        } else {
+            Timber.d("%s%s", "Dev_debug startScanAudio called(SDK) targetName:", targetName)
+            val pairedDevices: MutableSet<BluetoothDevice>? = bluetoothAdapter?.bondedDevices
+            var found = false
+            var foundedDevice: BluetoothDevice? = null
+            var hasFilter =
+                targetName.isNotEmpty() && targetName.length > 2
+            Timber.d("%s%s", "Dev_debug startScanAudio called(SDK) hasFilter:", hasFilter)
+            if (pairedDevices != null) {
+                for (device in pairedDevices) {
+                    val deviceName = device.name
+                    val macAddress = device.address
+                    // Do something with the device (e.g., display in a list)
+                    Timber.d("Dev_debug Paired device: $deviceName at $macAddress")
+                    if (deviceName.contains("MM")) {
+                        if (hasFilter) {
+                            if (deviceName.equals(targetName)) {
+                                found = true
+                                foundedDevice = device
+                                break
+                            }
+                        } else {
                             found = true
                             foundedDevice = device
                             break
                         }
-                    } else {
-                        found = true
-                        foundedDevice = device
-                        break
                     }
                 }
             }
-        }
-        if (foundedDevice != null && found) {
-            Timber.d("Dev_debug found paired device")
-            scanResultListener.onMbtDevices(listOf(MbtDevice(foundedDevice)))
+            if (foundedDevice != null && found) {
+                Timber.d("Dev_debug found paired device")
+                scanResultListener?.onMbtDevices(listOf(MbtDevice(foundedDevice)))
 
-        } else {
-            setupAudioBTBroadcast(context, object : MbtAudioDeviceInterface {
-                override fun onMbtAudioDeviceFound(
-                    device: BluetoothDevice,
-                    action: String,
-                    state: Int
-                ) {
-                    val deviceName = device.name
-                    if (deviceName.startsWith("MM")) {
-                        if (hasFilter) {
-                            if (deviceName.equals(targetName)) {
-                                scanResultListener.onMbtDevices(listOf(MbtDevice(device)))
+            } else {
+                setupAudioBTBroadcast(context, object : MbtAudioDeviceInterface {
+                    override fun onMbtAudioDeviceFound(
+                        device: BluetoothDevice,
+                        action: String,
+                        state: Int
+                    ) {
+                        val deviceName = device.name
+                        if (deviceName.startsWith("MM")) {
+                            if (hasFilter) {
+                                if (deviceName.equals(targetName)) {
+                                    scanResultListener?.onMbtDevices(listOf(MbtDevice(device)))
+                                }
+                            } else {
+                                scanResultListener?.onMbtDevices(listOf(MbtDevice(device)))
                             }
                         } else {
-                            scanResultListener.onMbtDevices(listOf(MbtDevice(device)))
+                            scanResultListener?.onOtherDevices(listOf(device))
                         }
-                    } else {
-                        scanResultListener.onOtherDevices(listOf(device))
                     }
-                }
 
-            })
-            bluetoothAdapter?.startDiscovery()
+                })
+                startDiscovery()
+            }
         }
+    }
+
+    fun startDiscovery() {
+
+        bluetoothAdapter?.startDiscovery()
     }
 }
