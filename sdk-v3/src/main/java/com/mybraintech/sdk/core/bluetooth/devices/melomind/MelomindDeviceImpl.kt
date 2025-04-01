@@ -520,19 +520,10 @@ class MelomindDeviceImpl(val ctx: Context) : BaseMbtDevice(ctx) {
         setNotificationCallback(eegChar).with { _, eegFrame ->
             if (eegFrame.value != null) {
                 this.dataReceiver?.onEEGFrame(
-                    if (MBTSession.allowMelomindToXonDebug) {
-                        val data = MBTSession.getXonSampleFrameData()
-                        TimedBLEFrame(
-                            SystemClock.elapsedRealtime(),
-                            data
-                        )
-                    } else {
-
-                        TimedBLEFrame(
-                            SystemClock.elapsedRealtime(),
-                            eegFrame.value!!
-                        )
-                    }
+                    TimedBLEFrame(
+                        SystemClock.elapsedRealtime(),
+                        eegFrame.value!!
+                    )
                 )
             } else {
                 Timber.w("Dev_debug eeg onEEGDataError  received empty eeg frame!")

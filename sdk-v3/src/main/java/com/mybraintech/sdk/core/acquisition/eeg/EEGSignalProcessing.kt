@@ -3,7 +3,6 @@ package com.mybraintech.sdk.core.acquisition.eeg
 import com.mybraintech.android.jnibrainbox.QualityChecker
 import com.mybraintech.sdk.BuildConfig
 import com.mybraintech.sdk.core.acquisition.*
-import com.mybraintech.sdk.core.encodeToHex
 import com.mybraintech.sdk.core.listener.EEGFrameDecodeInterface
 import com.mybraintech.sdk.core.model.*
 import com.mybraintech.sdk.core.recording.BaseEEGRecorder
@@ -16,7 +15,6 @@ import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import java.util.*
-import kotlin.collections.ArrayList
 import kotlin.math.pow
 
 /**
@@ -76,9 +74,6 @@ abstract class EEGSignalProcessing(
         MbtDataConversion2.generateInstance(getDeviceType())
     }
 
-    private val xonDataConversion: XonDataConversion by lazy {
-        XonDataConversion(8)
-    }
 
     private var qualityChecker: QualityChecker = QualityChecker(250)
 
@@ -177,12 +172,7 @@ abstract class EEGSignalProcessing(
         val eegSignals = decodeEEGData(timedBLEFrame.data)
 //        Timber.v("[eeg_frame_debug] consumeEEGFrame eegSignals:$eegSignals")
         val statuses: List<Float> = eegSignals.map { it.statusData }
-        val standardEEGs = if (getDeviceType() == EnumMBTDevice.XON) {
-            xonDataConversion.convertRawDataToEEG(eegSignals)
-        } else {
-            dataConversion.convertRawDataToEEG(eegSignals)
-        }
-
+        val standardEEGs = dataConversion.convertRawDataToEEG(eegSignals)
 //        Timber.v("[eeg_frame_debug] consumeEEGFrame standardEEGs:$standardEEGs")
         val hasRealtimeListener = hasRealtimeListener()
 //        Timber.i("[eeg_frame_debug] consumeEEGFrame hasRealtimeListener:$hasRealtimeListener")
@@ -246,11 +236,7 @@ abstract class EEGSignalProcessing(
         }
         val missingStatuses: List<Float> = missingEEGSamples.map { it.statusData }
 //        Timber.v("[eeg_frame_debug] consumeEEGFrame missingStatuses:$missingStatuses")
-        val standardMissingEEGs = if (getDeviceType() == EnumMBTDevice.XON) {
-            xonDataConversion.convertRawDataToEEG(missingEEGSamples)
-        } else {
-            dataConversion.convertRawDataToEEG(missingEEGSamples)
-        }
+        val standardMissingEEGs =  dataConversion.convertRawDataToEEG(missingEEGSamples)
 //        Timber.v("[eeg_frame_debug] consumeEEGFrame standardMissingEEGs:$standardMissingEEGs")
         consolidatedEEGBuffer.addAll(standardMissingEEGs)
         consolidatedStatusBuffer.addAll(missingStatuses)
