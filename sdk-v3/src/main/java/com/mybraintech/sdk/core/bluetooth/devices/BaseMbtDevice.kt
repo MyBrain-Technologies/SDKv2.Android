@@ -42,6 +42,8 @@ import timber.log.Timber
 abstract class BaseMbtDevice(ctx: Context) :
     BleManager(ctx), MbtDeviceInterface {
 
+    protected var audioBleConnected = false
+    protected var audioDevice: BluetoothDevice? = null
     protected val INDUS5_BLE_PREFIX = "qp_"
     protected val INDUS5_AUDIO_PREFIX = "QP"
     protected val MELOMIND_BLE_PREFIX = "melo_"
@@ -535,72 +537,11 @@ abstract class BaseMbtDevice(ctx: Context) :
         bluetoothAdapter?.cancelDiscovery()
     }
 
-    override fun startScanAudio(targetName: String, scanResultListener: ScanResultListener?) {
-        if (MBTSession.forceScanAudioOnly) {
-            Timber.d("Dev_debug startScanAudio called(SDK) forceScanAudioOnly")
-            startDiscovery()
-        } else {
-            Timber.d("%s%s", "Dev_debug startScanAudio called(SDK) targetName:", targetName)
-            val pairedDevices: MutableSet<BluetoothDevice>? = bluetoothAdapter?.bondedDevices
-            var found = false
-            var foundedDevice: BluetoothDevice? = null
-            var hasFilter =
-                targetName.isNotEmpty() && targetName.length > 2
-            Timber.d("%s%s", "Dev_debug startScanAudio called(SDK) hasFilter:", hasFilter)
-            if (pairedDevices != null) {
-                for (device in pairedDevices) {
-                    val deviceName = device.name
-                    val macAddress = device.address
-                    // Do something with the device (e.g., display in a list)
-                    Timber.d("Dev_debug Paired device: $deviceName at $macAddress")
-                    if (deviceName.contains("MM")) {
-                        if (hasFilter) {
-                            if (deviceName.equals(targetName)) {
-                                found = true
-                                foundedDevice = device
-                                break
-                            }
-                        } else {
-                            found = true
-                            foundedDevice = device
-                            break
-                        }
-                    }
-                }
-            }
-            if (foundedDevice != null && found) {
-                Timber.d("Dev_debug found paired device")
-                scanResultListener?.onMbtDevices(listOf(MbtDevice(foundedDevice)))
 
-            } else {
-                setupAudioBTBroadcast(context, object : MbtAudioDeviceInterface {
-                    override fun onMbtAudioDeviceFound(
-                        device: BluetoothDevice,
-                        action: String,
-                        state: Int
-                    ) {
-                        val deviceName = device.name
-                        if (deviceName.startsWith("MM")) {
-                            if (hasFilter) {
-                                if (deviceName.equals(targetName)) {
-                                    scanResultListener?.onMbtDevices(listOf(MbtDevice(device)))
-                                }
-                            } else {
-                                scanResultListener?.onMbtDevices(listOf(MbtDevice(device)))
-                            }
-                        } else {
-                            scanResultListener?.onOtherDevices(listOf(device))
-                        }
-                    }
-
-                })
-                startDiscovery()
-            }
-        }
-    }
 
     fun startDiscovery() {
 
+        Timber.i("Dev_debug startDiscovery called")
         bluetoothAdapter?.startDiscovery()
     }
 }

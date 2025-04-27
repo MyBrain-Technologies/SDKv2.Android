@@ -39,12 +39,6 @@ interface MbtClient {
     fun stopStreaming()
     fun isEEGEnabled(): Boolean
 
-    @ResearchStudy
-    fun getEEGFilterConfig(listener: EEGFilterConfigListener)
-
-    @LabStreamingLayer
-    fun setEEGRealtimeListener(eegRealtimeListener: EEGRealtimeListener)
-
     fun setEEGListener(eegListener: EEGListener)
     fun setAccelerometerListener(accelerometerListener: AccelerometerListener)
     fun startRecording(recordingOption: RecordingOption, recordingListener: RecordingListener)
@@ -63,6 +57,7 @@ interface MbtClient {
     fun eegRelaxingIndex(eegs:EEGRecordedDatas): Float
     fun eggStartRelaxingIndexSession(data: EEGCalibrateResult)
     fun eggEngRelaxingIndexSession():RelaxIndexSessionOutputData?
+    fun computeStatistics(threshold:Float, snrValues:Array<Float>): HashMap<String, Float>?
 
     @TestBench
     fun setSerialNumber(serialNumber: String, listener: SerialNumberChangedListener?)
@@ -72,5 +67,9 @@ interface MbtClient {
     fun getDeviceSystemStatus(deviceSystemStatusListener: DeviceSystemStatusListener)
     @TestBench
     fun getAccelerometerConfig(accelerometerConfigListener : AccelerometerConfigListener)
-    fun computeStatistics(threshold:Float, snrValues:Array<Float>): HashMap<String, Float>?
+    @ResearchStudy
+    fun getEEGFilterConfig(listener: EEGFilterConfigListener)
+
+    @LabStreamingLayer
+    fun setEEGRealtimeListener(eegRealtimeListener: EEGRealtimeListener)
 }
