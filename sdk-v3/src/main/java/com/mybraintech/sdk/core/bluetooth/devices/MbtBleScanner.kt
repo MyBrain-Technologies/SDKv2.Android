@@ -5,7 +5,8 @@ import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 
 class MbtBleScanner {
-    private val scanner: BluetoothLeScanner =
+
+    private val scanner: BluetoothLeScanner? =
         BluetoothAdapter.getDefaultAdapter().bluetoothLeScanner
 
     lateinit var scanCallback: ScanCallback
@@ -21,11 +22,12 @@ class MbtBleScanner {
      * @see android.bluetooth.le.BluetoothLeScanner.startScan(java.util.List<android.bluetooth.le.ScanFilter>, android.bluetooth.le.ScanSettings, android.bluetooth.le.ScanCallback)
      */
     fun startScan(scanCallback: ScanCallback) {
+
         this.scanCallback = scanCallback
-        scanner.startScan(scanCallback)
+        scanner?.startScan(scanCallback)
     }
 
     fun stopScan() {
-        scanner.stopScan(scanCallback)
+        scanner?.stopScan(scanCallback)
     }
 }

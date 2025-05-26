@@ -4,12 +4,14 @@ import android.bluetooth.le.ScanResult
 import android.content.Context
 import com.mybraintech.sdk.core.bluetooth.MbtBleUtils
 import com.mybraintech.sdk.core.bluetooth.devices.qplus.Indus5DeviceImpl
+import com.mybraintech.sdk.core.listener.ConnectionListener
 import com.mybraintech.sdk.core.model.MbtDevice
 import timber.log.Timber
 
 class HyperionDeviceImpl(ctx: Context) : Indus5DeviceImpl(ctx) {
 
-    override fun handleScanResults(results: List<ScanResult>) {
+
+    override fun handleScanResults(targetName:String,results: List<ScanResult>) {
         val devices = results.map { it.device }
         val hyperions = devices.filter(MbtBleUtils::isHyperion)
         if (hyperions.isNotEmpty()) {

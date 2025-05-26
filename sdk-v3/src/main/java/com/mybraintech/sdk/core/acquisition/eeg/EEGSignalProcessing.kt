@@ -15,9 +15,11 @@ import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import java.util.*
-import kotlin.collections.ArrayList
 import kotlin.math.pow
 
+/**
+ * Process all the EEG.
+ */
 abstract class EEGSignalProcessing(
     protocol: EnumBluetoothProtocol,
     val isTriggerStatusEnabled: Boolean,
@@ -71,6 +73,7 @@ abstract class EEGSignalProcessing(
     private val dataConversion: MbtDataConversion2 by lazy {
         MbtDataConversion2.generateInstance(getDeviceType())
     }
+
 
     private var qualityChecker: QualityChecker = QualityChecker(250)
 
@@ -143,6 +146,8 @@ abstract class EEGSignalProcessing(
     private fun consumeEEGFrame(timedBLEFrame: TimedBLEFrame) {
 //        Timber.v("consumeEEGFrame")
         val eegFrame = timedBLEFrame.data
+//        Timber.v("consumeEEGFrame eegFrame data size:${eegFrame.size}")
+//        Timber.v("consumeEEGFrame eegFrame data:${eegFrame.encodeToHex()}")
         if (!isValidFrame(eegFrame)) {
             Timber.e("bad format eeg frame : ${NumericalUtils.bytesToShortString(eegFrame)}")
             return
@@ -150,20 +155,28 @@ abstract class EEGSignalProcessing(
 
         // 1st step : check index
         val rawIndex = getFrameIndex(eegFrame)
+//        val rawIndex = -1
+//        Timber.v("[eeg_frame_debug] consumeEEGFrame rawIndex:$rawIndex")
         val indexCandidate = indexOverflowCount * indexCycle + rawIndex
+//        Timber.v("[eeg_frame_debug] consumeEEGFrame indexCandidate:$indexCandidate")
         if (indexCandidate < previousIndex) {
             //index in ble frame is from 0 to (2^16 - 1), this bracket is entered when the raw index does overflow
             indexOverflowCount++
-            Timber.d("increase indexOverflowCount : indexOverflowCount = $indexOverflowCount")
+//            Timber.d("increase indexOverflowCount : indexOverflowCount = $indexOverflowCount")
         }
         val newFrameIndex = indexOverflowCount * indexCycle + rawIndex
+//        Timber.v("consumeEEGFrame newFrameIndex:$newFrameIndex")
 //        Timber.v("newFrameIndex = $newFrameIndex")
 
         // 2st step : parse raw data to standard table and notify realtime if needed
         val eegSignals = decodeEEGData(timedBLEFrame.data)
+//        Timber.v("[eeg_frame_debug] consumeEEGFrame eegSignals:$eegSignals")
         val statuses: List<Float> = eegSignals.map { it.statusData }
         val standardEEGs = dataConversion.convertRawDataToEEG(eegSignals)
-        if (hasRealtimeListener()) {
+//        Timber.v("[eeg_frame_debug] consumeEEGFrame standardEEGs:$standardEEGs")
+        val hasRealtimeListener = hasRealtimeListener()
+//        Timber.i("[eeg_frame_debug] consumeEEGFrame hasRealtimeListener:$hasRealtimeListener")
+        if (hasRealtimeListener) {
             eegRealtimeSubject.onNext(
                 EEGSignalPack(
                     timestamp = timedBLEFrame.timestamp,
@@ -186,6 +199,7 @@ abstract class EEGSignalProcessing(
 
         val indexDifference = newFrameIndex - previousIndex
         val missingFrame = indexDifference - 1
+//        Timber.i("[eeg_frame_debug] consumeEEGFrame missingFrame:$missingFrame")
         if (missingFrame > 0) {
             eegStreamingErrorCounter.increaseMissingEegFrame(missingFrame)
         }
@@ -207,7 +221,7 @@ abstract class EEGSignalProcessing(
         if (missingFrame > 0) {
             var missingCount = 0L
             val sampleNb = getNumberOfTimes(eegFrame)
-            Timber.w("diff is $indexDifference. Current index : $newFrameIndex | previousIndex : $previousIndex")
+//            Timber.w("[eeg_frame_debug] diff is $indexDifference. Current index : $newFrameIndex | previousIndex : $previousIndex")
             for (i in 1..missingFrame) {
                 //one frame contains n times of sample
                 for (j in 1..sampleNb) {
@@ -221,26 +235,34 @@ abstract class EEGSignalProcessing(
 //            Timber.i("missing size = n channels * sample per frame = ${rawEEGList.size}")
         }
         val missingStatuses: List<Float> = missingEEGSamples.map { it.statusData }
-        val standardMissingEEGs = dataConversion.convertRawDataToEEG(missingEEGSamples)
+//        Timber.v("[eeg_frame_debug] consumeEEGFrame missingStatuses:$missingStatuses")
+        val standardMissingEEGs =  dataConversion.convertRawDataToEEG(missingEEGSamples)
+//        Timber.v("[eeg_frame_debug] consumeEEGFrame standardMissingEEGs:$standardMissingEEGs")
         consolidatedEEGBuffer.addAll(standardMissingEEGs)
         consolidatedStatusBuffer.addAll(missingStatuses)
-
+//        Timber.v("consumeEEGFrame consolidatedEEGBuffer size after add missing:${consolidatedEEGBuffer.size}")
         // 4th step: save raw eeg data to buffer
         consolidatedEEGBuffer.addAll(standardEEGs)
         consolidatedStatusBuffer.addAll(statuses)
+//        Timber.v("[eeg_frame_debug] consumeEEGFrame consolidatedEEGBuffer size after add standardEEGs:${consolidatedEEGBuffer.size}")
 
         previousIndex = newFrameIndex
 
         //5th step: if raw buffer is reach threshold, generate consolidated eeg
         val count = consolidatedEEGBuffer.size
         val sampleRate = getSampleRate()
+//        Timber.w("[eeg_frame_debug] count $count. sampleRate : $sampleRate")
         if (count >= sampleRate) {
             //consolidated buffer can emit a MBTPacket
 //            Timber.v("consolidatedEEGBuffer = [${consolidatedEEGBuffer.size}x${consolidatedEEGBuffer[0].size}]")
 //            Timber.v("consolidatedStatusBuffer = [${consolidatedStatusBuffer.size}]")
             val invertedEegData = ArrayList(consolidatedEEGBuffer.subList(0, sampleRate))
+//            Timber.w("[eeg_frame_debug] invertedEegData $invertedEegData")
             val newStatusData = ArrayList(consolidatedStatusBuffer.subList(0, sampleRate))
+//            Timber.w("[eeg_frame_debug] newStatusData $newStatusData")
             consolidatedEEGBuffer = ArrayList(consolidatedEEGBuffer.subList(sampleRate, count))
+
+//            Timber.w("[eeg_frame_debug] consolidatedEEGBuffer after sub $consolidatedEEGBuffer")
             consolidatedStatusBuffer =
                 ArrayList(consolidatedStatusBuffer.subList(sampleRate, count))
 
@@ -272,6 +294,7 @@ abstract class EEGSignalProcessing(
 //                Timber.v("eeg recordingBuffer size = ${recordingBuffer.size}")
             }
 
+//            Timber.w("[eeg_frame_debug] newPacket $newPacket")
             eegPacketSubject.onNext(newPacket)
         }
     }

@@ -63,7 +63,7 @@ public class ExampleInstrumentedTest {
             int duration = 20;
             float expected_mean_alpha_power = 625.0503540039062f;
 
-            Calibration c = new Calibration(sampling_rate, sliding_windows_sec);
+            Calibration calibrator = new Calibration(sampling_rate, sliding_windows_sec);
 
             float[][] signal = new float[2][sampling_rate*duration];
             float[][] qualities = new float[2][duration];
@@ -79,22 +79,23 @@ public class ExampleInstrumentedTest {
                 qualities[1][i] = 1;
             }
 
-            int errorCode = c.computeCalibration(signal, qualities);
+            int errorCode = calibrator.computeCalibration(signal, qualities);
 
             //the computing must be done without any error, error code must be 0.
             assertEquals(0, errorCode);
 
             //RelativeRMS size must be equal the input signal calibration duration
-            assertEquals(duration, c.GetRelativeRMS().length);
+            assertEquals(duration, calibrator.GetRelativeRMS().length);
 
-            float[] iaf = c.GetIAF();
+            float[] iaf = calibrator.GetIAF();
+            float[] rms = calibrator.GetRelativeRMS();
 
             //iaf contains the iaf median inf and iaf median sup
             assertEquals(2, iaf.length);
 
             float iaf_median_inf = iaf[0];
             float iaf_median_sup = iaf[1];
-            RelaxIndex ri = new RelaxIndex(sampling_rate, c.GetRelativeRMS(), iaf_median_inf, iaf_median_sup);
+            RelaxIndex ri = new RelaxIndex(sampling_rate, rms, iaf_median_inf, iaf_median_sup);
 
             float[][] real_time_signal = new float[2][sampling_rate];
             for (int i = 0; i < sampling_rate; ++i) {

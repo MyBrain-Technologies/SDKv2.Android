@@ -14,7 +14,7 @@ android {
         targetSdkVersion 30
 
         versionCode 134
-        versionName '3.4.0.2'
+        versionName '3.5.0.0'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -45,12 +45,7 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     // brainbox
-    def useLocalJni = false
-    if (useLocalJni) {
-//        implementation project(path: ':JniBrainBox')
-    } else {
-        implementation "com.mybraintech.android:jnibrainbox:3.0.0rc2"
-    }
+    implementation 'com.mybraintech.android:jnibrainbox:3.1.1'
 
     // bluetooth
     def useCustomizedBle = true
@@ -59,7 +54,7 @@ dependencies {
 //        implementation project(path: ':ble')
 //        implementation project(path: ':ble-common')
     } else {
-        implementation 'no.nordicsemi.android:ble:2.3.1'
+        implementation 'no.nordicsemi.android:ble:2.7.5'
     }
 
     implementation deps.kotlin.stdlib
@@ -101,12 +96,17 @@ def mavenUsername = properties.getProperty('maven_user')
 def mavenPassword = properties.getProperty('maven_password')
 def releasesRepoUrl = 'https://package.mybraintech.com/repository/maven-2-releases/'
 def snapshotsRepoUrl = 'https://package.mybraintech.com/repository/maven-2-snapshots/'
+//maven_user='ngotuan'
+//maven_password='gEM28mEcWk3hc6r'
 
+//Tuannexus0
+//anhtuan
 project.afterEvaluate {
     publishing {
         repositories {
             maven {
-                url = android.defaultConfig.versionName.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+//                url = android.defaultConfig.versionName.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+                url = releasesRepoUrl
                 credentials {
                     username mavenUsername
                     password mavenPassword
@@ -122,6 +122,13 @@ project.afterEvaluate {
                 artifactId = 'sdk'
                 version = android.defaultConfig.versionName
             }
+//            debug(MavenPublication) {
+//                from components.debug
+//                groupId = 'com.mybraintech.android'
+//                artifactId = 'sdk-debug'
+//                version = '3.5.0.1-SNAPSHOT'
+//            }
+
         }
     }
 }
