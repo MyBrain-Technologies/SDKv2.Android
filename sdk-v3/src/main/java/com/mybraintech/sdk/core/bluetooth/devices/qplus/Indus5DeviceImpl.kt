@@ -8,11 +8,16 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import com.mybraintech.sdk.core.acquisition.MBTSession
 import com.mybraintech.sdk.core.acquisition.MbtDeviceStatusCallback
+import com.mybraintech.sdk.core.bluetooth.MbtAudioDeviceInterface
 import com.mybraintech.sdk.core.bluetooth.devices.BaseMbtDevice
+import com.mybraintech.sdk.core.bluetooth.devices.EnumBluetoothConnection
 import com.mybraintech.sdk.core.bluetooth.devices.Indus5MailboxDecoder
+import com.mybraintech.sdk.core.encodeToHex
 import com.mybraintech.sdk.core.listener.*
 import com.mybraintech.sdk.core.model.*
+import com.mybraintech.sdk.util.BLE_CONNECTED_STATUS
 import no.nordicsemi.android.ble.Operation
 import no.nordicsemi.android.ble.WriteRequest
 import no.nordicsemi.android.ble.callback.DataReceivedCallback
@@ -37,7 +42,138 @@ abstract class Indus5DeviceImpl(ctx: Context) :
     // MARK: ble manager
     //----------------------------------------------------------------------------
     override fun getGattCallback(): BleManagerGattCallback = Indus5GattCallback(this)
+    override fun connectAudio(mbtDevice: MbtDevice, connectionListener: ConnectionListener) {
 
+        val currentThread = Thread.currentThread()
+        Timber.d("Dev_debug connectAudio:${mbtDevice.bluetoothDevice.name} connectionListener:$connectionListener Current thread: ${currentThread.name}")
+        this.connectionListener = connectionListener
+        val pairedDevices: MutableSet<BluetoothDevice>? = bluetoothAdapter?.bondedDevices
+        var found = false
+        if (pairedDevices != null) {
+            for (device in pairedDevices) {
+                val deviceName = device.name
+                val macAddress = device.address
+                // Do something with the device (e.g., display in a list)
+                Timber.d("Dev_debug connectAudio Paired device: $deviceName at $macAddress")
+                var targetAudioname = mbtDevice.bluetoothDevice.name
+                Timber.d("Dev_debug tobe connectAudio o Paired targetAudioname:$targetAudioname")
+                if (deviceName.equals(targetAudioname)) {
+                    found = true
+                    break
+                }
+            }
+
+        }
+        Timber.d("Dev_debug tobe connectAudio found:$found")
+        if (found) {
+            //if device already bond (paired device list). do the connection again
+            connectUsingBluetoothA2dpBinder(mbtDevice.bluetoothDevice)
+        } else {
+            //request pair new device
+            mbtDevice.bluetoothDevice.createBond()
+        }
+    }
+    override fun startScanAudio(targetName: String, scanResultListener: ScanResultListener?) {
+        if (MBTSession.forceScanAudioOnly) {
+            Timber.d("Dev_debug startScanAudio called(SDK) forceScanAudioOnly")
+            startDiscovery()
+        } else {
+            Timber.d("%s%s", "Dev_debug startScanAudio called(SDK) targetName:", targetName)
+            val pairedDevices: MutableSet<BluetoothDevice>? = bluetoothAdapter?.bondedDevices
+            var found = false
+            var foundedDevice: BluetoothDevice? = null
+            var hasFilter =
+                targetName.isNotEmpty() && targetName.length > 2
+            Timber.d("%s%s", "Dev_debug startScanAudio called(SDK) hasFilter:", hasFilter)
+            if (pairedDevices != null) {
+                for (device in pairedDevices) {
+                    val deviceName = device.name
+                    val macAddress = device.address
+                    // Do something with the device (e.g., display in a list)
+                    Timber.d("Dev_debug Paired device: $deviceName at $macAddress")
+                    if (deviceName.contains("QP")) {
+                        if (hasFilter) {
+                            if (deviceName.equals(targetName)) {
+                                found = true
+                                foundedDevice = device
+                                break
+                            }
+                        } else {
+                            found = true
+                            foundedDevice = device
+                            break
+                        }
+                    }
+                }
+            }
+            if (foundedDevice != null && found) {
+                Timber.d("Dev_debug found paired device")
+                scanResultListener?.onMbtDevices(listOf(MbtDevice(foundedDevice)))
+
+            } else {
+                setupAudioBTBroadcast(context, object : MbtAudioDeviceInterface {
+                    override fun onMbtAudioDeviceFound(
+                        device: BluetoothDevice,
+                        action: String,
+                        state: Int
+                    ) {
+                        val deviceName = device.name
+                        if (deviceName.startsWith("QP")) {
+                            if (hasFilter) {
+                                if (deviceName.equals(targetName)) {
+                                    scanResultListener?.onMbtDevices(listOf(MbtDevice(device)))
+                                }
+                            } else {
+                                scanResultListener?.onMbtDevices(listOf(MbtDevice(device)))
+                            }
+                        } else {
+                            scanResultListener?.onOtherDevices(listOf(device))
+                        }
+                    }
+
+                })
+                startDiscovery()
+            }
+        }
+    }
+    override fun scanConnectedA2DP() {
+
+        var connectedDevices = a2dp?.connectedDevices ?: arrayListOf()
+        val connectedDeviceSize = connectedDevices.size
+        var founded = false
+
+        val bleName = deviceInformation.bleName
+        val audioName = deviceInformation.audioName
+
+        Timber.d("Dev_debug connectAudioViaBle check connect a2dp list size is:${connectedDeviceSize}")
+        Timber.d("Dev_debug connectAudioViaBle bleName:${bleName} audioName:${audioName}")
+        if (connectedDeviceSize > 0) {
+            for (device in connectedDevices) {
+                val deviceName = device.name
+                if (deviceName.equals(bleName) || deviceName.equals(audioName)) {
+                    Timber.d("Dev_debug connectAudioViaBle  a2dp connectedDevice name:${device.name}")
+                    audioDevice = device
+                    founded = true
+                    break
+                } else if (deviceName.startsWith("qp") || deviceName.startsWith("QP")) {
+                    audioDevice = device
+                    founded = true
+                    break
+                }
+            }
+        }
+
+        if (founded) {
+            audioBleConnected = true
+        } else {
+            audioBleConnected = false
+            audioDevice = null
+        }
+    }
+
+    override fun disconnectAudio(mbtDevice: BluetoothDevice?) {
+        disConnectUsingBluetoothA2dpBinder(mbtDevice)
+    }
     override fun log(priority: Int, message: String) {
         if (message.contains("value: (0x) 40")
             || message.contains("value: (0x) 50")
@@ -63,7 +199,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
     //----------------------------------------------------------------------------
     override fun onDataReceived(device: BluetoothDevice, data: Data) {
         if (data.value != null) {
-//            Timber.v("onDataReceived : ${NumericalUtils.bytesToHex(data.value)}")
+            Timber.v("onDataReceived size:${data.value?.size} hex:${data.value?.encodeToHex()}")
             when (val response = Indus5MailboxDecoder.decodeRawIndus5Response(data.value!!)) {
                 is Indus5Response.MtuChange -> {
                     Timber.i("Mailbox MTU changed successfully")
@@ -82,7 +218,9 @@ abstract class Indus5DeviceImpl(ctx: Context) :
                     deviceInformation.bleName = INDUS5_BLE_PREFIX + response.serialNumber
                 }
                 is Indus5Response.AudioNameFetched -> {
-                    deviceInformation.audioName = INDUS5_AUDIO_PREFIX + response.audioName
+                    val audioName = INDUS5_AUDIO_PREFIX + response.audioName
+//                    startBluetoothScanning(audioName,"call from onDataReceived Indus5DeviceImpl")
+                    deviceInformation.audioName = audioName
                 }
                 is Indus5Response.AudioNameChanged -> {
                     deviceInformation.audioName = INDUS5_AUDIO_PREFIX + response.newAudioName
@@ -142,7 +280,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
     //----------------------------------------------------------------------------
     // MARK: internal ble manager
     //----------------------------------------------------------------------------
-    override fun connectMbt(mbtDevice: MbtDevice, connectionListener: ConnectionListener) {
+    override fun connectMbt(mbtDevice: MbtDevice, connectionListener: ConnectionListener, connectionMode:EnumBluetoothConnection) {
         /**
          * remove bond to fix data loss bug on Android 9 (SDK-415).
          * We do not apply this for Android 10 and later since this will show a popup to ask
@@ -152,10 +290,10 @@ abstract class Indus5DeviceImpl(ctx: Context) :
             Timber.w("removeBond and sleep 200 ms to avoid false bonding notification")
             removeBond(mbtDevice.bluetoothDevice)
             Handler(Looper.getMainLooper()).postDelayed({
-                super.connectMbt(mbtDevice, connectionListener)
+                super.connectMbt(mbtDevice, connectionListener,connectionMode)
             }, 200)
         } else {
-            super.connectMbt(mbtDevice, connectionListener)
+            super.connectMbt(mbtDevice, connectionListener,connectionMode)
         }
     }
 
@@ -499,7 +637,7 @@ abstract class Indus5DeviceImpl(ctx: Context) :
         BleManagerGattCallback() {
 
         override fun isRequiredServiceSupported(gatt: BluetoothGatt): Boolean {
-            connectionListener?.onServiceDiscovered()
+            connectionListener?.onServiceDiscovered("BLE device(Indus5) discovered")
             val service = gatt.getService(QPlusService.Transparent.uuid)
             rxCharacteristic =
                 service?.getCharacteristic(QPlusCharacteristic.Rx.uuid)
@@ -543,7 +681,8 @@ abstract class Indus5DeviceImpl(ctx: Context) :
         }
 
         override fun onDeviceReady() {
-            connectionListener?.onDeviceReady()
+            Timber.i("Dev_debug onDeviceReady of BLE device(QPlus) BLE_CONNECTED_STATUcalledS")
+            connectionListener?.onDeviceReady(BLE_CONNECTED_STATUS)
         }
 
         @Suppress("OVERRIDE_DEPRECATION")

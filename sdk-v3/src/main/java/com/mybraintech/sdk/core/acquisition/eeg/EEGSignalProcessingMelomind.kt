@@ -44,11 +44,16 @@ class EEGSignalProcessingMelomind(
     override fun decodeEEGData(eegFrame: ByteArray): List<RawEEGSample2> {
         val list = mutableListOf<RawEEGSample2>()
         val hasStatus = (statusAlloc != 0)
+
+//        Timber.v("decodeEEGData hasStatus:$hasStatus indexAlloc:$indexAlloc headerAlloc:$headerAlloc")
         val triggerBytes = if (hasStatus) {
             eegFrame.copyOfRange(indexAlloc, headerAlloc)
         } else {
             ByteArray(0)
         }
+//        Timber.v("decodeEEGData triggerBytes:${triggerBytes.size}")
+        val numberOfTimes = getNumberOfTimes(eegFrame)
+//        Timber.v("decodeEEGData numberOfTimes:${numberOfTimes}")
         for (i in 0 until getNumberOfTimes(eegFrame)) {
             val status = if (hasStatus) {
                 getTriggerStatus(i, triggerBytes)
@@ -57,6 +62,7 @@ class EEGSignalProcessingMelomind(
             }
             list.add(RawEEGSample2(getEEGSample(i, eegFrame), status))
         }
+//        Timber.v("decodeEEGData final list:${list}")
         return list
     }
 
@@ -79,9 +85,12 @@ class EEGSignalProcessingMelomind(
     }
 
     private fun getEEGSample(pos: Int, eegFrame: ByteArray): List<ByteArray>? {
+
+//        Timber.v("getEEGSample pos:${pos} eegFrame:${eegFrame.size}")
         try {
             val list = mutableListOf<ByteArray>()
             val startIndex = headerAlloc + pos * SIGNAL_ALLOC * getNumberOfChannels()
+//            Timber.v("getEEGSample startIndex:${startIndex} headerAlloc:${headerAlloc} SIGNAL_ALLOC:$SIGNAL_ALLOC ")
             for (i in 0 until getNumberOfChannels()) {
                 list.add(
                     eegFrame.copyOfRange(
@@ -97,4 +106,7 @@ class EEGSignalProcessingMelomind(
         }
     }
 
+}
+fun Byte.toString():String {
+    return this.toString(16)
 }

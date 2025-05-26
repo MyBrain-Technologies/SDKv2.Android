@@ -4,6 +4,8 @@ import androidx.annotation.NonNull;
 
 import java.util.ArrayList;
 
+import timber.log.Timber;
+
 public class MatrixUtils2 {
 
     @NonNull
@@ -13,7 +15,8 @@ public class MatrixUtils2 {
 
         int nbLinesDestination = source.get(0).size();
         int nbColumnsDestination = source.size();
-
+//        Timber.w("[eeg_frame_debug] nbLinesDestination:%s", nbLinesDestination);
+//        Timber.w("[eeg_frame_debug] nbColumnsDestination:%s", nbColumnsDestination);
         ArrayList<ArrayList<Float>> destination = new ArrayList<>();
 
         for (int nbLine = 0 ; nbLine < nbLinesDestination; nbLine++){ //fill the lines of the destination matrix
@@ -22,6 +25,7 @@ public class MatrixUtils2 {
                 destination.get(nbLine).add(source.get(nbColumn).get(nbLine)); //add the column elements for each line
             }
         }
+//        Timber.w("[eeg_frame_debug] destination:%s", destination);
         return destination;
     }
 

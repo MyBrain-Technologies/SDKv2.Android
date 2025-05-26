@@ -1,0 +1,11 @@
+prefix=/home/ludovic/Dev/MelomindSDK/buildAndroid/SDK
+exec_prefix=/home/ludovic/Dev/MelomindSDK/buildAndroid/SDK
+libdir=/home/ludovic/Dev/MelomindSDK/buildAndroid/SDK/lib/arm64-v8a
+includedir=/home/ludovic/Dev/MelomindSDK/buildAndroid/SDK/include
+
+Name: FFTW
+Description: fast Fourier transform library
+Version: 3.3.7
+Libs: -L${libdir} -lfftw3 
+Libs.private: -lm
+Cflags: -I${includedir}

@@ -2,14 +2,34 @@ package com.mybraintech.sdk.core.acquisition
 
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
+import com.mybraintech.android.jnibrainbox.Calibration
+import com.mybraintech.android.jnibrainbox.RelaxIndex
+import com.mybraintech.android.jnibrainbox.RelaxIndexSessionOutputData
+import com.mybraintech.android.jnibrainbox.TypeConverter
 import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessingHyperion
 import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessingMelomind
 import com.mybraintech.sdk.core.acquisition.eeg.EEGSignalProcessingQPlus
 import com.mybraintech.sdk.core.acquisition.ims.AccelerometerSignalProcessingDisabled
 import com.mybraintech.sdk.core.acquisition.ims.AccelerometerSignalProcessingIndus5
 import com.mybraintech.sdk.core.acquisition.ppg.PPGSignalProcessingDisabled
-import com.mybraintech.sdk.core.listener.*
-import com.mybraintech.sdk.core.model.*
+import com.mybraintech.sdk.core.listener.AccelerometerListener
+import com.mybraintech.sdk.core.listener.EEGListener
+import com.mybraintech.sdk.core.listener.EEGRealtimeListener
+import com.mybraintech.sdk.core.listener.MbtDataReceiver
+import com.mybraintech.sdk.core.listener.RecordingListener
+import com.mybraintech.sdk.core.model.AccelerometerConfig
+import com.mybraintech.sdk.core.model.AccelerometerPacket
+import com.mybraintech.sdk.core.model.EEGStreamingErrorCounter
+import com.mybraintech.sdk.core.model.EnumAccelerometerSampleRate
+import com.mybraintech.sdk.core.model.EnumEEGFilterConfig
+import com.mybraintech.sdk.core.model.EnumMBTDevice
+import com.mybraintech.sdk.core.model.Kwak
+import com.mybraintech.sdk.core.model.MbtEEGPacket
+import com.mybraintech.sdk.core.model.RecordingOption
+import com.mybraintech.sdk.core.model.StreamingParams
+import com.mybraintech.sdk.core.model.ThreeDimensionalPosition
+import com.mybraintech.sdk.core.model.TimedBLEFrame
 import com.mybraintech.sdk.core.recording.BaseAccelerometerRecorder
 import com.mybraintech.sdk.core.recording.BaseEEGRecorder
 import io.reactivex.Maybe
@@ -23,12 +43,13 @@ import kotlin.math.max
 import kotlin.math.min
 
 /**
+ * Process EEG, IMS, PPG..
  * please call [dispose] to release occupied memory when stop using
  */
 internal class SignalProcessingManager(
     val deviceType: EnumMBTDevice, val streamingParams: StreamingParams
 ) : RecordingInterface, MbtDataReceiver {
-
+    private val TAG = "SignalProcessingManager"
     private val bleFrameScheduler = RxJavaPlugins.createSingleScheduler(AcquisierThreadFactory)
 
     private var eegListener: EEGListener? = null
@@ -62,6 +83,7 @@ internal class SignalProcessingManager(
      * use to calibrate multi signal recordings
      */
     private var isWaitingLateSignals = false
+    private var relaxingIndex:RelaxIndex? = null
 
     private var recordingOption: RecordingOption? = null
     private var kwak: Kwak = Kwak()
@@ -192,6 +214,137 @@ internal class SignalProcessingManager(
                 )
             }
         }
+    }
+    fun innitRelaxingIndex(calibratedData: EEGCalibrateResult) {
+        Log.d(TAG, "Dev_debug innitRelaxingIndex  calibratedData:${calibratedData}")
+        val sampling_rate = 250
+        val iaf: FloatArray = calibratedData.iaf
+        val smoothRms: FloatArray = calibratedData.smoothRms
+        val iaf_median_inf = iaf[0]
+        val iaf_median_sup = iaf[1]
+        relaxingIndex = RelaxIndex(sampling_rate, smoothRms, iaf_median_inf, iaf_median_sup)
+
+        Log.d(TAG, "Dev_debug innitRelaxingIndex  relaxingIndex:${relaxingIndex}")
+    }
+
+    fun endSessionRelaxingIndex():RelaxIndexSessionOutputData? {
+        Log.d(TAG, "Dev_debug endSessionRelaxingIndex ")
+
+       return relaxingIndex?.endSession()
+    }
+
+
+    fun eegRelaxingIndex(tobeIndexEEGDatas:EEGRecordedDatas):Float {
+        Log.d(TAG,"Dev_debug eegRelaxingIndex error eegRelaxingIndex:${tobeIndexEEGDatas.eegPackets.size} relaxingIndex:$relaxingIndex")
+        val sampling_rate = 250
+
+
+        val ri = relaxingIndex
+        val packets = tobeIndexEEGDatas.eegPackets
+        val qualities = Array(2) {
+            FloatArray(
+                packets.size
+            )
+        }
+        val mainMatrixSize: Int = packets.size * sampling_rate
+        val signals = Array(2) {
+            FloatArray(
+                packets.size * mainMatrixSize
+            )
+        }
+
+        var qtCnt = 0
+        var chanCnt = 0
+        for (current in packets) {
+            // Merging qualities
+            if (current.qualities == null) {
+                Log.e(
+                    TAG,
+                    "NULL QUALITIES"
+                )
+            } else {
+                qualities[0][qtCnt] = current.qualities[0]
+                qualities[1][qtCnt++] = current.qualities[1]
+            }
+            val matrix: Array<FloatArray> =
+                TypeConverter.channelsToMatrixFloat(current.channelsData)
+            for (it in 0 until sampling_rate) {
+                signals[0][chanCnt] = matrix[0][it]
+                signals[1][chanCnt++] = matrix[1][it]
+            }
+        }
+
+
+        val lastPacketQualities = floatArrayOf(
+            qualities[0][packets.size - 1],
+            qualities[1][packets.size - 1]
+        )
+
+        Log.d(TAG,"Dev_debug SDKV3 computeRelaxIndex    lastPacketQualities :${ lastPacketQualities[0]} ${ lastPacketQualities[1]}")
+
+
+        // Simulate a session live of 3 seconds
+        val volume = ri?.computeVolume(signals, lastPacketQualities)?:-1f
+
+        // Simulate the end of session
+//        val session = ri.endSession()
+//        Log.d(
+//            TAG,
+//            "Dev_debug: eegRelaxingIndex volume:$volume session:${session.toString()}"
+//        )
+
+        // Simulate the end of session
+        Log.d(TAG,"Dev_debug SDKV3 computeRelaxIndex    volume :${volume}")
+
+
+        return volume
+    }
+    fun eegCalibrate(recordedData:EEGRecordedDatas):EEGCalibrateResult {
+        val packets = recordedData.eegPackets
+        val sampling_rate = 250
+        val packetLength = sampling_rate
+        val sliding_windows_sec = 8
+        val calibrator = Calibration(sampling_rate, sliding_windows_sec)
+
+        val qualities = Array(2) {
+            FloatArray(
+                packets.size
+            )
+        }
+        val mainMatrix = Array(2) {
+            FloatArray(
+                packets.size * packetLength
+            )
+        }
+
+        var qtCnt = 0
+        var chanCnt = 0
+        for (current in packets) {
+            // Merging qualities
+            if (current.qualities == null) {
+                Log.e(
+                    TAG,
+                    "NULL QUALITIES"
+                )
+            } else {
+                qualities[0][qtCnt] = current.qualities[0]
+                qualities[1][qtCnt++] = current.qualities[1]
+            }
+            val matrix: Array<FloatArray> = TypeConverter.channelsToMatrixFloat(current.channelsData)
+            for (it in 0 until sampling_rate) {
+                mainMatrix[0][chanCnt] = matrix[0][it]
+                mainMatrix[1][chanCnt++] = matrix[1][it]
+            }
+        }
+
+
+        val error = calibrator.computeCalibration(mainMatrix,qualities)
+        Log.d(TAG," calibrate error code:$error")
+        val result = EEGCalibrateResult(error == 0,error.toString())
+        result.iaf = calibrator.GetIAF()
+        result.rms = calibrator.GetRelativeRMS()
+        result.smoothRms = calibrator.GetSmoothRMS()
+        return result
     }
 
     /**
@@ -329,6 +482,8 @@ internal class SignalProcessingManager(
     // MARK: MbtDataReceiver
     //----------------------------------------------------------------------------
     override fun onTriggerStatusConfiguration(triggerStatusAllocationSize: Int) {
+
+        Timber.d("%s%d", "Dev_debug onTriggerStatusConfiguration triggerStatusAllocationSize:", triggerStatusAllocationSize)
         eegSignalProcessing.onTriggerStatusConfiguration(triggerStatusAllocationSize)
     }
 
@@ -398,7 +553,9 @@ internal class SignalProcessingManager(
                 if (!isOk) {
                     recordingListener?.onRecordingError(RuntimeException("Can not serialize file"))
                 } else {
-                    recordingListener?.onRecordingSaved(recordingOption?.outputFile!!)
+                    val recordedData = EEGRecordedDatas()
+                    recordedData.eegPackets = eegBuffer
+                    recordingListener?.onRecordingSaved(recordingOption?.outputFile!!,recordedData)
                 }
             } else {
                 recordingListener?.onRecordingError(RuntimeException("outputFile is null"))
@@ -408,4 +565,5 @@ internal class SignalProcessingManager(
             .subscribe()
             .addTo(recordingDisposable)
     }
+
 }

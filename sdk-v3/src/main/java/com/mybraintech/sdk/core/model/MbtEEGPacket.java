@@ -36,6 +36,8 @@ public class MbtEEGPacket {
         this.features = packetToClone.getFeatures();
     }
 
+
+
     /**
      * Initializes a new instance of the MbtEEGPacket class.
      *
@@ -47,7 +49,11 @@ public class MbtEEGPacket {
         this.statusData = statusData;
         this.timestamp = System.currentTimeMillis();
     }
+    public MbtEEGPacket(@NonNull final ArrayList<ArrayList<Float>> channelsData) {
 
+        this.channelsData = channelsData;
+        this.timestamp = System.currentTimeMillis();
+    }
     /**
      * Gets the TimeStamp
      *
@@ -85,7 +91,7 @@ public class MbtEEGPacket {
     public String toString() {
         return "MbtEEGPacket{" +
                 "EEG=" + (channelsData != null && !channelsData.isEmpty() ? (channelsData.size() + "x" + channelsData.get(0).size()) : channelsData) +
-                ",\n quality= [" + (qualities != null ? (qualities.get(0) + "," + qualities.get(1)) : null + "]") +
+                ",\n quality= [" + (qualities != null ? (qualities.get(0) + "," + qualities.get(1))+ "]" : null + "]") +
                 "\\n, statusData=" + (statusData != null ? "size: " + statusData.size() : null) +
                 ",\n timestamp=" + timestamp +
                 '}';
@@ -111,6 +117,10 @@ public class MbtEEGPacket {
 
     public float[][] getFeatures() {
         return features;
+    }
+
+    public void setChannelsData(ArrayList<ArrayList<Float>> list) {
+        this.channelsData = list;
     }
 
     public ArrayList<Float> getFeature(int frequency) {
